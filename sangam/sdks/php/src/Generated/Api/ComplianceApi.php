@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Compliance (34 operations). */
+/** Typed operations of Compliance (39 operations). */
 final class ComplianceApi
 {
     public function __construct(private readonly Calls $calls)
@@ -474,6 +474,99 @@ final class ComplianceApi
     public function setComplianceContact(string $role, Model\ComplianceContact|array $body, ?RequestOptions $options = null): void
     {
         $req = ApiRequest::post('/compliance/contacts/' . HttpTransport::seg((string) $role));
+        if ($body !== null) {
+            $req->body($body);
+        }
+        $this->calls->none($req, $options);
+    }
+
+    /**
+     * Send a one-time code for a rights request
+     *
+     * Public, like the submission (tenant in X-Sangam-Tenant or ?tenant=). Short-lived, single use; a new code supersedes the identifier's open one; an identifier locked out after too many wrong codes is 429 OTP_LOCKED; settings not configured is 409 OTP_NOT_CONFIGURED. Writes RIGHTS_OTP_ISSUED (owner decision 360).
+     *
+     * POST /compliance/rights-requests/otp-challenges (operationId issueRightsRequestOtp); result stored atomically with the state change.
+     * @param Model\ComplianceOtpChallengeRequest|array $body request body
+     * @param string|null $tenant query tenant
+     * @param string|null $xSangamTenant header X-Sangam-Tenant
+     * @return Model\ComplianceOtpChallenge|null
+     */
+    public function issueRightsRequestOtp(Model\ComplianceOtpChallengeRequest|array $body, ?string $tenant = null, ?string $xSangamTenant = null, ?RequestOptions $options = null): ?Model\ComplianceOtpChallenge
+    {
+        $req = ApiRequest::post('/compliance/rights-requests/otp-challenges');
+        $req->query('tenant', $tenant);
+        $req->header('X-Sangam-Tenant', Support::headerValue($xSangamTenant));
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\ComplianceOtpChallenge::class);
+    }
+
+    /**
+     * Verify a one-time code
+     *
+     * Public. A wrong, unknown, used or other tenant's challenge is 401 OTP_INVALID, an expired one 401 OTP_EXPIRED, a locked-out identifier 429 OTP_LOCKED; the attempt is recorded and counts toward the lock-out. Writes RIGHTS_OTP_VERIFIED or RIGHTS_OTP_FAILED (owner decision 360).
+     *
+     * POST /compliance/rights-requests/otp-challenges/{challengeId}/verify (operationId verifyRightsRequestOtp).
+     * @param Model\ComplianceOtpVerifyRequest|array $body request body
+     * @param string|null $tenant query tenant
+     * @param string|null $xSangamTenant header X-Sangam-Tenant
+     * @return Model\ComplianceOtpVerification|null
+     */
+    public function verifyRightsRequestOtp(string $challengeId, Model\ComplianceOtpVerifyRequest|array $body, ?string $tenant = null, ?string $xSangamTenant = null, ?RequestOptions $options = null): ?Model\ComplianceOtpVerification
+    {
+        $req = ApiRequest::post('/compliance/rights-requests/otp-challenges/' . HttpTransport::seg((string) $challengeId) . '/verify');
+        $req->query('tenant', $tenant);
+        $req->header('X-Sangam-Tenant', Support::headerValue($xSangamTenant));
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\ComplianceOtpVerification::class);
+    }
+
+    /**
+     * Active legal holds of a process root
+     *
+     * The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
+     *
+     * GET /compliance/process-roots/{rootId}/legal-holds (operationId listComplianceLegalHolds); permission compliance.read.
+     * @return list<Model\ComplianceLegalHold>
+     */
+    public function listComplianceLegalHolds(string $rootId, ?RequestOptions $options = null): array
+    {
+        $req = ApiRequest::get('/compliance/process-roots/' . HttpTransport::seg((string) $rootId) . '/legal-holds');
+        return $this->calls->models($req, $options, Model\ComplianceLegalHold::class);
+    }
+
+    /**
+     * Place a legal hold on a process root
+     *
+     * Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
+     *
+     * POST /compliance/process-roots/{rootId}/legal-holds (operationId placeComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
+     * @param Model\ComplianceLegalHoldRequest|array $body request body
+     * @return Model\ComplianceLegalHold|null
+     */
+    public function placeComplianceLegalHold(string $rootId, Model\ComplianceLegalHoldRequest|array $body, ?RequestOptions $options = null): ?Model\ComplianceLegalHold
+    {
+        $req = ApiRequest::post('/compliance/process-roots/' . HttpTransport::seg((string) $rootId) . '/legal-holds');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\ComplianceLegalHold::class);
+    }
+
+    /**
+     * Release a legal hold
+     *
+     * Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.
+     *
+     * POST /compliance/process-roots/{rootId}/legal-holds/{holdId}/release (operationId releaseComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
+     * @param Model\ComplianceLegalHoldRelease|array $body request body
+     */
+    public function releaseComplianceLegalHold(string $rootId, string $holdId, Model\ComplianceLegalHoldRelease|array $body, ?RequestOptions $options = null): void
+    {
+        $req = ApiRequest::post('/compliance/process-roots/' . HttpTransport::seg((string) $rootId) . '/legal-holds/' . HttpTransport::seg((string) $holdId) . '/release');
         if ($body !== null) {
             $req->body($body);
         }

@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 958,
- "operations": 1139,
- "schemas": 862,
+ "paths": 962,
+ "operations": 1144,
+ "schemas": 869,
  "tags": [
   "AI",
   "Admin",
@@ -183,8 +183,8 @@
    "class": "ComplianceApi",
    "tag": "Compliance",
    "pathPrefix": "",
-   "operations": 34,
-   "maxLines": 652
+   "operations": 39,
+   "maxLines": 753
   },
   {
    "class": "ConfigApi",
@@ -864,7 +864,14 @@
   "ComplianceJurisdiction",
   "ComplianceLawfulRequest",
   "ComplianceLawfulRequestBody",
+  "ComplianceLegalHold",
+  "ComplianceLegalHoldRelease",
+  "ComplianceLegalHoldRequest",
   "ComplianceLogSegment",
+  "ComplianceOtpChallenge",
+  "ComplianceOtpChallengeRequest",
+  "ComplianceOtpVerification",
+  "ComplianceOtpVerifyRequest",
   "CompliancePublishNoticeRequest",
   "CompliancePublishResult",
   "CompliancePurpose",
@@ -5781,6 +5788,66 @@
    "python": "compliance.set_compliance_contact",
    "dotnet": "ComplianceApi#SetComplianceContactAsync",
    "php": "ComplianceApi#setComplianceContact"
+  },
+  {
+   "operationId": "issueRightsRequestOtp",
+   "method": "POST",
+   "path": "/compliance/rights-requests/otp-challenges",
+   "tag": "Compliance",
+   "apiClass": "ComplianceApi",
+   "java": "ComplianceApi#issueRightsRequestOtp",
+   "typescript": "compliance.issueRightsRequestOtp",
+   "python": "compliance.issue_rights_request_otp",
+   "dotnet": "ComplianceApi#IssueRightsRequestOtpAsync",
+   "php": "ComplianceApi#issueRightsRequestOtp"
+  },
+  {
+   "operationId": "verifyRightsRequestOtp",
+   "method": "POST",
+   "path": "/compliance/rights-requests/otp-challenges/{challengeId}/verify",
+   "tag": "Compliance",
+   "apiClass": "ComplianceApi",
+   "java": "ComplianceApi#verifyRightsRequestOtp",
+   "typescript": "compliance.verifyRightsRequestOtp",
+   "python": "compliance.verify_rights_request_otp",
+   "dotnet": "ComplianceApi#VerifyRightsRequestOtpAsync",
+   "php": "ComplianceApi#verifyRightsRequestOtp"
+  },
+  {
+   "operationId": "listComplianceLegalHolds",
+   "method": "GET",
+   "path": "/compliance/process-roots/{rootId}/legal-holds",
+   "tag": "Compliance",
+   "apiClass": "ComplianceApi",
+   "java": "ComplianceApi#listComplianceLegalHolds",
+   "typescript": "compliance.listComplianceLegalHolds",
+   "python": "compliance.list_compliance_legal_holds",
+   "dotnet": "ComplianceApi#ListComplianceLegalHoldsAsync",
+   "php": "ComplianceApi#listComplianceLegalHolds"
+  },
+  {
+   "operationId": "placeComplianceLegalHold",
+   "method": "POST",
+   "path": "/compliance/process-roots/{rootId}/legal-holds",
+   "tag": "Compliance",
+   "apiClass": "ComplianceApi",
+   "java": "ComplianceApi#placeComplianceLegalHold",
+   "typescript": "compliance.placeComplianceLegalHold",
+   "python": "compliance.place_compliance_legal_hold",
+   "dotnet": "ComplianceApi#PlaceComplianceLegalHoldAsync",
+   "php": "ComplianceApi#placeComplianceLegalHold"
+  },
+  {
+   "operationId": "releaseComplianceLegalHold",
+   "method": "POST",
+   "path": "/compliance/process-roots/{rootId}/legal-holds/{holdId}/release",
+   "tag": "Compliance",
+   "apiClass": "ComplianceApi",
+   "java": "ComplianceApi#releaseComplianceLegalHold",
+   "typescript": "compliance.releaseComplianceLegalHold",
+   "python": "compliance.release_compliance_legal_hold",
+   "dotnet": "ComplianceApi#ReleaseComplianceLegalHoldAsync",
+   "php": "ComplianceApi#releaseComplianceLegalHold"
   },
   {
    "operationId": "recordComplianceAudit",

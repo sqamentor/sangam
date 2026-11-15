@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Compliance (34 operations).
+/// Typed operations of Compliance (39 operations).
 /// </summary>
 public sealed class ComplianceApi
 {
@@ -335,6 +335,69 @@ public sealed class ComplianceApi
     public async global::System.Threading.Tasks.Task SetComplianceContactAsync(string role, M.ComplianceContact body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Post($"/compliance/contacts/{HttpTransport.Seg(GeneratedCalls.Str(role)!)}");
+        if (body is not null) req.WithBody(body);
+        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Send a one-time code for a rights request
+    /// Public, like the submission (tenant in X-Sangam-Tenant or ?tenant=). Short-lived, single use; a new code supersedes the identifier's open one; an identifier locked out after too many wrong codes is 429 OTP_LOCKED; settings not configured is 409 OTP_NOT_CONFIGURED. Writes RIGHTS_OTP_ISSUED (owner decision 360).
+    /// POST /compliance/rights-requests/otp-challenges (operationId issueRightsRequestOtp); result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.ComplianceOtpChallenge?> IssueRightsRequestOtpAsync(M.ComplianceOtpChallengeRequest body, string? tenant = null, string? xSangamTenant = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/compliance/rights-requests/otp-challenges");
+        req.WithQuery("tenant", GeneratedCalls.Q(tenant));
+        req.WithHeader("X-Sangam-Tenant", GeneratedCalls.Str(xSangamTenant));
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.ComplianceOtpChallenge?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Verify a one-time code
+    /// Public. A wrong, unknown, used or other tenant's challenge is 401 OTP_INVALID, an expired one 401 OTP_EXPIRED, a locked-out identifier 429 OTP_LOCKED; the attempt is recorded and counts toward the lock-out. Writes RIGHTS_OTP_VERIFIED or RIGHTS_OTP_FAILED (owner decision 360).
+    /// POST /compliance/rights-requests/otp-challenges/{challengeId}/verify (operationId verifyRightsRequestOtp).
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.ComplianceOtpVerification?> VerifyRightsRequestOtpAsync(string challengeId, M.ComplianceOtpVerifyRequest body, string? tenant = null, string? xSangamTenant = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/compliance/rights-requests/otp-challenges/{HttpTransport.Seg(GeneratedCalls.Str(challengeId)!)}/verify");
+        req.WithQuery("tenant", GeneratedCalls.Q(tenant));
+        req.WithHeader("X-Sangam-Tenant", GeneratedCalls.Str(xSangamTenant));
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.ComplianceOtpVerification?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Active legal holds of a process root
+    /// The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
+    /// GET /compliance/process-roots/{rootId}/legal-holds (operationId listComplianceLegalHolds); permission compliance.read.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.ComplianceLegalHold>?> ListComplianceLegalHoldsAsync(string rootId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/compliance/process-roots/{HttpTransport.Seg(GeneratedCalls.Str(rootId)!)}/legal-holds");
+        return await _calls.JsonAsync<global::System.Collections.Generic.List<M.ComplianceLegalHold>?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Place a legal hold on a process root
+    /// Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
+    /// POST /compliance/process-roots/{rootId}/legal-holds (operationId placeComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.ComplianceLegalHold?> PlaceComplianceLegalHoldAsync(string rootId, M.ComplianceLegalHoldRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/compliance/process-roots/{HttpTransport.Seg(GeneratedCalls.Str(rootId)!)}/legal-holds");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.ComplianceLegalHold?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Release a legal hold
+    /// Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.
+    /// POST /compliance/process-roots/{rootId}/legal-holds/{holdId}/release (operationId releaseComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task ReleaseComplianceLegalHoldAsync(string rootId, string holdId, M.ComplianceLegalHoldRelease body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/compliance/process-roots/{HttpTransport.Seg(GeneratedCalls.Str(rootId)!)}/legal-holds/{HttpTransport.Seg(GeneratedCalls.Str(holdId)!)}/release");
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }

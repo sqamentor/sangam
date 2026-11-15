@@ -3659,7 +3659,7 @@ export class ChannelsApi {
   }
 }
 
-/** Typed operations of `Compliance` (34 operations). */
+/** Typed operations of `Compliance` (39 operations). */
 export class ComplianceApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -4003,6 +4003,72 @@ export class ComplianceApi {
    */
   async setComplianceContact(role: string, body: M.ComplianceContact, options?: RequestOptions): Promise<void> {
     const req: ApiRequest = { method: 'POST', path: `/compliance/contacts/${seg(String(role))}` };
+    if (body !== undefined) req.body = body;
+    await this.calls.none(req, options);
+  }
+
+  /**
+   * Send a one-time code for a rights request
+   *
+   * Public, like the submission (tenant in X-Sangam-Tenant or ?tenant=). Short-lived, single use; a new code supersedes the identifier's open one; an identifier locked out after too many wrong codes is 429 OTP_LOCKED; settings not configured is 409 OTP_NOT_CONFIGURED. Writes RIGHTS_OTP_ISSUED (owner decision 360).
+   *
+   * `POST /compliance/rights-requests/otp-challenges` (operationId `issueRightsRequestOtp`); result stored atomically with the state change.
+   */
+  async issueRightsRequestOtp(body: M.ComplianceOtpChallengeRequest, params?: { tenant?: string /* Tenant of an unauthenticated call (else X-Sangam-Tenant) */; xSangamTenant?: string /* Tenant of an unauthenticated call (else ?tenant=) */ }, options?: RequestOptions): Promise<M.ComplianceOtpChallenge> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/rights-requests/otp-challenges`, query: { tenant: params?.tenant } };
+    headersOf(req, { 'X-Sangam-Tenant': params?.xSangamTenant });
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.ComplianceOtpChallenge>(req, options);
+  }
+
+  /**
+   * Verify a one-time code
+   *
+   * Public. A wrong, unknown, used or other tenant's challenge is 401 OTP_INVALID, an expired one 401 OTP_EXPIRED, a locked-out identifier 429 OTP_LOCKED; the attempt is recorded and counts toward the lock-out. Writes RIGHTS_OTP_VERIFIED or RIGHTS_OTP_FAILED (owner decision 360).
+   *
+   * `POST /compliance/rights-requests/otp-challenges/{challengeId}/verify` (operationId `verifyRightsRequestOtp`).
+   */
+  async verifyRightsRequestOtp(challengeId: string, body: M.ComplianceOtpVerifyRequest, params?: { tenant?: string /* Tenant of an unauthenticated call (else X-Sangam-Tenant) */; xSangamTenant?: string /* Tenant of an unauthenticated call (else ?tenant=) */ }, options?: RequestOptions): Promise<M.ComplianceOtpVerification> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/rights-requests/otp-challenges/${seg(String(challengeId))}/verify`, query: { tenant: params?.tenant } };
+    headersOf(req, { 'X-Sangam-Tenant': params?.xSangamTenant });
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.ComplianceOtpVerification>(req, options);
+  }
+
+  /**
+   * Active legal holds of a process root
+   *
+   * The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
+   *
+   * `GET /compliance/process-roots/{rootId}/legal-holds` (operationId `listComplianceLegalHolds`); permission `compliance.read`.
+   */
+  async listComplianceLegalHolds(rootId: string, options?: RequestOptions): Promise<Array<M.ComplianceLegalHold>> {
+    const req: ApiRequest = { method: 'GET', path: `/compliance/process-roots/${seg(String(rootId))}/legal-holds` };
+    return this.calls.json<Array<M.ComplianceLegalHold>>(req, options);
+  }
+
+  /**
+   * Place a legal hold on a process root
+   *
+   * Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
+   *
+   * `POST /compliance/process-roots/{rootId}/legal-holds` (operationId `placeComplianceLegalHold`); permission `compliance.modify`; result stored atomically with the state change.
+   */
+  async placeComplianceLegalHold(rootId: string, body: M.ComplianceLegalHoldRequest, options?: RequestOptions): Promise<M.ComplianceLegalHold> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/process-roots/${seg(String(rootId))}/legal-holds` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.ComplianceLegalHold>(req, options);
+  }
+
+  /**
+   * Release a legal hold
+   *
+   * Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.
+   *
+   * `POST /compliance/process-roots/{rootId}/legal-holds/{holdId}/release` (operationId `releaseComplianceLegalHold`); permission `compliance.modify`; result stored atomically with the state change.
+   */
+  async releaseComplianceLegalHold(rootId: string, holdId: string, body: M.ComplianceLegalHoldRelease, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/process-roots/${seg(String(rootId))}/legal-holds/${seg(String(holdId))}/release` };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -14722,7 +14788,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1139 operations on 958 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1144 operations on 962 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;

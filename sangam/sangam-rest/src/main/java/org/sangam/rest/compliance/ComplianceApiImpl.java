@@ -330,6 +330,36 @@ public final class ComplianceApiImpl implements ComplianceRestService {
     }
 
     @Override
+    public org.sangam.compliance.rights.PrincipalOtpChallenges.Challenge issueRightsOtp(String tenantId, ComplianceRequests.OtpChallengeRequest r) {
+        return tx(c -> compliance.otp.issue(c, tenantId, r.identifierType(), r.identifierValue(), language(tenantId, r.language())));
+    }
+
+    @Override
+    public org.sangam.compliance.rights.PrincipalOtpChallenges.Verification verifyRightsOtp(String tenantId, String challengeId, String code) {
+        // the attempt commits first (attempt limit), then a refusal is thrown by name
+        return tx(c -> compliance.otp.verify(c, tenantId, challengeId, code)).require();
+    }
+
+    @Override
+    public List<org.sangam.compliance.ports.CompliancePorts.ActiveHold> legalHolds(SecurityIdentity id, String rootId) {
+        return tx(c -> compliance.legalHolds.active(c, id.tenantId(), rootId));
+    }
+
+    @Override
+    public org.sangam.compliance.ports.CompliancePorts.ActiveHold placeLegalHold(SecurityIdentity id, String rootId,
+                                                                                 ComplianceRequests.LegalHoldRequest r) {
+        return tx(c -> compliance.legalHolds.place(c, id.tenantId(), rootId, r.kind(), r.reference(), r.reason(), id.personId()));
+    }
+
+    @Override
+    public void releaseLegalHold(SecurityIdentity id, String rootId, String holdId, String reason) {
+        tx(c -> {
+            compliance.legalHolds.release(c, id.tenantId(), rootId, holdId, reason, id.personId());
+            return null;
+        });
+    }
+
+    @Override
     public Map<String, Object> verifyAudit(SecurityIdentity id) {
         return tx(c -> {
             Map<String, Object> m = new LinkedHashMap<>();

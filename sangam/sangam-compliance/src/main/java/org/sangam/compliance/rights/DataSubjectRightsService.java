@@ -457,7 +457,16 @@ public final class DataSubjectRightsService {
         List<String> erased = new ArrayList<>();
         Map<String, String> retained = new LinkedHashMap<>();
         for (String root : roots) {
-            String why = tx.inTransaction(c -> retentionReason(c, tenantId, root, cfg));
+            String why = tx.inTransaction(c -> {
+                String w = retentionReason(c, tenantId, root, cfg);
+                if (w != null) {
+                    // SANGAM.md X.2.3.8 #4 / owner decision 361: the refusal is an audited event on the root's chain, with
+                    // its reason by name (LEGAL_HOLD [ids], EXEMPT, RETENTION_REQUIRED_BY_LAW)
+                    audit.root(c, tenantId, root, ComplianceAudit.RETENTION_HELD, Sql.kv("request", requestId, "erasure",
+                            "REFUSED", "reason", w));
+                }
+                return w;
+            });
             if (why != null) {
                 retained.put(root, why);
                 continue;

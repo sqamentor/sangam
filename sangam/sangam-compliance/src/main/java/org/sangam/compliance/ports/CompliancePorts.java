@@ -35,6 +35,18 @@ public final class CompliancePorts {
         void place(Connection c, String tenantId, String rootId, String holdId, String reason, String actor);
 
         boolean release(Connection c, String tenantId, String rootId, String holdId, String actor);
+
+        /**
+         * The active holds on a root with who placed each (owner decision 361: release needs a different person). The
+         * default knows no placer, so a release through it is refused (fail closed).
+         */
+        default List<ActiveHold> active(Connection c, String tenantId, String rootId) {
+            return activeHoldIds(c, tenantId, rootId).stream().map(id -> new ActiveHold(id, rootId, null, null)).toList();
+        }
+    }
+
+    /** One active legal hold: {@code heldBy} null when the store does not record the placer. */
+    public record ActiveHold(String holdId, String rootId, String reason, String heldBy) {
     }
 
     /** Outcome of an erasure through the integration module. */
@@ -115,6 +127,14 @@ public final class CompliancePorts {
 
         /** Correlation / business keys of those roots (inbox scrubbing in {@code ErasureService}). */
         List<String> correlationKeysOf(Connection c, String tenantId, String principalRef);
+
+        /**
+         * Whether {@code rootId} is the root of a process instance tree of the tenant (owner decision 361: a legal hold
+         * is placed on a process root). The default knows none, so a hold cannot be placed without a port (fail closed).
+         */
+        default boolean isProcessRoot(Connection c, String tenantId, String rootId) {
+            return false;
+        }
     }
 
     // ---------------------------------------------------------------- guardian verification

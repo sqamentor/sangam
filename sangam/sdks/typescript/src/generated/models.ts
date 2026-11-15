@@ -3543,6 +3543,39 @@ export interface ComplianceLawfulRequestBody {
 }
 
 /**
+ * An active legal hold on a process root.
+ *
+ * Schema `ComplianceLegalHold`.
+ */
+export interface ComplianceLegalHold {
+  holdId: string;
+  rootId: string;
+  reason?: string;
+  heldBy?: string;
+}
+
+/**
+ * The reason a legal hold is released; the releaser must not be the person who placed it (FOUR_EYES_REQUIRED).
+ *
+ * Schema `ComplianceLegalHoldRelease`.
+ */
+export interface ComplianceLegalHoldRelease {
+  reason: string;
+}
+
+/**
+ * A legal hold to place on a process root (owner decision 361). `kind` is one of RTI, AUDIT, LITIGATION, VIGILANCE, OTHER (SANGAM.md X.2.3.5 #5); the stored reason is `KIND reference: reason`.
+ *
+ * Schema `ComplianceLegalHoldRequest`.
+ */
+export interface ComplianceLegalHoldRequest {
+  /**  One of: RTI, AUDIT, LITIGATION, VIGILANCE, OTHER. */
+  kind: 'RTI' | 'AUDIT' | 'LITIGATION' | 'VIGILANCE' | 'OTHER';
+  reference?: string;
+  reason: string;
+}
+
+/**
  * A sealed, hash-chained log segment in the home-country archive.
  *
  * Schema `ComplianceLogSegment`.
@@ -3555,6 +3588,49 @@ export interface ComplianceLogSegment {
   sha256?: string;
   prevSha256?: string;
   uri?: string;
+}
+
+/**
+ * An issued challenge; the code itself is only sent to the identifier.
+ *
+ * Schema `ComplianceOtpChallenge`.
+ */
+export interface ComplianceOtpChallenge {
+  challengeId: string;
+  identifierType?: string;
+  expiresAt: string;
+}
+
+/**
+ * A one-time code for a rights request (owner decision 360), sent through the principal notifier to an identifier the tenant accepts (rights.otp.identifier-types; IN pack: MOBILE, EMAIL; DPDP Rules r.14(1)). `language` is a code of the jurisdiction pack.
+ *
+ * Schema `ComplianceOtpChallengeRequest`.
+ */
+export interface ComplianceOtpChallengeRequest {
+  identifierType: string;
+  identifierValue: string;
+  language?: string;
+}
+
+/**
+ * A verified challenge: the rights submission then names it in proof.challengeId (single use).
+ *
+ * Schema `ComplianceOtpVerification`.
+ */
+export interface ComplianceOtpVerification {
+  challengeId: string;
+  /**  One of: VERIFIED, WRONG_CODE, LOCKED, EXPIRED, INVALID. */
+  outcome: 'VERIFIED' | 'WRONG_CODE' | 'LOCKED' | 'EXPIRED' | 'INVALID';
+  attemptsLeft?: number;
+}
+
+/**
+ * The code the data principal received.
+ *
+ * Schema `ComplianceOtpVerifyRequest`.
+ */
+export interface ComplianceOtpVerifyRequest {
+  code: string;
 }
 
 /**

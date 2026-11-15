@@ -64,4 +64,18 @@ public interface ComplianceRestService extends ComplianceApi {
                                                                   ComplianceRequests.ImpactAssessmentRequest r);
 
     LogArchiveService.Segment sealLogs(SecurityIdentity id, Instant from, Instant to);
+
+    /** Owner decision 360: sends a one-time code for a rights request (public, the tenant from the request). */
+    org.sangam.compliance.rights.PrincipalOtpChallenges.Challenge issueRightsOtp(String tenantId, ComplianceRequests.OtpChallengeRequest r);
+
+    /** Owner decision 360: verifies a code; the attempt is recorded before a refusal is thrown (named code). */
+    org.sangam.compliance.rights.PrincipalOtpChallenges.Verification verifyRightsOtp(String tenantId, String challengeId, String code);
+
+    /** Owner decision 361: the active legal holds of a process root of the caller's tenant. */
+    List<org.sangam.compliance.ports.CompliancePorts.ActiveHold> legalHolds(SecurityIdentity id, String rootId);
+
+    org.sangam.compliance.ports.CompliancePorts.ActiveHold placeLegalHold(SecurityIdentity id, String rootId,
+                                                                          ComplianceRequests.LegalHoldRequest r);
+
+    void releaseLegalHold(SecurityIdentity id, String rootId, String holdId, String reason);
 }

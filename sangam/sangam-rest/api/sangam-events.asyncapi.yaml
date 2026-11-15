@@ -777,6 +777,9 @@ components:
       - BREAK_GLASS_REVIEWED
       - FIELD_REENCRYPTION_COMPLETED
       - PERSONAL_DATA_READ
+      - RIGHTS_OTP_ISSUED
+      - RIGHTS_OTP_VERIFIED
+      - RIGHTS_OTP_FAILED
       x-sangam-groups:
         Identity:
         - AUTH_LOGIN
@@ -988,6 +991,9 @@ components:
         - BREAK_GLASS_REVIEWED
         - FIELD_REENCRYPTION_COMPLETED
         - PERSONAL_DATA_READ
+        - RIGHTS_OTP_ISSUED
+        - RIGHTS_OTP_VERIFIED
+        - RIGHTS_OTP_FAILED
       x-sangam-pending-change-control: {}
   messages:
     WebhookCaseFileEvent:

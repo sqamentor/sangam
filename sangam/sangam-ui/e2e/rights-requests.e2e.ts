@@ -11,13 +11,15 @@
  *   (CERT-In Directions 28-04-2022 dir.(iii));
  * - D-22: a data principal files a grievance or data-rights request in the portal, gets a reference, sees the published
  *   reply period, and the reply is due within the pack's maximum (s.8(10), s.13; DPDP Rules r.14(3): 90 days).
+ * - D-23 (OTP, owner decision 360): an OTP request needs a verified compliance-owned one-time code; an unaccepted
+ *   identifier type, an unknown challenge and an unverified one are refused by name; the code is never in a response.
  * The expected codes and days are read from the shipped India pack (support/compliance.ts indiaPack), never typed here.
  */
 import { randomUUID } from 'node:crypto';
-import type { Locator } from '@playwright/test';
+import { request, type Locator } from '@playwright/test';
 import { apiAs, expect, signInAs, test } from './support/fixtures';
-import { t } from './support/env';
-import { indiaPack } from './support/compliance';
+import { API_BASE, t } from './support/env';
+import { indiaPack, tenantOf } from './support/compliance';
 
 const DAY = 24 * 3600 * 1000;
 
@@ -86,5 +88,48 @@ test('a data principal files a data-rights request in the portal and gets a refe
     expect(days).toBeLessThanOrEqual(grievance!.maxDays!);
   } finally {
     await citizen.dispose();
+  }
+});
+
+test('an OTP rights request needs a verified one-time code (D-23, owner decision 360)', async ({ seed }) => {
+  const officer = await apiAs(seed.identities.complianceOfficer.token);
+  const anonymous = await request.newContext({ baseURL: `${API_BASE.replace(/\/$/, '')}/`, extraHTTPHeaders: { Accept: 'application/json, application/problem+json' } });
+  try {
+    const tenant = await tenantOf(officer);
+    const headers = () => ({ 'Idempotency-Key': randomUUID(), 'X-Sangam-Tenant': tenant });
+    const email = `e2e-otp-${randomUUID()}@example.test`;
+
+    // an identifier type the tenant does not accept is refused by name (IN pack: MOBILE, EMAIL)
+    const type = await anonymous.post('compliance/rights-requests/otp-challenges', { headers: headers(), data: { identifierType: 'AADHAAR', identifierValue: '0000' } });
+    expect(type.status(), await type.text()).toBe(400);
+
+    // a code for an unknown challenge is refused without saying whether it exists
+    const unknown = await anonymous.post(`compliance/rights-requests/otp-challenges/${randomUUID()}/verify`, { headers: headers(), data: { code: '000000' } });
+    expect(unknown.status(), await unknown.text()).toBe(401);
+    expect(((await unknown.json()) as { code?: string }).code).toBe('OTP_INVALID');
+
+    // a submission naming a challenge that was never verified does not authenticate
+    const submit = await anonymous.post('compliance/rights-requests', {
+      headers: headers(),
+      data: { right: 'ACCESS', identifierType: 'EMAIL', identifierValue: email, proof: { challengeId: randomUUID() } },
+    });
+    expect(submit.status(), await submit.text()).toBe(401);
+    expect(((await submit.json()) as { code?: string }).code).toBe('PRINCIPAL_NOT_AUTHENTICATED');
+
+    // a code is issued when the server has a notifier, else refused by name (the code itself is only sent to the identifier)
+    const issued = await anonymous.post('compliance/rights-requests/otp-challenges', { headers: headers(), data: { identifierType: 'EMAIL', identifierValue: email } });
+    expect([201, 409], await issued.text()).toContain(issued.status());
+    if (issued.status() === 201) {
+      const ch = (await issued.json()) as { challengeId: string; expiresAt: string; code?: string };
+      expect(ch.code, 'the code is never in the response').toBeUndefined();
+      expect(Date.parse(ch.expiresAt)).toBeGreaterThan(Date.now());
+      const wrong = await anonymous.post(`compliance/rights-requests/otp-challenges/${ch.challengeId}/verify`, { headers: headers(), data: { code: 'not-a-code' } });
+      expect(wrong.status(), await wrong.text()).toBe(401);
+      expect(((await wrong.json()) as { code?: string }).code).toBe('OTP_INVALID');
+    } else {
+      expect(((await issued.json()) as { code?: string }).code).toBe('OTP_NOT_CONFIGURED');
+    }
+  } finally {
+    await Promise.all([officer.dispose(), anonymous.dispose()]);
   }
 });

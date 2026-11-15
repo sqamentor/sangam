@@ -76,7 +76,11 @@ public final class SangamCompliance {
     public final ChildDataGuard children;
     public final PurposeBindingGuard purposeBinding;
     public final RetentionScheduler retention;
+    /** Owner decision 361: legal holds on a process root through the API. */
+    public final org.sangam.compliance.retention.LegalHoldService legalHolds;
     public final NominationService nominations;
+    /** Owner decision 360: the one-time code of a rights request (the authenticator when none is bound). */
+    public final org.sangam.compliance.rights.PrincipalOtpChallenges otp;
     public final DataSubjectRightsService rights;
     public final IncidentReportingService incidents;
     public final BreachIncidentService breaches;
@@ -125,8 +129,10 @@ public final class SangamCompliance {
         retention = new RetentionScheduler(dialect, tx, audit, config, purposes, holds, erasure, p.notifier(), p.principals(),
                 p.personalData(), templates);
         consents.addWithdrawalListener(retention);
+        legalHolds = new org.sangam.compliance.retention.LegalHoldService(audit, holds, p.personalData());
         nominations = new NominationService(dialect, audit);
-        rights = new DataSubjectRightsService(dialect, tx, audit, config, p.authenticator(), nominations, consents, purposes, processing,
+        otp = new org.sangam.compliance.rights.PrincipalOtpChallenges(dialect, audit, config, p.notifier(), templates);
+        rights = new DataSubjectRightsService(dialect, tx, audit, config, p.authenticator() != null ? p.authenticator() : otp, nominations, consents, purposes, processing,
                 disclosures, p.personalData(), retention, holds, erasure, contacts, p.workflows());
         incidents = new IncidentReportingService(dialect, audit, config, contacts, p.incidentAuthority(), p.workflows());
         breaches = new BreachIncidentService(dialect, audit, config, p.supervisoryAuthority(), p.notifier(), p.principals(), holds, incidents,

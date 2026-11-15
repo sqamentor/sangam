@@ -309,6 +309,29 @@ public class ComplianceController {
         return Lists.created("/api/v1/compliance/rights-requests/" + r.requestId(), r.requestId(), r);
     }
 
+    /**
+     * Owner decision 360: a one-time code for a rights request, sent to the identifier (public, like the submission;
+     * the tenant from the header or query). The submission then carries {@code proof.challengeId}.
+     */
+    @PostMapping("/rights-requests/otp-challenges")
+    public ResponseEntity<org.sangam.compliance.rights.PrincipalOtpChallenges.Challenge> issueRightsOtp(HttpServletRequest req,
+            @RequestBody ComplianceRequests.OtpChallengeRequest body,
+            @RequestHeader(value = TENANT_HEADER, required = false) String tenantHeader,
+            @RequestParam(required = false) String tenant) {
+        String tenantId = publicTenant(req, tenantHeader, tenant);
+        org.sangam.compliance.rights.PrincipalOtpChallenges.Challenge ch = api.issueRightsOtp(tenantId, body);
+        return Lists.created("/api/v1/compliance/rights-requests/otp-challenges/" + ch.challengeId(), ch.challengeId(), ch);
+    }
+
+    @PostMapping("/rights-requests/otp-challenges/{challengeId}/verify")
+    public ResponseEntity<org.sangam.compliance.rights.PrincipalOtpChallenges.Verification> verifyRightsOtp(HttpServletRequest req,
+            @PathVariable String challengeId, @RequestBody ComplianceRequests.OtpVerifyRequest body,
+            @RequestHeader(value = TENANT_HEADER, required = false) String tenantHeader,
+            @RequestParam(required = false) String tenant) {
+        String tenantId = publicTenant(req, tenantHeader, tenant);
+        return Lists.okRef(challengeId, api.verifyRightsOtp(tenantId, challengeId, body == null ? null : body.code()));
+    }
+
     /** The caller's own rights requests. Owner decision 338: another principal's by {@code POST /rights-requests/search}. */
     @GetMapping("/rights-requests")
     public ResponseEntity<List<DataSubjectRightsService.RightsRequest>> rightsRequests(RequestContext ctx,
@@ -432,6 +455,29 @@ public class ComplianceController {
                 Boolean.TRUE.equals(body.resident()), body.validFrom());
         api.setContact(id, c);
         return ResponseEntity.noContent().header(Lists.RESOURCE_REF, role).build();
+    }
+
+    // ---------------------------------------------------------------- legal holds on a process root (decision 361)
+
+    @GetMapping("/process-roots/{rootId}/legal-holds")
+    public List<org.sangam.compliance.ports.CompliancePorts.ActiveHold> legalHolds(RequestContext ctx, @PathVariable String rootId) {
+        return api.legalHolds(require(ctx, Permissions.COMPLIANCE_READ), rootId);
+    }
+
+    @PostMapping("/process-roots/{rootId}/legal-holds")
+    public ResponseEntity<org.sangam.compliance.ports.CompliancePorts.ActiveHold> placeLegalHold(RequestContext ctx,
+            @PathVariable String rootId, @RequestBody ComplianceRequests.LegalHoldRequest body) {
+        SecurityIdentity id = require(ctx, Permissions.COMPLIANCE_MODIFY);
+        org.sangam.compliance.ports.CompliancePorts.ActiveHold h = api.placeLegalHold(id, rootId, body);
+        return Lists.created("/api/v1/compliance/process-roots/" + rootId + "/legal-holds", h.holdId(), h);
+    }
+
+    @PostMapping("/process-roots/{rootId}/legal-holds/{holdId}/release")
+    public ResponseEntity<Void> releaseLegalHold(RequestContext ctx, @PathVariable String rootId, @PathVariable String holdId,
+                                                 @RequestBody ComplianceRequests.LegalHoldRelease body) {
+        SecurityIdentity id = require(ctx, Permissions.COMPLIANCE_MODIFY);
+        api.releaseLegalHold(id, rootId, holdId, body == null ? null : body.reason());
+        return ResponseEntity.noContent().header(Lists.RESOURCE_REF, holdId).build();
     }
 
     @PostMapping("/evidence/audits")

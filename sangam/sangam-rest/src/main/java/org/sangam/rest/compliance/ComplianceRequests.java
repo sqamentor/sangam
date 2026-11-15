@@ -67,6 +67,26 @@ public final class ComplianceRequests {
     public record WithdrawConsentRequest(Set<String> purposes) {
     }
 
+    /**
+     * Owner decision 360: a one-time code for a rights request, to an identifier the tenant accepts
+     * ({@code rights.otp.identifier-types}, e.g. MOBILE or EMAIL); {@code language} a code of the pack (default: the
+     * pack default).
+     */
+    public record OtpChallengeRequest(String identifierType, String identifierValue, String language) {
+    }
+
+    /** Owner decision 360: the code the data principal received. */
+    public record OtpVerifyRequest(String code) {
+    }
+
+    /** Owner decision 361: a legal hold on a process root; {@code kind} RTI | AUDIT | LITIGATION | VIGILANCE | OTHER. */
+    public record LegalHoldRequest(String kind, String reference, String reason) {
+    }
+
+    /** Owner decision 361: the release reason (the releaser is not the placer). */
+    public record LegalHoldRelease(String reason) {
+    }
+
     public record BreachRequest(Map<String, String> facts, Instant awareAt, Set<String> subjects, Set<String> roots,
                                 String incidentType) {
     }
