@@ -4,7 +4,7 @@
 #
 #   (cd sangam && mvn -B -ntp -pl sangam-server -am -DskipTests package)
 #   docker compose -f sdks/conformance/ac08/compose.yaml up -d --build     # run from sangam/; run_ac08.py waits for /api/v1/me
-#   python sdks/conformance/ac08/run_ac08.py --base-url http://localhost:18080 --token ac08-dev-token --require-all
+#   python sdks/conformance/ac08/run_ac08.py --base-url http://localhost:18080 --token ac08-development-token --require-all
 #   docker compose -f sdks/conformance/ac08/compose.yaml down -v
 name: sangam-ac08
 
@@ -24,7 +24,9 @@ services:
       # Decisions 143 and 198: every installation states its environment; without this switch the server refuses to
       # start ("sangam.security.production is not set"). AC-08 is a development and CI server with the dev token.
       SANGAM_SECURITY_PRODUCTION: "false"
-      SANGAM_DEV_TOKEN: ac08-dev-token
+      # A test value, never a secret. The server refuses a development token shorter than 16 characters
+      # ("sangam.security.dev-token.token must be at least 16 characters").
+      SANGAM_DEV_TOKEN: ac08-development-token
       SANGAM_TENANT_DEFAULT: ac08
     ports:
       - "127.0.0.1:18080:8080"

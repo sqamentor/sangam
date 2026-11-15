@@ -411,7 +411,7 @@ jobs:
           # the classpath file holds the dependency jars joined by ':'; expand it into the Java command
           cp="$(cat sdks/java/target/ac08-cp.txt)"
           export AC08_CMD_JAVA="java -cp java/target/classes:java/target/test-classes:${cp} org.sangam.sdk.conformance.Ac08Worker"
-          python sdks/conformance/ac08/run_ac08.py --base-url http://127.0.0.1:18080 --token ac08-dev-token --require-all
+          python sdks/conformance/ac08/run_ac08.py --base-url http://127.0.0.1:18080 --token ac08-development-token --require-all
       - name: Server log on failure
         if: failure()
         working-directory: sangam
