@@ -8,6 +8,7 @@ import org.operaton.bpm.engine.impl.history.HistoryLevel;
 import org.operaton.bpm.engine.impl.history.event.HistoryEventType;
 import org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.ExternalTaskEntity;
+import org.operaton.bpm.engine.impl.persistence.entity.IdentityLinkEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.JobEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.TaskEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.VariableInstanceEntity;
@@ -16,7 +17,7 @@ import org.operaton.bpm.engine.impl.persistence.entity.VariableInstanceEntity;
  * History configuration per process definition and per activity (FLOWABLE-INTO-OPERATON FC-26, FLOWABLE-INTO-OPERATON D-49): Operaton has one global level; this
  * level delegates to a configured level ({@code none | activity | audit | full}) per entry, most specific first:
  * {@code <processKey>#<activityId>}, then {@code <processKey>}, then the base level. The activity is the execution's
- * current activity, the task definition key, or the job's / external task's activity. Installed only when overrides are configured. Its id ({@value #ID}) is stored by the engine in
+ * current activity, the task definition key (also for an identity link of a task), or the job's / external task's activity. Installed only when overrides are configured. Its id ({@value #ID}) is stored by the engine in
  * {@code ACT_GE_PROPERTY}, so every node must use the same configuration.
  */
 public final class PerDefinitionHistoryLevel implements HistoryLevel {
@@ -102,8 +103,23 @@ public final class PerDefinitionHistoryLevel implements HistoryLevel {
             return x.getProcessDefinitionId();
         } else if (entity instanceof JobEntity j) {
             return j.getProcessDefinitionId();
+        } else if (entity instanceof IdentityLinkEntity l) {
+            return definitionIdOf(l);
         }
         return null;
+    }
+
+    /**
+     * The definition of an identity link: its own (a link of a process definition), else its task's. Without this an
+     * identity link of a task (candidate, assignee, owner) had no key and its history followed the base level, so a
+     * definition configured {@code none} still got its identity-link log.
+     */
+    private static String definitionIdOf(IdentityLinkEntity l) {
+        if (l.getProcessDefId() != null) {
+            return l.getProcessDefId();
+        }
+        TaskEntity task = l.getTask();
+        return task == null ? null : task.getProcessDefinitionId();
     }
 
     private static String activityOf(Object entity) {
@@ -115,6 +131,9 @@ public final class PerDefinitionHistoryLevel implements HistoryLevel {
             return x.getActivityId();
         } else if (entity instanceof JobEntity j) {
             return j.getActivityId();
+        } else if (entity instanceof IdentityLinkEntity l) {
+            TaskEntity task = l.getTask();
+            return task == null ? null : task.getTaskDefinitionKey();
         }
         return null;
     }
@@ -131,6 +150,8 @@ public final class PerDefinitionHistoryLevel implements HistoryLevel {
             return x.getProcessDefinitionKey();
         } else if (entity instanceof JobEntity j) {
             return j.getProcessDefinitionKey();
+        } else if (entity instanceof IdentityLinkEntity l) {
+            pdId = definitionIdOf(l);
         }
         if (pdId == null) {
             return null;

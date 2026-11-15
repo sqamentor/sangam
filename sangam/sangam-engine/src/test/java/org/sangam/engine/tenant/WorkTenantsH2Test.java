@@ -232,7 +232,7 @@ class WorkTenantsH2Test {
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
         JdbcDataSource ds = new JdbcDataSource();
-        ds.setURL("jdbc:h2:mem:w144n" + UUID.randomUUID().toString().replace("-", "") + ";DB_CLOSE_DELAY=-1");
+        ds.setURL("jdbc:h2:mem:w144n" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         RuntimeException e = assertThrows(RuntimeException.class, () -> SangamEngineFactory.build(ds, s, "h2").close());
         assertTrue(String.valueOf(rootMessage(e)).contains(WorkTenants.SETTING), String.valueOf(rootMessage(e)));
         assertFalse(WorkTenants.MAINTENANCE_JOB_TYPES.contains("timer-intermediate-transition"));

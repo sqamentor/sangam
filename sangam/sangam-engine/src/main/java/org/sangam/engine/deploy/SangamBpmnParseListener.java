@@ -89,15 +89,13 @@ public class SangamBpmnParseListener implements BpmnParseListener {
 
     /**
      * M-057 (decision 88): {@code sangam:historyLevel} on the process and its activities. Off (the default): ignored
-     * with a warning, so the model still deploys. On: registered per definition id; an unknown level name, or the
+     * with a warning, so the model still deploys. On: kept on the parsed definition and registered per definition id by
+     * {@code ModelHistoryLevels.DeployRule} (a definition has no id while it is parsed); an unknown level name, or the
      * property on an element that is not an activity, refuses the deployment.
      */
     private void registerModelHistory(Element processElement, ProcessDefinitionEntity def) {
         java.util.List<String[]> declared = new java.util.ArrayList<>();
         collectHistoryLevels(processElement, true, declared);
-        if (modelHistory != null) {
-            modelHistory.clear(def.getId());
-        }
         if (declared.isEmpty()) {
             return;
         }
@@ -112,7 +110,7 @@ public class SangamBpmnParseListener implements BpmnParseListener {
                         + " on '" + d[0] + "' in process '" + def.getKey() + "', which is not an activity");
             }
             try {
-                modelHistory.register(def.getId(), d[0], d[1]);
+                org.sangam.engine.history.ModelHistoryLevels.declare(def, d[0], d[1]);
             } catch (IllegalArgumentException e) {
                 throw new ProcessEngineException("M-057: process '" + def.getKey() + "': " + e.getMessage()
                         + " (none, activity, audit, full)", e);

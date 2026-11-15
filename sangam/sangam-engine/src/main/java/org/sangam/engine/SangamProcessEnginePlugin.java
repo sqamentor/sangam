@@ -225,7 +225,7 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         // capture listener (never in production) FEEL now()/today() read the engine clock and each read is captured
         if (s.getCaptureListener() != null) {
             org.sangam.feel.SangamFeel.install(dmn, new org.sangam.engine.replay.CapturingFeelClock(
-                    () -> components.clock().now(), java.time.ZoneId.systemDefault(), s.getCaptureListener()));
+                    () -> components.clock().now(), org.sangam.core.time.EngineTimeZone.ZONE, s.getCaptureListener()));
         } else {
             org.sangam.feel.SangamFeel.install(dmn);
         }
@@ -245,6 +245,13 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         modelHistory = s.isHistoryModelOverrides() ? new org.sangam.engine.history.ModelHistoryLevels() : null; // M-057
         bpmn.add(new SangamBpmnParseListener(s, components.timerPolicies(), modelHistory));
         cfg.setCustomPostBPMNParseListeners(bpmn);
+        if (modelHistory != null) {
+            // a parsed definition has no id yet: the declarations are registered once the engine's deployer set it
+            List<org.operaton.bpm.engine.impl.persistence.deploy.Deployer> afterBpmn =
+                    new ArrayList<>(cfg.getCustomPostDeployers());
+            afterBpmn.add(modelHistory.deployRule());
+            cfg.setCustomPostDeployers(afterBpmn);
+        }
         // SG-08 (a): scope compensated through its children triggers them one at a time (replaces "compensate")
         List<org.operaton.bpm.engine.impl.event.EventHandler> eventHandlers = cfg.getCustomEventHandlers() == null
                 ? new ArrayList<>() : new ArrayList<>(cfg.getCustomEventHandlers());

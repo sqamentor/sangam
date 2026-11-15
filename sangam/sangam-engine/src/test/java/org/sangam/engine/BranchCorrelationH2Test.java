@@ -111,13 +111,17 @@ class BranchCorrelationH2Test {
         });
     }
 
-    /** SL-04: a parallel multi-instance catch event (wait on the branch execution itself: the direct path). */
+    /**
+     * SL-04: a parallel multi-instance receive task, the multi-instance activity that itself waits for a message. (BPMN
+     * has no multi-instance catch event: the schema allows loop characteristics on activities only, and the engine
+     * refuses such a model at deployment.)
+     */
     private static byte[] miCatch(String id) {
         String xml = HEAD + "<process id=\"" + id + "\" isExecutable=\"true\">"
                 + "<startEvent id=\"s\"/><sequenceFlow id=\"f1\" sourceRef=\"s\" targetRef=\"w\"/>"
-                + "<intermediateCatchEvent id=\"w\"><multiInstanceLoopCharacteristics isSequential=\"false\">"
+                + "<receiveTask id=\"w\" messageRef=\"m\"><multiInstanceLoopCharacteristics isSequential=\"false\">"
                 + "<loopCardinality xsi:type=\"tFormalExpression\">3</loopCardinality></multiInstanceLoopCharacteristics>"
-                + "<messageEventDefinition messageRef=\"m\"/></intermediateCatchEvent>"
+                + "</receiveTask>"
                 + "<sequenceFlow id=\"f2\" sourceRef=\"w\" targetRef=\"after\"/><userTask id=\"after\"/>"
                 + "<sequenceFlow id=\"f3\" sourceRef=\"after\" targetRef=\"e\"/><endEvent id=\"e\"/></process></definitions>";
         return xml.getBytes(StandardCharsets.UTF_8);
@@ -154,7 +158,7 @@ class BranchCorrelationH2Test {
     }
 
     @Test
-    void deliversToAMultiInstanceCatchEventBranchDirectly() {
+    void deliversToAMultiInstanceReceiveTaskBranch() {
         withEngine(a -> {
             a.deploy("t1", "cat", Map.of("cat.bpmn", miCatch("cat")));
             String pid = a.startProcess("t1", "cat", "BK-4", Map.of());

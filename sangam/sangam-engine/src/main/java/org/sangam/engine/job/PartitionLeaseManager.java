@@ -431,8 +431,9 @@ public final class PartitionLeaseManager {
     /** X.2.1.4 claim: a new epoch, or -1 when another node won. */
     long claim(int p) {
         long epoch = tx(conn -> {
+            // owner_node is NULL while the partition is UNOWNED: a row without an owner, not a missing row
             String previous = Jdbc.one(conn, "SELECT owner_node FROM EXEC_PARTITION WHERE partition_id = ?",
-                    rs -> rs.getString(1), p).orElse(null);
+                    rs -> java.util.Optional.ofNullable(rs.getString(1)), p).flatMap(owner -> owner).orElse(null);
             int n = Jdbc.update(conn, "UPDATE EXEC_PARTITION SET owner_node = ?, owner_incarnation = ?,"
                             + " owner_epoch = owner_epoch + 1, lease_expires_at = " + d.nowPlusMillisParam()
                             + ", state = 'ACTIVE', drain_deadline = NULL WHERE partition_id = ?"

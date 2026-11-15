@@ -125,8 +125,16 @@ class TaskSuspensionEventsH2Test {
     @Test
     void aBatchGivesOneEventPerTask() {
         withEngine(e -> {
-            Batch b = e.engine().getRuntimeService().updateProcessInstanceSuspensionState()
-                    .byProcessInstanceIds(e.instances()).suspendAsync();
+            // SL-45 / decision 144: a batch over a tenant's instances is created by an identity of that tenant, so its
+            // jobs carry the tenant (a batch of no tenant over tenant-owned instances is refused when its jobs run)
+            e.engine().getIdentityService().setAuthentication("operator", List.of(), List.of("t"));
+            Batch b;
+            try {
+                b = e.engine().getRuntimeService().updateProcessInstanceSuspensionState()
+                        .byProcessInstanceIds(e.instances()).suspendAsync();
+            } finally {
+                e.engine().getIdentityService().clearAuthentication();
+            }
             assertEquals(0, events.size(), "nothing before the batch jobs run");
             e.runJobs();
             assertEquals(2, events.size(), events.toString());

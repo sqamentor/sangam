@@ -87,8 +87,10 @@ public final class ProcessTraceRecorder implements CommandContextListener {
         List<ExecutionEntity> roots = new ArrayList<>();
         List<ExecutionEntity> children = new ArrayList<>();
         for (CachedDbEntity cached : em.getDbEntityCache().getCachedEntities()) {
-            if (cached.getEntity() instanceof ExecutionEntity x && cached.getEntityState() == DbEntityState.TRANSIENT
-                    && x.isProcessInstanceExecution()) {
+            // created in this command: still running at its end (TRANSIENT), or already ended in it (DELETED_TRANSIENT:
+            // no runtime row is written, but its history is, and history removal looks for the trace row of that history)
+            if (cached.getEntity() instanceof ExecutionEntity x && (cached.getEntityState() == DbEntityState.TRANSIENT
+                    || cached.getEntityState() == DbEntityState.DELETED_TRANSIENT) && x.isProcessInstanceExecution()) {
                 String root = x.getRootProcessInstanceId();
                 (root == null || root.equals(x.getId()) ? roots : children).add(x);
             }

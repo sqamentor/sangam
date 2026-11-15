@@ -80,7 +80,8 @@ class InstanceHandlersH2Test {
 
             Map<String, Object> vars = a.processEngine().getRuntimeService().getVariables(pid);
             Object due = registry.evaluator().query(d.queries().get("feeDue"), vars, Map.of(), Map.of());
-            assertEquals(0, new BigDecimal("150.00").compareTo((BigDecimal) due));
+            // exact FEEL numbers: a whole result is answered as a Long, any other as a BigDecimal
+            assertEquals(0, new BigDecimal("150.00").compareTo(new BigDecimal(String.valueOf(due))), String.valueOf(due));
         }
     }
 

@@ -70,7 +70,7 @@ class ModelHistoryLevelsH2Test {
     @Test
     void offByDefaultTheDeclarationIsIgnored() {
         try (OperatonEngineAdapter a = engine(false, Map.of())) {
-            String pid = run(a, "plain", model("plain", "activity", null));
+            String pid = run(a, "plain", model("plain", "none", null));
             assertEquals(1, taskHistory(a, pid), "full history stays: the model cannot lower it when the option is off");
         }
     }
@@ -78,9 +78,9 @@ class ModelHistoryLevelsH2Test {
     @Test
     void onTheModelLevelAppliesPerDefinitionAndPerActivity() {
         try (OperatonEngineAdapter a = engine(true, Map.of())) {
-            String low = run(a, "low", model("low", "activity", null));
-            assertEquals(0, taskHistory(a, low), "process-level declaration: no task history at activity level");
-            String mixed = run(a, "mixed", model("mixed", "activity", "full"));
+            String low = run(a, "low", model("low", "none", null));
+            assertEquals(0, taskHistory(a, low), "process-level declaration none: no task history (Operaton's activity level would keep task history)");
+            String mixed = run(a, "mixed", model("mixed", "none", "full"));
             assertEquals(1, taskHistory(a, mixed), "the activity declaration is more specific than the process one");
         }
     }
@@ -88,7 +88,7 @@ class ModelHistoryLevelsH2Test {
     @Test
     void operatorSettingsWinOverTheModel() {
         try (OperatonEngineAdapter a = engine(true, Map.of("low", "full"))) {
-            String pid = run(a, "low", model("low", "activity", null));
+            String pid = run(a, "low", model("low", "none", null));
             assertEquals(1, taskHistory(a, pid));
         }
     }

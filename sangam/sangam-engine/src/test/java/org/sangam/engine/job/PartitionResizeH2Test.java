@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.sangam.core.engine.AuditSink;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
+import org.sangam.persistence.SangamSchema;
 
 /**
  * Decision 146 (M-056 resize, X.2.1.7) on H2: request validation and concurrency control, scale-out 8 to 12, scale-in,
@@ -31,16 +32,9 @@ import org.sangam.core.layer.Jdbc;
 class PartitionResizeH2Test {
 
     /** The EXEC_RESIZE columns of W4-G changeset 0045-05-exec_resize (decision 146); keep equal to the changeset. */
-    static final String RESIZE_DDL = "CREATE TABLE EXEC_RESIZE (resize_id VARCHAR(64) NOT NULL, cluster_id VARCHAR(64) NOT NULL,"
-            + " state VARCHAR(64) NOT NULL, from_count INTEGER NOT NULL, to_count INTEGER NOT NULL,"
-            + " from_map_epoch BIGINT NOT NULL, to_map_epoch BIGINT NOT NULL, algorithm_version VARCHAR(64) NOT NULL,"
-            + " moved_slot_count INTEGER, moved_slots TEXT, actor_id VARCHAR(255) NOT NULL, reason TEXT NOT NULL,"
-            + " requested_at TIMESTAMP WITH TIME ZONE NOT NULL, started_at TIMESTAMP WITH TIME ZONE,"
-            + " completed_at TIMESTAMP WITH TIME ZONE, failure TEXT, handover_pause_ms BIGINT,"
-            + " CONSTRAINT PK_EXEC_RESIZE PRIMARY KEY (resize_id))";
     /** The ACT_RU_JOB columns the slot recovery touches (Operaton's table has more; these are the ones used). */
     static final String JOB_DDL = "CREATE TABLE ACT_RU_JOB (ID_ VARCHAR(64) NOT NULL PRIMARY KEY, REV_ INTEGER NOT NULL,"
-            + " LOCK_OWNER_ VARCHAR(255), LOCK_EXP_TIME_ TIMESTAMP, RETRIES_ INTEGER NOT NULL)";
+            + " EXECUTION_ID_ VARCHAR(64), LOCK_OWNER_ VARCHAR(255), LOCK_EXP_TIME_ TIMESTAMP, RETRIES_ INTEGER NOT NULL)";
 
     private static final int SLOTS = 64;
 
@@ -56,9 +50,8 @@ class PartitionResizeH2Test {
     private JdbcDataSource h2() throws Exception {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:rs" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
+        SangamSchema.apply(ds); // the product changelog: the executor tables and EXEC_RESIZE
         try (Connection c = ds.getConnection()) {
-            JobSideTablesDdl.create(c);
-            Jdbc.update(c, RESIZE_DDL);
             Jdbc.update(c, JOB_DDL);
         }
         return ds;

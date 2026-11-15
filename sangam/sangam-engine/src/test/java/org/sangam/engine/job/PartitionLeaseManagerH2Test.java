@@ -23,6 +23,7 @@ import org.sangam.core.layer.Jdbc;
 import org.sangam.engine.OperatonEngineAdapter;
 import org.sangam.engine.SangamEngineFactory;
 import org.sangam.engine.SangamEngineSettings;
+import org.sangam.persistence.SangamSchema;
 
 /**
  * M-056 finish (C3-04, X.2.1.4 to X.2.1.6) on H2: bootstrap, claim with a new epoch, renew and loss, self-fencing,
@@ -33,12 +34,24 @@ class PartitionLeaseManagerH2Test {
 
     private final AtomicLong nanos = new AtomicLong(1_000_000_000L);
 
+    /** The ACT_RU_JOB columns the in-flight recovery touches (Operaton's table has more; these are the ones used). */
+    static final String JOB_DDL = "CREATE TABLE ACT_RU_JOB (ID_ VARCHAR(64) NOT NULL PRIMARY KEY, REV_ INTEGER NOT NULL,"
+            + " EXECUTION_ID_ VARCHAR(64), LOCK_OWNER_ VARCHAR(255), LOCK_EXP_TIME_ TIMESTAMP, RETRIES_ INTEGER NOT NULL)";
+
+    /** A database with the product changelog applied: the tables the executor runs on. */
     private static JdbcDataSource h2() throws Exception {
+        JdbcDataSource ds = empty();
+        SangamSchema.apply(ds);
+        try (Connection c = ds.getConnection()) {
+            Jdbc.update(c, JOB_DDL); // without an engine: the job columns the in-flight recovery of a claim reads
+        }
+        return ds;
+    }
+
+    /** An empty database, for a test that builds an engine on it (the engine applies the product changelog). */
+    private static JdbcDataSource empty() {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:c304" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
-        try (Connection c = ds.getConnection()) {
-            JobSideTablesDdl.create(c);
-        }
         return ds;
     }
 
@@ -128,7 +141,8 @@ class PartitionLeaseManagerH2Test {
                 listenerOf(m), JobExecutorSetup.ownershipAudit(sink, "t1", cfg, cfg.incarnation()));
         a.tick();
         assertEquals(List.of("t1|executor:c1|EXECUTOR_OWNERSHIP_CHANGED|1|claimed",
-                "t1|executor:c1|EXECUTOR_OWNERSHIP_CHANGED|2|claimed"), audit);
+                "t1|executor:c1|EXECUTOR_OWNERSHIP_CHANGED|2|claimed"), audit.stream().sorted().toList(),
+                "one event per claim; the claim order starts at a node-specific offset");
         assertTrue(metrics.contains("owner:claimed"));
         assertTrue(metrics.contains("orphaned:2"), "the coordinator saw both partitions unowned before the claims");
         audit.clear();
@@ -178,7 +192,7 @@ class PartitionLeaseManagerH2Test {
 
     @Test
     void forcedTakeoverRecoversInFlightJobsWithTheEngineCasAndParksAPoisonJob() throws Exception {
-        JdbcDataSource ds = h2();
+        JdbcDataSource ds = empty();
         SangamEngineSettings s = new SangamEngineSettings();
         s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
@@ -238,7 +252,7 @@ class PartitionLeaseManagerH2Test {
 
     @Test
     void orphanSideRowsAreSweptByTheCoordinator() throws Exception {
-        JdbcDataSource ds = h2();
+        JdbcDataSource ds = empty();
         try (OperatonEngineAdapter engine = SangamEngineFactory.build(ds, engineSettings(), "h2")) {
             sql(ds, c -> Jdbc.update(c, "INSERT INTO EXEC_JOB_SLOT (job_id, tenant_id, root_id, slot, recoveries,"
                     + " created_at_ms) VALUES ('gone', 't1', 'r', 3, 0, 0)"));

@@ -63,20 +63,15 @@ class PartitionedJobsH2Test {
         return s;
     }
 
-    private static JdbcDataSource h2(boolean sideTables) throws Exception {
+    private static JdbcDataSource h2() {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:m056" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
-        if (sideTables) {
-            try (Connection c = ds.getConnection()) {
-                JobSideTablesDdl.create(c);
-            }
-        }
         return ds;
     }
 
     private static void withEngine(boolean partitioning, BiConsumer<OperatonEngineAdapter, JdbcDataSource> test)
             throws Exception {
-        JdbcDataSource ds = h2(partitioning);
+        JdbcDataSource ds = h2(); // the engine applies the product changelog (side tables included)
         try (OperatonEngineAdapter a = SangamEngineFactory.build(ds, settings(partitioning), "h2")) {
             test.accept(a, ds);
         }
@@ -208,6 +203,7 @@ class PartitionedJobsH2Test {
         cfg.setJobExecutorPreferTimerJobs(true);
         cfg.setJobExecutorAcquireByDueDate(true);
         cfg.setJobExecutorAcquireExclusiveOverProcessHierarchies(true);
+        cfg.setHistoryCleanupEnabled(false); // the stock rule leaves the cleanup job out only on a node with cleanup off
         String sql = PartitionedAcquireJobsCmd.candidateSql(Dialect.POSTGRESQL, cfg, 10);
         for (String part : List.of("j.RETRIES_ > 0", "j.SUSPENSION_STATE_ = 1", "LOCK_EXP_TIME_ < ?", "ROOT_PROC_INST_ID_",
                 "'history-cleanup'", "p.owner_incarnation = ?", "NOT EXISTS (SELECT 1 FROM EXEC_JOB_SLOT",
@@ -220,7 +216,7 @@ class PartitionedJobsH2Test {
     void unsupportedAcquisitionOptionsAreRefusedAtStart() throws Exception {
         SangamEngineSettings s = settings(true);
         s.setJobAcquireWithSkipLocked(false);
-        RuntimeException e = assertThrows(RuntimeException.class, () -> SangamEngineFactory.build(h2(true), s, "h2").close());
+        RuntimeException e = assertThrows(RuntimeException.class, () -> SangamEngineFactory.build(h2(), s, "h2").close());
         Throwable t = e;
         while (t != null && (t.getMessage() == null || !t.getMessage().contains("M-056"))) {
             t = t.getCause();
@@ -228,6 +224,6 @@ class PartitionedJobsH2Test {
         assertNotNull(t, "refused with the M-056 message: " + e);
         SangamEngineSettings badSlots = settings(true);
         badSlots.setExecutorSlots(0);
-        assertThrows(RuntimeException.class, () -> SangamEngineFactory.build(h2(true), badSlots, "h2").close());
+        assertThrows(RuntimeException.class, () -> SangamEngineFactory.build(h2(), badSlots, "h2").close());
     }
 }

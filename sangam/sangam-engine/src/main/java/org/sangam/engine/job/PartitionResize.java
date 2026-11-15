@@ -434,7 +434,8 @@ public final class PartitionResize {
             Object[] m = Jdbc.one(c, "SELECT state, current_map_epoch, target_map_epoch FROM EXEC_MAP WHERE cluster_id = ?",
                     rs -> {
                         long target = rs.getLong(3);
-                        return new Object[]{rs.getString(1), rs.getLong(2), rs.wasNull() ? null : target};
+                        boolean noTarget = rs.wasNull(); // of column 3: asked before another column is read
+                        return new Object[]{rs.getString(1), rs.getLong(2), noTarget ? null : target};
                     }, clusterId).orElseThrow(() -> new ResizeException(Code.NOT_INITIALISED, "no executor map for cluster "
                     + clusterId + " (sangam.engine.executor-partitioning is off on every node)"));
             Resize active = openResize(c).orElse(null);
