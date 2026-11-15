@@ -280,8 +280,18 @@ jobs:
           mvn -B -ntp -C org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy             -Dartifact=org.openapitools:openapi-generator-cli:7.10.0 -DoutputDirectory="$RUNNER_TEMP/oag"
       - name: Generate and build the Go client
         run: |
+          set -euo pipefail
           python3 sangam/sdks/tier2/generate_tier2.py --jar "$RUNNER_TEMP/oag/openapi-generator-cli-7.10.0.jar" --lang=go
-          cd sangam/sdks/tier2/out/go && go build ./...
+          cd sangam/sdks/tier2/out/go
+          # openapi-generator 7.10.0 writes a oneOf model (the request body of receiveDltDeliveryReports) that imports
+          # gopkg.in/validator.v2 and a go.mod that does not require it: "no required module provides package
+          # gopkg.in/validator.v2". The module is added at one exact version; Go checks it against the checksum
+          # database, and the line below against the h1 hash the generator's own go.sum template names for v2.0.1.
+          if grep -rqF --include='*.go' '"gopkg.in/validator.v2"' . && ! grep -qF 'gopkg.in/validator.v2' go.mod; then
+            go get gopkg.in/validator.v2@v2.0.1
+            grep -Fxq 'gopkg.in/validator.v2 v2.0.1 h1:xF0KWyGWXm/LM2G1TrEjqOu4pa6coO9AlWSf3msVfDY=' go.sum
+          fi
+          go build ./...
 
   tier2-go-floor:
     # Decisions 252 and 260: the declared floor (go.mod "go 1.26") is exercised with the latest Go 1.26.x, the official
