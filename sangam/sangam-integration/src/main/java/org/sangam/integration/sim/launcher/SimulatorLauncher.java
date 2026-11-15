@@ -2,12 +2,15 @@
 package org.sangam.integration.sim.launcher;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+
+import org.sangam.integration.sidecar.SidecarLogging;
 
 /**
  * Entry point of the simulator image ({@code deploy/docker/simulators.Dockerfile}, owner decision 184; packaged by the
@@ -32,6 +35,10 @@ import java.util.concurrent.CountDownLatch;
  * ({@link SimFront}); every other path goes to the simulator (kinds with an HTTP interface).
  */
 public final class SimulatorLauncher implements AutoCloseable {
+
+    /** The {@code service.name} of every log line (decisions 324 and 378: the console log is ECS JSON). */
+    public static final String SERVICE = "sangam-simulator";
+    private static final System.Logger LOG = System.getLogger(SimulatorLauncher.class.getName());
 
     public static final String KIND_ENV = "SANGAM_SIM_KIND";
     public static final String BIND_ENV = "SANGAM_SIM_BIND";
@@ -156,7 +163,20 @@ public final class SimulatorLauncher implements AutoCloseable {
         }
     }
 
+    /** Installs the JSON console logging of the launcher on {@code out} (decisions 324, 378); the first step of main. */
+    static void logging(OutputStream out) {
+        SidecarLogging.install(SERVICE, out);
+    }
+
+    /** The start-up line, logged as one JSON object; every value in it is escaped. */
+    static void logStarted(String kind, String bind, int httpPort, int smtpPort, Path data) {
+        LOG.log(System.Logger.Level.INFO, "sangam simulator " + kind + " (DEMO AND TEST ONLY, never production) on "
+                + bind + ":" + httpPort + (smtpPort > 0 ? ", SMTP on " + bind + ":" + smtpPort : "") + ", data "
+                + data.toAbsolutePath());
+    }
+
     public static void main(String[] args) throws Exception {
+        logging(System.out);
         Settings s = Settings.from(System.getenv());
         SimulatorLauncher launcher = start(s);
         CountDownLatch stopped = new CountDownLatch(1);
@@ -164,9 +184,7 @@ public final class SimulatorLauncher implements AutoCloseable {
             launcher.close();
             stopped.countDown();
         }, "simulator-shutdown"));
-        System.out.println("sangam simulator " + s.kind() + " (DEMO AND TEST ONLY, never production) on " + s.bind() + ":"
-                + launcher.httpPort() + (launcher.smtpPort() > 0 ? ", SMTP on " + s.bind() + ":" + launcher.smtpPort() : "")
-                + ", data " + s.data().toAbsolutePath());
+        logStarted(s.kind(), s.bind(), launcher.httpPort(), launcher.smtpPort(), s.data());
         stopped.await();
     }
 }
