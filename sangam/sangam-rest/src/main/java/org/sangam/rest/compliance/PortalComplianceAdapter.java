@@ -195,9 +195,21 @@ public final class PortalComplianceAdapter implements PortalCompliancePort {
             }
             ConsentService.Consent k = compliance.consents.give(c, tenant, new ConsentService.GiveConsent(principal,
                     serviceNoticeKey, current, lang, Set.copyOf(consent.purposeCodes()), true, "portal:" + serviceKey,
-                    givenBy, verificationId, null, null));
+                    givenBy, verificationId, null, null, declaredCategory(age)));
             return new PortalPort.ConsentRecord(k.consentId(), age, verificationId);
         });
+    }
+
+    /**
+     * The applicant's age declaration as the declared category of the consent row (owner decision 365): a declared
+     * child stays a child and needs the guardian verification passed in the same call; no declaration (a pack without
+     * an age of majority) declares nothing, so the principal directory decides.
+     */
+    private static PrincipalCategory declaredCategory(String age) {
+        if (age == null) {
+            return null;
+        }
+        return CHILD.equals(age) ? PrincipalCategory.CHILD : PrincipalCategory.ADULT;
     }
 
     /** ADULT or CHILD; required whenever the pack sets an age of majority (owner decision 343). */

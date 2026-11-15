@@ -285,6 +285,12 @@ class PortalComplianceAdapterH2Test {
         String givenBy = tx.withConnection(c -> Jdbc.one(c, "SELECT given_by FROM CMP_CONSENT WHERE tenant_id=? AND consent_id=?",
                 rs -> rs.getString(1), TENANT, r.consentId()).orElseThrow());
         assertEquals("parent-1", givenBy, "the consent is the verified parent's");
+        // decision 365: the portal's age answer is the declared category, so the row of a declared child carries the
+        // guardian verification although no principal directory knows the child
+        String stored = tx.withConnection(c -> Jdbc.one(c, "SELECT COALESCE(guardian_verification_id, 'none')"
+                + " FROM CMP_CONSENT WHERE tenant_id=? AND consent_id=?", rs -> rs.getString(1), TENANT, r.consentId())
+                .orElseThrow());
+        assertEquals(vid, stored, "the consent row of a declared child carries the guardian verification id");
     }
 
     @Test
