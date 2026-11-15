@@ -46,6 +46,10 @@ class ServerBeanSetEqualityTest {
         String[] base = {
                 "spring.config.location=optional:file:" + SERVER_CONFIG + "/",
                 "spring.datasource.url=jdbc:h2:mem:" + db + ";DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000;MODE=PostgreSQL",
+                // The server's application.yaml sets server.port and management.server.port from these two
+                // placeholders and wins over the default properties given here, so the ports are set through them:
+                // a random free port, never 8080/8081 of the machine the test runs on.
+                "SANGAM_PORT=0", "SANGAM_MANAGEMENT_PORT=0",
                 "server.port=0", "management.server.port=0",
                 "sangam.engine.allow-multiple-engines-per-jvm=false",
                 // decision 143: every installation states its environment; the h2 profile is a development one

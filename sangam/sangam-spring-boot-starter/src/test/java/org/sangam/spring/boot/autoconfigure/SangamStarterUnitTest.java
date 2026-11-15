@@ -14,6 +14,7 @@ import java.util.Map;
 import org.example.sangamhost.SampleHostApplication;
 import org.junit.jupiter.api.Test;
 import org.sangam.server.SangamServerApplication;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -53,6 +54,39 @@ class SangamStarterUnitTest {
         }
         assertTrue(lastServer < firstRestWeb, "the server's base package order");
         assertEquals(found.size(), found.stream().distinct().count(), "each class once");
+    }
+
+    /** The selector as a host's context runs it: with the context's bean factory and the given settings. */
+    static List<String> candidatesInAContext(Map<String, Object> settings) {
+        StandardEnvironment env = new StandardEnvironment();
+        env.getPropertySources().addFirst(new MapPropertySource("host", settings));
+        SangamProductImportSelector selector = new SangamProductImportSelector();
+        selector.setEnvironment(env);
+        selector.setResourceLoader(new DefaultResourceLoader());
+        selector.setBeanClassLoader(SangamStarterUnitTest.class.getClassLoader());
+        selector.setBeanFactory(new DefaultListableBeanFactory());
+        return selector.candidates();
+    }
+
+    /**
+     * Wiring behind {@code @ConditionalOnExpression} is imported when its expression holds: the condition is checked
+     * with the context's bean factory. Without it the expression never matched, and a host with billing enabled got no
+     * billing (and one with a malware scanner no scanning).
+     */
+    @Test
+    void wiringBehindAnExpressionConditionFollowsItsSettings() {
+        String billing = "org.sangam.server.config.BillingWiring";
+        String malware = "org.sangam.server.config.MalwareScanWiring";
+        List<String> on = candidatesInAContext(Map.of("sangam.modules.billing.enabled", "true",
+                "sangam.modules.ledger.enabled", "true", "sangam.modules.config.enabled", "true",
+                "sangam.modules.registry.enabled", "true", "sangam.malware.scanner", "clamd"));
+        assertTrue(on.contains(billing), "billing and the modules it needs are on");
+        assertTrue(on.contains(malware), "a malware scanner is configured");
+        List<String> off = candidatesInAContext(Map.of("sangam.modules.billing.enabled", "false",
+                "sangam.malware.scanner", "none"));
+        assertFalse(off.contains(billing), "billing is off");
+        assertFalse(off.contains(malware), "no malware scanner");
+        assertTrue(off.contains("org.sangam.server.config.ModuleWiring"), "the rest of the wiring is still found");
     }
 
     @Test

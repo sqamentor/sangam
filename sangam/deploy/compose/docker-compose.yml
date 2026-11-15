@@ -70,6 +70,12 @@ x-server-common: &server-common
     SANGAM_DSC_OCSP_MAX_AGE: ${SANGAM_DSC_OCSP_MAX_AGE:-24h}
     # Decision 290: automatic re-dispatches of a pack operation with no process instance (positive integer)
     SANGAM_INTEGRATION_RECONCILIATION_MAX_REDISPATCHES: ${SANGAM_INTEGRATION_RECONCILIATION_MAX_REDISPATCHES:-3}
+    # Decisions 304, 305: India DLT SMS (deploy/README.md section 1.8); server defaults. The signing secret references
+    # (sangam.integration.dlt.delivery-reports.secrets.*) and the registration seed go into config/server/application.yaml
+    SANGAM_DLT_DELIVERY_REPORT_TOLERANCE: ${SANGAM_DLT_DELIVERY_REPORT_TOLERANCE:-5m}
+    SANGAM_DLT_DELIVERY_STATUS_ENABLED: ${SANGAM_DLT_DELIVERY_STATUS_ENABLED:-true}
+    SANGAM_DLT_DELIVERY_STATUS_INTERVAL: ${SANGAM_DLT_DELIVERY_STATUS_INTERVAL:-5m}
+    SANGAM_DLT_REGISTRATION_REFRESH_INTERVAL: ${SANGAM_DLT_REGISTRATION_REFRESH_INTERVAL:-1m}
     SANGAM_LIQUIBASE_MODE: ${SANGAM_LIQUIBASE_MODE:-startup}
     SANGAM_TENANT_DEFAULT: ${SANGAM_TENANT_DEFAULT:-dept-finance}
     # This example is an India deployment; the server has no default jurisdiction.
@@ -93,10 +99,11 @@ x-server-common: &server-common
     MANAGEMENT_OTLP_METRICS_EXPORT_URL: http://otel-collector:4318/v1/metrics
     # SL-168 / M-062: engine spans (sangam.tracing.engine.enabled), exported only when OTLP is enabled above
     SANGAM_TRACING_ENGINE_ENABLED: ${SANGAM_TRACING_ENGINE_ENABLED:-false}
-    # SL-168 / X1-05: the three leaf pools, each on top of the main pool (deploy/README.md section 1.6); server defaults
+    # SL-168 / X1-05: the four leaf pools, each on top of the main pool (deploy/README.md section 1.6); server defaults
     SANGAM_QUOTA_POOL_SIZE: ${SANGAM_QUOTA_POOL_SIZE:-4}
     SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE: ${SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE:-2}
     SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE: ${SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE:-2}
+    SANGAM_CONFIG_STORE_POOL_SIZE: ${SANGAM_CONFIG_STORE_POOL_SIZE:-4}
     # M-082: upload malware scanning. none by default; SANGAM_MALWARE_SCANNER=clamd together with --profile malware
     # (the clamav service below). ICAP: SANGAM_MALWARE_SCANNER=icap plus SANGAM_MALWARE_ICAP_URI in config/server.
     SANGAM_MALWARE_SCANNER: ${SANGAM_MALWARE_SCANNER:-none}
