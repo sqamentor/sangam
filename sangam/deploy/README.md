@@ -126,7 +126,7 @@ The compose database settings match the Stage B Testcontainers set (`spike/RUN-Q
 | PostgreSQL | `postgres:17` | UTC, read committed, `wal_level=replica` |
 | Oracle | `gvenzl/oracle-free:23-slim-faststart` | PDB `FREEPDB1`, app user `sangam` |
 | SQL Server | `mssql/server:2022-latest` | `sqlserver-init` sets **READ_COMMITTED_SNAPSHOT ON** and FULL recovery |
-| MySQL | `mysql:8.4` | `--transaction-isolation=READ-COMMITTED`, utf8mb4 / utf8mb4_bin, UTC, ROW binlog + GTID; connected through the **shipped MariaDB Connector/J** |
+| MySQL | `mysql:8.4` (8.4 or later; an older server is refused at start with `MYSQL_VERSION_REFUSED`, R84) | `--transaction-isolation=READ-COMMITTED`, utf8mb4 / utf8mb4_bin, UTC, ROW binlog + GTID; connected through the **shipped MariaDB Connector/J** |
 
 **Test seats.** The realm comes with these test seat holders:
 

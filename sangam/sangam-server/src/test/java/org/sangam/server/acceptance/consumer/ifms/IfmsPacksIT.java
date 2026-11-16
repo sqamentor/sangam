@@ -59,6 +59,7 @@ import org.sangam.security.SangamSecurity;
 import org.sangam.security.admin.TenantAdminService;
 import org.sangam.security.org.OrgModel;
 import org.sangam.server.acceptance.AbstractAcceptanceIT;
+import org.sangam.server.acceptance.JobExecutorPause;
 import org.sangam.server.bridge.PacksTenantDeployer;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,29 +123,27 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
     /** Seed seats by role, for a task offered to a role group (no office on the case). */
     final Map<String, List<String>> seatsOfRole = new LinkedHashMap<>();
 
-    /** Whether the server's job executor ran before this test paused it (restarted after the test). */
-    private boolean executorWasActive;
+    /** The pause of the server's job executor for this test (restarts it after the test when it ran before). */
+    private JobExecutorPause executorPause;
 
     /**
      * The driver runs every due job itself ({@link #runJobs}). With the server's job executor also running, both took
      * the same job ids (OptimisticLockingException on the job rows, and the executor's operatonTaskExecutor colliding
      * with the driver; matrix-sqlserver.log, SL-89 analysis). As {@code GovCSupport} does, each test pauses the
      * executor, so jobs run only on the test's thread, in a known order, and restarts it afterwards for sibling ITs.
+     * IFMSPACKS-EXEC-RACE: a plain {@code shutdown()} of the host's SpringJobExecutor left already dispatched batches
+     * running; {@link JobExecutorPause} also waits for them.
      */
     @BeforeEach
     void pauseJobExecutor() {
-        JobExecutor je = jobExecutor();
-        executorWasActive = je != null && je.isActive();
-        if (executorWasActive) {
-            je.shutdown();
-        }
+        executorPause = JobExecutorPause.pause(engine);
     }
 
     @AfterEach
     void resumeJobExecutor() {
-        if (executorWasActive) {
-            jobExecutor().start();
-            executorWasActive = false;
+        if (executorPause != null) {
+            executorPause.close();
+            executorPause = null;
         }
     }
 

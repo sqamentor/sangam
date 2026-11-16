@@ -25,6 +25,7 @@ import liquibase.integration.spring.SpringLiquibase;
 import liquibase.resource.ClassLoaderResourceAccessor;
 
 import org.sangam.core.api.LeaseTable;
+import org.sangam.core.db.DatabaseIdentity;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Schema;
 import org.sangam.engine.db.DatabaseGuard;
@@ -177,6 +178,8 @@ public class SchemaBootstrap {
      * engine check before the engine is configured ({@code EngineConfigurationCustomizer}) still applies to it.
      */
     static void requireEngineSchema(LiquibaseMode mode, Environment env, DataSource dataSource) {
+        // R84: every schema step (Liquibase or the development schema) runs only on a supported MySQL line.
+        DatabaseIdentity.requireSupportedMysql(dataSource, "sangam-server");
         if (!mode.oneShot()) {
             EngineSchemaGuard.require(env, dataSource);
         }

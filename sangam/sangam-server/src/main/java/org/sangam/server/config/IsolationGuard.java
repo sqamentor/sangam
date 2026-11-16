@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 
 import com.zaxxer.hikari.HikariDataSource;
 
+import org.sangam.core.db.DatabaseIdentity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ListableBeanFactory;
@@ -31,7 +32,8 @@ import org.springframework.core.env.Environment;
  *   <li>SQL Server: READ_COMMITTED_SNAPSHOT (RCSI) must be on for the database ({@code sangam.db.require-rcsi},
  *       default true);</li>
  *   <li>MySQL: {@code @@transaction_isolation = READ-COMMITTED}, {@code @@character_set_database = utf8mb4*}; a server
- *       other than 8.4 LTS is logged as a warning.</li>
+ *       older than {@code DatabaseIdentity.MYSQL_MINIMUM_VERSION} (8.4) is refused with {@code MYSQL_VERSION_REFUSED},
+ *       a newer line is logged as a warning.</li>
  * </ol>
  */
 @Configuration(proxyBeanMethods = false)
@@ -123,8 +125,14 @@ public class IsolationGuard {
                 throw new IllegalStateException("DataSource '" + name + "': MySQL @@character_set_database is " + charset
                         + "; utf8mb4 is required (R84, P-1)");
             }
-            if (version == null || !version.startsWith("8.4")) {
-                LOG.warn("DataSource '{}': MySQL server {} is not the pinned 8.4 LTS line (R84)", name, version);
+            if (version != null && version.toLowerCase(Locale.ROOT).contains("mariadb")) {
+                return; // MariaDB has its own support row; the MySQL release line does not apply to it
+            }
+            // R84: older than the supported line (or unreadable) refuses start-up; a newer line is only logged.
+            DatabaseIdentity.requireSupportedMysqlVersion(version, "DataSource '" + name + "'");
+            if (!version.trim().startsWith(DatabaseIdentity.MYSQL_MINIMUM_VERSION + ".")) {
+                LOG.warn("DataSource '{}': MySQL server {} is not the pinned {} LTS line (R84)", name, version,
+                        DatabaseIdentity.MYSQL_MINIMUM_VERSION);
             }
         }
     }
