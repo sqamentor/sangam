@@ -13,6 +13,7 @@ import java.util.Map;
 import org.operaton.bpm.engine.ProcessEngine;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.core.layer.Transactions;
+import org.sangam.ops.archive.HistoryArchives;
 import org.sangam.ops.retention.HierarchyRetention;
 import org.sangam.ops.search.SearchIndexMaintenance;
 import org.sangam.rest.modules.ops.OpsApi;
@@ -42,7 +43,31 @@ public final class OpsBindings {
         return out;
     }
 
-    public static OpsApi.Retention retention(HierarchyRetention service, ProcessEngine engine, Map<String, Duration> configured) {
+    /** RM-52: exports, signs and stores the archive of a tree in the retention run's transaction, before its purge. */
+    public static HierarchyRetention.Archiver archiver(HistoryArchives archives, Map<String, String> historyLevels) {
+        Map<String, String> levels = Map.copyOf(historyLevels);
+        return (c, tree) -> archives.archive(c, tree.tenantId(), tree.rootId(), levels);
+    }
+
+    /**
+     * RM-52 manifest: the history level of each configured definition key, with its outbox-only flag (IR-5); keys not
+     * listed have the engine's default level, recorded as {@code default:<level>}.
+     */
+    public static Map<String, String> historyLevels(org.sangam.engine.SangamEngineSettings s) {
+        Map<String, String> out = new java.util.TreeMap<>();
+        s.getHistoryLevelByProcessKey().forEach((k, v) -> out.put(k, v));
+        for (String k : s.getOutboxOnlyHistoryKeys()) {
+            out.put(k, out.getOrDefault(k, "default:" + s.getHistory()) + " (outbox-only)");
+        }
+        return out;
+    }
+
+    /**
+     * @param archiver RM-52: exports each tree's archive before the purge; null when no archive is configured, and then
+     *                 the service's gate refuses every tree
+     */
+    public static OpsApi.Retention retention(HierarchyRetention service, ProcessEngine engine, Map<String, Duration> configured,
+                                             HierarchyRetention.Archiver archiver) {
         return new OpsApi.Retention() {
             @Override
             public List<HierarchyRetention.Tree> plan(String tenant, int limit) {
@@ -51,7 +76,7 @@ public final class OpsBindings {
 
             @Override
             public int execute(String tenant, int limit, String actor, String reason) {
-                return service.execute(plan(tenant, limit), (t, ids) -> engine.getHistoryService().deleteHistoricProcessInstancesIfExists(ids), actor, reason);
+                return service.execute(plan(tenant, limit), archiver, (t, ids) -> engine.getHistoryService().deleteHistoricProcessInstancesIfExists(ids), actor, reason);
             }
 
             @Override

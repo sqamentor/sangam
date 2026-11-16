@@ -49,7 +49,7 @@ public class EngineWiring {
     @ConfigurationProperties("sangam.engine")
     public SangamEngineSettings sangamEngineSettings(Environment env, ObjectProvider<MeterRegistry> meters,
             ObjectProvider<io.opentelemetry.api.OpenTelemetry> otel, ObjectProvider<ApiContractStore> contracts,
-            ObjectProvider<PackagePort> packages) {
+            ObjectProvider<PackagePort> packages, ObjectProvider<org.sangam.core.history.HistoryArchiveGate> archive) {
         SangamEngineSettings s = new SangamEngineSettings();
         s.setApplyProductSchema(false);
         s.setApplyEnginePatches(true);
@@ -64,6 +64,10 @@ public class EngineWiring {
         // M-068: sangam:operationRef is pinned at deploy against the package's stored contracts. Both beans are looked up
         // at deploy time: PackagePort depends on DeploymentPort and so on the engine, which this bean configures.
         s.setOperationRefPinner(operationRefPinner(contracts::getIfAvailable, packages::getIfAvailable));
+        // RM-52 (decision 386): the engine deletes a tree's history only with a verified archive (HistoryArchiveWiring);
+        // looked up per purge, since the archive's beans come after the engine's settings
+        s.setHistoryArchiveGate((c, tenant, root) -> archive.getIfAvailable(
+                org.sangam.core.history.HistoryArchiveGate::notConfigured).refusal(c, tenant, root));
         meters.ifAvailable(r -> s.setMetrics(new EngineMicrometerMetrics(r)));
         // Note 16 (VI.4 rule 7): jobs, timers and async continuations run with the tenant's system identity bound in
         // sangam-security's TenantContext. Without the security module the engine binds JobIdentityBinder.current() only.

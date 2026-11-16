@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.ops.retention;
 
+import org.sangam.core.history.HistoryArchiveGate;
 import org.sangam.core.layer.AuditChain;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.core.layer.Transactions;
@@ -17,6 +18,7 @@ import java.util.function.Predicate;
  * time is older than the root definition's retention, and neither the root nor any legal hold prevents it. So a child never disappears
  * before its root, and a child with a shorter retention follows the root. Read from {@code ACT_HI_PROCINST}. Purging runs through the
  * {@link Purger} port (the engine's history service), children first. Records retention (A-9) goes through {@code onHold}.
+ * RM-52 (decision 386(2)): a tree without a verified archive is never purged ({@link HistoryArchiveGate}).
  */
 public final class HierarchyRetention {
 
@@ -30,10 +32,16 @@ public final class HierarchyRetention {
 
     private final Transactions tx;
     private final AuditChain audit;
+    private final HistoryArchiveGate gate;
 
-    public HierarchyRetention(Transactions tx, AuditChain audit) {
+    /**
+     * @param gate RM-52 (decision 386(2)): a tree is purged only when this gate finds its archive verified; a node with
+     *             no archive configured passes {@link HistoryArchiveGate#notConfigured()} and purges nothing
+     */
+    public HierarchyRetention(Transactions tx, AuditChain audit, HistoryArchiveGate gate) {
         this.tx = tx;
         this.audit = audit;
+        this.gate = java.util.Objects.requireNonNull(gate, "gate");
     }
 
     /** {@code retentionByKey}: definition key to retention; a root key with no entry is kept. */
@@ -66,17 +74,32 @@ public final class HierarchyRetention {
         });
     }
 
+    /** Exports the archive of a tree before it is purged (RM-52), in the given transaction. */
+    @FunctionalInterface
+    public interface Archiver {
+        void archive(java.sql.Connection c, Tree tree);
+    }
+
     /** Scheduled runs have no human reason; they are recorded as such. */
     public int execute(List<Tree> plan, Purger purger, String actor) {
-        return execute(plan, purger, actor, "scheduled retention run");
+        return execute(plan, null, purger, actor, "scheduled retention run");
+    }
+
+    public int execute(List<Tree> plan, Purger purger, String actor, String reason) {
+        return execute(plan, null, purger, actor, reason);
     }
 
     /**
      * Purges the plan and records one {@code OPS_RETENTION_RUN} row per tenant: plan id, SHA-256 of the canonical plan, reason,
      * purged count and executor. A row is written even when the purger fails part-way, with the count purged so far, and the
      * failure is rethrown.
+     *
+     * <p>RM-52 (decision 386): before a tree is purged its archive is exported ({@code archiver}, when given) and the
+     * {@link HistoryArchiveGate} must find it verified. A tree it refuses (or whose export fails) is not purged: the refusal
+     * is audited ({@code HISTORY_PURGE_REFUSED} on {@code retention:<tenant>}), counted in the run's reason, and the run
+     * goes on with the next tree. History without a verified archive is kept, never lost.
      */
-    public int execute(List<Tree> plan, Purger purger, String actor, String reason) {
+    public int execute(List<Tree> plan, Archiver archiver, Purger purger, String actor, String reason) {
         if (reason == null || reason.isBlank()) {
             throw new IllegalArgumentException("a reason is required");
         }
@@ -86,9 +109,18 @@ public final class HierarchyRetention {
         int total = 0;
         for (Map.Entry<String, List<Tree>> e : byTenant.entrySet()) {
             int n = 0;
+            int refused = 0;
             RuntimeException failure = null;
             try {
                 for (Tree t : e.getValue()) {
+                    String refusal = archived(t, archiver);
+                    if (refusal != null) {
+                        refused++;
+                        tx.inTransaction(c -> audit.append(c, t.tenantId(), "retention:" + t.tenantId(), "HISTORY_PURGE_REFUSED",
+                                Map.of("root", t.rootId(), "definition", t.definitionKey(), "refusal", refusal, "actor", actor,
+                                        "planId", planId)));
+                        continue;
+                    }
                     purger.purge(t.tenantId(), t.instanceIds());
                     tx.inTransaction(c -> audit.append(c, t.tenantId(), "retention:" + t.tenantId(), "HISTORY_TREE_PURGED", Map.of("root", t.rootId(), "definition", t.definitionKey(),
                             "instances", t.instanceIds().size(), "lastEnd", t.lastEnd().toString(), "actor", actor, "planId", planId)));
@@ -98,7 +130,8 @@ public final class HierarchyRetention {
                 failure = ex;
             }
             int purged = n;
-            String recorded = failure == null ? reason : reason + " (failed: " + failure.getMessage() + ")";
+            String recorded = (failure == null ? reason : reason + " (failed: " + failure.getMessage() + ")")
+                    + (refused == 0 ? "" : " (refused without a verified archive: " + refused + " trees)");
             String hash = org.sangam.core.layer.Hashes.hex(org.sangam.core.layer.Hashes.sha256(org.sangam.core.layer.CanonicalJson.write(
                     e.getValue().stream().map(t -> Map.of("root", t.rootId(), "instances", t.instanceIds(), "lastEnd", t.lastEnd().toString())).toList())));
             tx.inTransaction(c -> org.sangam.core.layer.Jdbc.update(c, "INSERT INTO OPS_RETENTION_RUN(run_id,tenant_id,plan_id,plan_hash,reason,purged,executed_by,executed_at) VALUES (?,?,?,?,?,?,?,?)",
@@ -110,6 +143,25 @@ public final class HierarchyRetention {
             }
         }
         return total;
+    }
+
+    /** The gate's refusal of the tree after its archive was exported (when an archiver is given); null: purge. */
+    private String archived(Tree t, Archiver archiver) {
+        if (archiver != null) {
+            try {
+                tx.inTransaction(c -> {
+                    archiver.archive(c, t);
+                    return null;
+                });
+            } catch (RuntimeException ex) {
+                return "HISTORY_ARCHIVE_EXPORT_FAILED: " + ex.getMessage();
+            }
+        }
+        try {
+            return tx.inTransaction(c -> gate.refusal(c, t.tenantId(), t.rootId()));
+        } catch (RuntimeException ex) {
+            return "HISTORY_ARCHIVE_UNVERIFIABLE: " + ex.getMessage();
+        }
     }
 
     /** One recorded retention run. */

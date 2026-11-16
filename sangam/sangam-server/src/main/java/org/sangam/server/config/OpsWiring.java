@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.operaton.bpm.engine.ProcessEngine;
+import org.sangam.core.history.HistoryArchiveGate;
 import org.sangam.core.layer.AuditChain;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Transactions;
@@ -23,6 +24,7 @@ import org.sangam.core.security.FieldEncryptor;
 import org.sangam.integration.connector.SecretResolver;
 import org.sangam.integration.relay.LeaderElection;
 import org.sangam.ops.OpsSchema;
+import org.sangam.ops.archive.HistoryArchives;
 import org.sangam.ops.listener.GlobalTaskListeners;
 import org.sangam.ops.metrics.UsageMetrics;
 import org.sangam.ops.retention.HierarchyRetention;
@@ -116,13 +118,18 @@ public class OpsWiring {
 
     @Bean
     public OpsApi sangamOpsApi(ScopedVariables vars, SecretAdmin secrets, TxSupport tx, DataSource ds, ProcessEngine engine, Environment env,
-            ObjectProvider<org.sangam.security.SangamSecurity> security) {
+            ObjectProvider<org.sangam.security.SangamSecurity> security, ObjectProvider<HistoryArchiveGate> archive,
+            ObjectProvider<org.sangam.engine.SangamEngineSettings> settings) {
         Dialect d = tx.dialect();
         Transactions t = Transactions.of(ds);
+        // RM-52 (decision 386(2)): a tree is archived, then purged only with a verified archive; no archive, no purge
+        HistoryArchiveGate gate = archive.getIfAvailable(HistoryArchiveGate::notConfigured);
         return new OpsApi(new GlobalSearch(t, searchSources(security.getIfAvailable())), usage(d, t), vars, secrets,
                 new SequenceAdmin(d, t, new AuditChain(d), List.of(new SequenceAdmin.Table("RES_BOOKING_SEQ", "tenant_id", "series", "period", "last_no"))),
                 new SearchIndexMaintenance(d, t), OpsBindings.engineReaders(t),
-                OpsBindings.retention(new HierarchyRetention(t, new AuditChain(d)), engine, retention(env)),
+                OpsBindings.retention(new HierarchyRetention(t, new AuditChain(d), gate), engine, retention(env),
+                        gate instanceof HistoryArchives a ? OpsBindings.archiver(a, settings.getIfAvailable() == null ? Map.of()
+                                : OpsBindings.historyLevels(settings.getIfAvailable())) : null),
                 () -> OpsBindings.migrationStatus(t, new org.sangam.ops.migrate.LegacyHistoryMigrator(null, t, d, new AuditChain(d), null)), t,
                 java.util.Set.copyOf(CaseWiring.list(env, "sangam.ops.outliers.allowed-variables")));
     }
@@ -199,6 +206,12 @@ public class OpsWiring {
 
     private static UsageMetrics usage(Dialect d, Transactions t) {
         return new UsageMetrics(d, t, null);
+    }
+
+    /** RM-52: the longest configured hierarchy retention, in whole days rounded up (0 when none). */
+    static int longestRetentionDays(Environment env) {
+        long seconds = retention(env).values().stream().mapToLong(Duration::getSeconds).max().orElse(0);
+        return (int) Math.min(Integer.MAX_VALUE, (seconds + 86_399) / 86_400);
     }
 
     private static Map<String, Duration> retention(Environment env) {

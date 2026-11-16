@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Engine history archive export: specification (RM-52)
 
-Status: **specification, not implemented.** Written 2026-11-16 by lane R7-rm from the code at c02359c9. RM-52 (REMEDIATION-PLAN, X3 R-13,
+Status: **implemented on H2 (lane R7-rm, 2026-11-16) under decision 386 (1) to (3); PostgreSQL, Oracle and SQL Server runs open.** Section 4 records the implementation and its deviations. Written 2026-11-16 by lane R7-rm from the code at c02359c9. RM-52 (REMEDIATION-PLAN, X3 R-13,
 C-35 advisory) asks for an `ACT_HI_*` archive-export spec so that an engine exit, or a purge under retention, never loses evidence
 held only in Operaton's history tables. Section 1 records what the code does today, with the source of each fact. Section 2 is the
 contract an implementation must meet. Section 3 lists the questions that need an answer before anyone codes it.
@@ -86,3 +86,30 @@ records the erasure. The audit chain keeps both digests.
    partitions whose trees all have verified archives, and otherwise keep the partition and report it.
 
 Owner: the engine history area (sangam-engine, sangam-ops retention). Register row: RM-52.
+
+## 4. Implementation (lane R7-rm, decision 386)
+
+Decision 386 answered section 3 as recommended: (1) the document store, with a records-retention class longer than the engine
+retention; (2) every tree needs a verified archive before any purge; (3) a partition is dropped only when every tree in it has one.
+
+| Part | Code | Proof |
+|---|---|---|
+| Gate contract | `sangam-core` `core/history/HistoryArchiveGate` (`refusal(connection, tenant, rootId)`, `null` = archived and verified; `PurgeRefusedException`); the default refuses every tree (`HISTORY_ARCHIVE_NOT_CONFIGURED`) | - |
+| Engine paths | `sangam-engine` `trace/HistoryArchiveGuard` and `trace/ProcessTraceHistoryRemoval`: every process and decision history delete (by id, deployment cascade, removal-time cleanup) asks the gate for each root tree first; one refusal refuses the whole request (PATCHES.md B-48, I-28) | `HistoryArchiveGuardH2Test` (5) |
+| Export and verify | `sangam-ops` `archive/HistoryArchiveExporter` (every `ACT_HI_*` table of section 2, the `ACT_GE_BYTEARRAY` rows they reference, `HRM_*`, `PROCESS_TRACE`, models, manifest; deterministic) and `archive/HistoryArchives` (Ed25519 signature, document store, `HISTORY_ARCHIVED` audit event; refusals `HISTORY_ARCHIVE_MISSING`, `_AUDIT_INVALID`, `_NOT_STORED`, `_DIGEST_MISMATCH`, `_INVALID`, `_SIGNATURE_INVALID`, `_STALE`, `_UNVERIFIABLE`, `_RETENTION_TOO_SHORT`) | `HistoryArchivePurgeTest` (3) |
+| Retention purge | `sangam-ops` `retention/HierarchyRetention.execute(plan, archiver, purger, ...)`: exports each tree first; a tree without a verified archive is never handed to the purger and gets a `HISTORY_PURGE_REFUSED` audit event | `OpsTest`, `HistoryArchivePurgeTest` |
+| Partition drop | `sangam-ops` `archive/PartitionDropGuard.check(from, to)`: allowed only when every tree in the range is archived, otherwise the refused roots are reported | `HistoryArchivePurgeTest` |
+| Server wiring | `HistoryArchiveWiring` (`sangam.history.archive.*`: store root, retention class and days, `secret://` signing refs only; the retention class must be longer than the longest engine retention); off = every purge refused | `HistoryArchiveWiringTest` (3) |
+
+Before-fix proofs (each check removed, the tests above fail): the engine gate (4 of 5 `HistoryArchiveGuardH2Test` cases), the
+retention purge (`OpsTest`), the engine path in the server (`HistoryArchivePurgeTest`), and, run alone, the partition guard
+(`HistoryArchivePurgeTest` line 221: the drop was allowed while a tree had no archive).
+
+Deviations from section 2:
+- The export time is on the `HISTORY_ARCHIVED` audit event, not in the manifest, so two exports of a tree are identical byte for byte.
+- The archive event is on the root's audit chain (tenant, root id), not the business key's.
+- An archive is stale when a table's row count differs from the manifest; a changed value with the same count is not detected.
+
+Open: an erasure after the export does not yet re-manifest the archive; the store does not yet enforce the retention class's
+lifecycle; the PostgreSQL, Oracle and SQL Server runs (test phase); `sangam-assembly` and the Quarkus host have no archive wiring, so
+they refuse every purge (fail closed).
