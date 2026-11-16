@@ -69,7 +69,7 @@ import org.slf4j.LoggerFactory;
 public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(OperatonOpsAdapter.class);
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = org.sangam.rest.support.ExactJson.mapper(); // decision 381(4)
     private static final int MAX_BATCH_ITEMS = 100_000;
     private static final Set<String> BATCH_TYPES = Set.of("RETRY", "CANCEL", "DELETE", "SUSPEND", "RESUME", "MIGRATE",
             "MODIFY", "SET_VARIABLES", "RESTART");

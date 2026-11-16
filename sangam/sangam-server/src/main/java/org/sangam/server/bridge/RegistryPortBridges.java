@@ -58,7 +58,8 @@ import org.slf4j.LoggerFactory;
 public final class RegistryPortBridges {
 
     private static final Logger LOG = LoggerFactory.getLogger(RegistryPortBridges.class);
-    private static final ObjectMapper JSON = new ObjectMapper();
+    // decision 381(4): fractions of a stored outbox payload are read exactly
+    private static final ObjectMapper JSON = org.sangam.rest.support.ExactJson.mapper();
 
     /** Outbox destination for document-locker pushes and system-of-record pushes (unordered, after commit). */
     public static final String DEST_PUBLISH = "sangam.registry.publish";
@@ -171,7 +172,9 @@ public final class RegistryPortBridges {
     // ---------------------------------------------------------------- DecisionPort → Operaton DMN
 
     public static RegistryPorts.DecisionPort decisions(DecisionService decisions) {
-        return (tenant, key, vars) -> {
+        return (tenant, key, facts) -> {
+            // decision 381(4): the facts reach the engine as variables through TypedVariables (no binary float)
+            Map<String, Object> vars = org.sangam.rest.support.TypedVariables.fromJson(facts);
             try {
                 return decisions.evaluateDecisionByKey(key).decisionDefinitionTenantId(tenant).variables(vars)
                         .evaluate().getResultList();
