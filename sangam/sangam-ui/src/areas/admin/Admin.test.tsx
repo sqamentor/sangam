@@ -88,12 +88,11 @@ afterEach(() => {
 });
 
 /**
- * Every call these tests saw is an operation of the contract, except the named gaps: the Tenants, Seats, Users and
- * Groups screens are generic CrudPage screens whose edit and row actions call routes the contract does not have
- * (sangam-api.yaml has only GET /admin/users, GET /admin/groups, no tenant or seat actions). Reported (M-047 report,
- * TESTING-GAP-REGISTER); a new drift, or a gap that is closed, fails this check.
+ * Every call these tests saw is an operation of the contract. Round 6 item 2 closed the gaps this list used to name
+ * (tenant validate/activate/suspend, user create/update/disable, group create/update are contract routes since lane
+ * w2; seat deactivate is DELETE /admin/seats/{id}?reason=); a new drift fails this check.
  */
-const KNOWN_GAPS = ['POST /admin/seats/s1/deactivate', 'POST /admin/tenants/t-a/validate', 'POST /admin/tenants/t-b/activate', 'POST /admin/users', 'POST /admin/users/u1/disable'];
+const KNOWN_GAPS: string[] = [];
 afterAll(() => {
   expect(outsideContract(seen, contractOperations(apiYaml))).toEqual(KNOWN_GAPS);
 });
@@ -131,6 +130,49 @@ describe('A01 tenants', () => {
     fireEvent.click(within(rowWith('Beta')).getByRole('button', { name: T('admin.activate') }));
     reasonAndConfirm('Go-live approved by the board');
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/tenants/t-b/activate', { reason: 'Go-live approved by the board' }));
+  });
+
+  it('validate shows the go-live readiness: what is required and what still has no evidence', async () => {
+    pages['/admin/tenants'] = pageOf(tenants);
+    api.post.mockResolvedValueOnce({ tenantId: 't-b', status: 'DRAFT', ready: false, required: ['DPO_NAMED', 'PACK_IN_FIN'], missing: ['DPO_NAMED'] });
+    show(<Tenants />);
+    fireEvent.click(within(rowWith((await screen.findByText('Beta')).textContent!)).getByRole('button', { name: T('admin.validate') }));
+    const r = await screen.findByRole('region', { name: T('admin.readinessOf', { id: 't-b' }) });
+    expect(within(r).getByText(T('admin.notReady'))).toBeTruthy();
+    expect(within(within(r).getByRole('list', { name: T('admin.readinessMissing') })).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['DPO_NAMED']);
+    expect(within(within(r).getByRole('list', { name: T('admin.readinessRequired') })).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['DPO_NAMED', 'PACK_IN_FIN']);
+    api.post.mockResolvedValueOnce({ tenantId: 't-b', ready: true, required: ['DPO_NAMED'], missing: [] });
+    fireEvent.click(within(rowWith('Beta')).getByRole('button', { name: T('admin.validate') }));
+    expect(await within(r).findByText(T('admin.ready'))).toBeTruthy();
+  });
+
+  it.each([
+    ['TENANT_ACTIVATION_BY_OWN_ADMIN', 'only the tenant’s own administrator activates it'],
+    ['ACTIVATION_BLOCKED', 'missing: DPO_NAMED'],
+  ])('a refused activation (409 %s) is shown by name in the dialog', async (code, detail) => {
+    pages['/admin/tenants'] = pageOf(tenants);
+    api.post.mockRejectedValueOnce(problem(409, code, detail));
+    show(<Tenants />);
+    fireEvent.click(within(rowWith((await screen.findByText('Beta')).textContent!)).getByRole('button', { name: T('admin.activate') }));
+    const d = reasonAndConfirm('Go-live approved by the board');
+    expect(await within(d).findByText(T(`error.code.${code}`))).toBeTruthy();
+    expect(within(d).getByText(detail)).toBeTruthy();
+  });
+
+  it('a refused validation (409 ACTIVATION_BLOCKED) is shown by name', async () => {
+    pages['/admin/tenants'] = pageOf(tenants);
+    api.post.mockRejectedValueOnce(problem(409, 'ACTIVATION_BLOCKED', 'pack IN-FIN is not installed'));
+    show(<Tenants />);
+    fireEvent.click(within(rowWith((await screen.findByText('Alpha')).textContent!)).getByRole('button', { name: T('admin.validate') }));
+    expect(await screen.findByText(T('error.code.ACTIVATION_BLOCKED'))).toBeTruthy();
+  });
+
+  it('suspend asks for a reason and sends it', async () => {
+    pages['/admin/tenants'] = pageOf(tenants);
+    show(<Tenants />);
+    fireEvent.click(within(rowWith((await screen.findByText('Alpha')).textContent!)).getByRole('button', { name: T('admin.suspendTenant') }));
+    reasonAndConfirm('Licence lapsed');
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/tenants/t-a/suspend', { reason: 'Licence lapsed' }));
   });
 
   it('a new tenant needs an id of the allowed form and a name; nothing is sent until then', async () => {
@@ -245,7 +287,9 @@ describe('seats', () => {
     expect(within(rowWith('Clerk')).queryByRole('button', { name: T('admin.deactivate') })).toBeNull();
     fireEvent.click(within(s1).getByRole('button', { name: T('admin.deactivate') }));
     reasonAndConfirm('Post abolished by order 7');
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/seats/s1/deactivate', { reason: 'Post abolished by order 7' }));
+    // the contract's deactivation is DELETE /admin/seats/{id}?reason= (deleteSeat); there is no /deactivate route
+    await waitFor(() => expect(api.del).toHaveBeenCalledWith('/admin/seats/s1', { reason: 'Post abolished by order 7' }));
+    expect(api.post.mock.calls.some((c) => String(c[0]).startsWith('/admin/seats/'))).toBe(false);
   });
 });
 
@@ -532,7 +576,71 @@ describe('SoD exceptions', () => {
 
 /** Evidence: Admin.tsx:955-1026, endpoints.ts:611-613. */
 describe('users and groups', () => {
-  it('users: a new user starts active and LOCAL; disable is offered on active users only', async () => {
+  it('users: a new user is created active and LOCAL, so no active box is offered (UserRequest.active: only true)', async () => {
+    show(<Users />);
+    fireEvent.click(await screen.findByRole('button', { name: T('common.new') }));
+    const d = dialog();
+    expect(within(d).queryByLabelText(L('admin.activeFlag'))).toBeNull();
+    type(d, 'admin.username', 'asha');
+    type(d, 'common.name', 'Asha');
+    type(d, 'admin.email', 'asha@example.in');
+    fireEvent.click(buttonIn(d, 'common.save'));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/users', { active: true, source: 'LOCAL', username: 'asha', displayName: 'Asha', email: 'asha@example.in' }));
+  });
+
+  it('users: editing changes only the display name and e-mail (PUT /admin/users/{id}, UserRequest)', async () => {
+    pages['/admin/users'] = pageOf([{ id: 'u1', username: 'ravi', displayName: 'Ravi', email: 'ravi@example.in', active: true, source: 'LOCAL', groups: ['g1'], lastLogin: '2026-11-01T09:00:00Z' }]);
+    show(<Users />);
+    fireEvent.click(within(rowWith(await screen.findByText('ravi').then((e) => e.textContent!))).getByRole('button', { name: T('common.edit') }));
+    const d = dialog();
+    expect(within(d).queryByLabelText(L('admin.username'))).toBeNull();
+    type(d, 'common.name', 'Ravi Kumar');
+    fireEvent.click(buttonIn(d, 'common.save'));
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/admin/users/u1', { displayName: 'Ravi Kumar', email: 'ravi@example.in' }));
+  });
+
+  it.each([
+    ['create', 'USER_EXISTS'],
+    ['disable', 'SELF_DISABLE'],
+  ])('users: a refused %s (409 %s) is shown by name', async (what, code) => {
+    pages['/admin/users'] = pageOf([{ id: 'u1', username: 'ravi', displayName: 'Ravi', active: true, source: 'LOCAL' }]);
+    api.post.mockRejectedValueOnce(problem(409, code, `detail of ${code}`));
+    show(<Users />);
+    let d: HTMLElement;
+    if (what === 'create') {
+      fireEvent.click(await screen.findByRole('button', { name: T('common.new') }));
+      d = dialog();
+      type(d, 'admin.username', 'ravi');
+      type(d, 'common.name', 'Ravi');
+      fireEvent.click(buttonIn(d, 'common.save'));
+    } else {
+      fireEvent.click(within(rowWith(await screen.findByText('ravi').then((e) => e.textContent!))).getByRole('button', { name: T('admin.disable') }));
+      d = reasonAndConfirm('Left the department');
+    }
+    expect(await within(d).findByText(T(`error.code.${code}`))).toBeTruthy();
+  });
+
+  it('groups: create sends the id and name, rename sends the name only; a duplicate is named', async () => {
+    pages['/admin/groups'] = pageOf([{ id: 'g1', name: 'Clerks', type: 'ROLE', members: 3, source: 'LOCAL' }]);
+    show(<Groups />);
+    fireEvent.click(within(rowWith(await screen.findByText('Clerks').then((e) => e.textContent!))).getByRole('button', { name: T('common.edit') }));
+    let d = dialog();
+    expect(within(d).queryByLabelText(L('admin.groupId'))).toBeNull();
+    type(d, 'common.name', 'Senior clerks');
+    fireEvent.click(buttonIn(d, 'common.save'));
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/admin/groups/g1', { name: 'Senior clerks' }));
+    await waitFor(noDialog);
+    api.post.mockRejectedValueOnce(problem(409, 'GROUP_EXISTS', 'group g1 already exists'));
+    fireEvent.click(screen.getByRole('button', { name: T('common.new') }));
+    d = dialog();
+    type(d, 'admin.groupId', 'g1');
+    type(d, 'common.name', 'Clerks');
+    fireEvent.click(buttonIn(d, 'common.save'));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/groups', { id: 'g1', name: 'Clerks' }));
+    expect(await within(d).findByText(T('error.code.GROUP_EXISTS'))).toBeTruthy();
+  });
+
+  it('users: disable is offered on active users only, with a reason', async () => {
     pages['/admin/users'] = pageOf([
       { id: 'u1', username: 'ravi', displayName: 'Ravi', active: true, source: 'LDAP' },
       { id: 'u2', username: 'old', displayName: 'Old', active: false, source: 'LOCAL' },
@@ -543,13 +651,6 @@ describe('users and groups', () => {
     fireEvent.click(within(r1).getByRole('button', { name: T('admin.disable') }));
     reasonAndConfirm('Left the department');
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/users/u1/disable', { reason: 'Left the department' }));
-    fireEvent.click(screen.getByRole('button', { name: T('common.new') }));
-    const d = dialog();
-    expect((within(d).getByLabelText(L('admin.activeFlag')) as HTMLInputElement).checked).toBe(true);
-    type(d, 'admin.username', 'asha');
-    type(d, 'common.name', 'Asha');
-    fireEvent.click(buttonIn(d, 'common.save'));
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/users', { active: true, source: 'LOCAL', username: 'asha', displayName: 'Asha' }));
   });
 
   it('groups: members of the typed group are listed, added and removed', async () => {

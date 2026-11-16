@@ -9,7 +9,7 @@ import { useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ApiError, newIdempotencyKey } from '../../api/client';
-import { api } from '../../api/endpoints';
+import { api, type IncidentVerb } from '../../api/endpoints';
 import type { ConsequencePreview, ReconStatus } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate, fmtDuration, fmtMoney } from '../../i18n';
@@ -43,41 +43,42 @@ export function Incidents() {
   const piId = sp.get('processInstanceId') ?? undefined;
   const list = usePaged((p) => api.ops.incidents({ ...p, type: type || undefined, q, processDefinitionKey: defKey, processInstanceId: piId }), [type, q, defKey, piId]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulk, setBulk] = useState(false);
+  const [bulk, setBulk] = useState<BulkVerb | null>(null);
   const [failures, setFailures] = useState<{ id: string; label: string; error: Error }[]>([]);
-  // One idempotency key per incident, kept until that incident's retry succeeds, so confirming again after a timeout
-  // never retries an incident twice (R41); a key is dropped once its retry is done.
+  // One idempotency key per incident and command, kept until that command succeeds for the incident, so confirming
+  // again after a timeout never runs it twice (R41); a key is dropped once its command is done.
   const keys = useRef(new Map<string, string>());
   const act = useAction();
   /**
-   * Bulk retry is the retry of each selected incident (POST /ops/incidents/{id}/retry, the same command as the detail
-   * screen): the contract's BatchFilter has no incident ids, and a RETRY batch over instances would retry more than was
-   * selected. Each refusal is listed by incident and by name; the refused incidents stay selected for another try.
+   * A bulk retry, skip or cancel is that command for each selected incident (POST /ops/incidents/{id}/retry | skip |
+   * cancel, the same command as the detail screen): the contract's BatchFilter has no incident ids, and a batch over
+   * instances would act on more than was selected. Each refusal is listed by incident and by name; the refused
+   * incidents stay selected for another try.
    */
-  const retrySelected = async (reason: string) => {
+  const runSelected = async (verb: BulkVerb, reason: string) => {
     const ids = [...selected];
     const label = (id: string) => {
       const r = list.data?.items.find((x) => x.id === id);
       return r ? `${t(`ops.incType.${r.type}`, { defaultValue: r.type })} · ${r.businessKey ?? r.message ?? id}` : id;
     };
     const keyOf = (id: string) => {
-      let k = keys.current.get(id);
-      if (!k) keys.current.set(id, (k = newIdempotencyKey()));
+      let k = keys.current.get(`${verb}:${id}`);
+      if (!k) keys.current.set(`${verb}:${id}`, (k = newIdempotencyKey()));
       return k;
     };
-    const results = await act.run(() => Promise.allSettled(ids.map((id) => api.ops.incidentAction(id, 'retry', { reason }, keyOf(id)))));
+    const results = await act.run(() => Promise.allSettled(ids.map((id) => api.ops.incidentAction(id, verb, { reason }, keyOf(id)))));
     if (!results) return;
     const failed: { id: string; label: string; error: Error }[] = [];
     results.forEach((r, n) => {
-      if (r.status === 'fulfilled') keys.current.delete(ids[n]);
+      if (r.status === 'fulfilled') keys.current.delete(`${verb}:${ids[n]}`);
       else failed.push({ id: ids[n], label: label(ids[n]), error: r.reason instanceof Error ? r.reason : new Error(String(r.reason)) });
     });
     const done = ids.length - failed.length;
-    if (done > 0) announce(t('ops.bulkRetryDone', { n: done }));
+    if (done > 0) announce(t(`ops.${BULK[verb]}Done`, { n: done }));
     setFailures(failed);
     setSelected(new Set(failed.map((f) => f.id)));
     list.reload();
-    if (failed.length === 0) setBulk(false);
+    if (failed.length === 0) setBulk(null);
   };
   return (
     <>
@@ -95,15 +96,19 @@ export function Incidents() {
       {selected.size > 0 && (
         <div className="toolbar bulk">
           <span>{t('common.selectedN', { n: selected.size })}</span>
-          <button
-            type="button"
-            onClick={() => {
-              setFailures([]);
-              setBulk(true);
-            }}
-          >
-            {t('ops.bulkRetry')}
-          </button>
+          {(Object.keys(BULK) as BulkVerb[]).map((v) => (
+            <button
+              key={v}
+              type="button"
+              className={v === 'cancel' ? 'danger' : undefined}
+              onClick={() => {
+                setFailures([]);
+                setBulk(v);
+              }}
+            >
+              {t(`ops.${BULK[v]}`)}
+            </button>
+          ))}
         </div>
       )}
       <ProblemAlert error={list.error} onRetry={list.reload} />
@@ -134,17 +139,18 @@ export function Incidents() {
         </>
       )}
       <ReasonDialog
-        open={bulk}
-        title={t('ops.bulkRetry')}
+        open={bulk !== null}
+        title={bulk ? t(`ops.${BULK[bulk]}`) : ''}
+        danger={bulk === 'cancel'}
         busy={act.busy}
         error={act.error}
-        onClose={() => setBulk(false)}
-        onConfirm={(reason) => void retrySelected(reason)}
+        onClose={() => setBulk(null)}
+        onConfirm={(reason) => bulk && void runSelected(bulk, reason)}
       >
-        <Notice>{t('ops.bulkRetryHint', { n: selected.size })}</Notice>
-        {failures.length > 0 && (
+        {bulk && <Notice>{t(`ops.${BULK[bulk]}Hint`, { n: selected.size })}</Notice>}
+        {bulk && failures.length > 0 && (
           <div className="alert alert-bad" role="alert">
-            <strong>{t('ops.bulkRetryFailed', { n: failures.length })}</strong>
+            <strong>{t(`ops.${BULK[bulk]}Failed`, { n: failures.length })}</strong>
             <ul>
               {failures.map((f) => (
                 <li key={f.id}>
@@ -160,24 +166,32 @@ export function Incidents() {
   );
 }
 
+/** The bulk incident commands and the i18n stem of their labels (ops.<stem>, <stem>Hint, <stem>Done, <stem>Failed). */
+type BulkVerb = Exclude<IncidentVerb, 'resolve'>;
+const BULK: Record<BulkVerb, string> = { retry: 'bulkRetry', skip: 'bulkSkip', cancel: 'bulkCancel' };
+
 function cause(i: object, key: string) {
   const id = (i as Record<string, unknown>)[key];
   return id ? <Link key={key} to={`/ops/incidents/${encodeURIComponent(String(id))}`}>{String(id)}</Link> : undefined;
 }
+
+const ACTION_LABEL: Record<IncidentVerb, string> = { retry: 'ops.retry', resolve: 'ops.resolve', skip: 'ops.skip', cancel: 'ops.cancelInstance' };
 
 export function IncidentDetail() {
   const { id = '' } = useParams();
   const { t } = useTranslation();
   const { hasRole } = useAuth();
   const inc = useAsync(() => api.ops.incident(id), [id]);
-  const [action, setAction] = useState<'retry' | 'skip' | 'cancel' | null>(null);
+  const [action, setAction] = useState<IncidentVerb | null>(null);
   const [preview, setPreview] = useState<ConsequencePreview>();
   const [note, setNote] = useState('');
   const [trace, setTrace] = useState<string>();
   const act = useAction();
-  const open = async (a: 'retry' | 'skip' | 'cancel') => {
+  const open = async (a: IncidentVerb) => {
+    setPreview(undefined);
     setAction(a);
-    setPreview(await api.ops.incidentPreview(id, a).catch(() => undefined));
+    // the contract's preview covers retry, skip and cancel (GET /ops/incidents/{id}/preview?action=); resolve has none
+    if (a !== 'resolve') setPreview(await api.ops.incidentPreview(id, a).catch(() => undefined));
   };
   if (inc.loading && !inc.data) return <Loading />;
   if (!inc.data) return <ProblemAlert error={inc.error} onRetry={inc.reload} />;
@@ -193,6 +207,15 @@ export function IncidentDetail() {
             </button>
             <button type="button" className="primary" onClick={() => void open('retry')}>
               {t('ops.retry')}
+            </button>
+            <button type="button" onClick={() => void open('skip')}>
+              {t('ops.skip')}
+            </button>
+            <button type="button" onClick={() => void open('resolve')}>
+              {t('ops.resolve')}
+            </button>
+            <button type="button" className="danger" onClick={() => void open('cancel')}>
+              {t('ops.cancelInstance')}
             </button>
             {i.processInstanceId && (
               <Link to={`/ops/instances/${encodeURIComponent(i.processInstanceId)}`}>{t('ops.modifyInInstance')}</Link>
@@ -253,13 +276,14 @@ export function IncidentDetail() {
       </Section>
       <ReasonDialog
         open={action !== null}
-        title={action ? t(`ops.${action}`) : ''}
+        title={action ? t(ACTION_LABEL[action]) : ''}
         preview={preview}
+        danger={action === 'cancel'}
         busy={act.busy}
         error={act.error}
         onClose={() => setAction(null)}
         onConfirm={(reason) =>
-          void act.run((k) => api.ops.incidentAction(id, action === 'retry' ? 'retry' : 'resolve', { reason }, k).then(() => true)).then((ok) => {
+          action && void act.run((k) => api.ops.incidentAction(id, action, { reason }, k).then(() => true)).then((ok) => {
             if (ok) {
               setAction(null);
               announce(t('ops.actionDone'));

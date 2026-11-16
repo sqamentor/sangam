@@ -246,7 +246,54 @@ describe('incidents', () => {
     await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
     expect(api.post).toHaveBeenCalledWith('/ops/incidents/inc2/retry', { reason: 'Gateway is back up', retries: undefined, annotation: undefined }, firstKey);
     await waitFor(noDialog);
-  });});
+  });
+
+  // Round 6 item 2: skip and cancel (POST /ops/incidents/{id}/skip | cancel, IncidentAction with a mandatory reason)
+  const pickBothFor = async (label: string) => {
+    fireEvent.click(within(rowWith(await screen.findByText('Gateway timeout').then((e) => e.textContent!))).getByRole('checkbox'));
+    fireEvent.click(within(rowWith('Bank refused')).getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: T(label) }));
+  };
+
+  it.each([
+    ['skip', 'ops.bulkSkip', 'ops.bulkSkipHint'],
+    ['cancel', 'ops.bulkCancel', 'ops.bulkCancelHint'],
+  ])('bulk %s calls each selected incident on its own route with a key per incident and the reason', async (verb, label, hint) => {
+    pages['/ops/incidents'] = pageOf(two);
+    show(<Incidents />);
+    await pickBothFor(label);
+    expect(within(dialog()).getByText(T(hint, { n: 2 }))).toBeTruthy();
+    reasonAndConfirm('Customer withdrew the application');
+    const body = { reason: 'Customer withdrew the application', retries: undefined, annotation: undefined };
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(2));
+    expect(api.post).toHaveBeenCalledWith(`/ops/incidents/inc1/${verb}`, body, KEY);
+    expect(api.post).toHaveBeenCalledWith(`/ops/incidents/inc2/${verb}`, body, KEY);
+    const [k1, k2] = api.post.mock.calls.map((c) => c[2] as string);
+    expect(k1).not.toBe(k2);
+    await waitFor(noDialog);
+  });
+
+  it('a partial bulk skip names each refused incident by its code; a second confirm skips only those, under the same key', async () => {
+    pages['/ops/incidents'] = pageOf(two);
+    api.post.mockImplementation(async (path: string) => {
+      if (path === '/ops/incidents/inc2/skip') throw problem(422, 'INCIDENT_NOT_SKIPPABLE');
+      return {};
+    });
+    show(<Incidents />);
+    await pickBothFor('ops.bulkSkip');
+    reasonAndConfirm('Customer withdrew the application');
+    const d = dialog();
+    expect(await within(d).findByText(T('ops.bulkSkipFailed', { n: 1 }))).toBeTruthy();
+    expect(within(d).getByText(`${T('ops.incType.failedJob')} · APP-10: ${T('error.code.INCIDENT_NOT_SKIPPABLE')} (INCIDENT_NOT_SKIPPABLE)`)).toBeTruthy();
+    const firstKey = api.post.mock.calls.find((c) => c[0] === '/ops/incidents/inc2/skip')![2];
+    api.post.mockClear();
+    api.post.mockResolvedValue({});
+    fireEvent.click(confirmIn(d));
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+    expect(api.post).toHaveBeenCalledWith('/ops/incidents/inc2/skip', { reason: 'Customer withdrew the application', retries: undefined, annotation: undefined }, firstKey);
+    await waitFor(noDialog);
+  });
+});
 
 /** Evidence: IncidentsRecon.tsx:122-223; endpoints.ts:452-458, 481 (stack trace). */
 describe('incident detail', () => {
@@ -284,6 +331,39 @@ describe('incident detail', () => {
     fireEvent.click(await screen.findByRole('button', { name: T('ops.retry') }));
     reasonAndConfirm('Gateway is back up');
     expect(await within(dialog()).findByText(T('error.conflict'))).toBeTruthy();
+  });
+
+  it.each([
+    ['skip', 'ops.skip'],
+    ['cancel', 'ops.cancelInstance'],
+  ])('%s shows its consequence preview and sends the reason to its own route under an idempotency key', async (verb, label) => {
+    routes['/ops/incidents/inc1'] = inc;
+    routes['/ops/incidents/inc1/preview'] = { summary: [`What ${verb} does`], affectedCount: 1 };
+    open();
+    fireEvent.click(await screen.findByRole('button', { name: T(label) }));
+    expect(await within(dialog()).findByText(`What ${verb} does`)).toBeTruthy();
+    expect(api.get).toHaveBeenCalledWith('/ops/incidents/inc1/preview', { action: verb });
+    reasonAndConfirm('Customer withdrew the application');
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith(`/ops/incidents/inc1/${verb}`, { reason: 'Customer withdrew the application', retries: undefined, annotation: undefined }, KEY));
+  });
+
+  it('resolve asks for a reason and sends it to the resolve route; the contract has no resolve preview', async () => {
+    routes['/ops/incidents/inc1'] = inc;
+    open();
+    fireEvent.click(await screen.findByRole('button', { name: T('ops.resolve') }));
+    reasonAndConfirm('Fixed by hand in the ledger');
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/ops/incidents/inc1/resolve', { reason: 'Fixed by hand in the ledger', retries: undefined, annotation: undefined }, KEY));
+    expect(api.get.mock.calls.some((c) => c[0] === '/ops/incidents/inc1/preview')).toBe(false);
+  });
+
+  it('a refused skip is shown by its code and the dialog stays open', async () => {
+    routes['/ops/incidents/inc1'] = inc;
+    routes['/ops/incidents/inc1/preview'] = { summary: ['The token moves on'] };
+    api.post.mockRejectedValueOnce(problem(422, 'INCIDENT_NOT_SKIPPABLE', 'no active token'));
+    open();
+    fireEvent.click(await screen.findByRole('button', { name: T('ops.skip') }));
+    reasonAndConfirm('Customer withdrew the application');
+    expect(await within(dialog()).findByText(T('error.code.INCIDENT_NOT_SKIPPABLE'))).toBeTruthy();
   });
 
   it('the stack trace is offered to a platform operator only (R28)', async () => {
