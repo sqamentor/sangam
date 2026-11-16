@@ -263,11 +263,14 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
         if (ctx.seatId() != null && !groups.contains(ctx.seatId())) {
             groups.add(ctx.seatId());
         }
-        q.or().taskAssignee(ctx.principalId()).taskCandidateUser(ctx.principalId());
+        // Operaton's or() returns the OR branch: every criterion of the branch and endOr() go on that object, as in
+        // OperatonTaskAdapter. On q the engine refused "cannot set endOr() before or()", so every task count and the
+        // field-visit list answered 500 for anyone who is not a supervisor (R7-ui sweep, task-user role).
+        TaskQuery any = q.or().taskAssignee(ctx.principalId()).taskCandidateUser(ctx.principalId());
         if (!groups.isEmpty()) {
-            q.taskCandidateGroupIn(groups);
+            any.taskCandidateGroupIn(groups);
         }
-        return q.endOr();
+        return any.endOr();
     }
 
     @Override
