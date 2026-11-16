@@ -43,9 +43,41 @@ import {
 
 // ------------------------------------------------------------------ A01 tenants
 
-export function Tenants() {
+/** TenantReadiness (POST /admin/tenants/{id}/validate): the activation check as a dry run. */
+interface TenantReadiness { tenantId: string; status?: string; ready: boolean; required: string[]; missing: string[] }
+
+/** The answer as a TenantReadiness, or undefined when it is not one (nothing is shown rather than a guess). */
+function asReadiness(v: unknown): TenantReadiness | undefined {
+  const r = v as Partial<TenantReadiness> | null;
+  return r && typeof r.tenantId === 'string' && typeof r.ready === 'boolean' && Array.isArray(r.required) && Array.isArray(r.missing) ? (r as TenantReadiness) : undefined;
+}
+
+function Readiness({ r }: { r: TenantReadiness }) {
   const { t } = useTranslation();
   return (
+    <Section title={t('admin.readinessOf', { id: r.tenantId })}>
+      <Notice tone={r.ready ? 'ok' : 'warn'}>{t(r.ready ? 'admin.ready' : 'admin.notReady')}</Notice>
+      {r.missing.length > 0 && (
+        <>
+          <h3>{t('admin.readinessMissing')}</h3>
+          <ul aria-label={t('admin.readinessMissing')}>{r.missing.map((m) => <li key={m}>{m}</li>)}</ul>
+        </>
+      )}
+      <h3>{t('admin.readinessRequired')}</h3>
+      <ul aria-label={t('admin.readinessRequired')}>{r.required.map((m) => <li key={m}>{m}</li>)}</ul>
+    </Section>
+  );
+}
+
+/**
+ * A01 tenants. validate shows the readiness report; activate (reason optional in the contract, asked for here) and
+ * suspend (reason mandatory) are refused by name by the server (409 ACTIVATION_BLOCKED, TENANT_ACTIVATION_BY_OWN_ADMIN).
+ */
+export function Tenants() {
+  const { t } = useTranslation();
+  const [readiness, setReadiness] = useState<TenantReadiness>();
+  return (
+    <>
     <CrudPage<Tenant>
       title={t('admin.tenantsTitle')}
       description={t('admin.tenantsDesc')}
@@ -68,11 +100,13 @@ export function Tenants() {
         { key: 'admins', type: 'textarea', label: 'admin.tenantAdmins', description: 'admin.tenantAdminsHint' },
       ]}
       rowActions={[
-        { id: 'validate', label: 'admin.validate' },
+        { id: 'validate', label: 'admin.validate', onResult: (_r, res) => setReadiness(asReadiness(res)) },
         { id: 'activate', label: 'admin.activate', reason: true, visible: (r) => r.status !== 'ACTIVE' },
         { id: 'suspend', label: 'admin.suspendTenant', reason: true, danger: true, visible: (r) => r.status === 'ACTIVE' },
       ]}
     />
+    {readiness && <Readiness r={readiness} />}
+    </>
   );
 }
 
@@ -320,7 +354,8 @@ export function Seats() {
         { key: 'validFrom', type: 'datetime', subtype: 'date', label: 'admin.validFrom', validate: { required: true } },
         { key: 'validTo', type: 'datetime', subtype: 'date', label: 'admin.validTo' },
       ]}
-      rowActions={[{ id: 'deactivate', label: 'admin.deactivate', reason: true, danger: true, visible: (r) => !!r.active }]}
+      // deleteSeat: DELETE /admin/seats/{id}?reason= is the contract's deactivation (there is no /deactivate route)
+      rowActions={[{ id: 'deactivate', label: 'admin.deactivate', reason: true, danger: true, remove: true, visible: (r) => !!r.active }]}
     />
   );
 }
@@ -955,6 +990,13 @@ export function SodExceptions() {
 
 // ------------------------------------------------------------------ users, groups
 
+/** The given keys of a form's values that hold something (a blank text is left out, as the contract's optional fields). */
+function pick(v: Record<string, unknown>, keys: string[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of keys) if (v[k] !== undefined && v[k] !== null && v[k] !== '') out[k] = v[k];
+  return out;
+}
+
 export function Users() {
   const { t } = useTranslation();
   return (
@@ -970,12 +1012,18 @@ export function Users() {
         { key: 'active', label: 'admin.status', render: (r) => <Badge value={r.active ? 'ACTIVE' : 'INACTIVE'} /> },
         { key: 'lastLogin', label: 'admin.lastLogin', render: (r) => fmtDate(r.lastLogin) },
       ]}
+      // UserRequest: a new user is LOCAL and active (active=false is refused: disable afterwards, with a reason), so there
+      // is no active box; an update changes the display name and e-mail only
       fields={[
         { key: 'username', type: 'textfield', label: 'admin.username', validate: { required: true } },
         { key: 'displayName', type: 'textfield', label: 'common.name', validate: { required: true } },
         { key: 'email', type: 'textfield', label: 'admin.email' },
-        { key: 'active', type: 'checkbox', label: 'admin.activeFlag' },
       ]}
+      editFields={[
+        { key: 'displayName', type: 'textfield', label: 'common.name', validate: { required: true } },
+        { key: 'email', type: 'textfield', label: 'admin.email' },
+      ]}
+      toBody={(v, creating) => pick(v, creating ? ['id', 'username', 'displayName', 'email', 'active', 'source'] : ['displayName', 'email'])}
       rowActions={[{ id: 'disable', label: 'admin.disable', reason: true, danger: true, visible: (r) => !!r.active }]}
     />
   );
@@ -1003,6 +1051,9 @@ export function Groups() {
           { key: 'name', type: 'textfield', label: 'common.name', validate: { required: true } },
           { key: 'type', type: 'textfield', label: 'admin.kind' },
         ]}
+        // updateGroup renames only: memberships and the IdP or SCIM reference are kept
+        editFields={[{ key: 'name', type: 'textfield', label: 'common.name', validate: { required: true } }]}
+        toBody={(v, creating) => pick(v, creating ? ['id', 'name', 'type'] : ['name'])}
       />
       <Section title={t('admin.membership')}>
         <div className="filters">
