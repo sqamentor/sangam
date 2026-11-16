@@ -208,6 +208,28 @@ class NoElectionRefusal(unittest.TestCase):
             ch = check([comp(purl, expr="EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0")])
             self.assertEqual([], ch.errors, purl)
 
+    def test_jersey_media_json_jackson_elects_epl_from_its_own_texts_not_apache(self):
+        # decision 385 (4): its NOTICE files and LICENSE.md name EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0; the
+        # Apache-2.0 election of decision 117 read a third-party notice line of the POM
+        purl = "pkg:maven/org.glassfish.jersey.media/jersey-media-json-jackson@4.0.3"
+        entries = [e for e in POLICY["elections"] if purl in e.get("purls", [])]
+        self.assertEqual(1, len(entries), entries)
+        e = entries[0]
+        self.assertEqual([purl], e["purls"], "elected on its own")
+        self.assertEqual("EPL-2.0", e["elected"])
+        self.assertIn("385", e["decision"])
+        self.assertIn("SHA-256 cd84f283624bfaf35e354353162d5c701a297fb59aa78e5e2b347dfd09c20860", e["evidence"])
+        self.assertIn("META-INF/NOTICE.md", e["evidence"])
+        self.assertIn("META-INF/LICENSE.md", e["evidence"])
+        self.assertFalse(any(purl in x.get("purls", []) for x in POLICY["elections"] if x["elected"] == "Apache-2.0"))
+        names = dict(SIMGATE)[purl]
+        ch = check([comp(purl, *names)])
+        self.assertEqual([], ch.errors, ch.errors)
+        self.assertTrue(any("ELECTED" in n and "EPL-2.0" in n for n in ch.notes), ch.notes)
+        self.assertFalse(any("Apache-2.0" in n and "ELECTED" in n for n in ch.notes), ch.notes)
+        ch = check([comp(purl, expr="EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0")])
+        self.assertEqual([], ch.errors, ch.errors)
+
     def test_annotate_records_a_class_election(self):
         import tempfile as tf
         with tf.TemporaryDirectory() as d:

@@ -73,13 +73,14 @@
       "evidence": "jersey-spring6-4.0.3.jar (SHA-256 be6f4b265c818611df2ed5b237af5f3ce0752d574b0378a2e9cd500a354f19ac): META-INF/NOTICE.md SPDX-License-Identifier EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0; META-INF/LICENSE.md carries both licence texts (read 2026-11-16, round 6 lane v1)" },
     { "elected": "EPL-2.0", "decision": "117, 176 and 383 (one by one from the carried texts)", "purls": ["pkg:maven/org.glassfish.jersey.inject/jersey-hk2@4.0.3"],
       "evidence": "jersey-hk2-4.0.3.jar (SHA-256 fa9332d19d2607a31fe26cf52065f5ee86a763f1a091668a4d5351202a84babe): META-INF/NOTICE.md SPDX-License-Identifier EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0; META-INF/LICENSE.md carries both licence texts (read 2026-11-16, round 6 lane v1)" },
+    { "elected": "EPL-2.0", "decision": "117 corrected by 385 (4) (from its own carried texts)", "purls": ["pkg:maven/org.glassfish.jersey.media/jersey-media-json-jackson@4.0.3"],
+      "evidence": "jersey-media-json-jackson-4.0.3.jar (SHA-256 cd84f283624bfaf35e354353162d5c701a297fb59aa78e5e2b347dfd09c20860): META-INF/NOTICE.md and META-INF/NOTICE.markdown SPDX-License-Identifier EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0; META-INF/LICENSE.md carries both licence texts; the Apache License, 2.0 lines there are notices of third-party content, not the jar's licence (read 2026-11-16, round 6 lane v1)" },
     { "elected": "BSD-3-Clause", "decision": "117 (EDL-1.0, which is BSD-3-Clause)", "purls": [
       "pkg:maven/jakarta.mail/jakarta.mail-api@2.1.5", "pkg:maven/org.eclipse.angus/angus-mail@2.0.4",
       "pkg:maven/org.eclipse.angus/angus-mail@2.0.5"
     ] },
     { "elected": "Apache-2.0", "decision": "117", "purls": [
       "pkg:maven/org.javassist/javassist@3.33.0-GA", "pkg:maven/com.rabbitmq/amqp-client@5.37.1",
-      "pkg:maven/org.glassfish.jersey.media/jersey-media-json-jackson@4.0.3",
       "pkg:maven/com.github.javaparser/javaparser-core@3.28.2", "pkg:maven/net.java.dev.jna/jna@5.13.0",
       "pkg:maven/net.java.dev.jna/jna@5.17.0", "pkg:maven/net.java.dev.jna/jna-platform@5.17.0",
       "pkg:npm/dompurify@3.4.17", "pkg:cargo/ryu@1.0.17"
