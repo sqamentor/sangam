@@ -282,7 +282,8 @@ def write_all(root):
     xmls_of, resources_of, own_gates, calls_of = {}, {}, {}, {}
     # decisions 382 and 385 (1): a call into a DSC gate process gets its prepare task, then precedence is checked
     pack_of = {p.pid: pk for pk in ALL for p in pk.procs}
-    prepare.apply([p for pk in ALL for p in pk.procs], lambda p: pack_of[p.pid].prepare_seats)
+    prepare.apply([p for pk in ALL for p in pk.procs], lambda p: pack_of[p.pid].prepare_seats,
+                  lambda p: pack_of[p.pid].dir)
     for pk in ALL:
         base = os.path.join(root, 'packs', pk.dir)
         os.makedirs(os.path.join(base, 'forms'), exist_ok=True)

@@ -18,6 +18,7 @@ import org.sangam.core.engine.IncidentSink;
 import org.sangam.core.engine.JobIdentityBinder;
 import org.sangam.core.engine.TimerCatchUpPolicy;
 import org.sangam.core.engine.WorkCalendar;
+import org.sangam.core.history.HistoryArchiveGate;
 
 /**
  * Typed configuration facade of the Sangam engine (FLOWABLE-INTO-OPERATON D-53): every setting Sangam changes on Operaton's 5,000-line
@@ -267,6 +268,13 @@ public class SangamEngineSettings {
     /** VI.4 rule 7: binds the tenant's system identity around job execution; server: {@code TenantContext::runAs}. */
     private JobIdentityBinder jobIdentityBinder;
     /**
+     * RM-52 (decision 386): asked before the engine deletes the history of a process tree (every
+     * {@code HistoryService} delete, the history cleanup, a cascade delete); a tree it refuses keeps its history and
+     * the command fails. Default: {@link HistoryArchiveGate#notConfigured()}, which refuses every tree, so history is
+     * never purged until a host configures the archive (server: {@code sangam.history.archive.*}).
+     */
+    private HistoryArchiveGate historyArchiveGate = HistoryArchiveGate.notConfigured();
+    /**
      * M-062 (R13): engine spans per command and job. {@link org.sangam.engine.trace.EngineTracing#NONE} (default)
      * installs nothing; outbound telemetry stays off by default (R56).
      */
@@ -385,6 +393,15 @@ public class SangamEngineSettings {
     public void setExpiryPolicy(ExpiryPolicy v) { mutable("expiryPolicy"); expiryPolicy = v; }
     public AuditSink getAuditSink() { return auditSink; }
     public void setAuditSink(AuditSink v) { mutable("auditSink"); auditSink = v; }
+    public HistoryArchiveGate getHistoryArchiveGate() { return historyArchiveGate; }
+    /** RM-52: a null gate is refused; there is no "purge without archive" setting. */
+    public void setHistoryArchiveGate(HistoryArchiveGate v) {
+        mutable("historyArchiveGate");
+        if (v == null) {
+            throw new IllegalArgumentException("historyArchiveGate must not be null");
+        }
+        historyArchiveGate = v;
+    }
     public IncidentSink getIncidentSink() { return incidentSink; }
     public void setIncidentSink(IncidentSink v) { mutable("incidentSink"); incidentSink = v; }
     public EngineEventSink getEventSink() { return eventSink; }

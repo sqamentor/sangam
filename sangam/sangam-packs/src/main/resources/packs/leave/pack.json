@@ -44,6 +44,10 @@
       "path": "packs/leave/forms/joining.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/leave/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/leave/seed.json"
     },

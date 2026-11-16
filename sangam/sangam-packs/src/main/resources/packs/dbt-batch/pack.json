@@ -33,6 +33,10 @@
     },
     {
       "kind": "FORM",
+      "path": "packs/dbt-batch/forms/prepare-sanction-note.form.json"
+    },
+    {
+      "kind": "FORM",
       "path": "packs/dbt-batch/forms/fix-record.form.json"
     },
     {

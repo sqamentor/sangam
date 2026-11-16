@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0. M-136 (decision 151) synthetic replay scenario: the verdict reads the FEEL clock
+     (now()), so a replay must serve the recorded clock read. -->
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="grantVerdictDefinitions" name="Grant verdict"
+             namespace="urn:sangam:replay:grant-verdict">
+  <decision id="grantVerdict" name="Grant verdict">
+    <decisionTable id="grantVerdictTable" hitPolicy="FIRST">
+      <input id="scoreInput" label="Score">
+        <inputExpression id="scoreExpression" typeRef="number"><text>score</text></inputExpression>
+      </input>
+      <input id="termInput" label="Within the scheme term">
+        <inputExpression id="termExpression" typeRef="boolean"><text>now() &lt; date and time("2027-04-01T00:00:00@UTC")</text></inputExpression>
+      </input>
+      <output id="verdictOutput" name="verdict" typeRef="string"/>
+      <rule id="approve">
+        <inputEntry id="approveScore"><text>&gt;= 600</text></inputEntry>
+        <inputEntry id="approveTerm"><text>true</text></inputEntry>
+        <outputEntry id="approveVerdict"><text>"APPROVE"</text></outputEntry>
+      </rule>
+      <rule id="refer">
+        <inputEntry id="referScore"><text>-</text></inputEntry>
+        <inputEntry id="referTerm"><text>-</text></inputEntry>
+        <outputEntry id="referVerdict"><text>"REVIEW"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

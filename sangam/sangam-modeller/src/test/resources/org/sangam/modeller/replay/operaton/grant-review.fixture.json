@@ -1,0 +1,349 @@
+{
+  "schemaVersion" : "sangam.replay-fixture/1",
+  "fixtureId" : "grant-review-h2-1",
+  "scenario" : "Synthetic grant review: scoring fails, times out and succeeds; documents arrive; the verdict reads the FEEL clock; a cooling-off timer; the applicant is notified",
+  "synthetic" : true,
+  "models" : [ {
+    "resource" : "grant-review.bpmn",
+    "kind" : "BPMN",
+    "definitionKey" : "grantReview",
+    "version" : 1,
+    "sha256" : "27cb211d61d818d12d41560171c8fd8267ff270d59bc436d8fa5fe6027100b4b",
+    "content" : "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- SPDX-License-Identifier: Apache-2.0. M-136 (decision 151) synthetic replay scenario: an external scoring task (retried\n     after a failure and a lease timeout), a document message, a DMN verdict that reads the FEEL clock, a cooling-off\n     timer, then a notification task (APPROVE) or a manual review (anything else). -->\n<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n             xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n             xmlns:operaton=\"http://operaton.org/schema/1.0/bpmn\"\n             id=\"grantReviewDefinitions\" targetNamespace=\"urn:sangam:replay:grant-review\">\n  <message id=\"documentsMessage\" name=\"documentsReceived\"/>\n  <process id=\"grantReview\" name=\"Grant review (synthetic)\" isExecutable=\"true\">\n    <startEvent id=\"start\"/>\n    <sequenceFlow id=\"toScore\" sourceRef=\"start\" targetRef=\"score\"/>\n    <serviceTask id=\"score\" name=\"Score the application\" operaton:type=\"external\" operaton:topic=\"replay.score\">\n      <!-- a read, safe to repeat: an expired lease re-offers the work (A-10 class a), so the scenario can time out -->\n      <extensionElements>\n        <operaton:properties><operaton:property name=\"sangam:capabilityClass\" value=\"a\"/></operaton:properties>\n      </extensionElements>\n    </serviceTask>\n    <sequenceFlow id=\"toDocuments\" sourceRef=\"score\" targetRef=\"documents\"/>\n    <intermediateCatchEvent id=\"documents\" name=\"Documents received\">\n      <messageEventDefinition messageRef=\"documentsMessage\"/>\n    </intermediateCatchEvent>\n    <sequenceFlow id=\"toDecide\" sourceRef=\"documents\" targetRef=\"decide\"/>\n    <businessRuleTask id=\"decide\" name=\"Verdict\" operaton:decisionRef=\"grantVerdict\" operaton:decisionRefBinding=\"deployment\"\n                      operaton:mapDecisionResult=\"singleEntry\" operaton:resultVariable=\"verdict\"/>\n    <sequenceFlow id=\"toCooling\" sourceRef=\"decide\" targetRef=\"cooling\"/>\n    <intermediateCatchEvent id=\"cooling\" name=\"Cooling-off period\">\n      <timerEventDefinition><timeDuration>PT1H</timeDuration></timerEventDefinition>\n    </intermediateCatchEvent>\n    <sequenceFlow id=\"toRoute\" sourceRef=\"cooling\" targetRef=\"route\"/>\n    <exclusiveGateway id=\"route\"/>\n    <sequenceFlow id=\"toNotify\" sourceRef=\"route\" targetRef=\"notify\">\n      <conditionExpression xsi:type=\"tFormalExpression\">${verdict == 'APPROVE'}</conditionExpression>\n    </sequenceFlow>\n    <sequenceFlow id=\"toReview\" sourceRef=\"route\" targetRef=\"review\">\n      <conditionExpression xsi:type=\"tFormalExpression\">${verdict != 'APPROVE'}</conditionExpression>\n    </sequenceFlow>\n    <serviceTask id=\"notify\" name=\"Notify the applicant\" operaton:type=\"external\" operaton:topic=\"replay.notify\"/>\n    <sequenceFlow id=\"toApproved\" sourceRef=\"notify\" targetRef=\"approved\"/>\n    <endEvent id=\"approved\"/>\n    <userTask id=\"review\" name=\"Manual review\"/>\n    <sequenceFlow id=\"toReviewed\" sourceRef=\"review\" targetRef=\"reviewed\"/>\n    <endEvent id=\"reviewed\"/>\n  </process>\n</definitions>\n",
+    "reference" : null
+  }, {
+    "resource" : "grant-verdict.dmn",
+    "kind" : "DMN",
+    "definitionKey" : "grantVerdict",
+    "version" : 1,
+    "sha256" : "522c342fd99c277eda48e4d4367a87e92e973527798a8230a4be57d5af5a8bc0",
+    "content" : "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- SPDX-License-Identifier: Apache-2.0. M-136 (decision 151) synthetic replay scenario: the verdict reads the FEEL clock\n     (now()), so a replay must serve the recorded clock read. -->\n<definitions xmlns=\"https://www.omg.org/spec/DMN/20191111/MODEL/\" id=\"grantVerdictDefinitions\" name=\"Grant verdict\"\n             namespace=\"urn:sangam:replay:grant-verdict\">\n  <decision id=\"grantVerdict\" name=\"Grant verdict\">\n    <decisionTable id=\"grantVerdictTable\" hitPolicy=\"FIRST\">\n      <input id=\"scoreInput\" label=\"Score\">\n        <inputExpression id=\"scoreExpression\" typeRef=\"number\"><text>score</text></inputExpression>\n      </input>\n      <input id=\"termInput\" label=\"Within the scheme term\">\n        <inputExpression id=\"termExpression\" typeRef=\"boolean\"><text>now() &lt; date and time(\"2027-04-01T00:00:00@UTC\")</text></inputExpression>\n      </input>\n      <output id=\"verdictOutput\" name=\"verdict\" typeRef=\"string\"/>\n      <rule id=\"approve\">\n        <inputEntry id=\"approveScore\"><text>&gt;= 600</text></inputEntry>\n        <inputEntry id=\"approveTerm\"><text>true</text></inputEntry>\n        <outputEntry id=\"approveVerdict\"><text>\"APPROVE\"</text></outputEntry>\n      </rule>\n      <rule id=\"refer\">\n        <inputEntry id=\"referScore\"><text>-</text></inputEntry>\n        <inputEntry id=\"referTerm\"><text>-</text></inputEntry>\n        <outputEntry id=\"referVerdict\"><text>\"REVIEW\"</text></outputEntry>\n      </rule>\n    </decisionTable>\n  </decision>\n</definitions>\n",
+    "reference" : null
+  } ],
+  "initialState" : {
+    "definitionKey" : "grantReview",
+    "businessKey" : "SYN-GR-0001",
+    "variables" : {
+      "applicant" : {
+        "type" : "STRING",
+        "value" : "SYN-APPLICANT-0001",
+        "zone" : null
+      },
+      "requested" : {
+        "type" : "DECIMAL",
+        "value" : "125000.50",
+        "zone" : null
+      }
+    }
+  },
+  "configuration" : {
+    "engine.expiryPolicy" : "default",
+    "engine.history" : "full",
+    "engine.maxExecutionsPerJobDefinitionPerCall" : "50",
+    "engine.maxJobExecutionsPerCall" : "1000",
+    "engine.maxLease" : "PT24H",
+    "engine.timeZone" : "Z"
+  },
+  "tenant" : {
+    "tenantId" : "t-replay",
+    "actorId" : "synthetic-officer",
+    "zoneId" : "UTC"
+  },
+  "versions" : {
+    "engine" : "operaton 2.2.0",
+    "evaluator" : "SangamFeelEngineFactory/feel-engine-1.22.1/strict",
+    "product" : null
+  },
+  "startedAt" : "2026-11-16T04:00:00Z",
+  "events" : [ {
+    "seq" : 1,
+    "type" : "EXTERNAL_TASK_RESULT",
+    "executionId" : "5b9a03bc-e171-11f1-a607-98fa9b647887",
+    "activityId" : "score",
+    "attempt" : 1,
+    "at" : "2026-11-16T04:01:00Z",
+    "outcome" : "FAILURE",
+    "retriesLeft" : 2,
+    "payload" : {
+      "errorMessage" : {
+        "type" : "STRING",
+        "value" : "scoring service unavailable",
+        "zone" : null
+      }
+    },
+    "activityInstanceId" : "score:5b9a03bd-e171-11f1-a607-98fa9b647887"
+  }, {
+    "seq" : 2,
+    "type" : "EXTERNAL_TASK_RESULT",
+    "executionId" : "5b9a03bc-e171-11f1-a607-98fa9b647887",
+    "activityId" : "score",
+    "attempt" : 2,
+    "at" : "2026-11-16T04:03:00Z",
+    "outcome" : "TIMEOUT",
+    "retriesLeft" : null,
+    "payload" : { },
+    "activityInstanceId" : "score:5b9a03bd-e171-11f1-a607-98fa9b647887"
+  }, {
+    "seq" : 3,
+    "type" : "EXTERNAL_TASK_RESULT",
+    "executionId" : "5b9a03bc-e171-11f1-a607-98fa9b647887",
+    "activityId" : "score",
+    "attempt" : 3,
+    "at" : "2026-11-16T04:03:00Z",
+    "outcome" : "SUCCESS",
+    "retriesLeft" : null,
+    "payload" : {
+      "rate" : {
+        "type" : "DECIMAL",
+        "value" : "7.25",
+        "zone" : null
+      },
+      "score" : {
+        "type" : "LONG",
+        "value" : "700",
+        "zone" : null
+      }
+    },
+    "activityInstanceId" : "score:5b9a03bd-e171-11f1-a607-98fa9b647887"
+  }, {
+    "seq" : 4,
+    "type" : "MESSAGE_DELIVERED",
+    "executionId" : "5bc161e6-e171-11f1-a607-98fa9b647887",
+    "activityId" : "documents",
+    "attempt" : 1,
+    "at" : "2026-11-16T04:10:00Z",
+    "outcome" : null,
+    "retriesLeft" : null,
+    "payload" : {
+      "correlationKey" : {
+        "type" : "STRING",
+        "value" : "SYN-GR-0001",
+        "zone" : null
+      },
+      "documentsComplete" : {
+        "type" : "BOOLEAN",
+        "value" : "true",
+        "zone" : null
+      },
+      "messageName" : {
+        "type" : "STRING",
+        "value" : "documentsReceived",
+        "zone" : null
+      }
+    },
+    "activityInstanceId" : "documents:5bc1d718-e171-11f1-a607-98fa9b647887"
+  }, {
+    "seq" : 5,
+    "type" : "CLOCK_READ",
+    "executionId" : "5bc92a1b-e171-11f1-a607-98fa9b647887",
+    "activityId" : "decide",
+    "attempt" : 1,
+    "at" : "2026-11-16T04:10:00Z",
+    "outcome" : null,
+    "retriesLeft" : null,
+    "payload" : { },
+    "activityInstanceId" : "decide:5bc92a1c-e171-11f1-a607-98fa9b647887"
+  }, {
+    "seq" : 6,
+    "type" : "TIMER_SCHEDULED",
+    "executionId" : "5bef27b3-e171-11f1-a607-98fa9b647887",
+    "activityId" : "cooling",
+    "attempt" : 1,
+    "at" : "2026-11-16T04:10:00Z",
+    "outcome" : null,
+    "retriesLeft" : null,
+    "payload" : {
+      "dueAt" : {
+        "type" : "INSTANT",
+        "value" : "2026-11-16T05:10:00Z",
+        "zone" : null
+      },
+      "timerId" : {
+        "type" : "STRING",
+        "value" : "5bf0fc75-e171-11f1-a607-98fa9b647887",
+        "zone" : null
+      }
+    },
+    "activityInstanceId" : null
+  }, {
+    "seq" : 7,
+    "type" : "TIMER_FIRED",
+    "executionId" : "5bef27b3-e171-11f1-a607-98fa9b647887",
+    "activityId" : "cooling",
+    "attempt" : 1,
+    "at" : "2026-11-16T06:00:00Z",
+    "outcome" : null,
+    "retriesLeft" : null,
+    "payload" : {
+      "timerId" : {
+        "type" : "STRING",
+        "value" : "5bf0fc75-e171-11f1-a607-98fa9b647887",
+        "zone" : null
+      }
+    },
+    "activityInstanceId" : "cooling:5bef27b4-e171-11f1-a607-98fa9b647887"
+  }, {
+    "seq" : 8,
+    "type" : "EXTERNAL_TASK_RESULT",
+    "executionId" : "5bf84f78-e171-11f1-a607-98fa9b647887",
+    "activityId" : "notify",
+    "attempt" : 1,
+    "at" : "2026-11-16T06:00:00Z",
+    "outcome" : "SUCCESS",
+    "retriesLeft" : null,
+    "payload" : {
+      "notified" : {
+        "type" : "BOOLEAN",
+        "value" : "true",
+        "zone" : null
+      }
+    },
+    "activityInstanceId" : "notify:5bf84f79-e171-11f1-a607-98fa9b647887"
+  } ],
+  "observed" : {
+    "endState" : "COMPLETED",
+    "outputs" : {
+      "applicant" : {
+        "type" : "STRING",
+        "value" : "SYN-APPLICANT-0001",
+        "zone" : null
+      },
+      "documentsComplete" : {
+        "type" : "BOOLEAN",
+        "value" : "true",
+        "zone" : null
+      },
+      "notified" : {
+        "type" : "BOOLEAN",
+        "value" : "true",
+        "zone" : null
+      },
+      "rate" : {
+        "type" : "DECIMAL",
+        "value" : "7.25",
+        "zone" : null
+      },
+      "requested" : {
+        "type" : "DECIMAL",
+        "value" : "125000.50",
+        "zone" : null
+      },
+      "score" : {
+        "type" : "LONG",
+        "value" : "700",
+        "zone" : null
+      },
+      "verdict" : {
+        "type" : "STRING",
+        "value" : "APPROVE",
+        "zone" : null
+      }
+    },
+    "transitions" : [ {
+      "executionId" : "5b919f46-e171-11f1-a607-98fa9b647887",
+      "activityId" : "start",
+      "kind" : "STARTED"
+    }, {
+      "executionId" : "5b919f46-e171-11f1-a607-98fa9b647887",
+      "activityId" : "start",
+      "kind" : "COMPLETED"
+    }, {
+      "executionId" : "5b9a03bc-e171-11f1-a607-98fa9b647887",
+      "activityId" : "score",
+      "kind" : "STARTED"
+    }, {
+      "executionId" : "5b9a03bc-e171-11f1-a607-98fa9b647887",
+      "activityId" : "score",
+      "kind" : "COMPLETED"
+    }, {
+      "executionId" : "5bc161e6-e171-11f1-a607-98fa9b647887",
+      "activityId" : "documents",
+      "kind" : "STARTED"
+    }, {
+      "executionId" : "5bc161e6-e171-11f1-a607-98fa9b647887",
+      "activityId" : "documents",
+      "kind" : "COMPLETED"
+    }, {
+      "executionId" : "5bc92a1b-e171-11f1-a607-98fa9b647887",
+      "activityId" : "decide",
+      "kind" : "STARTED"
+    }, {
+      "executionId" : "5bc92a1b-e171-11f1-a607-98fa9b647887",
+      "activityId" : "decide",
+      "kind" : "COMPLETED"
+    }, {
+      "executionId" : "5bef27b3-e171-11f1-a607-98fa9b647887",
+      "activityId" : "cooling",
+      "kind" : "STARTED"
+    }, {
+      "executionId" : "5bef27b3-e171-11f1-a607-98fa9b647887",
+      "activityId" : "cooling",
+      "kind" : "COMPLETED"
+    }, {
+      "executionId" : "5b919f46-e171-11f1-a607-98fa9b647887",
+      "activityId" : "route",
+      "kind" : "STARTED"
+    }, {
+      "executionId" : "5b919f46-e171-11f1-a607-98fa9b647887",
+      "activityId" : "route",
+      "kind" : "COMPLETED"
+    }, {
+      "executionId" : "5bf84f78-e171-11f1-a607-98fa9b647887",
+      "activityId" : "notify",
+      "kind" : "STARTED"
+    }, {
+      "executionId" : "5bf84f78-e171-11f1-a607-98fa9b647887",
+      "activityId" : "notify",
+      "kind" : "COMPLETED"
+    }, {
+      "executionId" : "5b919f46-e171-11f1-a607-98fa9b647887",
+      "activityId" : "approved",
+      "kind" : "STARTED"
+    }, {
+      "executionId" : "5b919f46-e171-11f1-a607-98fa9b647887",
+      "activityId" : "approved",
+      "kind" : "COMPLETED"
+    } ],
+    "decisions" : [ {
+      "activityId" : "decide",
+      "decisionKey" : "grantVerdict",
+      "inputs" : {
+        "scoreInput" : {
+          "type" : "LONG",
+          "value" : "700",
+          "zone" : null
+        },
+        "termInput" : {
+          "type" : "BOOLEAN",
+          "value" : "true",
+          "zone" : null
+        }
+      },
+      "matchedRules" : [ "approve" ],
+      "outputs" : [ {
+        "verdict" : {
+          "type" : "STRING",
+          "value" : "APPROVE",
+          "zone" : null
+        }
+      } ]
+    } ],
+    "deadlines" : [ {
+      "activityId" : "cooling",
+      "kind" : "TIMER",
+      "dueAt" : "2026-11-16T05:10:00Z"
+    } ],
+    "sideEffects" : [ {
+      "activityId" : "score",
+      "channel" : "external-task:replay.score",
+      "idempotencyKey" : null,
+      "payloadSha256" : "889def1a669b0fb8d2777d0dec430850cadaa1b42c1b60520fea6cfb6bb52bdf"
+    }, {
+      "activityId" : "notify",
+      "channel" : "external-task:replay.notify",
+      "idempotencyKey" : null,
+      "payloadSha256" : "73c28037707ec706caab9006b6d78c1c63eeb722d801fa558d4c087fdec7e03d"
+    } ]
+  },
+  "unsupported" : [ ]
+}

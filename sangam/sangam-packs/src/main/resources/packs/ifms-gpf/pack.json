@@ -32,6 +32,10 @@
       "path": "packs/ifms-gpf/forms/application.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/ifms-gpf/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/ifms-gpf/seed.json"
     },

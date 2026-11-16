@@ -58,7 +58,7 @@ public class TaskEnhancementService {
         }
         ts.saveTask(sub);
         if (variables != null && !variables.isEmpty()) {
-            ts.setVariablesLocal(sub.getId(), variables);
+            ts.setVariablesLocal(sub.getId(), org.sangam.core.engine.DocumentSlotNames.checked(variables));
         }
         return sub;
     }
@@ -72,7 +72,7 @@ public class TaskEnhancementService {
         if (requireSubTasksClosed && !engine.getTaskService().getSubTasks(taskId).isEmpty()) {
             throw new ProcessEngineException("task " + taskId + " has open sub-tasks");
         }
-        engine.getTaskService().complete(taskId, variables);
+        engine.getTaskService().complete(taskId, org.sangam.core.engine.DocumentSlotNames.checked(variables));
     }
 
     public void addUserLink(String taskId, String userId, String type) {

@@ -23,8 +23,8 @@ permissions:
 env:
   LEDGER: ${{ github.workspace }}/results
   RL: python3 -I ${{ github.workspace }}/sangam/deploy/licence/results_ledger.py
-  CL: python3 -I deploy/licence/check_licences.py --policy deploy/licence/licence-policy.json
   RD: python3 -I ${{ github.workspace }}/sangam/deploy/licence/release_dist.py
+  CL: python3 -I deploy/licence/check_licences.py --policy deploy/licence/licence-policy.json
   CYCLONEDX: org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeBom
 
 jobs:
@@ -76,11 +76,12 @@ jobs:
       - name: Per-distribution gates (licence strict, register, SBOM matches jar)
         run: |
           rc=0; mkdir -p target
-          for pair in server:sangam-server control-plane:sangam-control-plane gateway:sangam-gateway rollup:sangam-rollup sdk-java:sdks/java; do
-            id=${pair%%:*}; mod=${pair#*:}; art=$(basename "$mod"); [ "$id" = sdk-java ] && art=sangam-sdk-java
+          # RM-15: each fat jar is named from distributions.json with the built version, never found by a glob
+          V=$($RD pom-version)
+          for id in server control-plane gateway rollup sdk-java; do
+            mod=$($RD field "$id" module)
             sbom="$mod/target/sangam-dist.cdx.json"; jar=""
             if [ "$id" != sdk-java ]; then
-              # RM-15: the jar is named from distributions.json, never found by a glob; a missing jar is BLOCKED
               jar="$mod/target/$($RD field "$id" jar --version "$V")"
               $RL run --check sbom-match-$id --ledger-dir "$LEDGER" --expect "$sbom" --expect "$jar" -- \
                 python3 -I deploy/licence/sbom_matches_jar.py "$sbom" --distribution $id --jar "$jar" --out "target/dist-$id.cdx.json" || rc=1
@@ -114,13 +115,23 @@ jobs:
         run: |
           args=(--policy deploy/licence/licence-policy.json); expect=()
           for s in target/dist-*.cdx.json; do [ -f "$s" ] && args+=(--sbom "$s"); done
-          # RM-15: the four fat jars by name from distributions.json (no glob); each must exist
-          for pair in server:sangam-server control-plane:sangam-control-plane gateway:sangam-gateway rollup:sangam-rollup; do
-            id=${pair%%:*}; mod=${pair#*:}; j="$mod/target/$($RD field "$id" jar --version "$V")"
+          # RM-15: the four fat jars by name (distributions.json and the built version), each one expected
+          V=$($RD pom-version); expect=()
+          for id in server control-plane gateway rollup; do
+            j="$($RD field "$id" module)/target/$($RD field "$id" jar --version "$V")"
             args+=(--jar "$j"); expect+=(--expect "$j")
           done
           $RL run --check build-tools-not-shipped --ledger-dir "$LEDGER" --expect-glob 'target/dist-*.cdx.json=6' "${expect[@]}" -- \
             python3 -I ../.github/scripts/build_tools_not_shipped.py "${args[@]}"
+      - name: One crypto provider and one Commons Logging implementation per fat jar (RM-31)
+        run: |
+          V=$($RD pom-version); args=(); expect=()
+          for id in server control-plane gateway rollup; do
+            j="$($RD field "$id" module)/target/$($RD field "$id" jar --version "$V")"
+            args+=(--jar "$j"); expect+=(--expect "$j")
+          done
+          $RL run --check duplicate-classes --ledger-dir "$LEDGER" "${expect[@]}" -- \
+            python3 -I ../.github/scripts/duplicate_classes.py "${args[@]}" --package org.bouncycastle --package org.apache.commons.logging
       - name: Results-ledger gate (pull request)
         if: always()
         run: $RL gate --required deploy/licence/release-checks.json --mode pr --set pr-licence-check --ledger-dir "$LEDGER"

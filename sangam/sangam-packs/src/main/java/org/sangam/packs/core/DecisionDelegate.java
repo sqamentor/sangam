@@ -47,7 +47,7 @@ public class DecisionDelegate implements JavaDelegate {
         if (Vars.fieldBool(collect, ex, false)) {
             List<Map<String, Object>> rows = ev.all();
             Vars.setJsonDocument(ex, prefix + "Rows", rows);
-            ex.setVariable(prefix + "RowCount", rows.size());
+            Vars.setDynamic(ex, prefix + "RowCount", rows.size());
             output = rows.size();
         } else {
             Map<String, Object> row = ev.single();
@@ -57,7 +57,7 @@ public class DecisionDelegate implements JavaDelegate {
             for (Map.Entry<String, Object> e : row.entrySet()) {
                 String name = prefix.isEmpty() ? e.getKey()
                         : prefix + Character.toUpperCase(e.getKey().charAt(0)) + e.getKey().substring(1);
-                ex.setVariable(name, Vars.engineValue(e.getValue()));
+                Vars.setDynamic(ex, name, Vars.engineValue(e.getValue())); // a tenant's own table names it
             }
             output = row;
         }

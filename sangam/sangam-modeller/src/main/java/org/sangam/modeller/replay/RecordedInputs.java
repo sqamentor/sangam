@@ -82,6 +82,22 @@ public final class RecordedInputs {
      * moves to its time. Null when every stimulus has been consumed (the scenario has no more outside input).
      */
     public Event nextStimulus() {
+        int i = nextStimulusIndex();
+        return i < 0 ? null : consume(i);
+    }
+
+    /**
+     * The stimulus {@link #nextStimulus()} would return, without consuming it and without moving the clock (the same
+     * order check in EXACT mode). A driver that applies a stimulus to the engine peeks first and consumes it only when
+     * the engine has taken it: a stimulus the replayed instance never takes (the run diverged) then stays unconsumed
+     * and is reported as such ({@link ReplayRun.Coverage#unconsumedSeq()}), instead of counting as used.
+     */
+    public Event peekStimulus() {
+        int i = nextStimulusIndex();
+        return i < 0 ? null : events.get(i);
+    }
+
+    private int nextStimulusIndex() {
         for (int i = 0; i < events.size(); i++) {
             Event e = events.get(i);
             if (consumed.get(i) || !STIMULI.contains(e.type())) {
@@ -96,9 +112,9 @@ public final class RecordedInputs {
                             + " was never asked for before stimulus seq " + e.seq());
                 }
             }
-            return consume(i);
+            return i;
         }
-        return null;
+        return -1;
     }
 
     /**

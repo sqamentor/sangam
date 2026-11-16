@@ -35,7 +35,7 @@
     <exclusiveGateway id="br_exGw" name="executionOutcome?" default="budget_reappropriation_f28"></exclusiveGateway>
     <endEvent id="br_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <exclusiveGateway id="br_sanctionPrepareGw" name="Document to sign?" default="budget_reappropriation_f39"></exclusiveGateway>
-    <userTask id="br_sanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="br_sanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:budget-reappropriation/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <sequenceFlow id="budget_reappropriation_f1" sourceRef="br_savings_clear" targetRef="br_savings"/>
     <sequenceFlow id="budget_reappropriation_f2" sourceRef="br_start" targetRef="br_defaults"/>
     <sequenceFlow id="budget_reappropriation_f3" sourceRef="br_defaults" targetRef="br_savings_clear"/>

@@ -102,12 +102,12 @@ public class DebuggerService {
             throw new IllegalArgumentException("execution " + executionId + " not found");
         }
         requireSandboxInstance(ex.getProcessInstanceId());
-        engine.getRuntimeService().setVariables(executionId, vars);
+        engine.getRuntimeService().setVariables(executionId, org.sangam.core.engine.DocumentSlotNames.checked(vars));
     }
 
     public void sendMessage(String messageName, String processInstanceId, Map<String, Object> vars) {
         requireSandboxInstance(processInstanceId);
-        engine.getRuntimeService().createMessageCorrelation(messageName).processInstanceId(processInstanceId).setVariables(vars).correlate();
+        engine.getRuntimeService().createMessageCorrelation(messageName).processInstanceId(processInstanceId).setVariables(org.sangam.core.engine.DocumentSlotNames.checked(vars)).correlate();
     }
 
     /**

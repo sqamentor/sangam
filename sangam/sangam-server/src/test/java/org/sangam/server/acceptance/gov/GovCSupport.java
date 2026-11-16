@@ -29,8 +29,11 @@ import org.operaton.bpm.engine.runtime.Execution;
 import org.operaton.bpm.engine.runtime.Job;
 import org.operaton.bpm.engine.runtime.ProcessInstance;
 import org.sangam.core.api.EngineAdapter.ExternalWork;
+import org.sangam.core.history.HistoryArchiveGate;
 import org.sangam.core.api.EngineAdapter.InstanceView;
+import org.sangam.ops.archive.HistoryArchives;
 import org.sangam.server.acceptance.engine.EngineScenarioSupport;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Port of the spike's gov-c {@code GovBase} + {@code OperatonNative} onto the running server.
@@ -51,6 +54,10 @@ abstract class GovCSupport extends EngineScenarioSupport {
     static final String TOPIC_PREFIX = "govc.";
 
     private final List<String> deployments = new ArrayList<>();
+
+    /** RM-52: the server's history archive (configured by the suite). */
+    @Autowired
+    private HistoryArchiveGate archiveGate;
     private boolean executorWasActive;
 
     record Timer(String jobId, String activityId, Instant due, boolean suspended, String executionId) {
@@ -70,6 +77,7 @@ abstract class GovCSupport extends EngineScenarioSupport {
     void govcTearDown() {
         for (String d : deployments) {
             try {
+                archiveTreesOf(d); // RM-52: the cascade delete purges history, so every tree is archived first
                 engine.getRepositoryService().deleteDeployment(d, true, true, true);
             } catch (RuntimeException ignored) {
                 // best effort
@@ -397,8 +405,45 @@ abstract class GovCSupport extends EngineScenarioSupport {
         return out;
     }
 
+    /**
+     * RM-52 (decision 386(2)): weeding purges the engine record, which the engine allows only once the tree has a
+     * verified archive; the suite configures the archive (AbstractAcceptanceIT), so the record is archived first.
+     */
     protected void deleteHistoricInstance(String pid) {
+        HistoricProcessInstance h = engine.getHistoryService().createHistoricProcessInstanceQuery().processInstanceId(pid)
+                .singleResult();
+        archive(h.getRootProcessInstanceId(), h.getTenantId());
         engine.getHistoryService().deleteHistoricProcessInstance(pid);
+    }
+
+    /** Exports, signs and stores the archive of one ended tree through the server's history archive. */
+    protected void archive(String rootId, String tenantId) {
+        if (!(archiveGate instanceof HistoryArchives archives)) {
+            throw new IllegalStateException("the acceptance suite configures sangam.history.archive.*: " + archiveGate);
+        }
+        adapter.inEngineTransaction(c -> archives.archive(c, tenantId, rootId, Map.of()));
+    }
+
+    /** Ends what still runs of the deployment's instances and archives every tree they belong to. */
+    private void archiveTreesOf(String deployment) {
+        List<String> running = new ArrayList<>();
+        Map<String, String> roots = new LinkedHashMap<>();
+        for (org.operaton.bpm.engine.repository.ProcessDefinition def : engine.getRepositoryService()
+                .createProcessDefinitionQuery().deploymentId(deployment).list()) {
+            engine.getRuntimeService().createProcessInstanceQuery().processDefinitionId(def.getId()).list()
+                    .forEach(p -> running.add(p.getId()));
+        }
+        if (!running.isEmpty()) {
+            engine.getRuntimeService().deleteProcessInstancesIfExists(running, "gov-c teardown", true, true, false);
+        }
+        for (org.operaton.bpm.engine.repository.ProcessDefinition def : engine.getRepositoryService()
+                .createProcessDefinitionQuery().deploymentId(deployment).list()) {
+            for (HistoricProcessInstance h : engine.getHistoryService().createHistoricProcessInstanceQuery()
+                    .processDefinitionId(def.getId()).list()) {
+                roots.putIfAbsent(h.getRootProcessInstanceId(), h.getTenantId());
+            }
+        }
+        roots.forEach(this::archive);
     }
 
     // ---------------------------------------------------------------- product SQL (engine transaction)

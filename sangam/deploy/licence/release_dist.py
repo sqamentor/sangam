@@ -8,6 +8,10 @@
       prints the distribution ids, one per line, in file order
   python3 -I deploy/licence/release_dist.py scope <id>
       prints the licence scope of the id: its "scope_as" when set, else the id itself
+  python3 -I deploy/licence/release_dist.py pom-version [--pom POM]
+      prints the project version of a Maven pom (default: the sangam root pom), so a pull-request workflow names
+      each jar from distributions.json with the version it was built with instead of finding it (RM-15); exit 2
+      when the pom has no literal own <version> (an inherited or missing version is never guessed)
 
 Standard library only.
 """
@@ -15,8 +19,10 @@ import argparse
 import json
 import os
 import sys
+import xml.etree.ElementTree as ET
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT_POM = os.path.normpath(os.path.join(HERE, "..", "..", "pom.xml"))
 
 
 def load(path):
@@ -40,6 +46,20 @@ def field(dists, dist_id, key, version=""):
     return [str(x).replace("{version}", version) for x in items]
 
 
+def pom_version(path):
+    """The pom's own <project><version>; a pom without a literal one (inherited, a property) is an error, not a guess."""
+    try:
+        root = ET.parse(path).getroot()
+    except (OSError, ET.ParseError) as e:
+        raise ValueError(f"cannot read {path}: {e}") from e
+    ns = root.tag[:root.tag.index("}") + 1] if root.tag.startswith("{") else ""
+    v = root.find(f"{ns}version")
+    text = (v.text or "").strip() if v is not None else ""
+    if not text or "${" in text:
+        raise ValueError(f"{path} has no literal project version")
+    return text
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--distributions", default=os.path.join(HERE, "distributions.json"))
@@ -52,8 +72,13 @@ def main(argv=None):
     i.add_argument("--kind")
     s = sub.add_parser("scope")
     s.add_argument("id")
+    pv = sub.add_parser("pom-version")
+    pv.add_argument("--pom", default=ROOT_POM)
     a = ap.parse_args(argv)
     try:
+        if a.cmd == "pom-version":
+            print(pom_version(a.pom))
+            return 0
         dists = load(a.distributions)
         if a.cmd == "field":
             out = field(dists, a.id, a.key, a.version)

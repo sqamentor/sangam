@@ -45,6 +45,10 @@
     },
     {
       "kind": "FORM",
+      "path": "packs/recruitment/forms/prepare-sanction-note.form.json"
+    },
+    {
+      "kind": "FORM",
       "path": "packs/recruitment/forms/application.form.json"
     },
     {

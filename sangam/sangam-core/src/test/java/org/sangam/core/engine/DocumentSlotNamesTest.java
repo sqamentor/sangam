@@ -65,6 +65,18 @@ class DocumentSlotNamesTest {
     }
 
     @Test
+    void decision387CheckedRefusesASlotKeyAndOtherwiseReturnsTheSameMap() {
+        DocumentSlotNames.install(() -> Set.of("sanctionDocumentId"));
+        java.util.Map<String, Object> slot = java.util.Map.of("amount", 1, "sanctionDocumentId", "d-1");
+        DocumentSlotNames.Refused e = assertThrows(DocumentSlotNames.Refused.class,
+                () -> DocumentSlotNames.checked(slot));
+        assertEquals(Set.of("sanctionDocumentId"), e.variables());
+        java.util.Map<String, Object> other = java.util.Map.of("amount", 1);
+        org.junit.jupiter.api.Assertions.assertSame(other, DocumentSlotNames.checked(other));
+        org.junit.jupiter.api.Assertions.assertNull(DocumentSlotNames.checked(null));
+    }
+
+    @Test
     void byDefaultNoNameIsDeclared() {
         assertEquals(Set.of(), DocumentSlotNames.names());
         assertThrows(NullPointerException.class, () -> DocumentSlotNames.install(null));

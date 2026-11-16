@@ -10,7 +10,9 @@ Writes into --out:
                        exact purl -> file), for components whose artefact carries no licence or copyright text of its
                        own (decision 176: paranamer 2.8.3). A listed file that is missing is BLOCKED (exit 2).
   THIRD-PARTY.txt      one line per SBOM component: purl, the licence terms as declared, and the licence the
-                       distribution uses (the elected one where licence-policy.json records an election)
+                       distribution uses (the elected one where licence-policy.json records an election); for a
+                       component used under EPL, MPL or CDDL also where its source code is (RM-16,
+                       source-locations.json by exact purl; a missing entry FAILS the bundle, exit 1)
   licenses/<id>.txt    the text of every licence id that THIRD-PARTY.txt uses
 Licence texts come from --texts DIR/<id>.txt ("X WITH Y" needs X.txt and Y.txt); Apache-2.0 is the repository
 LICENSE. A licence id with no text FAILS the bundle (exit 1) and is listed: the text has to be added (decision 134
@@ -124,19 +126,44 @@ def attribution_texts(sbom, attributions):
                 yield purl, f.read()
 
 
-def build(sbom, policy, dist_id, root, texts, out, jar=None, directory=None, node_modules=None, attributions=None):
-    """Returns the list of licence ids with no text."""
+SOURCE_MISSING = "source location of "
+
+
+def load_sources(path):
+    """source-locations.json (RM-16): the weak-copyleft licence ids and the exact purl -> source URL map."""
+    if not os.path.isfile(path):
+        raise InputError(f"{path} does not exist")
+    doc = load_json(path)
+    licences, comps = doc.get("licences"), doc.get("components")
+    if not isinstance(licences, list) or not isinstance(comps, dict):
+        raise InputError(f"{path} needs a 'licences' list and a 'components' map")
+    return {"licences": set(licences), "components": comps}
+
+
+def build(sbom, policy, dist_id, root, texts, out, jar=None, directory=None, node_modules=None, attributions=None,
+          sources=None):
+    """Returns what is missing: licence ids with no text, then "source location of <purl>" for every component used
+    under a weak-copyleft licence of ``sources`` (RM-16: EPL, MPL, CDDL) that has no source-location entry for its
+    exact purl. Nothing is written when anything is missing."""
     attributed = list(attribution_texts(sbom, attributions))  # unreadable input is BLOCKED before anything is written
     checker = Checker(policy, True, distribution=dist_id)
-    rows, ids = [], []
+    rows, ids, no_source = [], [], []
     for comp in sorted(iter_components(sbom), key=lambda c: c.get("purl") or c.get("name") or ""):
         purl = comp.get("purl") or ""
         if not purl or purl.startswith(FIRST_PARTY):
             continue
         declared, used = used_licences(comp, checker)
-        rows.append(f"{purl}\tdeclared: {declared}\tused: {' AND '.join(used) if used else '(none)'}")
+        row = f"{purl}\tdeclared: {declared}\tused: {' AND '.join(used) if used else '(none)'}"
+        if sources is not None and any(i in sources["licences"] for i in used):
+            coord = purl.split("?", 1)[0].split("#", 1)[0]
+            url = sources["components"].get(coord)
+            if url:
+                row += f"\tsource: {url}"
+            else:
+                no_source.append(SOURCE_MISSING + coord)
+        rows.append(row)
         ids.extend(i for i in used if i not in ids)
-    missing = [i for i in sorted(ids) if not os.path.isfile(text_path(i, texts, root))]
+    missing = [i for i in sorted(ids) if not os.path.isfile(text_path(i, texts, root))] + no_source
     if missing:
         return missing
     os.makedirs(os.path.join(out, "licenses"), exist_ok=True)
@@ -163,7 +190,8 @@ def build(sbom, policy, dist_id, root, texts, out, jar=None, directory=None, nod
         f.writelines(notice)
     with open(os.path.join(out, "THIRD-PARTY.txt"), "w", encoding="utf-8", newline="\n") as f:
         f.write(f"Third-party components of the {dist_id} distribution (from its CycloneDX SBOM).\n"
-                "Licence texts are in licenses/. This list records licence terms; it is not legal advice.\n\n")
+                "Licence texts are in licenses/. A component used under a weak-copyleft licence (EPL, MPL, CDDL) names\n"
+                "where its source code can be obtained (source:). This list records licence terms; it is not legal advice.\n\n")
         f.write("\n".join(rows) + "\n")
     return []
 
@@ -182,6 +210,8 @@ def main(argv=None):
     ap.add_argument("--node-modules")
     ap.add_argument("--attributions", default=os.path.join(here, "attributions"),
                     help="directory with attributions.json (exact purl -> text file); default deploy/licence/attributions")
+    ap.add_argument("--sources", default=os.path.join(here, "source-locations.json"),
+                    help="RM-16 source locations of weak-copyleft components; default deploy/licence/source-locations.json")
     a = ap.parse_args(argv)
     try:
         sbom = load_json(a.sbom)
@@ -191,13 +221,16 @@ def main(argv=None):
             if not os.path.isfile(os.path.join(a.root, p)):
                 raise InputError(f"{p} is not in {a.root}")
         missing = build(sbom, load_json(a.policy), a.distribution, a.root, a.texts, a.out, a.jar, a.dir, a.node_modules,
-                        a.attributions)
+                        a.attributions, load_sources(a.sources))
     except InputError as e:
         print(f"::error title=notices BLOCKED::{e}")
         return 2
     for m in missing:
-        print(f"::error title=notices {a.distribution}::no licence text for {m} (add {a.texts}/{m}.txt)")
-    print(f"notices {a.distribution}: {'FAIL' if missing else 'PASS'}, {len(missing)} licence text(s) missing")
+        if m.startswith(SOURCE_MISSING):
+            print(f"::error title=notices {a.distribution}::no {m} (add its exact purl to {a.sources})")
+        else:
+            print(f"::error title=notices {a.distribution}::no licence text for {m} (add {a.texts}/{m}.txt)")
+    print(f"notices {a.distribution}: {'FAIL' if missing else 'PASS'}, {len(missing)} licence text(s) or source location(s) missing")
     return 1 if missing else 0
 
 

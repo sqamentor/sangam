@@ -105,6 +105,12 @@ public final class SpringHostHarness implements HostHarness {
         return context.getBean(port);
     }
 
+    /** RM-30: the host's own data source (the one its engine and product tables use). */
+    @Override
+    public javax.sql.DataSource database() {
+        return port(org.operaton.bpm.engine.ProcessEngine.class).getProcessEngineConfiguration().getDataSource();
+    }
+
     @Override
     public RequestContext administrator(String tenantId) {
         return new RequestContext(tenantId, "conformance-admin", Set.copyOf(ADMIN_GROUPS), null, null, null, null, null,

@@ -73,6 +73,14 @@ public interface HostHarness {
     /** The host's HTTP binding, when it offers one. */
     Optional<HttpBinding> http();
 
+    /**
+     * RM-30: the host's own database, for the scenarios that prove the host detects a change made behind its ports
+     * (audit tamper). A host that offers no port yet need not offer it.
+     */
+    default javax.sql.DataSource database() {
+        throw new UnsupportedOperationException(hostName() + " offers no database to the conformance kit");
+    }
+
     /** The host module's folder, for the thinness report (main-source classes and lines). */
     Path hostModule();
 }

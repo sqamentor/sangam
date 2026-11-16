@@ -61,7 +61,7 @@ public class CaseLifecycleService {
             }
         }
         if (extraVariables != null) {
-            vars.putAll(extraVariables);
+            vars.putAll(org.sangam.core.engine.DocumentSlotNames.checked(extraVariables));
         }
         String defId = targetDefinitionIdOrNull != null ? targetDefinitionIdOrNull : h.getCaseDefinitionId();
         requireSameTenant(defId, h.getTenantId(), historicCaseInstanceId);

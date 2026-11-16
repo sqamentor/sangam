@@ -114,6 +114,9 @@ public class EventDispatcher implements Inbox.Handler {
         if (ev.correlation() != null) {
             ev.correlation().forEach((k, v) -> corr.put(k, retype(v, field(def.correlationParameters(), k))));
         }
+        // decision 387 (1): an event's payload and correlation fields may not name a DSC document slot
+        org.sangam.core.engine.DocumentSlotNames.refuse(vars.keySet());
+        org.sangam.core.engine.DocumentSlotNames.refuse(corr.keySet());
         int matchers = ev.businessKey() != null ? 1 : 0;
         for (EventDefinition.Field f : def.correlationParameters()) {
             if (corr.get(f.name()) != null) {

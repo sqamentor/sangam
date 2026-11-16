@@ -260,6 +260,273 @@ class HostFrameworkBoundaryTest {
         }
     }
 
+    // ------------------------------------------------------------------ RM-29: hosts stay thin
+
+    /**
+     * RM-29 (REMEDIATION-PLAN, X3 R-11, BOUNDARY 1.2): the server's {@code bridge} and {@code config} packages wire
+     * the product layer to the host; they hold no business rule of their own. The scan covers every main source under
+     * a {@code bridge/} or {@code config/} package of sangam-server.
+     */
+    static final Pattern HOST_GLUE = Pattern.compile("^sangam-server/src/main/java/(?:.+/)?(?:bridge|config)/.+\\.java$");
+
+    /** Arithmetic, rounding and comparison methods of BigDecimal and Money. */
+    static final String MONEY_OPS = "add|subtract|multiply|divide|divideToIntegralValue|remainder|negate|abs|compareTo"
+            + "|signum|setScale|min|max|plus|minus";
+
+    /**
+     * Money arithmetic or an amount comparison on one code line: the line names BigDecimal or Money and calls one of
+     * {@link #MONEY_OPS}, or it compares something named {@code amount...}. Lines that call an operation on a variable
+     * the file declares as BigDecimal or Money are found by {@link #moneyHits}.
+     */
+    static final Pattern MONEY_LINE = Pattern.compile("^(?=.*\\b(?:BigDecimal|Money)\\b)(?=.*\\.(?:" + MONEY_OPS + ")\\()"
+            + "|(?i:amount\\w*(?:\\(\\))?\\s*\\.\\s*(?:compareTo|signum)\\()");
+
+    /** A local, field or parameter declared as BigDecimal or Money: group 1 is its name. */
+    static final Pattern MONEY_DECLARATION = Pattern.compile(
+            "\\b(?:java\\.math\\.)?(?:BigDecimal|(?:org\\.sangam\\.core\\.money\\.)?Money)(?:\\s*\\[\\])?\\s+([a-z]\\w*)\\b");
+
+    /**
+     * SQL in host glue: a string literal holding a statement (SELECT ... FROM, INSERT INTO, UPDATE ... SET, DELETE
+     * FROM, MERGE INTO, CREATE/ALTER/DROP TABLE, CREATE INDEX), or a JDBC statement call or template.
+     */
+    static final Pattern SQL = Pattern.compile("(?i:\"[^\"]*\\b(?:select\\b[^\"]*\\bfrom|insert\\s+into|update\\s+[\\w.]+\\s+set"
+            + "|delete\\s+from|merge\\s+into|create\\s+(?:table|index)|alter\\s+table|drop\\s+table)\\b)"
+            + "|\\b(?:prepareStatement|prepareCall|createStatement|executeQuery|executeUpdate|executeLargeUpdate|addBatch)\\("
+            + "|\\b(?:JdbcTemplate|NamedParameterJdbcTemplate|JdbcClient)\\b");
+
+    /**
+     * Ratchet, snapshot 2026-11-16 (RM-29): the host glue that computes with money. The 835 remittance split (paid,
+     * patient responsibility, write-off) belongs in the billing domain. Never add an entry; the list only shrinks.
+     */
+    static final Set<String> HOST_MONEY_ALLOWED = Set.of(
+            "sangam-server/src/main/java/org/sangam/server/bridge/PackGapConnectors.java");
+
+    /**
+     * Ratchet, snapshot 2026-11-16 (RM-29): the host glue that runs SQL itself instead of calling a store of the
+     * product layer. Never add an entry: put the statement in the owning module's store; the list only shrinks.
+     */
+    static final Set<String> HOST_SQL_ALLOWED = Set.of(
+            "sangam-server/src/main/java/org/sangam/server/bridge/AiBindings.java",
+            "sangam-server/src/main/java/org/sangam/server/bridge/BillingAccountSource.java",
+            "sangam-server/src/main/java/org/sangam/server/bridge/CellTenantMover.java",
+            "sangam-server/src/main/java/org/sangam/server/bridge/CompliancePersonalData.java",
+            "sangam-server/src/main/java/org/sangam/server/bridge/ConfigCaseBindingPlugin.java",
+            "sangam-server/src/main/java/org/sangam/server/bridge/ContentDocumentEraser.java",
+            "sangam-server/src/main/java/org/sangam/server/bridge/OpsBindings.java",
+            "sangam-server/src/main/java/org/sangam/server/bridge/PackOperationTxLock.java",
+            "sangam-server/src/main/java/org/sangam/server/bridge/PortsDocumentBridge.java",
+            "sangam-server/src/main/java/org/sangam/server/bridge/PortsLinkBridge.java",
+            "sangam-server/src/main/java/org/sangam/server/config/CellWiring.java",
+            "sangam-server/src/main/java/org/sangam/server/config/FirstAdminBootstrap.java",
+            "sangam-server/src/main/java/org/sangam/server/config/IsolationGuard.java",
+            "sangam-server/src/main/java/org/sangam/server/config/PacksWiring.java",
+            "sangam-server/src/main/java/org/sangam/server/config/RestStoreReencryptionSources.java",
+            "sangam-server/src/main/java/org/sangam/server/config/SecretStoreReencryptionSource.java");
+
+    /** Code lines of {@code text} with money arithmetic or an amount comparison. */
+    static List<String> moneyHits(String rel, String text) {
+        Set<String> names = new TreeSet<>();
+        for (String line : text.split("\n", -1)) {
+            String code = line.strip();
+            if (code.startsWith("*") || code.startsWith("//") || code.startsWith("/*")) {
+                continue;
+            }
+            var m = MONEY_DECLARATION.matcher(line);
+            while (m.find()) {
+                names.add(m.group(1));
+            }
+        }
+        Pattern p = names.isEmpty() ? MONEY_LINE : Pattern.compile(MONEY_LINE.pattern() + "|\\b(?:"
+                + String.join("|", names.stream().map(Pattern::quote).toList()) + ")\\s*\\.\\s*(?:" + MONEY_OPS + ")\\(");
+        return ArchitectureGuardTest.codeHits(rel, text, p);
+    }
+
+    /** Host glue -> its code lines of the given kind ({@code money} or {@code sql}). */
+    static Map<String, List<String>> scanGlue(Path root, String kind) throws IOException {
+        Map<String, List<String>> out = new TreeMap<>();
+        for (Path p : ArchitectureGuardTest.files(root)) {
+            String r = ArchitectureGuardTest.rel(root, p);
+            if (!HOST_GLUE.matcher(r).matches()) {
+                continue;
+            }
+            String text = ArchitectureGuardTest.read(p);
+            if (text == null) {
+                continue;
+            }
+            List<String> hits = kind.equals("money") ? moneyHits(r, text) : ArchitectureGuardTest.codeHits(r, text, SQL);
+            if (!hits.isEmpty()) {
+                out.put(r, hits);
+            }
+        }
+        return out;
+    }
+
+    /** Every ratchet violation of a host-thinness rule, worded with the fix it needs. */
+    static List<String> glueViolations(String rule, Map<String, List<String>> found, Set<String> allowed) {
+        List<String> out = new ArrayList<>();
+        for (Map.Entry<String, List<String>> e : found.entrySet()) {
+            if (!allowed.contains(e.getKey())) {
+                out.add(e.getKey() + ": " + rule + " in host glue (move it into the product layer; first hit "
+                        + e.getValue().get(0) + ")");
+            }
+        }
+        for (String a : allowed) {
+            if (!found.containsKey(a)) {
+                out.add(a + ": no " + rule + " left (remove its ratchet entry)");
+            }
+        }
+        return out;
+    }
+
+    @Test
+    void hostGlueComputesNoMoney() throws IOException {
+        List<String> v = glueViolations("money arithmetic or amount comparison",
+                scanGlue(ArchitectureGuardTest.root(), "money"), HOST_MONEY_ALLOWED);
+        assertTrue(v.isEmpty(), String.join("\n", v));
+    }
+
+    @Test
+    void hostGlueRunsNoSql() throws IOException {
+        List<String> v = glueViolations("SQL", scanGlue(ArchitectureGuardTest.root(), "sql"), HOST_SQL_ALLOWED);
+        assertTrue(v.isEmpty(), String.join("\n", v));
+    }
+
+    @Test
+    void hostThinnessPatternsFindWhatTheyBan() {
+        String money = """
+                package x.bridge;
+                class A {
+                    java.math.BigDecimal f(java.math.BigDecimal paid, Object o) {
+                        // paid.add(paid) in a comment is no hit
+                        if (paid.signum() == 0) { return BigDecimal.ZERO; }
+                        Money fee = Money.of("1.00", "INR");
+                        boolean big = order.amount().compareTo(limit) > 0;
+                        list.add(o);
+                        return BigDecimal.ONE.add(paid);
+                    }
+                }
+                """;
+        List<String> hits = moneyHits("sangam-server/src/main/java/x/bridge/A.java", money);
+        assertEquals(3, hits.size(), String.join("\n", hits));
+        assertTrue(hits.get(0).contains(":5:") && hits.get(1).contains(":7:") && hits.get(2).contains(":9:"), hits.toString());
+        assertEquals(List.of(), moneyHits("r", "class B { Optional<BigDecimal> r() { return Optional.of(BigDecimal.ONE); } }"));
+
+        for (String sql : List.of("Jdbc.query(c, \"SELECT id FROM T WHERE tenant_id=?\")", "\"insert into T (a) values (?)\"",
+                "\"UPDATE LEGAL_HOLD SET released_at=?\"", "\"DELETE FROM X\"", "c.prepareStatement(s)", "st.executeQuery(q)",
+                "new JdbcTemplate(ds)")) {
+            assertTrue(SQL.matcher(sql).find(), sql);
+        }
+        for (String fine : List.of("store.select(tenant)", "\"select a role\"", "log(\"updated the set\")", "deleteAll(ids)")) {
+            assertFalse(SQL.matcher(fine).find(), fine);
+        }
+        assertTrue(HOST_GLUE.matcher("sangam-server/src/main/java/org/sangam/server/bridge/X.java").matches());
+        assertTrue(HOST_GLUE.matcher("sangam-server/src/main/java/org/sangam/server/config/Y.java").matches());
+        assertFalse(HOST_GLUE.matcher("sangam-server/src/main/java/org/sangam/server/web/Z.java").matches());
+        assertFalse(HOST_GLUE.matcher("sangam-server/src/test/java/org/sangam/server/bridge/XTest.java").matches());
+    }
+
+    @Test
+    void hostThinnessRatchetReportsEveryCase() {
+        Map<String, List<String>> found = new TreeMap<>();
+        found.put("n/New.java", List.of("n/New.java:3: x.add(y)"));
+        found.put("k/Kept.java", List.of("k/Kept.java:4: x.add(y)"));
+        List<String> v = glueViolations("SQL", found, Set.of("k/Kept.java", "g/Gone.java"));
+        assertEquals(2, v.size(), String.join("\n", v));
+        assertTrue(v.get(0).startsWith("n/New.java: SQL in host glue"), v.get(0));
+        assertTrue(v.get(1).startsWith("g/Gone.java: no SQL left"), v.get(1));
+    }
+
+    /**
+     * RM-29, pom level: no module outside the hosts declares a Spring or Quarkus dependency in any non-test scope
+     * (compile, provided, runtime, system). Dependency management and plugin dependencies are not declarations of the
+     * module's own code. The ratchet holds sangam-rest, which carries the REST host area of decision 72 next to its
+     * services; it leaves the list when the host area moves out (M-141).
+     */
+    static final Set<String> FRAMEWORK_POM_ALLOWED = Set.of("sangam-rest/pom.xml");
+
+    static final Pattern POM_DEPENDENCY = Pattern.compile("<dependency>(.*?)</dependency>", Pattern.DOTALL);
+
+    /** Non-host pom -> its Spring or Quarkus dependencies outside test scope ({@code group:artifact:scope}). */
+    static Map<String, List<String>> frameworkPoms(Path root) throws IOException {
+        Map<String, List<String>> out = new TreeMap<>();
+        for (Path p : ArchitectureGuardTest.files(root)) {
+            String r = ArchitectureGuardTest.rel(root, p);
+            if (!(r.equals("pom.xml") || r.endsWith("/pom.xml")) || isHost(r)) {
+                continue;
+            }
+            String text = ArchitectureGuardTest.read(p);
+            List<String> deps = text == null ? List.of() : frameworkDependencies(text);
+            if (!deps.isEmpty()) {
+                out.put(r, deps);
+            }
+        }
+        return out;
+    }
+
+    static List<String> frameworkDependencies(String pom) {
+        String t = pom.replaceAll("(?s)<!--.*?-->", "")
+                .replaceAll("(?s)<dependencyManagement>.*?</dependencyManagement>", "")
+                .replaceAll("(?s)<pluginManagement>.*?</pluginManagement>", "")
+                .replaceAll("(?s)<plugins>.*?</plugins>", "");
+        List<String> out = new ArrayList<>();
+        var m = POM_DEPENDENCY.matcher(t);
+        while (m.find()) {
+            String d = m.group(1);
+            String group = tag(d, "groupId");
+            String scope = tag(d, "scope");
+            scope = scope == null ? "compile" : scope;
+            if (group != null && (group.startsWith("org.springframework") || group.startsWith("io.quarkus"))
+                    && !scope.equals("test")) {
+                out.add(group + ":" + tag(d, "artifactId") + ":" + scope);
+            }
+        }
+        return out;
+    }
+
+    private static String tag(String xml, String name) {
+        var m = Pattern.compile("<" + name + ">\\s*([^<\\s]+)\\s*</" + name + ">").matcher(xml);
+        return m.find() ? m.group(1) : null;
+    }
+
+    @Test
+    void nonHostPomsDeclareNoHostFramework() throws IOException {
+        Map<String, List<String>> found = frameworkPoms(ArchitectureGuardTest.root());
+        List<String> v = new ArrayList<>();
+        found.forEach((pom, deps) -> {
+            if (!FRAMEWORK_POM_ALLOWED.contains(pom)) {
+                v.add(pom + ": declares " + deps + " outside the hosts (only test scope is allowed; move the code into a host)");
+            }
+        });
+        for (String a : FRAMEWORK_POM_ALLOWED) {
+            if (!found.containsKey(a)) {
+                v.add(a + ": declares no host framework any more (remove its FRAMEWORK_POM_ALLOWED entry)");
+            }
+        }
+        assertTrue(v.isEmpty(), String.join("\n", v));
+    }
+
+    @Test
+    void pomRuleReadsScopesAndIgnoresManagement() {
+        String pom = """
+                <project>
+                  <dependencyManagement><dependencies><dependency><groupId>org.springframework</groupId>
+                    <artifactId>spring-core</artifactId></dependency></dependencies></dependencyManagement>
+                  <dependencies>
+                    <!-- <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-core</artifactId></dependency> -->
+                    <dependency><groupId>org.springframework</groupId><artifactId>spring-jdbc</artifactId></dependency>
+                    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-arc</artifactId><scope>provided</scope></dependency>
+                    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-test</artifactId>
+                      <scope>test</scope></dependency>
+                    <dependency><groupId>org.sangam</groupId><artifactId>x</artifactId></dependency>
+                  </dependencies>
+                  <build><plugins><plugin><dependencies><dependency><groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-loader</artifactId></dependency></dependencies></plugin></plugins></build>
+                </project>
+                """;
+        assertEquals(List.of("org.springframework:spring-jdbc:compile", "io.quarkus:quarkus-arc:provided"),
+                frameworkDependencies(pom));
+    }
+
     @Test
     void hostsAndRatchetDoNotOverlap() {
         for (String a : HOST_FRAMEWORK_ALLOWED) {

@@ -40,6 +40,14 @@
       "path": "packs/p1-bill-payment/forms/treasury-rejection.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/p1-bill-payment/forms/prepare-noting.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p1-bill-payment/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/p1-bill-payment/seed.json"
     },

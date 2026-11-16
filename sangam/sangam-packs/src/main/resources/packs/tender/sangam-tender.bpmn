@@ -59,7 +59,7 @@
     <serviceTask id="td_awarded" name="Awarded" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>tenderOutcome=AWARDED</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="td_end" name="Awarded"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <exclusiveGateway id="td_nitApprovalPrepareGw" name="Document to sign?" default="tender_f65"></exclusiveGateway>
-    <userTask id="td_nitApprovalPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="td_nitApprovalPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:tender/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <boundaryEvent id="td_bidsComp" name="Refund EMD on failure" attachedToRef="td_bids" cancelActivity="true"><compensateEventDefinition/></boundaryEvent>
     <sequenceFlow id="tender_f1" sourceRef="td_deptClass" targetRef="td_deptClassGw"/>
     <sequenceFlow id="tender_f2" sourceRef="td_rjDeptClass_reject" targetRef="td_rjDeptClass_endRejected"/>

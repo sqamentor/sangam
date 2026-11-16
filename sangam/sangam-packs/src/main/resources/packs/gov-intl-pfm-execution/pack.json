@@ -40,6 +40,10 @@
       "path": "packs/gov-intl-pfm-execution/forms/certify.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-execution/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/gov-intl-pfm-execution/seed.json"
     },

@@ -235,6 +235,14 @@ def write(path, packs):
       'behalf of the seat). Approval tasks carry, in order, the SoD guard, the power guard, the payload binding and the '
       'actor recorder.')
     w('')
+    w('DSC gates are reached through a call (decisions 382, 385 and 387 (3)): the signing levels of '
+      '`sangam-core-recommendation` (slot `notingDocumentId`, type NOTING) and the approval of `sangam-core-sanction` '
+      '(slot `sanctionDocumentId`, type SANCTION_NOTE) sign the document in their slot, which only the document route '
+      'fills, on an open user task of the case. A pack calls the gate process with `in variables="all"`; where no user '
+      'task of the caller comes before the call, packgen puts the prepare task there, whose form requires the slot. A '
+      'gate process started directly, with no caller, has no user task before its gate, so its slot is empty and the '
+      'signature is refused (`422 DSC_SIGNATURE_NOT_VERIFIED`): start the pack process that calls it.')
+    w('')
     w('## 4. Process variable and message contract (for WS-REST, WS-UI, WS-INTEGRATION)')
     w('')
     w('| Variable / message | Set by | Meaning |')
@@ -411,7 +419,7 @@ def write(path, packs):
     w('| io.github.sqamentor:sangam-core | Apache-2.0 | compile |')
     w('| org.operaton.bpm:operaton-engine 2.2.0 (BOM) | Apache-2.0 | compile |')
     w('| com.fasterxml.jackson.core:jackson-databind 2.22.3 (BOM) | Apache-2.0 | compile |')
-    w('| org.slf4j:slf4j-api 2.0.17 | MIT | compile |')
+    w('| org.slf4j:slf4j-api 2.0.20 | MIT | compile |')
     w('| org.junit.jupiter:junit-jupiter 5.11.4 | EPL-2.0 | test |')
     w('| com.h2database:h2 2.3.232 | MPL-2.0 / EPL-1.0 | test |')
     w('')

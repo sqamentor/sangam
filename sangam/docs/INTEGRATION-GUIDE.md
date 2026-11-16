@@ -265,6 +265,12 @@ Worker credentials are a service-principal API token, or the Keycloak client `sa
 - Packs are generated, never hand-edited: `python sangam-packs/tools/packgen/main.py` writes them, and `--check` fails on any difference (`main.py:2-10,116-124`).
 - Domain knowledge lives in the pack data, not in the engine.
 
+**DSC gates are reached through a call (decisions 382, 385 and 387 (3))**
+- The signing levels of `sangam-core-recommendation` (slot `notingDocumentId`) and the approval of `sangam-core-sanction` (slot `sanctionDocumentId`) sign the document in their slot (`DscSignatureGuardListener`).
+- Only the document route fills a slot, on an open user task of the case (decisions 267, 268 and 385 (2)).
+- So a gate process is started by a call from a pack process, with `in variables="all"`. Where no user task of the caller comes before the call, packgen puts a prepare task there; its form requires the slot (`sangam-packs/tools/packgen/prepare.py`).
+- A gate process started directly, with no caller, has no user task before its gate. Its slot stays empty, and the signature is refused with `422 DSC_SIGNATURE_NOT_VERIFIED`. Start the pack process that calls it instead.
+
 **Deployment**
 - `PackDeployer.deployAll(tenantId)` makes one engine deployment per pack (`pack:<id>@<version>`).
 - A version is immutable (`PACK_VERSION_IMMUTABLE`, answered as `422 PACK_REJECTED`). A rollback rolls forward.

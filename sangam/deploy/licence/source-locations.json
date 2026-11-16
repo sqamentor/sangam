@@ -1,0 +1,43 @@
+{
+ "_comment": "SPDX-License-Identifier: Apache-2.0. RM-16 (REMEDIATION-PLAN; CONFLICTS-AND-OBLIGATIONS section 4): where the source code of every shipped component used under a weak-copyleft licence (the licences below) can be obtained. notice_bundle.py prints the line into THIRD-PARTY.txt and fails a distribution that ships such a component without an entry for its exact purl and version, so a version change needs a new entry. Maven entries point at the component's own -sources.jar on Maven Central (a Central publication requirement for every release). Written 2026-11-16 from decision-register.json and the elections of licence-policy.json; the URLs were not fetched (decision 96), the test-phase release run checks them.",
+ "licences": [
+  "CDDL-1.0",
+  "CDDL-1.1",
+  "EPL-1.0",
+  "EPL-2.0",
+  "MPL-1.1",
+  "MPL-2.0"
+ ],
+ "components": {
+  "pkg:maven/ch.qos.logback/logback-classic@1.5.38": "https://repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.5.38/logback-classic-1.5.38-sources.jar",
+  "pkg:maven/ch.qos.logback/logback-core@1.5.38": "https://repo1.maven.org/maven2/ch/qos/logback/logback-core/1.5.38/logback-core-1.5.38-sources.jar",
+  "pkg:maven/com.h2database/h2@2.3.232": "https://repo1.maven.org/maven2/com/h2database/h2/2.3.232/h2-2.3.232-sources.jar",
+  "pkg:maven/jakarta.annotation/jakarta.annotation-api@3.0.0": "https://repo1.maven.org/maven2/jakarta/annotation/jakarta.annotation-api/3.0.0/jakarta.annotation-api-3.0.0-sources.jar",
+  "pkg:maven/jakarta.el/jakarta.el-api@6.0.1": "https://repo1.maven.org/maven2/jakarta/el/jakarta.el-api/6.0.1/jakarta.el-api-6.0.1-sources.jar",
+  "pkg:maven/jakarta.jms/jakarta.jms-api@3.1.0": "https://repo1.maven.org/maven2/jakarta/jms/jakarta.jms-api/3.1.0/jakarta.jms-api-3.1.0-sources.jar",
+  "pkg:maven/jakarta.ws.rs/jakarta.ws.rs-api@4.0.0": "https://repo1.maven.org/maven2/jakarta/ws/rs/jakarta.ws.rs-api/4.0.0/jakarta.ws.rs-api-4.0.0-sources.jar",
+  "pkg:maven/javax.xml.bind/jaxb-api@2.3.1": "https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1-sources.jar",
+  "pkg:maven/org.eclipse.paho/org.eclipse.paho.client.mqttv3@1.2.5": "https://repo1.maven.org/maven2/org/eclipse/paho/org.eclipse.paho.client.mqttv3/1.2.5/org.eclipse.paho.client.mqttv3-1.2.5-sources.jar",
+  "pkg:maven/org.glassfish.expressly/expressly@5.0.0": "https://repo1.maven.org/maven2/org/glassfish/expressly/expressly/5.0.0/expressly-5.0.0-sources.jar",
+  "pkg:maven/org.glassfish.hk2.external/aopalliance-repackaged@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/hk2/external/aopalliance-repackaged/4.0.3/aopalliance-repackaged-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.hk2/class-model@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/hk2/class-model/4.0.3/class-model-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.hk2/hk2-api@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/hk2/hk2-api/4.0.3/hk2-api-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.hk2/hk2-core@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/hk2/hk2-core/4.0.3/hk2-core-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.hk2/hk2-locator@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/hk2/hk2-locator/4.0.3/hk2-locator-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.hk2/hk2-runlevel@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/hk2/hk2-runlevel/4.0.3/hk2-runlevel-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.hk2/hk2-utils@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/hk2/hk2-utils/4.0.3/hk2-utils-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.hk2/hk2@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/hk2/hk2/4.0.3/hk2-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.hk2/osgi-resource-locator@3.0.0": "https://repo1.maven.org/maven2/org/glassfish/hk2/osgi-resource-locator/3.0.0/osgi-resource-locator-3.0.0-sources.jar",
+  "pkg:maven/org.glassfish.hk2/spring-bridge@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/hk2/spring-bridge/4.0.3/spring-bridge-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.jersey.containers/jersey-container-servlet@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/jersey/containers/jersey-container-servlet/4.0.3/jersey-container-servlet-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.jersey.core/jersey-client@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/jersey/core/jersey-client/4.0.3/jersey-client-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.jersey.core/jersey-common@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/jersey/core/jersey-common/4.0.3/jersey-common-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.jersey.core/jersey-server@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/jersey/core/jersey-server/4.0.3/jersey-server-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.jersey.ext/jersey-bean-validation@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/jersey/ext/jersey-bean-validation/4.0.3/jersey-bean-validation-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.jersey.ext/jersey-entity-filtering@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/jersey/ext/jersey-entity-filtering/4.0.3/jersey-entity-filtering-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.jersey.ext/jersey-spring6@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/jersey/ext/jersey-spring6/4.0.3/jersey-spring6-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.jersey.inject/jersey-hk2@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/jersey/inject/jersey-hk2/4.0.3/jersey-hk2-4.0.3-sources.jar",
+  "pkg:maven/org.glassfish.jersey.media/jersey-media-json-jackson@4.0.3": "https://repo1.maven.org/maven2/org/glassfish/jersey/media/jersey-media-json-jackson/4.0.3/jersey-media-json-jackson-4.0.3-sources.jar"
+ },
+ "_comment_jersey_media_json_jackson": "Decision 385 (4): its decision 117 election (Apache-2.0) is corrected to EPL-2.0 by lane r6-v1; the entry is here before that change lands so the bundle does not fail when it does."
+}

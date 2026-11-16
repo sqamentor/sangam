@@ -71,11 +71,20 @@
       <version>${version.angus-mail}</version>
     </dependency>
 
-    <!-- SFTP transport: Apache MINA SSHD. Apache-2.0. -->
+    <!-- SFTP transport: Apache MINA SSHD. Apache-2.0. RM-31: the sshd 2.15.0 parent pom gives every sshd module
+         org.slf4j:jcl-over-slf4j as a compile dependency, a second org.apache.commons.logging implementation next to
+         commons-logging 1.3.6 (pdfbox, fontbox); commons-logging 1.3 routes to SLF4J itself, so the bridge is excluded
+         and one implementation ships (duplicate_classes.py proves it per fat jar). -->
     <dependency>
       <groupId>org.apache.sshd</groupId>
       <artifactId>sshd-sftp</artifactId>
       <version>${version.sshd}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>jcl-over-slf4j</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- Optional publishers / inbound consumers. -->

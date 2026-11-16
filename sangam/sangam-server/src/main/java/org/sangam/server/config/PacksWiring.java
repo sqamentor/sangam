@@ -38,12 +38,14 @@ import org.sangam.packs.port.PackRuntime;
 import org.sangam.packs.sim.SimulatorConnectorGateway;
 import org.sangam.packs.spi.PackDeployer;
 import org.sangam.packs.spi.PackRegistry;
+import org.sangam.packs.spi.ProfileTableDeployer;
 import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.support.TxSupport;
 import org.sangam.security.SangamSecurity;
 import org.sangam.server.bridge.PacksAuditSink;
 import org.sangam.server.bridge.PacksSeatDirectory;
 import org.sangam.server.bridge.PacksTenantDeployer;
+import org.sangam.server.bridge.ProfileTenantTables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -103,9 +105,38 @@ public class PacksWiring {
         return new PackDeployer(engine, registry, operationLock);
     }
 
+    /**
+     * With sangam-config: each tenant's own delegation tables from its profile (DEC-225-4, {@code profiles/} on the
+     * class path), deployed with its packs and re-deployed for every tenant after a profile change (activation,
+     * retirement, import). Without a profile resolver the packs alone.
+     */
     @Bean
-    public PacksTenantDeployer sangamPacksTenantDeployer(PackDeployer deployer, PackRegistry registry, AuditPort audit) {
-        return new PacksTenantDeployer(deployer, registry, audit);
+    public PacksTenantDeployer sangamPacksTenantDeployer(PackDeployer deployer, PackRegistry registry, AuditPort audit,
+            ProcessEngine engine, ObjectProvider<org.sangam.config.profile.ProfileResolver> profiles,
+            ObjectProvider<org.sangam.core.time.BusinessClock> businessClocks,
+            ObjectProvider<org.sangam.config.admin.ConfigAdminService> configAdmin) {
+        PacksTenantDeployer d = new PacksTenantDeployer(deployer, registry, audit);
+        org.sangam.config.profile.ProfileResolver resolver = profiles.getIfAvailable();
+        if (resolver != null) {
+            d.useProfileTables(new ProfileTableDeployer(engine, ProfileTableDeployer.classpath(
+                    PacksWiring.class.getClassLoader(), "profiles/")),
+                    new ProfileTenantTables(resolver, ConfigWiring.businessClock(businessClocks)));
+            configAdmin.ifAvailable(a -> a.onActiveChange(changes -> syncProfileTables(d)));
+        } else {
+            LOG.warn("No profile resolver: tenants are deployed without their own delegation tables (DEC-225-4)");
+        }
+        return d;
+    }
+
+    /** Re-deploys every tenant's own tables; one tenant's refusal (audited by the deployer) never stops the others. */
+    static void syncProfileTables(PacksTenantDeployer d) {
+        for (String tenant : d.tenantsToSync()) {
+            try {
+                d.syncTables(tenant);
+            } catch (RuntimeException e) {
+                LOG.error("Profile tables of tenant {} not re-deployed after a profile change: {}", tenant, e.toString());
+            }
+        }
     }
 
     /**
