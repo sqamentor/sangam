@@ -186,7 +186,9 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         // decision 331: a delayed suspension or activation timer belongs to its definition's tenant (B-46)
         sessions.add(org.sangam.engine.deploy.DelayedStateChangeTenant.sessionFactory());
         // SL-177: PROCESS_TRACE rows go with the instance's history (B-36)
-        sessions.add(org.sangam.engine.trace.ProcessTraceHistoryRemoval.sessionFactory());
+        // RM-52 (decision 386): and only once the tree has a verified archive (process and decision history)
+        sessions.add(org.sangam.engine.trace.ProcessTraceHistoryRemoval.sessionFactory(s.getHistoryArchiveGate()));
+        sessions.add(org.sangam.engine.trace.HistoryArchiveGuard.Decisions.sessionFactory(s.getHistoryArchiveGate()));
         cfg.setCustomSessionFactories(sessions);
 
         // variables: long strings and JSON first, so they win over Operaton's string / Java serializers

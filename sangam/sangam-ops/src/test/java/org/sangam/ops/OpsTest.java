@@ -151,8 +151,18 @@ class OpsTest {
         assertThrows(Exception.class, () -> mig.run("j2", List.of(new LegacyHistoryMigrator.Table("ACT_ID_MEMBERSHIP", "NOPE_")), 10, "ops"));
         assertEquals(List.of("FAILED", 1L), List.of(mig.checkpoints("j2").get(0).status(), mig.checkpoints("j2").get(0).failed()));
 
-        HierarchyRetention h = new HierarchyRetention(tx, audit);
+        // RM-52: this tree counts as archived (the refusing gate below, and HistoryArchivePurgeTest, test the gate)
+        HierarchyRetention h = new HierarchyRetention(tx, audit, (c, tenant, root) -> null);
         var tree = new HierarchyRetention.Tree("r1", "t", "k", Instant.parse("2020-01-01T00:00:00Z"), List.of("c1", "r1"));
+        List<String> notPurged = new ArrayList<>();
+        var unarchived = new HierarchyRetention.Tree("r9", "t-refused", "k", Instant.parse("2020-01-01T00:00:00Z"), List.of("c9", "r9"));
+        HierarchyRetention refusing = new HierarchyRetention(tx, audit, org.sangam.core.history.HistoryArchiveGate.notConfigured());
+        assertEquals(0, refusing.execute(List.of(unarchived), (t, ids) -> notPurged.addAll(ids), "ops", "no archive"));
+        assertEquals(List.of(), notPurged, "RM-52: a tree without a verified archive is never handed to the purger");
+        assertTrue(refusing.runs("t-refused").stream().anyMatch(r -> r.reason().equals("no archive (refused without a verified archive: 1 trees)") && r.purged() == 0));
+        assertEquals(0, refusing.execute(List.of(unarchived), (c, t) -> { throw new IllegalStateException("store down"); },
+                (t, ids) -> notPurged.addAll(ids), "ops", "export fails"));
+        assertEquals(List.of(), notPurged, "a failed export refuses the tree too");
         assertThrows(IllegalArgumentException.class, () -> h.execute(List.of(tree), (t, ids) -> { }, "ops", " "));
         assertEquals(2, h.execute(List.of(tree), (t, ids) -> { }, "ops", "records schedule 4"));
         var run = h.runs("t").get(0);
@@ -339,7 +349,7 @@ class OpsTest {
             Jdbc.update(c, sql, "r5", "r5", "unlisted", "t", old, old);
             return null;
         });
-        HierarchyRetention h = new HierarchyRetention(tx, audit);
+        HierarchyRetention h = new HierarchyRetention(tx, audit, (c, tenant, root) -> null); // RM-52: archived
         var plan = h.plan("t", Map.of("k", Duration.ofDays(30)), now, id -> id.equals("r3"), 10);
         assertEquals(List.of("r1"), plan.stream().map(HierarchyRetention.Tree::rootId).toList(), plan::toString);
         assertEquals(List.of("c1", "r1"), plan.get(0).instanceIds());

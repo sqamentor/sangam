@@ -44,7 +44,11 @@ public final class EquivalenceScenarios {
                 new EquivalenceScenario("cross-tenant", "authorization: another tenant's instance",
                         EquivalenceScenarios::crossTenant),
                 new EquivalenceScenario("idempotent-replay", "duplicate prevention: Idempotency-Key replay and reuse",
-                        EquivalenceScenarios::idempotentReplay));
+                        EquivalenceScenarios::idempotentReplay),
+                new EquivalenceScenario("inbox-dedupe", "duplicate prevention: an inbound message is accepted once",
+                        PortScenarios::inboxDedupe),
+                new EquivalenceScenario("audit-tamper", "audit: a row altered behind the ports breaks the chain",
+                        PortScenarios::auditTamper));
     }
 
     /** The fee decision at its latest version for three amounts, plus a repeat that must give the same digest. */

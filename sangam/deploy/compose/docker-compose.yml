@@ -166,7 +166,7 @@ services:
 
   # ------------------------------------------------------------------------------------------------ databases
   postgres:
-    image: postgres:17
+    image: postgres:17@sha256:846a7ddaa67a4b354ae1d21087b683901aa6113a4ed626d3787cfbf6c85e3e07
     profiles: [postgres]
     restart: unless-stopped
     environment:
@@ -203,7 +203,7 @@ services:
   # oracle and server-oracle never start (NOT-RUN, never a pass); the oracle entrypoint repeats the check before the
   # image's own container-entrypoint.sh (the image has no CMD, so overriding the entrypoint drops nothing).
   oracle-terms:
-    image: gvenzl/oracle-free:23-slim-faststart
+    image: gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093
     profiles: [oracle]
     restart: "no"
     environment:
@@ -216,7 +216,7 @@ services:
         { echo "NOT-RUN: SANGAM_ACCEPT_ORACLE_FREE_TERMS is not Y. Read the Oracle Free container image terms, then set it in .env yourself (decision 180)." >&2; exit 1; }
 
   oracle:
-    image: gvenzl/oracle-free:23-slim-faststart
+    image: gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093
     profiles: [oracle]
     restart: unless-stopped
     depends_on:
@@ -248,7 +248,7 @@ services:
       start_period: 60s
 
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2022-latest@sha256:4525e3efac9f3e241cb003bb2ff2a82818b502f37e12049d788b1a9fa7e13b7f
     profiles: [sqlserver]
     restart: unless-stopped
     environment:
@@ -273,7 +273,7 @@ services:
 
   # One-shot: database "sangam", login "sangam", READ_COMMITTED_SNAPSHOT ON (VI.1.6), FULL recovery (log backups).
   sqlserver-init:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2022-latest@sha256:4525e3efac9f3e241cb003bb2ff2a82818b502f37e12049d788b1a9fa7e13b7f
     profiles: [sqlserver]
     restart: "no"
     depends_on:
@@ -291,7 +291,7 @@ services:
       - /opt/mssql-tools18/bin/sqlcmd -C -S sqlserver -U sa -P "$${MSSQL_SA_PASSWORD}" -b -v SANGAM_DB_PASSWORD="$${SANGAM_DB_PASSWORD}" -i /init/init.sql
 
   mysql:
-    image: mysql:8.4
+    image: mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902
     profiles: [mysql]
     restart: unless-stopped
     environment:
@@ -433,7 +433,7 @@ services:
   #   docker compose -f docker-compose.yml -f docker-compose.sidecars.yml --profile postgres --profile pdf --profile ocr up -d
   # Without it PDF output answers 422 FORMAT_NOT_AVAILABLE and OCR is unavailable (fail closed, nothing guessed).
   sidecar-secrets-init:
-    image: ${SANGAM_SIDECAR_INIT_IMAGE:-eclipse-temurin:25.0.1_8-jre-noble}
+    image: ${SANGAM_SIDECAR_INIT_IMAGE:-eclipse-temurin:25.0.1_8-jre-noble@sha256:ecbdcdbfae44ee61794a8ad36042b6b8e3c3124e5e9c171c3630fcd5ab856e33}
     profiles: [pdf, ocr]
     restart: "no"
     user: "0:0"
@@ -535,7 +535,7 @@ services:
   # ------------------------------------------------------------------------------------------------ identity
   # Development mode (embedded H2 store). Production: external Keycloak (or Parichay/SAML via brokering, R50).
   keycloak:
-    image: quay.io/keycloak/keycloak:26.3.3
+    image: quay.io/keycloak/keycloak:26.3.3@sha256:6a7217a100bd3e5de4063a27a538ef999a3c5a88c4b4ec0ffc0a642aee7b2597
     restart: unless-stopped
     command: ["start-dev", "--import-realm", "--http-port=8180", "--hostname-strict=false", "--health-enabled=true"]
     environment:
@@ -556,7 +556,7 @@ services:
   # Admin password: dev falls back to KEYCLOAK_ADMIN_PASSWORD exactly like the keycloak service; for anything else add
   # -f docker-compose.keycloak-secret.yml, which supplies KEYCLOAK_ADMIN_PASSWORD_FILE from a compose secret file.
   keycloak-broker-otp:
-    image: quay.io/keycloak/keycloak:26.3.3
+    image: quay.io/keycloak/keycloak:26.3.3@sha256:6a7217a100bd3e5de4063a27a538ef999a3c5a88c4b4ec0ffc0a642aee7b2597
     entrypoint: ["sh"]
     command: ["/opt/sangam/keycloak/configure-broker-otp.sh"]
     restart: on-failure
@@ -578,7 +578,7 @@ services:
   # Always present so the server has a local OTLP endpoint; by default it exports nowhere (R56: no outbound
   # telemetry by default). OTEL_COLLECTOR_CONFIG=collector-observability.yaml forwards to Jaeger/Prometheus.
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.131.1
+    image: otel/opentelemetry-collector-contrib:0.131.1@sha256:c06aa6d7833e9a2b81c6c394d67e40ae9864edec8dca8a8e8552df1316c96d9b
     restart: unless-stopped
     command: ["--config=/etc/otelcol/${OTEL_COLLECTOR_CONFIG:-collector-base.yaml}"]
     volumes:
@@ -589,14 +589,14 @@ services:
     networks: [sangam]
 
   jaeger:
-    image: jaegertracing/jaeger:2.9.0
+    image: jaegertracing/jaeger:2.9.0@sha256:e128b9adbb29c7146ac0b43e26be9dec794fee3478f2f05c4ef7a5b14ddba9a4
     profiles: [observability]
     restart: unless-stopped
     ports: ["127.0.0.1:16686:16686"]
     networks: [sangam]
 
   prometheus:
-    image: prom/prometheus:v3.5.0
+    image: prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996
     profiles: [observability]
     restart: unless-stopped
     command:

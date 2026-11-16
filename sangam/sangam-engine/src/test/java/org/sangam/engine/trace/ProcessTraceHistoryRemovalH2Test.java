@@ -65,6 +65,8 @@ class ProcessTraceHistoryRemovalH2Test {
         s.setApplyEnvironment(false);
         s.setJobExecutorActivate(false);
         s.setTraceIdSource(current::get);
+        // RM-52: these trees count as archived; the archive gate itself is HistoryArchiveGuardH2Test's subject
+        s.setHistoryArchiveGate((c, tenant, root) -> null);
         ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:sl177" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         OperatonEngineAdapter a = SangamEngineFactory.build(ds, s, "h2");

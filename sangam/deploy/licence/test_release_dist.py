@@ -6,6 +6,7 @@ run in the test phase."""
 import contextlib
 import io
 import os
+import tempfile
 import unittest
 
 import release_dist as rd
@@ -56,6 +57,33 @@ class ReleaseDist(unittest.TestCase):
         self.assertEqual(run("field", "nats", "select")[1],
                          ["pkg:maven/io.nats/jnats@", "pkg:maven/org.bouncycastle/bcprov-lts8on@"])
         self.assertEqual(run("field", "nats", "sbom", "--version", "0.1.0"), (0, ["sangam-nats-0.1.0.cdx.json"]))
+
+    def test_pom_version_reads_the_literal_project_version(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pom = os.path.join(tmp, "pom.xml")
+            with open(pom, "w", encoding="utf-8") as f:
+                f.write('<project xmlns="http://maven.apache.org/POM/4.0.0"><parent><version>9</version></parent>'
+                        '<version>0.1.0-SNAPSHOT</version></project>')
+            self.assertEqual(run("pom-version", "--pom", pom), (0, ["0.1.0-SNAPSHOT"]))
+            with open(pom, "w", encoding="utf-8") as f:
+                f.write('<project xmlns="http://maven.apache.org/POM/4.0.0"><parent><version>9</version></parent></project>')
+            self.assertEqual(run("pom-version", "--pom", pom)[0], 2, "an inherited version is never guessed")
+            with open(pom, "w", encoding="utf-8") as f:
+                f.write("<project><version>${revision}</version></project>")
+            self.assertEqual(run("pom-version", "--pom", pom)[0], 2)
+        self.assertEqual(run("pom-version", "--pom", os.path.join(HERE, "none.xml"))[0], 2)
+        self.assertEqual(run("pom-version")[0], 0, "the sangam root pom has a literal version")
+
+    def test_rm15_the_pull_request_licence_gate_names_each_fat_jar(self):
+        # RM-15: "Name each jar explicitly; do not glob." The licence gate takes each fat jar's name from
+        # distributions.json (release_dist.py field <id> jar) with the built version, never from find.
+        wf = os.path.join(HERE, "..", "..", "..", ".github", "workflows", "licence-check.yml")
+        with open(wf, encoding="utf-8") as f:
+            text = f.read()
+        jar_finds = [ln.strip() for ln in text.splitlines() if "find " in ln and ".jar" in ln]
+        self.assertEqual([], jar_finds)
+        self.assertIn('$RD field "$id" jar --version "$V"', text)
+        self.assertIn("V=$($RD pom-version)", text)
 
 
 if __name__ == "__main__":

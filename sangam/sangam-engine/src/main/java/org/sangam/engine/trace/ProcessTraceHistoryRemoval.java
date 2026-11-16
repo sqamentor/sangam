@@ -6,6 +6,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.operaton.bpm.engine.impl.db.DbEntity;
@@ -14,6 +15,7 @@ import org.operaton.bpm.engine.impl.db.sql.DbSqlSessionFactory;
 import org.operaton.bpm.engine.impl.interceptor.Session;
 import org.operaton.bpm.engine.impl.interceptor.SessionFactory;
 import org.operaton.bpm.engine.impl.persistence.entity.HistoricProcessInstanceManager;
+import org.sangam.core.history.HistoryArchiveGate;
 import org.sangam.engine.tx.CommandState;
 
 /**
@@ -48,8 +50,19 @@ public final class ProcessTraceHistoryRemoval extends HistoricProcessInstanceMan
     /** Oracle allows at most 1,000 expressions in an IN list. */
     static final int IN_CHUNK = 1000;
 
+    /**
+     * RM-52 (decision 386): asked for every tree before its history goes; see {@link HistoryArchiveGuard}. The manager
+     * also owns the removal-time cleanup of the process tables, so both deletion paths are gated here.
+     */
+    private final HistoryArchiveGate gate;
+
+    ProcessTraceHistoryRemoval(HistoryArchiveGate gate) {
+        this.gate = Objects.requireNonNull(gate, "gate");
+    }
+
     /** The session factory that installs this manager for every command of the engine. */
-    public static SessionFactory sessionFactory() {
+    public static SessionFactory sessionFactory(HistoryArchiveGate gate) {
+        Objects.requireNonNull(gate, "gate");
         return new SessionFactory() {
             @Override
             public Class<?> getSessionType() {
@@ -58,7 +71,7 @@ public final class ProcessTraceHistoryRemoval extends HistoricProcessInstanceMan
 
             @Override
             public Session openSession() {
-                return new ProcessTraceHistoryRemoval();
+                return new ProcessTraceHistoryRemoval(gate);
             }
         };
     }
@@ -66,7 +79,11 @@ public final class ProcessTraceHistoryRemoval extends HistoricProcessInstanceMan
     @Override
     public void deleteHistoricProcessInstanceByIds(List<String> processInstanceIds) {
         if (isHistoryEnabled() && processInstanceIds != null && !processInstanceIds.isEmpty()) {
-            ProcessTraces.deleteInstances(CommandState.connection(getCommandContext()), processInstanceIds, IN_CHUNK);
+            Connection c = CommandState.connection(getCommandContext());
+            // RM-52: refused before anything is deleted, so the command rolls back whole
+            HistoryArchiveGuard.require(gate, c, HistoryArchiveGuard.treesOfInstances(c,
+                    prefix(getCommandContext().getProcessEngineConfiguration()), processInstanceIds));
+            ProcessTraces.deleteInstances(c, processInstanceIds, IN_CHUNK);
         }
         super.deleteHistoricProcessInstanceByIds(processInstanceIds);
     }
@@ -78,6 +95,9 @@ public final class ProcessTraceHistoryRemoval extends HistoricProcessInstanceMan
                                                                                                   int batchSize) {
         ProcessEngineConfigurationImpl cfg = getCommandContext().getProcessEngineConfiguration();
         Connection c = CommandState.connection(getCommandContext());
+        // RM-52: every tree with a due row in any process table, before the trace rows or the history go
+        HistoryArchiveGuard.require(gate, c, HistoryArchiveGuard.treesDue(c, cfg, HistoryArchiveGuard.PROCESS_TABLES,
+                removalTime, minuteFrom, minuteTo));
         String history = prefix(cfg) + "ACT_HI_PROCINST";
         String minute = minuteFilter(cfg.getDatabaseType(), minuteFrom, minuteTo);
         Jdbc.deleteDue(c, history, minute, new Timestamp(removalTime.getTime()), minuteFrom, minuteTo);

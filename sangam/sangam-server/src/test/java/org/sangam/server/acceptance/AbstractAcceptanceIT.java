@@ -36,6 +36,25 @@ public abstract class AbstractAcceptanceIT {
     private static final String TEST_PEPPER = randomBase64(32);
     private static final String[] REGISTRY_SIGNER = ed25519();
     private static final String[] BUNDLE_SIGNER = ed25519();
+    /**
+     * RM-52: the suite's history archive (store and key per run). The key is a secret reference, as in production,
+     * resolved from a mounted-file directory ahead of the environment (sangam.secrets.providers=file,env).
+     */
+    private static final java.nio.file.Path ARCHIVE_DIR = archiveDir();
+
+    private static java.nio.file.Path archiveDir() {
+        try {
+            java.nio.file.Path dir = java.nio.file.Files.createTempDirectory("sangam-acceptance-archive");
+            String[] key = ed25519();
+            java.nio.file.Path secrets = java.nio.file.Files.createDirectories(dir.resolve("secrets/history-archive"));
+            java.nio.file.Files.writeString(secrets.resolve("private"), key[0]);
+            java.nio.file.Files.writeString(secrets.resolve("public"), key[1]);
+            java.nio.file.Files.createDirectories(dir.resolve("store"));
+            return dir;
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+    }
 
     /** Base64 PKCS#8 private key and X.509 public key of a fresh Ed25519 pair. */
     private static String[] ed25519() {
@@ -121,5 +140,12 @@ public abstract class AbstractAcceptanceIT {
             r.add("sangam.quotas.defaults." + l.key(), () -> "-1");
         }
         r.add("sangam.quotas.override-ttl", () -> "0s");
+        r.add("sangam.secrets.providers", () -> "file,env");
+        r.add("sangam.secrets.file.root", () -> ARCHIVE_DIR.resolve("secrets").toString());
+        r.add("sangam.history.archive.enabled", () -> "true");
+        r.add("sangam.history.archive.store-root", () -> ARCHIVE_DIR.resolve("store").toString());
+        r.add("sangam.history.archive.retention-days", () -> "36500");
+        r.add("sangam.history.archive.signing.private-key-ref", () -> "secret://history-archive/private");
+        r.add("sangam.history.archive.signing.public-key-ref", () -> "secret://history-archive/public");
     }
 }

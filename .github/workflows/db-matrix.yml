@@ -176,12 +176,12 @@ jobs:
     env:
       # Read by the Sangam integration-test base classes (same images as spike Databases.java).
       SANGAM_IT_DB: ${{ matrix.db }}
-      SANGAM_IT_IMAGE_POSTGRES: postgres:17
-      SANGAM_IT_IMAGE_ORACLE: gvenzl/oracle-free:23-slim-faststart
-      SANGAM_IT_IMAGE_SQLSERVER: mcr.microsoft.com/mssql/server:2022-latest
+      SANGAM_IT_IMAGE_POSTGRES: postgres:17@sha256:846a7ddaa67a4b354ae1d21087b683901aa6113a4ed626d3787cfbf6c85e3e07
+      SANGAM_IT_IMAGE_ORACLE: gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093
+      SANGAM_IT_IMAGE_SQLSERVER: mcr.microsoft.com/mssql/server:2022-latest@sha256:4525e3efac9f3e241cb003bb2ff2a82818b502f37e12049d788b1a9fa7e13b7f
       # SG-05: must equal AcceptanceDatabase's sqlserver2025 image
       SANGAM_IT_IMAGE_SQLSERVER2025: mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04
-      SANGAM_IT_IMAGE_MYSQL: mysql:8.4
+      SANGAM_IT_IMAGE_MYSQL: mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902
       SANGAM_IT_IMAGE_MARIADB: mariadb:11.4
       SANGAM_IT_IMAGE_DB2: icr.io/db2_community/db2:12.1.2.0
       # M-108: YugabyteDB YSQL, pinned by digest (<repo>:<tag>@sha256:<64 hex>). Not pinned yet: the digest needs a
@@ -235,7 +235,11 @@ jobs:
         if: steps.terms.outputs.run == 'true'
         run: |
           img_var="SANGAM_IT_IMAGE_$(echo '${{ matrix.db }}' | tr a-z A-Z)"
-          docker pull "${!img_var}"
+          ref="${!img_var}"
+          docker pull "$ref"
+          # RM-33: a <name>:<tag>@sha256:<digest> pin is pulled by its digest and tagged <name>:<tag>, the name the
+          # integration tests ask Testcontainers for (AcceptanceDatabase), which then runs exactly the pinned image
+          case "$ref" in *@sha256:*) docker tag "$ref" "${ref%@sha256:*}" ;; esac
       - name: Provenance (start)
         if: steps.terms.outputs.run == 'true'
         run: python3 -I tools/provenance/run_provenance.py start --db "${{ matrix.db }}" --out target/run-provenance

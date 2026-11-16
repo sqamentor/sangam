@@ -3,6 +3,8 @@
 
 Run: python -I -m unittest discover -s sangam/deploy/licence -p "test_*.py" (governance.yml). Written in Wave 4,
 run in the test phase."""
+import contextlib
+import io
 import json
 import os
 import tempfile
@@ -470,29 +472,33 @@ class Cli(unittest.TestCase):
             z.writestr("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\n")
         self.assertEqual(1, cl.main(["--policy", self.policy, "--jar", jar]))
 
-    def fat_jar(self, name, *nested):
+    def fat_jar(self, name, nested):
         jar = os.path.join(self.tmp.name, name)
         with zipfile.ZipFile(jar, "w") as z:
-            z.writestr("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\n")
-            z.writestr("BOOT-INF/classes/x.class", b"")
+            z.writestr("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\nMain-Class: org.springframework.boot.loader.launch.JarLauncher\n")
             for n in nested:
                 z.writestr(f"BOOT-INF/lib/{n}", b"PK\x05\x06" + b"\x00" * 18)
         return jar
 
-    def test_a_planted_mariadb_driver_inside_a_fat_jar_fails(self):
-        # RM-15 / CR-04: LIC-5, the MariaDB driver must be a separate replaceable jar, never inside the fat jar
-        clean = self.fat_jar("clean.jar", "postgresql-42.7.8.jar", "spring-core-6.2.10.jar")
-        self.assertEqual(0, cl.main(["--policy", self.policy, "--jar", clean]))
-        planted = self.fat_jar("planted.jar", "postgresql-42.7.8.jar", "mariadb-java-client-3.5.6.jar")
-        self.assertEqual(1, cl.main(["--policy", self.policy, "--jar", clean, "--jar", planted]))
-        ch = cl.Checker(cl.load_json(self.policy), True)
-        ch.check_jar(planted)
-        self.assertTrue(any("FORBIDDEN JAR ENTRY planted.jar!BOOT-INF/lib/mariadb-java-client-3.5.6.jar" in e
-                            and "LIC-5" in e for e in ch.errors), ch.errors)
+    def test_rm15_a_planted_mariadb_jar_fails_every_fat_jar_distribution(self):
+        # RM-15 acceptance (CR-04): a MariaDB driver nested in any released fat jar fails the gate (exit 1), for
+        # every fat-jar distribution of distributions.json, by the name the release gives the jar.
+        import release_dist
+        fat = [d for d in release_dist.load(os.path.join(HERE, "distributions.json")) if d.get("kind") == "fat-jar"]
+        self.assertEqual({"server", "control-plane", "gateway", "rollup", "simulators"}, {d["id"] for d in fat})
+        for d in fat:
+            name = d["jar"].replace("{version}", "0.1.0")
+            clean = self.fat_jar("clean-" + name, ["spring-core-6.2.0.jar"])
+            self.assertEqual(0, cl.main(["--policy", self.policy, "--strict", "--distribution", d["id"], "--jar", clean]), name)
+            planted = self.fat_jar(name, ["spring-core-6.2.0.jar", "mariadb-java-client-3.5.6.jar"])
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                code = cl.main(["--policy", self.policy, "--strict", "--distribution", d["id"], "--jar", planted])
+            self.assertEqual(1, code, name)
+            self.assertIn(f"FORBIDDEN JAR ENTRY {name}!BOOT-INF/lib/mariadb-java-client-3.5.6.jar: LIC-5", out.getvalue())
 
-    def test_a_missing_jar_is_blocked_never_passed(self):
-        # RM-15: a jar named on the command line that does not exist blocks the gate (exit 2), it is never skipped
-        self.assertEqual(2, cl.main(["--policy", self.policy, "--jar", os.path.join(self.tmp.name, "absent.jar")]))
+    def test_rm15_a_missing_jar_is_blocked_never_a_pass(self):
+        self.assertEqual(2, cl.main(["--policy", self.policy, "--jar", os.path.join(self.tmp.name, "sangam-server-0.1.0.jar")]))
 
     def test_annotate_records_elections_in_the_sbom(self):
         p = self.write_bom([comp("pkg:maven/com.h2database/h2@2.3.232", expr="MPL-2.0 OR EPL-1.0")])
