@@ -323,8 +323,7 @@ public class IntegrationWiring {
     @Bean
     public IntegrationBridge sangamIntegrationBridge(ConnectorInvoker invoker, PendingAuditDrainer sangamPendingAuditDrainer,
                                                      OutboxWriter writer, Environment env) {
-        IntegrationBridge bridge = new IntegrationBridge(invoker.deferringAudit(sangamPendingAuditDrainer), writer,
-                defaultTenant(env));
+        IntegrationBridge bridge = new IntegrationBridge(invoker.deferringAudit(sangamPendingAuditDrainer), writer);
         IntegrationBridge.install(bridge);
         return bridge;
     }
@@ -553,7 +552,7 @@ public class IntegrationWiring {
             return new IntegrationWorkerHolder(null);
         }
         ConnectorExternalTaskWorker worker = new ConnectorExternalTaskWorker(a, invoker,
-                WorkContextResolver.fromVariables(defaultTenant(env)), lifecycle, rest.getNode() + "-connectors", 10,
+                WorkContextResolver.engineTenant(), lifecycle, rest.getNode() + "-connectors", 10,
                 Duration.ofSeconds(2));
         for (String spec : specs) {
             int eq = spec.indexOf('=');
