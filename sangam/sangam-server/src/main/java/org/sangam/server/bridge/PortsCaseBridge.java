@@ -13,7 +13,7 @@ import org.sangam.rest.port.CasePort;
 import org.sangam.rest.port.Page;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.TxSupport;
-import org.sangam.rest.support.TypedVariables;
+import org.sangam.rest.support.SlotVariableGuard;
 
 /**
  * {@link CasePort} with the CMMN extensions of sangam-flowable-ports: event listeners can {@code occur} (FLOWABLE-INTO-OPERATON FC-55, via
@@ -84,7 +84,7 @@ public final class PortsCaseBridge implements CasePort {
             String newId = tx.inTx(() -> {
                 String id = "reactivate".equalsIgnoreCase(action)
                         ? PortsErrors.call(() -> lifecycle.reactivate(caseInstanceId, null, Set.of(),
-                                TypedVariables.fromJson(command.variables()), ctx.principalId()))
+                                SlotVariableGuard.callerVariables(command.variables()), ctx.principalId()))
                         : PortsErrors.call(() -> lifecycle.cutOver(caseInstanceId, null, ctx.principalId()));
                 Map<String, Object> payload = new LinkedHashMap<>();
                 payload.put("action", action);

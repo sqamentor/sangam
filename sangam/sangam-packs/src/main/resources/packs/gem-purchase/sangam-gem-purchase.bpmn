@@ -65,6 +65,8 @@
     <callActivity id="gm_bill" name="Bill within the payment SLA (P1)" calledElement="sangam-p1-bill-payment" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}/BILL"/><operaton:in source="supplierName" target="payee"/><operaton:in source="supplierAccount" target="account"/><operaton:in source="supplierIfsc" target="ifsc"/><operaton:in source="amount" target="amount"/><operaton:in source="budgetHead" target="budgetHead"/><operaton:in source="approvedPayloadHash" target="sanctionRef"/><operaton:in source="initiatorSeat" target="actingSeat"/><operaton:in source="initiatorPerson" target="initiator"/><operaton:in source="officeId" target="officeId"/><operaton:in sourceExpression="${'3WD'}" target="scrutinySla"/><operaton:in sourceExpression="${'3WD'}" target="sanctionSla"/><operaton:out source="caseState" target="billState"/></extensionElements></callActivity>
     <callActivity id="gm_close" name="Closure (core)" calledElement="sangam-core-closure" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <endEvent id="gm_end" name="Purchased and paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="gm_sanctionPrepareGw" name="Document to sign?" default="gem_purchase_f73"></exclusiveGateway>
+    <userTask id="gm_sanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <boundaryEvent id="gm_inspect_warn" name="SLA warning (75%)" attachedToRef="gm_inspect" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${gm_inspectWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
     <boundaryEvent id="gm_inspect_breach" name="SLA breached" attachedToRef="gm_inspect" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${gm_inspectDueAt}</timeDate></timerEventDefinition></boundaryEvent>
     <sequenceFlow id="gem_purchase_f1" sourceRef="gm_deptClass" targetRef="gm_deptClassGw"/>
@@ -88,7 +90,7 @@
     <sequenceFlow id="gem_purchase_f19" name="no" sourceRef="gm_budgetGw" targetRef="gm_rjBudget_code"/>
     <sequenceFlow id="gem_purchase_f20" sourceRef="gm_encumber" targetRef="gm_autoGw"/>
     <sequenceFlow id="gem_purchase_f21" name="yes" sourceRef="gm_autoGw" targetRef="gm_autoApprove"><conditionExpression xsi:type="tFormalExpression">${autoApprove}</conditionExpression></sequenceFlow>
-    <sequenceFlow id="gem_purchase_f22" name="no" sourceRef="gm_autoGw" targetRef="gm_sanction"/>
+    <sequenceFlow id="gem_purchase_f22" name="no" sourceRef="gm_autoGw" targetRef="gm_sanctionPrepareGw"/>
     <sequenceFlow id="gem_purchase_f23" sourceRef="gm_rj_reject" targetRef="gm_rj_endRejected"/>
     <sequenceFlow id="gem_purchase_f24" sourceRef="gm_autoApprove" targetRef="gm_modeGw"/>
     <sequenceFlow id="gem_purchase_f25" name="SANCTIONED" sourceRef="gm_sanGw" targetRef="gm_modeGw"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
@@ -132,6 +134,9 @@
     <sequenceFlow id="gem_purchase_f63" sourceRef="gm_cracDoc" targetRef="gm_bill"/>
     <sequenceFlow id="gem_purchase_f64" sourceRef="gm_bill" targetRef="gm_close"/>
     <sequenceFlow id="gem_purchase_f65" sourceRef="gm_close" targetRef="gm_end"/>
+    <sequenceFlow id="gem_purchase_f72" name="DSC signature needed" sourceRef="gm_sanctionPrepareGw" targetRef="gm_sanctionPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="gem_purchase_f73" name="no DSC signature" sourceRef="gm_sanctionPrepareGw" targetRef="gm_sanction"/>
+    <sequenceFlow id="gem_purchase_f74" sourceRef="gm_sanctionPrepare" targetRef="gm_sanction"/>
     <subProcess id="gm_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
       <startEvent id="gm_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
       <serviceTask id="gm_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -175,44 +180,46 @@
       <bpmndi:BPMNShape id="gm_rjBudget_endRejected_di" bpmnElement="gm_rjBudget_endRejected"><dc:Bounds x="2032" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gm_autoGw_di" bpmnElement="gm_autoGw"><dc:Bounds x="1860" y="170" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gm_autoApprove_di" bpmnElement="gm_autoApprove"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_sanction_di" bpmnElement="gm_sanction"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_rj_reject_di" bpmnElement="gm_rj_reject"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_rj_endRejected_di" bpmnElement="gm_rj_endRejected"><dc:Bounds x="3682" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_modeGw_di" bpmnElement="gm_modeGw"><dc:Bounds x="2355" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_sanGw_di" bpmnElement="gm_sanGw"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_bid_di" bpmnElement="gm_bid"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_order_di" bpmnElement="gm_order"><dc:Bounds x="2990" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_bidDoc_di" bpmnElement="gm_bidDoc"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_tenderGw_di" bpmnElement="gm_tenderGw"><dc:Bounds x="2850" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_rjTender_code_di" bpmnElement="gm_rjTender_code"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_rjTender_reject_di" bpmnElement="gm_rjTender_reject"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_rjTender_endRejected_di" bpmnElement="gm_rjTender_endRejected"><dc:Bounds x="3352" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_deliveryDue_di" bpmnElement="gm_deliveryDue"><dc:Bounds x="3320" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_orderGw_di" bpmnElement="gm_orderGw"><dc:Bounds x="3180" y="295" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_orderGw_failedReason_di" bpmnElement="gm_orderGw_failedReason"><dc:Bounds x="3320" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_wait_di" bpmnElement="gm_wait"><dc:Bounds x="3510" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_delivered_di" bpmnElement="gm_delivered"><dc:Bounds x="3682" y="552" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_late_di" bpmnElement="gm_late"><dc:Bounds x="3682" y="427" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_overdue_di" bpmnElement="gm_overdue"><dc:Bounds x="3815" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_lateGw_di" bpmnElement="gm_lateGw"><dc:Bounds x="4005" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_terminate_kind_di" bpmnElement="gm_terminate_kind"><dc:Bounds x="4145" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_terminate_call_di" bpmnElement="gm_terminate_call"><dc:Bounds x="4310" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_terminate_end_di" bpmnElement="gm_terminate_end"><dc:Bounds x="4507" y="427" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_inspect_slaPlan_di" bpmnElement="gm_inspect_slaPlan"><dc:Bounds x="3815" y="530" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_inspect_di" bpmnElement="gm_inspect"><dc:Bounds x="3980" y="530" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_inspect_warnNotify_di" bpmnElement="gm_inspect_warnNotify"><dc:Bounds x="4145" y="655" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_inspect_warnEnd_di" bpmnElement="gm_inspect_warnEnd"><dc:Bounds x="4342" y="677" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_inspect_breachAct_di" bpmnElement="gm_inspect_breachAct"><dc:Bounds x="4145" y="530" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_inspect_breachGw_di" bpmnElement="gm_inspect_breachGw"><dc:Bounds x="4335" y="545" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_inspect_done_di" bpmnElement="gm_inspect_done"><dc:Bounds x="4500" y="545" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_cracGw_di" bpmnElement="gm_cracGw"><dc:Bounds x="4665" y="545" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_rejectGoods_di" bpmnElement="gm_rejectGoods"><dc:Bounds x="4805" y="655" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_cracDoc_di" bpmnElement="gm_cracDoc"><dc:Bounds x="4805" y="530" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_bill_di" bpmnElement="gm_bill"><dc:Bounds x="4970" y="530" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_close_di" bpmnElement="gm_close"><dc:Bounds x="5135" y="530" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_end_di" bpmnElement="gm_end"><dc:Bounds x="5332" y="552" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_inspect_warn_di" bpmnElement="gm_inspect_warn"><dc:Bounds x="3988" y="592" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gm_inspect_breach_di" bpmnElement="gm_inspect_breach"><dc:Bounds x="4018" y="592" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_sanction_di" bpmnElement="gm_sanction"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_rj_reject_di" bpmnElement="gm_rj_reject"><dc:Bounds x="3815" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_rj_endRejected_di" bpmnElement="gm_rj_endRejected"><dc:Bounds x="4012" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_modeGw_di" bpmnElement="gm_modeGw"><dc:Bounds x="2685" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_sanGw_di" bpmnElement="gm_sanGw"><dc:Bounds x="2520" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_bid_di" bpmnElement="gm_bid"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_order_di" bpmnElement="gm_order"><dc:Bounds x="3320" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_bidDoc_di" bpmnElement="gm_bidDoc"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_tenderGw_di" bpmnElement="gm_tenderGw"><dc:Bounds x="3180" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_rjTender_code_di" bpmnElement="gm_rjTender_code"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_rjTender_reject_di" bpmnElement="gm_rjTender_reject"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_rjTender_endRejected_di" bpmnElement="gm_rjTender_endRejected"><dc:Bounds x="3682" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_deliveryDue_di" bpmnElement="gm_deliveryDue"><dc:Bounds x="3650" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_orderGw_di" bpmnElement="gm_orderGw"><dc:Bounds x="3510" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_orderGw_failedReason_di" bpmnElement="gm_orderGw_failedReason"><dc:Bounds x="3650" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_wait_di" bpmnElement="gm_wait"><dc:Bounds x="3840" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_delivered_di" bpmnElement="gm_delivered"><dc:Bounds x="4012" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_late_di" bpmnElement="gm_late"><dc:Bounds x="4012" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_overdue_di" bpmnElement="gm_overdue"><dc:Bounds x="4145" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_lateGw_di" bpmnElement="gm_lateGw"><dc:Bounds x="4335" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_terminate_kind_di" bpmnElement="gm_terminate_kind"><dc:Bounds x="4475" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_terminate_call_di" bpmnElement="gm_terminate_call"><dc:Bounds x="4640" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_terminate_end_di" bpmnElement="gm_terminate_end"><dc:Bounds x="4837" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_slaPlan_di" bpmnElement="gm_inspect_slaPlan"><dc:Bounds x="4145" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_di" bpmnElement="gm_inspect"><dc:Bounds x="4310" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_warnNotify_di" bpmnElement="gm_inspect_warnNotify"><dc:Bounds x="4475" y="655" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_warnEnd_di" bpmnElement="gm_inspect_warnEnd"><dc:Bounds x="4672" y="677" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_breachAct_di" bpmnElement="gm_inspect_breachAct"><dc:Bounds x="4475" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_breachGw_di" bpmnElement="gm_inspect_breachGw"><dc:Bounds x="4665" y="545" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_done_di" bpmnElement="gm_inspect_done"><dc:Bounds x="4830" y="545" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_cracGw_di" bpmnElement="gm_cracGw"><dc:Bounds x="4995" y="545" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_rejectGoods_di" bpmnElement="gm_rejectGoods"><dc:Bounds x="5135" y="655" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_cracDoc_di" bpmnElement="gm_cracDoc"><dc:Bounds x="5135" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_bill_di" bpmnElement="gm_bill"><dc:Bounds x="5300" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_close_di" bpmnElement="gm_close"><dc:Bounds x="5465" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_end_di" bpmnElement="gm_end"><dc:Bounds x="5662" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_sanctionPrepareGw_di" bpmnElement="gm_sanctionPrepareGw"><dc:Bounds x="2025" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_sanctionPrepare_di" bpmnElement="gm_sanctionPrepare"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_warn_di" bpmnElement="gm_inspect_warn"><dc:Bounds x="4318" y="592" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_breach_di" bpmnElement="gm_inspect_breach"><dc:Bounds x="4348" y="592" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gm_withdraw_di" bpmnElement="gm_withdraw" isExpanded="true"><dc:Bounds x="30" y="785" width="623" height="150"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gm_withdrawStart_di" bpmnElement="gm_withdrawStart"><dc:Bounds x="92" y="847" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gm_withdrawKind_di" bpmnElement="gm_withdrawKind"><dc:Bounds x="225" y="825" width="100" height="80"/></bpmndi:BPMNShape>
@@ -244,50 +251,53 @@
       <bpmndi:BPMNEdge id="gem_purchase_f19_di" bpmnElement="gem_purchase_f19"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="gem_purchase_f20_di" bpmnElement="gem_purchase_f20"><di:waypoint x="1770" y="195"/><di:waypoint x="1860" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="gem_purchase_f21_di" bpmnElement="gem_purchase_f21"><di:waypoint x="1910" y="195"/><di:waypoint x="1955" y="195"/><di:waypoint x="1955" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f22_di" bpmnElement="gem_purchase_f22"><di:waypoint x="1910" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f23_di" bpmnElement="gem_purchase_f23"><di:waypoint x="3585" y="195"/><di:waypoint x="3682" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f24_di" bpmnElement="gem_purchase_f24"><di:waypoint x="2100" y="320"/><di:waypoint x="2227" y="320"/><di:waypoint x="2227" y="195"/><di:waypoint x="2355" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f25_di" bpmnElement="gem_purchase_f25"><di:waypoint x="2240" y="195"/><di:waypoint x="2355" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f26_di" bpmnElement="gem_purchase_f26"><di:waypoint x="2240" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f27_di" bpmnElement="gem_purchase_f27"><di:waypoint x="2100" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f28_di" bpmnElement="gem_purchase_f28"><di:waypoint x="2405" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f29_di" bpmnElement="gem_purchase_f29"><di:waypoint x="2595" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f30_di" bpmnElement="gem_purchase_f30"><di:waypoint x="2405" y="195"/><di:waypoint x="2697" y="195"/><di:waypoint x="2697" y="320"/><di:waypoint x="2990" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f31_di" bpmnElement="gem_purchase_f31"><di:waypoint x="2760" y="195"/><di:waypoint x="2850" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f32_di" bpmnElement="gem_purchase_f32"><di:waypoint x="2900" y="195"/><di:waypoint x="2945" y="195"/><di:waypoint x="2945" y="320"/><di:waypoint x="2990" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f33_di" bpmnElement="gem_purchase_f33"><di:waypoint x="3255" y="195"/><di:waypoint x="3352" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f34_di" bpmnElement="gem_purchase_f34"><di:waypoint x="3090" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f35_di" bpmnElement="gem_purchase_f35"><di:waypoint x="2900" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f36_di" bpmnElement="gem_purchase_f36"><di:waypoint x="3230" y="320"/><di:waypoint x="3275" y="320"/><di:waypoint x="3275" y="445"/><di:waypoint x="3320" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f37_di" bpmnElement="gem_purchase_f37"><di:waypoint x="3230" y="320"/><di:waypoint x="3320" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f38_di" bpmnElement="gem_purchase_f38"><di:waypoint x="3420" y="320"/><di:waypoint x="3452" y="320"/><di:waypoint x="3452" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f39_di" bpmnElement="gem_purchase_f39"><di:waypoint x="3230" y="320"/><di:waypoint x="3357" y="320"/><di:waypoint x="3357" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f40_di" bpmnElement="gem_purchase_f40"><di:waypoint x="3090" y="320"/><di:waypoint x="3180" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f41_di" bpmnElement="gem_purchase_f41"><di:waypoint x="3420" y="445"/><di:waypoint x="3510" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f42_di" bpmnElement="gem_purchase_f42"><di:waypoint x="3560" y="445"/><di:waypoint x="3621" y="445"/><di:waypoint x="3621" y="570"/><di:waypoint x="3682" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f43_di" bpmnElement="gem_purchase_f43"><di:waypoint x="3560" y="445"/><di:waypoint x="3682" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f44_di" bpmnElement="gem_purchase_f44"><di:waypoint x="3718" y="445"/><di:waypoint x="3815" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f45_di" bpmnElement="gem_purchase_f45"><di:waypoint x="3915" y="445"/><di:waypoint x="4005" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f46_di" bpmnElement="gem_purchase_f46"><di:waypoint x="4030" y="470"/><di:waypoint x="4030" y="510"/><di:waypoint x="3370" y="510"/><di:waypoint x="3370" y="485"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f47_di" bpmnElement="gem_purchase_f47"><di:waypoint x="4245" y="445"/><di:waypoint x="4310" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f48_di" bpmnElement="gem_purchase_f48"><di:waypoint x="4410" y="445"/><di:waypoint x="4507" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f49_di" bpmnElement="gem_purchase_f49"><di:waypoint x="4055" y="445"/><di:waypoint x="4145" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f50_di" bpmnElement="gem_purchase_f50"><di:waypoint x="4006" y="628"/><di:waypoint x="4006" y="695"/><di:waypoint x="4145" y="695"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f51_di" bpmnElement="gem_purchase_f51"><di:waypoint x="4245" y="695"/><di:waypoint x="4342" y="695"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f52_di" bpmnElement="gem_purchase_f52"><di:waypoint x="4036" y="628"/><di:waypoint x="4036" y="570"/><di:waypoint x="4145" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f53_di" bpmnElement="gem_purchase_f53"><di:waypoint x="4245" y="570"/><di:waypoint x="4335" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f54_di" bpmnElement="gem_purchase_f54"><di:waypoint x="4385" y="570"/><di:waypoint x="4500" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f55_di" bpmnElement="gem_purchase_f55"><di:waypoint x="4360" y="595"/><di:waypoint x="4360" y="642"/><di:waypoint x="3865" y="642"/><di:waypoint x="3865" y="610"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f56_di" bpmnElement="gem_purchase_f56"><di:waypoint x="3915" y="570"/><di:waypoint x="3980" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f57_di" bpmnElement="gem_purchase_f57"><di:waypoint x="4080" y="570"/><di:waypoint x="4500" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f58_di" bpmnElement="gem_purchase_f58"><di:waypoint x="3718" y="570"/><di:waypoint x="3815" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f59_di" bpmnElement="gem_purchase_f59"><di:waypoint x="4550" y="570"/><di:waypoint x="4665" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f60_di" bpmnElement="gem_purchase_f60"><di:waypoint x="4715" y="570"/><di:waypoint x="4760" y="570"/><di:waypoint x="4760" y="695"/><di:waypoint x="4805" y="695"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f61_di" bpmnElement="gem_purchase_f61"><di:waypoint x="4855" y="735"/><di:waypoint x="4855" y="753"/><di:waypoint x="3370" y="753"/><di:waypoint x="3370" y="485"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f62_di" bpmnElement="gem_purchase_f62"><di:waypoint x="4715" y="570"/><di:waypoint x="4805" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f63_di" bpmnElement="gem_purchase_f63"><di:waypoint x="4905" y="570"/><di:waypoint x="4970" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f64_di" bpmnElement="gem_purchase_f64"><di:waypoint x="5070" y="570"/><di:waypoint x="5135" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="gem_purchase_f65_di" bpmnElement="gem_purchase_f65"><di:waypoint x="5235" y="570"/><di:waypoint x="5332" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f22_di" bpmnElement="gem_purchase_f22"><di:waypoint x="1910" y="195"/><di:waypoint x="2025" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f23_di" bpmnElement="gem_purchase_f23"><di:waypoint x="3915" y="195"/><di:waypoint x="4012" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f24_di" bpmnElement="gem_purchase_f24"><di:waypoint x="2100" y="320"/><di:waypoint x="2392" y="320"/><di:waypoint x="2392" y="195"/><di:waypoint x="2685" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f25_di" bpmnElement="gem_purchase_f25"><di:waypoint x="2570" y="195"/><di:waypoint x="2685" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f26_di" bpmnElement="gem_purchase_f26"><di:waypoint x="2570" y="195"/><di:waypoint x="3815" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f27_di" bpmnElement="gem_purchase_f27"><di:waypoint x="2430" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f28_di" bpmnElement="gem_purchase_f28"><di:waypoint x="2735" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f29_di" bpmnElement="gem_purchase_f29"><di:waypoint x="2925" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f30_di" bpmnElement="gem_purchase_f30"><di:waypoint x="2735" y="195"/><di:waypoint x="3027" y="195"/><di:waypoint x="3027" y="320"/><di:waypoint x="3320" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f31_di" bpmnElement="gem_purchase_f31"><di:waypoint x="3090" y="195"/><di:waypoint x="3180" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f32_di" bpmnElement="gem_purchase_f32"><di:waypoint x="3230" y="195"/><di:waypoint x="3275" y="195"/><di:waypoint x="3275" y="320"/><di:waypoint x="3320" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f33_di" bpmnElement="gem_purchase_f33"><di:waypoint x="3585" y="195"/><di:waypoint x="3682" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f34_di" bpmnElement="gem_purchase_f34"><di:waypoint x="3420" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f35_di" bpmnElement="gem_purchase_f35"><di:waypoint x="3230" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f36_di" bpmnElement="gem_purchase_f36"><di:waypoint x="3560" y="320"/><di:waypoint x="3605" y="320"/><di:waypoint x="3605" y="445"/><di:waypoint x="3650" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f37_di" bpmnElement="gem_purchase_f37"><di:waypoint x="3560" y="320"/><di:waypoint x="3650" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f38_di" bpmnElement="gem_purchase_f38"><di:waypoint x="3750" y="320"/><di:waypoint x="3782" y="320"/><di:waypoint x="3782" y="195"/><di:waypoint x="3815" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f39_di" bpmnElement="gem_purchase_f39"><di:waypoint x="3560" y="320"/><di:waypoint x="3687" y="320"/><di:waypoint x="3687" y="195"/><di:waypoint x="3815" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f40_di" bpmnElement="gem_purchase_f40"><di:waypoint x="3420" y="320"/><di:waypoint x="3510" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f41_di" bpmnElement="gem_purchase_f41"><di:waypoint x="3750" y="445"/><di:waypoint x="3840" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f42_di" bpmnElement="gem_purchase_f42"><di:waypoint x="3890" y="445"/><di:waypoint x="3951" y="445"/><di:waypoint x="3951" y="570"/><di:waypoint x="4012" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f43_di" bpmnElement="gem_purchase_f43"><di:waypoint x="3890" y="445"/><di:waypoint x="4012" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f44_di" bpmnElement="gem_purchase_f44"><di:waypoint x="4048" y="445"/><di:waypoint x="4145" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f45_di" bpmnElement="gem_purchase_f45"><di:waypoint x="4245" y="445"/><di:waypoint x="4335" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f46_di" bpmnElement="gem_purchase_f46"><di:waypoint x="4360" y="470"/><di:waypoint x="4360" y="510"/><di:waypoint x="3700" y="510"/><di:waypoint x="3700" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f47_di" bpmnElement="gem_purchase_f47"><di:waypoint x="4575" y="445"/><di:waypoint x="4640" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f48_di" bpmnElement="gem_purchase_f48"><di:waypoint x="4740" y="445"/><di:waypoint x="4837" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f49_di" bpmnElement="gem_purchase_f49"><di:waypoint x="4385" y="445"/><di:waypoint x="4475" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f50_di" bpmnElement="gem_purchase_f50"><di:waypoint x="4336" y="628"/><di:waypoint x="4336" y="695"/><di:waypoint x="4475" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f51_di" bpmnElement="gem_purchase_f51"><di:waypoint x="4575" y="695"/><di:waypoint x="4672" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f52_di" bpmnElement="gem_purchase_f52"><di:waypoint x="4366" y="628"/><di:waypoint x="4366" y="570"/><di:waypoint x="4475" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f53_di" bpmnElement="gem_purchase_f53"><di:waypoint x="4575" y="570"/><di:waypoint x="4665" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f54_di" bpmnElement="gem_purchase_f54"><di:waypoint x="4715" y="570"/><di:waypoint x="4830" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f55_di" bpmnElement="gem_purchase_f55"><di:waypoint x="4690" y="595"/><di:waypoint x="4690" y="642"/><di:waypoint x="4195" y="642"/><di:waypoint x="4195" y="610"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f56_di" bpmnElement="gem_purchase_f56"><di:waypoint x="4245" y="570"/><di:waypoint x="4310" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f57_di" bpmnElement="gem_purchase_f57"><di:waypoint x="4410" y="570"/><di:waypoint x="4830" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f58_di" bpmnElement="gem_purchase_f58"><di:waypoint x="4048" y="570"/><di:waypoint x="4145" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f59_di" bpmnElement="gem_purchase_f59"><di:waypoint x="4880" y="570"/><di:waypoint x="4995" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f60_di" bpmnElement="gem_purchase_f60"><di:waypoint x="5045" y="570"/><di:waypoint x="5090" y="570"/><di:waypoint x="5090" y="695"/><di:waypoint x="5135" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f61_di" bpmnElement="gem_purchase_f61"><di:waypoint x="5185" y="735"/><di:waypoint x="5185" y="753"/><di:waypoint x="3700" y="753"/><di:waypoint x="3700" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f62_di" bpmnElement="gem_purchase_f62"><di:waypoint x="5045" y="570"/><di:waypoint x="5135" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f63_di" bpmnElement="gem_purchase_f63"><di:waypoint x="5235" y="570"/><di:waypoint x="5300" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f64_di" bpmnElement="gem_purchase_f64"><di:waypoint x="5400" y="570"/><di:waypoint x="5465" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f65_di" bpmnElement="gem_purchase_f65"><di:waypoint x="5565" y="570"/><di:waypoint x="5662" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f72_di" bpmnElement="gem_purchase_f72"><di:waypoint x="2075" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f73_di" bpmnElement="gem_purchase_f73"><di:waypoint x="2075" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f74_di" bpmnElement="gem_purchase_f74"><di:waypoint x="2265" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="gem_purchase_f66_di" bpmnElement="gem_purchase_f66"><di:waypoint x="128" y="865"/><di:waypoint x="225" y="865"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="gem_purchase_f67_di" bpmnElement="gem_purchase_f67"><di:waypoint x="325" y="865"/><di:waypoint x="390" y="865"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="gem_purchase_f68_di" bpmnElement="gem_purchase_f68"><di:waypoint x="490" y="865"/><di:waypoint x="587" y="865"/></bpmndi:BPMNEdge>

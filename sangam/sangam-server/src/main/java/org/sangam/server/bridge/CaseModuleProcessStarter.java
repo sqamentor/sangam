@@ -8,6 +8,7 @@ import java.util.Map;
 import org.operaton.bpm.engine.RuntimeService;
 import org.sangam.casefile.ports.CaseFilePorts;
 import org.sangam.programme.ports.ProgrammePorts;
+import org.sangam.core.engine.DocumentSlotNames;
 
 /**
  * The case module's {@code ProcessStarter} and the programme module's {@code CampaignStarter} on the engine
@@ -31,6 +32,7 @@ public final class CaseModuleProcessStarter implements CaseFilePorts.ProcessStar
             return null;
         }
         Map<String, Object> vars = new LinkedHashMap<>(variables == null ? Map.of() : variables);
+        DocumentSlotNames.refuse(vars.keySet()); // decision 385 (2)
         vars.putIfAbsent("sangamTenantId", tenantId);
         vars.putIfAbsent("sangamBusinessKey", businessKey);
         boolean tenantOwned = tenantId != null && repository.createProcessDefinitionQuery().processDefinitionKey(processKey)

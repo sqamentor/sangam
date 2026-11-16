@@ -49,6 +49,10 @@
     <serviceTask id="py_failed" name="Payment rejected by the rail" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>payment-failed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>initiatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="py_exGw" name="executionOutcome?" default="sec_bank_payment_f46"></exclusiveGateway>
     <endEvent id="py_end" name="Paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="py_checkerPrepareGw" name="Document to sign?" default="sec_bank_payment_f60"></exclusiveGateway>
+    <userTask id="py_checkerPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="py_authoriserPrepareGw" name="Document to sign?" default="sec_bank_payment_f63"></exclusiveGateway>
+    <userTask id="py_authoriserPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <boundaryEvent id="py_inv" name="Changed after approval" attachedToRef="py_pay" cancelActivity="true"><errorEventDefinition errorRef="err_APPROVAL_INVALIDATED"/></boundaryEvent>
     <sequenceFlow id="sec_bank_payment_f1" sourceRef="py_bene_clear" targetRef="py_bene"/>
     <sequenceFlow id="sec_bank_payment_f2" sourceRef="py_start" targetRef="py_defaults"/>
@@ -80,14 +84,14 @@
     <sequenceFlow id="sec_bank_payment_f28" sourceRef="py_limits" targetRef="py_limGw"/>
     <sequenceFlow id="sec_bank_payment_f29" name="rail not permitted for this amount: correct" sourceRef="py_limGw" targetRef="py_correct"><conditionExpression xsi:type="tFormalExpression">${!railAllowed}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_bank_payment_f30" name="allowed" sourceRef="py_limGw" targetRef="py_auth1"/>
-    <sequenceFlow id="sec_bank_payment_f31" sourceRef="py_auth1" targetRef="py_checker"/>
+    <sequenceFlow id="sec_bank_payment_f31" sourceRef="py_auth1" targetRef="py_checkerPrepareGw"/>
     <sequenceFlow id="sec_bank_payment_f32" sourceRef="py_rj_reject" targetRef="py_rj_endRejected"/>
     <sequenceFlow id="sec_bank_payment_f33" name="SANCTIONED" sourceRef="py_chkGw" targetRef="py_levelGw"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_bank_payment_f34" name="RETURNED" sourceRef="py_chkGw" targetRef="py_correct"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_bank_payment_f35" name="otherwise" sourceRef="py_chkGw" targetRef="py_rj_reject"/>
     <sequenceFlow id="sec_bank_payment_f36" sourceRef="py_checker" targetRef="py_chkGw"/>
     <sequenceFlow id="sec_bank_payment_f37" name="above the band" sourceRef="py_levelGw" targetRef="py_auth2"><conditionExpression xsi:type="tFormalExpression">${authLevels &gt; 1}</conditionExpression></sequenceFlow>
-    <sequenceFlow id="sec_bank_payment_f38" sourceRef="py_auth2" targetRef="py_authoriser"/>
+    <sequenceFlow id="sec_bank_payment_f38" sourceRef="py_auth2" targetRef="py_authoriserPrepareGw"/>
     <sequenceFlow id="sec_bank_payment_f39" name="one level" sourceRef="py_levelGw" targetRef="py_pay"/>
     <sequenceFlow id="sec_bank_payment_f40" name="SANCTIONED" sourceRef="py_authGw" targetRef="py_pay"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_bank_payment_f41" name="RETURNED" sourceRef="py_authGw" targetRef="py_correct"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
@@ -99,6 +103,12 @@
     <sequenceFlow id="sec_bank_payment_f47" sourceRef="py_pay" targetRef="py_exGw"/>
     <sequenceFlow id="sec_bank_payment_f48" sourceRef="py_failed" targetRef="py_correct"/>
     <sequenceFlow id="sec_bank_payment_f49" sourceRef="py_close" targetRef="py_end"/>
+    <sequenceFlow id="sec_bank_payment_f59" name="DSC signature needed" sourceRef="py_checkerPrepareGw" targetRef="py_checkerPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_payment_f60" name="no DSC signature" sourceRef="py_checkerPrepareGw" targetRef="py_checker"/>
+    <sequenceFlow id="sec_bank_payment_f61" sourceRef="py_checkerPrepare" targetRef="py_checker"/>
+    <sequenceFlow id="sec_bank_payment_f62" name="DSC signature needed" sourceRef="py_authoriserPrepareGw" targetRef="py_authoriserPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_payment_f63" name="no DSC signature" sourceRef="py_authoriserPrepareGw" targetRef="py_authoriser"/>
+    <sequenceFlow id="sec_bank_payment_f64" sourceRef="py_authoriserPrepare" targetRef="py_authoriser"/>
     <subProcess id="py_return" name="Payment returned by the beneficiary bank" triggeredByEvent="true">
       <startEvent id="py_retStart" name="Return received" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_payment_returned"/></startEvent>
       <serviceTask id="py_retCredit" name="Credit back the remitter" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cbs.credit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>account,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>retCredit</operaton:string></operaton:field><operaton:field name="step"><operaton:string>return-credit</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -134,12 +144,12 @@
       <bpmndi:BPMNShape id="py_bene_clear_di" bpmnElement="py_bene_clear"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_bene_di" bpmnElement="py_bene"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_beneGw_di" bpmnElement="py_beneGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_correct_di" bpmnElement="py_correct"><dc:Bounds x="3650" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_correct_gw_di" bpmnElement="py_correct_gw"><dc:Bounds x="3840" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_correct_version_di" bpmnElement="py_correct_version"><dc:Bounds x="3980" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_correct_wd_kind_di" bpmnElement="py_correct_wd_kind"><dc:Bounds x="3980" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_correct_wd_call_di" bpmnElement="py_correct_wd_call"><dc:Bounds x="4145" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_correct_wd_end_di" bpmnElement="py_correct_wd_end"><dc:Bounds x="4342" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_correct_di" bpmnElement="py_correct"><dc:Bounds x="4310" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_correct_gw_di" bpmnElement="py_correct_gw"><dc:Bounds x="4500" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_correct_version_di" bpmnElement="py_correct_version"><dc:Bounds x="4640" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_correct_wd_kind_di" bpmnElement="py_correct_wd_kind"><dc:Bounds x="4640" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_correct_wd_call_di" bpmnElement="py_correct_wd_call"><dc:Bounds x="4805" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_correct_wd_end_di" bpmnElement="py_correct_wd_end"><dc:Bounds x="5002" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_rjBene_code_di" bpmnElement="py_rjBene_code"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_rjBene_reject_di" bpmnElement="py_rjBene_reject"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_rjBene_endRejected_di" bpmnElement="py_rjBene_endRejected"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
@@ -157,20 +167,24 @@
       <bpmndi:BPMNShape id="py_rjScreen_endRejected_di" bpmnElement="py_rjScreen_endRejected"><dc:Bounds x="2032" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_limGw_di" bpmnElement="py_limGw"><dc:Bounds x="1860" y="170" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_auth1_di" bpmnElement="py_auth1"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_checker_di" bpmnElement="py_checker"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_rj_reject_di" bpmnElement="py_rj_reject"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_rj_endRejected_di" bpmnElement="py_rj_endRejected"><dc:Bounds x="3352" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_levelGw_di" bpmnElement="py_levelGw"><dc:Bounds x="2520" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_chkGw_di" bpmnElement="py_chkGw"><dc:Bounds x="2355" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_auth2_di" bpmnElement="py_auth2"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_authoriser_di" bpmnElement="py_authoriser"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_pay_di" bpmnElement="py_pay"><dc:Bounds x="3155" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_authGw_di" bpmnElement="py_authGw"><dc:Bounds x="3015" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_close_di" bpmnElement="py_close"><dc:Bounds x="3485" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_failed_di" bpmnElement="py_failed"><dc:Bounds x="3485" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_exGw_di" bpmnElement="py_exGw"><dc:Bounds x="3345" y="295" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_end_di" bpmnElement="py_end"><dc:Bounds x="3682" y="427" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_inv_di" bpmnElement="py_inv"><dc:Bounds x="3163" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_checker_di" bpmnElement="py_checker"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_rj_reject_di" bpmnElement="py_rj_reject"><dc:Bounds x="3815" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_rj_endRejected_di" bpmnElement="py_rj_endRejected"><dc:Bounds x="4012" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_levelGw_di" bpmnElement="py_levelGw"><dc:Bounds x="2850" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_chkGw_di" bpmnElement="py_chkGw"><dc:Bounds x="2685" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_auth2_di" bpmnElement="py_auth2"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_authoriser_di" bpmnElement="py_authoriser"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_pay_di" bpmnElement="py_pay"><dc:Bounds x="3815" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_authGw_di" bpmnElement="py_authGw"><dc:Bounds x="3675" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_close_di" bpmnElement="py_close"><dc:Bounds x="4145" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_failed_di" bpmnElement="py_failed"><dc:Bounds x="4145" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_exGw_di" bpmnElement="py_exGw"><dc:Bounds x="4005" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_end_di" bpmnElement="py_end"><dc:Bounds x="4342" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_checkerPrepareGw_di" bpmnElement="py_checkerPrepareGw"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_checkerPrepare_di" bpmnElement="py_checkerPrepare"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_authoriserPrepareGw_di" bpmnElement="py_authoriserPrepareGw"><dc:Bounds x="3180" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_authoriserPrepare_di" bpmnElement="py_authoriserPrepare"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_inv_di" bpmnElement="py_inv"><dc:Bounds x="3823" y="342" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_return_di" bpmnElement="py_return" isExpanded="true"><dc:Bounds x="30" y="535" width="623" height="150"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_retStart_di" bpmnElement="py_retStart"><dc:Bounds x="92" y="597" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_retCredit_di" bpmnElement="py_retCredit"><dc:Bounds x="225" y="575" width="100" height="80"/></bpmndi:BPMNShape>
@@ -190,16 +204,16 @@
       <bpmndi:BPMNEdge id="sec_bank_payment_f2_di" bpmnElement="sec_bank_payment_f2"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_payment_f3_di" bpmnElement="sec_bank_payment_f3"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_payment_f4_di" bpmnElement="sec_bank_payment_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f5_di" bpmnElement="sec_bank_payment_f5"><di:waypoint x="3750" y="70"/><di:waypoint x="3840" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f6_di" bpmnElement="sec_bank_payment_f6"><di:waypoint x="3890" y="70"/><di:waypoint x="3935" y="70"/><di:waypoint x="3935" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f7_di" bpmnElement="sec_bank_payment_f7"><di:waypoint x="4030" y="235"/><di:waypoint x="4030" y="267"/><di:waypoint x="400" y="267"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f8_di" bpmnElement="sec_bank_payment_f8"><di:waypoint x="4080" y="70"/><di:waypoint x="4145" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f9_di" bpmnElement="sec_bank_payment_f9"><di:waypoint x="4245" y="70"/><di:waypoint x="4342" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f10_di" bpmnElement="sec_bank_payment_f10"><di:waypoint x="3890" y="70"/><di:waypoint x="3980" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f5_di" bpmnElement="sec_bank_payment_f5"><di:waypoint x="4410" y="70"/><di:waypoint x="4500" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f6_di" bpmnElement="sec_bank_payment_f6"><di:waypoint x="4550" y="70"/><di:waypoint x="4595" y="70"/><di:waypoint x="4595" y="195"/><di:waypoint x="4640" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f7_di" bpmnElement="sec_bank_payment_f7"><di:waypoint x="4690" y="235"/><di:waypoint x="4690" y="267"/><di:waypoint x="400" y="267"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f8_di" bpmnElement="sec_bank_payment_f8"><di:waypoint x="4740" y="70"/><di:waypoint x="4805" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f9_di" bpmnElement="sec_bank_payment_f9"><di:waypoint x="4905" y="70"/><di:waypoint x="5002" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f10_di" bpmnElement="sec_bank_payment_f10"><di:waypoint x="4550" y="70"/><di:waypoint x="4640" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_payment_f11_di" bpmnElement="sec_bank_payment_f11"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_payment_f12_di" bpmnElement="sec_bank_payment_f12"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_payment_f13_di" bpmnElement="sec_bank_payment_f13"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f14_di" bpmnElement="sec_bank_payment_f14"><di:waypoint x="755" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f14_di" bpmnElement="sec_bank_payment_f14"><di:waypoint x="755" y="70"/><di:waypoint x="4310" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_payment_f15_di" bpmnElement="sec_bank_payment_f15"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_payment_f16_di" bpmnElement="sec_bank_payment_f16"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_payment_f17_di" bpmnElement="sec_bank_payment_f17"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
@@ -214,27 +228,33 @@
       <bpmndi:BPMNEdge id="sec_bank_payment_f26_di" bpmnElement="sec_bank_payment_f26"><di:waypoint x="1770" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_payment_f27_di" bpmnElement="sec_bank_payment_f27"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_payment_f28_di" bpmnElement="sec_bank_payment_f28"><di:waypoint x="1770" y="195"/><di:waypoint x="1860" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f29_di" bpmnElement="sec_bank_payment_f29"><di:waypoint x="1910" y="195"/><di:waypoint x="2780" y="195"/><di:waypoint x="2780" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f29_di" bpmnElement="sec_bank_payment_f29"><di:waypoint x="1910" y="195"/><di:waypoint x="3110" y="195"/><di:waypoint x="3110" y="70"/><di:waypoint x="4310" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_payment_f30_di" bpmnElement="sec_bank_payment_f30"><di:waypoint x="1910" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f31_di" bpmnElement="sec_bank_payment_f31"><di:waypoint x="2100" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f32_di" bpmnElement="sec_bank_payment_f32"><di:waypoint x="3255" y="195"/><di:waypoint x="3352" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f33_di" bpmnElement="sec_bank_payment_f33"><di:waypoint x="2405" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f34_di" bpmnElement="sec_bank_payment_f34"><di:waypoint x="2405" y="195"/><di:waypoint x="3027" y="195"/><di:waypoint x="3027" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f35_di" bpmnElement="sec_bank_payment_f35"><di:waypoint x="2405" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f36_di" bpmnElement="sec_bank_payment_f36"><di:waypoint x="2265" y="195"/><di:waypoint x="2355" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f37_di" bpmnElement="sec_bank_payment_f37"><di:waypoint x="2570" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f38_di" bpmnElement="sec_bank_payment_f38"><di:waypoint x="2760" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f39_di" bpmnElement="sec_bank_payment_f39"><di:waypoint x="2570" y="195"/><di:waypoint x="2862" y="195"/><di:waypoint x="2862" y="320"/><di:waypoint x="3155" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f40_di" bpmnElement="sec_bank_payment_f40"><di:waypoint x="3065" y="195"/><di:waypoint x="3110" y="195"/><di:waypoint x="3110" y="320"/><di:waypoint x="3155" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f41_di" bpmnElement="sec_bank_payment_f41"><di:waypoint x="3065" y="195"/><di:waypoint x="3357" y="195"/><di:waypoint x="3357" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f42_di" bpmnElement="sec_bank_payment_f42"><di:waypoint x="3065" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f43_di" bpmnElement="sec_bank_payment_f43"><di:waypoint x="2925" y="195"/><di:waypoint x="3015" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f44_di" bpmnElement="sec_bank_payment_f44"><di:waypoint x="3181" y="378"/><di:waypoint x="3181" y="417"/><di:waypoint x="2050" y="417"/><di:waypoint x="2050" y="235"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f45_di" bpmnElement="sec_bank_payment_f45"><di:waypoint x="3395" y="320"/><di:waypoint x="3440" y="320"/><di:waypoint x="3440" y="445"/><di:waypoint x="3485" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f46_di" bpmnElement="sec_bank_payment_f46"><di:waypoint x="3395" y="320"/><di:waypoint x="3485" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f47_di" bpmnElement="sec_bank_payment_f47"><di:waypoint x="3255" y="320"/><di:waypoint x="3345" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f48_di" bpmnElement="sec_bank_payment_f48"><di:waypoint x="3585" y="320"/><di:waypoint x="3617" y="320"/><di:waypoint x="3617" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_payment_f49_di" bpmnElement="sec_bank_payment_f49"><di:waypoint x="3585" y="445"/><di:waypoint x="3682" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f31_di" bpmnElement="sec_bank_payment_f31"><di:waypoint x="2100" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f32_di" bpmnElement="sec_bank_payment_f32"><di:waypoint x="3915" y="195"/><di:waypoint x="4012" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f33_di" bpmnElement="sec_bank_payment_f33"><di:waypoint x="2735" y="195"/><di:waypoint x="2850" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f34_di" bpmnElement="sec_bank_payment_f34"><di:waypoint x="2735" y="195"/><di:waypoint x="3522" y="195"/><di:waypoint x="3522" y="70"/><di:waypoint x="4310" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f35_di" bpmnElement="sec_bank_payment_f35"><di:waypoint x="2735" y="195"/><di:waypoint x="3815" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f36_di" bpmnElement="sec_bank_payment_f36"><di:waypoint x="2595" y="195"/><di:waypoint x="2685" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f37_di" bpmnElement="sec_bank_payment_f37"><di:waypoint x="2900" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f38_di" bpmnElement="sec_bank_payment_f38"><di:waypoint x="3090" y="195"/><di:waypoint x="3180" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f39_di" bpmnElement="sec_bank_payment_f39"><di:waypoint x="2900" y="195"/><di:waypoint x="3357" y="195"/><di:waypoint x="3357" y="320"/><di:waypoint x="3815" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f40_di" bpmnElement="sec_bank_payment_f40"><di:waypoint x="3725" y="195"/><di:waypoint x="3770" y="195"/><di:waypoint x="3770" y="320"/><di:waypoint x="3815" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f41_di" bpmnElement="sec_bank_payment_f41"><di:waypoint x="3725" y="195"/><di:waypoint x="4017" y="195"/><di:waypoint x="4017" y="70"/><di:waypoint x="4310" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f42_di" bpmnElement="sec_bank_payment_f42"><di:waypoint x="3725" y="195"/><di:waypoint x="3815" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f43_di" bpmnElement="sec_bank_payment_f43"><di:waypoint x="3585" y="195"/><di:waypoint x="3675" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f44_di" bpmnElement="sec_bank_payment_f44"><di:waypoint x="3841" y="378"/><di:waypoint x="3841" y="417"/><di:waypoint x="2050" y="417"/><di:waypoint x="2050" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f45_di" bpmnElement="sec_bank_payment_f45"><di:waypoint x="4055" y="320"/><di:waypoint x="4100" y="320"/><di:waypoint x="4100" y="445"/><di:waypoint x="4145" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f46_di" bpmnElement="sec_bank_payment_f46"><di:waypoint x="4055" y="320"/><di:waypoint x="4145" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f47_di" bpmnElement="sec_bank_payment_f47"><di:waypoint x="3915" y="320"/><di:waypoint x="4005" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f48_di" bpmnElement="sec_bank_payment_f48"><di:waypoint x="4245" y="320"/><di:waypoint x="4277" y="320"/><di:waypoint x="4277" y="70"/><di:waypoint x="4310" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f49_di" bpmnElement="sec_bank_payment_f49"><di:waypoint x="4245" y="445"/><di:waypoint x="4342" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f59_di" bpmnElement="sec_bank_payment_f59"><di:waypoint x="2240" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f60_di" bpmnElement="sec_bank_payment_f60"><di:waypoint x="2240" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f61_di" bpmnElement="sec_bank_payment_f61"><di:waypoint x="2430" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f62_di" bpmnElement="sec_bank_payment_f62"><di:waypoint x="3230" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f63_di" bpmnElement="sec_bank_payment_f63"><di:waypoint x="3230" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_payment_f64_di" bpmnElement="sec_bank_payment_f64"><di:waypoint x="3420" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_payment_f50_di" bpmnElement="sec_bank_payment_f50"><di:waypoint x="128" y="615"/><di:waypoint x="225" y="615"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_payment_f51_di" bpmnElement="sec_bank_payment_f51"><di:waypoint x="325" y="615"/><di:waypoint x="390" y="615"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_payment_f52_di" bpmnElement="sec_bank_payment_f52"><di:waypoint x="490" y="615"/><di:waypoint x="587" y="615"/></bpmndi:BPMNEdge>

@@ -22,6 +22,7 @@ import org.sangam.rest.port.Page;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
+import org.sangam.rest.support.SlotVariableGuard;
 import org.sangam.rest.support.TypedVariables;
 
 /**
@@ -56,7 +57,7 @@ public class OperatonCaseAdapter implements CasePort {
             throw ApiProblem.badRequest("KEY_REQUIRED", "the case definition key is required");
         }
         return tx.inTx(() -> {
-            Map<String, Object> vars = TypedVariables.fromJson(r.variables());
+            Map<String, Object> vars = SlotVariableGuard.callerVariables(r.variables());
             vars.put(OperatonTaskAdapter.INITIATOR, ctx.principalId());
             org.operaton.bpm.engine.runtime.CaseInstance ci = create(ctx, r.key(), r.businessKey(), vars);
             audit.record(ctx, ci.getId(), "CASE_STARTED", payload(ctx, Map.of("case_definition_id",
@@ -167,7 +168,7 @@ public class OperatonCaseAdapter implements CasePort {
                 throw ApiProblem.notFound("case execution", executionId);
             }
             CaseExecutionCommandBuilder b = cases.withCaseExecution(executionId);
-            Map<String, Object> vars = TypedVariables.fromJson(c.variables());
+            Map<String, Object> vars = SlotVariableGuard.callerVariables(c.variables());
             if (!vars.isEmpty()) {
                 b = b.setVariables(vars);
             }
@@ -203,7 +204,7 @@ public class OperatonCaseAdapter implements CasePort {
         return tx.inTx(() -> {
             requireRuntime(ctx, caseInstanceId);
             CaseExecutionCommandBuilder b = cases.withCaseExecution(caseInstanceId);
-            Map<String, Object> vars = TypedVariables.fromJson(c.variables());
+            Map<String, Object> vars = SlotVariableGuard.callerVariables(c.variables());
             if (!vars.isEmpty()) {
                 b = b.setVariables(vars);
             }
@@ -242,7 +243,7 @@ public class OperatonCaseAdapter implements CasePort {
                             vars.put(v.getName(), v.getValue());
                         }
                     });
-            vars.putAll(TypedVariables.fromJson(c.variables()));
+            vars.putAll(SlotVariableGuard.callerVariables(c.variables()));
             vars.put(REACTIVATED_FROM, oldId);
             String key = h.getCaseDefinitionKey();
             org.operaton.bpm.engine.runtime.CaseInstance ci = create(ctx, key, h.getBusinessKey(), vars);

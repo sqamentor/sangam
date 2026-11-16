@@ -52,9 +52,11 @@
     <serviceTask id="rc2_tellPromoted" name="Tell the promoted candidate" operaton:class="org.sangam.packs.core.CorrelationDelegate"><extensionElements><operaton:field name="messageName"><operaton:string>sangam.recruit.result</operaton:string></operaton:field><operaton:field name="targetBusinessKey"><operaton:expression>${promotedKey}</operaton:expression></operaton:field><operaton:field name="variables"><operaton:string>promotedSelected:selected</operaton:string></operaton:field><operaton:field name="optional"><operaton:string>true</operaton:string></operaton:field></extensionElements></serviceTask>
     <serviceTask id="rc2_carry" name="Close the panel (carry-forward recorded in roster)" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>recruitment-closure</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="rc2_end" name="Campaign closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="rc2_approvePrepareGw" name="Document to sign?" default="recruitment_campaign_f56"></exclusiveGateway>
+    <userTask id="rc2_approvePrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <sequenceFlow id="recruitment_campaign_f1" sourceRef="rc2_start" targetRef="rc2_defaults"/>
     <sequenceFlow id="recruitment_campaign_f2" sourceRef="rc2_defaults" targetRef="rc2_batchId"/>
-    <sequenceFlow id="recruitment_campaign_f3" sourceRef="rc2_batchId" targetRef="rc2_approve"/>
+    <sequenceFlow id="recruitment_campaign_f3" sourceRef="rc2_batchId" targetRef="rc2_approvePrepareGw"/>
     <sequenceFlow id="recruitment_campaign_f4" sourceRef="rc2_rj_reject" targetRef="rc2_rj_endRejected"/>
     <sequenceFlow id="recruitment_campaign_f5" name="SANCTIONED" sourceRef="rc2_sanGw" targetRef="rc2_publish"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="recruitment_campaign_f6" name="otherwise" sourceRef="rc2_sanGw" targetRef="rc2_rj_reject"/>
@@ -106,109 +108,117 @@
     <sequenceFlow id="recruitment_campaign_f52" name="waitlist exhausted" sourceRef="rc2_promGw" targetRef="rc2_waitlist"/>
     <sequenceFlow id="recruitment_campaign_f53" sourceRef="rc2_panelExpiry" targetRef="rc2_carry"/>
     <sequenceFlow id="recruitment_campaign_f54" sourceRef="rc2_carry" targetRef="rc2_end"/>
+    <sequenceFlow id="recruitment_campaign_f55" name="DSC signature needed" sourceRef="rc2_approvePrepareGw" targetRef="rc2_approvePrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="recruitment_campaign_f56" name="no DSC signature" sourceRef="rc2_approvePrepareGw" targetRef="rc2_approve"/>
+    <sequenceFlow id="recruitment_campaign_f57" sourceRef="rc2_approvePrepare" targetRef="rc2_approve"/>
   </process>
   <bpmndi:BPMNDiagram id="recruitment_campaign_diagram">
     <bpmndi:BPMNPlane id="recruitment_campaign_plane" bpmnElement="sangam-recruitment-campaign">
       <bpmndi:BPMNShape id="rc2_start_di" bpmnElement="rc2_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="rc2_defaults_di" bpmnElement="rc2_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="rc2_batchId_di" bpmnElement="rc2_batchId"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_approve_di" bpmnElement="rc2_approve"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_publish_di" bpmnElement="rc2_publish"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_rj_reject_di" bpmnElement="rc2_rj_reject"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_rj_endRejected_di" bpmnElement="rc2_rj_endRejected"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_sanGw_di" bpmnElement="rc2_sanGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_window_di" bpmnElement="rc2_window"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_closeApps_di" bpmnElement="rc2_closeApps"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_closed_notify_di" bpmnElement="rc2_closed_notify"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_closed_notifyGw_di" bpmnElement="rc2_closed_notifyGw"><dc:Bounds x="1530" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_scrutinyPeriod_di" bpmnElement="rc2_scrutinyPeriod"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_admit_notify_di" bpmnElement="rc2_admit_notify"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_admit_notifyGw_di" bpmnElement="rc2_admit_notifyGw"><dc:Bounds x="2025" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_examDate_di" bpmnElement="rc2_examDate"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_exam_di" bpmnElement="rc2_exam"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_prov_notify_di" bpmnElement="rc2_prov_notify"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_prov_notifyGw_di" bpmnElement="rc2_prov_notifyGw"><dc:Bounds x="2685" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_provKey_di" bpmnElement="rc2_provKey"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_challengeWindow_di" bpmnElement="rc2_challengeWindow"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_challenges_di" bpmnElement="rc2_challenges"><dc:Bounds x="3180" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_challenge_di" bpmnElement="rc2_challenge"><dc:Bounds x="3352" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_countChallenge_di" bpmnElement="rc2_countChallenge"><dc:Bounds x="3485" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_challengeClose_di" bpmnElement="rc2_challengeClose"><dc:Bounds x="3352" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_expert_di" bpmnElement="rc2_expert"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_finalRound_di" bpmnElement="rc2_finalRound"><dc:Bounds x="3650" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_final_notify_di" bpmnElement="rc2_final_notify"><dc:Bounds x="3815" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_final_notifyGw_di" bpmnElement="rc2_final_notifyGw"><dc:Bounds x="4005" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_poll_di" bpmnElement="rc2_poll"><dc:Bounds x="4177" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_aggregate_di" bpmnElement="rc2_aggregate"><dc:Bounds x="4310" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_aggGw_di" bpmnElement="rc2_aggGw"><dc:Bounds x="4500" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_merit_di" bpmnElement="rc2_merit"><dc:Bounds x="4640" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_resultDoc_di" bpmnElement="rc2_resultDoc"><dc:Bounds x="4805" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_result_notify_di" bpmnElement="rc2_result_notify"><dc:Bounds x="4970" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_result_notifyGw_di" bpmnElement="rc2_result_notifyGw"><dc:Bounds x="5160" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_validity_di" bpmnElement="rc2_validity"><dc:Bounds x="5300" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_waitlist_di" bpmnElement="rc2_waitlist"><dc:Bounds x="5490" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_vacated_di" bpmnElement="rc2_vacated"><dc:Bounds x="5662" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_panelExpiry_di" bpmnElement="rc2_panelExpiry"><dc:Bounds x="5662" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_promote_di" bpmnElement="rc2_promote"><dc:Bounds x="5795" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_promGw_di" bpmnElement="rc2_promGw"><dc:Bounds x="5985" y="295" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_selectFlag_di" bpmnElement="rc2_selectFlag"><dc:Bounds x="6125" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_tellPromoted_di" bpmnElement="rc2_tellPromoted"><dc:Bounds x="6290" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_carry_di" bpmnElement="rc2_carry"><dc:Bounds x="5795" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc2_end_di" bpmnElement="rc2_end"><dc:Bounds x="5992" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_approve_di" bpmnElement="rc2_approve"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_publish_di" bpmnElement="rc2_publish"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_rj_reject_di" bpmnElement="rc2_rj_reject"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_rj_endRejected_di" bpmnElement="rc2_rj_endRejected"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_sanGw_di" bpmnElement="rc2_sanGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_window_di" bpmnElement="rc2_window"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_closeApps_di" bpmnElement="rc2_closeApps"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_closed_notify_di" bpmnElement="rc2_closed_notify"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_closed_notifyGw_di" bpmnElement="rc2_closed_notifyGw"><dc:Bounds x="1860" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_scrutinyPeriod_di" bpmnElement="rc2_scrutinyPeriod"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_admit_notify_di" bpmnElement="rc2_admit_notify"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_admit_notifyGw_di" bpmnElement="rc2_admit_notifyGw"><dc:Bounds x="2355" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_examDate_di" bpmnElement="rc2_examDate"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_exam_di" bpmnElement="rc2_exam"><dc:Bounds x="2692" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_prov_notify_di" bpmnElement="rc2_prov_notify"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_prov_notifyGw_di" bpmnElement="rc2_prov_notifyGw"><dc:Bounds x="3015" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_provKey_di" bpmnElement="rc2_provKey"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_challengeWindow_di" bpmnElement="rc2_challengeWindow"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_challenges_di" bpmnElement="rc2_challenges"><dc:Bounds x="3510" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_challenge_di" bpmnElement="rc2_challenge"><dc:Bounds x="3682" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_countChallenge_di" bpmnElement="rc2_countChallenge"><dc:Bounds x="3815" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_challengeClose_di" bpmnElement="rc2_challengeClose"><dc:Bounds x="3682" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_expert_di" bpmnElement="rc2_expert"><dc:Bounds x="3815" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_finalRound_di" bpmnElement="rc2_finalRound"><dc:Bounds x="3980" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_final_notify_di" bpmnElement="rc2_final_notify"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_final_notifyGw_di" bpmnElement="rc2_final_notifyGw"><dc:Bounds x="4335" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_poll_di" bpmnElement="rc2_poll"><dc:Bounds x="4507" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_aggregate_di" bpmnElement="rc2_aggregate"><dc:Bounds x="4640" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_aggGw_di" bpmnElement="rc2_aggGw"><dc:Bounds x="4830" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_merit_di" bpmnElement="rc2_merit"><dc:Bounds x="4970" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_resultDoc_di" bpmnElement="rc2_resultDoc"><dc:Bounds x="5135" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_result_notify_di" bpmnElement="rc2_result_notify"><dc:Bounds x="5300" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_result_notifyGw_di" bpmnElement="rc2_result_notifyGw"><dc:Bounds x="5490" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_validity_di" bpmnElement="rc2_validity"><dc:Bounds x="5630" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_waitlist_di" bpmnElement="rc2_waitlist"><dc:Bounds x="5820" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_vacated_di" bpmnElement="rc2_vacated"><dc:Bounds x="5992" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_panelExpiry_di" bpmnElement="rc2_panelExpiry"><dc:Bounds x="5992" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_promote_di" bpmnElement="rc2_promote"><dc:Bounds x="6125" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_promGw_di" bpmnElement="rc2_promGw"><dc:Bounds x="6315" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_selectFlag_di" bpmnElement="rc2_selectFlag"><dc:Bounds x="6455" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_tellPromoted_di" bpmnElement="rc2_tellPromoted"><dc:Bounds x="6620" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_carry_di" bpmnElement="rc2_carry"><dc:Bounds x="6125" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_end_di" bpmnElement="rc2_end"><dc:Bounds x="6322" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_approvePrepareGw_di" bpmnElement="rc2_approvePrepareGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc2_approvePrepare_di" bpmnElement="rc2_approvePrepare"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="recruitment_campaign_f1_di" bpmnElement="recruitment_campaign_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="recruitment_campaign_f2_di" bpmnElement="recruitment_campaign_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f3_di" bpmnElement="recruitment_campaign_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f4_di" bpmnElement="recruitment_campaign_f4"><di:waypoint x="945" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f5_di" bpmnElement="recruitment_campaign_f5"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f6_di" bpmnElement="recruitment_campaign_f6"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f7_di" bpmnElement="recruitment_campaign_f7"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f8_di" bpmnElement="recruitment_campaign_f8"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f9_di" bpmnElement="recruitment_campaign_f9"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f10_di" bpmnElement="recruitment_campaign_f10"><di:waypoint x="1440" y="195"/><di:waypoint x="1530" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f11_di" bpmnElement="recruitment_campaign_f11"><di:waypoint x="1555" y="220"/><di:waypoint x="1555" y="267"/><di:waypoint x="1390" y="267"/><di:waypoint x="1390" y="235"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f12_di" bpmnElement="recruitment_campaign_f12"><di:waypoint x="1243" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f13_di" bpmnElement="recruitment_campaign_f13"><di:waypoint x="1580" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f14_di" bpmnElement="recruitment_campaign_f14"><di:waypoint x="1935" y="195"/><di:waypoint x="2025" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f15_di" bpmnElement="recruitment_campaign_f15"><di:waypoint x="2050" y="220"/><di:waypoint x="2050" y="267"/><di:waypoint x="1885" y="267"/><di:waypoint x="1885" y="235"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f16_di" bpmnElement="recruitment_campaign_f16"><di:waypoint x="1738" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f17_di" bpmnElement="recruitment_campaign_f17"><di:waypoint x="2075" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f18_di" bpmnElement="recruitment_campaign_f18"><di:waypoint x="2265" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f19_di" bpmnElement="recruitment_campaign_f19"><di:waypoint x="2595" y="195"/><di:waypoint x="2685" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f20_di" bpmnElement="recruitment_campaign_f20"><di:waypoint x="2710" y="220"/><di:waypoint x="2710" y="274"/><di:waypoint x="2545" y="274"/><di:waypoint x="2545" y="235"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f21_di" bpmnElement="recruitment_campaign_f21"><di:waypoint x="2398" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f22_di" bpmnElement="recruitment_campaign_f22"><di:waypoint x="2735" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f23_di" bpmnElement="recruitment_campaign_f23"><di:waypoint x="2925" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f24_di" bpmnElement="recruitment_campaign_f24"><di:waypoint x="3090" y="195"/><di:waypoint x="3180" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f25_di" bpmnElement="recruitment_campaign_f25"><di:waypoint x="3230" y="195"/><di:waypoint x="3291" y="195"/><di:waypoint x="3291" y="320"/><di:waypoint x="3352" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f26_di" bpmnElement="recruitment_campaign_f26"><di:waypoint x="3230" y="195"/><di:waypoint x="3352" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f27_di" bpmnElement="recruitment_campaign_f27"><di:waypoint x="3388" y="320"/><di:waypoint x="3485" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f28_di" bpmnElement="recruitment_campaign_f28"><di:waypoint x="3535" y="360"/><di:waypoint x="3535" y="399"/><di:waypoint x="3205" y="399"/><di:waypoint x="3205" y="220"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f29_di" bpmnElement="recruitment_campaign_f29"><di:waypoint x="3388" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f30_di" bpmnElement="recruitment_campaign_f30"><di:waypoint x="3915" y="195"/><di:waypoint x="4005" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f31_di" bpmnElement="recruitment_campaign_f31"><di:waypoint x="4030" y="220"/><di:waypoint x="4030" y="267"/><di:waypoint x="3865" y="267"/><di:waypoint x="3865" y="235"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f32_di" bpmnElement="recruitment_campaign_f32"><di:waypoint x="3585" y="195"/><di:waypoint x="3650" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f33_di" bpmnElement="recruitment_campaign_f33"><di:waypoint x="3750" y="195"/><di:waypoint x="3815" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f34_di" bpmnElement="recruitment_campaign_f34"><di:waypoint x="4055" y="195"/><di:waypoint x="4177" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f35_di" bpmnElement="recruitment_campaign_f35"><di:waypoint x="4213" y="195"/><di:waypoint x="4310" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f36_di" bpmnElement="recruitment_campaign_f36"><di:waypoint x="4410" y="195"/><di:waypoint x="4500" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f37_di" bpmnElement="recruitment_campaign_f37"><di:waypoint x="4525" y="220"/><di:waypoint x="4525" y="238"/><di:waypoint x="4195" y="238"/><di:waypoint x="4195" y="213"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f38_di" bpmnElement="recruitment_campaign_f38"><di:waypoint x="4550" y="195"/><di:waypoint x="4640" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f39_di" bpmnElement="recruitment_campaign_f39"><di:waypoint x="5070" y="195"/><di:waypoint x="5160" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f40_di" bpmnElement="recruitment_campaign_f40"><di:waypoint x="5185" y="220"/><di:waypoint x="5185" y="274"/><di:waypoint x="5020" y="274"/><di:waypoint x="5020" y="235"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f41_di" bpmnElement="recruitment_campaign_f41"><di:waypoint x="4740" y="195"/><di:waypoint x="4805" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f42_di" bpmnElement="recruitment_campaign_f42"><di:waypoint x="4905" y="195"/><di:waypoint x="4970" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f43_di" bpmnElement="recruitment_campaign_f43"><di:waypoint x="5210" y="195"/><di:waypoint x="5300" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f44_di" bpmnElement="recruitment_campaign_f44"><di:waypoint x="5400" y="195"/><di:waypoint x="5490" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f45_di" bpmnElement="recruitment_campaign_f45"><di:waypoint x="5540" y="195"/><di:waypoint x="5601" y="195"/><di:waypoint x="5601" y="320"/><di:waypoint x="5662" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f46_di" bpmnElement="recruitment_campaign_f46"><di:waypoint x="5540" y="195"/><di:waypoint x="5662" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f47_di" bpmnElement="recruitment_campaign_f47"><di:waypoint x="5698" y="320"/><di:waypoint x="5795" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f48_di" bpmnElement="recruitment_campaign_f48"><di:waypoint x="5895" y="320"/><di:waypoint x="5985" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f49_di" bpmnElement="recruitment_campaign_f49"><di:waypoint x="6035" y="320"/><di:waypoint x="6125" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f50_di" bpmnElement="recruitment_campaign_f50"><di:waypoint x="6225" y="320"/><di:waypoint x="6290" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f51_di" bpmnElement="recruitment_campaign_f51"><di:waypoint x="6340" y="360"/><di:waypoint x="6340" y="392"/><di:waypoint x="5515" y="392"/><di:waypoint x="5515" y="220"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f52_di" bpmnElement="recruitment_campaign_f52"><di:waypoint x="6010" y="345"/><di:waypoint x="6010" y="384"/><di:waypoint x="5515" y="384"/><di:waypoint x="5515" y="220"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f53_di" bpmnElement="recruitment_campaign_f53"><di:waypoint x="5698" y="195"/><di:waypoint x="5795" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="recruitment_campaign_f54_di" bpmnElement="recruitment_campaign_f54"><di:waypoint x="5895" y="195"/><di:waypoint x="5992" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f3_di" bpmnElement="recruitment_campaign_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f4_di" bpmnElement="recruitment_campaign_f4"><di:waypoint x="1275" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f5_di" bpmnElement="recruitment_campaign_f5"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f6_di" bpmnElement="recruitment_campaign_f6"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f7_di" bpmnElement="recruitment_campaign_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f8_di" bpmnElement="recruitment_campaign_f8"><di:waypoint x="1275" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f9_di" bpmnElement="recruitment_campaign_f9"><di:waypoint x="1440" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f10_di" bpmnElement="recruitment_campaign_f10"><di:waypoint x="1770" y="195"/><di:waypoint x="1860" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f11_di" bpmnElement="recruitment_campaign_f11"><di:waypoint x="1885" y="220"/><di:waypoint x="1885" y="267"/><di:waypoint x="1720" y="267"/><di:waypoint x="1720" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f12_di" bpmnElement="recruitment_campaign_f12"><di:waypoint x="1573" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f13_di" bpmnElement="recruitment_campaign_f13"><di:waypoint x="1910" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f14_di" bpmnElement="recruitment_campaign_f14"><di:waypoint x="2265" y="195"/><di:waypoint x="2355" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f15_di" bpmnElement="recruitment_campaign_f15"><di:waypoint x="2380" y="220"/><di:waypoint x="2380" y="267"/><di:waypoint x="2215" y="267"/><di:waypoint x="2215" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f16_di" bpmnElement="recruitment_campaign_f16"><di:waypoint x="2068" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f17_di" bpmnElement="recruitment_campaign_f17"><di:waypoint x="2405" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f18_di" bpmnElement="recruitment_campaign_f18"><di:waypoint x="2595" y="195"/><di:waypoint x="2692" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f19_di" bpmnElement="recruitment_campaign_f19"><di:waypoint x="2925" y="195"/><di:waypoint x="3015" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f20_di" bpmnElement="recruitment_campaign_f20"><di:waypoint x="3040" y="220"/><di:waypoint x="3040" y="274"/><di:waypoint x="2875" y="274"/><di:waypoint x="2875" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f21_di" bpmnElement="recruitment_campaign_f21"><di:waypoint x="2728" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f22_di" bpmnElement="recruitment_campaign_f22"><di:waypoint x="3065" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f23_di" bpmnElement="recruitment_campaign_f23"><di:waypoint x="3255" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f24_di" bpmnElement="recruitment_campaign_f24"><di:waypoint x="3420" y="195"/><di:waypoint x="3510" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f25_di" bpmnElement="recruitment_campaign_f25"><di:waypoint x="3560" y="195"/><di:waypoint x="3621" y="195"/><di:waypoint x="3621" y="320"/><di:waypoint x="3682" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f26_di" bpmnElement="recruitment_campaign_f26"><di:waypoint x="3560" y="195"/><di:waypoint x="3682" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f27_di" bpmnElement="recruitment_campaign_f27"><di:waypoint x="3718" y="320"/><di:waypoint x="3815" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f28_di" bpmnElement="recruitment_campaign_f28"><di:waypoint x="3865" y="360"/><di:waypoint x="3865" y="399"/><di:waypoint x="3535" y="399"/><di:waypoint x="3535" y="220"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f29_di" bpmnElement="recruitment_campaign_f29"><di:waypoint x="3718" y="195"/><di:waypoint x="3815" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f30_di" bpmnElement="recruitment_campaign_f30"><di:waypoint x="4245" y="195"/><di:waypoint x="4335" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f31_di" bpmnElement="recruitment_campaign_f31"><di:waypoint x="4360" y="220"/><di:waypoint x="4360" y="267"/><di:waypoint x="4195" y="267"/><di:waypoint x="4195" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f32_di" bpmnElement="recruitment_campaign_f32"><di:waypoint x="3915" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f33_di" bpmnElement="recruitment_campaign_f33"><di:waypoint x="4080" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f34_di" bpmnElement="recruitment_campaign_f34"><di:waypoint x="4385" y="195"/><di:waypoint x="4507" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f35_di" bpmnElement="recruitment_campaign_f35"><di:waypoint x="4543" y="195"/><di:waypoint x="4640" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f36_di" bpmnElement="recruitment_campaign_f36"><di:waypoint x="4740" y="195"/><di:waypoint x="4830" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f37_di" bpmnElement="recruitment_campaign_f37"><di:waypoint x="4855" y="220"/><di:waypoint x="4855" y="238"/><di:waypoint x="4525" y="238"/><di:waypoint x="4525" y="213"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f38_di" bpmnElement="recruitment_campaign_f38"><di:waypoint x="4880" y="195"/><di:waypoint x="4970" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f39_di" bpmnElement="recruitment_campaign_f39"><di:waypoint x="5400" y="195"/><di:waypoint x="5490" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f40_di" bpmnElement="recruitment_campaign_f40"><di:waypoint x="5515" y="220"/><di:waypoint x="5515" y="274"/><di:waypoint x="5350" y="274"/><di:waypoint x="5350" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f41_di" bpmnElement="recruitment_campaign_f41"><di:waypoint x="5070" y="195"/><di:waypoint x="5135" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f42_di" bpmnElement="recruitment_campaign_f42"><di:waypoint x="5235" y="195"/><di:waypoint x="5300" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f43_di" bpmnElement="recruitment_campaign_f43"><di:waypoint x="5540" y="195"/><di:waypoint x="5630" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f44_di" bpmnElement="recruitment_campaign_f44"><di:waypoint x="5730" y="195"/><di:waypoint x="5820" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f45_di" bpmnElement="recruitment_campaign_f45"><di:waypoint x="5870" y="195"/><di:waypoint x="5931" y="195"/><di:waypoint x="5931" y="320"/><di:waypoint x="5992" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f46_di" bpmnElement="recruitment_campaign_f46"><di:waypoint x="5870" y="195"/><di:waypoint x="5992" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f47_di" bpmnElement="recruitment_campaign_f47"><di:waypoint x="6028" y="320"/><di:waypoint x="6125" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f48_di" bpmnElement="recruitment_campaign_f48"><di:waypoint x="6225" y="320"/><di:waypoint x="6315" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f49_di" bpmnElement="recruitment_campaign_f49"><di:waypoint x="6365" y="320"/><di:waypoint x="6455" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f50_di" bpmnElement="recruitment_campaign_f50"><di:waypoint x="6555" y="320"/><di:waypoint x="6620" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f51_di" bpmnElement="recruitment_campaign_f51"><di:waypoint x="6670" y="360"/><di:waypoint x="6670" y="392"/><di:waypoint x="5845" y="392"/><di:waypoint x="5845" y="220"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f52_di" bpmnElement="recruitment_campaign_f52"><di:waypoint x="6340" y="345"/><di:waypoint x="6340" y="384"/><di:waypoint x="5845" y="384"/><di:waypoint x="5845" y="220"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f53_di" bpmnElement="recruitment_campaign_f53"><di:waypoint x="6028" y="195"/><di:waypoint x="6125" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f54_di" bpmnElement="recruitment_campaign_f54"><di:waypoint x="6225" y="195"/><di:waypoint x="6322" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f55_di" bpmnElement="recruitment_campaign_f55"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f56_di" bpmnElement="recruitment_campaign_f56"><di:waypoint x="590" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="recruitment_campaign_f57_di" bpmnElement="recruitment_campaign_f57"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

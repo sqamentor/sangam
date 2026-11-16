@@ -202,6 +202,16 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "documentSlots": [
+    {
+      "documentType": "NOTING",
+      "slot": "notingDocumentId"
+    },
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
   "currency": "INR",
   "powers": {
     "p2_disposal": {

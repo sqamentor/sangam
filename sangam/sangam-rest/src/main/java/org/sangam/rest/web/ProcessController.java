@@ -13,6 +13,7 @@ import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.ProcessPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.Permissions;
+import org.sangam.rest.support.SlotVariableGuard;
 import org.sangam.rest.support.TypedVariables;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
@@ -59,7 +60,7 @@ public class ProcessController {
         }
         Telemetry.businessKey(body.businessKey());
         var req = new ProcessPort.StartProcessRequest(body.key(), body.businessKey(),
-                TypedVariables.fromJson(body.variables()), body.version(), body.packageHash(), body.formVersion(),
+                SlotVariableGuard.callerVariables(body.variables()), body.version(), body.packageHash(), body.formVersion(),
                 body.startBeforeActivityIds());
         ProcessPort.ProcessInstance pi = processes.start(ctx, req);
         Telemetry.processInstance(pi.id());
@@ -104,7 +105,7 @@ public class ProcessController {
     public ResponseEntity<Map<String, Object>> setVariables(RequestContext ctx, @PathVariable String id,
                                                             @RequestBody Map<String, Object> body) {
         permissions.require(ctx, Permissions.PROCESS_WRITE);
-        return Lists.okRef(id, processes.setVariables(ctx, id, TypedVariables.fromJson(body)));
+        return Lists.okRef(id, processes.setVariables(ctx, id, SlotVariableGuard.callerVariables(body)));
     }
 
     @PostMapping("/process-instances/{id}/cancel")
@@ -127,7 +128,7 @@ public class ProcessController {
     public ResponseEntity<ProcessPort.CaseVersion> resubmit(RequestContext ctx, @PathVariable String id,
                                                             @RequestBody ProcessPort.ResubmitRequest body) {
         permissions.require(ctx, Permissions.PROCESS_WRITE);
-        var req = new ProcessPort.ResubmitRequest(TypedVariables.fromJson(body.variables()), body.reason(),
+        var req = new ProcessPort.ResubmitRequest(SlotVariableGuard.callerVariables(body.variables()), body.reason(),
                 body.expectedVersion());
         return Lists.okRef(id, processes.resubmit(ctx, id, req));
     }
@@ -154,7 +155,7 @@ public class ProcessController {
                                                                @RequestBody ProcessPort.TriggerRequest body) {
         permissions.require(ctx, Permissions.PROCESS_WRITE);
         var req = new ProcessPort.TriggerRequest(body.executionId(), body.activityId(),
-                TypedVariables.fromJson(body.variables()), body.reason());
+                SlotVariableGuard.callerVariables(body.variables()), body.reason());
         return Lists.okRef(id, processes.trigger(ctx, id, req));
     }
 
@@ -184,7 +185,7 @@ public class ProcessController {
     public ResponseEntity<DynamicPort.AdHocState> startAdHoc(RequestContext ctx, @PathVariable String id,
             @PathVariable String adHocActivityId, @RequestBody DynamicPort.StartAdHocActivityRequest body) {
         permissions.require(ctx, Permissions.PROCESS_WRITE);
-        var req = new DynamicPort.StartAdHocActivityRequest(body.activityId(), TypedVariables.fromJson(body.variables()),
+        var req = new DynamicPort.StartAdHocActivityRequest(body.activityId(), SlotVariableGuard.callerVariables(body.variables()),
                 body.reason());
         return Lists.okRef(id, dynamic.startAdHocActivity(ctx, id, adHocActivityId, req));
     }
@@ -235,7 +236,7 @@ public class ProcessController {
         }
         Telemetry.businessKey(body.businessKey());
         var req = new ProcessPort.MessageRequest(body.messageName(), body.businessKey(), body.processInstanceId(),
-                TypedVariables.fromJson(body.correlationKeys()), TypedVariables.fromJson(body.variables()), body.all());
+                TypedVariables.fromJson(body.correlationKeys()), SlotVariableGuard.callerVariables(body.variables()), body.all());
         ProcessPort.MessageResult r = processes.correlate(ctx, req);
         return Lists.okRef(String.join(",", r.processInstanceIds()), r);
     }
@@ -247,7 +248,7 @@ public class ProcessController {
             throw ApiProblem.badRequest("VALIDATION_FAILED", "name is required");
         }
         processes.signal(ctx, new ProcessPort.SignalRequest(body.name(), body.executionId(),
-                TypedVariables.fromJson(body.variables())));
+                SlotVariableGuard.callerVariables(body.variables())));
         return ResponseEntity.noContent().build();
     }
 

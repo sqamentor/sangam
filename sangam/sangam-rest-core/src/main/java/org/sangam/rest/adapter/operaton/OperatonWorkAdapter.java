@@ -32,6 +32,7 @@ import org.sangam.rest.port.WorkPort;
 import org.sangam.rest.port.WorkPort.WorkOperation;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
+import org.sangam.rest.support.SlotVariableGuard;
 import org.sangam.rest.support.TypedVariables;
 
 /**
@@ -263,7 +264,7 @@ public class OperatonWorkAdapter implements WorkPort {
             fence(c, workId, r.workerId(), r.lockVersion(), r.attemptId());
             UUID op = operationIds.of(task);
             OperatonSupport.run(() -> externalTasks.complete(workId, r.workerId(),
-                    TypedVariables.fromJson(r.variables()), TypedVariables.fromJson(r.localVariables())));
+                    SlotVariableGuard.callerVariables(r.variables()), SlotVariableGuard.callerVariables(r.localVariables())));
             ledger.onComplete(c, op, r.lockVersion(), outcome);
             LeaseTable.remove(c, workId);
             audit.record(ctx, task.getProcessInstanceId(), "EXT_OP_ACKNOWLEDGED", payload(task, op, r.workerId(),
@@ -319,7 +320,7 @@ public class OperatonWorkAdapter implements WorkPort {
             fence(c, workId, r.workerId(), r.lockVersion(), r.attemptId());
             UUID op = operationIds.of(task);
             OperatonSupport.run(() -> externalTasks.handleBpmnError(workId, r.workerId(), r.errorCode(),
-                    r.errorMessage(), TypedVariables.fromJson(r.variables())));
+                    r.errorMessage(), SlotVariableGuard.callerVariables(r.variables())));
             ledger.onBpmnError(c, op, r.lockVersion(), r.errorCode(), r.errorMessage(), r.variables());
             LeaseTable.remove(c, workId);
             Map<String, Object> extra = new LinkedHashMap<>();

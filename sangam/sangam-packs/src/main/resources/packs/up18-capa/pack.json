@@ -62,6 +62,12 @@
   "calls": [
     "sangam-core-sanction"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
   "currency": "INR",
   "powers": {
     "u18_approve": {

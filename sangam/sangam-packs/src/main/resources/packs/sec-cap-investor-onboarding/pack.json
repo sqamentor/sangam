@@ -109,6 +109,12 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
   "currency": "INR",
   "powers": {
     "io_check": {

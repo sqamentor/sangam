@@ -127,6 +127,12 @@
     "sangam-tender",
     "sangam-work-order"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
   "currency": "INR",
   "powers": {
     "wk_ts": {

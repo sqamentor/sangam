@@ -16,7 +16,7 @@ import org.sangam.rest.port.DynamicPort;
 import org.sangam.rest.port.ProcessPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.TxSupport;
-import org.sangam.rest.support.TypedVariables;
+import org.sangam.rest.support.SlotVariableGuard;
 
 /**
  * {@link DynamicPort} on sangam-flowable-ports: ad-hoc sub-process (FLOWABLE-INTO-OPERATON FC-01, {@link AdHocSubProcessService}) and dynamic
@@ -64,7 +64,7 @@ public final class PortsDynamicBridge implements DynamicPort {
                     "Activity " + request.activityId() + " cannot be started in ad-hoc sub-process " + adHocActivityId + " now");
         }
         tx.runInTx(() -> {
-            Map<String, Object> vars = TypedVariables.fromJson(request.variables());
+            Map<String, Object> vars = SlotVariableGuard.callerVariables(request.variables());
             if (!vars.isEmpty()) {
                 PortsErrors.run(() -> engine.getRuntimeService().setVariables(processInstanceId, vars));
             }
@@ -125,7 +125,7 @@ public final class PortsDynamicBridge implements DynamicPort {
                 }
                 default -> throw ApiProblem.badRequest("VALIDATION_FAILED", "unknown kind " + request.kind());
             };
-            Map<String, Object> vars = TypedVariables.fromJson(request.variables());
+            Map<String, Object> vars = SlotVariableGuard.callerVariables(request.variables());
             if (!vars.isEmpty()) {
                 PortsErrors.run(() -> engine.getRuntimeService().setVariables(processInstanceId, vars));
             }

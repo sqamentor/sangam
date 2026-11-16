@@ -387,6 +387,16 @@
       "capabilityClass": "c"
     }
   ],
+  "documentSlots": [
+    {
+      "documentType": "NOTING",
+      "slot": "notingDocumentId"
+    },
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
   "currency": "INR",
   "powers": {
     "p1_sanction": {

@@ -47,7 +47,7 @@ import org.sangam.rest.port.ProcessPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
-import org.sangam.rest.support.TypedVariables;
+import org.sangam.rest.support.SlotVariableGuard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -938,7 +938,7 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
                 event = "INSTANCE_RESUMED";
             }
             case "SET_VARIABLES" -> {
-                runtimeService.setVariables(root, TypedVariables.fromJson((Map<String, Object>) params.get("variables")));
+                runtimeService.setVariables(root, SlotVariableGuard.callerVariables((Map<String, Object>) params.get("variables")));
                 event = "VARIABLES_UPDATED";
             }
             case "MODIFY" -> {
@@ -1205,7 +1205,7 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
                 }
             }
             if (request.variables() != null && !request.variables().isEmpty()) {
-                b = b.setVariables(TypedVariables.fromJson(request.variables()));
+                b = b.setVariables(SlotVariableGuard.callerVariables(request.variables()));
             }
             try {
                 return b.build();

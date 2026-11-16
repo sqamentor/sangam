@@ -27,6 +27,8 @@
     <exclusiveGateway id="dg_invGw" name="Within 120 days overdue?" default="sec_nbfc_dlg_f19"></exclusiveGateway>
     <serviceTask id="dg_doInvoke" name="Invoke DLG" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>dlg.invoke</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>invoke</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>dlgProvider,daysOverdue</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>inv</operaton:string></operaton:field><operaton:field name="step"><operaton:string>invoke</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="dg_end" name="Arrangement ended"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="dg_sanctionPrepareGw" name="Document to sign?" default="sec_nbfc_dlg_f29"></exclusiveGateway>
+    <userTask id="dg_sanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <sequenceFlow id="sec_nbfc_dlg_f1" sourceRef="dg_start" targetRef="dg_defaults"/>
     <sequenceFlow id="sec_nbfc_dlg_f2" sourceRef="dg_defaults" targetRef="dg_pct"/>
     <sequenceFlow id="sec_nbfc_dlg_f3" sourceRef="dg_pct" targetRef="dg_cap"/>
@@ -34,7 +36,7 @@
     <sequenceFlow id="sec_nbfc_dlg_f5" sourceRef="dg_rjCap_reject" targetRef="dg_rjCap_endRejected"/>
     <sequenceFlow id="sec_nbfc_dlg_f6" sourceRef="dg_rjCap_code" targetRef="dg_rjCap_reject"/>
     <sequenceFlow id="sec_nbfc_dlg_f7" name="no" sourceRef="dg_capGw" targetRef="dg_rjCap_code"><conditionExpression xsi:type="tFormalExpression">${!dlgAllowed}</conditionExpression></sequenceFlow>
-    <sequenceFlow id="sec_nbfc_dlg_f8" name="yes" sourceRef="dg_capGw" targetRef="dg_sanction"/>
+    <sequenceFlow id="sec_nbfc_dlg_f8" name="yes" sourceRef="dg_capGw" targetRef="dg_sanctionPrepareGw"/>
     <sequenceFlow id="sec_nbfc_dlg_f9" sourceRef="dg_rj_reject" targetRef="dg_rj_endRejected"/>
     <sequenceFlow id="sec_nbfc_dlg_f10" name="SANCTIONED" sourceRef="dg_sanGw" targetRef="dg_register"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_nbfc_dlg_f11" name="otherwise" sourceRef="dg_sanGw" targetRef="dg_rj_reject"/>
@@ -48,6 +50,9 @@
     <sequenceFlow id="sec_nbfc_dlg_f19" name="outside the window: not invoked" sourceRef="dg_invGw" targetRef="dg_wait"/>
     <sequenceFlow id="sec_nbfc_dlg_f20" sourceRef="dg_doInvoke" targetRef="dg_wait"/>
     <sequenceFlow id="sec_nbfc_dlg_f21" sourceRef="dg_tenure" targetRef="dg_end"/>
+    <sequenceFlow id="sec_nbfc_dlg_f28" name="DSC signature needed" sourceRef="dg_sanctionPrepareGw" targetRef="dg_sanctionPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_nbfc_dlg_f29" name="no DSC signature" sourceRef="dg_sanctionPrepareGw" targetRef="dg_sanction"/>
+    <sequenceFlow id="sec_nbfc_dlg_f30" sourceRef="dg_sanctionPrepare" targetRef="dg_sanction"/>
     <subProcess id="dg_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
       <startEvent id="dg_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
       <serviceTask id="dg_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -76,19 +81,21 @@
       <bpmndi:BPMNShape id="dg_capGw_di" bpmnElement="dg_capGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dg_rjCap_code_di" bpmnElement="dg_rjCap_code"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dg_rjCap_reject_di" bpmnElement="dg_rjCap_reject"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dg_rjCap_endRejected_di" bpmnElement="dg_rjCap_endRejected"><dc:Bounds x="1207" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dg_sanction_di" bpmnElement="dg_sanction"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dg_register_di" bpmnElement="dg_register"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dg_rj_reject_di" bpmnElement="dg_rj_reject"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dg_rj_endRejected_di" bpmnElement="dg_rj_endRejected"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dg_sanGw_di" bpmnElement="dg_sanGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dg_wait_di" bpmnElement="dg_wait"><dc:Bounds x="1365" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dg_invoke_di" bpmnElement="dg_invoke"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dg_tenure_di" bpmnElement="dg_tenure"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dg_invRule_di" bpmnElement="dg_invRule"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dg_invGw_di" bpmnElement="dg_invGw"><dc:Bounds x="1860" y="295" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dg_doInvoke_di" bpmnElement="dg_doInvoke"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dg_end_di" bpmnElement="dg_end"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_rjCap_endRejected_di" bpmnElement="dg_rjCap_endRejected"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_sanction_di" bpmnElement="dg_sanction"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_register_di" bpmnElement="dg_register"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_rj_reject_di" bpmnElement="dg_rj_reject"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_rj_endRejected_di" bpmnElement="dg_rj_endRejected"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_sanGw_di" bpmnElement="dg_sanGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_wait_di" bpmnElement="dg_wait"><dc:Bounds x="1695" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_invoke_di" bpmnElement="dg_invoke"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_tenure_di" bpmnElement="dg_tenure"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_invRule_di" bpmnElement="dg_invRule"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_invGw_di" bpmnElement="dg_invGw"><dc:Bounds x="2190" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_doInvoke_di" bpmnElement="dg_doInvoke"><dc:Bounds x="2330" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_end_di" bpmnElement="dg_end"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_sanctionPrepareGw_di" bpmnElement="dg_sanctionPrepareGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_sanctionPrepare_di" bpmnElement="dg_sanctionPrepare"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dg_withdraw_di" bpmnElement="dg_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dg_withdrawStart_di" bpmnElement="dg_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dg_withdrawKind_di" bpmnElement="dg_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
@@ -103,23 +110,26 @@
       <bpmndi:BPMNEdge id="sec_nbfc_dlg_f2_di" bpmnElement="sec_nbfc_dlg_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_nbfc_dlg_f3_di" bpmnElement="sec_nbfc_dlg_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_nbfc_dlg_f4_di" bpmnElement="sec_nbfc_dlg_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f5_di" bpmnElement="sec_nbfc_dlg_f5"><di:waypoint x="1110" y="195"/><di:waypoint x="1158" y="195"/><di:waypoint x="1158" y="320"/><di:waypoint x="1207" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f5_di" bpmnElement="sec_nbfc_dlg_f5"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_nbfc_dlg_f6_di" bpmnElement="sec_nbfc_dlg_f6"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_nbfc_dlg_f7_di" bpmnElement="sec_nbfc_dlg_f7"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f8_di" bpmnElement="sec_nbfc_dlg_f8"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f9_di" bpmnElement="sec_nbfc_dlg_f9"><di:waypoint x="1275" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f10_di" bpmnElement="sec_nbfc_dlg_f10"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f11_di" bpmnElement="sec_nbfc_dlg_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f12_di" bpmnElement="sec_nbfc_dlg_f12"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f13_di" bpmnElement="sec_nbfc_dlg_f13"><di:waypoint x="1275" y="195"/><di:waypoint x="1365" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f14_di" bpmnElement="sec_nbfc_dlg_f14"><di:waypoint x="1415" y="195"/><di:waypoint x="1476" y="195"/><di:waypoint x="1476" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f15_di" bpmnElement="sec_nbfc_dlg_f15"><di:waypoint x="1415" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f16_di" bpmnElement="sec_nbfc_dlg_f16"><di:waypoint x="1573" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f17_di" bpmnElement="sec_nbfc_dlg_f17"><di:waypoint x="1770" y="320"/><di:waypoint x="1860" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f18_di" bpmnElement="sec_nbfc_dlg_f18"><di:waypoint x="1910" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f19_di" bpmnElement="sec_nbfc_dlg_f19"><di:waypoint x="1885" y="345"/><di:waypoint x="1885" y="377"/><di:waypoint x="1390" y="377"/><di:waypoint x="1390" y="220"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f20_di" bpmnElement="sec_nbfc_dlg_f20"><di:waypoint x="2050" y="360"/><di:waypoint x="2050" y="399"/><di:waypoint x="1390" y="399"/><di:waypoint x="1390" y="220"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f21_di" bpmnElement="sec_nbfc_dlg_f21"><di:waypoint x="1573" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f8_di" bpmnElement="sec_nbfc_dlg_f8"><di:waypoint x="755" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f9_di" bpmnElement="sec_nbfc_dlg_f9"><di:waypoint x="1605" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f10_di" bpmnElement="sec_nbfc_dlg_f10"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f11_di" bpmnElement="sec_nbfc_dlg_f11"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f12_di" bpmnElement="sec_nbfc_dlg_f12"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f13_di" bpmnElement="sec_nbfc_dlg_f13"><di:waypoint x="1605" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f14_di" bpmnElement="sec_nbfc_dlg_f14"><di:waypoint x="1745" y="195"/><di:waypoint x="1806" y="195"/><di:waypoint x="1806" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f15_di" bpmnElement="sec_nbfc_dlg_f15"><di:waypoint x="1745" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f16_di" bpmnElement="sec_nbfc_dlg_f16"><di:waypoint x="1903" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f17_di" bpmnElement="sec_nbfc_dlg_f17"><di:waypoint x="2100" y="320"/><di:waypoint x="2190" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f18_di" bpmnElement="sec_nbfc_dlg_f18"><di:waypoint x="2240" y="320"/><di:waypoint x="2330" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f19_di" bpmnElement="sec_nbfc_dlg_f19"><di:waypoint x="2215" y="345"/><di:waypoint x="2215" y="377"/><di:waypoint x="1720" y="377"/><di:waypoint x="1720" y="220"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f20_di" bpmnElement="sec_nbfc_dlg_f20"><di:waypoint x="2380" y="360"/><di:waypoint x="2380" y="399"/><di:waypoint x="1720" y="399"/><di:waypoint x="1720" y="220"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f21_di" bpmnElement="sec_nbfc_dlg_f21"><di:waypoint x="1903" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f28_di" bpmnElement="sec_nbfc_dlg_f28"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f29_di" bpmnElement="sec_nbfc_dlg_f29"><di:waypoint x="920" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f30_di" bpmnElement="sec_nbfc_dlg_f30"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_nbfc_dlg_f22_di" bpmnElement="sec_nbfc_dlg_f22"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_nbfc_dlg_f23_di" bpmnElement="sec_nbfc_dlg_f23"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_nbfc_dlg_f24_di" bpmnElement="sec_nbfc_dlg_f24"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>

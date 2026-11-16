@@ -94,6 +94,12 @@
     "sangam-core-sanction",
     "sangam-ifms-bill"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
   "placeholders": [
     {
       "decision": "ifms-advance-powers",

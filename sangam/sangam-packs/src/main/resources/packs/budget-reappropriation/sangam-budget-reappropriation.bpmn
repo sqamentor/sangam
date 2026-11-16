@@ -34,6 +34,8 @@
     <serviceTask id="br_postFailed" name="IFMS rejected the posting" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>ifms-posting-failed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>initiatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="br_exGw" name="executionOutcome?" default="budget_reappropriation_f28"></exclusiveGateway>
     <endEvent id="br_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="br_sanctionPrepareGw" name="Document to sign?" default="budget_reappropriation_f39"></exclusiveGateway>
+    <userTask id="br_sanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <sequenceFlow id="budget_reappropriation_f1" sourceRef="br_savings_clear" targetRef="br_savings"/>
     <sequenceFlow id="budget_reappropriation_f2" sourceRef="br_start" targetRef="br_defaults"/>
     <sequenceFlow id="budget_reappropriation_f3" sourceRef="br_defaults" targetRef="br_savings_clear"/>
@@ -52,7 +54,7 @@
     <sequenceFlow id="budget_reappropriation_f16" name="otherwise" sourceRef="br_scrGw" targetRef="br_rj_reject"/>
     <sequenceFlow id="budget_reappropriation_f17" sourceRef="br_scrutiny" targetRef="br_scrGw"/>
     <sequenceFlow id="budget_reappropriation_f18" sourceRef="br_finance" targetRef="br_concurGw"/>
-    <sequenceFlow id="budget_reappropriation_f19" name="concur" sourceRef="br_concurGw" targetRef="br_sanction"><conditionExpression xsi:type="tFormalExpression">${referralDecision == 'concur'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="budget_reappropriation_f19" name="concur" sourceRef="br_concurGw" targetRef="br_sanctionPrepareGw"><conditionExpression xsi:type="tFormalExpression">${referralDecision == 'concur'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="budget_reappropriation_f20" sourceRef="br_rjFin_reject" targetRef="br_rjFin_endRejected"/>
     <sequenceFlow id="budget_reappropriation_f21" sourceRef="br_rjFin_code" targetRef="br_rjFin_reject"/>
     <sequenceFlow id="budget_reappropriation_f22" name="not concurred" sourceRef="br_concurGw" targetRef="br_rjFin_code"/>
@@ -65,6 +67,9 @@
     <sequenceFlow id="budget_reappropriation_f29" sourceRef="br_post" targetRef="br_exGw"/>
     <sequenceFlow id="budget_reappropriation_f30" sourceRef="br_postFailed" targetRef="br_scrutiny"/>
     <sequenceFlow id="budget_reappropriation_f31" sourceRef="br_close" targetRef="br_end"/>
+    <sequenceFlow id="budget_reappropriation_f38" name="DSC signature needed" sourceRef="br_sanctionPrepareGw" targetRef="br_sanctionPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="budget_reappropriation_f39" name="no DSC signature" sourceRef="br_sanctionPrepareGw" targetRef="br_sanction"/>
+    <sequenceFlow id="budget_reappropriation_f40" sourceRef="br_sanctionPrepare" targetRef="br_sanction"/>
     <subProcess id="br_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
       <startEvent id="br_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
       <serviceTask id="br_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -98,22 +103,24 @@
       <bpmndi:BPMNShape id="br_rjSav_code_di" bpmnElement="br_rjSav_code"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="br_rjSav_reject_di" bpmnElement="br_rjSav_reject"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="br_rjSav_endRejected_di" bpmnElement="br_rjSav_endRejected"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="br_rj_reject_di" bpmnElement="br_rj_reject"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="br_rj_endRejected_di" bpmnElement="br_rj_endRejected"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_rj_reject_di" bpmnElement="br_rj_reject"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_rj_endRejected_di" bpmnElement="br_rj_endRejected"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="br_finance_di" bpmnElement="br_finance"><dc:Bounds x="1175" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="br_scrGw_di" bpmnElement="br_scrGw"><dc:Bounds x="1035" y="170" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="br_scrGw_lapsedReason_di" bpmnElement="br_scrGw_lapsedReason"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="br_sanction_di" bpmnElement="br_sanction"><dc:Bounds x="1505" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_sanction_di" bpmnElement="br_sanction"><dc:Bounds x="1835" y="405" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="br_concurGw_di" bpmnElement="br_concurGw"><dc:Bounds x="1365" y="295" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="br_rjFin_code_di" bpmnElement="br_rjFin_code"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="br_rjFin_reject_di" bpmnElement="br_rjFin_reject"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="br_rjFin_endRejected_di" bpmnElement="br_rjFin_endRejected"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="br_post_di" bpmnElement="br_post"><dc:Bounds x="1835" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="br_sanGw_di" bpmnElement="br_sanGw"><dc:Bounds x="1695" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="br_close_di" bpmnElement="br_close"><dc:Bounds x="2165" y="530" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="br_postFailed_di" bpmnElement="br_postFailed"><dc:Bounds x="2165" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="br_exGw_di" bpmnElement="br_exGw"><dc:Bounds x="2025" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="br_end_di" bpmnElement="br_end"><dc:Bounds x="2362" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_post_di" bpmnElement="br_post"><dc:Bounds x="2165" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_sanGw_di" bpmnElement="br_sanGw"><dc:Bounds x="2025" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_close_di" bpmnElement="br_close"><dc:Bounds x="2495" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_postFailed_di" bpmnElement="br_postFailed"><dc:Bounds x="2495" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_exGw_di" bpmnElement="br_exGw"><dc:Bounds x="2355" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_end_di" bpmnElement="br_end"><dc:Bounds x="2692" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_sanctionPrepareGw_di" bpmnElement="br_sanctionPrepareGw"><dc:Bounds x="1530" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_sanctionPrepare_di" bpmnElement="br_sanctionPrepare"><dc:Bounds x="1670" y="405" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="br_withdraw_di" bpmnElement="br_withdraw" isExpanded="true"><dc:Bounds x="30" y="660" width="623" height="150"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="br_withdrawStart_di" bpmnElement="br_withdrawStart"><dc:Bounds x="92" y="722" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="br_withdrawKind_di" bpmnElement="br_withdrawKind"><dc:Bounds x="225" y="700" width="100" height="80"/></bpmndi:BPMNShape>
@@ -135,26 +142,29 @@
       <bpmndi:BPMNEdge id="budget_reappropriation_f9_di" bpmnElement="budget_reappropriation_f9"><di:waypoint x="1110" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="budget_reappropriation_f10_di" bpmnElement="budget_reappropriation_f10"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="budget_reappropriation_f11_di" bpmnElement="budget_reappropriation_f11"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="budget_reappropriation_f12_di" bpmnElement="budget_reappropriation_f12"><di:waypoint x="1935" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f12_di" bpmnElement="budget_reappropriation_f12"><di:waypoint x="2265" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="budget_reappropriation_f13_di" bpmnElement="budget_reappropriation_f13"><di:waypoint x="1085" y="195"/><di:waypoint x="1130" y="195"/><di:waypoint x="1130" y="320"/><di:waypoint x="1175" y="320"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="budget_reappropriation_f14_di" bpmnElement="budget_reappropriation_f14"><di:waypoint x="1085" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="budget_reappropriation_f15_di" bpmnElement="budget_reappropriation_f15"><di:waypoint x="1275" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="budget_reappropriation_f16_di" bpmnElement="budget_reappropriation_f16"><di:waypoint x="1085" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f15_di" bpmnElement="budget_reappropriation_f15"><di:waypoint x="1275" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f16_di" bpmnElement="budget_reappropriation_f16"><di:waypoint x="1085" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="budget_reappropriation_f17_di" bpmnElement="budget_reappropriation_f17"><di:waypoint x="945" y="195"/><di:waypoint x="1035" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="budget_reappropriation_f18_di" bpmnElement="budget_reappropriation_f18"><di:waypoint x="1275" y="320"/><di:waypoint x="1365" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="budget_reappropriation_f19_di" bpmnElement="budget_reappropriation_f19"><di:waypoint x="1415" y="320"/><di:waypoint x="1460" y="320"/><di:waypoint x="1460" y="445"/><di:waypoint x="1505" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f19_di" bpmnElement="budget_reappropriation_f19"><di:waypoint x="1415" y="320"/><di:waypoint x="1472" y="320"/><di:waypoint x="1472" y="445"/><di:waypoint x="1530" y="445"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="budget_reappropriation_f20_di" bpmnElement="budget_reappropriation_f20"><di:waypoint x="1770" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="budget_reappropriation_f21_di" bpmnElement="budget_reappropriation_f21"><di:waypoint x="1605" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="budget_reappropriation_f22_di" bpmnElement="budget_reappropriation_f22"><di:waypoint x="1415" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="budget_reappropriation_f23_di" bpmnElement="budget_reappropriation_f23"><di:waypoint x="1745" y="445"/><di:waypoint x="1835" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="budget_reappropriation_f24_di" bpmnElement="budget_reappropriation_f24"><di:waypoint x="1720" y="470"/><di:waypoint x="1720" y="509"/><di:waypoint x="895" y="509"/><di:waypoint x="895" y="235"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="budget_reappropriation_f25_di" bpmnElement="budget_reappropriation_f25"><di:waypoint x="1745" y="445"/><di:waypoint x="1790" y="445"/><di:waypoint x="1790" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="budget_reappropriation_f26_di" bpmnElement="budget_reappropriation_f26"><di:waypoint x="1605" y="445"/><di:waypoint x="1695" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="budget_reappropriation_f27_di" bpmnElement="budget_reappropriation_f27"><di:waypoint x="2075" y="445"/><di:waypoint x="2120" y="445"/><di:waypoint x="2120" y="570"/><di:waypoint x="2165" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="budget_reappropriation_f28_di" bpmnElement="budget_reappropriation_f28"><di:waypoint x="2075" y="445"/><di:waypoint x="2165" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="budget_reappropriation_f29_di" bpmnElement="budget_reappropriation_f29"><di:waypoint x="1935" y="445"/><di:waypoint x="2025" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="budget_reappropriation_f30_di" bpmnElement="budget_reappropriation_f30"><di:waypoint x="2215" y="485"/><di:waypoint x="2215" y="510"/><di:waypoint x="895" y="510"/><di:waypoint x="895" y="235"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="budget_reappropriation_f31_di" bpmnElement="budget_reappropriation_f31"><di:waypoint x="2265" y="570"/><di:waypoint x="2362" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f23_di" bpmnElement="budget_reappropriation_f23"><di:waypoint x="2075" y="445"/><di:waypoint x="2165" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f24_di" bpmnElement="budget_reappropriation_f24"><di:waypoint x="2050" y="470"/><di:waypoint x="2050" y="509"/><di:waypoint x="895" y="509"/><di:waypoint x="895" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f25_di" bpmnElement="budget_reappropriation_f25"><di:waypoint x="2075" y="445"/><di:waypoint x="2120" y="445"/><di:waypoint x="2120" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f26_di" bpmnElement="budget_reappropriation_f26"><di:waypoint x="1935" y="445"/><di:waypoint x="2025" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f27_di" bpmnElement="budget_reappropriation_f27"><di:waypoint x="2405" y="445"/><di:waypoint x="2450" y="445"/><di:waypoint x="2450" y="570"/><di:waypoint x="2495" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f28_di" bpmnElement="budget_reappropriation_f28"><di:waypoint x="2405" y="445"/><di:waypoint x="2495" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f29_di" bpmnElement="budget_reappropriation_f29"><di:waypoint x="2265" y="445"/><di:waypoint x="2355" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f30_di" bpmnElement="budget_reappropriation_f30"><di:waypoint x="2545" y="485"/><di:waypoint x="2545" y="510"/><di:waypoint x="895" y="510"/><di:waypoint x="895" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f31_di" bpmnElement="budget_reappropriation_f31"><di:waypoint x="2595" y="570"/><di:waypoint x="2692" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f38_di" bpmnElement="budget_reappropriation_f38"><di:waypoint x="1580" y="445"/><di:waypoint x="1670" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f39_di" bpmnElement="budget_reappropriation_f39"><di:waypoint x="1580" y="445"/><di:waypoint x="1835" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f40_di" bpmnElement="budget_reappropriation_f40"><di:waypoint x="1770" y="445"/><di:waypoint x="1835" y="445"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="budget_reappropriation_f32_di" bpmnElement="budget_reappropriation_f32"><di:waypoint x="128" y="740"/><di:waypoint x="225" y="740"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="budget_reappropriation_f33_di" bpmnElement="budget_reappropriation_f33"><di:waypoint x="325" y="740"/><di:waypoint x="390" y="740"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="budget_reappropriation_f34_di" bpmnElement="budget_reappropriation_f34"><di:waypoint x="490" y="740"/><di:waypoint x="587" y="740"/></bpmndi:BPMNEdge>

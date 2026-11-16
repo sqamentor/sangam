@@ -934,7 +934,10 @@ op("post", "/tasks/{id}/complete", "completeTask", "Tasks", "Complete a task wit
    "required document by the completing person at this task: otherwise 422 DSC_SIGNATURE_NOT_VERIFIED, or 422 "
    "DSC_ENROLMENT_REVOKED when the person did sign it but the certificate enrolment that signature was bound to was "
    "revoked afterwards (also after a re-approval); the signature evidence stays recorded and the person signs again "
-   "with the currently approved certificate. "
+   "with the currently approved certificate. The required document is the one the document route bound into the "
+   "step's slot (upload with its documentType on an open task of the case); a variable naming a declared DSC document "
+   "slot is refused with 422 DOCUMENT_SLOT_VARIABLE and nothing is written, here and on every other caller variable "
+   "write (owner decision 385). "
    "Closing a security incident (task compliance/incident-follow-up of sangam-incident-report, when the follow-up "
    "choice is close) needs non-blank rootCause and lessonsLearned in the completion variables (SANGAM.md OJ-06 step "
    "8): otherwise 422 INCIDENT_CLOSURE_INCOMPLETE naming the missing field(s), and nothing is written.",

@@ -7,6 +7,7 @@ import org.sangam.integration.inbox.ChannelBinding;
 import org.sangam.integration.inbox.InboundMessage;
 import org.sangam.integration.inbox.InboxHandler;
 import org.sangam.integration.inbox.InboxService;
+import org.sangam.core.engine.DocumentSlotNames;
 
 import java.sql.Connection;
 import java.util.LinkedHashMap;
@@ -63,8 +64,10 @@ public final class PipelineMessages implements InboxHandler {
         if (q.count() == 0) {
             return Disposition.NO_SUBSCRIPTION;
         }
+        Map<String, Object> data = Json.readMap(m.dataJson());
+        DocumentSlotNames.refuse(data.keySet()); // decision 385 (2)
         var b = engine.getRuntimeService().createMessageCorrelation(MESSAGE).processInstanceVariableEquals(VARIABLE, m.correlationKey())
-                .setVariables(Json.readMap(m.dataJson()));
+                .setVariables(data);
         b = noTenant ? b.withoutTenantId() : b.tenantId(m.tenantId());
         return b.correlateAllWithResult().isEmpty() ? Disposition.NO_SUBSCRIPTION : Disposition.PROCESSED;
     }

@@ -49,6 +49,8 @@
     <serviceTask id="pp_payCfg" name="Payment settings" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>treasurySeat=AP-TREASURY;executionConnector=bank.transfer;executionStep=supplier-payment;verifyApproval=false;reconcileRequired=true;executionPayloadFields=supplierName,amount</operaton:string></operaton:field></extensionElements></serviceTask>
     <callActivity id="pp_pay" name="Pay supplier (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <endEvent id="pp_end" name="Paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="pp_approvePrepareGw" name="Document to sign?" default="sec_scm_p2p_f53"></exclusiveGateway>
+    <userTask id="pp_approvePrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <boundaryEvent id="pp_release_warn" name="SLA warning (75%)" attachedToRef="pp_release" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pp_releaseWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
     <boundaryEvent id="pp_release_breach" name="SLA breached" attachedToRef="pp_release" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pp_releaseDueAt}</timeDate></timerEventDefinition></boundaryEvent>
     <sequenceFlow id="sec_scm_p2p_f1" sourceRef="pp_budget_clear" targetRef="pp_budget"/>
@@ -68,8 +70,8 @@
     <sequenceFlow id="sec_scm_p2p_f15" sourceRef="pp_rfq" targetRef="pp_rfqGw"/>
     <sequenceFlow id="sec_scm_p2p_f16" name="retender" sourceRef="pp_rfqGw" targetRef="pp_rfq"><conditionExpression xsi:type="tFormalExpression">${rfqDecision == 'retender'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_scm_p2p_f17" name="award" sourceRef="pp_rfqGw" targetRef="pp_recompute"/>
-    <sequenceFlow id="sec_scm_p2p_f18" name="direct" sourceRef="pp_modeGw" targetRef="pp_approve"/>
-    <sequenceFlow id="sec_scm_p2p_f19" sourceRef="pp_recompute" targetRef="pp_approve"/>
+    <sequenceFlow id="sec_scm_p2p_f18" name="direct" sourceRef="pp_modeGw" targetRef="pp_approvePrepareGw"/>
+    <sequenceFlow id="sec_scm_p2p_f19" sourceRef="pp_recompute" targetRef="pp_approvePrepareGw"/>
     <sequenceFlow id="sec_scm_p2p_f20" sourceRef="pp_rj_reject" targetRef="pp_rj_endRejected"/>
     <sequenceFlow id="sec_scm_p2p_f21" name="SANCTIONED" sourceRef="pp_sanGw" targetRef="pp_po"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_scm_p2p_f22" name="otherwise" sourceRef="pp_sanGw" targetRef="pp_rj_reject"/>
@@ -96,6 +98,9 @@
     <sequenceFlow id="sec_scm_p2p_f43" sourceRef="pp_payCfg" targetRef="pp_release_slaPlan"/>
     <sequenceFlow id="sec_scm_p2p_f44" sourceRef="pp_release_done" targetRef="pp_pay"/>
     <sequenceFlow id="sec_scm_p2p_f45" sourceRef="pp_pay" targetRef="pp_end"/>
+    <sequenceFlow id="sec_scm_p2p_f52" name="DSC signature needed" sourceRef="pp_approvePrepareGw" targetRef="pp_approvePrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_scm_p2p_f53" name="no DSC signature" sourceRef="pp_approvePrepareGw" targetRef="pp_approve"/>
+    <sequenceFlow id="sec_scm_p2p_f54" sourceRef="pp_approvePrepare" targetRef="pp_approve"/>
     <subProcess id="pp_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
       <startEvent id="pp_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
       <serviceTask id="pp_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -134,32 +139,34 @@
       <bpmndi:BPMNShape id="pp_rfq_di" bpmnElement="pp_rfq"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="pp_rfqGw_di" bpmnElement="pp_rfqGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="pp_recompute_di" bpmnElement="pp_recompute"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_approve_di" bpmnElement="pp_approve"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_rj_reject_di" bpmnElement="pp_rj_reject"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_rj_endRejected_di" bpmnElement="pp_rj_endRejected"><dc:Bounds x="2362" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_po_di" bpmnElement="pp_po"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_sanGw_di" bpmnElement="pp_sanGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_send_di" bpmnElement="pp_send"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_grn_di" bpmnElement="pp_grn"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_qc_di" bpmnElement="pp_qc"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_qcGw_di" bpmnElement="pp_qcGw"><dc:Bounds x="2850" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_debit_di" bpmnElement="pp_debit"><dc:Bounds x="2990" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_grnQty_di" bpmnElement="pp_grnQty"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_invoice_di" bpmnElement="pp_invoice"><dc:Bounds x="3187" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_match_di" bpmnElement="pp_match"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_terms_di" bpmnElement="pp_terms"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_release_slaPlan_di" bpmnElement="pp_release_slaPlan"><dc:Bounds x="3815" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_release_di" bpmnElement="pp_release"><dc:Bounds x="3980" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_release_warnNotify_di" bpmnElement="pp_release_warnNotify"><dc:Bounds x="4145" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_release_warnEnd_di" bpmnElement="pp_release_warnEnd"><dc:Bounds x="4342" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_release_breachAct_di" bpmnElement="pp_release_breachAct"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_release_breachGw_di" bpmnElement="pp_release_breachGw"><dc:Bounds x="4335" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_release_done_di" bpmnElement="pp_release_done"><dc:Bounds x="4500" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_payCfg_di" bpmnElement="pp_payCfg"><dc:Bounds x="3650" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_pay_di" bpmnElement="pp_pay"><dc:Bounds x="4640" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_end_di" bpmnElement="pp_end"><dc:Bounds x="4837" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_release_warn_di" bpmnElement="pp_release_warn"><dc:Bounds x="3988" y="217" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_release_breach_di" bpmnElement="pp_release_breach"><dc:Bounds x="4018" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_approve_di" bpmnElement="pp_approve"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_rj_reject_di" bpmnElement="pp_rj_reject"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_rj_endRejected_di" bpmnElement="pp_rj_endRejected"><dc:Bounds x="2692" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_po_di" bpmnElement="pp_po"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_sanGw_di" bpmnElement="pp_sanGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_send_di" bpmnElement="pp_send"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_grn_di" bpmnElement="pp_grn"><dc:Bounds x="2857" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_qc_di" bpmnElement="pp_qc"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_qcGw_di" bpmnElement="pp_qcGw"><dc:Bounds x="3180" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_debit_di" bpmnElement="pp_debit"><dc:Bounds x="3320" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_grnQty_di" bpmnElement="pp_grnQty"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_invoice_di" bpmnElement="pp_invoice"><dc:Bounds x="3517" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_match_di" bpmnElement="pp_match"><dc:Bounds x="3650" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_terms_di" bpmnElement="pp_terms"><dc:Bounds x="3815" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_slaPlan_di" bpmnElement="pp_release_slaPlan"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_di" bpmnElement="pp_release"><dc:Bounds x="4310" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_warnNotify_di" bpmnElement="pp_release_warnNotify"><dc:Bounds x="4475" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_warnEnd_di" bpmnElement="pp_release_warnEnd"><dc:Bounds x="4672" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_breachAct_di" bpmnElement="pp_release_breachAct"><dc:Bounds x="4475" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_breachGw_di" bpmnElement="pp_release_breachGw"><dc:Bounds x="4665" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_done_di" bpmnElement="pp_release_done"><dc:Bounds x="4830" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_payCfg_di" bpmnElement="pp_payCfg"><dc:Bounds x="3980" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_pay_di" bpmnElement="pp_pay"><dc:Bounds x="4970" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_end_di" bpmnElement="pp_end"><dc:Bounds x="5167" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_approvePrepareGw_di" bpmnElement="pp_approvePrepareGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_approvePrepare_di" bpmnElement="pp_approvePrepare"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_warn_di" bpmnElement="pp_release_warn"><dc:Bounds x="4318" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_breach_di" bpmnElement="pp_release_breach"><dc:Bounds x="4348" y="217" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="pp_withdraw_di" bpmnElement="pp_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="pp_withdrawStart_di" bpmnElement="pp_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="pp_withdrawKind_di" bpmnElement="pp_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
@@ -187,34 +194,37 @@
       <bpmndi:BPMNEdge id="sec_scm_p2p_f15_di" bpmnElement="sec_scm_p2p_f15"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_scm_p2p_f16_di" bpmnElement="sec_scm_p2p_f16"><di:waypoint x="1555" y="95"/><di:waypoint x="1555" y="149"/><di:waypoint x="1390" y="149"/><di:waypoint x="1390" y="110"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_scm_p2p_f17_di" bpmnElement="sec_scm_p2p_f17"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f18_di" bpmnElement="sec_scm_p2p_f18"><di:waypoint x="1250" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f19_di" bpmnElement="sec_scm_p2p_f19"><di:waypoint x="1770" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f20_di" bpmnElement="sec_scm_p2p_f20"><di:waypoint x="2265" y="70"/><di:waypoint x="2362" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f21_di" bpmnElement="sec_scm_p2p_f21"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f22_di" bpmnElement="sec_scm_p2p_f22"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f23_di" bpmnElement="sec_scm_p2p_f23"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f24_di" bpmnElement="sec_scm_p2p_f24"><di:waypoint x="2265" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f25_di" bpmnElement="sec_scm_p2p_f25"><di:waypoint x="2430" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f26_di" bpmnElement="sec_scm_p2p_f26"><di:waypoint x="2563" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f27_di" bpmnElement="sec_scm_p2p_f27"><di:waypoint x="2760" y="195"/><di:waypoint x="2850" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f28_di" bpmnElement="sec_scm_p2p_f28"><di:waypoint x="2900" y="195"/><di:waypoint x="2945" y="195"/><di:waypoint x="2945" y="320"/><di:waypoint x="2990" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f29_di" bpmnElement="sec_scm_p2p_f29"><di:waypoint x="3040" y="360"/><di:waypoint x="3040" y="378"/><di:waypoint x="2545" y="378"/><di:waypoint x="2545" y="213"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f30_di" bpmnElement="sec_scm_p2p_f30"><di:waypoint x="2900" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f31_di" bpmnElement="sec_scm_p2p_f31"><di:waypoint x="3090" y="195"/><di:waypoint x="3187" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f32_di" bpmnElement="sec_scm_p2p_f32"><di:waypoint x="3223" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f33_di" bpmnElement="sec_scm_p2p_f33"><di:waypoint x="3420" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f34_di" bpmnElement="sec_scm_p2p_f34"><di:waypoint x="4006" y="253"/><di:waypoint x="4006" y="320"/><di:waypoint x="4145" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f35_di" bpmnElement="sec_scm_p2p_f35"><di:waypoint x="4245" y="320"/><di:waypoint x="4342" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f36_di" bpmnElement="sec_scm_p2p_f36"><di:waypoint x="4036" y="253"/><di:waypoint x="4036" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f37_di" bpmnElement="sec_scm_p2p_f37"><di:waypoint x="4245" y="195"/><di:waypoint x="4335" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f38_di" bpmnElement="sec_scm_p2p_f38"><di:waypoint x="4385" y="195"/><di:waypoint x="4500" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f39_di" bpmnElement="sec_scm_p2p_f39"><di:waypoint x="4360" y="220"/><di:waypoint x="4360" y="267"/><di:waypoint x="3865" y="267"/><di:waypoint x="3865" y="235"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f40_di" bpmnElement="sec_scm_p2p_f40"><di:waypoint x="3915" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f41_di" bpmnElement="sec_scm_p2p_f41"><di:waypoint x="4080" y="195"/><di:waypoint x="4500" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f42_di" bpmnElement="sec_scm_p2p_f42"><di:waypoint x="3585" y="195"/><di:waypoint x="3650" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f43_di" bpmnElement="sec_scm_p2p_f43"><di:waypoint x="3750" y="195"/><di:waypoint x="3815" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f44_di" bpmnElement="sec_scm_p2p_f44"><di:waypoint x="4550" y="195"/><di:waypoint x="4640" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_scm_p2p_f45_di" bpmnElement="sec_scm_p2p_f45"><di:waypoint x="4740" y="195"/><di:waypoint x="4837" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f18_di" bpmnElement="sec_scm_p2p_f18"><di:waypoint x="1250" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f19_di" bpmnElement="sec_scm_p2p_f19"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f20_di" bpmnElement="sec_scm_p2p_f20"><di:waypoint x="2595" y="70"/><di:waypoint x="2692" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f21_di" bpmnElement="sec_scm_p2p_f21"><di:waypoint x="2405" y="70"/><di:waypoint x="2450" y="70"/><di:waypoint x="2450" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f22_di" bpmnElement="sec_scm_p2p_f22"><di:waypoint x="2405" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f23_di" bpmnElement="sec_scm_p2p_f23"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f24_di" bpmnElement="sec_scm_p2p_f24"><di:waypoint x="2595" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f25_di" bpmnElement="sec_scm_p2p_f25"><di:waypoint x="2760" y="195"/><di:waypoint x="2857" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f26_di" bpmnElement="sec_scm_p2p_f26"><di:waypoint x="2893" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f27_di" bpmnElement="sec_scm_p2p_f27"><di:waypoint x="3090" y="195"/><di:waypoint x="3180" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f28_di" bpmnElement="sec_scm_p2p_f28"><di:waypoint x="3230" y="195"/><di:waypoint x="3275" y="195"/><di:waypoint x="3275" y="320"/><di:waypoint x="3320" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f29_di" bpmnElement="sec_scm_p2p_f29"><di:waypoint x="3370" y="360"/><di:waypoint x="3370" y="378"/><di:waypoint x="2875" y="378"/><di:waypoint x="2875" y="213"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f30_di" bpmnElement="sec_scm_p2p_f30"><di:waypoint x="3230" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f31_di" bpmnElement="sec_scm_p2p_f31"><di:waypoint x="3420" y="195"/><di:waypoint x="3517" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f32_di" bpmnElement="sec_scm_p2p_f32"><di:waypoint x="3553" y="195"/><di:waypoint x="3650" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f33_di" bpmnElement="sec_scm_p2p_f33"><di:waypoint x="3750" y="195"/><di:waypoint x="3815" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f34_di" bpmnElement="sec_scm_p2p_f34"><di:waypoint x="4336" y="253"/><di:waypoint x="4336" y="320"/><di:waypoint x="4475" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f35_di" bpmnElement="sec_scm_p2p_f35"><di:waypoint x="4575" y="320"/><di:waypoint x="4672" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f36_di" bpmnElement="sec_scm_p2p_f36"><di:waypoint x="4366" y="253"/><di:waypoint x="4366" y="195"/><di:waypoint x="4475" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f37_di" bpmnElement="sec_scm_p2p_f37"><di:waypoint x="4575" y="195"/><di:waypoint x="4665" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f38_di" bpmnElement="sec_scm_p2p_f38"><di:waypoint x="4715" y="195"/><di:waypoint x="4830" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f39_di" bpmnElement="sec_scm_p2p_f39"><di:waypoint x="4690" y="220"/><di:waypoint x="4690" y="267"/><di:waypoint x="4195" y="267"/><di:waypoint x="4195" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f40_di" bpmnElement="sec_scm_p2p_f40"><di:waypoint x="4245" y="195"/><di:waypoint x="4310" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f41_di" bpmnElement="sec_scm_p2p_f41"><di:waypoint x="4410" y="195"/><di:waypoint x="4830" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f42_di" bpmnElement="sec_scm_p2p_f42"><di:waypoint x="3915" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f43_di" bpmnElement="sec_scm_p2p_f43"><di:waypoint x="4080" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f44_di" bpmnElement="sec_scm_p2p_f44"><di:waypoint x="4880" y="195"/><di:waypoint x="4970" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f45_di" bpmnElement="sec_scm_p2p_f45"><di:waypoint x="5070" y="195"/><di:waypoint x="5167" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f52_di" bpmnElement="sec_scm_p2p_f52"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f53_di" bpmnElement="sec_scm_p2p_f53"><di:waypoint x="1910" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f54_di" bpmnElement="sec_scm_p2p_f54"><di:waypoint x="2100" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_scm_p2p_f46_di" bpmnElement="sec_scm_p2p_f46"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_scm_p2p_f47_di" bpmnElement="sec_scm_p2p_f47"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_scm_p2p_f48_di" bpmnElement="sec_scm_p2p_f48"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>

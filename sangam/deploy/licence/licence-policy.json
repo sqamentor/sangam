@@ -43,7 +43,7 @@
       "condition": "Owner decision 102 (2026-11-12): BSD-style licence of stax-utils, reached only through veraPDF (decision 94), which runs only in the PDF validator (decisions 114, 119). Exactly this version."
     }
   ],
-  "_comment_elections": "Owner decision 117 (C-02, 2026-11-12), plus decisions 90 (cryptacular), 94 (veraPDF) and 176 (the six Jersey jars of DR-01 join the EPL-2.0 entry): the licence Sangam elects for a component offered under a choice. Keyed by exact purl (pkg:type/namespace/name@version), or by purl prefix plus exact versions. The gate checks that the elected licence is one of the offered terms, then judges the component by the elected licence only, and the NOTICE generator prints the election. A multi-licence component with no election is read as AND (every term must pass), RM-18. A version change needs a new entry.",
+  "_comment_elections": "Owner decision 117 (C-02, 2026-11-12), plus decisions 90 (cryptacular), 94 (veraPDF) and 176 (the six Jersey jars of DR-01 join the EPL-2.0 entry): the licence Sangam elects for a component offered under a choice. Keyed by exact purl (pkg:type/namespace/name@version), or by purl prefix plus exact versions. The gate checks that the elected licence is one of the offered terms, then judges the component by the elected licence only, and the NOTICE generator prints the election. Decision 383 (RM-17): a component offered under a choice of licences (an SPDX OR expression with more than one alternative) and no election is refused (NO ELECTION), shipped or build scope; a plain licence list is not a choice and is read as AND (every term must pass), RM-18. A class entry (purl_prefix plus offered, the exact set of single-licence alternatives) elects for every component of that prefix offering exactly that choice. The Jersey jars are elected one by one, each with the evidence of the texts its jar carries. A version change needs a new entry.",
   "elections": [
     { "elected": "EPL-2.0", "decision": "117", "purls": [
       "pkg:maven/ch.qos.logback/logback-classic@1.5.38", "pkg:maven/ch.qos.logback/logback-core@1.5.38",
@@ -55,19 +55,32 @@
       "pkg:maven/org.glassfish.hk2/hk2-api@4.0.3", "pkg:maven/org.glassfish.hk2/hk2-core@4.0.3",
       "pkg:maven/org.glassfish.hk2/hk2-locator@4.0.3", "pkg:maven/org.glassfish.hk2/hk2-runlevel@4.0.3",
       "pkg:maven/org.glassfish.hk2/hk2-utils@4.0.3", "pkg:maven/org.glassfish.hk2/hk2@4.0.3",
-      "pkg:maven/org.glassfish.hk2/osgi-resource-locator@3.0.0", "pkg:maven/org.glassfish.hk2/spring-bridge@4.0.3",
-      "pkg:maven/org.glassfish.jersey.containers/jersey-container-servlet@4.0.3", "pkg:maven/org.glassfish.jersey.core/jersey-client@4.0.3",
-      "pkg:maven/org.glassfish.jersey.ext/jersey-bean-validation@4.0.3", "pkg:maven/org.glassfish.jersey.ext/jersey-entity-filtering@4.0.3",
-      "pkg:maven/org.glassfish.jersey.ext/jersey-spring6@4.0.3", "pkg:maven/org.glassfish.jersey.inject/jersey-hk2@4.0.3",
-      "pkg:maven/org.glassfish.jersey.core/jersey-common@4.0.3", "pkg:maven/org.glassfish.jersey.core/jersey-server@4.0.3"
+      "pkg:maven/org.glassfish.hk2/osgi-resource-locator@3.0.0", "pkg:maven/org.glassfish.hk2/spring-bridge@4.0.3"
     ] },
+    { "elected": "EPL-2.0", "decision": "117, 176 and 383 (one by one from the carried texts)", "purls": ["pkg:maven/org.glassfish.jersey.containers/jersey-container-servlet@4.0.3"],
+      "evidence": "jersey-container-servlet-4.0.3.jar (SHA-256 ddf054a3de54a1ebc2653baa7cdbd9a0a5455dbff82602bcbc64a49fbb3e7969): META-INF/NOTICE.md SPDX-License-Identifier EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0; META-INF/LICENSE.md carries both licence texts (read 2026-11-16, round 6 lane v1)" },
+    { "elected": "EPL-2.0", "decision": "117, 176 and 383 (one by one from the carried texts)", "purls": ["pkg:maven/org.glassfish.jersey.core/jersey-client@4.0.3"],
+      "evidence": "jersey-client-4.0.3.jar (SHA-256 4fe1aa250b9f0f708e5f5641468d50cd773776d236926f2a51d3ece27d8d6ffc): META-INF/NOTICE.md SPDX-License-Identifier EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0; META-INF/LICENSE.md carries both licence texts (read 2026-11-16, round 6 lane v1)" },
+    { "elected": "EPL-2.0", "decision": "117, 176 and 383 (one by one from the carried texts)", "purls": ["pkg:maven/org.glassfish.jersey.core/jersey-common@4.0.3"],
+      "evidence": "jersey-common-4.0.3.jar (SHA-256 6480837fa63edd71141aa35e4d8d8d15ccd49234246ce0d3ef3eedb9e8cb1c03): META-INF/NOTICE.md SPDX-License-Identifier EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0; META-INF/LICENSE.md carries both licence texts (read 2026-11-16, round 6 lane v1)" },
+    { "elected": "EPL-2.0", "decision": "117, 176 and 383 (one by one from the carried texts)", "purls": ["pkg:maven/org.glassfish.jersey.core/jersey-server@4.0.3"],
+      "evidence": "jersey-server-4.0.3.jar (SHA-256 7e62e6a96a4aedc7e9905b8e429d4768b9b3ac449e6a35ac9b8c5b1004364437): META-INF/NOTICE.md SPDX-License-Identifier EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0; META-INF/LICENSE.md carries both licence texts (read 2026-11-16, round 6 lane v1)" },
+    { "elected": "EPL-2.0", "decision": "117, 176 and 383 (one by one from the carried texts)", "purls": ["pkg:maven/org.glassfish.jersey.ext/jersey-bean-validation@4.0.3"],
+      "evidence": "jersey-bean-validation-4.0.3.jar (SHA-256 8f154b37c204c50c6a108bb29985292d5b6072e84e242046f50e6b42ad7d3681): META-INF/NOTICE.md SPDX-License-Identifier EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0; META-INF/LICENSE.md carries both licence texts (read 2026-11-16, round 6 lane v1)" },
+    { "elected": "EPL-2.0", "decision": "117, 176 and 383 (one by one from the carried texts)", "purls": ["pkg:maven/org.glassfish.jersey.ext/jersey-entity-filtering@4.0.3"],
+      "evidence": "jersey-entity-filtering-4.0.3.jar (SHA-256 64503ee18c51f660d456e26e78e6cb113e06c6320e49347ba5722746862c8f1c): META-INF/NOTICE.md SPDX-License-Identifier EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0; META-INF/LICENSE.md carries both licence texts (read 2026-11-16, round 6 lane v1)" },
+    { "elected": "EPL-2.0", "decision": "117, 176 and 383 (one by one from the carried texts)", "purls": ["pkg:maven/org.glassfish.jersey.ext/jersey-spring6@4.0.3"],
+      "evidence": "jersey-spring6-4.0.3.jar (SHA-256 be6f4b265c818611df2ed5b237af5f3ce0752d574b0378a2e9cd500a354f19ac): META-INF/NOTICE.md SPDX-License-Identifier EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0; META-INF/LICENSE.md carries both licence texts (read 2026-11-16, round 6 lane v1)" },
+    { "elected": "EPL-2.0", "decision": "117, 176 and 383 (one by one from the carried texts)", "purls": ["pkg:maven/org.glassfish.jersey.inject/jersey-hk2@4.0.3"],
+      "evidence": "jersey-hk2-4.0.3.jar (SHA-256 fa9332d19d2607a31fe26cf52065f5ee86a763f1a091668a4d5351202a84babe): META-INF/NOTICE.md SPDX-License-Identifier EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0; META-INF/LICENSE.md carries both licence texts (read 2026-11-16, round 6 lane v1)" },
+    { "elected": "EPL-2.0", "decision": "117 corrected by 385 (4) (from its own carried texts)", "purls": ["pkg:maven/org.glassfish.jersey.media/jersey-media-json-jackson@4.0.3"],
+      "evidence": "jersey-media-json-jackson-4.0.3.jar (SHA-256 cd84f283624bfaf35e354353162d5c701a297fb59aa78e5e2b347dfd09c20860): META-INF/NOTICE.md and META-INF/NOTICE.markdown SPDX-License-Identifier EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0; META-INF/LICENSE.md carries both licence texts; the Apache License, 2.0 lines there are notices of third-party content, not the jar's licence (read 2026-11-16, round 6 lane v1)" },
     { "elected": "BSD-3-Clause", "decision": "117 (EDL-1.0, which is BSD-3-Clause)", "purls": [
       "pkg:maven/jakarta.mail/jakarta.mail-api@2.1.5", "pkg:maven/org.eclipse.angus/angus-mail@2.0.4",
       "pkg:maven/org.eclipse.angus/angus-mail@2.0.5"
     ] },
     { "elected": "Apache-2.0", "decision": "117", "purls": [
       "pkg:maven/org.javassist/javassist@3.33.0-GA", "pkg:maven/com.rabbitmq/amqp-client@5.37.1",
-      "pkg:maven/org.glassfish.jersey.media/jersey-media-json-jackson@4.0.3",
       "pkg:maven/com.github.javaparser/javaparser-core@3.28.2", "pkg:maven/net.java.dev.jna/jna@5.13.0",
       "pkg:maven/net.java.dev.jna/jna@5.17.0", "pkg:maven/net.java.dev.jna/jna-platform@5.17.0",
       "pkg:npm/dompurify@3.4.17", "pkg:cargo/ryu@1.0.17"
@@ -77,9 +90,11 @@
     { "elected": "BSD-2-Clause", "decision": "117", "purls": ["pkg:maven/org.hdrhistogram/HdrHistogram@2.2.2"] },
     { "elected": "MPL-2.0", "decision": "117 (H2 election MPL-2.0)", "purls": ["pkg:maven/com.h2database/h2@2.3.232"] },
     { "elected": "MPL-2.0", "decision": "94 (veraPDF 1.30.4, wcag-algorithms 1.30.3; only in the PDF validator, decisions 114 and 119)",
-      "purl_prefix": "pkg:maven/org.verapdf/", "versions": ["1.30.4", "1.30.3"], "allowed_in": ["pdf-validator"] }
+      "purl_prefix": "pkg:maven/org.verapdf/", "versions": ["1.30.4", "1.30.3"], "allowed_in": ["pdf-validator"] },
+    { "elected": "Apache-2.0", "decision": "383 (the Rust crates offered as MIT OR Apache-2.0 elect Apache-2.0, the project licence)",
+      "purl_prefix": "pkg:cargo/", "offered": ["Apache-2.0", "MIT"] }
   ],
-  "_comment_rust_crates": "Decision 117: the Rust crates are MIT OR Apache-2.0 (both allowed, so their SPDX OR expression passes as it is); only ryu needs the election above. They matter only if a binary is ever shipped.",
+  "_comment_rust_crates": "Decision 117: the Rust crates are MIT OR Apache-2.0; decision 383 elects Apache-2.0 for every crate offering exactly that choice (the class entry above). Any other choice of a crate is refused until it has an election. They matter only if a binary is ever shipped.",
   "_comment_pending_review": "Shipped components whose licence reading is open in the decision register. Each is reported as REVIEW REQUIRED and fails the gate until the register entry is closed and this list is updated (decision 117: the six Jersey jars stay unelected until their files are reviewed). Decision 176 (2026-11-12) closed DR-01 (the six Jersey jars, now elected EPL-2.0 above from the SPDX line of their own META-INF/NOTICE.md) and DR-02 (paranamer 2.8.3, BSD-3-Clause from the upstream LICENSE.txt at its release tag); evidence in the E16 CSV rows. The list is empty and stays in place for the next open reading.",
   "pending_review": [],
   "_comment_reviewed_licences": "Exact component versions whose package metadata names no licence: nothing at all, or a pointer to a file ('SEE LICENSE IN LICENSE'). 'licence' is the licence read from the package's own files and recorded for that version in decision-register.json (test_check_licences.py checks that the two agree); 'declared' is what the metadata said at the review (null = no licence member; a list when two tools spell the same metadata differently). The gate judges the component by 'licence' under the ordinary rules of this file, so an entry here accepts nothing by itself: LicenseRef-bpmn.io passes only through the LIC-8 conditional entry above, MIT because it is in 'allowed'. A different metadata value, or another version, fails (REVIEWED LICENCE MISMATCH, UNKNOWN LICENCE or NO LICENCE DATA) until the files are read again.",

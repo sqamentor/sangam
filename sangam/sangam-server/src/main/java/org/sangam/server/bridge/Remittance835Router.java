@@ -23,6 +23,7 @@ import org.sangam.integration.inbox.InboxService;
 import org.sangam.integration.inbox.PoisonInbound;
 import org.sangam.integration.inbox.UniqueStartGuard;
 import org.sangam.rest.modules.connectorshealth.HealthHooksPort;
+import org.sangam.core.engine.DocumentSlotNames;
 
 /**
  * Routes a received 835. Each claim becomes one inbox message, deduplicated on trace number plus patient control number.
@@ -109,6 +110,7 @@ public final class Remittance835Router {
             vars.put("sangamInboxSource", m.source());
             vars.put("sangamInboxMessageId", m.messageId());
             vars.put("sangamEventType", m.eventType());
+            DocumentSlotNames.refuse(vars.keySet()); // decision 385 (2)
             long waiting = rs.createExecutionQuery().messageEventSubscriptionName(EVENT_TYPE)
                     .processVariableValueEquals(CLAIM_VARIABLE, m.correlationKey()).tenantIdIn(m.tenantId()).count();
             if (waiting > 0) {

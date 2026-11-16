@@ -214,6 +214,9 @@ class HostSchemaAndPrecedenceTest {
         m.put("sangam.secrets.file.root", SECRETS.toString());
         m.put("sangam.audit.checkpoint.private-key-ref", "secret://audit/checkpoint-private");
         m.put("sangam.audit.checkpoint.public-key-ref", "secret://audit/checkpoint-public");
+        // decision 385 (3): production needs this environment's name and the other environments' key fingerprints
+        m.put("sangam.keys.environment", "prod");
+        m.put("sangam.keys.foreign-fingerprints", FOREIGN_FINGERPRINTS.toString());
         m.put("sangam.security.bootstrap.enabled", "false");
         m.put("sangam.security.dev-token.enabled", "false");
         m.put("sangam.security.platform-issuer", "");
@@ -222,6 +225,17 @@ class HostSchemaAndPrecedenceTest {
     }
 
     static final Path SECRETS = secretsDirectory();
+    static final Path FOREIGN_FINGERPRINTS = foreignFingerprints();
+
+    private static Path foreignFingerprints() {
+        try {
+            Path f = Files.createTempFile("host-key-fingerprints", ".txt");
+            Files.writeString(f, "staging " + "0123456789abcdef".repeat(4) + "\n", StandardCharsets.UTF_8);
+            return f;
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+    }
 
     private static String randomBase64(int bytes) {
         byte[] k = new byte[bytes];

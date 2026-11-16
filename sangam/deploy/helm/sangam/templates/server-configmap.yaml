@@ -16,6 +16,15 @@ data:
   SANGAM_SECURITY_PRODUCTION: {{ .Values.server.production | quote }}
   # Decision 144: system audit scope of shared and system-owned engine work (required; refused at start if invalid)
   SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE: {{ required "server.systemAuditScope is required (decision 144)" .Values.server.systemAuditScope | quote }}
+  {{- $ke := .Values.server.keyEnvironment | default dict }}
+  {{- with $ke.name }}
+  # Decision 385 (3): one key per environment (the start refuses a key of another environment; in production a list)
+  SANGAM_KEYS_ENVIRONMENT: {{ . | quote }}
+  SANGAM_KEYS_FINGERPRINT_EXPORT: /var/lib/sangam/key-fingerprints.txt
+  {{- end }}
+  {{- if $ke.foreignFingerprints }}
+  SANGAM_KEYS_FOREIGN_FINGERPRINTS: /opt/sangam/config/key-fingerprints.txt
+  {{- end }}
   # Decision 247: knowledge-base ranking index (portable, pgvector, oracle); also set on the migrate Job
   SANGAM_AI_KB_VECTOR_INDEX: {{ .Values.server.aiKbVectorIndex | quote }}
   # Decision 259: maximum age of an OCSP answer's thisUpdate (DSC add-on only)
@@ -220,3 +229,8 @@ data:
     {{- else }}
     {}
     {{- end }}
+  {{- with (.Values.server.keyEnvironment | default dict).foreignFingerprints }}
+  # Decision 385 (3): the key fingerprints of the other environments (no key, no secret)
+  key-fingerprints.txt: |
+    {{- . | nindent 4 }}
+  {{- end }}

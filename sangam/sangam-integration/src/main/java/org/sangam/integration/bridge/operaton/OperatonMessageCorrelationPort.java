@@ -5,6 +5,7 @@ import org.operaton.bpm.engine.ProcessEngine;
 import org.operaton.bpm.engine.RuntimeService;
 import org.operaton.bpm.engine.runtime.MessageCorrelationResult;
 import org.sangam.integration.inbox.MessageCorrelationPort;
+import org.sangam.core.engine.DocumentSlotNames;
 
 import java.sql.Connection;
 import java.util.List;
@@ -46,6 +47,7 @@ public final class OperatonMessageCorrelationPort implements MessageCorrelationP
 
     @Override
     public int correlate(Connection c, String tenantId, String messageName, String correlationKey, Map<String, Object> variables) {
+        DocumentSlotNames.refuse(variables == null ? null : variables.keySet()); // decision 385 (2)
         RuntimeService rs = engine.getRuntimeService();
         List<MessageCorrelationResult> r = rs.createMessageCorrelation(messageName).tenantId(tenantId)
                 .processInstanceBusinessKey(correlationKey).setVariables(variables).correlateAllWithResult();
@@ -58,6 +60,7 @@ public final class OperatonMessageCorrelationPort implements MessageCorrelationP
 
     @Override
     public String start(Connection c, String tenantId, String definitionKey, String businessKey, Map<String, Object> variables) {
+        DocumentSlotNames.refuse(variables == null ? null : variables.keySet()); // decision 385 (2)
         var b = engine.getRuntimeService().createProcessInstanceByKey(definitionKey).businessKey(businessKey).setVariables(variables);
         if (tenantId != null) {
             b = b.processDefinitionTenantId(tenantId);
