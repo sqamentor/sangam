@@ -45,8 +45,9 @@ class EngineVariablesThroughTypedVariablesTest {
     void everyWritePathThatReadsJsonUsesAnExactMapperAndTypedVariables() throws Exception {
         Map<String, String> violations = new TreeMap<>();
         List<String> readers = new ArrayList<>();
-        for (String root : CallerVariableWritePathsTest.ROOTS) {
-            try (Stream<Path> files = Files.walk(Path.of(root))) {
+        // the module list of decision 387 (1), found on disk (the fixed ROOTS list it replaced no longer exists)
+        for (Path root : CallerVariableWritePathsTest.roots()) {
+            try (Stream<Path> files = Files.walk(root)) {
                 for (Path p : files.filter(x -> x.toString().endsWith(".java")).toList()) {
                     String src = Files.readString(p);
                     boolean writes = CallerVariableWritePathsTest.WRITE.matcher(src).find()

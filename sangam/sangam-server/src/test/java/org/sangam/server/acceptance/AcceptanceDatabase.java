@@ -148,7 +148,7 @@ public final class AcceptanceDatabase {
                     + "sendStringParametersAsUnicode=true";
             case "mysql" -> "jdbc:mariadb://" + c.getHost() + ":" + c.getMappedPort(3306) + "/" + database
                     + "?useServerPrepStmts=true&sessionVariables=transaction_isolation='READ-COMMITTED'"
-                    + "&connectionCollation=utf8mb4_bin&permitMysqlScheme";
+                    + "&connectionCollation=utf8mb4_bin&permitMysqlScheme" + MYSQL_TLS;
             default -> {
                 if (!"sangam".equals(database)) {
                     throw new IllegalArgumentException(name() + ": one database per container, isolate with a schema/user");
@@ -273,9 +273,18 @@ public final class AcceptanceDatabase {
         @Override
         public String getJdbcUrl() {
             return "jdbc:mariadb://" + getHost() + ":" + getMappedPort(MYSQL_PORT) + "/" + getDatabaseName()
-                    + "?permitMysqlScheme";
+                    + "?permitMysqlScheme" + MYSQL_TLS;
         }
     }
+
+    /**
+     * MySQL 8.4 accounts use caching_sha2_password: the first login of an account the server has not cached needs either
+     * TLS or the server's RSA key, so a plain-text login of {@code root} (the harness administrator, never cached) failed
+     * with "RSA public key is not available client side" (probe r7-it-mysql-auth-probe-20261116-171629.log: plain fails,
+     * {@code sslMode=trust} succeeds). The harness talks TLS to the container's own self-signed certificate, as a
+     * production MySQL connection does over TLS; it does not fetch the RSA key over an unauthenticated channel.
+     */
+    static final String MYSQL_TLS = "&sslMode=trust";
 
     private static void createSqlServerDatabase(JdbcDatabaseContainer<?> c) {
         try (Connection conn = DriverManager.getConnection(c.getJdbcUrl() + ";encrypt=true;trustServerCertificate=true",

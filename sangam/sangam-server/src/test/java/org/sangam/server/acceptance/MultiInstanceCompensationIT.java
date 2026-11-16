@@ -29,11 +29,12 @@ class MultiInstanceCompensationIT extends EngineScenarioSupport {
                 </userTask>
                 <boundaryEvent id="holdComp" attachedToRef="hold"><compensateEventDefinition/></boundaryEvent>
                 <userTask id="refund" isForCompensation="true"/>
-                <association id="a1" associationDirection="One" sourceRef="holdComp" targetRef="refund"/>
                 <sequenceFlow id="f2" sourceRef="hold" targetRef="decide"/><userTask id="decide"/>
                 <sequenceFlow id="f3" sourceRef="decide" targetRef="comp"/>
                 <intermediateThrowEvent id="comp"><compensateEventDefinition/></intermediateThrowEvent>
                 <sequenceFlow id="f4" sourceRef="comp" targetRef="e"/><endEvent id="e"/>
+                <!-- BPMN 2.0 XSD (tProcess): every flow element precedes the artifacts, so the association is last -->
+                <association id="a1" associationDirection="One" sourceRef="holdComp" targetRef="refund"/>
               </process>
             </definitions>
             """;
