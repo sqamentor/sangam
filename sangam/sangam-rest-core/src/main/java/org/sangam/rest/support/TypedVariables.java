@@ -76,13 +76,25 @@ public final class TypedVariables {
         if (v instanceof List<?> l) {
             return l.stream().map(TypedVariables::fromJsonValue).toList();
         }
-        if (v instanceof Double d) {
-            // Never a binary float in the engine (R33). A request body never brings a Double here: the server's JSON
-            // mapper reads fractions as BigDecimal from their text (ExactJsonNumbersWiring, decision 138); this branch
-            // only keeps an in-process caller's Double from becoming a double variable.
-            return new BigDecimal(d.toString());
+        if (v instanceof Double || v instanceof Float) {
+            throw fromFloat(v);
         }
         return v;
+    }
+
+    /** Refusal code of a binary floating-point value (decision 381(4)), as in the engine decimal type. */
+    public static final String DECIMAL_FROM_FLOAT = "DECIMAL_FROM_FLOAT";
+
+    /**
+     * Decision 381(4): a binary float never becomes a variable (R33), and is not rounded into a decimal either; its
+     * digits are not the ones the caller meant. Request bodies (ExactJsonNumbersWiring) and the stored JSON this
+     * server reads back ({@link ExactJson}) carry fractions as BigDecimal; an in-process caller that still hands over a
+     * Double or Float is refused by name.
+     */
+    private static ApiProblem fromFloat(Object v) {
+        return ApiProblem.badRequest("VALIDATION_FAILED", DECIMAL_FROM_FLOAT + ": a binary floating-point value ("
+                        + v.getClass().getSimpleName() + ") cannot become an exact decimal; pass decimal text or BigDecimal")
+                .with("reason", DECIMAL_FROM_FLOAT);
     }
 
     public static Map<String, Object> toJson(Map<String, ?> in) {

@@ -117,6 +117,12 @@
     "sangam-core-sanction",
     "sangam-up14-three-way-match"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
   "placeholders": [
     {
       "decision": "sec-scm-p2p-amount-rounding",

@@ -25,6 +25,12 @@ public final class Permissions {
      */
     public static final String ADMIN_EXECUTOR = "executor.admin";
     /**
+     * Owner decision 381(3): read the decision 145 tenant migration inventory and repair an instance
+     * ({@code /admin/tenant-migration/**}). Platform-only, platform administrator: it spans tenants and moves an
+     * instance between them; in no persona group (the server decides it from the platform-issuer identity alone).
+     */
+    public static final String TENANT_MIGRATION_ADMIN = "platform.tenant-migration.admin";
+    /**
      * Decision 144: read the audit of a system audit scope ({@code scope} on GET /audit/events and /audit/verify).
      * Platform-only (platform administrator and platform auditor); the server maps it in SecurityPermissionBridge
      * (SYSTEM_AUDIT_READ, the same string). Tenant audit.read never reaches a system scope.

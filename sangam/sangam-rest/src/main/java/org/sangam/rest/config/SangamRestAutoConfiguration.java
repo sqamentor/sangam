@@ -559,6 +559,15 @@ public class SangamRestAutoConfiguration {
         return console;
     }
 
+    /** Incident skip and cancel (O01, R63): instance modification and the business cancel of ProcessPort (VI.5). */
+    @Bean
+    @ConditionalOnMissingBean
+    public org.sangam.rest.port.IncidentActionPort sangamIncidentActionPort(ProcessEngine engine, OpsPort ops,
+            org.sangam.rest.port.ProcessPort processes, TxSupport tx, AuditPort audit) {
+        return new org.sangam.rest.adapter.operaton.OperatonIncidentActions(engine.getRuntimeService(), ops, processes,
+                tx, audit);
+    }
+
     /**
      * SL-109, decisions 143 and 198: the debugger is on only with {@code sangam.debug.enabled=true} outside production,
      * as the shared resolver decides it (a missing or invalid switch counts as production).

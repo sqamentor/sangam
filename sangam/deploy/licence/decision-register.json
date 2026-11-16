@@ -225,6 +225,13 @@
    ],
    "spdx": "BSD-3-Clause"
   },
+  "pkg:maven/com.googlecode.javaewah/JavaEWAH@1.2.3": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "server"
+   ],
+   "spdx": "Apache-2.0"
+  },
   "pkg:maven/com.h2database/h2@2.3.232": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
@@ -1141,6 +1148,13 @@
     "server"
    ],
    "spdx": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0 OR BSD-3-Clause (EDL-1.0)"
+  },
+  "pkg:maven/org.eclipse.jgit/org.eclipse.jgit@7.8.0.202609011348-r": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "server"
+   ],
+   "spdx": "BSD-3-Clause"
   },
   "pkg:maven/org.eclipse.paho/org.eclipse.paho.client.mqttv3@1.2.5": {
    "decision": "ACCEPTED WITH CONDITIONS",

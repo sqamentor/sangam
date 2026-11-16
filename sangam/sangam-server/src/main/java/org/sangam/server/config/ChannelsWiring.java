@@ -58,6 +58,7 @@ import org.sangam.server.bridge.BotFrameworkKeys;
 import org.sangam.server.bridge.ChannelMediaWorker;
 import org.sangam.server.bridge.ChannelRuntimeBinder;
 import org.sangam.server.bridge.ChannelsScheduler;
+import org.sangam.core.engine.DocumentSlotNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -205,6 +206,7 @@ public class ChannelsWiring {
         return new BotBridge(new BotBridge.ProcessGateway() {
             @Override
             public boolean correlate(String tenantId, String messageName, String businessKey, Map<String, Object> variables) {
+                DocumentSlotNames.refuse(variables == null ? null : variables.keySet()); // decision 385 (2)
                 try {
                     engine.getObject().getRuntimeService().createMessageCorrelation(messageName).tenantId(tenantId)
                             .processInstanceBusinessKey(businessKey).setVariables(variables).correlateWithResult();
@@ -216,6 +218,7 @@ public class ChannelsWiring {
 
             @Override
             public void start(String tenantId, String processKey, String businessKey, Map<String, Object> variables) {
+                DocumentSlotNames.refuse(variables == null ? null : variables.keySet()); // decision 385 (2)
                 engine.getObject().getRuntimeService().createProcessInstanceByKey(processKey).processDefinitionTenantId(tenantId)
                         .businessKey(businessKey).setVariables(variables).execute();
             }

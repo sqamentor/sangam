@@ -30,11 +30,13 @@ public final class PackRuntime {
      * {@code production} (decision 292) says the installation runs in production mode: then every rounding policy row
      * and versioned rules row whose permitted use is not {@code PRODUCTION} is refused
      * ({@code org.sangam.packs.core.RowEvidence}). It is false (non-production) unless the server sets it from its
-     * fail-closed production setting (decision 143).
+     * fail-closed production setting (decision 143). {@code slotBindings} (decision 385 (2)) answers whether the
+     * server's document route bound a document into a DSC slot; its default {@link DocumentSlotBindings#NONE} binds
+     * nothing, so a DSC step with a slot is refused (fail closed).
      */
     public record Ports(ConnectorGateway gateway, SeatDirectory seats, BusinessCalendar calendar, PackAuditSink audit,
                         BatchLedger batches, LedgerStore ledgers, Clock clock, SignatureVerifications signatures,
-                        boolean production) {
+                        boolean production, DocumentSlotBindings slotBindings) {
         public Ports {
             Objects.requireNonNull(gateway, "gateway");
             Objects.requireNonNull(seats, "seats");
@@ -44,55 +46,70 @@ public final class PackRuntime {
             Objects.requireNonNull(ledgers, "ledgers");
             Objects.requireNonNull(clock, "clock");
             Objects.requireNonNull(signatures, "signatures");
+            Objects.requireNonNull(slotBindings, "slotBindings");
+        }
+
+        /** The ports without a slot binding adapter (decision 385 (2) default: nothing is bound). */
+        public Ports(ConnectorGateway gateway, SeatDirectory seats, BusinessCalendar calendar, PackAuditSink audit,
+                     BatchLedger batches, LedgerStore ledgers, Clock clock, SignatureVerifications signatures,
+                     boolean production) {
+            this(gateway, seats, calendar, audit, batches, ledgers, clock, signatures, production,
+                    DocumentSlotBindings.NONE);
         }
 
         /** The ports with a DSC verification adapter, non-production (decision 292 default). */
         public Ports(ConnectorGateway gateway, SeatDirectory seats, BusinessCalendar calendar, PackAuditSink audit,
                      BatchLedger batches, LedgerStore ledgers, Clock clock, SignatureVerifications signatures) {
-            this(gateway, seats, calendar, audit, batches, ledgers, clock, signatures, false);
+            this(gateway, seats, calendar, audit, batches, ledgers, clock, signatures, false, DocumentSlotBindings.NONE);
         }
 
         /** The ports without a DSC verification adapter: every DSC check is refused; non-production. */
         public Ports(ConnectorGateway gateway, SeatDirectory seats, BusinessCalendar calendar, PackAuditSink audit,
                      BatchLedger batches, LedgerStore ledgers, Clock clock) {
-            this(gateway, seats, calendar, audit, batches, ledgers, clock, SignatureVerifications.DENY, false);
+            this(gateway, seats, calendar, audit, batches, ledgers, clock, SignatureVerifications.DENY, false,
+                    DocumentSlotBindings.NONE);
         }
 
         public Ports withGateway(ConnectorGateway g) {
-            return new Ports(g, seats, calendar, audit, batches, ledgers, clock, signatures, production);
+            return new Ports(g, seats, calendar, audit, batches, ledgers, clock, signatures, production, slotBindings);
         }
 
         public Ports withSeats(SeatDirectory s) {
-            return new Ports(gateway, s, calendar, audit, batches, ledgers, clock, signatures, production);
+            return new Ports(gateway, s, calendar, audit, batches, ledgers, clock, signatures, production, slotBindings);
         }
 
         public Ports withCalendar(BusinessCalendar c) {
-            return new Ports(gateway, seats, c, audit, batches, ledgers, clock, signatures, production);
+            return new Ports(gateway, seats, c, audit, batches, ledgers, clock, signatures, production, slotBindings);
         }
 
         public Ports withAudit(PackAuditSink a) {
-            return new Ports(gateway, seats, calendar, a, batches, ledgers, clock, signatures, production);
+            return new Ports(gateway, seats, calendar, a, batches, ledgers, clock, signatures, production, slotBindings);
         }
 
         public Ports withBatches(BatchLedger b) {
-            return new Ports(gateway, seats, calendar, audit, b, ledgers, clock, signatures, production);
+            return new Ports(gateway, seats, calendar, audit, b, ledgers, clock, signatures, production, slotBindings);
         }
 
         public Ports withLedgers(LedgerStore l) {
-            return new Ports(gateway, seats, calendar, audit, batches, l, clock, signatures, production);
+            return new Ports(gateway, seats, calendar, audit, batches, l, clock, signatures, production, slotBindings);
         }
 
         public Ports withClock(Clock c) {
-            return new Ports(gateway, seats, calendar, audit, batches, ledgers, c, signatures, production);
+            return new Ports(gateway, seats, calendar, audit, batches, ledgers, c, signatures, production, slotBindings);
         }
 
         public Ports withSignatures(SignatureVerifications v) {
-            return new Ports(gateway, seats, calendar, audit, batches, ledgers, clock, v, production);
+            return new Ports(gateway, seats, calendar, audit, batches, ledgers, clock, v, production, slotBindings);
         }
 
         /** Decision 292: production mode on or off; every other port is kept. */
         public Ports withProduction(boolean p) {
-            return new Ports(gateway, seats, calendar, audit, batches, ledgers, clock, signatures, p);
+            return new Ports(gateway, seats, calendar, audit, batches, ledgers, clock, signatures, p, slotBindings);
+        }
+
+        /** Decision 385 (2): the document route's slot bindings; every other port is kept. */
+        public Ports withSlotBindings(DocumentSlotBindings b) {
+            return new Ports(gateway, seats, calendar, audit, batches, ledgers, clock, signatures, production, b);
         }
     }
 
@@ -146,6 +163,11 @@ public final class PackRuntime {
 
     public static SignatureVerifications signatures() {
         return ports.signatures();
+    }
+
+    /** Decision 385 (2): whether the document route bound a slot's document (default: nothing is bound). */
+    public static DocumentSlotBindings slotBindings() {
+        return ports.slotBindings();
     }
 
     /** Decision 292: true when the installation runs in production mode (default false, non-production). */

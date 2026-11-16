@@ -10,6 +10,7 @@ import org.sangam.rest.port.DecisionPort;
 import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.Permissions;
+import org.sangam.rest.support.SlotVariableGuard;
 import org.sangam.rest.support.TypedVariables;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +45,7 @@ public class CaseDecisionController {
         }
         Telemetry.businessKey(body.businessKey());
         CasePort.CaseInstance ci = cases.start(ctx, new CasePort.StartCaseRequest(body.key(), body.businessKey(),
-                TypedVariables.fromJson(body.variables())));
+                SlotVariableGuard.callerVariables(body.variables())));
         return Lists.created("/api/v1/case-instances/" + ci.id(), ci.id(), ci);
     }
 
@@ -75,7 +76,7 @@ public class CaseDecisionController {
         permissions.require(ctx, Permissions.CASE_WRITE);
         requireAction(body.action());
         return Lists.okRef(id, cases.instanceCommand(ctx, id,
-                new CasePort.InstanceCommand(body.action(), TypedVariables.fromJson(body.variables()), body.reason())));
+                new CasePort.InstanceCommand(body.action(), SlotVariableGuard.callerVariables(body.variables()), body.reason())));
     }
 
     @PostMapping("/case-instances/{id}/executions/{executionId}/commands")
@@ -84,7 +85,7 @@ public class CaseDecisionController {
         permissions.require(ctx, Permissions.CASE_WRITE);
         requireAction(body.action());
         return Lists.okRef(id, cases.executionCommand(ctx, id, executionId,
-                new CasePort.ExecutionCommand(body.action(), TypedVariables.fromJson(body.variables()), body.reason())));
+                new CasePort.ExecutionCommand(body.action(), SlotVariableGuard.callerVariables(body.variables()), body.reason())));
     }
 
     @GetMapping("/case-definitions")

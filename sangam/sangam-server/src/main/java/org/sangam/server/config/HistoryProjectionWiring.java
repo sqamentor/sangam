@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.sangam.assembly.integration.OutboxDestinations;
 import org.sangam.core.layer.Outbox;
 import org.sangam.integration.connector.EgressPolicy;
 import org.sangam.integration.connector.HttpTransport;
@@ -62,19 +63,25 @@ public class HistoryProjectionWiring {
     static final String PREFIX = "sangam.history.projection";
     public static final String KAFKA_DESTINATION = "history-kafka";
     /** Event types every projection sink receives. */
-    public static final String HISTORY_TYPES = "sangam.history.";
+    public static final String HISTORY_TYPES = OutboxDestinations.HISTORY_TYPES;
 
-    /** The destinations of the configured sinks (none = no history routing beyond what was there before). */
+    /** The sinks this host delivers, keyed by the setting that turns each on ({@link OutboxDestinations#HISTORY_SINK_KEYS}). */
+    static final OutboxDestinations.Routes SINKS = OutboxDestinations.Routes.none()
+            .withHistorySink(OutboxDestinations.HISTORY_SEARCH, Outbox.Destination.unordered(SearchIndexPublisher.DESTINATION))
+            .withHistorySink(OutboxDestinations.HISTORY_KAFKA, Outbox.Destination.unordered(KAFKA_DESTINATION))
+            .withHistorySink(OutboxDestinations.HISTORY_DATALAKE,
+                    Outbox.Destination.unordered(DataLakeHistoryPublisher.DESTINATION));
+
+    /**
+     * The destinations of the configured sinks, in the routing order of {@link OutboxDestinations#HISTORY_SINK_KEYS}
+     * (none = no history routing beyond what was there before).
+     */
     public static List<Outbox.Destination> destinations(Environment env) {
         List<Outbox.Destination> out = new ArrayList<>();
-        if (!env.getProperty(PREFIX + ".search.url", "").isBlank()) {
-            out.add(Outbox.Destination.unordered(SearchIndexPublisher.DESTINATION));
-        }
-        if (!env.getProperty(PREFIX + ".kafka.topic", "").isBlank()) {
-            out.add(Outbox.Destination.unordered(KAFKA_DESTINATION));
-        }
-        if (!env.getProperty(PREFIX + ".datalake.bucket", "").isBlank()) {
-            out.add(Outbox.Destination.unordered(DataLakeHistoryPublisher.DESTINATION));
+        for (String key : OutboxDestinations.HISTORY_SINK_KEYS) {
+            if (!env.getProperty(key, "").isBlank()) {
+                out.add(SINKS.historySinks().get(key));
+            }
         }
         return List.copyOf(out);
     }

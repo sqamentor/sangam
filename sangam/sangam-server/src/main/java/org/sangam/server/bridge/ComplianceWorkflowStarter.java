@@ -7,6 +7,7 @@ import java.util.Map;
 import org.operaton.bpm.engine.ProcessEngine;
 import org.sangam.compliance.ComplianceException;
 import org.sangam.compliance.ports.CompliancePorts;
+import org.sangam.core.engine.DocumentSlotNames;
 
 /**
  * {@link CompliancePorts.WorkflowStarter} on the engine: starts the compliance pack's processes (rights requests,
@@ -42,6 +43,7 @@ public final class ComplianceWorkflowStarter implements CompliancePorts.Workflow
                     + " is not installed for the tenant: install the compliance pack " + PACK_ID
                     + " through the tenant's pack installation");
         }
+        DocumentSlotNames.refuse(variables == null ? null : variables.keySet()); // decision 385 (2)
         var builder = engine.getRuntimeService().createProcessInstanceByKey(processKey);
         builder = tenantDefinition ? builder.processDefinitionTenantId(tenantId) : builder.processDefinitionWithoutTenantId();
         return builder.businessKey(businessKey).setVariables(variables == null ? Map.of() : variables).execute().getId();

@@ -14,38 +14,48 @@
     <exclusiveGateway id="u5_gw" name="sanctionOutcome?" default="up05_four_eyes_f5"></exclusiveGateway>
     <callActivity id="u5_close" name="Close (core)" calledElement="sangam-core-closure" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <endEvent id="u5_end" name="Applied"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="u5_checkPrepareGw" name="Document to sign?" default="up05_four_eyes_f11"></exclusiveGateway>
+    <userTask id="u5_checkPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <boundaryEvent id="u5_inv" name="Changed after approval" attachedToRef="u5_apply" cancelActivity="true"><errorEventDefinition errorRef="err_APPROVAL_INVALIDATED"/></boundaryEvent>
     <sequenceFlow id="up05_four_eyes_f1" sourceRef="u5_start" targetRef="u5_defaults"/>
-    <sequenceFlow id="up05_four_eyes_f2" sourceRef="u5_defaults" targetRef="u5_check"/>
+    <sequenceFlow id="up05_four_eyes_f2" sourceRef="u5_defaults" targetRef="u5_checkPrepareGw"/>
     <sequenceFlow id="up05_four_eyes_f3" sourceRef="u5_rj_reject" targetRef="u5_rj_endRejected"/>
     <sequenceFlow id="up05_four_eyes_f4" name="SANCTIONED" sourceRef="u5_gw" targetRef="u5_apply"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="up05_four_eyes_f5" name="otherwise" sourceRef="u5_gw" targetRef="u5_rj_reject"/>
     <sequenceFlow id="up05_four_eyes_f6" sourceRef="u5_check" targetRef="u5_gw"/>
-    <sequenceFlow id="up05_four_eyes_f7" sourceRef="u5_inv" targetRef="u5_check"/>
+    <sequenceFlow id="up05_four_eyes_f7" sourceRef="u5_inv" targetRef="u5_checkPrepareGw"/>
     <sequenceFlow id="up05_four_eyes_f8" sourceRef="u5_apply" targetRef="u5_close"/>
     <sequenceFlow id="up05_four_eyes_f9" sourceRef="u5_close" targetRef="u5_end"/>
+    <sequenceFlow id="up05_four_eyes_f10" name="DSC signature needed" sourceRef="u5_checkPrepareGw" targetRef="u5_checkPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up05_four_eyes_f11" name="no DSC signature" sourceRef="u5_checkPrepareGw" targetRef="u5_check"/>
+    <sequenceFlow id="up05_four_eyes_f12" sourceRef="u5_checkPrepare" targetRef="u5_check"/>
   </process>
   <bpmndi:BPMNDiagram id="up05_four_eyes_diagram">
     <bpmndi:BPMNPlane id="up05_four_eyes_plane" bpmnElement="sangam-up05-four-eyes">
       <bpmndi:BPMNShape id="u5_start_di" bpmnElement="u5_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u5_defaults_di" bpmnElement="u5_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="u5_check_di" bpmnElement="u5_check"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="u5_apply_di" bpmnElement="u5_apply"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="u5_rj_reject_di" bpmnElement="u5_rj_reject"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="u5_rj_endRejected_di" bpmnElement="u5_rj_endRejected"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="u5_gw_di" bpmnElement="u5_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="u5_close_di" bpmnElement="u5_close"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="u5_end_di" bpmnElement="u5_end"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="u5_inv_di" bpmnElement="u5_inv"><dc:Bounds x="688" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_check_di" bpmnElement="u5_check"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_apply_di" bpmnElement="u5_apply"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_rj_reject_di" bpmnElement="u5_rj_reject"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_rj_endRejected_di" bpmnElement="u5_rj_endRejected"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_gw_di" bpmnElement="u5_gw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_close_di" bpmnElement="u5_close"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_end_di" bpmnElement="u5_end"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_checkPrepareGw_di" bpmnElement="u5_checkPrepareGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_checkPrepare_di" bpmnElement="u5_checkPrepare"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_inv_di" bpmnElement="u5_inv"><dc:Bounds x="1018" y="217" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="up05_four_eyes_f1_di" bpmnElement="up05_four_eyes_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="up05_four_eyes_f2_di" bpmnElement="up05_four_eyes_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="up05_four_eyes_f3_di" bpmnElement="up05_four_eyes_f3"><di:waypoint x="780" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="up05_four_eyes_f4_di" bpmnElement="up05_four_eyes_f4"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="up05_four_eyes_f5_di" bpmnElement="up05_four_eyes_f5"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="up05_four_eyes_f6_di" bpmnElement="up05_four_eyes_f6"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="up05_four_eyes_f7_di" bpmnElement="up05_four_eyes_f7"><di:waypoint x="706" y="253"/><di:waypoint x="706" y="285"/><di:waypoint x="400" y="285"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="up05_four_eyes_f8_di" bpmnElement="up05_four_eyes_f8"><di:waypoint x="780" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="up05_four_eyes_f9_di" bpmnElement="up05_four_eyes_f9"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f2_di" bpmnElement="up05_four_eyes_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f3_di" bpmnElement="up05_four_eyes_f3"><di:waypoint x="1110" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f4_di" bpmnElement="up05_four_eyes_f4"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f5_di" bpmnElement="up05_four_eyes_f5"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f6_di" bpmnElement="up05_four_eyes_f6"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f7_di" bpmnElement="up05_four_eyes_f7"><di:waypoint x="1036" y="253"/><di:waypoint x="1036" y="285"/><di:waypoint x="400" y="285"/><di:waypoint x="400" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f8_di" bpmnElement="up05_four_eyes_f8"><di:waypoint x="1110" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f9_di" bpmnElement="up05_four_eyes_f9"><di:waypoint x="1275" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f10_di" bpmnElement="up05_four_eyes_f10"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f11_di" bpmnElement="up05_four_eyes_f11"><di:waypoint x="425" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f12_di" bpmnElement="up05_four_eyes_f12"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

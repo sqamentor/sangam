@@ -47,7 +47,7 @@ import org.sangam.rest.port.ProcessPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
-import org.sangam.rest.support.TypedVariables;
+import org.sangam.rest.support.SlotVariableGuard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -435,10 +435,8 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
     static final String TYPE_PREFIX = "REST:";
     private static final String BATCH_COLS = "id, tenant_id, batch_type, state, total_items, done_items, failed_items,"
             + " config, created_by, created_at, updated_at";
-    private static final ObjectMapper CONFIG_JSON = new ObjectMapper()
-            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
-            .disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-            .disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    // decision 381(4): stored batch parameters reach TypedVariables, so fractions are read exactly
+    private static final ObjectMapper CONFIG_JSON = org.sangam.rest.support.ExactJson.documents();
 
     /**
      * One batch as stored in {@code PORT_BATCH}; {@code config} holds filter, params, reason, approvedBy,
@@ -938,7 +936,7 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
                 event = "INSTANCE_RESUMED";
             }
             case "SET_VARIABLES" -> {
-                runtimeService.setVariables(root, TypedVariables.fromJson((Map<String, Object>) params.get("variables")));
+                runtimeService.setVariables(root, SlotVariableGuard.callerVariables((Map<String, Object>) params.get("variables")));
                 event = "VARIABLES_UPDATED";
             }
             case "MODIFY" -> {
@@ -1205,7 +1203,7 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
                 }
             }
             if (request.variables() != null && !request.variables().isEmpty()) {
-                b = b.setVariables(TypedVariables.fromJson(request.variables()));
+                b = b.setVariables(SlotVariableGuard.callerVariables(request.variables()));
             }
             try {
                 return b.build();

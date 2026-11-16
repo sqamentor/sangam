@@ -9,7 +9,6 @@ import org.sangam.sdk.http.HttpTransport;
 import org.sangam.sdk.generated.model.Delegation;
 import org.sangam.sdk.generated.model.ExplainRequest;
 import org.sangam.sdk.generated.model.ExplainResult;
-import org.sangam.sdk.generated.model.Group;
 import org.sangam.sdk.generated.model.IdentityProvider;
 import org.sangam.sdk.generated.model.IdentitySyncResult;
 import org.sangam.sdk.generated.model.IdentityTestResult;
@@ -21,11 +20,11 @@ import org.sangam.sdk.generated.model.Seat;
 import org.sangam.sdk.generated.model.ServicePrincipal;
 import org.sangam.sdk.generated.model.ServicePrincipalSecret;
 import org.sangam.sdk.generated.model.SodException;
-import org.sangam.sdk.generated.model.Tenant;
 import org.sangam.sdk.generated.model.User;
+import org.sangam.sdk.generated.model.UserRequest;
 
 /**
- * Typed operations of {@code Admin} (37 operations), generated from
+ * Typed operations of {@code Admin} (32 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -41,14 +40,11 @@ public final class AdminApi {
     private static final TypeReference<Delegation> R_revokeDelegation = new TypeReference<>() { };
     private static final TypeReference<Policy> R_createPolicy = new TypeReference<>() { };
     private static final TypeReference<PolicyVersion> R_getPolicyVersion = new TypeReference<>() { };
-    private static final TypeReference<Tenant> R_createTenant = new TypeReference<>() { };
-    private static final TypeReference<Tenant> R_getTenant = new TypeReference<>() { };
-    private static final TypeReference<Tenant> R_updateTenant = new TypeReference<>() { };
     private static final TypeReference<ExplainResult> R_explainPolicy = new TypeReference<>() { };
     private static final TypeReference<SodException> R_createSodException = new TypeReference<>() { };
     private static final TypeReference<SodException> R_approveSodException = new TypeReference<>() { };
     private static final TypeReference<SodException> R_rejectSodException = new TypeReference<>() { };
-    private static final TypeReference<java.util.List<User>> R_listGroupMembers = new TypeReference<>() { };
+    private static final TypeReference<User> R_createUser = new TypeReference<>() { };
     private static final TypeReference<java.util.List<IdentityProvider>> R_listIdentityProviders = new TypeReference<>() { };
     private static final TypeReference<IdentityProvider> R_createIdentityProvider = new TypeReference<>() { };
     private static final TypeReference<IdentityProvider> R_updateIdentityProvider = new TypeReference<>() { };
@@ -59,6 +55,8 @@ public final class AdminApi {
     private static final TypeReference<ServicePrincipalSecret> R_createServicePrincipal = new TypeReference<>() { };
     private static final TypeReference<ServicePrincipalSecret> R_rotateServicePrincipal = new TypeReference<>() { };
     private static final TypeReference<ServicePrincipal> R_revokeServicePrincipal = new TypeReference<>() { };
+    private static final TypeReference<User> R_updateUser = new TypeReference<>() { };
+    private static final TypeReference<User> R_disableUser = new TypeReference<>() { };
 
     private final GeneratedCalls call;
 
@@ -327,88 +325,6 @@ public final class AdminApi {
     }
 
     /**
-     * List tenants
-     *
-     * <p>Tenant-scoped admin list.
-     *
-     * <p>{@code GET /admin/tenants} (operationId {@code listTenants}); permission {@code tenant.admin}.
-     * @param q query parameter {@code q}, or null. Free-text search
-     * @param parentId query parameter {@code parentId}, or null
-     * @param orgUnitId query parameter {@code orgUnitId}, or null
-     * @param seatId query parameter {@code seatId}, or null
-     * @param personId query parameter {@code personId}, or null
-     * @param kind query parameter {@code kind}, or null
-     * @param activeOn query parameter {@code activeOn}, or null
-     * @param includeInactive query parameter {@code includeInactive}, or null
-     * @param page query parameter {@code page}, or null. 0-based page index
-     * @param size query parameter {@code size}, or null. Page size
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response with the A-16 count headers
-     */
-    public org.sangam.sdk.model.Page<Tenant> listTenants(String q, String parentId, String orgUnitId, String seatId, String personId, String kind, java.time.LocalDate activeOn, Boolean includeInactive, Long page, Long size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/admin/tenants");
-        req.query("q", q);
-        req.query("parentId", parentId);
-        req.query("orgUnitId", orgUnitId);
-        req.query("seatId", seatId);
-        req.query("personId", personId);
-        req.query("kind", kind);
-        req.query("activeOn", activeOn);
-        req.query("includeInactive", includeInactive);
-        req.query("page", page);
-        req.query("size", size);
-        return call.page(req, options, Tenant.class, page, size);
-    }
-
-    /**
-     * Create tenant
-     *
-     * <p>Creates and audits on the tenant security chain.
-     *
-     * <p>{@code POST /admin/tenants} (operationId {@code createTenant}); permission {@code tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param body request body
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 201 response
-     */
-    public Tenant createTenant(Tenant body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/admin/tenants");
-        req.body(body);
-        return call.json(req, options, R_createTenant);
-    }
-
-    /**
-     * Get tenant
-     *
-     * <p>One item.
-     *
-     * <p>{@code GET /admin/tenants/{id}} (operationId {@code getTenant}); permission {@code tenant.admin}.
-     * @param id path parameter {@code id}
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public Tenant getTenant(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/admin/tenants/" + HttpTransport.seg(String.valueOf(id)));
-        return call.json(req, options, R_getTenant);
-    }
-
-    /**
-     * Update tenant
-     *
-     * <p>Updates and audits.
-     *
-     * <p>{@code PUT /admin/tenants/{id}} (operationId {@code updateTenant}); permission {@code tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
-     * @param body request body
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public Tenant updateTenant(String id, Tenant body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/admin/tenants/" + HttpTransport.seg(String.valueOf(id)));
-        req.body(body);
-        return call.json(req, options, R_updateTenant);
-    }
-
-    /**
      * Explain an authorization decision
      *
      * <p>Which grants and denies match (deny wins, A-13) at the current policy version (VI.4).
@@ -515,68 +431,19 @@ public final class AdminApi {
     }
 
     /**
-     * Groups
+     * Create a user
      *
-     * <p>Groups of the tenant (R67).
+     * <p>A LOCAL user of the caller's tenant (USER_PROVISIONED); an IdP subject is linked separately. 409 USER_EXISTS.
      *
-     * <p>{@code GET /admin/groups} (operationId {@code listGroups}); permission {@code admin.read}.
-     * @param q query parameter {@code q}, or null
-     * @param page query parameter {@code page}, or null. 0-based page index
-     * @param size query parameter {@code size}, or null. Page size
+     * <p>{@code POST /admin/users} (operationId {@code createUser}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param body request body
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response with the A-16 count headers
+     * @return the 201 response
      */
-    public org.sangam.sdk.model.Page<Group> listGroups(String q, Long page, Long size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/admin/groups");
-        req.query("q", q);
-        req.query("page", page);
-        req.query("size", size);
-        return call.page(req, options, Group.class, page, size);
-    }
-
-    /**
-     * Group members
-     *
-     * <p>Members of a group.
-     *
-     * <p>{@code GET /admin/groups/{id}/members} (operationId {@code listGroupMembers}); permission {@code admin.read}.
-     * @param id path parameter {@code id}
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public java.util.List<User> listGroupMembers(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/admin/groups/" + HttpTransport.seg(String.valueOf(id)) + "/members");
-        return call.json(req, options, R_listGroupMembers);
-    }
-
-    /**
-     * Add a group member
-     *
-     * <p>MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).
-     *
-     * <p>{@code POST /admin/groups/{id}/members/{userId}} (operationId {@code addGroupMember}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
-     * @param userId path parameter {@code userId}
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     */
-    public void addGroupMember(String id, String userId, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/admin/groups/" + HttpTransport.seg(String.valueOf(id)) + "/members/" + HttpTransport.seg(String.valueOf(userId)));
-        call.none(req, options);
-    }
-
-    /**
-     * Remove a group member
-     *
-     * <p>MEMBERSHIP_CHANGED; policy_version+1.
-     *
-     * <p>{@code DELETE /admin/groups/{id}/members/{userId}} (operationId {@code removeGroupMember}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
-     * @param userId path parameter {@code userId}
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     */
-    public void removeGroupMember(String id, String userId, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/admin/groups/" + HttpTransport.seg(String.valueOf(id)) + "/members/" + HttpTransport.seg(String.valueOf(userId)));
-        call.none(req, options);
+    public User createUser(UserRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/admin/users");
+        req.body(body);
+        return call.json(req, options, R_createUser);
     }
 
     /**
@@ -733,5 +600,39 @@ public final class AdminApi {
         ApiRequest req = ApiRequest.post("/admin/service-principals/" + HttpTransport.seg(String.valueOf(id)) + "/revoke");
         req.body(body);
         return call.json(req, options, R_revokeServicePrincipal);
+    }
+
+    /**
+     * Update a user
+     *
+     * <p>Display name and e-mail (USER_UPDATED).
+     *
+     * <p>{@code PUT /admin/users/{id}} (operationId {@code updateUser}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public User updateUser(String id, UserRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/admin/users/" + HttpTransport.seg(String.valueOf(id)));
+        req.body(body);
+        return call.json(req, options, R_updateUser);
+    }
+
+    /**
+     * Disable a user
+     *
+     * <p>USER_DISABLED with the reason; every API token of the user is revoked in the same transaction. 409 SELF_DISABLE for the caller's own user.
+     *
+     * <p>{@code POST /admin/users/{id}/disable} (operationId {@code disableUser}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public User disableUser(String id, ReasonRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/admin/users/" + HttpTransport.seg(String.valueOf(id)) + "/disable");
+        req.body(body);
+        return call.json(req, options, R_disableUser);
     }
 }

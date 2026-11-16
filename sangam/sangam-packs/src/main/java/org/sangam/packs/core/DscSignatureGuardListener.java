@@ -18,7 +18,11 @@ import org.sangam.packs.port.SignatureVerifications;
  * <p>Packgen names the required document per DSC step: {@code documentSlot} is the case variable that holds its
  * document id and {@code documentType} its type (decision 236). On {@code create} the listener records the slot's
  * document id task-locally ({@value #REQUIRED_DOCUMENT}, with the slot name in {@value #SLOT}); on {@code complete}
- * it checks that document only: the slot must be unchanged since the task was created, a client-named
+ * it checks that document only. Decision 385 (2): the slot's document is captured only when the server's document
+ * route bound it into the slot ({@link org.sangam.packs.port.PackRuntime#slotBindings}: on this instance or on a
+ * process instance that called it, with this type, in this tenant); a value written any other way (a task completion,
+ * a variable set, a process start, a message) is treated as an empty slot ({@value #UNBOUND} records why), and so is
+ * a failing binding check (fail closed); completion asks again. The slot must be unchanged since the task was created, a client-named
  * {@code dscDocumentId} must be the same document, and
  * {@link org.sangam.packs.port.SignatureVerifications#status} must answer {@code VERIFIED} for the engine tenant,
  * this task, that document and the completing person. {@code ENROLMENT_REVOKED} (signed, but the signing enrolment
@@ -42,6 +46,10 @@ public class DscSignatureGuardListener implements TaskListener {
     public static final String REFUSAL_REVOKED = "422 DSC_ENROLMENT_REVOKED";
     public static final String REQUIRED_DOCUMENT = "dscRequiredDocumentId";
     public static final String SLOT = "dscDocumentSlot";
+    /** Decision 385 (2): task-local; true when the slot held a value the document route did not bind. */
+    public static final String UNBOUND = "dscDocumentUnbound";
+    /** Decision 385 (2): a deeper call chain than this is not followed (no pack nests calls this deep). */
+    static final int MAX_CALL_DEPTH = 32;
     public static final String CLIENT_DOCUMENT = "dscDocumentId";
     public static final String EVIDENCE_TASK = "dscEvidenceTaskId";
     public static final String EVIDENCE_DOCUMENT = "dscEvidenceDocumentId";
@@ -63,7 +71,12 @@ public class DscSignatureGuardListener implements TaskListener {
             if (slot != null) {
                 t.setVariableLocal(SLOT, slot);
                 Object doc = t.getExecution().getVariable(slot);
-                t.setVariableLocal(REQUIRED_DOCUMENT, doc == null || doc.toString().isBlank() ? null : doc.toString());
+                String documentId = doc == null || doc.toString().isBlank() ? null : doc.toString();
+                if (documentId != null && !bound(t, slot, documentId)) {
+                    t.setVariableLocal(UNBOUND, Boolean.TRUE);
+                    documentId = null;
+                }
+                t.setVariableLocal(REQUIRED_DOCUMENT, documentId);
             }
             return;
         }
@@ -80,10 +93,16 @@ public class DscSignatureGuardListener implements TaskListener {
         boolean revoked = false;
         if (slot == null) {
             reason = "the step names no document slot";
+        } else if (documentId == null && Boolean.TRUE.equals(t.getVariableLocal(UNBOUND))) {
+            reason = unbound(type, slot);
         } else if (documentId == null) {
             reason = "no " + type + " document in " + slot + " when the task was created";
         } else if (!Objects.equals(documentId, Vars.str(t, slot))) {
             reason = "the " + type + " document in " + slot + " changed after the task was created";
+        } else if (!bound(t, slot, documentId)) {
+            // asked again at completion: the capture is task-local, so a capture not made by this listener on create
+            // (written to the task afterwards) is not trusted either
+            reason = unbound(type, slot);
         } else if (named != null && !named.toString().isBlank() && !documentId.equals(named.toString())) {
             reason = "the signed document is not the required " + type + " document";
         } else {
@@ -114,6 +133,33 @@ public class DscSignatureGuardListener implements TaskListener {
         t.getExecution().setVariable(EVIDENCE_SIGNER, a.person());
         Vars.auditTask(t, "DSC_SIGNATURE_VERIFIED", a.person(), a.seat(), null, a.authorityBasis(),
                 Vars.map("taskId", t.getId(), "documentId", documentId, "documentType", type));
+    }
+
+    private static String unbound(String type, String slot) {
+        return "the " + type + " document in " + slot + " was not uploaded through the document route for this case"
+                + " (decisions 267, 268 and 385); upload it with its documentType on an open task of the case";
+    }
+
+    /** Decision 385 (2): the document route bound {@code documentId} into {@code slot}; a failing check is no. */
+    private boolean bound(DelegateTask t, String slot, String documentId) {
+        try {
+            return PackRuntime.slotBindings().isBound(Vars.tenant(t), callChain(t), slot,
+                    Vars.field(documentType, t, "document"), documentId);
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    /** The task's process instance, then each calling instance upwards, from the execution tree in memory. */
+    static java.util.List<String> callChain(DelegateTask t) {
+        java.util.List<String> chain = new java.util.ArrayList<>();
+        org.operaton.bpm.engine.delegate.DelegateExecution e = t.getExecution();
+        while (e != null && chain.size() < MAX_CALL_DEPTH) {
+            org.operaton.bpm.engine.delegate.DelegateExecution instance = e.getProcessInstance();
+            chain.add(instance.getId());
+            e = instance.getSuperExecution();
+        }
+        return java.util.List.copyOf(chain);
     }
 
     private boolean needsDsc(DelegateTask t) {

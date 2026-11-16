@@ -44,6 +44,13 @@ public interface IdentityAdminPort {
     record Group(String id, String name, String type, Integer members, String source) {
     }
 
+    /**
+     * Create or update a user: {@code id} (else {@code username}) names a new user; {@code active} and {@code source}
+     * may be given only as {@code true} and {@code LOCAL}, what an administrator creates.
+     */
+    record UserRequest(String id, String username, String displayName, String email, Boolean active, String source) {
+    }
+
     /** protocol: OIDC | SAML2 | LDAP. status: DRAFT | TESTED | ACTIVE. */
     record IdentityProvider(String id, String name, String protocol, String issuer, String metadataUrl,
                             Map<String, String> attributeMapping, boolean mfaRequired, int sessionTimeoutMin,
@@ -123,6 +130,35 @@ public interface IdentityAdminPort {
      */
     default RoleDefinition defineRole(RequestContext ctx, String roleId, RoleDefinition role) {
         throw ApiProblem.notInstalled("role definition", "sangam-security");
+    }
+
+    /**
+     * {@code POST /api/v1/admin/users}: an administrator creates a LOCAL user of the caller's tenant ({@code id}, else
+     * {@code username}, is the person id; USER_PROVISIONED). IdP subjects are linked separately; SCIM and directory sync
+     * provision their own users.
+     */
+    default User createUser(RequestContext ctx, UserRequest user) {
+        throw ApiProblem.notInstalled("user administration", "sangam-security");
+    }
+
+    /** {@code PUT /api/v1/admin/users/{id}}: display name and e-mail (USER_UPDATED). */
+    default User updateUser(RequestContext ctx, String id, UserRequest user) {
+        throw ApiProblem.notInstalled("user administration", "sangam-security");
+    }
+
+    /** {@code POST /api/v1/admin/users/{id}/disable}: disables the user and revokes its API tokens (USER_DISABLED). */
+    default User disableUser(RequestContext ctx, String id, String reason) {
+        throw ApiProblem.notInstalled("user administration", "sangam-security");
+    }
+
+    /** {@code POST /api/v1/admin/groups}: a LOCAL group of the caller's tenant (MEMBERSHIP_CHANGED, created). */
+    default Group createGroup(RequestContext ctx, Group group) {
+        throw ApiProblem.notInstalled("group administration", "sangam-security");
+    }
+
+    /** {@code PUT /api/v1/admin/groups/{id}}: renames a group; memberships and its IdP reference are kept. */
+    default Group updateGroup(RequestContext ctx, String id, Group group) {
+        throw ApiProblem.notInstalled("group administration", "sangam-security");
     }
 
     /** CSV columns: id,parentId,code,name,nameHi,level (header row required). */

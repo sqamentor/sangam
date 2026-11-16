@@ -252,13 +252,13 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
-    <!-- M-100: JGit stays optional in sangam-integration, so the server binds package Git sync only when a deployment
-         puts JGit on the class path (PackageGitWiring checks for it). Test scope only: the binding's tests need it;
-         whether the default server ships it is open for the owner. -->
+    <!-- M-100, owner decision 381(1): the default server ships JGit (EDL-1.0 = BSD-3-Clause; pulls JavaEWAH 1.2.3,
+         commons-codec and slf4j-api, versions managed by the BOMs), so an operator turns package Git sync on without a
+         rebuild. The feature stays off (sangam.packages.git.enabled=false) and its egress deny-all; JGit stays optional
+         in sangam-integration, so no other module carries it. Licence: deploy/licence/decision-register.json. -->
     <dependency>
       <groupId>org.eclipse.jgit</groupId>
       <artifactId>org.eclipse.jgit</artifactId>
-      <scope>test</scope>
     </dependency>
     <!-- M-144/M-150: the host conformance kit and cross-host equivalence scenarios (org.sangam.server.host) -->
     <dependency>

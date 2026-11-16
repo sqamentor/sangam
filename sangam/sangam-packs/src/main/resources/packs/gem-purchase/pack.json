@@ -118,6 +118,12 @@
     "sangam-p1-bill-payment",
     "sangam-tender"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
   "placeholders": [
     {
       "decision": "gem-amount-rounding",

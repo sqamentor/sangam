@@ -58,6 +58,8 @@
     <exclusiveGateway id="td_awardGw" name="sanctionOutcome?" default="tender_f54"></exclusiveGateway>
     <serviceTask id="td_awarded" name="Awarded" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>tenderOutcome=AWARDED</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="td_end" name="Awarded"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="td_nitApprovalPrepareGw" name="Document to sign?" default="tender_f65"></exclusiveGateway>
+    <userTask id="td_nitApprovalPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <boundaryEvent id="td_bidsComp" name="Refund EMD on failure" attachedToRef="td_bids" cancelActivity="true"><compensateEventDefinition/></boundaryEvent>
     <sequenceFlow id="tender_f1" sourceRef="td_deptClass" targetRef="td_deptClassGw"/>
     <sequenceFlow id="tender_f2" sourceRef="td_rjDeptClass_reject" targetRef="td_rjDeptClass_endRejected"/>
@@ -66,7 +68,7 @@
     <sequenceFlow id="tender_f5" name="confirmed" sourceRef="td_deptClassGw" targetRef="td_procMode"/>
     <sequenceFlow id="tender_f6" sourceRef="td_start" targetRef="td_defaults"/>
     <sequenceFlow id="tender_f7" sourceRef="td_defaults" targetRef="td_deptClass"/>
-    <sequenceFlow id="tender_f8" sourceRef="td_procMode" targetRef="td_nitApproval"/>
+    <sequenceFlow id="tender_f8" sourceRef="td_procMode" targetRef="td_nitApprovalPrepareGw"/>
     <sequenceFlow id="tender_f9" sourceRef="td_rj_reject" targetRef="td_rj_endRejected"/>
     <sequenceFlow id="tender_f10" name="SANCTIONED" sourceRef="td_nitGw" targetRef="td_publish"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="tender_f11" name="otherwise" sourceRef="td_nitGw" targetRef="td_rj_reject"/>
@@ -115,6 +117,9 @@
     <sequenceFlow id="tender_f55" sourceRef="td_award" targetRef="td_awardGw"/>
     <sequenceFlow id="tender_f56" sourceRef="td_emdUnsuccessful" targetRef="td_awarded"/>
     <sequenceFlow id="tender_f57" sourceRef="td_awarded" targetRef="td_end"/>
+    <sequenceFlow id="tender_f64" name="DSC signature needed" sourceRef="td_nitApprovalPrepareGw" targetRef="td_nitApprovalPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="tender_f65" name="no DSC signature" sourceRef="td_nitApprovalPrepareGw" targetRef="td_nitApproval"/>
+    <sequenceFlow id="tender_f66" sourceRef="td_nitApprovalPrepare" targetRef="td_nitApproval"/>
     <subProcess id="td_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
       <startEvent id="td_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
       <serviceTask id="td_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -139,56 +144,58 @@
     <bpmndi:BPMNPlane id="tender_plane" bpmnElement="sangam-tender">
       <bpmndi:BPMNShape id="td_start_di" bpmnElement="td_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="td_defaults_di" bpmnElement="td_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_nitApproval_di" bpmnElement="td_nitApproval"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_nitApproval_di" bpmnElement="td_nitApproval"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="td_deptClass_di" bpmnElement="td_deptClass"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="td_deptClassGw_di" bpmnElement="td_deptClassGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="td_rjDeptClass_code_di" bpmnElement="td_rjDeptClass_code"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="td_rjDeptClass_reject_di" bpmnElement="td_rjDeptClass_reject"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="td_rjDeptClass_endRejected_di" bpmnElement="td_rjDeptClass_endRejected"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="td_procMode_di" bpmnElement="td_procMode"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_publish_di" bpmnElement="td_publish"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_rj_reject_di" bpmnElement="td_rj_reject"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_rj_endRejected_di" bpmnElement="td_rj_endRejected"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_nitGw_di" bpmnElement="td_nitGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_window_di" bpmnElement="td_window"><dc:Bounds x="1365" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_close_di" bpmnElement="td_close"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_corrigendum_di" bpmnElement="td_corrigendum"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_applyCorr_di" bpmnElement="td_applyCorr"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_publishCorr_di" bpmnElement="td_publishCorr"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_bids_clear_di" bpmnElement="td_bids_clear"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_bids_di" bpmnElement="td_bids"><dc:Bounds x="1835" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_refundEmd_di" bpmnElement="td_refundEmd"><dc:Bounds x="1875" y="400" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_bidsGw_di" bpmnElement="td_bidsGw"><dc:Bounds x="2025" y="295" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_openingLock_di" bpmnElement="td_openingLock"><dc:Bounds x="2197" y="427" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_bidsUnconfirmed_di" bpmnElement="td_bidsUnconfirmed"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_retenderCount_di" bpmnElement="td_retenderCount"><dc:Bounds x="5300" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_openCommittee_di" bpmnElement="td_openCommittee"><dc:Bounds x="2330" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_techOpening_di" bpmnElement="td_techOpening"><dc:Bounds x="2495" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_tecCommittee_di" bpmnElement="td_tecCommittee"><dc:Bounds x="2660" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_techEval_di" bpmnElement="td_techEval"><dc:Bounds x="2825" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_qualified_di" bpmnElement="td_qualified"><dc:Bounds x="2990" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_finLockSet_di" bpmnElement="td_finLockSet"><dc:Bounds x="3155" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_finLock_di" bpmnElement="td_finLock"><dc:Bounds x="3352" y="427" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_finCommittee_di" bpmnElement="td_finCommittee"><dc:Bounds x="3485" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_finOpening_di" bpmnElement="td_finOpening"><dc:Bounds x="3650" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_evaluate_di" bpmnElement="td_evaluate"><dc:Bounds x="3815" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_l1Rule_di" bpmnElement="td_l1Rule"><dc:Bounds x="3980" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_negotiate_di" bpmnElement="td_negotiate"><dc:Bounds x="4310" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_awardVars_di" bpmnElement="td_awardVars"><dc:Bounds x="4805" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_l1Gw_di" bpmnElement="td_l1Gw"><dc:Bounds x="4170" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_negGw_di" bpmnElement="td_negGw"><dc:Bounds x="4500" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_negotiated_di" bpmnElement="td_negotiated"><dc:Bounds x="4640" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_retenderGw_di" bpmnElement="td_retenderGw"><dc:Bounds x="5490" y="295" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_reissue_di" bpmnElement="td_reissue"><dc:Bounds x="5630" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_compensate_di" bpmnElement="td_compensate"><dc:Bounds x="5662" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_failed_di" bpmnElement="td_failed"><dc:Bounds x="5795" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_endFailed_di" bpmnElement="td_endFailed"><dc:Bounds x="5992" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_award_di" bpmnElement="td_award"><dc:Bounds x="4970" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_emdUnsuccessful_di" bpmnElement="td_emdUnsuccessful"><dc:Bounds x="5300" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_awardGw_di" bpmnElement="td_awardGw"><dc:Bounds x="5160" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_awarded_di" bpmnElement="td_awarded"><dc:Bounds x="5465" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_end_di" bpmnElement="td_end"><dc:Bounds x="5662" y="552" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="td_bidsComp_di" bpmnElement="td_bidsComp"><dc:Bounds x="1843" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_publish_di" bpmnElement="td_publish"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_rj_reject_di" bpmnElement="td_rj_reject"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_rj_endRejected_di" bpmnElement="td_rj_endRejected"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_nitGw_di" bpmnElement="td_nitGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_window_di" bpmnElement="td_window"><dc:Bounds x="1695" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_close_di" bpmnElement="td_close"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_corrigendum_di" bpmnElement="td_corrigendum"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_applyCorr_di" bpmnElement="td_applyCorr"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_publishCorr_di" bpmnElement="td_publishCorr"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_bids_clear_di" bpmnElement="td_bids_clear"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_bids_di" bpmnElement="td_bids"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_refundEmd_di" bpmnElement="td_refundEmd"><dc:Bounds x="2205" y="400" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_bidsGw_di" bpmnElement="td_bidsGw"><dc:Bounds x="2355" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_openingLock_di" bpmnElement="td_openingLock"><dc:Bounds x="2527" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_bidsUnconfirmed_di" bpmnElement="td_bidsUnconfirmed"><dc:Bounds x="2495" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_retenderCount_di" bpmnElement="td_retenderCount"><dc:Bounds x="5630" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_openCommittee_di" bpmnElement="td_openCommittee"><dc:Bounds x="2660" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_techOpening_di" bpmnElement="td_techOpening"><dc:Bounds x="2825" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_tecCommittee_di" bpmnElement="td_tecCommittee"><dc:Bounds x="2990" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_techEval_di" bpmnElement="td_techEval"><dc:Bounds x="3155" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_qualified_di" bpmnElement="td_qualified"><dc:Bounds x="3320" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_finLockSet_di" bpmnElement="td_finLockSet"><dc:Bounds x="3485" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_finLock_di" bpmnElement="td_finLock"><dc:Bounds x="3682" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_finCommittee_di" bpmnElement="td_finCommittee"><dc:Bounds x="3815" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_finOpening_di" bpmnElement="td_finOpening"><dc:Bounds x="3980" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_evaluate_di" bpmnElement="td_evaluate"><dc:Bounds x="4145" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_l1Rule_di" bpmnElement="td_l1Rule"><dc:Bounds x="4310" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_negotiate_di" bpmnElement="td_negotiate"><dc:Bounds x="4640" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_awardVars_di" bpmnElement="td_awardVars"><dc:Bounds x="5135" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_l1Gw_di" bpmnElement="td_l1Gw"><dc:Bounds x="4500" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_negGw_di" bpmnElement="td_negGw"><dc:Bounds x="4830" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_negotiated_di" bpmnElement="td_negotiated"><dc:Bounds x="4970" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_retenderGw_di" bpmnElement="td_retenderGw"><dc:Bounds x="5820" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_reissue_di" bpmnElement="td_reissue"><dc:Bounds x="5960" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_compensate_di" bpmnElement="td_compensate"><dc:Bounds x="5992" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_failed_di" bpmnElement="td_failed"><dc:Bounds x="6125" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_endFailed_di" bpmnElement="td_endFailed"><dc:Bounds x="6322" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_award_di" bpmnElement="td_award"><dc:Bounds x="5300" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_emdUnsuccessful_di" bpmnElement="td_emdUnsuccessful"><dc:Bounds x="5630" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_awardGw_di" bpmnElement="td_awardGw"><dc:Bounds x="5490" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_awarded_di" bpmnElement="td_awarded"><dc:Bounds x="5795" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_end_di" bpmnElement="td_end"><dc:Bounds x="5992" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_nitApprovalPrepareGw_di" bpmnElement="td_nitApprovalPrepareGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_nitApprovalPrepare_di" bpmnElement="td_nitApprovalPrepare"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_bidsComp_di" bpmnElement="td_bidsComp"><dc:Bounds x="2173" y="342" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="td_withdraw_di" bpmnElement="td_withdraw" isExpanded="true"><dc:Bounds x="30" y="638" width="623" height="150"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="td_withdrawStart_di" bpmnElement="td_withdrawStart"><dc:Bounds x="92" y="700" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="td_withdrawKind_di" bpmnElement="td_withdrawKind"><dc:Bounds x="225" y="678" width="100" height="80"/></bpmndi:BPMNShape>
@@ -206,62 +213,65 @@
       <bpmndi:BPMNEdge id="tender_f5_di" bpmnElement="tender_f5"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="tender_f6_di" bpmnElement="tender_f6"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="tender_f7_di" bpmnElement="tender_f7"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f8_di" bpmnElement="tender_f8"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f9_di" bpmnElement="tender_f9"><di:waypoint x="1275" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f10_di" bpmnElement="tender_f10"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f11_di" bpmnElement="tender_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f12_di" bpmnElement="tender_f12"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f13_di" bpmnElement="tender_f13"><di:waypoint x="1275" y="195"/><di:waypoint x="1365" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f14_di" bpmnElement="tender_f14"><di:waypoint x="1415" y="195"/><di:waypoint x="1476" y="195"/><di:waypoint x="1476" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f15_di" bpmnElement="tender_f15"><di:waypoint x="1415" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f16_di" bpmnElement="tender_f16"><di:waypoint x="1573" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f17_di" bpmnElement="tender_f17"><di:waypoint x="1770" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f18_di" bpmnElement="tender_f18"><di:waypoint x="1885" y="235"/><di:waypoint x="1885" y="260"/><di:waypoint x="1390" y="260"/><di:waypoint x="1390" y="220"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f19_di" bpmnElement="tender_f19"><di:waypoint x="1770" y="320"/><di:waypoint x="1835" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f20_di" bpmnElement="tender_f20"><di:waypoint x="1573" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f22_di" bpmnElement="tender_f22"><di:waypoint x="1935" y="320"/><di:waypoint x="2025" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f23_di" bpmnElement="tender_f23"><di:waypoint x="2075" y="320"/><di:waypoint x="2136" y="320"/><di:waypoint x="2136" y="445"/><di:waypoint x="2197" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f24_di" bpmnElement="tender_f24"><di:waypoint x="2215" y="360"/><di:waypoint x="2215" y="392"/><di:waypoint x="1720" y="392"/><di:waypoint x="1720" y="360"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f25_di" bpmnElement="tender_f25"><di:waypoint x="2075" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f26_di" bpmnElement="tender_f26"><di:waypoint x="2075" y="320"/><di:waypoint x="5300" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f27_di" bpmnElement="tender_f27"><di:waypoint x="2233" y="445"/><di:waypoint x="2330" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f28_di" bpmnElement="tender_f28"><di:waypoint x="2430" y="445"/><di:waypoint x="2495" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f29_di" bpmnElement="tender_f29"><di:waypoint x="2595" y="445"/><di:waypoint x="2660" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f30_di" bpmnElement="tender_f30"><di:waypoint x="2760" y="445"/><di:waypoint x="2825" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f31_di" bpmnElement="tender_f31"><di:waypoint x="2925" y="445"/><di:waypoint x="2990" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f32_di" bpmnElement="tender_f32"><di:waypoint x="3090" y="445"/><di:waypoint x="3155" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f33_di" bpmnElement="tender_f33"><di:waypoint x="3255" y="445"/><di:waypoint x="3352" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f34_di" bpmnElement="tender_f34"><di:waypoint x="3388" y="445"/><di:waypoint x="3485" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f35_di" bpmnElement="tender_f35"><di:waypoint x="3585" y="445"/><di:waypoint x="3650" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f36_di" bpmnElement="tender_f36"><di:waypoint x="3750" y="445"/><di:waypoint x="3815" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f37_di" bpmnElement="tender_f37"><di:waypoint x="3915" y="445"/><di:waypoint x="3980" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f38_di" bpmnElement="tender_f38"><di:waypoint x="4220" y="445"/><di:waypoint x="4805" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f39_di" bpmnElement="tender_f39"><di:waypoint x="4220" y="445"/><di:waypoint x="4310" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f40_di" bpmnElement="tender_f40"><di:waypoint x="4220" y="445"/><di:waypoint x="4760" y="445"/><di:waypoint x="4760" y="320"/><di:waypoint x="5300" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f41_di" bpmnElement="tender_f41"><di:waypoint x="4080" y="445"/><di:waypoint x="4170" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f42_di" bpmnElement="tender_f42"><di:waypoint x="4410" y="445"/><di:waypoint x="4500" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f43_di" bpmnElement="tender_f43"><di:waypoint x="4550" y="445"/><di:waypoint x="4640" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f44_di" bpmnElement="tender_f44"><di:waypoint x="4740" y="445"/><di:waypoint x="4805" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f45_di" bpmnElement="tender_f45"><di:waypoint x="4550" y="445"/><di:waypoint x="4925" y="445"/><di:waypoint x="4925" y="320"/><di:waypoint x="5300" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f46_di" bpmnElement="tender_f46"><di:waypoint x="5400" y="320"/><di:waypoint x="5490" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f47_di" bpmnElement="tender_f47"><di:waypoint x="5540" y="320"/><di:waypoint x="5585" y="320"/><di:waypoint x="5585" y="445"/><di:waypoint x="5630" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f48_di" bpmnElement="tender_f48"><di:waypoint x="5680" y="485"/><di:waypoint x="5680" y="517"/><di:waypoint x="1225" y="517"/><di:waypoint x="1225" y="235"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f49_di" bpmnElement="tender_f49"><di:waypoint x="5540" y="320"/><di:waypoint x="5662" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f50_di" bpmnElement="tender_f50"><di:waypoint x="5698" y="320"/><di:waypoint x="5795" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f51_di" bpmnElement="tender_f51"><di:waypoint x="5895" y="320"/><di:waypoint x="5992" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f52_di" bpmnElement="tender_f52"><di:waypoint x="4905" y="445"/><di:waypoint x="4970" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f53_di" bpmnElement="tender_f53"><di:waypoint x="5210" y="445"/><di:waypoint x="5300" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f54_di" bpmnElement="tender_f54"><di:waypoint x="5210" y="445"/><di:waypoint x="5255" y="445"/><di:waypoint x="5255" y="320"/><di:waypoint x="5300" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f55_di" bpmnElement="tender_f55"><di:waypoint x="5070" y="445"/><di:waypoint x="5160" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f56_di" bpmnElement="tender_f56"><di:waypoint x="5400" y="445"/><di:waypoint x="5465" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_f57_di" bpmnElement="tender_f57"><di:waypoint x="5565" y="445"/><di:waypoint x="5613" y="445"/><di:waypoint x="5613" y="570"/><di:waypoint x="5662" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f8_di" bpmnElement="tender_f8"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f9_di" bpmnElement="tender_f9"><di:waypoint x="1605" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f10_di" bpmnElement="tender_f10"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f11_di" bpmnElement="tender_f11"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f12_di" bpmnElement="tender_f12"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f13_di" bpmnElement="tender_f13"><di:waypoint x="1605" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f14_di" bpmnElement="tender_f14"><di:waypoint x="1745" y="195"/><di:waypoint x="1806" y="195"/><di:waypoint x="1806" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f15_di" bpmnElement="tender_f15"><di:waypoint x="1745" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f16_di" bpmnElement="tender_f16"><di:waypoint x="1903" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f17_di" bpmnElement="tender_f17"><di:waypoint x="2100" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f18_di" bpmnElement="tender_f18"><di:waypoint x="2215" y="235"/><di:waypoint x="2215" y="260"/><di:waypoint x="1720" y="260"/><di:waypoint x="1720" y="220"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f19_di" bpmnElement="tender_f19"><di:waypoint x="2100" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f20_di" bpmnElement="tender_f20"><di:waypoint x="1903" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f22_di" bpmnElement="tender_f22"><di:waypoint x="2265" y="320"/><di:waypoint x="2355" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f23_di" bpmnElement="tender_f23"><di:waypoint x="2405" y="320"/><di:waypoint x="2466" y="320"/><di:waypoint x="2466" y="445"/><di:waypoint x="2527" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f24_di" bpmnElement="tender_f24"><di:waypoint x="2545" y="360"/><di:waypoint x="2545" y="392"/><di:waypoint x="2050" y="392"/><di:waypoint x="2050" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f25_di" bpmnElement="tender_f25"><di:waypoint x="2405" y="320"/><di:waypoint x="2495" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f26_di" bpmnElement="tender_f26"><di:waypoint x="2405" y="320"/><di:waypoint x="5630" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f27_di" bpmnElement="tender_f27"><di:waypoint x="2563" y="445"/><di:waypoint x="2660" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f28_di" bpmnElement="tender_f28"><di:waypoint x="2760" y="445"/><di:waypoint x="2825" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f29_di" bpmnElement="tender_f29"><di:waypoint x="2925" y="445"/><di:waypoint x="2990" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f30_di" bpmnElement="tender_f30"><di:waypoint x="3090" y="445"/><di:waypoint x="3155" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f31_di" bpmnElement="tender_f31"><di:waypoint x="3255" y="445"/><di:waypoint x="3320" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f32_di" bpmnElement="tender_f32"><di:waypoint x="3420" y="445"/><di:waypoint x="3485" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f33_di" bpmnElement="tender_f33"><di:waypoint x="3585" y="445"/><di:waypoint x="3682" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f34_di" bpmnElement="tender_f34"><di:waypoint x="3718" y="445"/><di:waypoint x="3815" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f35_di" bpmnElement="tender_f35"><di:waypoint x="3915" y="445"/><di:waypoint x="3980" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f36_di" bpmnElement="tender_f36"><di:waypoint x="4080" y="445"/><di:waypoint x="4145" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f37_di" bpmnElement="tender_f37"><di:waypoint x="4245" y="445"/><di:waypoint x="4310" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f38_di" bpmnElement="tender_f38"><di:waypoint x="4550" y="445"/><di:waypoint x="5135" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f39_di" bpmnElement="tender_f39"><di:waypoint x="4550" y="445"/><di:waypoint x="4640" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f40_di" bpmnElement="tender_f40"><di:waypoint x="4550" y="445"/><di:waypoint x="5090" y="445"/><di:waypoint x="5090" y="320"/><di:waypoint x="5630" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f41_di" bpmnElement="tender_f41"><di:waypoint x="4410" y="445"/><di:waypoint x="4500" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f42_di" bpmnElement="tender_f42"><di:waypoint x="4740" y="445"/><di:waypoint x="4830" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f43_di" bpmnElement="tender_f43"><di:waypoint x="4880" y="445"/><di:waypoint x="4970" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f44_di" bpmnElement="tender_f44"><di:waypoint x="5070" y="445"/><di:waypoint x="5135" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f45_di" bpmnElement="tender_f45"><di:waypoint x="4880" y="445"/><di:waypoint x="5255" y="445"/><di:waypoint x="5255" y="320"/><di:waypoint x="5630" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f46_di" bpmnElement="tender_f46"><di:waypoint x="5730" y="320"/><di:waypoint x="5820" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f47_di" bpmnElement="tender_f47"><di:waypoint x="5870" y="320"/><di:waypoint x="5915" y="320"/><di:waypoint x="5915" y="445"/><di:waypoint x="5960" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f48_di" bpmnElement="tender_f48"><di:waypoint x="6010" y="485"/><di:waypoint x="6010" y="517"/><di:waypoint x="1555" y="517"/><di:waypoint x="1555" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f49_di" bpmnElement="tender_f49"><di:waypoint x="5870" y="320"/><di:waypoint x="5992" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f50_di" bpmnElement="tender_f50"><di:waypoint x="6028" y="320"/><di:waypoint x="6125" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f51_di" bpmnElement="tender_f51"><di:waypoint x="6225" y="320"/><di:waypoint x="6322" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f52_di" bpmnElement="tender_f52"><di:waypoint x="5235" y="445"/><di:waypoint x="5300" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f53_di" bpmnElement="tender_f53"><di:waypoint x="5540" y="445"/><di:waypoint x="5630" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f54_di" bpmnElement="tender_f54"><di:waypoint x="5540" y="445"/><di:waypoint x="5585" y="445"/><di:waypoint x="5585" y="320"/><di:waypoint x="5630" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f55_di" bpmnElement="tender_f55"><di:waypoint x="5400" y="445"/><di:waypoint x="5490" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f56_di" bpmnElement="tender_f56"><di:waypoint x="5730" y="445"/><di:waypoint x="5795" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f57_di" bpmnElement="tender_f57"><di:waypoint x="5895" y="445"/><di:waypoint x="5943" y="445"/><di:waypoint x="5943" y="570"/><di:waypoint x="5992" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f64_di" bpmnElement="tender_f64"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f65_di" bpmnElement="tender_f65"><di:waypoint x="920" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f66_di" bpmnElement="tender_f66"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="tender_f58_di" bpmnElement="tender_f58"><di:waypoint x="128" y="718"/><di:waypoint x="225" y="718"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="tender_f59_di" bpmnElement="tender_f59"><di:waypoint x="325" y="718"/><di:waypoint x="390" y="718"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="tender_f60_di" bpmnElement="tender_f60"><di:waypoint x="490" y="718"/><di:waypoint x="587" y="718"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="tender_f61_di" bpmnElement="tender_f61"><di:waypoint x="128" y="908"/><di:waypoint x="225" y="908"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="tender_f62_di" bpmnElement="tender_f62"><di:waypoint x="325" y="908"/><di:waypoint x="390" y="908"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="tender_f63_di" bpmnElement="tender_f63"><di:waypoint x="490" y="908"/><di:waypoint x="587" y="908"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="tender_a21_di" bpmnElement="tender_a21"><di:waypoint x="1861" y="378"/><di:waypoint x="1925" y="400"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_a21_di" bpmnElement="tender_a21"><di:waypoint x="2191" y="378"/><di:waypoint x="2255" y="400"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

@@ -25,6 +25,7 @@ import org.sangam.rest.port.WorkPort;
 import org.sangam.rest.port.WorkPort.WorkOperation;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
+import org.sangam.rest.support.SlotVariableGuard;
 import org.sangam.rest.support.TypedVariables;
 
 /**
@@ -213,9 +214,9 @@ public class EngineAdapterWorkAdapter implements WorkPort {
     public void complete(RequestContext ctx, String workId, CompleteRequest r) {
         guardWork(ctx, workId);   // SL-157 tenant, SL-158 topic binding
         rejectIfTombstoned(ctx, workId, r.lockVersion(), Tombstones.ResultKind.COMPLETE, true, r.variables());
-        Map<String, Object> vars = TypedVariables.fromJson(r.variables());
+        Map<String, Object> vars = SlotVariableGuard.callerVariables(r.variables());
         if (r.localVariables() != null) {
-            vars.putAll(TypedVariables.fromJson(r.localVariables()));
+            vars.putAll(SlotVariableGuard.callerVariables(r.localVariables()));
         }
         String outcome = WorkLedger.successJson(r.variables(), r.outcome());
         Map<String, Object> acknowledged = workPayload(workId, r.workerId(), r.lockVersion(), r.attemptId(), Map.of());
@@ -306,7 +307,7 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         UUID op = operationIdOf(workId);
         fenced(workId, () -> engine.inEngineTransaction(c -> {
             engine.bpmnErrorExternal(workId, r.workerId(), r.lockVersion(), r.errorCode(),
-                    TypedVariables.fromJson(r.variables()));
+                    SlotVariableGuard.callerVariables(r.variables()));
             ledger.onBpmnError(c, op, r.lockVersion(), r.errorCode(), r.errorMessage(), r.variables());
             return null;
         }));

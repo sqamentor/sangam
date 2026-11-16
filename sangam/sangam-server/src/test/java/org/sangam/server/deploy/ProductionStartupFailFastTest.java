@@ -42,6 +42,28 @@ class ProductionStartupFailFastTest {
     private static final String[] REGISTRY_SIGNER = ed25519();
     /** A mounted secrets directory ({@code sangam.secrets.providers=file}) holding the audit checkpoint key pair. */
     private static final Path SECRETS = secretsDirectory();
+    /** Decision 385 (3): the list of another environment's key fingerprints (none of them is a key of this test). */
+    private static final Path FOREIGN = fingerprintList("staging " + "0123456789abcdef".repeat(4) + " sangam.example\n");
+
+    private static Path fingerprintList(String content) {
+        try {
+            Path f = Files.createTempFile("sg38-key-fingerprints", ".txt");
+            Files.writeString(f, "# other environments' key fingerprints\n" + content, StandardCharsets.UTF_8);
+            return f;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /** SHA-256 of a public key: its fingerprint (decision 385 (3)). */
+    private static String publicKeyFingerprint(String base64) {
+        try {
+            return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(Base64.getDecoder().decode(base64)));
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
     private static String randomBase64(int bytes) {
         byte[] k = new byte[bytes];
@@ -102,6 +124,9 @@ class ProductionStartupFailFastTest {
         m.put("sangam.audit.checkpoint.private-key-ref", "secret://audit/checkpoint-private");
         m.put("sangam.audit.checkpoint.public-key-ref", "secret://audit/checkpoint-public");
         m.put("sangam.compliance.principal-key-ref", "secret://compliance/principal-key");
+        // decision 385 (3): one key per environment; production needs this environment's name and the other list
+        m.put("sangam.keys.environment", "prod");
+        m.put("sangam.keys.foreign-fingerprints", FOREIGN.toString());
         // decision 126 part 2 (W4-A): the ledger module is on by default and needs its GL export connector id
         m.put("sangam.ledger.gl-connector", "gl-test");
         // the h2 profile's development conveniences, which production refuses or must not use
@@ -210,6 +235,37 @@ class ProductionStartupFailFastTest {
     @Test
     void missingCompliancePrincipalKeyIsRefused() {
         assertRefused("sg38-principal", m -> m.remove("sangam.compliance.principal-key-ref"), "(owner decision 371)");
+    }
+
+    @Test
+    void aLiteralKeyServingTwoPurposesIsRefused() {
+        // owner decision 37: the key-encryption key reused as the registry vault pepper
+        assertRefused("sg38-key-literal", m -> m.put("sangam.registry.vault.hmac-pepper", TEST_KEK),
+                "KEY_SHARED_ACROSS_PURPOSES");
+    }
+
+    @Test
+    void oneSecretReferenceServingTwoPurposesIsRefused() {
+        // owner decision 37: the audit checkpoint private key also as the compliance principal key (it is long enough
+        // to pass as one, so only the separation check refuses it)
+        assertRefused("sg38-key-ref", m -> m.put("sangam.compliance.principal-key-ref", "secret://audit/checkpoint-private"),
+                "KEY_SHARED_ACROSS_PURPOSES");
+    }
+
+    @Test
+    void productionWithoutAKeyEnvironmentListIsRefused() {
+        // owner decision 385 (3): production refuses to start without the other environments' fingerprints
+        assertRefused("sg38-key-env-list", m -> m.remove("sangam.keys.foreign-fingerprints"),
+                "KEY_ENVIRONMENT_LIST_REQUIRED");
+        assertRefused("sg38-key-env-name", m -> m.remove("sangam.keys.environment"), "KEY_ENVIRONMENT_LIST_REQUIRED");
+    }
+
+    @Test
+    void aKeyOfAnotherEnvironmentIsRefused() {
+        // owner decision 385 (3): the registry signer of this start is on staging's list
+        Path list = fingerprintList("staging " + publicKeyFingerprint(REGISTRY_SIGNER[1]) + "\n");
+        assertRefused("sg38-key-env-shared", m -> m.put("sangam.keys.foreign-fingerprints", list.toString()),
+                "KEY_SHARED_ACROSS_ENVIRONMENTS");
     }
 
     @Test

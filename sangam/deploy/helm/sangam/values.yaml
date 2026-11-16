@@ -181,6 +181,18 @@ server:
   # system-owned engine work. Required: system:<name>, name [a-z0-9][a-z0-9._-]{0,47}; anything else, or empty, and
   # the server refuses to start. It can never be a customer tenant (tenant ids have no ':').
   systemAuditScope: "system:platform"
+  # Owner decision 385 (3): one key per environment. name is SANGAM_KEYS_ENVIRONMENT (sangam.keys.environment), this
+  # environment's name, [a-z0-9][a-z0-9._-]{0,47} (for example prod, staging). foreignFingerprints is the content of the
+  # list file (SANGAM_KEYS_FOREIGN_FINGERPRINTS, mounted at /opt/sangam/config/key-fingerprints.txt): one line per key of
+  # ANOTHER environment, "<environment> <sha256 hex> [<setting>]", # for comments, as each environment's server writes
+  # it to /var/lib/sangam/key-fingerprints.txt (SANGAM_KEYS_FINGERPRINT_EXPORT) at start. A fingerprint is SHA-256 of a
+  # public key or HMAC-SHA256 under a fixed label of a secret, never the value. The start is refused
+  # (KEY_SHARED_ACROSS_ENVIRONMENTS) when one of this environment's keys is on the list; with server.production: true it
+  # is refused (KEY_ENVIRONMENT_LIST_REQUIRED) without a name or without a list holding a fingerprint of another
+  # environment. See deploy/README.md section 1.
+  keyEnvironment:
+    name: ""
+    foreignFingerprints: ""
   # Decision 247 (170, 207): SANGAM_AI_KB_VECTOR_INDEX (sangam.ai.kb.vector-index), the knowledge-base ranking index.
   # portable (default, every database) | pgvector (PostgreSQL with the pgvector column) | oracle (Oracle AI Database 23ai
   # or later: the server applies the separate changelog db/changelog/sangam-oracle-vector.xml, context oracle-vector, and

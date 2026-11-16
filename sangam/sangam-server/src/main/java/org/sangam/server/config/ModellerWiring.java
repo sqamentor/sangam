@@ -45,6 +45,7 @@ import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.port.TaskPort;
 import org.sangam.rest.support.TxSupport;
 import org.sangam.server.bridge.TokenExchangeConnector;
+import org.sangam.rest.support.SlotVariableGuard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -191,6 +192,7 @@ public class ModellerWiring {
             String tenant, UUID operationId, ActionModels.Action action, String targetRef, Map<String, Object> input) {
         switch (action.targetType()) {
             case BPMN -> {
+                SlotVariableGuard.refuse(input == null ? null : input.keySet()); // decision 385 (2)
                 var pi = engine.getObject().getRuntimeService().createProcessInstanceByKey(action.target())
                         .processDefinitionTenantId(tenant).businessKey(operationId.toString()).setVariables(input).execute();
                 return Map.of("processInstanceId", pi.getId());

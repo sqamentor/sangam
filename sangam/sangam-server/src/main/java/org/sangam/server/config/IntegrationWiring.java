@@ -221,32 +221,19 @@ public class IntegrationWiring {
 
     /**
      * Every event goes to {@code fixed}; history, cross-cell and roll-up events also to the roll-up stream when
-     * {@code rollup}; history events also to the external projection sinks.
+     * {@code rollup}; history events also to the external projection sinks. The rule is
+     * {@link org.sangam.assembly.integration.OutboxDestinations#subscriptions}, the one every host applies.
      */
     static OutboxWriter.SubscriptionResolver subscriptions(List<Outbox.Destination> fixed, boolean rollup,
                                                            List<Outbox.Destination> projection) {
-        if (!rollup && projection.isEmpty()) {
-            return OutboxWriter.SubscriptionResolver.fixed(fixed);
-        }
-        List<Outbox.Destination> rollupSet = rollup
-                ? merge(fixed, List.of(Outbox.Destination.unordered(org.sangam.cell.rollup.RollupPublisher.DESTINATION)))
-                : fixed;
-        List<Outbox.Destination> historySet = merge(rollupSet, projection);
-        return (tenant, eventType) -> eventType == null ? fixed
-                : eventType.startsWith(HistoryProjectionWiring.HISTORY_TYPES) ? historySet
-                : eventType.startsWith("sangam.xcell.") || eventType.startsWith("sangam.rollup.") ? rollupSet
-                : fixed;
+        return org.sangam.assembly.integration.OutboxDestinations.subscriptions(fixed, rollup
+                ? java.util.Optional.of(Outbox.Destination.unordered(org.sangam.cell.rollup.RollupPublisher.DESTINATION))
+                : java.util.Optional.empty(), projection);
     }
 
-    /** {@code a} then the destinations of {@code b} not already named in {@code a}. */
+    /** {@code a} then the destinations of {@code b} not already named in {@code a} (OutboxDestinations#merge). */
     static List<Outbox.Destination> merge(List<Outbox.Destination> a, List<Outbox.Destination> b) {
-        List<Outbox.Destination> out = new ArrayList<>(a);
-        for (Outbox.Destination d : b) {
-            if (out.stream().noneMatch(x -> x.name().equals(d.name()))) {
-                out.add(d);
-            }
-        }
-        return List.copyOf(out);
+        return org.sangam.assembly.integration.OutboxDestinations.merge(a, b);
     }
 
     @Bean

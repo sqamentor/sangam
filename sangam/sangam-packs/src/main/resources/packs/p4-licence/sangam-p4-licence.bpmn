@@ -57,6 +57,8 @@
     <serviceTask id="p4_pushPending" name="Partial success: DigiLocker copy pending" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>digilocker-pending</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="p4_pushGw" name="executionOutcome?" default="p4_licence_f56"></exclusiveGateway>
     <endEvent id="p4_end" name="Licence issued"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="p4_approvePrepareGw" name="Document to sign?" default="p4_licence_f67"></exclusiveGateway>
+    <userTask id="p4_approvePrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <boundaryEvent id="p4_inspect_warn" name="SLA warning (75%)" attachedToRef="p4_inspect" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${p4_inspectWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
     <boundaryEvent id="p4_inspect_breach" name="SLA breached" attachedToRef="p4_inspect" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${p4_inspectDueAt}</timeDate></timerEventDefinition></boundaryEvent>
     <sequenceFlow id="p4_licence_f1" sourceRef="p4_start" targetRef="p4_defaults"/>
@@ -106,7 +108,7 @@
     <sequenceFlow id="p4_licence_f45" name="unsatisfactory" sourceRef="p4_inspRes" targetRef="p4_rjInsp_code"/>
     <sequenceFlow id="p4_licence_f46" name="no inspection" sourceRef="p4_inspGw" targetRef="p4_breachRule"/>
     <sequenceFlow id="p4_licence_f47" sourceRef="p4_resume" targetRef="p4_breachRule"/>
-    <sequenceFlow id="p4_licence_f48" sourceRef="p4_breachRule" targetRef="p4_approve"/>
+    <sequenceFlow id="p4_licence_f48" sourceRef="p4_breachRule" targetRef="p4_approvePrepareGw"/>
     <sequenceFlow id="p4_licence_f49" name="SANCTIONED" sourceRef="p4_sanGw" targetRef="p4_certificate"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="p4_licence_f50" name="RETURNED" sourceRef="p4_sanGw" targetRef="p4_scrutinySeat"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="p4_licence_f51" name="otherwise" sourceRef="p4_sanGw" targetRef="p4_rj_reject"/>
@@ -118,6 +120,9 @@
     <sequenceFlow id="p4_licence_f57" sourceRef="p4_push" targetRef="p4_pushGw"/>
     <sequenceFlow id="p4_licence_f58" sourceRef="p4_pushPending" targetRef="p4_close"/>
     <sequenceFlow id="p4_licence_f59" sourceRef="p4_close" targetRef="p4_end"/>
+    <sequenceFlow id="p4_licence_f66" name="DSC signature needed" sourceRef="p4_approvePrepareGw" targetRef="p4_approvePrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p4_licence_f67" name="no DSC signature" sourceRef="p4_approvePrepareGw" targetRef="p4_approve"/>
+    <sequenceFlow id="p4_licence_f68" sourceRef="p4_approvePrepare" targetRef="p4_approve"/>
     <subProcess id="p4_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
       <startEvent id="p4_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
       <serviceTask id="p4_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -154,9 +159,9 @@
       <bpmndi:BPMNShape id="p4_wdFee_end_di" bpmnElement="p4_wdFee_end"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="p4_scrutinySeat_di" bpmnElement="p4_scrutinySeat"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="p4_scrutiny_di" bpmnElement="p4_scrutiny"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p4_rj_reject_di" bpmnElement="p4_rj_reject"><dc:Bounds x="3980" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p4_rj_endRejected_di" bpmnElement="p4_rj_endRejected"><dc:Bounds x="4342" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p4_rj_appealGw_di" bpmnElement="p4_rj_appealGw"><dc:Bounds x="4170" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_rj_reject_di" bpmnElement="p4_rj_reject"><dc:Bounds x="4310" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_rj_endRejected_di" bpmnElement="p4_rj_endRejected"><dc:Bounds x="4672" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_rj_appealGw_di" bpmnElement="p4_rj_appealGw"><dc:Bounds x="4500" y="170" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="p4_inspRule_di" bpmnElement="p4_inspRule"><dc:Bounds x="1835" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="p4_rjLapsed_code_di" bpmnElement="p4_rjLapsed_code"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="p4_rjLapsed_reject_di" bpmnElement="p4_rjLapsed_reject"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
@@ -180,15 +185,17 @@
       <bpmndi:BPMNShape id="p4_rjInsp_reject_di" bpmnElement="p4_rjInsp_reject"><dc:Bounds x="3485" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="p4_rjInsp_endRejected_di" bpmnElement="p4_rjInsp_endRejected"><dc:Bounds x="3682" y="302" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="p4_breachRule_di" bpmnElement="p4_breachRule"><dc:Bounds x="3485" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p4_approve_di" bpmnElement="p4_approve"><dc:Bounds x="3650" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p4_certificate_di" bpmnElement="p4_certificate"><dc:Bounds x="3980" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p4_sanGw_di" bpmnElement="p4_sanGw"><dc:Bounds x="3840" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p4_pushConfig_di" bpmnElement="p4_pushConfig"><dc:Bounds x="4145" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p4_push_di" bpmnElement="p4_push"><dc:Bounds x="4310" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p4_close_di" bpmnElement="p4_close"><dc:Bounds x="4805" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p4_pushPending_di" bpmnElement="p4_pushPending"><dc:Bounds x="4640" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p4_pushGw_di" bpmnElement="p4_pushGw"><dc:Bounds x="4500" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p4_end_di" bpmnElement="p4_end"><dc:Bounds x="5002" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_approve_di" bpmnElement="p4_approve"><dc:Bounds x="3980" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_certificate_di" bpmnElement="p4_certificate"><dc:Bounds x="4310" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_sanGw_di" bpmnElement="p4_sanGw"><dc:Bounds x="4170" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_pushConfig_di" bpmnElement="p4_pushConfig"><dc:Bounds x="4475" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_push_di" bpmnElement="p4_push"><dc:Bounds x="4640" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_close_di" bpmnElement="p4_close"><dc:Bounds x="5135" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_pushPending_di" bpmnElement="p4_pushPending"><dc:Bounds x="4970" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_pushGw_di" bpmnElement="p4_pushGw"><dc:Bounds x="4830" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_end_di" bpmnElement="p4_end"><dc:Bounds x="5332" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_approvePrepareGw_di" bpmnElement="p4_approvePrepareGw"><dc:Bounds x="3675" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_approvePrepare_di" bpmnElement="p4_approvePrepare"><dc:Bounds x="3815" y="405" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="p4_inspect_warn_di" bpmnElement="p4_inspect_warn"><dc:Bounds x="2503" y="342" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="p4_inspect_breach_di" bpmnElement="p4_inspect_breach"><dc:Bounds x="2533" y="342" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="p4_withdraw_di" bpmnElement="p4_withdraw" isExpanded="true"><dc:Bounds x="30" y="660" width="623" height="150"/></bpmndi:BPMNShape>
@@ -216,14 +223,14 @@
       <bpmndi:BPMNEdge id="p4_licence_f13_di" bpmnElement="p4_licence_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p4_licence_f14_di" bpmnElement="p4_licence_f14"><di:waypoint x="1275" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p4_licence_f15_di" bpmnElement="p4_licence_f15"><di:waypoint x="1440" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f16_di" bpmnElement="p4_licence_f16"><di:waypoint x="4080" y="195"/><di:waypoint x="4170" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f17_di" bpmnElement="p4_licence_f17"><di:waypoint x="4195" y="220"/><di:waypoint x="4195" y="503"/><di:waypoint x="3535" y="503"/><di:waypoint x="3535" y="485"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f18_di" bpmnElement="p4_licence_f18"><di:waypoint x="4220" y="195"/><di:waypoint x="4342" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f16_di" bpmnElement="p4_licence_f16"><di:waypoint x="4410" y="195"/><di:waypoint x="4500" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f17_di" bpmnElement="p4_licence_f17"><di:waypoint x="4525" y="220"/><di:waypoint x="4525" y="503"/><di:waypoint x="3535" y="503"/><di:waypoint x="3535" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f18_di" bpmnElement="p4_licence_f18"><di:waypoint x="4550" y="195"/><di:waypoint x="4672" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p4_licence_f19_di" bpmnElement="p4_licence_f19"><di:waypoint x="2100" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p4_licence_f20_di" bpmnElement="p4_licence_f20"><di:waypoint x="1935" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p4_licence_f21_di" bpmnElement="p4_licence_f21"><di:waypoint x="1745" y="195"/><di:waypoint x="1790" y="195"/><di:waypoint x="1790" y="320"/><di:waypoint x="1835" y="320"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p4_licence_f22_di" bpmnElement="p4_licence_f22"><di:waypoint x="1745" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f23_di" bpmnElement="p4_licence_f23"><di:waypoint x="1745" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f23_di" bpmnElement="p4_licence_f23"><di:waypoint x="1745" y="195"/><di:waypoint x="4310" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p4_licence_f24_di" bpmnElement="p4_licence_f24"><di:waypoint x="1605" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p4_licence_f25_di" bpmnElement="p4_licence_f25"><di:waypoint x="1935" y="320"/><di:waypoint x="2025" y="320"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p4_licence_f26_di" bpmnElement="p4_licence_f26"><di:waypoint x="2075" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
@@ -248,18 +255,21 @@
       <bpmndi:BPMNEdge id="p4_licence_f45_di" bpmnElement="p4_licence_f45"><di:waypoint x="3230" y="320"/><di:waypoint x="3320" y="320"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p4_licence_f46_di" bpmnElement="p4_licence_f46"><di:waypoint x="2075" y="320"/><di:waypoint x="2780" y="320"/><di:waypoint x="2780" y="445"/><di:waypoint x="3485" y="445"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p4_licence_f47_di" bpmnElement="p4_licence_f47"><di:waypoint x="3420" y="445"/><di:waypoint x="3485" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f48_di" bpmnElement="p4_licence_f48"><di:waypoint x="3585" y="445"/><di:waypoint x="3650" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f49_di" bpmnElement="p4_licence_f49"><di:waypoint x="3890" y="445"/><di:waypoint x="3980" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f50_di" bpmnElement="p4_licence_f50"><di:waypoint x="3865" y="470"/><di:waypoint x="3865" y="495"/><di:waypoint x="1390" y="495"/><di:waypoint x="1390" y="235"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f51_di" bpmnElement="p4_licence_f51"><di:waypoint x="3890" y="445"/><di:waypoint x="3935" y="445"/><di:waypoint x="3935" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f52_di" bpmnElement="p4_licence_f52"><di:waypoint x="3750" y="445"/><di:waypoint x="3840" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f53_di" bpmnElement="p4_licence_f53"><di:waypoint x="4080" y="445"/><di:waypoint x="4145" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f54_di" bpmnElement="p4_licence_f54"><di:waypoint x="4245" y="445"/><di:waypoint x="4310" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f55_di" bpmnElement="p4_licence_f55"><di:waypoint x="4550" y="445"/><di:waypoint x="4805" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f56_di" bpmnElement="p4_licence_f56"><di:waypoint x="4550" y="445"/><di:waypoint x="4640" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f57_di" bpmnElement="p4_licence_f57"><di:waypoint x="4410" y="445"/><di:waypoint x="4500" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f58_di" bpmnElement="p4_licence_f58"><di:waypoint x="4740" y="445"/><di:waypoint x="4805" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p4_licence_f59_di" bpmnElement="p4_licence_f59"><di:waypoint x="4905" y="445"/><di:waypoint x="5002" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f48_di" bpmnElement="p4_licence_f48"><di:waypoint x="3585" y="445"/><di:waypoint x="3675" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f49_di" bpmnElement="p4_licence_f49"><di:waypoint x="4220" y="445"/><di:waypoint x="4310" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f50_di" bpmnElement="p4_licence_f50"><di:waypoint x="4195" y="470"/><di:waypoint x="4195" y="495"/><di:waypoint x="1390" y="495"/><di:waypoint x="1390" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f51_di" bpmnElement="p4_licence_f51"><di:waypoint x="4220" y="445"/><di:waypoint x="4265" y="445"/><di:waypoint x="4265" y="195"/><di:waypoint x="4310" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f52_di" bpmnElement="p4_licence_f52"><di:waypoint x="4080" y="445"/><di:waypoint x="4170" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f53_di" bpmnElement="p4_licence_f53"><di:waypoint x="4410" y="445"/><di:waypoint x="4475" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f54_di" bpmnElement="p4_licence_f54"><di:waypoint x="4575" y="445"/><di:waypoint x="4640" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f55_di" bpmnElement="p4_licence_f55"><di:waypoint x="4880" y="445"/><di:waypoint x="5135" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f56_di" bpmnElement="p4_licence_f56"><di:waypoint x="4880" y="445"/><di:waypoint x="4970" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f57_di" bpmnElement="p4_licence_f57"><di:waypoint x="4740" y="445"/><di:waypoint x="4830" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f58_di" bpmnElement="p4_licence_f58"><di:waypoint x="5070" y="445"/><di:waypoint x="5135" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f59_di" bpmnElement="p4_licence_f59"><di:waypoint x="5235" y="445"/><di:waypoint x="5332" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f66_di" bpmnElement="p4_licence_f66"><di:waypoint x="3725" y="445"/><di:waypoint x="3815" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f67_di" bpmnElement="p4_licence_f67"><di:waypoint x="3725" y="445"/><di:waypoint x="3980" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f68_di" bpmnElement="p4_licence_f68"><di:waypoint x="3915" y="445"/><di:waypoint x="3980" y="445"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p4_licence_f60_di" bpmnElement="p4_licence_f60"><di:waypoint x="128" y="740"/><di:waypoint x="225" y="740"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p4_licence_f61_di" bpmnElement="p4_licence_f61"><di:waypoint x="325" y="740"/><di:waypoint x="390" y="740"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p4_licence_f62_di" bpmnElement="p4_licence_f62"><di:waypoint x="490" y="740"/><di:waypoint x="587" y="740"/></bpmndi:BPMNEdge>

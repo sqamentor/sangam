@@ -593,7 +593,7 @@ public class OperatonTaskAdapter implements TaskPort {
             if (t.getAssignee() == null) {
                 OperatonSupport.run(() -> tasks.claim(taskId, ctx.principalId()));
             }
-            Map<String, Object> submit = TypedVariables.fromJson(req.variables());
+            Map<String, Object> submit = org.sangam.rest.support.SlotVariableGuard.callerVariables(req.variables());
             if (req.decision() != null) {
                 submit.put(DECISION, req.decision());
             }
@@ -653,7 +653,7 @@ public class OperatonTaskAdapter implements TaskPort {
             checkSod(ctx, t, vars);
             TaskVersions.check(vars, r.caseVersion(), r.payloadHash(), null);
             String pi = t.getProcessInstanceId();
-            Map<String, Object> submit = TypedVariables.fromJson(r.variables());
+            Map<String, Object> submit = org.sangam.rest.support.SlotVariableGuard.callerVariables(r.variables());
             submit.put(DECISION, "RETURNED");
             submit.put(RETURN_REASON, r.reason());
             if (r.reasonCode() != null) {

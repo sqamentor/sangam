@@ -54,6 +54,17 @@ class PilotScenarioTest {
         return Answer.of(person, seat, kv);
     }
 
+    /**
+     * Decision 385 (1): before a call into a DSC gate the case's initiator, at the initiator's seat, prepares the
+     * document to sign; the driver uploads it through the (simulated) document route when the task completes.
+     */
+    static Answer asInitiator(Task t) {
+        String seat = engine.getTaskService().getIdentityLinksForTask(t.getId()).stream()
+                .map(IdentityLink::getGroupId).filter(java.util.Objects::nonNull).findFirst().orElse("none");
+        Object person = engine.getRuntimeService().getVariable(t.getProcessInstanceId(), "initiator");
+        return Answer.of(String.valueOf(person), seat);
+    }
+
     /** Starts the definition of the test tenant; another tenant's deployments of the same key exist in this engine. */
     static void start(String key, String bk, Map<String, Object> v) {
         engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(v)
@@ -90,10 +101,11 @@ class PilotScenarioTest {
         start("sangam-p1-bill-payment", bk, bill());
         List<String> done = driver.run(bk, t -> switch (t.getTaskDefinitionKey()) {
             case "sc_scrutiny" -> Answer.of("p1.ao2", "AO-2", "scrutinyDecision", "accept");
+            case "p1_sanctionPrepare" -> asInitiator(t);
             case "sn_sanction" -> Answer.of("p1.ee", "EE-DIV1", "sanctionDecision", "approve");
             default -> null;
         }, 50);
-        assertEquals(List.of("sc_scrutiny", "sn_sanction"), done);
+        assertEquals(List.of("sc_scrutiny", "p1_sanctionPrepare", "sn_sanction"), done);
         assertTrue(driver.ended(bk), "case still running");
         assertEquals("CLOSED", driver.var(bk, "caseState"));
         assertEquals("MATCHED", driver.var(bk, "reconStatus"));
@@ -107,13 +119,15 @@ class PilotScenarioTest {
                 "noting", "Proposal for approval.", "draftLetter", "Draft order.", "actingSeat", "DA-B2",
                 "initiator", "p2.da", "officeId", "SEC-B2"));
         List<String> done = driver.run(bk, t -> switch (t.getTaskDefinitionKey()) {
+            case "p2_movementPrepare", "p2_disposalPrepare" -> asInitiator(t);
             case "rc_level" -> asSeat(t, "recDecision", "recommend");
             case "sn_sanction" -> asSeat(t, "sanctionDecision", "approve");
             case "p2_dispatch" -> Answer.of("p2.da", "DA-B2", "letterNo", "L-1", "dispatchRecipients", "all");
             case "p2_close" -> Answer.of("p2.da", "DA-B2", "retentionCategory", "C", "retentionYears", 10);
             default -> null;
         }, 80);
-        assertEquals(List.of("rc_level", "rc_level", "sn_sanction", "p2_dispatch", "p2_close"), done);
+        assertEquals(List.of("p2_movementPrepare", "rc_level", "rc_level", "p2_disposalPrepare", "sn_sanction",
+                "p2_dispatch", "p2_close"), done);
         assertTrue(driver.ended(bk));
         assertEquals("CLOSED", driver.var(bk, "caseState"));
     }
@@ -147,10 +161,11 @@ class PilotScenarioTest {
                 "durationYears", 1, "officeId", "WARD-7", "initiator", "citizen.ramesh"));
         List<String> done = driver.run(bk, t -> switch (t.getTaskDefinitionKey()) {
             case "sc_scrutiny" -> asSeat(t, "scrutinyDecision", "accept");
+            case "p4_approvePrepare" -> asInitiator(t);
             case "sn_sanction" -> asSeat(t, "sanctionDecision", "approve");
             default -> null;
         }, 80);
-        assertEquals(List.of("sc_scrutiny", "sn_sanction"), done);
+        assertEquals(List.of("sc_scrutiny", "p4_approvePrepare", "sn_sanction"), done);
         assertTrue(driver.ended(bk));
         assertEquals("CLOSED", driver.var(bk, "caseState"));
         assertTrue(driver.var(bk, "licenceNo") != null);
@@ -311,6 +326,7 @@ class PilotScenarioTest {
         start("sangam-p1-bill-payment", bk, v);
         driver.run(bk, t -> switch (t.getTaskDefinitionKey()) {
             case "sc_scrutiny" -> Answer.of("p1.ao2", "AO-2", "scrutinyDecision", "accept");
+            case "p1_sanctionPrepare" -> asInitiator(t);
             case "sn_sanction" -> Answer.of("p1.ee", "EE-DIV1", "sanctionDecision", "approve");
             default -> null;
         }, 50);

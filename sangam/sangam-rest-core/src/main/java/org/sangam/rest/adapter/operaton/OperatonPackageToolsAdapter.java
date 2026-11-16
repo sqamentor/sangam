@@ -99,7 +99,8 @@ public final class OperatonPackageToolsAdapter implements PackageToolsPort {
     private final PackagePort packages;
     private final AuditPort audit;
     private final RestProperties props;
-    private final ObjectMapper json = new ObjectMapper();
+    // decision 381(4): stored DMN test inputs reach TypedVariables, so fractions are read exactly
+    private static final ObjectMapper json = org.sangam.rest.support.ExactJson.mapper();
     /** Git configuration per package (REST_DOCUMENT, doc_id = package id) and review comments (ref = package id). */
     static final String KIND_GIT = "package:git";
     static final String KIND_COMMENT = "package:comment";

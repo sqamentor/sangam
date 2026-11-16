@@ -29,7 +29,7 @@ import org.sangam.rest.port.ProcessPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
-import org.sangam.rest.support.TypedVariables;
+import org.sangam.rest.support.SlotVariableGuard;
 
 /**
  * Event registry (FLOWABLE-INTO-OPERATON FC-02, FLOWABLE-INTO-OPERATON FC-03, FLOWABLE-INTO-OPERATON FC-04; R38, R83) persisted in the versioned product tables {@code EVT_CHANNEL_DEF} and
@@ -63,7 +63,8 @@ public final class JdbcEventAdapter implements EventPort {
     private static final Set<String> TRANSPORTS = Set.of("REST", "WEBHOOK", "KAFKA", "JMS", "AMQP");
     private static final Set<String> RESERVED = Set.of("channels", "definitions");
     private static final Duration INBOX_TTL = Duration.ofHours(24);
-    private static final ObjectMapper JSON = new ObjectMapper();
+    // decision 381(4): event data reaches TypedVariables, so fractions are read exactly
+    private static final ObjectMapper JSON = org.sangam.rest.support.ExactJson.mapper();
 
     private final ProcessPort processes;
     private final TxSupport tx;
@@ -563,7 +564,7 @@ public final class JdbcEventAdapter implements EventPort {
     private static Map<String, Object> variables(CloudEvent event, JsonNode data, Map<String, Object> correlation) {
         Map<String, Object> vars = new LinkedHashMap<>();
         if (data.isObject()) {
-            vars.putAll(TypedVariables.fromJson(JSON.convertValue(data, Map.class)));
+            vars.putAll(SlotVariableGuard.callerVariables(JSON.convertValue(data, Map.class)));
         }
         String eventJson = CanonicalJson.write(data.isMissingNode() ? Map.of() : JSON.convertValue(data, Object.class));
         if (eventJson.length() < 4000) {

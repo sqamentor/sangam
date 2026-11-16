@@ -194,11 +194,14 @@
     <!-- CR-10/CR-12 (RM-20..RM-22): build tools the workflows call by prefix (dependency:copy, dependency:tree,
          help:evaluate) or by coordinate (makeBom) are pinned here, so no CI run picks a version by itself. All
          Apache-2.0, build-only, never shipped. maven-dependency-plugin 3.7.0 = what the Maven 3.9.9 wrapper's super POM
-         resolves today; maven-help-plugin 3.5.2 = the only cached version (unpinned, an offline run cannot resolve one);
-         cyclonedx-maven-plugin 2.9.1 = decision 134 (download approved, not yet cached); versions-maven-plugin 2.25.1 =
-         decision 185 (latest stable, Apache-2.0, recorded in DOWNLOADS-WAVE4.md). -->
+         resolves; maven-help-plugin 3.5.2 = the version in the local repository (unpinned, an offline run cannot
+         resolve one); cyclonedx-maven-plugin 2.9.1 = decision 134, downloaded under decision 178 with its 23-jar
+         build-time closure (DOWNLOADS-WAVE4.md, 2026-11-12T18:42:21Z; the per-POM licence review of that closure is
+         not done); versions-maven-plugin 2.25.1 = decision 185 (latest stable, Apache-2.0, recorded in
+         DOWNLOADS-WAVE4.md); maven-site-plugin 3.12.1 = the version the Maven 3.9.9 super POM binds (RM-45). -->
     <version.maven-dependency-plugin>3.7.0</version.maven-dependency-plugin>
     <version.maven-help-plugin>3.5.2</version.maven-help-plugin>
+    <version.maven-site-plugin>3.12.1</version.maven-site-plugin>
     <version.cyclonedx-maven-plugin>2.9.1</version.cyclonedx-maven-plugin>
     <version.versions-maven-plugin>2.25.1</version.versions-maven-plugin>
     <version.jqwik>1.10.2</version.jqwik>
@@ -598,6 +601,13 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-help-plugin</artifactId>
           <version>${version.maven-help-plugin}</version>
+        </plugin>
+        <!-- RM-45: the site lifecycle plugin, pinned to the version the Maven 3.9.9 super POM binds (maven-core
+             components.xml), so no run picks one by itself -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>${version.maven-site-plugin}</version>
         </plugin>
         <plugin>
           <groupId>org.cyclonedx</groupId>

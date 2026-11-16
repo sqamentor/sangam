@@ -93,7 +93,7 @@ public class OperatonProcessAdapter implements ProcessPort {
         if (r == null || r.key() == null || r.key().isBlank()) {
             throw ApiProblem.badRequest("KEY_REQUIRED", "the process definition key is required");
         }
-        Map<String, Object> vars = TypedVariables.fromJson(r.variables());
+        Map<String, Object> vars = org.sangam.rest.support.SlotVariableGuard.callerVariables(r.variables());
         vars.put(OperatonTaskAdapter.INITIATOR, ctx.principalId());
         // Pack contract (sangam-packs README §4): initiator person and seat for SoD (K5).
         vars.putIfAbsent("initiator", ctx.principalId());
@@ -324,7 +324,7 @@ public class OperatonProcessAdapter implements ProcessPort {
         }
         return tx.inTx(() -> {
             requireRuntime(ctx, id);
-            Map<String, Object> vars = TypedVariables.fromJson(variables);
+            Map<String, Object> vars = org.sangam.rest.support.SlotVariableGuard.callerVariables(variables);
             OperatonSupport.run(() -> runtime.setVariables(id, vars));
             audit.record(ctx, id, "VARIABLES_UPDATED", Map.of("names", new ArrayList<>(new java.util.TreeSet<>(vars.keySet())),
                     "actor", ctx.actor()));
@@ -438,7 +438,7 @@ public class OperatonProcessAdapter implements ProcessPort {
                 throw ApiProblem.conflict("FORM_VERSION_STALE", "This case changed since you opened it (version "
                         + r.expectedVersion() + " to " + current + ")").with("currentVersion", current);
             }
-            Map<String, Object> incoming = TypedVariables.fromJson(r.variables());
+            Map<String, Object> incoming = org.sangam.rest.support.SlotVariableGuard.callerVariables(r.variables());
             incoming.keySet().removeIf(k -> k.startsWith("sangam"));
             Map<String, Object> after = new HashMap<>(before);
             after.putAll(incoming);
@@ -551,7 +551,7 @@ public class OperatonProcessAdapter implements ProcessPort {
 
     private static ProcessInstanceModificationBuilder apply(ProcessInstanceModificationBuilder b, ModificationInstruction i) {
         String type = i.type() == null ? "" : i.type();
-        Map<String, Object> vars = TypedVariables.fromJson(i.variables());
+        Map<String, Object> vars = org.sangam.rest.support.SlotVariableGuard.callerVariables(i.variables());
         switch (type) {
             case "startBeforeActivity", "startAfterActivity", "startTransition" -> {
                 String target = "startTransition".equals(type) ? i.transitionInstanceId() : i.activityId();
@@ -629,7 +629,7 @@ public class OperatonProcessAdapter implements ProcessPort {
                 }
             }
             String target = executionId;
-            OperatonSupport.run(() -> runtime.signal(target, TypedVariables.fromJson(r.variables())));
+            OperatonSupport.run(() -> runtime.signal(target, org.sangam.rest.support.SlotVariableGuard.callerVariables(r.variables())));
             Map<String, Object> p = new LinkedHashMap<>();
             p.put("execution_id", target);
             p.put("activity_id", r.activityId());
@@ -722,7 +722,7 @@ public class OperatonProcessAdapter implements ProcessPort {
                     b = b.processInstanceVariableEquals(e.getKey(), e.getValue());
                 }
             }
-            Map<String, Object> vars = TypedVariables.fromJson(r.variables());
+            Map<String, Object> vars = org.sangam.rest.support.SlotVariableGuard.callerVariables(r.variables());
             if (!vars.isEmpty()) {
                 b = b.setVariables(vars);
             }
@@ -773,7 +773,7 @@ public class OperatonProcessAdapter implements ProcessPort {
             } else if (ctx.tenantId() != null) {
                 b = b.tenantId(ctx.tenantId());
             }
-            Map<String, Object> vars = TypedVariables.fromJson(r.variables());
+            Map<String, Object> vars = org.sangam.rest.support.SlotVariableGuard.callerVariables(r.variables());
             if (!vars.isEmpty()) {
                 b = b.setVariables(vars);
             }

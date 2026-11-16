@@ -17,7 +17,7 @@ import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.port.WorkPort;
 import org.sangam.rest.support.Permissions;
 import org.sangam.rest.support.TxSupport;
-import org.sangam.rest.support.TypedVariables;
+import org.sangam.rest.support.SlotVariableGuard;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -196,6 +196,6 @@ public class FlowableWorkerCompatController {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> vars(Map<String, Object> m) {
         Object v = m.get("variables");
-        return v instanceof Map<?, ?> map ? TypedVariables.fromJson((Map<String, Object>) map) : Map.of();
+        return v instanceof Map<?, ?> map ? SlotVariableGuard.callerVariables((Map<String, Object>) map) : Map.of();
     }
 }

@@ -231,6 +231,23 @@ Chart behaviour worth knowing:
   personal-data read audits and one-time codes are refused with `409 PRINCIPAL_KEY_NOT_CONFIGURED`. A literal key,
   or a reference whose secret is missing, not base64 or shorter than 32 bytes, stops the start everywhere. Changing the key changes every token written after
   the change (earlier events keep theirs), so rotate it only with a recorded change.
+- **One key per environment (owner decisions 37 and 385 (3)).** Each environment has a name,
+  `sangam.keys.environment` (env `SANGAM_KEYS_ENVIRONMENT`, chart `server.keyEnvironment.name`, for example `prod` or
+  `staging`, `[a-z0-9][a-z0-9._-]{0,47}`), and reads the fingerprints of the other environments' keys from a list file,
+  `sangam.keys.foreign-fingerprints` (env `SANGAM_KEYS_FOREIGN_FINGERPRINTS`; the chart mounts
+  `server.keyEnvironment.foreignFingerprints` at `/opt/sangam/config/key-fingerprints.txt`). A line is
+  `<environment> <sha256 hex> [<setting>]`; `#` starts a comment; lines of the server's own environment are skipped. A
+  fingerprint is SHA-256 of a public key, or HMAC-SHA256 under the fixed label `sangam:key-fingerprint:v1` of a secret
+  (the keys of the key purpose table: KEK, registry signer and peppers, compliance principal key, audit checkpoint,
+  package and bundle signing); it is never the key, and no message prints one. With a name set, the server writes its
+  own list at start to `sangam.keys.fingerprint-export` (env `SANGAM_KEYS_FINGERPRINT_EXPORT`; the chart sets
+  `/var/lib/sangam/key-fingerprints.txt`); copy that file into the other environments' lists. The start is refused with
+  `KEY_SHARED_ACROSS_ENVIRONMENTS`, naming the setting and the other environment, when one of its keys is on the list,
+  in every mode. **Required in production**: without a name, without a list, or with a list that holds no fingerprint
+  of another environment the start is refused with `KEY_ENVIRONMENT_LIST_REQUIRED`; a list or export without a name,
+  and an unreadable or malformed list (by line number), are refused everywhere. Trusted keys (trust lists, catalogue
+  and plugin keys) are someone else's keys and are not fingerprinted. A custodian-signed attestation (decision 385
+  (3) option c) follows later.
 - **Explicit production switch (decisions 143 and 198).** The chart always renders `SANGAM_SECURITY_PRODUCTION` from
   `server.production` (default `true`, boolean in the schema); a missing or invalid value stops the server. With
   `true` a dev profile in `server.springProfiles` is ignored with a warning; `false` together with a production

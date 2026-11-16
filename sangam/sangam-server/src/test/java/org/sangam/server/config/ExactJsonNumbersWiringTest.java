@@ -59,13 +59,17 @@ class ExactJsonNumbersWiringTest {
 
     @Test
     void withoutTheWiringSpringBootsDefaultMapperReadsABinaryDouble() {
-        // the defect this wiring closes: the default mapper rounds before TypedVariables sees the value
+        // the defect this wiring closes: the default mapper rounds before TypedVariables sees the value; since decision
+        // 381(4) TypedVariables refuses that Double by name instead of storing the rounded digits
         runner.run(ctx -> {
             Map<String, Object> body = ctx.getBean(JsonMapper.class).readValue(BODY, Map.class);
             Object amount = ((Map<?, ?>) body.get("variables")).get("amount");
             assertInstanceOf(Double.class, amount);
-            assertEquals(0, new BigDecimal("12345678901234567000")
-                    .compareTo((BigDecimal) TypedVariables.fromJsonValue(amount)), "the last digits are gone");
+            assertEquals(0, new BigDecimal("12345678901234567000").compareTo(new BigDecimal(amount.toString())),
+                    "the last digits are gone");
+            org.sangam.rest.port.ApiProblem p = org.junit.jupiter.api.Assertions.assertThrows(
+                    org.sangam.rest.port.ApiProblem.class, () -> TypedVariables.fromJsonValue(amount));
+            assertEquals(TypedVariables.DECIMAL_FROM_FLOAT, p.extensions().get("reason"));
         });
     }
 }

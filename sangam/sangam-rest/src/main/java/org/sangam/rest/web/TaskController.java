@@ -9,7 +9,7 @@ import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.port.TaskPort;
 import org.sangam.rest.support.Permissions;
-import org.sangam.rest.support.TypedVariables;
+import org.sangam.rest.support.SlotVariableGuard;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -93,7 +93,7 @@ public class TaskController {
                                                                 @RequestBody TaskPort.CompleteTaskRequest body) {
         permissions.require(ctx, Permissions.TASK_WRITE);
         var req = new TaskPort.CompleteTaskRequest(body.payloadHash(), body.caseVersion(), body.decision(),
-                body.remarks(), body.formVersion(), TypedVariables.fromJson(body.variables()), body.reasonCode(),
+                body.remarks(), body.formVersion(), SlotVariableGuard.callerVariables(body.variables()), body.reasonCode(),
                 body.nextSeatId(), body.nextSeatReason());
         TaskPort.CompleteTaskResult r = tasks.complete(ctx, id, req);
         Telemetry.processInstance(r.processInstanceId());
@@ -108,7 +108,7 @@ public class TaskController {
             throw org.sangam.rest.port.ApiProblem.badRequest("REASON_REQUIRED", "A return needs a reason (CASE_RETURNED)");
         }
         var req = new TaskPort.ReturnTaskRequest(body.reason(), body.reasonCode(), body.targetActivityId(),
-                TypedVariables.fromJson(body.variables()), body.targetSeatId(), body.targetLevel(), body.payloadHash(),
+                SlotVariableGuard.callerVariables(body.variables()), body.targetSeatId(), body.targetLevel(), body.payloadHash(),
                 body.caseVersion());
         return Lists.okRef(id, tasks.returnTask(ctx, id, req));
     }

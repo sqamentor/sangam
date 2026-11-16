@@ -97,6 +97,12 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
   "placeholders": [
     {
       "decision": "ifms-scheme-powers",

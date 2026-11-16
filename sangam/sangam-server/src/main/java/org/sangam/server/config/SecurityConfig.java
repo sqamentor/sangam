@@ -85,6 +85,10 @@ public class SecurityConfig {
                         // authenticate by the published identifier; consent-manager artefacts need mTLS at the ingress).
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/compliance/notices/**",
                                 "/api/v1/compliance/privacy-policy", "/api/v1/compliance/jurisdiction").permitAll()
+                        // Decision 380: the hosted extension catalogue a consumer's sangam.modeller.catalogue.url names.
+                        // Platform-wide (no tenant), published: only the approved entries, the index signed by the host's
+                        // catalogue key, which the consumer verifies. Submit, list and review stay authenticated.
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, HOSTED_CATALOGUE_PATHS).permitAll()
                         // FHIR subscription notifications: authenticated by the channel secret in the receiver
                         // (sangam-connectors-health), not by a Sangam token
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/hooks/fhir/**").permitAll()
@@ -242,6 +246,10 @@ public class SecurityConfig {
 
     /** Decision 304: the signed delivery-report webhook of a tenant's DLT SMS connector (exactly this shape). */
     static final String DLT_DELIVERY_REPORTS = "/api/v1/hooks/sms-dlt/*/*/delivery-reports";
+
+    /** Decision 380: the public GET routes of the hosted catalogue (CatalogueHostController), exactly these. */
+    static final String[] HOSTED_CATALOGUE_PATHS = {"/api/v1/catalogue/hosted/index.json",
+            "/api/v1/catalogue/hosted/index.json.sig", "/api/v1/catalogue/hosted/artifacts/*/*"};
 
     /** SL-170: Event Grid hooks; their Authorization header is a Microsoft Entra delivery token, checked by the channel. */
     static final RequestMatcher EVENT_GRID_HOOKS = PathPatternRequestMatcher.pathPattern("/api/v1/hooks/eventgrid/**");

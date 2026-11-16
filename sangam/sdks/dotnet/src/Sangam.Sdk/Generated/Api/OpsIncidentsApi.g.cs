@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Ops /incidents (7 operations).
+/// Typed operations of Ops /incidents (9 operations).
 /// </summary>
 public sealed class OpsIncidentsApi
 {
@@ -98,6 +98,30 @@ public sealed class OpsIncidentsApi
     public async global::System.Threading.Tasks.Task<M.Incident?> NoteIncidentAsync(string id, M.NoteRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Post($"/ops/incidents/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/note");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.Incident?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Skip an incident
+    /// Moves the token past the incident's activity (instance modification, R49): starts after the activity under the same parent, then cancels the incident's own activity or transition instance; the activity's effect does not happen and other instances of the activity are untouched (INCIDENT_SKIPPED; the reason is the modification's annotation). 400 REASON_REQUIRED without a reason; 422 INCIDENT_NOT_SKIPPABLE when the incident has no active token to move.
+    /// POST /ops/incidents/{id}/skip (operationId skipIncident); permission ops.write; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.Incident?> SkipIncidentAsync(string id, M.IncidentAction body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/ops/incidents/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/skip");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.Incident?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Cancel an incident's instance
+    /// Cancels the incident's process instance through the business cancel (VI.5: the model's cancel paths, open external work becomes CANCEL_REQUESTED, INSTANCE_CANCELLED), then audits INCIDENT_CANCELLED with the open operation ids. 400 REASON_REQUIRED without a reason.
+    /// POST /ops/incidents/{id}/cancel (operationId cancelIncident); permission ops.write; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.Incident?> CancelIncidentAsync(string id, M.IncidentAction body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/ops/incidents/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/cancel");
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.Incident?>(req, options, cancellationToken).ConfigureAwait(false);
     }

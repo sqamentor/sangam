@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 977,
- "operations": 1160,
- "schemas": 886,
+ "paths": 987,
+ "operations": 1172,
+ "schemas": 892,
  "tags": [
   "AI",
   "Admin",
@@ -54,6 +54,7 @@
   "SharedDeployments",
   "Tasks",
   "Tenant operations",
+  "TenantMigration",
   "TestMode",
   "Work",
   "Workspace"
@@ -71,8 +72,8 @@
    "class": "AdminApi",
    "tag": "Admin",
    "pathPrefix": "",
-   "operations": 37,
-   "maxLines": 737
+   "operations": 32,
+   "maxLines": 638
   },
   {
    "class": "AdminAssignmentsApi",
@@ -80,6 +81,13 @@
    "pathPrefix": "assignments",
    "operations": 7,
    "maxLines": 167
+  },
+  {
+   "class": "AdminGroupsApi",
+   "tag": "Admin",
+   "pathPrefix": "groups",
+   "operations": 6,
+   "maxLines": 128
   },
   {
    "class": "AdminOrgUnitsApi",
@@ -101,6 +109,13 @@
    "pathPrefix": "security",
    "operations": 6,
    "maxLines": 139
+  },
+  {
+   "class": "AdminTenantsApi",
+   "tag": "Admin",
+   "pathPrefix": "tenants",
+   "operations": 7,
+   "maxLines": 165
   },
   {
    "class": "AnalyticsApi",
@@ -372,8 +387,8 @@
    "class": "OpsIncidentsApi",
    "tag": "Ops",
    "pathPrefix": "incidents",
-   "operations": 7,
-   "maxLines": 159
+   "operations": 9,
+   "maxLines": 195
   },
   {
    "class": "OpsJobsApi",
@@ -598,6 +613,13 @@
    "pathPrefix": "variables",
    "operations": 7,
    "maxLines": 141
+  },
+  {
+   "class": "TenantMigrationApi",
+   "tag": "TenantMigration",
+   "pathPrefix": "",
+   "operations": 2,
+   "maxLines": 61
   },
   {
    "class": "TestModeApi",
@@ -1472,6 +1494,11 @@
   "TaskStat",
   "Tenant",
   "TenantBundle",
+  "TenantClaim",
+  "TenantFallbackInstance",
+  "TenantReadiness",
+  "TenantRepairRequest",
+  "TenantRepairResult",
   "TerminateRequest",
   "TerminationResult",
   "TestBundleExport",
@@ -1495,6 +1522,7 @@
   "UpdatePackageRequest",
   "User",
   "UserOperation",
+  "UserRequest",
   "ValidationIssue",
   "Variant",
   "VisitRecord",
@@ -2823,48 +2851,48 @@
    "method": "GET",
    "path": "/admin/tenants",
    "tag": "Admin",
-   "apiClass": "AdminApi",
-   "java": "AdminApi#listTenants",
-   "typescript": "admin.listTenants",
-   "python": "admin.list_tenants",
-   "dotnet": "AdminApi#ListTenantsAsync",
-   "php": "AdminApi#listTenants"
+   "apiClass": "AdminTenantsApi",
+   "java": "AdminTenantsApi#listTenants",
+   "typescript": "adminTenants.listTenants",
+   "python": "admin_tenants.list_tenants",
+   "dotnet": "AdminTenantsApi#ListTenantsAsync",
+   "php": "AdminTenantsApi#listTenants"
   },
   {
    "operationId": "createTenant",
    "method": "POST",
    "path": "/admin/tenants",
    "tag": "Admin",
-   "apiClass": "AdminApi",
-   "java": "AdminApi#createTenant",
-   "typescript": "admin.createTenant",
-   "python": "admin.create_tenant",
-   "dotnet": "AdminApi#CreateTenantAsync",
-   "php": "AdminApi#createTenant"
+   "apiClass": "AdminTenantsApi",
+   "java": "AdminTenantsApi#createTenant",
+   "typescript": "adminTenants.createTenant",
+   "python": "admin_tenants.create_tenant",
+   "dotnet": "AdminTenantsApi#CreateTenantAsync",
+   "php": "AdminTenantsApi#createTenant"
   },
   {
    "operationId": "getTenant",
    "method": "GET",
    "path": "/admin/tenants/{id}",
    "tag": "Admin",
-   "apiClass": "AdminApi",
-   "java": "AdminApi#getTenant",
-   "typescript": "admin.getTenant",
-   "python": "admin.get_tenant",
-   "dotnet": "AdminApi#GetTenantAsync",
-   "php": "AdminApi#getTenant"
+   "apiClass": "AdminTenantsApi",
+   "java": "AdminTenantsApi#getTenant",
+   "typescript": "adminTenants.getTenant",
+   "python": "admin_tenants.get_tenant",
+   "dotnet": "AdminTenantsApi#GetTenantAsync",
+   "php": "AdminTenantsApi#getTenant"
   },
   {
    "operationId": "updateTenant",
    "method": "PUT",
    "path": "/admin/tenants/{id}",
    "tag": "Admin",
-   "apiClass": "AdminApi",
-   "java": "AdminApi#updateTenant",
-   "typescript": "admin.updateTenant",
-   "python": "admin.update_tenant",
-   "dotnet": "AdminApi#UpdateTenantAsync",
-   "php": "AdminApi#updateTenant"
+   "apiClass": "AdminTenantsApi",
+   "java": "AdminTenantsApi#updateTenant",
+   "typescript": "adminTenants.updateTenant",
+   "python": "admin_tenants.update_tenant",
+   "dotnet": "AdminTenantsApi#UpdateTenantAsync",
+   "php": "AdminTenantsApi#updateTenant"
   },
   {
    "operationId": "listIncidents",
@@ -4595,52 +4623,76 @@
    "php": "AdminApi#listUsers"
   },
   {
+   "operationId": "createUser",
+   "method": "POST",
+   "path": "/admin/users",
+   "tag": "Admin",
+   "apiClass": "AdminApi",
+   "java": "AdminApi#createUser",
+   "typescript": "admin.createUser",
+   "python": "admin.create_user",
+   "dotnet": "AdminApi#CreateUserAsync",
+   "php": "AdminApi#createUser"
+  },
+  {
    "operationId": "listGroups",
    "method": "GET",
    "path": "/admin/groups",
    "tag": "Admin",
-   "apiClass": "AdminApi",
-   "java": "AdminApi#listGroups",
-   "typescript": "admin.listGroups",
-   "python": "admin.list_groups",
-   "dotnet": "AdminApi#ListGroupsAsync",
-   "php": "AdminApi#listGroups"
+   "apiClass": "AdminGroupsApi",
+   "java": "AdminGroupsApi#listGroups",
+   "typescript": "adminGroups.listGroups",
+   "python": "admin_groups.list_groups",
+   "dotnet": "AdminGroupsApi#ListGroupsAsync",
+   "php": "AdminGroupsApi#listGroups"
+  },
+  {
+   "operationId": "createGroup",
+   "method": "POST",
+   "path": "/admin/groups",
+   "tag": "Admin",
+   "apiClass": "AdminGroupsApi",
+   "java": "AdminGroupsApi#createGroup",
+   "typescript": "adminGroups.createGroup",
+   "python": "admin_groups.create_group",
+   "dotnet": "AdminGroupsApi#CreateGroupAsync",
+   "php": "AdminGroupsApi#createGroup"
   },
   {
    "operationId": "listGroupMembers",
    "method": "GET",
    "path": "/admin/groups/{id}/members",
    "tag": "Admin",
-   "apiClass": "AdminApi",
-   "java": "AdminApi#listGroupMembers",
-   "typescript": "admin.listGroupMembers",
-   "python": "admin.list_group_members",
-   "dotnet": "AdminApi#ListGroupMembersAsync",
-   "php": "AdminApi#listGroupMembers"
+   "apiClass": "AdminGroupsApi",
+   "java": "AdminGroupsApi#listGroupMembers",
+   "typescript": "adminGroups.listGroupMembers",
+   "python": "admin_groups.list_group_members",
+   "dotnet": "AdminGroupsApi#ListGroupMembersAsync",
+   "php": "AdminGroupsApi#listGroupMembers"
   },
   {
    "operationId": "addGroupMember",
    "method": "POST",
    "path": "/admin/groups/{id}/members/{userId}",
    "tag": "Admin",
-   "apiClass": "AdminApi",
-   "java": "AdminApi#addGroupMember",
-   "typescript": "admin.addGroupMember",
-   "python": "admin.add_group_member",
-   "dotnet": "AdminApi#AddGroupMemberAsync",
-   "php": "AdminApi#addGroupMember"
+   "apiClass": "AdminGroupsApi",
+   "java": "AdminGroupsApi#addGroupMember",
+   "typescript": "adminGroups.addGroupMember",
+   "python": "admin_groups.add_group_member",
+   "dotnet": "AdminGroupsApi#AddGroupMemberAsync",
+   "php": "AdminGroupsApi#addGroupMember"
   },
   {
    "operationId": "removeGroupMember",
    "method": "DELETE",
    "path": "/admin/groups/{id}/members/{userId}",
    "tag": "Admin",
-   "apiClass": "AdminApi",
-   "java": "AdminApi#removeGroupMember",
-   "typescript": "admin.removeGroupMember",
-   "python": "admin.remove_group_member",
-   "dotnet": "AdminApi#RemoveGroupMemberAsync",
-   "php": "AdminApi#removeGroupMember"
+   "apiClass": "AdminGroupsApi",
+   "java": "AdminGroupsApi#removeGroupMember",
+   "typescript": "adminGroups.removeGroupMember",
+   "python": "admin_groups.remove_group_member",
+   "dotnet": "AdminGroupsApi#RemoveGroupMemberAsync",
+   "php": "AdminGroupsApi#removeGroupMember"
   },
   {
    "operationId": "listIdentityProviders",
@@ -6129,6 +6181,102 @@
    "python": "cell.download_cell_export",
    "dotnet": "CellApi#DownloadCellExportAsync",
    "php": "CellApi#downloadCellExport"
+  },
+  {
+   "operationId": "skipIncident",
+   "method": "POST",
+   "path": "/ops/incidents/{id}/skip",
+   "tag": "Ops",
+   "apiClass": "OpsIncidentsApi",
+   "java": "OpsIncidentsApi#skipIncident",
+   "typescript": "opsIncidents.skipIncident",
+   "python": "ops_incidents.skip_incident",
+   "dotnet": "OpsIncidentsApi#SkipIncidentAsync",
+   "php": "OpsIncidentsApi#skipIncident"
+  },
+  {
+   "operationId": "cancelIncident",
+   "method": "POST",
+   "path": "/ops/incidents/{id}/cancel",
+   "tag": "Ops",
+   "apiClass": "OpsIncidentsApi",
+   "java": "OpsIncidentsApi#cancelIncident",
+   "typescript": "opsIncidents.cancelIncident",
+   "python": "ops_incidents.cancel_incident",
+   "dotnet": "OpsIncidentsApi#CancelIncidentAsync",
+   "php": "OpsIncidentsApi#cancelIncident"
+  },
+  {
+   "operationId": "validateTenant",
+   "method": "POST",
+   "path": "/admin/tenants/{id}/validate",
+   "tag": "Admin",
+   "apiClass": "AdminTenantsApi",
+   "java": "AdminTenantsApi#validateTenant",
+   "typescript": "adminTenants.validateTenant",
+   "python": "admin_tenants.validate_tenant",
+   "dotnet": "AdminTenantsApi#ValidateTenantAsync",
+   "php": "AdminTenantsApi#validateTenant"
+  },
+  {
+   "operationId": "activateTenant",
+   "method": "POST",
+   "path": "/admin/tenants/{id}/activate",
+   "tag": "Admin",
+   "apiClass": "AdminTenantsApi",
+   "java": "AdminTenantsApi#activateTenant",
+   "typescript": "adminTenants.activateTenant",
+   "python": "admin_tenants.activate_tenant",
+   "dotnet": "AdminTenantsApi#ActivateTenantAsync",
+   "php": "AdminTenantsApi#activateTenant"
+  },
+  {
+   "operationId": "suspendTenant",
+   "method": "POST",
+   "path": "/admin/tenants/{id}/suspend",
+   "tag": "Admin",
+   "apiClass": "AdminTenantsApi",
+   "java": "AdminTenantsApi#suspendTenant",
+   "typescript": "adminTenants.suspendTenant",
+   "python": "admin_tenants.suspend_tenant",
+   "dotnet": "AdminTenantsApi#SuspendTenantAsync",
+   "php": "AdminTenantsApi#suspendTenant"
+  },
+  {
+   "operationId": "updateUser",
+   "method": "PUT",
+   "path": "/admin/users/{id}",
+   "tag": "Admin",
+   "apiClass": "AdminApi",
+   "java": "AdminApi#updateUser",
+   "typescript": "admin.updateUser",
+   "python": "admin.update_user",
+   "dotnet": "AdminApi#UpdateUserAsync",
+   "php": "AdminApi#updateUser"
+  },
+  {
+   "operationId": "disableUser",
+   "method": "POST",
+   "path": "/admin/users/{id}/disable",
+   "tag": "Admin",
+   "apiClass": "AdminApi",
+   "java": "AdminApi#disableUser",
+   "typescript": "admin.disableUser",
+   "python": "admin.disable_user",
+   "dotnet": "AdminApi#DisableUserAsync",
+   "php": "AdminApi#disableUser"
+  },
+  {
+   "operationId": "updateGroup",
+   "method": "PUT",
+   "path": "/admin/groups/{id}",
+   "tag": "Admin",
+   "apiClass": "AdminGroupsApi",
+   "java": "AdminGroupsApi#updateGroup",
+   "typescript": "adminGroups.updateGroup",
+   "python": "admin_groups.update_group",
+   "dotnet": "AdminGroupsApi#UpdateGroupAsync",
+   "php": "AdminGroupsApi#updateGroup"
   },
   {
    "operationId": "aiStartRun",
@@ -15357,6 +15505,30 @@
    "python": "shared_deployments.revoke_shared_deployment",
    "dotnet": "SharedDeploymentsApi#RevokeSharedDeploymentAsync",
    "php": "SharedDeploymentsApi#revokeSharedDeployment"
+  },
+  {
+   "operationId": "listTenantFallbackInstances",
+   "method": "GET",
+   "path": "/admin/tenant-migration/instances",
+   "tag": "TenantMigration",
+   "apiClass": "TenantMigrationApi",
+   "java": "TenantMigrationApi#listTenantFallbackInstances",
+   "typescript": "tenantMigration.listTenantFallbackInstances",
+   "python": "tenant_migration.list_tenant_fallback_instances",
+   "dotnet": "TenantMigrationApi#ListTenantFallbackInstancesAsync",
+   "php": "TenantMigrationApi#listTenantFallbackInstances"
+  },
+  {
+   "operationId": "repairTenantFallbackInstance",
+   "method": "POST",
+   "path": "/admin/tenant-migration/instances/{id}/repair",
+   "tag": "TenantMigration",
+   "apiClass": "TenantMigrationApi",
+   "java": "TenantMigrationApi#repairTenantFallbackInstance",
+   "typescript": "tenantMigration.repairTenantFallbackInstance",
+   "python": "tenant_migration.repair_tenant_fallback_instance",
+   "dotnet": "TenantMigrationApi#RepairTenantFallbackInstanceAsync",
+   "php": "TenantMigrationApi#repairTenantFallbackInstance"
   },
   {
    "operationId": "getTestClock",
