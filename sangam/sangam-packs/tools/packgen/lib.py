@@ -28,6 +28,9 @@ C = dict(
     MATCH='org.sangam.packs.gov.ReconciliationMatchDelegate', HEAR='org.sangam.packs.gov.HearingScheduleDelegate',
     EVWIN='org.sangam.packs.universal.EventWindowDelegate',
 )
+# UI-DEMO-7: the service-task fields that name a process the task starts from code (BatchDelegate FAN_OUT starts one
+# child per item, LinkedInstanceDelegate starts a linked instance); see Proc.spawns
+SPAWN_FIELDS = {C['BATCH']: ('childProcessKey',), C['LINK']: ('processKey',)}
 
 SIZES = {'task': (100, 80), 'gateway': (50, 50), 'event': (36, 36)}
 COLW, ROWH = 165, 125
@@ -106,6 +109,13 @@ class Scope:
         attrs = {}
         if initiator and self.el is None:
             attrs['operaton:initiator'] = initiator
+        if self.el is None:
+            if msg or signal:
+                self.proc.event_starts += 1
+            else:
+                self.proc.plain_starts += 1  # a none start, or a timer start (a timer carries no data)
+                if form and not (timer_cycle or timer_date):
+                    self.proc.start_form = form
         if form:
             attrs['operaton:formKey'] = 'sangam:' + form
         if interrupting is not None:
@@ -137,6 +147,11 @@ class Scope:
         return self._add(dict(tag='endEvent', id=id, name=name, kind='event', ext=list(listeners or []), body=body))
 
     def svc(self, id, name, cls, fields=None, async_=False, listeners=None, comp_for=None, async_after=False):
+        # the processes this model starts from code: a batch round's children (FAN_OUT childProcessKey) and linked
+        # instances (LinkedInstanceDelegate processKey); with the call activities they are the model's spawns
+        for k in SPAWN_FIELDS.get(cls, ()):
+            if (fields or {}).get(k):
+                self.proc.spawns.add(fields[k])
         attrs = {'operaton:class': cls}
         if async_:
             attrs['operaton:asyncBefore'] = 'true'
@@ -462,6 +477,14 @@ class Proc:
         self.escalations = {}
         self.forms = []
         self.calls = set()
+        # UI-DEMO-7: processes this model starts from code (batch children, linked instances); calls are the call
+        # activities. A process some model starts this way and that has no start form of its own gets its variables
+        # from its starter, so a person cannot start it from the start catalogue (packs.write_all sets started_by).
+        self.spawns = set()
+        self.event_starts = 0  # top-level message or signal starts: the event carries the instance's data
+        self.plain_starts = 0  # top-level none or timer starts
+        self.start_form = None
+        self.started_by = ()
         self.decisions_used = set()
         self.connectors = set()
         # connector -> result prefixes of its calls (ConnectorCallDelegate writes data entries as <prefix><Key>), so
@@ -504,6 +527,16 @@ class Proc:
         return xlistener('end', C['ITEM'], {'outcome': outcome, 'reasonVar': reason_var, 'dataVars': data_vars,
                                             'roundVar': round_var})
 
+    def startable_by_person(self):
+        """UI-DEMO-7: the start catalogue lists the processes startable in the tasklist. A process that only runs with
+        variables someone else passes, and has no start form a person could fill instead, is kept out of it: one another
+        model starts (call activity, batch child, linked instance), and one whose only starts are message or signal
+        events (the event carries its data). A process with a start form may also be started by a person; a timer start
+        carries no data, so starting it by hand is the same run."""
+        if self.start_form is not None:
+            return True
+        return not self.started_by and not (self.event_starts and not self.plain_starts)
+
     # ---- XML ---------------------------------------------------------------------------------------------------
     def xml(self):
         out = ['<?xml version="1.0" encoding="UTF-8"?>',
@@ -526,8 +559,9 @@ class Proc:
             out.append(f'  <signal id="{sid}" name="{a(name)}"/>')
         for eid, code in sorted(self.escalations.items()):
             out.append(f'  <escalation id="{eid}" name="{a(code)}" escalationCode="{a(code)}"/>')
+        startable = '' if self.startable_by_person() else ' operaton:isStartableInTasklist="false"'
         out.append(f'  <process id="{self.pid}" name="{a(self.name)}" isExecutable="true" '
-                   f'operaton:historyTimeToLive="{self.ttl}" operaton:versionTag="{self.version}">')
+                   f'operaton:historyTimeToLive="{self.ttl}" operaton:versionTag="{self.version}"{startable}>')
         if self.doc:
             out.append(f'    <documentation>{escape(self.doc)}</documentation>')
         if self.listeners:

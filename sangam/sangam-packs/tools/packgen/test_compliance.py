@@ -25,21 +25,22 @@ SHAPED = {'startEvent', 'endEvent', 'boundaryEvent', 'userTask', 'serviceTask', 
 # di_before.txt, confirmed by B39 on checkpoint 0e53f91b); the takeover (M-010b) added the diagram only. M-010c then
 # changed only operaton:candidateGroups of the 22 user tasks of all 12 models (role code -> ${<role>Seat}; the breach
 # notification plan's two tasks in a second step, when BreachNotificationPlanner got its start). 2026-11-15: the incident
-# report's u_follow got its completion guard (IncidentClosureGuardListener, OJ-06 step 8). A deliberate semantic
+# report's u_follow got its completion guard (IncidentClosureGuardListener, OJ-06 step 8). 2026-11-16 (UI-DEMO-7): every
+# process got operaton:isStartableInTasklist="false" (started only by its starter service). A deliberate semantic
 # change of a model updates its digest here in the same change.
 FROZEN = {
-    'sangam-breach-incident.bpmn': 'e9b0646c7d4f27ca30c35ed4c5121c3ac911b0024d44a8add67c2060f8748cfb',
-    'sangam-breach-notification-plan.bpmn': '8d10f1278b9c44e77dbc2f46389b008eabde4d6f8294d3836e586f8c03b2e306',
-    'sangam-dsr-access.bpmn': 'fcd7ebceb2cf8b56497acc79f79d6ebe811b0037edc25f76a4190d07e801bd88',
-    'sangam-dsr-accounting.bpmn': '2940bfb0448f1bb51b634c3b2ae4c3e795656bbc65e5d65ce07343db9b62130d',
-    'sangam-dsr-automated-decision.bpmn': '3e847d2c9a8f92eed0acf5995dfc9aa0a18da1e1b4c8feecc15358cc979323a5',
-    'sangam-dsr-erasure.bpmn': '1d7fce49feb1518f5b028e81465a032d52b13f37e6c934790cd0ab252a087956',
-    'sangam-dsr-grievance.bpmn': '9116fef70a44671a2107be2db961ad24fd28b7badb007c4fef6f6eb74acea15e',
-    'sangam-dsr-nomination.bpmn': '8ba9b23b0acc1e3e4ccab09ae5967fc31b24dcb29b56edd863d58bf2e40dc7d0',
-    'sangam-dsr-objection.bpmn': '2d9463d5d0d9e2545c2d95011850e8e161055ba069bd3a7883e639b8e734e522',
-    'sangam-dsr-rectification.bpmn': '425e8602197ad455c197da2627688db5b7ccb235d3832531d30405452dc45b1b',
-    'sangam-dsr-restriction.bpmn': '6e1808713213a3e5f8a8392d6189ce10833b4c81aca8231749002f0b1809f2a3',
-    'sangam-incident-report.bpmn': '717393d3f75ecf3cd1afdc35956013394d88f7b3f2ff18e934fefc59835c3230',
+    'sangam-breach-incident.bpmn': 'd2f284ccfc1abd1f5f2316aaf91ee74acd02fbc14fc7f34a660d65a2d456a7cd',
+    'sangam-breach-notification-plan.bpmn': 'd66956ef449c383eef0518d90f5d4b3f9ebbccedc8a225774a3bd10c54e90749',
+    'sangam-dsr-access.bpmn': '5a341150809249d12b673c61a9867fa96540b1cb7a19337db6f125a6470104b5',
+    'sangam-dsr-accounting.bpmn': '63f124be01413e615e4ccd186dc483cb999875cdbe833c731ee015934513560f',
+    'sangam-dsr-automated-decision.bpmn': 'd2efe9116b0edf8222959bab3d973b743544b93a4a3fc04e9fa2d45f3a0ac258',
+    'sangam-dsr-erasure.bpmn': '8058a8311048798f2e8850ea09feba5270a8764b5a8f0782f65fba64533667ff',
+    'sangam-dsr-grievance.bpmn': 'd9139f8688b63372791d10a8104263cb9e15f66012031510bb7a4a9584e2145f',
+    'sangam-dsr-nomination.bpmn': '507f51684d38bf191a01a7b859b4e1f7a89f286038645206fb9f249a73f655a4',
+    'sangam-dsr-objection.bpmn': '060a984d9136e599fb8d0a8095414630b6552df30abf92fef4e1c8d788fb57af',
+    'sangam-dsr-rectification.bpmn': 'a9608e7cbb3537fa651acd6e39abee34589e8493a9e99cba7d636b77304206ea',
+    'sangam-dsr-restriction.bpmn': '6c90b3ee4d8e93ed426c8bb4442624713fc1e7e457d69e41edeea2699ea70829',
+    'sangam-incident-report.bpmn': '717bd9c9ef1f99da3f473d75fcab5551c431f38d7561eca768684d59af23618b',
 }
 
 

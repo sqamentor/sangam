@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- Human review of an automated decision. Sangam compliance pack (jurisdiction-neutral): timelines arrive as process variables computed from the jurisdiction pack. Generated with its diagram layout by sangam-packs/tools/packgen (compliance.py): change the generator, then regenerate. -->
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sangam_dsr_automated_decision" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.2.0">
-  <process id="sangam-dsr-automated-decision" name="Human review of an automated decision" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <process id="sangam-dsr-automated-decision" name="Human review of an automated decision" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0" operaton:isStartableInTasklist="false">
     <documentation>Right not to be subject to a solely automated decision (EU-GDPR Art. 22(3)): human intervention and contest.</documentation>
     <startEvent id="start" name="Request received"/>
     <serviceTask id="s_start" name="Mark in progress" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.start</operaton:string></operaton:field></extensionElements></serviceTask>

@@ -5,7 +5,7 @@
   <message id="msg_sangam_borrower_representation" name="sangam.borrower.representation"/>
   <message id="msg_sangam_loan_closed" name="sangam.loan.closed"/>
   <message id="msg_sangam_loan_overdue" name="sangam.loan.overdue"/>
-  <process id="sangam-sec-bank-collections" name="Collections case" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <process id="sangam-sec-bank-collections" name="Collections case" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1" operaton:isStartableInTasklist="false">
     <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.collections</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.1</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>loanAccountNo,customerId,amount,dpd</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="co_start" name="Loan overdue (LMS end of day)"><messageEventDefinition messageRef="msg_sangam_loan_overdue"/></startEvent>
     <serviceTask id="co_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>dpd=1;amount=0;crilcThreshold=5000000000;loanAccountNo=@customerId;ptpDays=P7D;agentPool=COLL-AGENT-1,COLL-AGENT-2;caseType=SETTLEMENT;routingDecisionKey=sec-bank-ots-authority;powersDecisionKey=sec-bank-ots-powers;appealAllowed=false;applicantRef=@customerId</operaton:string></operaton:field></extensionElements></serviceTask>

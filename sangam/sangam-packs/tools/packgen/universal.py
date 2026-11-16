@@ -712,7 +712,9 @@ def up17():
     p.forms.append(dict(key='up17-prior-authorisation/request', name='Prior authorisation request | पूर्व प्राधिकरण अनुरोध',
                         decision=None, fields=['customerId*', 'description*', 'priority', 'consentGiven*', 'documents'],
                         doc=None))
-    d = s.setv('u17_defaults', 'Configuration', defaults='urgency=@priority;consentGiven=false;appealAllowed=true;'
+    # priority is optional on the request form; a request that gives none is standard (P3, as up11), so the strict
+    # decision below never reads a null urgency (ADR-D-26)
+    d = s.setv('u17_defaults', 'Configuration', defaults='priority=P3;urgency=@priority;consentGiven=false;appealAllowed=true;'
                'appellateSeat=MEDICAL-DIRECTOR;reviewerSeat=CLINICAL-REVIEWER;caseType=PRIOR_AUTH')
     cg = s.xgw('u17_consent', 'Consent recorded?')
     s.seq(st, d, cg)

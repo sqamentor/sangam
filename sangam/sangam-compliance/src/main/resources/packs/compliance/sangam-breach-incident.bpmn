@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- Personal data breach. Sangam compliance pack (jurisdiction-neutral): timelines arrive as process variables computed from the jurisdiction pack. Generated with its diagram layout by sangam-packs/tools/packgen (compliance.py): change the generator, then regenerate. -->
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sangam_breach_incident" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
-  <process id="sangam-breach-incident" name="Personal data breach" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <process id="sangam-breach-incident" name="Personal data breach" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0" operaton:isStartableInTasklist="false">
     <documentation>Breach handling: initial notification to the supervisory authority and notice to each affected data subject without delay (parallel), detailed report by the pack deadline (IN: DPDP r.7, 72 hours) with warning and overdue timers. The linked incident report runs in sangam-incident-report.</documentation>
     <startEvent id="start" name="Breach registered"/>
     <parallelGateway id="fork"/>
