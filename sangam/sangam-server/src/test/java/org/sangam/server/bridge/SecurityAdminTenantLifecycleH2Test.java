@@ -92,6 +92,16 @@ class SecurityAdminTenantLifecycleH2Test {
         assertTrue(ready.ready());
         assertEquals(List.of(), ready.missing());
         assertEquals("ACTIVE", bridge.activateTenant(ownAdmin, OWN, "go-live approved").status());
+        List<String> activated = events(OWN, "TENANT_ACTIVATED");
+        assertEquals(1, activated.size(), "one activation event");
+        assertTrue(activated.get(0).contains("\"reason\":\"go-live approved\""), "the reason is stored: " + activated);
+    }
+
+    /** Payloads of the tenant's audit events of one type, oldest first. */
+    private List<String> events(String tenant, String type) {
+        return tx.inTransaction(c -> org.sangam.core.layer.Jdbc.query(c, "SELECT p.payload FROM AUDIT_EVENT e JOIN "
+                + "AUDIT_PAYLOAD p ON p.event_id = e.event_id WHERE e.tenant_id=? AND e.event_type=? ORDER BY e.seq",
+                rs -> rs.getString(1), tenant, type));
     }
 
     @Test
@@ -100,6 +110,12 @@ class SecurityAdminTenantLifecycleH2Test {
         bridge.activateTenant(ownAdmin, OWN, null);
         assertEquals("SUSPENDED", bridge.suspendTenant(platform, OWN, "unpaid invoice").status());
         assertEquals("ACTIVE", bridge.activateTenant(platform, OWN, "invoice paid").status());
+        List<String> activated = events(OWN, "TENANT_ACTIVATED");
+        assertEquals(2, activated.size(), "the activation and the resumption");
+        assertFalse(activated.get(0).contains("\"reason\""), "no reason given, none stored: " + activated.get(0));
+        assertTrue(activated.get(1).contains("\"resumed\":true") && activated.get(1).contains("\"reason\":\"invoice paid\""),
+                "the resumption keeps its reason: " + activated.get(1));
+        assertTrue(events(OWN, "TENANT_SUSPENDED").get(0).contains("\"reason\":\"unpaid invoice\""));
 
         ApiProblem notPlatform = assertThrows(ApiProblem.class, () -> bridge.suspendTenant(ownAdmin, OWN, "self"));
         assertEquals(403, notPlatform.status());

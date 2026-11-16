@@ -32,7 +32,7 @@ op("post", "/admin/tenants/{id}/validate", "validateTenant", "Admin", "Check a t
 op("post", "/admin/tenants/{id}/activate", "activateTenant", "Admin", "Activate or resume a tenant",
    "A suspended tenant is resumed (platform administrator). Any other tenant is activated by its own administrator once "
    "every required item has evidence (409 ACTIVATION_BLOCKED names the missing items); naming another tenant is 409 "
-   "TENANT_ACTIVATION_BY_OWN_ADMIN. TENANT_ACTIVATED. The optional reason is not stored by the activation.",
+   "TENANT_ACTIVATION_BY_OWN_ADMIN. TENANT_ACTIVATED, with the reason when one is given.",
    ["AJ-01", "R41"], params=[ID], body="ReasonRequest", body_required=False, resp=(200, "Tenant"),
    cmd="admin.tenant.activate", perm="tenant.admin")
 op("post", "/admin/tenants/{id}/suspend", "suspendTenant", "Admin", "Suspend a tenant",

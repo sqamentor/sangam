@@ -132,7 +132,7 @@ public final class AdminTenantsApi {
     /**
      * Activate or resume a tenant
      *
-     * <p>A suspended tenant is resumed (platform administrator). Any other tenant is activated by its own administrator once every required item has evidence (409 ACTIVATION_BLOCKED names the missing items); naming another tenant is 409 TENANT_ACTIVATION_BY_OWN_ADMIN. TENANT_ACTIVATED. The optional reason is not stored by the activation.
+     * <p>A suspended tenant is resumed (platform administrator). Any other tenant is activated by its own administrator once every required item has evidence (409 ACTIVATION_BLOCKED names the missing items); naming another tenant is 409 TENANT_ACTIVATION_BY_OWN_ADMIN. TENANT_ACTIVATED, with the reason when one is given.
      *
      * <p>{@code POST /admin/tenants/{id}/activate} (operationId {@code activateTenant}); permission {@code tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}

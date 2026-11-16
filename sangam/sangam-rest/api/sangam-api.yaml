@@ -19055,8 +19055,8 @@ paths:
       - Admin
       summary: Activate or resume a tenant
       description: A suspended tenant is resumed (platform administrator). Any other tenant is activated by its own administrator once every required
-        item has evidence (409 ACTIVATION_BLOCKED names the missing items); naming another tenant is 409 TENANT_ACTIVATION_BY_OWN_ADMIN. TENANT_ACTIVATED.
-        The optional reason is not stored by the activation.
+        item has evidence (409 ACTIVATION_BLOCKED names the missing items); naming another tenant is 409 TENANT_ACTIVATION_BY_OWN_ADMIN. TENANT_ACTIVATED,
+        with the reason when one is given.
       x-sangam-command-type: admin.tenant.activate
       x-sangam-idempotent: true
       parameters:

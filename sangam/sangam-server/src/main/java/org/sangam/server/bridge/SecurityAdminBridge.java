@@ -402,7 +402,7 @@ public final class SecurityAdminBridge implements AdminPort {
             }
             if (t.status() != null && !t.status().equalsIgnoreCase(current.status())) {
                 switch (t.status().toUpperCase(Locale.ROOT)) {
-                    case "ACTIVE" -> activate(c, ctx, id, current);
+                    case "ACTIVE" -> activate(c, ctx, id, current, null);
                     case "SUSPENDED" -> security.tenants().suspend(c, actor, id, "admin API");
                     default -> throw ApiProblem.badRequest("VALIDATION_FAILED", "status must be ACTIVE or SUSPENDED")
                             .with("field", "status");
@@ -429,7 +429,7 @@ public final class SecurityAdminBridge implements AdminPort {
     public Tenant activateTenant(RequestContext ctx, String id, String reason) {
         Tenant current = tenant(ctx, id);
         run(c -> {
-            activate(c, ctx, id, current);
+            activate(c, ctx, id, current, reason);
             return null;
         });
         org.sangam.server.config.QuotaWiring.invalidateAfterCommit(id);
@@ -450,13 +450,14 @@ public final class SecurityAdminBridge implements AdminPort {
     /**
      * A suspended tenant is resumed (platform administrator, TenantAdminService#resume). Any other tenant is activated
      * through TenantAdminService#activate, which acts on the caller's own tenant only (AJ-01 step 10: its administrator,
-     * once the checklist has evidence); naming another tenant is refused instead of activating the caller's.
+     * once the checklist has evidence); naming another tenant is refused instead of activating the caller's. The
+     * optional reason is stored in the TENANT_ACTIVATED event either way.
      */
-    private void activate(Connection c, RequestContext ctx, String id, Tenant current) {
+    private void activate(Connection c, RequestContext ctx, String id, Tenant current, String reason) {
         if ("SUSPENDED".equalsIgnoreCase(current.status())) {
-            security.tenants().resume(c, actor(ctx), id);
+            security.tenants().resume(c, actor(ctx), id, reason);
         } else if (id.equals(ctx.tenantId())) {
-            security.tenants().activate(c, actor(ctx));
+            security.tenants().activate(c, actor(ctx), reason);
         } else {
             throw ApiProblem.conflict("TENANT_ACTIVATION_BY_OWN_ADMIN", "tenant " + id + " is activated by its own "
                     + "administrator once its go-live checklist has evidence (AJ-01 step 10); a suspended tenant is "
