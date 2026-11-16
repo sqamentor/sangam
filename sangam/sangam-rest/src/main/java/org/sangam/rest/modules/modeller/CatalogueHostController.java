@@ -231,6 +231,16 @@ public class CatalogueHostController {
         return org.sangam.rest.modules.config.ModuleProblems.respond(ExtensionCatalogueController.problem(e), req);
     }
 
+    /**
+     * This controller's own refusals answer here, not through the servlet error dispatch: that dispatch is kept for
+     * signed-in callers only, so on the public hosted routes (decision 380) an anonymous consumer would get 401 instead
+     * of the 404 of an unknown or unapproved artefact, or of hosting being off.
+     */
+    @ExceptionHandler(ApiProblem.class)
+    public ResponseEntity<Map<String, Object>> problem(ApiProblem p, jakarta.servlet.http.HttpServletRequest req) {
+        return org.sangam.rest.modules.config.ModuleProblems.respond(p, req);
+    }
+
     private byte[] indexBytes() {
         host();
         List<ExtensionCatalogue.Entry> approved = store.all(DocumentStore.GLOBAL, KIND, DocumentStore.Filter.state(APPROVED)).stream()
