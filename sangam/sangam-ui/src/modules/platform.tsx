@@ -15,6 +15,7 @@ import { BpmnDiagram } from '../components/BpmnDiagram';
 import { fmtNumber } from '../i18n';
 import { Badge, DataTable, Dialog, Empty, JsonView, Notice, ProblemAlert, ReasonDialog, Section, SelectField, TextArea, TextField } from '../components/ui';
 import { ModulePage, c, cell, f, type Row, type ScreenDef } from './engine';
+import { KbSearch, OcrReview } from './aiOcr';
 
 // ------------------------------------------------------------------ AI
 
@@ -90,7 +91,7 @@ export function FeelPlayground() {
 }
 
 export function AiPage() {
-  return <ModulePage title="mod.ai.title" description="mod.ai.desc" screens={[runs, approvals, drafts, kb, classifications]} extra={[{ id: 'feel', label: 'mod.ai.feel', node: <FeelPlayground /> }]} />;
+  return <ModulePage title="mod.ai.title" description="mod.ai.desc" screens={[runs, approvals, drafts, kb, classifications]} extra={[{ id: 'feel', label: 'mod.ai.feel', node: <FeelPlayground /> }, { id: 'ocr', label: 'mod.ai.ocr.title', node: <OcrReview /> }, { id: 'kbSearch', label: 'mod.ai.ocr.search', node: <KbSearch /> }]} />;
 }
 
 // ------------------------------------------------------------------ channels
