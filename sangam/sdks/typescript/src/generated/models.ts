@@ -1653,6 +1653,89 @@ export interface CatalogueEntry {
 }
 
 /**
+ * One entry of the signed platform-wide extension catalogue index.
+ *
+ * Schema `CatalogueExtensionEntry`.
+ */
+export interface CatalogueExtensionEntry {
+  id: string;
+  version: string;
+  /** package is installable (a signed package bundle); every other kind is code and is listed only */
+  kind: string;
+  publisher: string;
+  licence: string;
+  /** Hex SHA-256 of the artefact bytes */
+  sha256: string;
+  /** The oldest Sangam version the entry runs on */
+  minPlatform: string;
+  /** The artefact, relative to the index (a file of the mirror, or a URL of the hosted catalogue) */
+  artifactPath: string;
+}
+
+/**
+ * A hosted catalogue entry and its review state.
+ *
+ * Schema `CatalogueHostedEntry`.
+ */
+export interface CatalogueHostedEntry {
+  id: string;
+  version: string;
+  /**  One of: package. */
+  kind: 'package';
+  /** tenant/principal of the submitter */
+  publisher: string;
+  licence: string;
+  /** Hex SHA-256 of the exact bundle bytes served at artifactPath */
+  sha256: string;
+  minPlatform: string;
+  /** Relative to the hosted index: artifacts/<id>/<version> */
+  artifactPath: string;
+  /**  One of: SUBMITTED, APPROVED, REJECTED. */
+  state: 'SUBMITTED' | 'APPROVED' | 'REJECTED';
+  submittedBy: string;
+  reviewedBy?: string;
+  reason?: string;
+  reviewReason?: string;
+  submittedAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Why the catalogue entry is installed; kept in the PACKAGE_IMPORTED audit note.
+ *
+ * Schema `CatalogueInstallRequest`.
+ */
+export interface CatalogueInstallRequest {
+  reason?: string;
+}
+
+/**
+ * Why a catalogue entry is approved or rejected (required to reject).
+ *
+ * Schema `CatalogueReviewRequest`.
+ */
+export interface CatalogueReviewRequest {
+  reason?: string;
+}
+
+/**
+ * A signed package bundle submitted to the platform-wide catalogue, with its catalogue fields.
+ *
+ * Schema `CatalogueSubmissionRequest`.
+ */
+export interface CatalogueSubmissionRequest {
+  /** 1 to 100 of a-z 0-9. _ - (a path segment of the hosted artefact URL) */
+  id: string;
+  /** 1 to 100 of a-z 0-9. _ - (a path segment of the hosted artefact URL) */
+  version: string;
+  licence: string;
+  /** The oldest Sangam version the package runs on */
+  minPlatform: string;
+  bundle: PackageBundle;
+  reason?: string;
+}
+
+/**
  * Opens the imported tenant; `sourceAuditHead` must equal the imported chain heads.
  *
  * Schema `CellActivateRequest`.

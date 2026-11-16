@@ -1,20 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.modules.modeller;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.PublicKey;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
 import org.sangam.modeller.action.ActionModels;
-import org.sangam.modeller.catalogue.ExtensionCatalogue;
 import org.sangam.modeller.diff.ModelDiff;
 import org.sangam.modeller.landscape.ProcessLandscape;
 import org.sangam.modeller.lease.EditLeases;
@@ -28,7 +19,6 @@ import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.Permissions;
 import org.sangam.rest.web.Lists;
-import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * {@code /api/v1}: process landscape, token walk, edit leases (a model file is its package id), element templates,
- * action models, stored test reports and bundles, and the signed extension catalogue (a mirrored local file).
+ * action models, stored test reports and bundles. The extension catalogue is {@link ExtensionCatalogueController}.
  */
 @RestController
 @RequestMapping("/api/v1")
@@ -57,17 +47,15 @@ public class ModellerController {
     private final ElementTemplates templates;
     private final ActionModels actions;
     private final BulkModelTests tests;
-    private final Environment env;
 
     public ModellerController(PackagePort packages, PermissionPort permissions, EditLeases leases, ElementTemplates templates,
-                              ActionModels actions, BulkModelTests tests, Environment env) {
+                              ActionModels actions, BulkModelTests tests) {
         this.packages = packages;
         this.permissions = permissions;
         this.leases = leases;
         this.templates = templates;
         this.actions = actions;
         this.tests = tests;
-        this.env = env;
     }
 
     /** {@code xml}, {@code state} and {@code choice} are the step-by-step form; {@code state} comes from the previous answer. */
@@ -444,26 +432,5 @@ public class ModellerController {
     public Map<String, Object> verifyBundle(RequestContext ctx, @RequestBody BundleRequest b) {
         permissions.require(ctx, Permissions.PACKAGE_READ);
         return BulkModelTests.verifyBundle(b.bundle());
-    }
-
-    /** {@code sangam.modeller.catalogue.index}, {@code .signature} (base64 file), {@code .public-key} (base64 X.509 Ed25519). */
-    @GetMapping("/catalogue")
-    public ResponseEntity<List<ExtensionCatalogue.Entry>> catalogue(RequestContext ctx) throws IOException {
-        permissions.require(ctx, Permissions.PACKAGE_READ);
-        String index = env.getProperty("sangam.modeller.catalogue.index");
-        String signature = env.getProperty("sangam.modeller.catalogue.signature");
-        String key = env.getProperty("sangam.modeller.catalogue.public-key");
-        if (index == null || signature == null || key == null) {
-            throw ApiProblem.notFound("extension catalogue", "not configured");
-        }
-        return Lists.ok(ExtensionCatalogue.read(Files.readAllBytes(Path.of(index)), Files.readString(Path.of(signature)).strip(), publicKey(key)));
-    }
-
-    private static PublicKey publicKey(String base64) {
-        try {
-            return KeyFactory.getInstance("Ed25519").generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(base64)));
-        } catch (GeneralSecurityException e) {
-            throw new IllegalStateException("sangam.modeller.catalogue.public-key is not an Ed25519 key", e);
-        }
     }
 }
