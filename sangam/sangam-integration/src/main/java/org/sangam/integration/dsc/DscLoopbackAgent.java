@@ -3,6 +3,7 @@ package org.sangam.integration.dsc;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -29,6 +30,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 import org.sangam.integration.connector.Json;
+import org.sangam.integration.sidecar.SidecarLogging;
 
 /**
  * Owner decision 165 (M-079): the loopback desktop agent for DSC signing. It runs on the signer's computer, listens on
@@ -57,8 +59,14 @@ import org.sangam.integration.connector.Json;
  * {@code SHA256withECDSA}), {@code signedAttributes} (Base64 DER), {@code preparedDigestSha256} and
  * {@code documentName}; answer {@code signature} (Base64), {@code algorithm} and {@code certificateChain} (Base64 DER,
  * signer first).
+ *
+ * <p>The console log is ECS JSON from the first line on (owner decisions 324 and 378, {@link SidecarLogging}).
  */
 public final class DscLoopbackAgent implements AutoCloseable {
+
+    /** The {@code service.name} of every log line. */
+    public static final String SERVICE = "sangam-dsc-agent";
+    private static final System.Logger LOG = System.getLogger(DscLoopbackAgent.class.getName());
 
     /** The JCA signature algorithms the agent performs. */
     public static final List<String> ALGORITHMS = List.of("SHA256withRSA", "SHA256withECDSA");
@@ -363,7 +371,18 @@ public final class DscLoopbackAgent implements AutoCloseable {
      * Command line: {@code --pkcs11-config <file> --origin <https://ui-origin> [--origin ...] [--port <n>]}. The PIN and
      * every approval are asked in local dialogs ({@link DesktopPrompts}); without a desktop the agent does not start.
      */
+    /** Installs the JSON console logging of the agent on {@code out} (decisions 324, 378); the first step of main. */
+    static void logging(OutputStream out) {
+        SidecarLogging.install(SERVICE, out);
+    }
+
+    /** The start-up line, logged as one JSON object. */
+    static void logStarted(int port) {
+        LOG.log(System.Logger.Level.INFO, "Sangam DSC agent listening on 127.0.0.1:" + port);
+    }
+
     public static void main(String[] args) throws Exception {
+        logging(System.out);
         Path config = null;
         int port = 0;
         List<String> origins = new ArrayList<>();
@@ -380,6 +399,6 @@ public final class DscLoopbackAgent implements AutoCloseable {
         }
         DesktopPrompts prompts = DesktopPrompts.require();
         DscLoopbackAgent agent = start(new Config(port, Set.copyOf(origins)), Pkcs11Tokens.open(config, prompts), prompts);
-        System.out.println("Sangam DSC agent listening on 127.0.0.1:" + agent.port());
+        logStarted(agent.port());
     }
 }

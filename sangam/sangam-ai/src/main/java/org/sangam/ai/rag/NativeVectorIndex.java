@@ -73,7 +73,7 @@ final class NativeVectorIndex implements VectorIndex {
             free(kthParams);
         }
 
-        String candidates = "SELECT k.document_id,k.doc_version,k.seq,k.text_value,k.embedding" + scope;
+        String candidates = "SELECT k.document_id,k.doc_version,k.seq,k.text_value,k.embedding,k.ocr_transcript_id" + scope;
         List<Object> params = new ArrayList<>(scopeParams);
         if (threshold != null) {
             candidates += " AND (" + col + " IS NULL OR " + sql.scoreExpression() + " >= ?)";

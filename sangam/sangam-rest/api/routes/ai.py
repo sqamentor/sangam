@@ -28,6 +28,31 @@ schema('AiClassify', 'ClassifyRequest.', 'key:s version:int labels:list:s fields
 schema('AiClassification', 'Classification.', 'id:s label:s confidence:num fields:obj route:s model:s')
 schema('AiCorrect', 'CorrectRequest.', 'label:s')
 schema('AiEvalResult', 'Evaluation of a template.', 'sampled:long correct:long')
+# M-103, owner decision 378(3) option A: OCR into a knowledge base with review before ingest
+_OCR_STATES = ['PENDING_REVIEW', 'APPROVED', 'REJECTED']
+schema('AiKbHit', 'Hit: one ranked chunk the caller may read.', 'documentId:s docVersion:s seq:int text:s score:num ocrTranscriptId:s',
+       descs={'ocrTranscriptId': 'The approved OCR transcript the chunk was ingested from (GET /ai/ocr-transcripts/{id}); null for a document ingested as text'})
+schema('AiOcrTranscript', 'Transcript: OCR text of one image, reviewed before it is ingested.',
+       'id:s kb:s kbVersion:int documentId:s docVersion:s imageSha256:s mediaType:s engine:s languages:list:s text:s state:s '
+       'correctedText:s chunks:int createdBy:s createdAt:dt reviewedBy:s reviewedAt:dt reviewNote:s',
+       ['id', 'kb', 'kbVersion', 'documentId', 'imageSha256', 'mediaType', 'languages', 'text', 'state', 'createdBy', 'createdAt'],
+       enums={'state': _OCR_STATES},
+       descs={'text': "The engine's text, unverified machine output (empty when the engine found none)",
+              'imageSha256': 'SHA-256 of the image bytes, lower-case hex; the image itself is not stored',
+              'correctedText': "The reviewer's text, ingested instead of text; null when text was approved as read",
+              'chunks': 'Chunks ingested on approval; null until approved',
+              'reviewNote': "The reviewer's note or reason"})
+schema('AiOcrTranscriptSummary', 'Summary: a transcript without its texts, for the review queue.',
+       'id:s kb:s kbVersion:int documentId:s docVersion:s mediaType:s engine:s languages:list:s state:s chunks:int createdBy:s '
+       'createdAt:dt reviewedBy:s reviewedAt:dt', ['id', 'kb', 'kbVersion', 'documentId', 'mediaType', 'languages', 'state', 'createdBy', 'createdAt'],
+       enums={'state': _OCR_STATES})
+schema('AiOcrDecide', 'OcrDecideRequest.', 'approve:bool correctedText:s note:s', ['approve'],
+       descs={'correctedText': "On approval, replaces the engine's text; blank keeps it",
+              'note': 'Review note; the reason of a rejection'})
+_OCR_UPLOAD = {"required": True, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ['file', 'documentId', 'languages'], "properties": {
+    'file': {"type": "string", "contentMediaType": "application/octet-stream", "description": "The image; its part content type is one of image/png, image/jpeg, image/tiff"},
+    'documentId': typ('s'), 'docVersion': typ('s'),
+    'languages': {"type": "string", "description": "Comma-separated engine language codes in priority order, for example eng,hin"}}}}}}
 
 
 def _b(name):
@@ -43,7 +68,26 @@ op('post', '/ai/approvals/{id}/decide', 'aiDecideApproval', 'AI', 'Decide a tool
 op('post', '/ai/knowledge-bases/{kb}/versions', 'aiKbNewVersion', 'AI', 'Create a knowledge base version', 'Starts a BUILDING version.', _R, params=[pp('kb')], body_required=False, resp=(200, 'AiKbVersion'), cmd='ai.kb.version', perm='ai.admin')
 op('post', '/ai/knowledge-bases/{kb}/versions/{version}/documents', 'aiKbIngest', 'AI', 'Ingest a document', 'Only a BUILDING version accepts documents.', _R, params=[pp('kb'), pp('version')], body=_b('AiIngest'), resp=(200, 'AiIngestResult'), cmd='ai.kb.ingest', perm='ai.admin')
 op('post', '/ai/knowledge-bases/{kb}/versions/{version}/activate', 'aiKbActivate', 'AI', 'Activate a version', 'Makes the version the searched one.', _R, params=[pp('kb'), pp('version')], body_required=False, resp=(204, None), cmd='ai.kb.activate', perm='ai.admin')
-op('post', '/ai/knowledge-bases/{kb}/search', 'aiKbSearch', 'AI', 'Search a knowledge base', 'Results are filtered by what the caller may read.', _R, params=[pp('kb')], body=_b('AiKbSearch'), resp=(200, _LIST), perm='ai.use')
+op('post', '/ai/knowledge-bases/{kb}/search', 'aiKbSearch', 'AI', 'Search a knowledge base', 'Results are filtered by what the caller may read.', _R, params=[pp('kb')], body=_b('AiKbSearch'), resp=(200, 'array:AiKbHit'), perm='ai.use')
+op('post', '/ai/knowledge-bases/{kb}/versions/{version}/ocr', 'aiKbOcr', 'AI', 'Submit an image for OCR',
+   'M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state '
+   'PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version '
+   'must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. '
+   'No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, '
+   'another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.',
+   _R, params=[pp('kb'), pp('version')], body=_OCR_UPLOAD, resp=(201, 'AiOcrTranscript'), cmd='ai.kb.ocr', perm='ai.admin', created=True)
+op('get', '/ai/ocr-transcripts', 'aiListOcrTranscripts', 'AI', 'OCR review queue',
+   'Transcripts of the tenant, newest first, without their texts; state and kb filter, limit 1..500 (default 100).', _R,
+   params=[q('state', enum=_OCR_STATES), q('kb'), q('limit', 'int')], resp=(200, 'array:AiOcrTranscriptSummary'), perm='ai.review')
+op('get', '/ai/ocr-transcripts/{id}', 'aiGetOcrTranscript', 'AI', 'Get an OCR transcript', 'The transcript with the engine text and any correction.', _R,
+   params=[pp('id')], resp=(200, 'AiOcrTranscript'), perm='ai.review')
+op('post', '/ai/ocr-transcripts/{id}/decide', 'aiDecideOcrTranscript', 'AI', 'Approve or reject an OCR transcript',
+   'Only a PENDING_REVIEW transcript (409 OCR_TRANSCRIPT_NOT_PENDING) and only by a person other than the submitter (409 '
+   'SELF_REVIEW_FORBIDDEN). Approval ingests correctedText, when not blank, else the engine text into the transcript\'s '
+   'version, which must still be BUILDING (409 KB_VERSION_NOT_BUILDING); every chunk records the transcript id, shown as '
+   'ocrTranscriptId on search hits. A blank approved text is 422 OCR_TRANSCRIPT_EMPTY. The decision and the chunks '
+   'commit together; a rejection ingests nothing.', _R,
+   params=[pp('id')], body=_b('AiOcrDecide'), resp=(200, 'AiOcrTranscript'), cmd='ai.ocr.decide', perm='ai.review')
 op('post', '/ai/drafts', 'aiGenerateDraft', 'AI', 'Generate a draft', 'Generates and validates content for review.', _R, body=_b('AiDraftGenerate'), resp=(200, 'AiDraft'), cmd='ai.draft.generate', perm='ai.use')
 op('get', '/ai/drafts/{id}', 'aiGetDraft', 'AI', 'Get a draft', 'Visible to its author and to ai.review.', _R, params=[pp('id')], resp=(200, 'AiDraft'), perm='ai.use')
 op('post', '/ai/drafts/{id}/approve', 'aiApproveDraft', 'AI', 'Approve a draft', 'Stores the content as a package draft; never deploys. Also needs package.author.', _R, params=[pp('id')], body=_b('AiDraftReview'), resp=(200, 'AiDraft'), cmd='ai.draft.approve', perm='ai.review')

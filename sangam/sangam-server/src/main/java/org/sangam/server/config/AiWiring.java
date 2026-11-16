@@ -31,12 +31,15 @@ import org.sangam.ai.llm.LlmPort;
 import org.sangam.ai.llm.OpenAiCompatibleLlm;
 import org.sangam.ai.mcp.McpServer;
 import org.sangam.ai.rag.KnowledgeBaseService;
+import org.sangam.ai.rag.OcrIngestion;
 import org.sangam.core.layer.AuditChain;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Transactions;
 import org.sangam.integration.connector.ConnectorInvoker;
 import org.sangam.integration.connector.EgressPolicy;
 import org.sangam.integration.connector.SecretResolver;
+import org.sangam.integration.document.ocr.OcrPort;
+import org.sangam.integration.document.ocr.RemoteOcrClient;
 import org.sangam.integration.relay.LeaderElection;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.modules.ai.AiApi;
@@ -60,7 +63,9 @@ import org.springframework.core.env.Environment;
  * outbound call, unless {@code sangam.ai.llm.base-uri} and {@code sangam.ai.llm.model} are set; egress is limited to
  * that one origin. Agents ({@code sangam.ai.agents-json}), connector tools ({@code sangam.ai.tools-json}) and inbound
  * A2A agents ({@code sangam.ai.a2a-json}) are JSON arrays. MCP write tools are off unless a tenant is listed in
- * {@code sangam.ai.mcp.write-tenants}.
+ * {@code sangam.ai.mcp.write-tenants}. M-103 OCR into a knowledge base (owner decision 378(3)) uses an {@link OcrPort} bean when
+ * one is defined, else the OCR sidecar client ({@link RemoteOcrClient#fromEnvironment()}: {@code sangam.ocr.url} /
+ * {@code SANGAM_OCR_URL} and its token file); unconfigured, every OCR call fails closed with 503 OCR_UNAVAILABLE.
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "sangam.modules.ai.enabled", havingValue = "true")
@@ -150,7 +155,8 @@ public class AiWiring {
     }
 
     @Bean
-    public AiApi sangamAiApi(AgentRuntime runtime, KnowledgeBaseService kb, LlmPort llm, TxSupport tx, DataSource ds, ProcessEngine engine, Environment env) {
+    public AiApi sangamAiApi(AgentRuntime runtime, KnowledgeBaseService kb, LlmPort llm, TxSupport tx, DataSource ds, ProcessEngine engine, Environment env,
+            ObjectProvider<OcrPort> ocrPort) {
         Dialect d = tx.dialect();
         Transactions t = Transactions.of(ds);
         AuditChain audit = new AuditChain(d);
@@ -177,7 +183,8 @@ public class AiWiring {
                 new ExpressionPlayground(env.getProperty("sangam.ai.expression.limit", Duration.class, Duration.ofSeconds(2)), llm),
                 key -> Optional.ofNullable(agents.get(key)),
                 (tenant, principal, limit) -> AiBindings.runs(runtime, t, tenant, principal, limit), mcp,
-                (tenant, name) -> Optional.ofNullable(a2a.get(tenant + "/" + name)));
+                (tenant, name) -> Optional.ofNullable(a2a.get(tenant + "/" + name)),
+                new OcrIngestion(d, t, audit, ocrPort.getIfAvailable(() -> new RemoteOcrClient(RemoteOcrClient.fromEnvironment())), kb));
     }
 
     @Bean

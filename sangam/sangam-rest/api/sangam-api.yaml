@@ -19220,7 +19220,8 @@ paths:
             application/json:
               schema:
                 type: array
-                items: {}
+                items:
+                  $ref: '#/components/schemas/AiKbHit'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -19229,6 +19230,230 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ai/knowledge-bases/{kb}/versions/{version}/ocr:
+    post:
+      operationId: aiKbOcr
+      tags:
+      - AI
+      summary: Submit an image for OCR
+      description: 'M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW;
+        nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED)
+        and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer
+        is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422
+        OCR_REJECTED. Neither records a transcript.'
+      x-sangam-command-type: ai.kb.ocr
+      x-sangam-idempotent: true
+      parameters:
+      - name: kb
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.admin
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - file
+              - documentId
+              - languages
+              properties:
+                file:
+                  type: string
+                  contentMediaType: application/octet-stream
+                  description: The image; its part content type is one of image/png, image/jpeg, image/tiff
+                documentId:
+                  type: string
+                docVersion:
+                  type: string
+                languages:
+                  type: string
+                  description: Comma-separated engine language codes in priority order, for example eng,hin
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiOcrTranscript'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ai/ocr-transcripts:
+    get:
+      operationId: aiListOcrTranscripts
+      tags:
+      - AI
+      summary: OCR review queue
+      description: Transcripts of the tenant, newest first, without their texts; state and kb filter, limit 1..500 (default 100).
+      parameters:
+      - name: state
+        in: query
+        schema:
+          type: string
+          enum:
+          - PENDING_REVIEW
+          - APPROVED
+          - REJECTED
+      - name: kb
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AiOcrTranscriptSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ai/ocr-transcripts/{id}:
+    get:
+      operationId: aiGetOcrTranscript
+      tags:
+      - AI
+      summary: Get an OCR transcript
+      description: The transcript with the engine text and any correction.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiOcrTranscript'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ai/ocr-transcripts/{id}/decide:
+    post:
+      operationId: aiDecideOcrTranscript
+      tags:
+      - AI
+      summary: Approve or reject an OCR transcript
+      description: Only a PENDING_REVIEW transcript (409 OCR_TRANSCRIPT_NOT_PENDING) and only by a person other than the submitter (409 SELF_REVIEW_FORBIDDEN).
+        Approval ingests correctedText, when not blank, else the engine text into the transcript's version, which must still be BUILDING (409
+        KB_VERSION_NOT_BUILDING); every chunk records the transcript id, shown as ocrTranscriptId on search hits. A blank approved text is 422
+        OCR_TRANSCRIPT_EMPTY. The decision and the chunks commit together; a rejection ingests nothing.
+      x-sangam-command-type: ai.ocr.decide
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiOcrDecide'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiOcrTranscript'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
   /ai/drafts:
@@ -65309,6 +65534,159 @@ components:
         correct:
           type: integer
           format: int64
+    AiKbHit:
+      type: object
+      description: 'Hit: one ranked chunk the caller may read.'
+      properties:
+        documentId:
+          type: string
+        docVersion:
+          type: string
+        seq:
+          type: integer
+          format: int32
+        text:
+          type: string
+        score:
+          type: number
+          format: double
+        ocrTranscriptId:
+          type: string
+          description: The approved OCR transcript the chunk was ingested from (GET /ai/ocr-transcripts/{id}); null for a document ingested as
+            text
+    AiOcrTranscript:
+      type: object
+      description: 'Transcript: OCR text of one image, reviewed before it is ingested.'
+      properties:
+        id:
+          type: string
+        kb:
+          type: string
+        kbVersion:
+          type: integer
+          format: int32
+        documentId:
+          type: string
+        docVersion:
+          type: string
+        imageSha256:
+          type: string
+          description: SHA-256 of the image bytes, lower-case hex; the image itself is not stored
+        mediaType:
+          type: string
+        engine:
+          type: string
+        languages:
+          type: array
+          items:
+            type: string
+        text:
+          type: string
+          description: The engine's text, unverified machine output (empty when the engine found none)
+        state:
+          type: string
+          enum:
+          - PENDING_REVIEW
+          - APPROVED
+          - REJECTED
+        correctedText:
+          type: string
+          description: The reviewer's text, ingested instead of text; null when text was approved as read
+        chunks:
+          type: integer
+          format: int32
+          description: Chunks ingested on approval; null until approved
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        reviewedBy:
+          type: string
+        reviewedAt:
+          type: string
+          format: date-time
+        reviewNote:
+          type: string
+          description: The reviewer's note or reason
+      required:
+      - id
+      - kb
+      - kbVersion
+      - documentId
+      - imageSha256
+      - mediaType
+      - languages
+      - text
+      - state
+      - createdBy
+      - createdAt
+    AiOcrTranscriptSummary:
+      type: object
+      description: 'Summary: a transcript without its texts, for the review queue.'
+      properties:
+        id:
+          type: string
+        kb:
+          type: string
+        kbVersion:
+          type: integer
+          format: int32
+        documentId:
+          type: string
+        docVersion:
+          type: string
+        mediaType:
+          type: string
+        engine:
+          type: string
+        languages:
+          type: array
+          items:
+            type: string
+        state:
+          type: string
+          enum:
+          - PENDING_REVIEW
+          - APPROVED
+          - REJECTED
+        chunks:
+          type: integer
+          format: int32
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        reviewedBy:
+          type: string
+        reviewedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - kb
+      - kbVersion
+      - documentId
+      - mediaType
+      - languages
+      - state
+      - createdBy
+      - createdAt
+    AiOcrDecide:
+      type: object
+      description: OcrDecideRequest.
+      properties:
+        approve:
+          type: boolean
+        correctedText:
+          type: string
+          description: On approval, replaces the engine's text; blank keeps it
+        note:
+          type: string
+          description: Review note; the reason of a rejection
+      required:
+      - approve
     AiUiDecisionRequest:
       type: object
       description: Request record AiUiDecisionRequest (sangam-rest/src/main/java/org/sangam/rest/modules/ai/AiUiController.java), typed from its

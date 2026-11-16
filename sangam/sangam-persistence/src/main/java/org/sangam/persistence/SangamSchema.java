@@ -176,7 +176,9 @@ public final class SangamSchema {
             // 0045-18/19), sangam-integration IntegrationSchema
             "NOTIFICATION_DELIVERY", "NOTIFICATION_DELIVERY_REPORT", "DLT_REGISTRATION", "DLT_REGISTRATION_ITEM",
             // OTP challenges of the rights intake (decision 360; 0045-21), sangam-compliance
-            "CMP_OTP_CHALLENGE");
+            "CMP_OTP_CHALLENGE",
+            // M-103 OCR transcripts reviewed before knowledge-base ingest (decision 378; 0045-23), sangam-ai AiSchema
+            "AI_OCR_TRANSCRIPT");
 
     /**
      * Changesets that alter a table created earlier (generator {@code ALTERS}): FORM_DRAFT.form_version_hash,
@@ -203,14 +205,15 @@ public final class SangamSchema {
      * INTEGRATION_DSC_PREPARED.enrolment_id and enrolment_approval_seq (0045-12); plus the OJ-06 step 8 incident closure
      * columns CMP_INCIDENT root_cause, lessons_learned, closed_at, closed_by (0045-15) and the decision 304 index
      * CONNECTOR_CALL_DELIVERY (0045-20); plus the decision 369 OTP issue limit per client address:
-     * CMP_OTP_CHALLENGE.client_hash and the index CMP_OTP_CLIENT (0045-22); plus the generator {@code DATA}
+     * CMP_OTP_CHALLENGE.client_hash and the index CMP_OTP_CLIENT (0045-22); plus the M-103 chunk provenance
+     * AI_KB_CHUNK.ocr_transcript_id (0045-24, decision 378); plus the generator {@code DATA}
      * changeset that seeds the OPS_UTC_GATE row ENGINE_WORK in state OPEN (0045-14).
      * The PostgreSQL changelog also holds optional extension changesets (generator {@code PG_EXTENSION_OPTIONAL}: the
      * pgvector column AI_KB_CHUNK.embedding_vec, 0044-08, decision 170). They are recorded only where the extension is
      * enabled, so they are not in this count.
      * The changelog holds {@code PRODUCT_TABLES.size() + ADDITIONAL_CHANGESETS} changesets.
      */
-    public static final int ADDITIONAL_CHANGESETS = 92;
+    public static final int ADDITIONAL_CHANGESETS = 93;
 
     /** Liquibase dbms names used in the changelogs. */
     public enum Dbms {

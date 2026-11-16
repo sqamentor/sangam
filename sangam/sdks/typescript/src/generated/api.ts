@@ -80,7 +80,7 @@ export class GeneratedCalls {
   }
 }
 
-/** Typed operations of `AI` (34 operations). */
+/** Typed operations of `AI` (38 operations). */
 export class AIApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -203,10 +203,60 @@ export class AIApi {
    *
    * `POST /ai/knowledge-bases/{kb}/search` (operationId `aiKbSearch`); permission `ai.use`.
    */
-  async aiKbSearch(kb: string, body: M.AiKbSearch, options?: RequestOptions): Promise<Array<unknown>> {
+  async aiKbSearch(kb: string, body: M.AiKbSearch, options?: RequestOptions): Promise<Array<M.AiKbHit>> {
     const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/search` };
     if (body !== undefined) req.body = body;
-    return this.calls.json<Array<unknown>>(req, options);
+    return this.calls.json<Array<M.AiKbHit>>(req, options);
+  }
+
+  /**
+   * Submit an image for OCR
+   *
+   * M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.
+   *
+   * `POST /ai/knowledge-bases/{kb}/versions/{version}/ocr` (operationId `aiKbOcr`); permission `ai.admin`; result stored atomically with the state change.
+   */
+  async aiKbOcr(kb: string, version: string, body: FormData, options?: RequestOptions): Promise<M.AiOcrTranscript> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/versions/${seg(String(version))}/ocr` };
+    if (body !== undefined) req.rawBody = body;
+    return this.calls.json<M.AiOcrTranscript>(req, options);
+  }
+
+  /**
+   * OCR review queue
+   *
+   * Transcripts of the tenant, newest first, without their texts; state and kb filter, limit 1..500 (default 100).
+   *
+   * `GET /ai/ocr-transcripts` (operationId `aiListOcrTranscripts`); permission `ai.review`.
+   */
+  async aiListOcrTranscripts(params?: { state?: 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED'; kb?: string; limit?: number }, options?: RequestOptions): Promise<Array<M.AiOcrTranscriptSummary>> {
+    const req: ApiRequest = { method: 'GET', path: `/ai/ocr-transcripts`, query: { state: params?.state, kb: params?.kb, limit: params?.limit } };
+    return this.calls.json<Array<M.AiOcrTranscriptSummary>>(req, options);
+  }
+
+  /**
+   * Get an OCR transcript
+   *
+   * The transcript with the engine text and any correction.
+   *
+   * `GET /ai/ocr-transcripts/{id}` (operationId `aiGetOcrTranscript`); permission `ai.review`.
+   */
+  async aiGetOcrTranscript(id: string, options?: RequestOptions): Promise<M.AiOcrTranscript> {
+    const req: ApiRequest = { method: 'GET', path: `/ai/ocr-transcripts/${seg(String(id))}` };
+    return this.calls.json<M.AiOcrTranscript>(req, options);
+  }
+
+  /**
+   * Approve or reject an OCR transcript
+   *
+   * Only a PENDING_REVIEW transcript (409 OCR_TRANSCRIPT_NOT_PENDING) and only by a person other than the submitter (409 SELF_REVIEW_FORBIDDEN). Approval ingests correctedText, when not blank, else the engine text into the transcript's version, which must still be BUILDING (409 KB_VERSION_NOT_BUILDING); every chunk records the transcript id, shown as ocrTranscriptId on search hits. A blank approved text is 422 OCR_TRANSCRIPT_EMPTY. The decision and the chunks commit together; a rejection ingests nothing.
+   *
+   * `POST /ai/ocr-transcripts/{id}/decide` (operationId `aiDecideOcrTranscript`); permission `ai.review`; result stored atomically with the state change.
+   */
+  async aiDecideOcrTranscript(id: string, body: M.AiOcrDecide, options?: RequestOptions): Promise<M.AiOcrTranscript> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/ocr-transcripts/${seg(String(id))}/decide` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.AiOcrTranscript>(req, options);
   }
 
   /**
@@ -14937,7 +14987,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1156 operations on 973 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1160 operations on 977 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;

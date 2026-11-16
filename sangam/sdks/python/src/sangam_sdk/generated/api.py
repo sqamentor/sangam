@@ -132,7 +132,7 @@ class _Calls:
 
 
 class AIApi:
-    """``AI`` (34 operations)."""
+    """``AI`` (38 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -231,7 +231,7 @@ class AIApi:
         req = ApiRequest("POST", f"/ai/knowledge-bases/{seg(str(kb))}/versions/{seg(str(version))}/activate")
         self._c.none(req, options)
 
-    def ai_kb_search(self, kb: str, body: M.AiKbSearch, *, options: Optional[RequestOptions] = None) -> list[Any]:
+    def ai_kb_search(self, kb: str, body: M.AiKbSearch, *, options: Optional[RequestOptions] = None) -> list[M.AiKbHit]:
         """Search a knowledge base
 
         Results are filtered by what the caller may read.
@@ -240,7 +240,49 @@ class AIApi:
         """
         req = ApiRequest("POST", f"/ai/knowledge-bases/{seg(str(kb))}/search")
         req.body = body
-        return cast("list[Any]", self._c.json(req, options))
+        return cast("list[M.AiKbHit]", self._c.json(req, options))
+
+    def ai_kb_ocr(self, kb: str, version: str, body: Mapping[str, Any], *, options: Optional[RequestOptions] = None) -> M.AiOcrTranscript:
+        """Submit an image for OCR
+
+        M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.
+
+        ``POST /ai/knowledge-bases/{kb}/versions/{version}/ocr`` (operationId ``aiKbOcr``); permission ``ai.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ai/knowledge-bases/{seg(str(kb))}/versions/{seg(str(version))}/ocr")
+        _multipart(req, body)
+        return cast("M.AiOcrTranscript", self._c.json(req, options))
+
+    def ai_list_ocr_transcripts(self, *, state: Optional[Literal["PENDING_REVIEW", "APPROVED", "REJECTED"]] = None, kb: Optional[str] = None, limit: Optional[int] = None, options: Optional[RequestOptions] = None) -> list[M.AiOcrTranscriptSummary]:
+        """OCR review queue
+
+        Transcripts of the tenant, newest first, without their texts; state and kb filter, limit 1..500 (default 100).
+
+        ``GET /ai/ocr-transcripts`` (operationId ``aiListOcrTranscripts``); permission ``ai.review``.
+        """
+        req = ApiRequest("GET", f"/ai/ocr-transcripts", query={"state": state, "kb": kb, "limit": limit})
+        return cast("list[M.AiOcrTranscriptSummary]", self._c.json(req, options))
+
+    def ai_get_ocr_transcript(self, id: str, *, options: Optional[RequestOptions] = None) -> M.AiOcrTranscript:
+        """Get an OCR transcript
+
+        The transcript with the engine text and any correction.
+
+        ``GET /ai/ocr-transcripts/{id}`` (operationId ``aiGetOcrTranscript``); permission ``ai.review``.
+        """
+        req = ApiRequest("GET", f"/ai/ocr-transcripts/{seg(str(id))}")
+        return cast("M.AiOcrTranscript", self._c.json(req, options))
+
+    def ai_decide_ocr_transcript(self, id: str, body: M.AiOcrDecide, *, options: Optional[RequestOptions] = None) -> M.AiOcrTranscript:
+        """Approve or reject an OCR transcript
+
+        Only a PENDING_REVIEW transcript (409 OCR_TRANSCRIPT_NOT_PENDING) and only by a person other than the submitter (409 SELF_REVIEW_FORBIDDEN). Approval ingests correctedText, when not blank, else the engine text into the transcript's version, which must still be BUILDING (409 KB_VERSION_NOT_BUILDING); every chunk records the transcript id, shown as ocrTranscriptId on search hits. A blank approved text is 422 OCR_TRANSCRIPT_EMPTY. The decision and the chunks commit together; a rejection ingests nothing.
+
+        ``POST /ai/ocr-transcripts/{id}/decide`` (operationId ``aiDecideOcrTranscript``); permission ``ai.review``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ai/ocr-transcripts/{seg(str(id))}/decide")
+        req.body = body
+        return cast("M.AiOcrTranscript", self._c.json(req, options))
 
     def ai_generate_draft(self, body: M.AiDraftGenerate, *, options: Optional[RequestOptions] = None) -> M.AiDraft:
         """Generate a draft
@@ -12758,7 +12800,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1156 operations on 973 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1160 operations on 977 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)

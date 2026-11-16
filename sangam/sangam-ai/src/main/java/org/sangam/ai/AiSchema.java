@@ -90,8 +90,35 @@ public final class AiSchema {
               seq         {int} NOT NULL,
               text_value  {text} NOT NULL,
               embedding   {blob} NOT NULL,
+              ocr_transcript_id {str64},
               PRIMARY KEY (tenant_id, kb_key, version, id)
             )""",
+            // M-103 (owner decision 378(3), option A): an OCR transcript waits for review; only an approval ingests it,
+            // and its chunks carry transcript_id in AI_KB_CHUNK.ocr_transcript_id (sangam-persistence 0045-23, 0045-24)
+            """
+            CREATE TABLE AI_OCR_TRANSCRIPT (
+              tenant_id      {str64} NOT NULL,
+              transcript_id  {str64} NOT NULL,
+              kb_key         {str} NOT NULL,
+              kb_version     {int} NOT NULL,
+              document_id    {str} NOT NULL,
+              doc_version    {str64},
+              image_sha256   {str64} NOT NULL,
+              media_type     {str64} NOT NULL,
+              engine         {str},
+              language_codes {str} NOT NULL,
+              ocr_text       {text},
+              state          {str64} NOT NULL,
+              corrected_text {text},
+              chunks         {int},
+              created_by     {str} NOT NULL,
+              created_at     {ts} NOT NULL,
+              reviewed_by    {str},
+              reviewed_at    {ts},
+              review_note    {text},
+              PRIMARY KEY (tenant_id, transcript_id)
+            )""",
+            "CREATE INDEX AI_OCR_TRANSCRIPT_STATE ON AI_OCR_TRANSCRIPT (tenant_id, state, created_at)",
             """
             CREATE TABLE AI_DRAFT (
               draft_id     {str64} NOT NULL PRIMARY KEY,
