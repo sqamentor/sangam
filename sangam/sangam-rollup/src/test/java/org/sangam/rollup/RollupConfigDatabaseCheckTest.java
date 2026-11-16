@@ -46,6 +46,18 @@ class RollupConfigDatabaseCheckTest {
         assertRefused(fake("Apache Derby", "10.17.1.0", null), DatabaseIdentity.SCALE_DB_UNSUPPORTED);
     }
 
+    /** D7 (R84): a MySQL server older than the supported 8.4 line is refused before Liquibase; 8.4 is not. */
+    @Test
+    void refusesMysqlOlderThanTheSupportedLine() {
+        for (String old : new String[]{"8.0.36", "8.3.0", "5.7.44-log"}) {
+            IllegalStateException e = assertThrows(IllegalStateException.class,
+                    () -> new RollupConfig().rollupLiquibase(fake("MySQL", old, null), false), old);
+            assertTrue(e.getMessage().startsWith(DatabaseIdentity.MYSQL_VERSION_REFUSED + ": R84: sangam-rollup"),
+                    e.getMessage());
+        }
+        assertNotNull(DatabaseIdentity.requireScaleDatabase(fake("MySQL", "8.4.5", null), "sangam-rollup"));
+    }
+
     @Test
     void buildsTheSchemaBeanOnH2() {
         JdbcDataSource h2 = new JdbcDataSource();

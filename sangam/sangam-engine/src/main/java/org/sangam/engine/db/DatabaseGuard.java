@@ -21,7 +21,8 @@ import org.slf4j.LoggerFactory;
  *   <li>SQL Server: {@code READ_COMMITTED_SNAPSHOT} is ON for the database (VI.1.6 "RCSI required");</li>
  *   <li>MySQL family (FLOWABLE-INTO-OPERATON D-05): the server is identified from the server, not from the driver. The MariaDB driver makes
  *       Operaton pick its MariaDB dialect (driver name check) even on a MySQL server; Sangam pins
- *       {@code databaseType} to the configured value so create/upgrade scripts always match the server.</li>
+ *       {@code databaseType} to the configured value so create/upgrade scripts always match the server. A MySQL server
+ *       older than {@code DatabaseIdentity.MYSQL_MINIMUM_VERSION} is refused with {@code MYSQL_VERSION_REFUSED}.</li>
  *   <li>PostgreSQL-compatible servers (the PostgreSQL driver always reports the product {@code PostgreSQL}): CockroachDB
  *       (decision 205) and YugabyteDB YSQL (M-108) are told apart by their {@code version()} text and refused unless
  *       the operator enabled their experimental mode.</li>
@@ -129,6 +130,10 @@ public final class DatabaseGuard {
                 }
                 case MYSQL -> {
                     boolean mariaServer = String.valueOf(version).toLowerCase(Locale.ROOT).contains("mariadb");
+                    if (!mariaServer) {
+                        // R84: a MySQL server older than the supported line is refused before the engine schema.
+                        org.sangam.core.db.DatabaseIdentity.requireSupportedMysqlVersion(version, "the engine");
+                    }
                     type = mariaServer ? "mariadb" : mysqlDatabaseType;
                     if (!mariaServer && String.valueOf(driver).toLowerCase(Locale.ROOT).contains("mariadb")) {
                         LOG.info("FLOWABLE-INTO-OPERATON D-05: MariaDB Connector/J on a MySQL server; Operaton databaseType pinned to '{}'", type);

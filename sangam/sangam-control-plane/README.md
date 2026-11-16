@@ -14,7 +14,7 @@ D-10). Design: `../SCALE-ARCHITECTURE.md` sections 5 and 7.
 | `audit/ControlPlaneAudit.java` | Append-only control-plane audit with content hash (R42 for control-plane decisions) |
 | `web/ControlPlaneController.java` | REST API, RFC 9457 errors |
 | `config/SecurityConfig.java` | Role tokens (ADMIN, CELL, GATEWAY, ROLLUP) |
-| `config/SchemaConfig.java`, `resources/db/changelog/controlplane/**` | Self-contained Liquibase 4.33.0 changelog: postgresql, oracle, mssql, mysql, h2 (D-7, R12). Before it runs, `DatabaseIdentity.requireScaleDatabase` (sangam-core) refuses any other database by code: `SCALE_DB_MARIADB_REFUSED`, `SCALE_DB_COCKROACHDB_REFUSED`, `SCALE_DB_YUGABYTEDB_REFUSED`, `SCALE_DB_UNSUPPORTED`, or `SCALE_DB_CHECK_FAILED` when the database cannot be read (decision 384; `SchemaConfigDatabaseCheckTest`) |
+| `config/SchemaConfig.java`, `resources/db/changelog/controlplane/**` | Self-contained Liquibase 4.33.0 changelog: postgresql, oracle, mssql, mysql, h2 (D-7, R12). Before it runs, `DatabaseIdentity.requireScaleDatabase` (sangam-core) refuses any other database by code: `SCALE_DB_MARIADB_REFUSED`, `SCALE_DB_COCKROACHDB_REFUSED`, `SCALE_DB_YUGABYTEDB_REFUSED`, `SCALE_DB_UNSUPPORTED`, or `SCALE_DB_CHECK_FAILED` when the database cannot be read (decision 384), and a MySQL server older than 8.4 by `MYSQL_VERSION_REFUSED` (R84, D7; `SchemaConfigDatabaseCheckTest`) |
 | `tools/generate_scale_changelogs.py` | Generator of the control-plane and roll-up changelogs from one catalogue |
 
 ## API

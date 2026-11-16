@@ -81,6 +81,56 @@ class DatabaseIdentityTest {
         assertEquals(Server.H2, DatabaseIdentity.requireScaleDatabase(h2, "m"));
     }
 
+    /** D7 (R84): the supported MySQL line is data in one place; older or unreadable versions are not supported. */
+    @Test
+    void mysqlVersionsBelowTheSupportedLineOrUnreadableAreNotSupported() {
+        assertEquals("8.4", DatabaseIdentity.MYSQL_MINIMUM_VERSION);
+        for (String ok : new String[]{"8.4.0", "8.4.5", "8.4.5-log", " 8.4.7 ", "8.10.1", "9.1.0", "10.0.0"}) {
+            assertTrue(DatabaseIdentity.isSupportedMysqlVersion(ok), ok);
+        }
+        for (String old : new String[]{"8.0.36", "8.3.0", "8.0.40-log", "5.7.44-log", "7.9.9"}) {
+            assertTrue(!DatabaseIdentity.isSupportedMysqlVersion(old), old);
+        }
+        for (String unreadable : new String[]{null, "", "MySQL", "eight", "8"}) {
+            assertTrue(!DatabaseIdentity.isSupportedMysqlVersion(unreadable), String.valueOf(unreadable));
+        }
+    }
+
+    @Test
+    void scaleCheckRefusesMysqlOlderThanTheSupportedLine() {
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> DatabaseIdentity.requireScaleDatabase(fake("MySQL", "8.0.36", null), "sangam-test-module"));
+        assertTrue(e.getMessage().startsWith(DatabaseIdentity.MYSQL_VERSION_REFUSED + ": R84: sangam-test-module"),
+                e.getMessage());
+        assertTrue(e.getMessage().contains("MySQL 8.0.36"), e.getMessage());
+    }
+
+    @Test
+    void serverCheckRefusesOnlyOldMysqlAndFailsClosed() {
+        IllegalStateException old = assertThrows(IllegalStateException.class,
+                () -> DatabaseIdentity.requireSupportedMysql(fake("MySQL", "8.0.36", null), "sangam-server"));
+        assertTrue(old.getMessage().startsWith(DatabaseIdentity.MYSQL_VERSION_REFUSED + ": R84: sangam-server"),
+                old.getMessage());
+        IllegalStateException noVersion = assertThrows(IllegalStateException.class,
+                () -> DatabaseIdentity.requireSupportedMysql(fake("MySQL", null, null), "sangam-server"));
+        assertTrue(noVersion.getMessage().startsWith(DatabaseIdentity.MYSQL_VERSION_REFUSED + ": "),
+                noVersion.getMessage());
+        DataSource broken = (DataSource) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class<?>[]{DataSource.class}, (p, m, a) -> {
+                    throw new SQLException("connection refused");
+                });
+        IllegalStateException unreadable = assertThrows(IllegalStateException.class,
+                () -> DatabaseIdentity.requireSupportedMysql(broken, "sangam-server"));
+        assertTrue(unreadable.getMessage().startsWith(DatabaseIdentity.MYSQL_VERSION_REFUSED + ": "),
+                unreadable.getMessage());
+        // The supported line, MariaDB (its own support row, also when reported as MySQL) and other servers pass.
+        DatabaseIdentity.requireSupportedMysql(fake("MySQL", "8.4.5", null), "sangam-server");
+        DatabaseIdentity.requireSupportedMysql(fake("MySQL", MARIADB_VERSION, null), "sangam-server");
+        DatabaseIdentity.requireSupportedMysql(fake("MariaDB", "10.6.18-MariaDB", null), "sangam-server");
+        DatabaseIdentity.requireSupportedMysql(fake("PostgreSQL", "17.5", null), "sangam-server");
+        DatabaseIdentity.requireSupportedMysql(fake("Oracle", "Oracle Database 19c", null), "sangam-server");
+    }
+
     private static void assertRefused(DataSource ds, String code) {
         IllegalStateException e = assertThrows(IllegalStateException.class,
                 () -> DatabaseIdentity.requireScaleDatabase(ds, "sangam-test-module"));

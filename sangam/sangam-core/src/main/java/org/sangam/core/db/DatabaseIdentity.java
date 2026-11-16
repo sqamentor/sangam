@@ -37,7 +37,85 @@ public final class DatabaseIdentity {
     /** Decision 384: stable code when a scale module cannot identify its database (fails closed). */
     public static final String SCALE_DB_CHECK_FAILED = "SCALE_DB_CHECK_FAILED";
 
+    /**
+     * R84 and the support matrix ({@code deploy/SUPPORT-MATRIX.md}, Tier 1 "MySQL 8.4"): the oldest MySQL release line
+     * Sangam runs on, as {@code major.minor}. The one place this minimum lives: the server's product-schema step, the
+     * engine start-up check, the server's pool check and both scale modules read it from here.
+     */
+    public static final String MYSQL_MINIMUM_VERSION = "8.4";
+
+    /**
+     * Stable code of the refusal of a MySQL server older than {@link #MYSQL_MINIMUM_VERSION}, or of one whose version
+     * cannot be read (fails closed: an unreadable version does not prove the supported line).
+     */
+    public static final String MYSQL_VERSION_REFUSED = "MYSQL_VERSION_REFUSED";
+
+    private static final java.util.regex.Pattern MAJOR_MINOR = java.util.regex.Pattern.compile("^\\s*(\\d+)\\.(\\d+)");
+
     private DatabaseIdentity() {
+    }
+
+    /**
+     * True when a MySQL server version text ({@code DatabaseMetaData.getDatabaseProductVersion()} or
+     * {@code @@version}, for example {@code 8.4.5} or {@code 8.0.36-log}) is at least {@link #MYSQL_MINIMUM_VERSION};
+     * false for an older or unreadable text.
+     */
+    public static boolean isSupportedMysqlVersion(String version) {
+        int[] have = majorMinor(version);
+        int[] min = majorMinor(MYSQL_MINIMUM_VERSION);
+        if (have == null) {
+            return false;
+        }
+        return have[0] != min[0] ? have[0] > min[0] : have[1] >= min[1];
+    }
+
+    /**
+     * Refuses a MySQL server older than {@link #MYSQL_MINIMUM_VERSION} (or with an unreadable version) with
+     * {@value #MYSQL_VERSION_REFUSED}; {@code who} names the component that does not start.
+     */
+    public static void requireSupportedMysqlVersion(String version, String who) {
+        if (!isSupportedMysqlVersion(version)) {
+            throw new IllegalStateException(MYSQL_VERSION_REFUSED + ": R84: " + who + " runs on MySQL "
+                    + MYSQL_MINIMUM_VERSION + " or later only; the server reports "
+                    + (version == null ? "no version" : "MySQL " + version.trim()));
+        }
+    }
+
+    /**
+     * Checks the server behind {@code ds}: a MySQL server (not MariaDB, which has its own support row) must be at least
+     * {@link #MYSQL_MINIMUM_VERSION}; every other server passes. Fails closed with {@value #MYSQL_VERSION_REFUSED} when
+     * the database cannot be read.
+     */
+    public static void requireSupportedMysql(DataSource ds, String who) {
+        String product;
+        String version;
+        try (Connection c = ds.getConnection()) {
+            DatabaseMetaData md = c.getMetaData();
+            product = lower(md.getDatabaseProductName());
+            version = md.getDatabaseProductVersion();
+        } catch (SQLException | RuntimeException e) {
+            throw new IllegalStateException(MYSQL_VERSION_REFUSED + ": R84: " + who
+                    + " cannot read its database version, so it does not start", e);
+        }
+        // The MySQL family is told from the metadata alone, as in identify(): MariaDB is never a MySQL server here.
+        if (product.contains("mysql") && !lower(version).contains("mariadb")) {
+            requireSupportedMysqlVersion(version, who);
+        }
+    }
+
+    private static int[] majorMinor(String version) {
+        if (version == null) {
+            return null;
+        }
+        java.util.regex.Matcher m = MAJOR_MINOR.matcher(version);
+        if (!m.find()) {
+            return null;
+        }
+        try {
+            return new int[]{Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2))};
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /** The server's own {@code SELECT version()} text (null when the server returns no row). */
@@ -93,14 +171,17 @@ public final class DatabaseIdentity {
      * Their changelogs apply on PostgreSQL, Oracle, SQL Server, MySQL 8.4 and H2 only; any other server would start
      * on an empty schema (Liquibase matches {@code dbms:} by its own short name: {@code mariadb}, {@code cockroachdb}),
      * and YugabyteDB is not a database of these modules. Refuses with a stable code, fails closed when the database
-     * cannot be identified, and returns the accepted server.
+     * cannot be identified, and returns the accepted server. A MySQL server older than {@link #MYSQL_MINIMUM_VERSION}
+     * is refused with {@value #MYSQL_VERSION_REFUSED} (R84).
      */
     public static Server requireScaleDatabase(DataSource ds, String module) {
         Server server;
         String seen;
+        String productVersion;
         try (Connection c = ds.getConnection()) {
             DatabaseMetaData md = c.getMetaData();
-            seen = md.getDatabaseProductName() + " " + md.getDatabaseProductVersion();
+            productVersion = md.getDatabaseProductVersion();
+            seen = md.getDatabaseProductName() + " " + productVersion;
             server = identify(c);
         } catch (SQLException | RuntimeException e) {
             throw new IllegalStateException(SCALE_DB_CHECK_FAILED + ": decision 384: " + module
@@ -115,7 +196,11 @@ public final class DatabaseIdentity {
         };
         if (code != null) {
             throw new IllegalStateException(code + ": decision 384: " + module + " applies its schema only on "
-                    + "PostgreSQL, Oracle, SQL Server, MySQL 8.4 and H2; the server is " + server + " (" + seen + ")");
+                    + "PostgreSQL, Oracle, SQL Server, MySQL " + MYSQL_MINIMUM_VERSION + " and H2; the server is "
+                    + server + " (" + seen + ")");
+        }
+        if (server == Server.MYSQL) {
+            requireSupportedMysqlVersion(productVersion, module);
         }
         return server;
     }

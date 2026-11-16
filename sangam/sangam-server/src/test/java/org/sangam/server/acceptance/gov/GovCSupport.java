@@ -22,12 +22,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.operaton.bpm.engine.history.HistoricDetail;
 import org.operaton.bpm.engine.history.HistoricProcessInstance;
 import org.operaton.bpm.engine.history.HistoricVariableUpdate;
-import org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
-import org.operaton.bpm.engine.impl.jobexecutor.JobExecutor;
 import org.operaton.bpm.engine.management.JobDefinition;
 import org.operaton.bpm.engine.runtime.Execution;
 import org.operaton.bpm.engine.runtime.Job;
 import org.operaton.bpm.engine.runtime.ProcessInstance;
+import org.sangam.server.acceptance.JobExecutorPause;
 import org.sangam.core.api.EngineAdapter.ExternalWork;
 import org.sangam.core.history.HistoryArchiveGate;
 import org.sangam.core.api.EngineAdapter.InstanceView;
@@ -58,18 +57,15 @@ abstract class GovCSupport extends EngineScenarioSupport {
     /** RM-52: the server's history archive (configured by the suite). */
     @Autowired
     private HistoryArchiveGate archiveGate;
-    private boolean executorWasActive;
+    private JobExecutorPause executorPause;
 
     record Timer(String jobId, String activityId, Instant due, boolean suspended, String executionId) {
     }
 
     @BeforeEach
     void govcSetUp() {
-        JobExecutor je = jobExecutor();
-        executorWasActive = je != null && je.isActive();
-        if (executorWasActive) {
-            je.shutdown();
-        }
+        // IFMSPACKS-EXEC-RACE: also waits for batches the host's SpringJobExecutor had already dispatched
+        executorPause = JobExecutorPause.pause(engine);
         clock(START);
     }
 
@@ -85,13 +81,10 @@ abstract class GovCSupport extends EngineScenarioSupport {
         }
         deployments.clear();
         adapter.setClock(null);
-        if (executorWasActive) {
-            jobExecutor().start();
+        if (executorPause != null) {
+            executorPause.close();
+            executorPause = null;
         }
-    }
-
-    private JobExecutor jobExecutor() {
-        return ((ProcessEngineConfigurationImpl) engine.getProcessEngineConfiguration()).getJobExecutor();
     }
 
     // ---------------------------------------------------------------- models (spike Models + Operaton dialect)
