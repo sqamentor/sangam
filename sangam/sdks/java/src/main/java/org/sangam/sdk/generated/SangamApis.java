@@ -7,9 +7,11 @@ import org.sangam.sdk.http.HttpTransport;
 import org.sangam.sdk.generated.api.AIApi;
 import org.sangam.sdk.generated.api.AdminApi;
 import org.sangam.sdk.generated.api.AdminAssignmentsApi;
+import org.sangam.sdk.generated.api.AdminGroupsApi;
 import org.sangam.sdk.generated.api.AdminOrgUnitsApi;
 import org.sangam.sdk.generated.api.AdminPowerTablesApi;
 import org.sangam.sdk.generated.api.AdminSecurityApi;
+import org.sangam.sdk.generated.api.AdminTenantsApi;
 import org.sangam.sdk.generated.api.AnalyticsApi;
 import org.sangam.sdk.generated.api.ApiContractsApi;
 import org.sangam.sdk.generated.api.AuditApi;
@@ -87,7 +89,7 @@ import org.sangam.sdk.generated.api.WorkApi;
 import org.sangam.sdk.generated.api.WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1150 operations on 968 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1160 operations on 976 paths,
  * one accessor per API class (a tag, or a sub-path of a large tag: M-098 class-size gate). Obtain it with {@code SangamClient.api()}; it shares the client's transport
  * (auth, retries, Idempotency-Key, seat headers). The hand-written groups and the worker runtime are unchanged.
  */
@@ -96,9 +98,11 @@ public final class SangamApis {
     private final AIApi ai;
     private final AdminApi admin;
     private final AdminAssignmentsApi adminAssignments;
+    private final AdminGroupsApi adminGroups;
     private final AdminOrgUnitsApi adminOrgUnits;
     private final AdminPowerTablesApi adminPowerTables;
     private final AdminSecurityApi adminSecurity;
+    private final AdminTenantsApi adminTenants;
     private final AnalyticsApi analytics;
     private final ApiContractsApi apiContracts;
     private final AuditApi audit;
@@ -179,9 +183,11 @@ public final class SangamApis {
         this.ai = new AIApi(http);
         this.admin = new AdminApi(http);
         this.adminAssignments = new AdminAssignmentsApi(http);
+        this.adminGroups = new AdminGroupsApi(http);
         this.adminOrgUnits = new AdminOrgUnitsApi(http);
         this.adminPowerTables = new AdminPowerTablesApi(http);
         this.adminSecurity = new AdminSecurityApi(http);
+        this.adminTenants = new AdminTenantsApi(http);
         this.analytics = new AnalyticsApi(http);
         this.apiContracts = new ApiContractsApi(http);
         this.audit = new AuditApi(http);
@@ -261,16 +267,20 @@ public final class SangamApis {
 
     /** {@code AI}: 34 operations. */
     public AIApi ai() { return ai; }
-    /** {@code Admin}: 37 operations. */
+    /** {@code Admin}: 32 operations. */
     public AdminApi admin() { return admin; }
     /** {@code Admin /assignments}: 7 operations. */
     public AdminAssignmentsApi adminAssignments() { return adminAssignments; }
+    /** {@code Admin /groups}: 6 operations. */
+    public AdminGroupsApi adminGroups() { return adminGroups; }
     /** {@code Admin /org-units}: 6 operations. */
     public AdminOrgUnitsApi adminOrgUnits() { return adminOrgUnits; }
     /** {@code Admin /power-tables}: 8 operations. */
     public AdminPowerTablesApi adminPowerTables() { return adminPowerTables; }
     /** {@code Admin /security}: 6 operations. */
     public AdminSecurityApi adminSecurity() { return adminSecurity; }
+    /** {@code Admin /tenants}: 7 operations. */
+    public AdminTenantsApi adminTenants() { return adminTenants; }
     /** {@code Analytics}: 15 operations. */
     public AnalyticsApi analytics() { return analytics; }
     /** {@code ApiContracts}: 4 operations. */
@@ -347,7 +357,7 @@ public final class SangamApis {
     public OpsApi ops() { return ops; }
     /** {@code Ops /batches}: 6 operations. */
     public OpsBatchesApi opsBatches() { return opsBatches; }
-    /** {@code Ops /incidents}: 7 operations. */
+    /** {@code Ops /incidents}: 9 operations. */
     public OpsIncidentsApi opsIncidents() { return opsIncidents; }
     /** {@code Ops /jobs}: 6 operations. */
     public OpsJobsApi opsJobs() { return opsJobs; }

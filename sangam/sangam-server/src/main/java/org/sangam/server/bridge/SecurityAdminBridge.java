@@ -402,13 +402,7 @@ public final class SecurityAdminBridge implements AdminPort {
             }
             if (t.status() != null && !t.status().equalsIgnoreCase(current.status())) {
                 switch (t.status().toUpperCase(Locale.ROOT)) {
-                    case "ACTIVE" -> {
-                        if ("SUSPENDED".equalsIgnoreCase(current.status())) {
-                            security.tenants().resume(c, actor, id);
-                        } else {
-                            security.tenants().activate(c, actor);
-                        }
-                    }
+                    case "ACTIVE" -> activate(c, ctx, id, current);
                     case "SUSPENDED" -> security.tenants().suspend(c, actor, id, "admin API");
                     default -> throw ApiProblem.badRequest("VALIDATION_FAILED", "status must be ACTIVE or SUSPENDED")
                             .with("field", "status");
@@ -419,6 +413,55 @@ public final class SecurityAdminBridge implements AdminPort {
         // SL-43: the tenant row (quotas included) changed; the cached quota overrides of this node go now
         org.sangam.server.config.QuotaWiring.invalidateAfterCommit(id);
         return tenant(ctx, id);
+    }
+
+    @Override
+    public TenantReadiness validateTenant(RequestContext ctx, String id) {
+        Tenant current = tenant(ctx, id);
+        return run(c -> {
+            List<String> required = security.tenants().requiredChecklist(c, id);
+            List<String> missing = security.tenants().missingEvidence(c, id);
+            return new TenantReadiness(id, current.status(), missing.isEmpty(), required, missing);
+        });
+    }
+
+    @Override
+    public Tenant activateTenant(RequestContext ctx, String id, String reason) {
+        Tenant current = tenant(ctx, id);
+        run(c -> {
+            activate(c, ctx, id, current);
+            return null;
+        });
+        org.sangam.server.config.QuotaWiring.invalidateAfterCommit(id);
+        return tenant(ctx, id);
+    }
+
+    @Override
+    public Tenant suspendTenant(RequestContext ctx, String id, String reason) {
+        tenant(ctx, id);
+        run(c -> {
+            security.tenants().suspend(c, actor(ctx), id, reason);
+            return null;
+        });
+        org.sangam.server.config.QuotaWiring.invalidateAfterCommit(id);
+        return tenant(ctx, id);
+    }
+
+    /**
+     * A suspended tenant is resumed (platform administrator, TenantAdminService#resume). Any other tenant is activated
+     * through TenantAdminService#activate, which acts on the caller's own tenant only (AJ-01 step 10: its administrator,
+     * once the checklist has evidence); naming another tenant is refused instead of activating the caller's.
+     */
+    private void activate(Connection c, RequestContext ctx, String id, Tenant current) {
+        if ("SUSPENDED".equalsIgnoreCase(current.status())) {
+            security.tenants().resume(c, actor(ctx), id);
+        } else if (id.equals(ctx.tenantId())) {
+            security.tenants().activate(c, actor(ctx));
+        } else {
+            throw ApiProblem.conflict("TENANT_ACTIVATION_BY_OWN_ADMIN", "tenant " + id + " is activated by its own "
+                    + "administrator once its go-live checklist has evidence (AJ-01 step 10); a suspended tenant is "
+                    + "resumed by a platform administrator").with("field", "id");
+        }
     }
 
     // ------------------------------------------------------------------ helpers

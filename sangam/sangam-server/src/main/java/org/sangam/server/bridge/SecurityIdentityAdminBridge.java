@@ -26,6 +26,7 @@ import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
 import org.sangam.security.SangamSecurity;
 import org.sangam.security.admin.ApiTokenService;
+import org.sangam.security.admin.GroupAdminService;
 import org.sangam.security.admin.RoleAdminService;
 import org.sangam.security.admin.SecurityDirectoryService;
 import org.sangam.security.org.OrgModel;
@@ -219,6 +220,66 @@ public final class SecurityIdentityAdminBridge implements IdentityAdminPort {
             }
             return null;
         });
+    }
+
+    @Override
+    public User createUser(RequestContext ctx, UserRequest u) {
+        String id = u.id() != null && !u.id().isBlank() ? u.id().trim() : u.username().trim();
+        return run(c -> {
+            security.persons().createUser(c, actor(ctx), id, u.displayName(), null, u.email());
+            return user(c, security.persons().find(c, ctx.tenantId(), id).orElseThrow());
+        });
+    }
+
+    @Override
+    public User updateUser(RequestContext ctx, String id, UserRequest u) {
+        return run(c -> {
+            OrgModel.Person current = person(c, ctx, id);
+            security.persons().updateUser(c, actor(ctx), current.personId(), u.displayName(), u.email());
+            return user(c, person(c, ctx, id));
+        });
+    }
+
+    /** USER_DISABLED, and every API token of the user revoked in the same transaction (PersonService#disableUser). */
+    @Override
+    public User disableUser(RequestContext ctx, String id, String reason) {
+        return run(c -> {
+            OrgModel.Person current = person(c, ctx, id);
+            security.persons().disableUser(c, actor(ctx), current.personId(), reason);
+            security.tokens().revokeAllOf(c, actor(ctx), current.personId());
+            return user(c, person(c, ctx, id));
+        });
+    }
+
+    @Override
+    public Group createGroup(RequestContext ctx, Group g) {
+        return run(c -> {
+            security.groups().createGroup(c, actor(ctx), g.id().trim(), g.name(), null, "LOCAL");
+            return group(c, ctx, g.id().trim());
+        });
+    }
+
+    /** The name only: the group's external reference (an IdP or SCIM link) and its memberships stay as they are. */
+    @Override
+    public Group updateGroup(RequestContext ctx, String id, Group g) {
+        return run(c -> {
+            GroupAdminService.Group current = security.groups().groups(c, actor(ctx)).stream()
+                    .filter(x -> x.groupId().equals(id)).findFirst()
+                    .orElseThrow(() -> ApiProblem.notFound("group", id));
+            security.groups().updateGroup(c, actor(ctx), id, g.name(), current.externalRef());
+            return group(c, ctx, id);
+        });
+    }
+
+    private OrgModel.Person person(Connection c, RequestContext ctx, String id) {
+        return security.persons().find(c, ctx.tenantId(), id).orElseThrow(() -> ApiProblem.notFound("user", id));
+    }
+
+    private Group group(Connection c, RequestContext ctx, String id) {
+        GroupAdminService.Group g = security.groups().groups(c, actor(ctx)).stream()
+                .filter(x -> x.groupId().equals(id)).findFirst().orElseThrow(() -> ApiProblem.notFound("group", id));
+        return new Group(g.groupId(), g.name(), g.externalRef() == null ? "LOCAL" : "EXTERNAL",
+                security.groups().members(c, ctx.tenantId(), id).size(), g.source());
     }
 
     private User user(Connection c, OrgModel.Person p) {

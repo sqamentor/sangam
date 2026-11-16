@@ -499,7 +499,7 @@ class AIApi:
         return cast("dict[str, Any]", self._c.json(req, options))
 
 class AdminApi:
-    """``Admin`` (37 operations)."""
+    """``Admin`` (32 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -639,48 +639,6 @@ class AdminApi:
         req = ApiRequest("GET", f"/admin/policies/version")
         return cast("M.PolicyVersion", self._c.json(req, options))
 
-    def list_tenants(self, *, q: Optional[str] = None, parent_id: Optional[str] = None, org_unit_id: Optional[str] = None, seat_id: Optional[str] = None, person_id: Optional[str] = None, kind: Optional[str] = None, active_on: Optional[str] = None, include_inactive: Optional[bool] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Tenant]:
-        """List tenants
-
-        Tenant-scoped admin list.
-
-        ``GET /admin/tenants`` (operationId ``listTenants``); permission ``tenant.admin``.
-        """
-        req = ApiRequest("GET", f"/admin/tenants", query={"q": q, "parentId": parent_id, "orgUnitId": org_unit_id, "seatId": seat_id, "personId": person_id, "kind": kind, "activeOn": active_on, "includeInactive": include_inactive, "page": page, "size": size})
-        return cast("Page[M.Tenant]", self._c.page(req, options, page, size))
-
-    def create_tenant(self, body: M.Tenant, *, options: Optional[RequestOptions] = None) -> M.Tenant:
-        """Create tenant
-
-        Creates and audits on the tenant security chain.
-
-        ``POST /admin/tenants`` (operationId ``createTenant``); permission ``tenant.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("POST", f"/admin/tenants")
-        req.body = body
-        return cast("M.Tenant", self._c.json(req, options))
-
-    def get_tenant(self, id: str, *, options: Optional[RequestOptions] = None) -> M.Tenant:
-        """Get tenant
-
-        One item.
-
-        ``GET /admin/tenants/{id}`` (operationId ``getTenant``); permission ``tenant.admin``.
-        """
-        req = ApiRequest("GET", f"/admin/tenants/{seg(str(id))}")
-        return cast("M.Tenant", self._c.json(req, options))
-
-    def update_tenant(self, id: str, body: M.Tenant, *, options: Optional[RequestOptions] = None) -> M.Tenant:
-        """Update tenant
-
-        Updates and audits.
-
-        ``PUT /admin/tenants/{id}`` (operationId ``updateTenant``); permission ``tenant.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("PUT", f"/admin/tenants/{seg(str(id))}")
-        req.body = body
-        return cast("M.Tenant", self._c.json(req, options))
-
     def explain_policy(self, body: M.ExplainRequest, *, options: Optional[RequestOptions] = None) -> M.ExplainResult:
         """Explain an authorization decision
 
@@ -745,45 +703,16 @@ class AdminApi:
         req = ApiRequest("GET", f"/admin/users", query={"q": q, "page": page, "size": size})
         return cast("Page[M.User]", self._c.page(req, options, page, size))
 
-    def list_groups(self, *, q: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Group]:
-        """Groups
+    def create_user(self, body: M.UserRequest, *, options: Optional[RequestOptions] = None) -> M.User:
+        """Create a user
 
-        Groups of the tenant (R67).
+        A LOCAL user of the caller's tenant (USER_PROVISIONED); an IdP subject is linked separately. 409 USER_EXISTS.
 
-        ``GET /admin/groups`` (operationId ``listGroups``); permission ``admin.read``.
+        ``POST /admin/users`` (operationId ``createUser``); permission ``admin.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("GET", f"/admin/groups", query={"q": q, "page": page, "size": size})
-        return cast("Page[M.Group]", self._c.page(req, options, page, size))
-
-    def list_group_members(self, id: str, *, options: Optional[RequestOptions] = None) -> list[M.User]:
-        """Group members
-
-        Members of a group.
-
-        ``GET /admin/groups/{id}/members`` (operationId ``listGroupMembers``); permission ``admin.read``.
-        """
-        req = ApiRequest("GET", f"/admin/groups/{seg(str(id))}/members")
-        return cast("list[M.User]", self._c.json(req, options))
-
-    def add_group_member(self, id: str, user_id: str, *, options: Optional[RequestOptions] = None) -> None:
-        """Add a group member
-
-        MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).
-
-        ``POST /admin/groups/{id}/members/{userId}`` (operationId ``addGroupMember``); permission ``policy.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("POST", f"/admin/groups/{seg(str(id))}/members/{seg(str(user_id))}")
-        self._c.none(req, options)
-
-    def remove_group_member(self, id: str, user_id: str, *, options: Optional[RequestOptions] = None) -> None:
-        """Remove a group member
-
-        MEMBERSHIP_CHANGED; policy_version+1.
-
-        ``DELETE /admin/groups/{id}/members/{userId}`` (operationId ``removeGroupMember``); permission ``policy.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("DELETE", f"/admin/groups/{seg(str(id))}/members/{seg(str(user_id))}")
-        self._c.none(req, options)
+        req = ApiRequest("POST", f"/admin/users")
+        req.body = body
+        return cast("M.User", self._c.json(req, options))
 
     def list_identity_providers(self, *, options: Optional[RequestOptions] = None) -> list[M.IdentityProvider]:
         """Identity providers
@@ -890,6 +819,28 @@ class AdminApi:
         req.body = body
         return cast("M.ServicePrincipal", self._c.json(req, options))
 
+    def update_user(self, id: str, body: M.UserRequest, *, options: Optional[RequestOptions] = None) -> M.User:
+        """Update a user
+
+        Display name and e-mail (USER_UPDATED).
+
+        ``PUT /admin/users/{id}`` (operationId ``updateUser``); permission ``admin.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("PUT", f"/admin/users/{seg(str(id))}")
+        req.body = body
+        return cast("M.User", self._c.json(req, options))
+
+    def disable_user(self, id: str, body: M.ReasonRequest, *, options: Optional[RequestOptions] = None) -> M.User:
+        """Disable a user
+
+        USER_DISABLED with the reason; every API token of the user is revoked in the same transaction. 409 SELF_DISABLE for the caller's own user.
+
+        ``POST /admin/users/{id}/disable`` (operationId ``disableUser``); permission ``admin.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/users/{seg(str(id))}/disable")
+        req.body = body
+        return cast("M.User", self._c.json(req, options))
+
 class AdminAssignmentsApi:
     """``Admin /assignments`` (7 operations)."""
 
@@ -970,6 +921,74 @@ class AdminAssignmentsApi:
         req = ApiRequest("POST", f"/admin/assignments/{seg(str(id))}/reject")
         req.body = body
         return cast("M.Assignment", self._c.json(req, options))
+
+class AdminGroupsApi:
+    """``Admin /groups`` (6 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def list_groups(self, *, q: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Group]:
+        """Groups
+
+        Groups of the tenant (R67).
+
+        ``GET /admin/groups`` (operationId ``listGroups``); permission ``admin.read``.
+        """
+        req = ApiRequest("GET", f"/admin/groups", query={"q": q, "page": page, "size": size})
+        return cast("Page[M.Group]", self._c.page(req, options, page, size))
+
+    def create_group(self, body: M.Group, *, options: Optional[RequestOptions] = None) -> M.Group:
+        """Create a group
+
+        A LOCAL group of the caller's tenant (MEMBERSHIP_CHANGED, created). 409 GROUP_EXISTS.
+
+        ``POST /admin/groups`` (operationId ``createGroup``); permission ``policy.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/groups")
+        req.body = body
+        return cast("M.Group", self._c.json(req, options))
+
+    def list_group_members(self, id: str, *, options: Optional[RequestOptions] = None) -> list[M.User]:
+        """Group members
+
+        Members of a group.
+
+        ``GET /admin/groups/{id}/members`` (operationId ``listGroupMembers``); permission ``admin.read``.
+        """
+        req = ApiRequest("GET", f"/admin/groups/{seg(str(id))}/members")
+        return cast("list[M.User]", self._c.json(req, options))
+
+    def add_group_member(self, id: str, user_id: str, *, options: Optional[RequestOptions] = None) -> None:
+        """Add a group member
+
+        MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).
+
+        ``POST /admin/groups/{id}/members/{userId}`` (operationId ``addGroupMember``); permission ``policy.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/groups/{seg(str(id))}/members/{seg(str(user_id))}")
+        self._c.none(req, options)
+
+    def remove_group_member(self, id: str, user_id: str, *, options: Optional[RequestOptions] = None) -> None:
+        """Remove a group member
+
+        MEMBERSHIP_CHANGED; policy_version+1.
+
+        ``DELETE /admin/groups/{id}/members/{userId}`` (operationId ``removeGroupMember``); permission ``policy.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("DELETE", f"/admin/groups/{seg(str(id))}/members/{seg(str(user_id))}")
+        self._c.none(req, options)
+
+    def update_group(self, id: str, body: M.Group, *, options: Optional[RequestOptions] = None) -> M.Group:
+        """Rename a group
+
+        The name only; memberships and the group's IdP or SCIM reference are kept (MEMBERSHIP_CHANGED, updated).
+
+        ``PUT /admin/groups/{id}`` (operationId ``updateGroup``); permission ``policy.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("PUT", f"/admin/groups/{seg(str(id))}")
+        req.body = body
+        return cast("M.Group", self._c.json(req, options))
 
 class AdminOrgUnitsApi:
     """``Admin /org-units`` (6 operations)."""
@@ -1200,6 +1219,86 @@ class AdminSecurityApi:
         req = ApiRequest("POST", f"/admin/security/module-defaults")
         req.body = body
         return cast("M.ModuleDefaultsResult", self._c.json(req, options))
+
+class AdminTenantsApi:
+    """``Admin /tenants`` (7 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def list_tenants(self, *, q: Optional[str] = None, parent_id: Optional[str] = None, org_unit_id: Optional[str] = None, seat_id: Optional[str] = None, person_id: Optional[str] = None, kind: Optional[str] = None, active_on: Optional[str] = None, include_inactive: Optional[bool] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Tenant]:
+        """List tenants
+
+        Tenant-scoped admin list.
+
+        ``GET /admin/tenants`` (operationId ``listTenants``); permission ``tenant.admin``.
+        """
+        req = ApiRequest("GET", f"/admin/tenants", query={"q": q, "parentId": parent_id, "orgUnitId": org_unit_id, "seatId": seat_id, "personId": person_id, "kind": kind, "activeOn": active_on, "includeInactive": include_inactive, "page": page, "size": size})
+        return cast("Page[M.Tenant]", self._c.page(req, options, page, size))
+
+    def create_tenant(self, body: M.Tenant, *, options: Optional[RequestOptions] = None) -> M.Tenant:
+        """Create tenant
+
+        Creates and audits on the tenant security chain.
+
+        ``POST /admin/tenants`` (operationId ``createTenant``); permission ``tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/tenants")
+        req.body = body
+        return cast("M.Tenant", self._c.json(req, options))
+
+    def get_tenant(self, id: str, *, options: Optional[RequestOptions] = None) -> M.Tenant:
+        """Get tenant
+
+        One item.
+
+        ``GET /admin/tenants/{id}`` (operationId ``getTenant``); permission ``tenant.admin``.
+        """
+        req = ApiRequest("GET", f"/admin/tenants/{seg(str(id))}")
+        return cast("M.Tenant", self._c.json(req, options))
+
+    def update_tenant(self, id: str, body: M.Tenant, *, options: Optional[RequestOptions] = None) -> M.Tenant:
+        """Update tenant
+
+        Updates and audits.
+
+        ``PUT /admin/tenants/{id}`` (operationId ``updateTenant``); permission ``tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("PUT", f"/admin/tenants/{seg(str(id))}")
+        req.body = body
+        return cast("M.Tenant", self._c.json(req, options))
+
+    def validate_tenant(self, id: str, *, options: Optional[RequestOptions] = None) -> M.TenantReadiness:
+        """Check a tenant's go-live readiness
+
+        Lists the required go-live checklist items and those without evidence; changes nothing. 404 for a tenant the caller does not administer; 409 ACTIVATION_BLOCKED when a required jurisdiction pack is not installed.
+
+        ``POST /admin/tenants/{id}/validate`` (operationId ``validateTenant``); permission ``tenant.admin``.
+        """
+        req = ApiRequest("POST", f"/admin/tenants/{seg(str(id))}/validate")
+        return cast("M.TenantReadiness", self._c.json(req, options))
+
+    def activate_tenant(self, id: str, body: Optional[M.ReasonRequest] = None, *, options: Optional[RequestOptions] = None) -> M.Tenant:
+        """Activate or resume a tenant
+
+        A suspended tenant is resumed (platform administrator). Any other tenant is activated by its own administrator once every required item has evidence (409 ACTIVATION_BLOCKED names the missing items); naming another tenant is 409 TENANT_ACTIVATION_BY_OWN_ADMIN. TENANT_ACTIVATED. The optional reason is not stored by the activation.
+
+        ``POST /admin/tenants/{id}/activate`` (operationId ``activateTenant``); permission ``tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/tenants/{seg(str(id))}/activate")
+        req.body = body
+        return cast("M.Tenant", self._c.json(req, options))
+
+    def suspend_tenant(self, id: str, body: M.ReasonRequest, *, options: Optional[RequestOptions] = None) -> M.Tenant:
+        """Suspend a tenant
+
+        Platform administrator only; requests for the tenant are then refused. TENANT_SUSPENDED with the reason.
+
+        ``POST /admin/tenants/{id}/suspend`` (operationId ``suspendTenant``); permission ``tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/tenants/{seg(str(id))}/suspend")
+        req.body = body
+        return cast("M.Tenant", self._c.json(req, options))
 
 class AnalyticsApi:
     """``Analytics`` (15 operations)."""
@@ -6553,7 +6652,7 @@ class OpsBatchesApi:
         return cast("M.Batch", self._c.json(req, options))
 
 class OpsIncidentsApi:
-    """``Ops /incidents`` (7 operations)."""
+    """``Ops /incidents`` (9 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -6628,6 +6727,28 @@ class OpsIncidentsApi:
         ``POST /ops/incidents/{id}/note`` (operationId ``noteIncident``); permission ``ops.write``; result stored atomically with the state change.
         """
         req = ApiRequest("POST", f"/ops/incidents/{seg(str(id))}/note")
+        req.body = body
+        return cast("M.Incident", self._c.json(req, options))
+
+    def skip_incident(self, id: str, body: M.IncidentAction, *, options: Optional[RequestOptions] = None) -> M.Incident:
+        """Skip an incident
+
+        Moves the token past the incident's activity (instance modification, R49): starts after the activity under the same parent, then cancels the incident's own activity or transition instance; the activity's effect does not happen and other instances of the activity are untouched (INCIDENT_SKIPPED; the reason is the modification's annotation). 400 REASON_REQUIRED without a reason; 422 INCIDENT_NOT_SKIPPABLE when the incident has no active token to move.
+
+        ``POST /ops/incidents/{id}/skip`` (operationId ``skipIncident``); permission ``ops.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ops/incidents/{seg(str(id))}/skip")
+        req.body = body
+        return cast("M.Incident", self._c.json(req, options))
+
+    def cancel_incident(self, id: str, body: M.IncidentAction, *, options: Optional[RequestOptions] = None) -> M.Incident:
+        """Cancel an incident's instance
+
+        Cancels the incident's process instance through the business cancel (VI.5: the model's cancel paths, open external work becomes CANCEL_REQUESTED, INSTANCE_CANCELLED), then audits INCIDENT_CANCELLED with the open operation ids. 400 REASON_REQUIRED without a reason.
+
+        ``POST /ops/incidents/{id}/cancel`` (operationId ``cancelIncident``); permission ``ops.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ops/incidents/{seg(str(id))}/cancel")
         req.body = body
         return cast("M.Incident", self._c.json(req, options))
 
@@ -12701,16 +12822,18 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1150 operations on 968 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1160 operations on 976 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)
         self.ai = AIApi(calls)
         self.admin = AdminApi(calls)
         self.admin_assignments = AdminAssignmentsApi(calls)
+        self.admin_groups = AdminGroupsApi(calls)
         self.admin_org_units = AdminOrgUnitsApi(calls)
         self.admin_power_tables = AdminPowerTablesApi(calls)
         self.admin_security = AdminSecurityApi(calls)
+        self.admin_tenants = AdminTenantsApi(calls)
         self.analytics = AnalyticsApi(calls)
         self.api_contracts = ApiContractsApi(calls)
         self.audit = AuditApi(calls)

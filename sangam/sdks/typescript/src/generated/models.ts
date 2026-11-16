@@ -12366,6 +12366,21 @@ export interface TenantFallbackInstance {
 }
 
 /**
+ * Go-live readiness of a tenant (AJ-01 step 10): the activation check as a dry run.
+ *
+ * Schema `TenantReadiness`.
+ */
+export interface TenantReadiness {
+  tenantId: string;
+  status?: string;
+  ready: boolean;
+  /** Checklist items the activation requires: core items, the tenant's jurisdiction packs, its profile */
+  required: Array<string>;
+  /** Required items without recorded evidence; empty when ready */
+  missing: Array<string>;
+}
+
+/**
  * Repair of one instance on authoritative ownership evidence (decisions 145 and 199).
  *
  * Schema `TenantRepairRequest`.
@@ -12723,6 +12738,23 @@ export interface UserOperation {
   timestamp?: string;
   processInstanceId?: string;
   annotation?: string;
+}
+
+/**
+ * A LOCAL user an administrator creates or updates (R67).
+ *
+ * Schema `UserRequest`.
+ */
+export interface UserRequest {
+  /** Person id of a new user (1-64 characters); username when omitted */
+  id?: string;
+  username?: string;
+  displayName?: string;
+  email?: string;
+  /** Only true: a user is created active and disabled afterwards with a reason */
+  active?: boolean;
+  /** Only LOCAL: SCIM and directory sync provision their own users One of: LOCAL. */
+  source?: 'LOCAL';
 }
 
 /**

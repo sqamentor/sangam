@@ -237,4 +237,29 @@ public interface AdminPort {
     Tenant createTenant(RequestContext ctx, Tenant tenant);
 
     Tenant updateTenant(RequestContext ctx, String id, Tenant tenant);
+
+    /**
+     * The go-live readiness of a tenant (AJ-01 step 10): the checklist items its activation requires (core items, its
+     * jurisdiction packs, its profile) and those still without evidence; {@code ready} when none is missing.
+     */
+    record TenantReadiness(String tenantId, String status, boolean ready, List<String> required, List<String> missing) {
+    }
+
+    /** {@code POST /api/v1/admin/tenants/{id}/validate}: a dry run of the activation check; changes nothing. */
+    default TenantReadiness validateTenant(RequestContext ctx, String id) {
+        throw ApiProblem.notInstalled("tenant lifecycle", "sangam-security");
+    }
+
+    /**
+     * {@code POST /api/v1/admin/tenants/{id}/activate}: a suspended tenant is resumed (platform administrator); any
+     * other tenant is activated by its own administrator once every required item has evidence (TENANT_ACTIVATED).
+     */
+    default Tenant activateTenant(RequestContext ctx, String id, String reason) {
+        throw ApiProblem.notInstalled("tenant lifecycle", "sangam-security");
+    }
+
+    /** {@code POST /api/v1/admin/tenants/{id}/suspend}: platform administrator only, with the reason (TENANT_SUSPENDED). */
+    default Tenant suspendTenant(RequestContext ctx, String id, String reason) {
+        throw ApiProblem.notInstalled("tenant lifecycle", "sangam-security");
+    }
 }

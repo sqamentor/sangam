@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Admin (37 operations). */
+/** Typed operations of Admin (32 operations). */
 final class AdminApi
 {
     public function __construct(private readonly Calls $calls)
@@ -285,90 +285,6 @@ final class AdminApi
     }
 
     /**
-     * List tenants
-     *
-     * Tenant-scoped admin list.
-     *
-     * GET /admin/tenants (operationId listTenants); permission tenant.admin.
-     * @param string|null $q query q
-     * @param string|null $parentId query parentId
-     * @param string|null $orgUnitId query orgUnitId
-     * @param string|null $seatId query seatId
-     * @param string|null $personId query personId
-     * @param string|null $kind query kind
-     * @param string|null $activeOn query activeOn
-     * @param bool|null $includeInactive query includeInactive
-     * @param int|null $page query page
-     * @param int|null $size query size
-     * @return Page<Model\Tenant>
-     */
-    public function listTenants(?string $q = null, ?string $parentId = null, ?string $orgUnitId = null, ?string $seatId = null, ?string $personId = null, ?string $kind = null, ?string $activeOn = null, ?bool $includeInactive = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
-    {
-        $req = ApiRequest::get('/admin/tenants');
-        $req->query('q', $q);
-        $req->query('parentId', $parentId);
-        $req->query('orgUnitId', $orgUnitId);
-        $req->query('seatId', $seatId);
-        $req->query('personId', $personId);
-        $req->query('kind', $kind);
-        $req->query('activeOn', $activeOn);
-        $req->query('includeInactive', $includeInactive);
-        $req->query('page', $page);
-        $req->query('size', $size);
-        return $this->calls->page($req, $options, Model\Tenant::class, $page, $size);
-    }
-
-    /**
-     * Create tenant
-     *
-     * Creates and audits on the tenant security chain.
-     *
-     * POST /admin/tenants (operationId createTenant); permission tenant.admin; result stored atomically with the state change.
-     * @param Model\Tenant|array $body request body
-     * @return Model\Tenant|null
-     */
-    public function createTenant(Model\Tenant|array $body, ?RequestOptions $options = null): ?Model\Tenant
-    {
-        $req = ApiRequest::post('/admin/tenants');
-        if ($body !== null) {
-            $req->body($body);
-        }
-        return $this->calls->model($req, $options, Model\Tenant::class);
-    }
-
-    /**
-     * Get tenant
-     *
-     * One item.
-     *
-     * GET /admin/tenants/{id} (operationId getTenant); permission tenant.admin.
-     * @return Model\Tenant|null
-     */
-    public function getTenant(string $id, ?RequestOptions $options = null): ?Model\Tenant
-    {
-        $req = ApiRequest::get('/admin/tenants/' . HttpTransport::seg((string) $id));
-        return $this->calls->model($req, $options, Model\Tenant::class);
-    }
-
-    /**
-     * Update tenant
-     *
-     * Updates and audits.
-     *
-     * PUT /admin/tenants/{id} (operationId updateTenant); permission tenant.admin; result stored atomically with the state change.
-     * @param Model\Tenant|array $body request body
-     * @return Model\Tenant|null
-     */
-    public function updateTenant(string $id, Model\Tenant|array $body, ?RequestOptions $options = null): ?Model\Tenant
-    {
-        $req = ApiRequest::put('/admin/tenants/' . HttpTransport::seg((string) $id));
-        if ($body !== null) {
-            $req->body($body);
-        }
-        return $this->calls->model($req, $options, Model\Tenant::class);
-    }
-
-    /**
      * Explain an authorization decision
      *
      * Which grants and denies match (deny wins, A-13) at the current policy version (VI.4).
@@ -481,63 +397,21 @@ final class AdminApi
     }
 
     /**
-     * Groups
+     * Create a user
      *
-     * Groups of the tenant (R67).
+     * A LOCAL user of the caller's tenant (USER_PROVISIONED); an IdP subject is linked separately. 409 USER_EXISTS.
      *
-     * GET /admin/groups (operationId listGroups); permission admin.read.
-     * @param string|null $q query q
-     * @param int|null $page query page
-     * @param int|null $size query size
-     * @return Page<Model\Group>
+     * POST /admin/users (operationId createUser); permission admin.write; result stored atomically with the state change.
+     * @param Model\UserRequest|array $body request body
+     * @return Model\User|null
      */
-    public function listGroups(?string $q = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
+    public function createUser(Model\UserRequest|array $body, ?RequestOptions $options = null): ?Model\User
     {
-        $req = ApiRequest::get('/admin/groups');
-        $req->query('q', $q);
-        $req->query('page', $page);
-        $req->query('size', $size);
-        return $this->calls->page($req, $options, Model\Group::class, $page, $size);
-    }
-
-    /**
-     * Group members
-     *
-     * Members of a group.
-     *
-     * GET /admin/groups/{id}/members (operationId listGroupMembers); permission admin.read.
-     * @return list<Model\User>
-     */
-    public function listGroupMembers(string $id, ?RequestOptions $options = null): array
-    {
-        $req = ApiRequest::get('/admin/groups/' . HttpTransport::seg((string) $id) . '/members');
-        return $this->calls->models($req, $options, Model\User::class);
-    }
-
-    /**
-     * Add a group member
-     *
-     * MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).
-     *
-     * POST /admin/groups/{id}/members/{userId} (operationId addGroupMember); permission policy.admin; result stored atomically with the state change.
-     */
-    public function addGroupMember(string $id, string $userId, ?RequestOptions $options = null): void
-    {
-        $req = ApiRequest::post('/admin/groups/' . HttpTransport::seg((string) $id) . '/members/' . HttpTransport::seg((string) $userId));
-        $this->calls->none($req, $options);
-    }
-
-    /**
-     * Remove a group member
-     *
-     * MEMBERSHIP_CHANGED; policy_version+1.
-     *
-     * DELETE /admin/groups/{id}/members/{userId} (operationId removeGroupMember); permission policy.admin; result stored atomically with the state change.
-     */
-    public function removeGroupMember(string $id, string $userId, ?RequestOptions $options = null): void
-    {
-        $req = ApiRequest::delete('/admin/groups/' . HttpTransport::seg((string) $id) . '/members/' . HttpTransport::seg((string) $userId));
-        $this->calls->none($req, $options);
+        $req = ApiRequest::post('/admin/users');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\User::class);
     }
 
     /**
@@ -698,5 +572,41 @@ final class AdminApi
             $req->body($body);
         }
         return $this->calls->model($req, $options, Model\ServicePrincipal::class);
+    }
+
+    /**
+     * Update a user
+     *
+     * Display name and e-mail (USER_UPDATED).
+     *
+     * PUT /admin/users/{id} (operationId updateUser); permission admin.write; result stored atomically with the state change.
+     * @param Model\UserRequest|array $body request body
+     * @return Model\User|null
+     */
+    public function updateUser(string $id, Model\UserRequest|array $body, ?RequestOptions $options = null): ?Model\User
+    {
+        $req = ApiRequest::put('/admin/users/' . HttpTransport::seg((string) $id));
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\User::class);
+    }
+
+    /**
+     * Disable a user
+     *
+     * USER_DISABLED with the reason; every API token of the user is revoked in the same transaction. 409 SELF_DISABLE for the caller's own user.
+     *
+     * POST /admin/users/{id}/disable (operationId disableUser); permission admin.write; result stored atomically with the state change.
+     * @param Model\ReasonRequest|array $body request body
+     * @return Model\User|null
+     */
+    public function disableUser(string $id, Model\ReasonRequest|array $body, ?RequestOptions $options = null): ?Model\User
+    {
+        $req = ApiRequest::post('/admin/users/' . HttpTransport::seg((string) $id) . '/disable');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\User::class);
     }
 }

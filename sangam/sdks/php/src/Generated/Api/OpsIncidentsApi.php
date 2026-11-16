@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Ops /incidents (7 operations). */
+/** Typed operations of Ops /incidents (9 operations). */
 final class OpsIncidentsApi
 {
     public function __construct(private readonly Calls $calls)
@@ -138,6 +138,42 @@ final class OpsIncidentsApi
     public function noteIncident(string $id, Model\NoteRequest|array $body, ?RequestOptions $options = null): ?Model\Incident
     {
         $req = ApiRequest::post('/ops/incidents/' . HttpTransport::seg((string) $id) . '/note');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\Incident::class);
+    }
+
+    /**
+     * Skip an incident
+     *
+     * Moves the token past the incident's activity (instance modification, R49): starts after the activity under the same parent, then cancels the incident's own activity or transition instance; the activity's effect does not happen and other instances of the activity are untouched (INCIDENT_SKIPPED; the reason is the modification's annotation). 400 REASON_REQUIRED without a reason; 422 INCIDENT_NOT_SKIPPABLE when the incident has no active token to move.
+     *
+     * POST /ops/incidents/{id}/skip (operationId skipIncident); permission ops.write; result stored atomically with the state change.
+     * @param Model\IncidentAction|array $body request body
+     * @return Model\Incident|null
+     */
+    public function skipIncident(string $id, Model\IncidentAction|array $body, ?RequestOptions $options = null): ?Model\Incident
+    {
+        $req = ApiRequest::post('/ops/incidents/' . HttpTransport::seg((string) $id) . '/skip');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\Incident::class);
+    }
+
+    /**
+     * Cancel an incident's instance
+     *
+     * Cancels the incident's process instance through the business cancel (VI.5: the model's cancel paths, open external work becomes CANCEL_REQUESTED, INSTANCE_CANCELLED), then audits INCIDENT_CANCELLED with the open operation ids. 400 REASON_REQUIRED without a reason.
+     *
+     * POST /ops/incidents/{id}/cancel (operationId cancelIncident); permission ops.write; result stored atomically with the state change.
+     * @param Model\IncidentAction|array $body request body
+     * @return Model\Incident|null
+     */
+    public function cancelIncident(string $id, Model\IncidentAction|array $body, ?RequestOptions $options = null): ?Model\Incident
+    {
+        $req = ApiRequest::post('/ops/incidents/' . HttpTransport::seg((string) $id) . '/cancel');
         if ($body !== null) {
             $req->body($body);
         }

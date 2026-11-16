@@ -12,7 +12,7 @@ import org.sangam.sdk.generated.model.IncidentAction;
 import org.sangam.sdk.generated.model.NoteRequest;
 
 /**
- * Typed operations of {@code Ops /incidents} (7 operations), generated from
+ * Typed operations of {@code Ops /incidents} (9 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -26,6 +26,8 @@ public final class OpsIncidentsApi {
     private static final TypeReference<ConsequencePreview> R_previewIncidentAction = new TypeReference<>() { };
     private static final TypeReference<Incident> R_claimIncident = new TypeReference<>() { };
     private static final TypeReference<Incident> R_noteIncident = new TypeReference<>() { };
+    private static final TypeReference<Incident> R_skipIncident = new TypeReference<>() { };
+    private static final TypeReference<Incident> R_cancelIncident = new TypeReference<>() { };
 
     private final GeneratedCalls call;
 
@@ -155,5 +157,39 @@ public final class OpsIncidentsApi {
         ApiRequest req = ApiRequest.post("/ops/incidents/" + HttpTransport.seg(String.valueOf(id)) + "/note");
         req.body(body);
         return call.json(req, options, R_noteIncident);
+    }
+
+    /**
+     * Skip an incident
+     *
+     * <p>Moves the token past the incident's activity (instance modification, R49): starts after the activity under the same parent, then cancels the incident's own activity or transition instance; the activity's effect does not happen and other instances of the activity are untouched (INCIDENT_SKIPPED; the reason is the modification's annotation). 400 REASON_REQUIRED without a reason; 422 INCIDENT_NOT_SKIPPABLE when the incident has no active token to move.
+     *
+     * <p>{@code POST /ops/incidents/{id}/skip} (operationId {@code skipIncident}); permission {@code ops.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public Incident skipIncident(String id, IncidentAction body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ops/incidents/" + HttpTransport.seg(String.valueOf(id)) + "/skip");
+        req.body(body);
+        return call.json(req, options, R_skipIncident);
+    }
+
+    /**
+     * Cancel an incident's instance
+     *
+     * <p>Cancels the incident's process instance through the business cancel (VI.5: the model's cancel paths, open external work becomes CANCEL_REQUESTED, INSTANCE_CANCELLED), then audits INCIDENT_CANCELLED with the open operation ids. 400 REASON_REQUIRED without a reason.
+     *
+     * <p>{@code POST /ops/incidents/{id}/cancel} (operationId {@code cancelIncident}); permission {@code ops.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public Incident cancelIncident(String id, IncidentAction body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ops/incidents/" + HttpTransport.seg(String.valueOf(id)) + "/cancel");
+        req.body(body);
+        return call.json(req, options, R_cancelIncident);
     }
 }

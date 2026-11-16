@@ -119,6 +119,97 @@ public class IdentityAdminController {
         return Lists.ok(identity.groups(ctx, q, Lists.page(page, size)));
     }
 
+    /**
+     * A LOCAL user of the caller's tenant: {@code id} (else {@code username}) 1-64 characters, display name and e-mail at
+     * most 255; a user is created active ({@code active=false} is refused: disable it afterwards, with a reason) and
+     * LOCAL (SCIM and directory sync provision their own users).
+     */
+    @PostMapping("/users")
+    public ResponseEntity<IdentityAdminPort.User> createUser(RequestContext ctx,
+                                                             @RequestBody IdentityAdminPort.UserRequest body) {
+        permissions.require(ctx, Permissions.ADMIN_WRITE);
+        if (body == null) {
+            throw invalid("body", "a user is required");
+        }
+        String id = body.id() != null && !body.id().isBlank() ? body.id() : body.username();
+        text("id", id, 64, true);
+        text("displayName", body.displayName(), 255, false);
+        text("email", body.email(), 255, false);
+        if (body.source() != null && !"LOCAL".equals(body.source())) {
+            throw invalid("source", "an administrator creates LOCAL users; " + body.source()
+                    + " users are provisioned by their source");
+        }
+        if (Boolean.FALSE.equals(body.active())) {
+            throw invalid("active", "a user is created active; disable it afterwards with a reason");
+        }
+        IdentityAdminPort.User u = identity.createUser(ctx, body);
+        return Lists.created("/api/v1/admin/users/" + u.id(), u.id(), u);
+    }
+
+    @PutMapping("/users/{id}")
+    public ResponseEntity<IdentityAdminPort.User> updateUser(RequestContext ctx, @PathVariable String id,
+                                                             @RequestBody IdentityAdminPort.UserRequest body) {
+        permissions.require(ctx, Permissions.ADMIN_WRITE);
+        if (body == null) {
+            throw invalid("body", "a user is required");
+        }
+        text("displayName", body.displayName(), 255, false);
+        text("email", body.email(), 255, false);
+        return Lists.okRef(id, identity.updateUser(ctx, id, body));
+    }
+
+    @PostMapping("/users/{id}/disable")
+    public ResponseEntity<IdentityAdminPort.User> disableUser(RequestContext ctx, @PathVariable String id,
+                                                              @RequestBody IdentityAdminPort.DecisionRequest body) {
+        permissions.require(ctx, Permissions.ADMIN_WRITE);
+        ProcessController.requireReason(body == null ? null : body.reason());
+        return Lists.okRef(id, identity.disableUser(ctx, id, body.reason()));
+    }
+
+    /** A LOCAL group: {@code id} and {@code name} 1-255 characters. */
+    @PostMapping("/groups")
+    public ResponseEntity<IdentityAdminPort.Group> createGroup(RequestContext ctx, @RequestBody IdentityAdminPort.Group body) {
+        permissions.require(ctx, Permissions.POLICY_ADMIN);
+        if (body == null) {
+            throw invalid("body", "a group is required");
+        }
+        text("id", body.id(), 255, true);
+        text("name", body.name(), 255, true);
+        if (body.source() != null && !"LOCAL".equals(body.source())) {
+            throw invalid("source", "an administrator creates LOCAL groups; " + body.source()
+                    + " groups are provisioned by their source");
+        }
+        IdentityAdminPort.Group g = identity.createGroup(ctx, body);
+        return Lists.created("/api/v1/admin/groups/" + g.id(), g.id(), g);
+    }
+
+    @PutMapping("/groups/{id}")
+    public ResponseEntity<IdentityAdminPort.Group> updateGroup(RequestContext ctx, @PathVariable String id,
+                                                               @RequestBody IdentityAdminPort.Group body) {
+        permissions.require(ctx, Permissions.POLICY_ADMIN);
+        if (body == null) {
+            throw invalid("body", "a group is required");
+        }
+        text("name", body.name(), 255, true);
+        return Lists.okRef(id, identity.updateGroup(ctx, id, body));
+    }
+
+    private static void text(String field, String value, int max, boolean required) {
+        if (value == null || value.isBlank()) {
+            if (required) {
+                throw invalid(field, field + " is required");
+            }
+            return;
+        }
+        if (value.length() > max || !value.equals(value.strip())) {
+            throw invalid(field, field + " must be at most " + max + " characters, without leading or trailing blanks");
+        }
+    }
+
+    private static org.sangam.rest.port.ApiProblem invalid(String field, String detail) {
+        return org.sangam.rest.port.ApiProblem.badRequest("VALIDATION_FAILED", detail).with("field", field);
+    }
+
     @GetMapping("/groups/{id}/members")
     public ResponseEntity<List<IdentityAdminPort.User>> members(RequestContext ctx, @PathVariable String id) {
         permissions.require(ctx, Permissions.ADMIN_READ);

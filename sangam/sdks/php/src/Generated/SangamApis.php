@@ -10,9 +10,11 @@ use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Generated\Api\AIApi;
 use Sangam\Sdk\Generated\Api\AdminApi;
 use Sangam\Sdk\Generated\Api\AdminAssignmentsApi;
+use Sangam\Sdk\Generated\Api\AdminGroupsApi;
 use Sangam\Sdk\Generated\Api\AdminOrgUnitsApi;
 use Sangam\Sdk\Generated\Api\AdminPowerTablesApi;
 use Sangam\Sdk\Generated\Api\AdminSecurityApi;
+use Sangam\Sdk\Generated\Api\AdminTenantsApi;
 use Sangam\Sdk\Generated\Api\AnalyticsApi;
 use Sangam\Sdk\Generated\Api\ApiContractsApi;
 use Sangam\Sdk\Generated\Api\AuditApi;
@@ -90,7 +92,7 @@ use Sangam\Sdk\Generated\Api\WorkApi;
 use Sangam\Sdk\Generated\Api\WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1150 operations on 968 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1160 operations on 976 paths,
  * one property per API class (a tag, or a sub-path of a large tag). Use SangamClient::api().
  */
 final class SangamApis
@@ -98,9 +100,11 @@ final class SangamApis
     public readonly AIApi $ai;
     public readonly AdminApi $admin;
     public readonly AdminAssignmentsApi $adminAssignments;
+    public readonly AdminGroupsApi $adminGroups;
     public readonly AdminOrgUnitsApi $adminOrgUnits;
     public readonly AdminPowerTablesApi $adminPowerTables;
     public readonly AdminSecurityApi $adminSecurity;
+    public readonly AdminTenantsApi $adminTenants;
     public readonly AnalyticsApi $analytics;
     public readonly ApiContractsApi $apiContracts;
     public readonly AuditApi $audit;
@@ -183,9 +187,11 @@ final class SangamApis
         $this->ai = new AIApi($calls);
         $this->admin = new AdminApi($calls);
         $this->adminAssignments = new AdminAssignmentsApi($calls);
+        $this->adminGroups = new AdminGroupsApi($calls);
         $this->adminOrgUnits = new AdminOrgUnitsApi($calls);
         $this->adminPowerTables = new AdminPowerTablesApi($calls);
         $this->adminSecurity = new AdminSecurityApi($calls);
+        $this->adminTenants = new AdminTenantsApi($calls);
         $this->analytics = new AnalyticsApi($calls);
         $this->apiContracts = new ApiContractsApi($calls);
         $this->audit = new AuditApi($calls);
