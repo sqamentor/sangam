@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0. M-136 (decision 151) synthetic replay scenario: an external scoring task (retried
+     after a failure and a lease timeout), a document message, a DMN verdict that reads the FEEL clock, a cooling-off
+     timer, then a notification task (APPROVE) or a manual review (anything else). -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:operaton="http://operaton.org/schema/1.0/bpmn"
+             id="grantReviewDefinitions" targetNamespace="urn:sangam:replay:grant-review">
+  <message id="documentsMessage" name="documentsReceived"/>
+  <process id="grantReview" name="Grant review (synthetic)" isExecutable="true">
+    <startEvent id="start"/>
+    <sequenceFlow id="toScore" sourceRef="start" targetRef="score"/>
+    <serviceTask id="score" name="Score the application" operaton:type="external" operaton:topic="replay.score">
+      <!-- a read, safe to repeat: an expired lease re-offers the work (A-10 class a), so the scenario can time out -->
+      <extensionElements>
+        <operaton:properties><operaton:property name="sangam:capabilityClass" value="a"/></operaton:properties>
+      </extensionElements>
+    </serviceTask>
+    <sequenceFlow id="toDocuments" sourceRef="score" targetRef="documents"/>
+    <intermediateCatchEvent id="documents" name="Documents received">
+      <messageEventDefinition messageRef="documentsMessage"/>
+    </intermediateCatchEvent>
+    <sequenceFlow id="toDecide" sourceRef="documents" targetRef="decide"/>
+    <businessRuleTask id="decide" name="Verdict" operaton:decisionRef="grantVerdict" operaton:decisionRefBinding="deployment"
+                      operaton:mapDecisionResult="singleEntry" operaton:resultVariable="verdict"/>
+    <sequenceFlow id="toCooling" sourceRef="decide" targetRef="cooling"/>
+    <intermediateCatchEvent id="cooling" name="Cooling-off period">
+      <timerEventDefinition><timeDuration>PT1H</timeDuration></timerEventDefinition>
+    </intermediateCatchEvent>
+    <sequenceFlow id="toRoute" sourceRef="cooling" targetRef="route"/>
+    <exclusiveGateway id="route"/>
+    <sequenceFlow id="toNotify" sourceRef="route" targetRef="notify">
+      <conditionExpression xsi:type="tFormalExpression">${verdict == 'APPROVE'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="toReview" sourceRef="route" targetRef="review">
+      <conditionExpression xsi:type="tFormalExpression">${verdict != 'APPROVE'}</conditionExpression>
+    </sequenceFlow>
+    <serviceTask id="notify" name="Notify the applicant" operaton:type="external" operaton:topic="replay.notify"/>
+    <sequenceFlow id="toApproved" sourceRef="notify" targetRef="approved"/>
+    <endEvent id="approved"/>
+    <userTask id="review" name="Manual review"/>
+    <sequenceFlow id="toReviewed" sourceRef="review" targetRef="reviewed"/>
+    <endEvent id="reviewed"/>
+  </process>
+</definitions>
