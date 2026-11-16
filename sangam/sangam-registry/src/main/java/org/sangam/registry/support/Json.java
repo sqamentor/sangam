@@ -18,8 +18,13 @@ import java.util.Map;
 /** JSON helpers for the registry's JSON columns and configuration documents. */
 public final class Json {
 
+    /**
+     * Reads a fraction exactly, as a {@link BigDecimal} (owner decision 381(4)): a request JSON a process hands to a
+     * registry delegate keeps every digit, never a binary Double.
+     */
     public static final ObjectMapper MAPPER = new ObjectMapper()
-            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+            .enable(com.fasterxml.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
 
     private static final TypeReference<LinkedHashMap<String, Object>> MAP = new TypeReference<>() {
     };

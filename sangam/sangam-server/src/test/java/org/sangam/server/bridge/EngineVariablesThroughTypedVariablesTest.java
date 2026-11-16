@@ -20,16 +20,19 @@ import org.sangam.rest.support.ExactJson;
 
 /**
  * Owner decision 381(4) follow-up, guard: an engine variable write that takes its values from JSON never bypasses
- * {@code TypedVariables}. Over the engine variable write paths of {@link CallerVariableWritePathsTest} (sangam-server,
- * sangam-rest-core, sangam-rest, sangam-integration) and the decision evaluations, every file that also reads JSON
+ * {@code TypedVariables}. Over the engine variable write paths of {@link CallerVariableWritePathsTest} in every reactor
+ * module (decision 387(1)) and the decision evaluations, every file that also reads JSON
  * <ul>
  *   <li>declares no plain Jackson mapper (one that reads a fraction as a binary Double), and</li>
  *   <li>in the modules that see sangam-rest-core, converts the values through {@code TypedVariables.fromJson} or
- *       {@code SlotVariableGuard.callerVariables} (which calls it). sangam-integration sits below sangam-rest-core and
- *       reads through its own exact mapper, checked below.</li>
+ *       {@code SlotVariableGuard.callerVariables} (which calls it). The modules below sangam-rest-core
+ *       ({@link #BELOW_REST_CORE}) cannot see TypedVariables; they read through their own mapper, and each shared one is
+ *       checked below to read fractions exactly.</li>
  * </ul>
- * and every shared mapper such a path reads with reads fractions exactly. A new write path that parses JSON with a
- * plain mapper, or hands parsed JSON to the engine without TypedVariables, fails here by file name.
+ * A file the write-path inventory lists as "not an engine write" (its matches are an LLM completion, an audit drain, an
+ * idempotency record) is no engine variable write path and is not checked; {@link #NO_ENGINE_JSON} lists, with its
+ * reason, a write path whose JSON call never reaches the engine. A new write path that parses JSON with a plain mapper,
+ * or hands parsed JSON to the engine without TypedVariables, fails here by file name.
  */
 class EngineVariablesThroughTypedVariablesTest {
 
@@ -37,7 +40,22 @@ class EngineVariablesThroughTypedVariablesTest {
             + "|\\bJson\\.(?:map|read|tree|readMap)\\(");
     /** A mapper built without the exact-fraction feature in the same statement. */
     static final Pattern PLAIN_MAPPER = Pattern.compile("new ObjectMapper\\(\\)(?![^;]*USE_BIG_DECIMAL_FOR_FLOATS)");
-    static final String INTEGRATION = "../sangam-integration/";
+    /**
+     * The modules with engine write paths below sangam-rest-core, with the mapper they read JSON through (each shared
+     * one checked in {@link #theSharedMappersOfThoseWritePathsReadFractionsExactly}). Any other module must use
+     * TypedVariables.
+     */
+    static final Map<String, String> BELOW_REST_CORE = Map.of(
+            "../sangam-integration/", "integration Json.MAPPER",
+            "../sangam-flowable-ports/", "ports Json.MAPPER",
+            "../sangam-registry/", "registry Json.MAPPER",
+            "../sangam-packs/", "Vars' own JsonMapper with USE_BIG_DECIMAL_FOR_FLOATS");
+    /** Write paths whose JSON call never reaches the engine, with the reason. */
+    static final Map<String, String> NO_ENGINE_JSON = Map.of(
+            "../sangam-onboarding/src/main/java/org/sangam/onboarding/flow/OnboardingService.java",
+            "convertValue turns the in-memory UpgradeStep records (text and a flag, no fraction, no JSON text) into the"
+                    + " onboarding plan document; its engine writes complete tasks with the fixed variables approved"
+                    + " and checker");
     /** Engine variable inputs beyond the inventory's writes: a decision evaluation's variables. */
     static final Pattern EVALUATES = Pattern.compile("evaluateDecision(?:Table)?By(?:Key|Id)\\(");
 
@@ -55,11 +73,20 @@ class EngineVariablesThroughTypedVariablesTest {
                         continue;
                     }
                     String name = p.toString().replace('\\', '/');
+                    CallerVariableWritePathsTest.Path0 listed = CallerVariableWritePathsTest.PATHS
+                            .get(CallerVariableWritePathsTest.relative(p));
+                    if (listed != null
+                            && listed.disposition().startsWith(CallerVariableWritePathsTest.NOT_AN_ENGINE_WRITE)) {
+                        continue;
+                    }
                     readers.add(name);
+                    if (NO_ENGINE_JSON.containsKey(name)) {
+                        continue;
+                    }
                     if (PLAIN_MAPPER.matcher(src).find()) {
                         violations.put(name, "declares a plain ObjectMapper (fractions become Double): use "
                                 + "ExactJson.mapper() or ExactJson.documents()");
-                    } else if (!name.startsWith(INTEGRATION) && !src.contains("TypedVariables.fromJson(")
+                    } else if (BELOW_REST_CORE.keySet().stream().noneMatch(name::startsWith) &&!src.contains("TypedVariables.fromJson(")
                             && !src.contains("SlotVariableGuard.callerVariables(")) {
                         violations.put(name, "hands parsed JSON to the engine without TypedVariables.fromJson");
                     }
@@ -69,6 +96,9 @@ class EngineVariablesThroughTypedVariablesTest {
         assertTrue(readers.stream().anyMatch(f -> f.endsWith("CellCrossCellInboxHandler.java")),
                 () -> "the scan works: " + readers);
         assertEquals(Map.of(), violations, "engine variable write paths that bypass TypedVariables (decision 381(4))");
+        for (String listed : NO_ENGINE_JSON.keySet()) {
+            assertTrue(readers.contains(listed), () -> "a stale NO_ENGINE_JSON entry: " + listed);
+        }
     }
 
     @Test
@@ -76,6 +106,7 @@ class EngineVariablesThroughTypedVariablesTest {
         Map<String, ObjectMapper> mappers = Map.of(
                 "ports Json.MAPPER", org.sangam.ports.support.Json.MAPPER,
                 "integration Json.MAPPER", org.sangam.integration.connector.Json.MAPPER,
+                "registry Json.MAPPER", org.sangam.registry.support.Json.MAPPER,
                 "ExactJson.mapper()", ExactJson.mapper(),
                 "ExactJson.documents()", ExactJson.documents());
         mappers.forEach((name, m) -> assertTrue(
