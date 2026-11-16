@@ -23,6 +23,7 @@ permissions:
 env:
   LEDGER: ${{ github.workspace }}/results
   RL: python3 -I ${{ github.workspace }}/sangam/deploy/licence/results_ledger.py
+  RD: python3 -I ${{ github.workspace }}/sangam/deploy/licence/release_dist.py
   CL: python3 -I deploy/licence/check_licences.py --policy deploy/licence/licence-policy.json
   CYCLONEDX: org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeBom
 
@@ -70,12 +71,14 @@ jobs:
       - name: Per-distribution gates (licence strict, register, SBOM matches jar)
         run: |
           rc=0; mkdir -p target
-          for pair in server:sangam-server control-plane:sangam-control-plane gateway:sangam-gateway rollup:sangam-rollup sdk-java:sdks/java; do
-            id=${pair%%:*}; mod=${pair#*:}; art=$(basename "$mod"); [ "$id" = sdk-java ] && art=sangam-sdk-java
+          # RM-15: each fat jar is named from distributions.json with the built version, never found by a glob
+          V=$($RD pom-version)
+          for id in server control-plane gateway rollup sdk-java; do
+            mod=$($RD field "$id" module)
             sbom="$mod/target/sangam-dist.cdx.json"; jar=""
             if [ "$id" != sdk-java ]; then
-              jar=$(find "$mod/target" -maxdepth 1 -name "$art-*.jar" ! -name '*-plain.jar' ! -name '*-sources.jar' | head -n1)
-              $RL run --check sbom-match-$id --ledger-dir "$LEDGER" --expect "$sbom" --expect "${jar:-$mod/target/$art.jar}" -- \
+              jar="$mod/target/$($RD field "$id" jar --version "$V")"
+              $RL run --check sbom-match-$id --ledger-dir "$LEDGER" --expect "$sbom" --expect "$jar" -- \
                 python3 -I deploy/licence/sbom_matches_jar.py "$sbom" --distribution $id --jar "$jar" --out "target/dist-$id.cdx.json" || rc=1
             else
               cp "$sbom" "target/dist-$id.cdx.json" || rc=1
@@ -107,8 +110,13 @@ jobs:
         run: |
           args=(--policy deploy/licence/licence-policy.json)
           for s in target/dist-*.cdx.json; do [ -f "$s" ] && args+=(--sbom "$s"); done
-          for j in $(find sangam-server/target sangam-control-plane/target sangam-gateway/target sangam-rollup/target -maxdepth 1 -name 'sangam-*.jar' ! -name '*-plain.jar' ! -name '*-sources.jar'); do args+=(--jar "$j"); done
-          $RL run --check build-tools-not-shipped --ledger-dir "$LEDGER" --expect-glob 'target/dist-*.cdx.json=6' --expect-glob 'sangam-*/target/sangam-*.jar=4' -- \
+          # RM-15: the four fat jars by name (distributions.json and the built version), each one expected
+          V=$($RD pom-version); expect=()
+          for id in server control-plane gateway rollup; do
+            j="$($RD field "$id" module)/target/$($RD field "$id" jar --version "$V")"
+            args+=(--jar "$j"); expect+=(--expect "$j")
+          done
+          $RL run --check build-tools-not-shipped --ledger-dir "$LEDGER" --expect-glob 'target/dist-*.cdx.json=6' "${expect[@]}" -- \
             python3 -I ../.github/scripts/build_tools_not_shipped.py "${args[@]}"
       - name: Results-ledger gate (pull request)
         if: always()
