@@ -92,6 +92,8 @@ class CallerVariableWritePathsTest {
             Map.entry("../sangam-integration/src/main/java/org/sangam/integration/pipeline/PipelineDelegate.java", reason(1, "a delegate writing its fixed run id variable")),
             Map.entry("../sangam-integration/src/main/java/org/sangam/integration/pipeline/PipelineMessages.java", guarded(2)),
             Map.entry("../sangam-ledger/src/main/java/org/sangam/ledger/LedgerJournal.java", reason(1, "not an engine write: PendingAuditDrainer.signal queues an audit-chain drain")),
+            Map.entry("../sangam-modeller/src/main/java/org/sangam/modeller/replay/operaton/OperatonReplayCapture.java", reason(4, "M-136 replay capture: writes only on its own fresh isolated engine (ReplayEngines.start), never the server's")),
+            Map.entry("../sangam-modeller/src/main/java/org/sangam/modeller/replay/operaton/OperatonReplayDriver.java", reason(4, "M-136 replay: writes only on its own fresh isolated engine (ReplayEngines.start), never the server's")),
             Map.entry("../sangam-onboarding/src/main/java/org/sangam/onboarding/flow/OnboardingFlowEngine.java", reason(2, "the onboarding process of the platform with the fixed variables runId, approved and checker")),
             Map.entry("../sangam-onboarding/src/main/java/org/sangam/onboarding/flow/OnboardingService.java", reason(4, "completes onboarding tasks with the fixed variables approved and checker")),
             Map.entry("../sangam-onboarding/src/main/java/org/sangam/onboarding/flow/OnboardingStepDelegate.java", reason(1, "a delegate or listener of the engine writing names fixed in its code")),
