@@ -227,7 +227,8 @@ server:
   # Owner decision 371 (1): list the UI pods (sangam-ui proxies the API) AND the ingress / edge proxies. The server
   # counts rights-request one-time codes per client address (decision 369 (d)) on the address it resolves; with an
   # empty or incomplete list every citizen shares the UI's or the ingress's address and so one limit
-  # (deploy/README.md section 1, "Hosting behind an edge / reverse proxy").
+  # (deploy/README.md section 1, "Hosting behind an edge / reverse proxy"). Required with server.production: true:
+  # while it is empty the server refuses to start (TRUSTED_PROXIES_REQUIRED, DEC-371-1).
   trustedProxies: []
   # Client-IP headers in priority order (read only from trustedProxies), e.g. [CF-Connecting-IP, X-Forwarded-For].
   clientIpHeaders: [X-Forwarded-For]

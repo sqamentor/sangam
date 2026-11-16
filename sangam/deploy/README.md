@@ -214,7 +214,8 @@ Chart behaviour worth knowing:
   369 (d), `rights.otp.issue-max-per-address`) on the address it resolves: with an empty or incomplete list every
   citizen behind the UI or the ingress has that hop's address, so they share one limit and a few requests lock
   everyone out of rights-request one-time codes. The same address is used for rate limits and audit records.
-  Refusing to start in production while the list is empty is a follow-up before release (gap register DEC-371-1).
+  In production (`server.production: true`) the server **refuses to start** while the list is empty
+  (`TRUSTED_PROXIES_REQUIRED`, gap register DEC-371-1).
 - **Key material required on a non-dev profile.** The server refuses to start without: a key-encryption key
   (`sangam.security.kek.keys.<id>` + `sangam.security.kek.current-id`, or `sangam.security.kek.pkcs12.*`), the registry
   signer (`sangam.registry.signer.private-key` PKCS#8 + `.public-key` X.509, Ed25519, base64) and the identifier-vault

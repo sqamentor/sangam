@@ -60,6 +60,34 @@ class ProductBatchServiceH2Test {
         return batches.batch(id).orElseThrow();
     }
 
+    /**
+     * Owner decision 381(4) follow-up: a batch stored before the exact-decimal rule carries its fractions as plain JSON
+     * numbers ({@code 0.1}, written by Jackson from a Double). The runner hands the item handler the exact BigDecimal of
+     * that text, so the item reaches TypedVariables instead of the DECIMAL_FROM_FLOAT refusal; nothing is rewritten.
+     * Before the ports mapper read fractions exactly, the handler got a Double.
+     */
+    @Test
+    void aBatchStoredBeforeTheUpgradeHandsItsFractionsOverExactly() {
+        java.util.List<Map<String, Object>> seen = new java.util.ArrayList<>();
+        batches.register("captured", (tenant, ref, cfg) -> {
+            seen.add(cfg);
+            return "ok";
+        });
+        String id = batches.create("t1", "captured", List.of("pi-1"), Map.of(), "maker");
+        String stored = "{\"params\":{\"variables\":{\"rate\":0.1,\"wide\":12345678901234567890.123456789,"
+                + "\"small\":1.0E-4,\"count\":3}}}";
+        EngineTx.transactions(h2.engine).inTransaction(c -> org.sangam.core.layer.Jdbc.update(c,
+                "UPDATE PORT_BATCH SET config=? WHERE id=?", stored, id));
+        assertEquals(1, batches.runOnce(10));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> vars = (Map<String, Object>) ((Map<String, Object>) seen.get(0).get("params")).get("variables");
+        assertEquals(new java.math.BigDecimal("0.1"), vars.get("rate"));
+        assertEquals(new java.math.BigDecimal("12345678901234567890.123456789"), vars.get("wide"), "every digit");
+        assertEquals(0, new java.math.BigDecimal("0.0001").compareTo((java.math.BigDecimal) vars.get("small")));
+        assertEquals(3, ((Number) vars.get("count")).intValue(), "an integer stays an integer");
+        assertEquals(State.COMPLETED, get(id).state());
+    }
+
     @Test
     void runsItemsCountsFailuresAndRetries() {
         String id = batches.create("t1", "flaky", List.of("a", "bad1", "b"), Map.of(), "maker");

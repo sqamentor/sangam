@@ -126,6 +126,11 @@ x-server-common: &server-common
     # server refuses to start. With SANGAM_SECURITY_PRODUCTION=false, unset, consents and one-time codes are refused
     # with PRINCIPAL_KEY_NOT_CONFIGURED. A reference whose secret is missing, empty or short stops the start.
     SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF: ${SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF:-}
+    # Decision 371 (1): the CIDRs of the proxies in front of the server (the ui service, which proxies the API, and any
+    # edge or ingress), whose forwarding headers are trusted. Required with SANGAM_SECURITY_PRODUCTION=true (this
+    # file's default): empty, the server refuses to start (TRUSTED_PROXIES_REQUIRED), because every citizen would share
+    # the proxy's address and its one-time-code limit.
+    SANGAM_TRUSTED_PROXIES: ${SANGAM_TRUSTED_PROXIES:-}
     # Owner decision 385 (3): one key per environment. This environment's name and the list of the other environments'
     # key fingerprints (a file under ./config/server, mounted at /opt/sangam/config). Required with
     # SANGAM_SECURITY_PRODUCTION=true (this file's default): without them the server refuses to start

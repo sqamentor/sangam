@@ -194,7 +194,8 @@ public class ModellerWiring {
             case BPMN -> {
                 SlotVariableGuard.refuse(input == null ? null : input.keySet()); // decision 385 (2)
                 var pi = engine.getObject().getRuntimeService().createProcessInstanceByKey(action.target())
-                        .processDefinitionTenantId(tenant).businessKey(operationId.toString()).setVariables(input).execute();
+                        .processDefinitionTenantId(tenant).businessKey(operationId.toString())
+                        .setVariables(org.sangam.rest.support.TypedVariables.fromJson(input)).execute(); // R33, 381(4)
                 return Map.of("processInstanceId", pi.getId());
             }
             case REST -> {

@@ -267,6 +267,14 @@ public final class TenantAdminService {
 
     /** Activation (AJ-01 step 10): blocked until every mandatory item has evidence. */
     public void activate(Connection c, SecurityIdentity admin) {
+        activate(c, admin, null);
+    }
+
+    /**
+     * As {@link #activate(Connection, SecurityIdentity)}; a given {@code reason} (the admin API's optional activation
+     * reason) is stored in the {@code TENANT_ACTIVATED} event, as a suspension's reason is in {@code TENANT_SUSPENDED}.
+     */
+    public void activate(Connection c, SecurityIdentity admin, String reason) {
         authz.require(c, admin, ResourceRegistry.TENANT, Permission.ADMIN, admin.tenantId());
         List<String> have = Jdbc.query(c, "SELECT item FROM SEC_TENANT_CHECKLIST WHERE tenant_id=? AND evidence_ref IS NOT NULL",
                 rs -> rs.getString(1), admin.tenantId());
@@ -275,7 +283,17 @@ public final class TenantAdminService {
             throw new SangamSecurityException.AdminConflict("ACTIVATION_BLOCKED", "missing go-live evidence: " + missing);
         }
         Jdbc.update(c, "UPDATE SEC_TENANT SET status='ACTIVE', activated_at=? WHERE tenant_id=?", Sql.dbNow(c, dialect), admin.tenantId());
-        audit.security(c, admin, SecurityEventType.TENANT_ACTIVATED, Map.of("checklist", have));
+        audit.security(c, admin, SecurityEventType.TENANT_ACTIVATED, withReason(Map.of("checklist", have), reason));
+    }
+
+    /** The event payload with {@code reason} added when one was given (blank counts as none). */
+    static Map<String, Object> withReason(Map<String, Object> payload, String reason) {
+        if (reason == null || reason.isBlank()) {
+            return payload;
+        }
+        Map<String, Object> out = new java.util.LinkedHashMap<>(payload);
+        out.put("reason", reason);
+        return out;
     }
 
     public void suspend(Connection c, SecurityIdentity platformAdmin, String tenantId, String reason) {
@@ -285,9 +303,15 @@ public final class TenantAdminService {
     }
 
     public void resume(Connection c, SecurityIdentity platformAdmin, String tenantId) {
+        resume(c, platformAdmin, tenantId, null);
+    }
+
+    /** As {@link #resume(Connection, SecurityIdentity, String)}; a given {@code reason} is stored in the event. */
+    public void resume(Connection c, SecurityIdentity platformAdmin, String tenantId, String reason) {
         requirePlatformAdmin(platformAdmin);
         Jdbc.update(c, "UPDATE SEC_TENANT SET status='ACTIVE' WHERE tenant_id=? AND status='SUSPENDED'", tenantId);
-        audit.securityIn(c, tenantId, platformAdmin, SecurityEventType.TENANT_ACTIVATED, Map.of("resumed", true));
+        audit.securityIn(c, tenantId, platformAdmin, SecurityEventType.TENANT_ACTIVATED,
+                withReason(Map.of("resumed", true), reason));
     }
 
     public Optional<Tenant> find(Connection c, String tenantId) {

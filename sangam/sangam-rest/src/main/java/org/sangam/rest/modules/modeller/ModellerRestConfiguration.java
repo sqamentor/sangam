@@ -15,7 +15,8 @@ public class ModellerRestConfiguration {
 
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnBean(type = "org.sangam.modeller.lease.EditLeases")
-    @Import({ModellerController.class, ExtensionCatalogueController.class, CatalogueHostController.class, ServiceMocksController.class, ModellerProblemAdvice.class})
+    @Import({ModellerController.class, ExtensionCatalogueController.class, CatalogueHostController.class, ServiceMocksController.class, ModellerProblemAdvice.class,
+            CatalogueProblemAdvice.class})
     static class Controllers {
     }
 }
