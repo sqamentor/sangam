@@ -570,3 +570,19 @@ Decisions 395 and 396 were taken on 2026-11-17 by the owner in chat, answering l
 Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it (Recommended)") on the UX specification sangam-handoff/2026-11-17/r8-ux/UX-SPEC.md, after the owner asked that Sangam's UI, menus and naming be the easiest to understand for a non-technical first-time user (at least Flowable / Camunda level).
 
 - **397 (UX specification, all 12 recommended answers; owner chat 2026-11-17)**: Q1 the 7-group menu (Home, My work, Services, Track and find, Design, Monitor and fix, Set up, Reports and audit, Help); the "Modules" area goes away. Q2 one running item is a "request" for staff and an "application" for citizens. Q3 modules that are not installed are hidden (one read at sign-in). Q4 a team.read permission for supervisors; until it exists Team workload is shown to operators too. Q5 only platform admins see the list of organisations. Q6 Audit search and exports leave the task user's menu. Q7 "Grievances" becomes "Complaints", "My consents" becomes "My data and consent". Q8 first-run checklist progress kept in the browser for 0.1.0. Q9 "Post" for seat, "Postings and additional charge" for assignments. Q10 the sandbox debugger moves to Design as "Test run". Q11 the language switch is hidden in 0.1.0 (English only, Q-06). Q12 phase 2 order: menu, labels, routes and errors first, then page frame, status chips and first run. API or contract changes stay out of scope unless approved separately. Assigned to R8-ux.
+
+- **398 (UX top 10 problems: accept the spec's recommended fix for each, where confidence is 98% or more; owner chat 2026-11-17)**: The owner wrote "I accept all recommended answer for all those question that having 98% confidence" about UX-SPEC.md section 1.10 (top 10 problems).
+  - Assigned to R8-ux-build (phase 2):
+    1. Menu by job.
+    2. Plain words instead of engine jargon.
+    3. One name per duplicate.
+    4. The Modules area is removed.
+    5. Misplaced entries are moved.
+    6. (Assigned to R7-ui; see below.)
+    7. Shared status words and colours.
+    8. Page descriptions, breadcrumbs and empty-state next steps.
+    9. First-run checklists and a glossary.
+    10. One label namespace, matching route words, Hindi switch hidden.
+  - Assigned to R7-ui: problem 6, the dead ends UI-DEMO-1, UI-DEMO-2, UI-DEMO-7 and R7UI-S2, plus hiding modules that answer 501.
+  - Also assigned to R7-ui: the misleading statuses UI-DEMO-3, UI-DEMO-4 and UI-DEMO-5 (the data or logic fixes) under problem 7.
+  - Any fix below 98% confidence comes back to the owner as a question before it is built.
