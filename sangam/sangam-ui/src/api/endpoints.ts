@@ -13,6 +13,10 @@ const enc = encodeURIComponent;
 /** The edit-lease fence header of a package save (ModellerWiring.FENCE_HEADER). */
 export const EDIT_FENCE_HEADER = 'X-Sangam-Edit-Fence';
 
+/** The scope of a document list (listDocuments): exactly what the server accepts. */
+export type DocumentScope = { taskId?: string; processInstanceId?: string; caseInstanceId?: string };
+export const DOCUMENT_SCOPES = ['processInstanceId', 'caseInstanceId', 'taskId'] as const;
+
 export interface ListQuery extends Query {
   page?: number;
   size?: number;
@@ -681,8 +685,9 @@ export const api = {
 
   // ------------------------------------------------------------ documents (R74, EC-18)
   documents: {
-    list: async (q: ListQuery & { businessKey?: string }) =>
-      A.mapPage(await http.page<Record<string, unknown>>('/documents', { page: q.page, size: q.size, name: q.q, businessKey: q.businessKey }), A.normDocument),
+    /** listDocuments is scoped: one of taskId, processInstanceId or caseInstanceId is required (400 SCOPE_REQUIRED). */
+    list: async (q: ListQuery & DocumentScope) =>
+      A.mapPage(await http.page<Record<string, unknown>>('/documents', { page: q.page, size: q.size, name: q.q, taskId: q.taskId, processInstanceId: q.processInstanceId, caseInstanceId: q.caseInstanceId }), A.normDocument),
     versions: (id: string) => http.get<T.Attachment[]>(`/documents/${enc(id)}/versions`),
     content: (id: string, name: string, version?: number) => download(`/documents/${enc(id)}/content`, { version }, name),
     setHold: (id: string, hold: boolean, reason: string) => http.post<void>(`/documents/${enc(id)}/legal-hold`, { hold, reason }),

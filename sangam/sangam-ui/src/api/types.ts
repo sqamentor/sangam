@@ -1104,13 +1104,20 @@ export interface AuditEvent {
   details?: Record<string, unknown>;
   prevHash: string;
   hash: string;
+  /** The hash chain the event belongs to (AuditEvent.chainId); seq and prevHash link within one chain only. */
+  chainId?: string;
 }
 
+/** The screen's reading of AuditVerifyResult (adapters.normVerify). */
 export interface AuditVerifyResult {
+  /** Every chain verified and at least one event checked; never true for a check over nothing. */
   valid: boolean;
+  /** Events checked over all chains (sum of ChainVerification.eventsChecked). */
   checked: number;
-  headHash?: string;
+  /** Chains the server checked. */
+  chains: number;
   firstBrokenSeq?: number;
+  brokenChainId?: string;
   anchoredAt?: Iso;
   message?: string;
 }
