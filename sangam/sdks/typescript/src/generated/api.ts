@@ -564,7 +564,7 @@ export class AIApi {
   }
 }
 
-/** Typed operations of `Admin` (37 operations). */
+/** Typed operations of `Admin` (32 operations). */
 export class AdminApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -730,56 +730,6 @@ export class AdminApi {
   }
 
   /**
-   * List tenants
-   *
-   * Tenant-scoped admin list.
-   *
-   * `GET /admin/tenants` (operationId `listTenants`); permission `tenant.admin`.
-   */
-  async listTenants(params?: { q?: string /* Free-text search */; parentId?: string; orgUnitId?: string; seatId?: string; personId?: string; kind?: string; activeOn?: string; includeInactive?: boolean; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.Tenant>> {
-    const req: ApiRequest = { method: 'GET', path: `/admin/tenants`, query: { q: params?.q, parentId: params?.parentId, orgUnitId: params?.orgUnitId, seatId: params?.seatId, personId: params?.personId, kind: params?.kind, activeOn: params?.activeOn, includeInactive: params?.includeInactive, page: params?.page, size: params?.size } };
-    return this.calls.page<M.Tenant>(req, options, params?.page, params?.size);
-  }
-
-  /**
-   * Create tenant
-   *
-   * Creates and audits on the tenant security chain.
-   *
-   * `POST /admin/tenants` (operationId `createTenant`); permission `tenant.admin`; result stored atomically with the state change.
-   */
-  async createTenant(body: M.Tenant, options?: RequestOptions): Promise<M.Tenant> {
-    const req: ApiRequest = { method: 'POST', path: `/admin/tenants` };
-    if (body !== undefined) req.body = body;
-    return this.calls.json<M.Tenant>(req, options);
-  }
-
-  /**
-   * Get tenant
-   *
-   * One item.
-   *
-   * `GET /admin/tenants/{id}` (operationId `getTenant`); permission `tenant.admin`.
-   */
-  async getTenant(id: string, options?: RequestOptions): Promise<M.Tenant> {
-    const req: ApiRequest = { method: 'GET', path: `/admin/tenants/${seg(String(id))}` };
-    return this.calls.json<M.Tenant>(req, options);
-  }
-
-  /**
-   * Update tenant
-   *
-   * Updates and audits.
-   *
-   * `PUT /admin/tenants/{id}` (operationId `updateTenant`); permission `tenant.admin`; result stored atomically with the state change.
-   */
-  async updateTenant(id: string, body: M.Tenant, options?: RequestOptions): Promise<M.Tenant> {
-    const req: ApiRequest = { method: 'PUT', path: `/admin/tenants/${seg(String(id))}` };
-    if (body !== undefined) req.body = body;
-    return this.calls.json<M.Tenant>(req, options);
-  }
-
-  /**
    * Explain an authorization decision
    *
    * Which grants and denies match (deny wins, A-13) at the current policy version (VI.4).
@@ -856,51 +806,16 @@ export class AdminApi {
   }
 
   /**
-   * Groups
+   * Create a user
    *
-   * Groups of the tenant (R67).
+   * A LOCAL user of the caller's tenant (USER_PROVISIONED); an IdP subject is linked separately. 409 USER_EXISTS.
    *
-   * `GET /admin/groups` (operationId `listGroups`); permission `admin.read`.
+   * `POST /admin/users` (operationId `createUser`); permission `admin.write`; result stored atomically with the state change.
    */
-  async listGroups(params?: { q?: string; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.Group>> {
-    const req: ApiRequest = { method: 'GET', path: `/admin/groups`, query: { q: params?.q, page: params?.page, size: params?.size } };
-    return this.calls.page<M.Group>(req, options, params?.page, params?.size);
-  }
-
-  /**
-   * Group members
-   *
-   * Members of a group.
-   *
-   * `GET /admin/groups/{id}/members` (operationId `listGroupMembers`); permission `admin.read`.
-   */
-  async listGroupMembers(id: string, options?: RequestOptions): Promise<Array<M.User>> {
-    const req: ApiRequest = { method: 'GET', path: `/admin/groups/${seg(String(id))}/members` };
-    return this.calls.json<Array<M.User>>(req, options);
-  }
-
-  /**
-   * Add a group member
-   *
-   * MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).
-   *
-   * `POST /admin/groups/{id}/members/{userId}` (operationId `addGroupMember`); permission `policy.admin`; result stored atomically with the state change.
-   */
-  async addGroupMember(id: string, userId: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/admin/groups/${seg(String(id))}/members/${seg(String(userId))}` };
-    await this.calls.none(req, options);
-  }
-
-  /**
-   * Remove a group member
-   *
-   * MEMBERSHIP_CHANGED; policy_version+1.
-   *
-   * `DELETE /admin/groups/{id}/members/{userId}` (operationId `removeGroupMember`); permission `policy.admin`; result stored atomically with the state change.
-   */
-  async removeGroupMember(id: string, userId: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/admin/groups/${seg(String(id))}/members/${seg(String(userId))}` };
-    await this.calls.none(req, options);
+  async createUser(body: M.UserRequest, options?: RequestOptions): Promise<M.User> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/users` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.User>(req, options);
   }
 
   /**
@@ -1027,6 +942,32 @@ export class AdminApi {
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ServicePrincipal>(req, options);
   }
+
+  /**
+   * Update a user
+   *
+   * Display name and e-mail (USER_UPDATED).
+   *
+   * `PUT /admin/users/{id}` (operationId `updateUser`); permission `admin.write`; result stored atomically with the state change.
+   */
+  async updateUser(id: string, body: M.UserRequest, options?: RequestOptions): Promise<M.User> {
+    const req: ApiRequest = { method: 'PUT', path: `/admin/users/${seg(String(id))}` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.User>(req, options);
+  }
+
+  /**
+   * Disable a user
+   *
+   * USER_DISABLED with the reason; every API token of the user is revoked in the same transaction. 409 SELF_DISABLE for the caller's own user.
+   *
+   * `POST /admin/users/{id}/disable` (operationId `disableUser`); permission `admin.write`; result stored atomically with the state change.
+   */
+  async disableUser(id: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.User> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/users/${seg(String(id))}/disable` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.User>(req, options);
+  }
 }
 
 /** Typed operations of `Admin /assignments` (7 operations). */
@@ -1120,6 +1061,85 @@ export class AdminAssignmentsApi {
     const req: ApiRequest = { method: 'POST', path: `/admin/assignments/${seg(String(id))}/reject` };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Assignment>(req, options);
+  }
+}
+
+/** Typed operations of `Admin /groups` (6 operations). */
+export class AdminGroupsApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Groups
+   *
+   * Groups of the tenant (R67).
+   *
+   * `GET /admin/groups` (operationId `listGroups`); permission `admin.read`.
+   */
+  async listGroups(params?: { q?: string; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.Group>> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/groups`, query: { q: params?.q, page: params?.page, size: params?.size } };
+    return this.calls.page<M.Group>(req, options, params?.page, params?.size);
+  }
+
+  /**
+   * Create a group
+   *
+   * A LOCAL group of the caller's tenant (MEMBERSHIP_CHANGED, created). 409 GROUP_EXISTS.
+   *
+   * `POST /admin/groups` (operationId `createGroup`); permission `policy.admin`; result stored atomically with the state change.
+   */
+  async createGroup(body: M.Group, options?: RequestOptions): Promise<M.Group> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/groups` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.Group>(req, options);
+  }
+
+  /**
+   * Group members
+   *
+   * Members of a group.
+   *
+   * `GET /admin/groups/{id}/members` (operationId `listGroupMembers`); permission `admin.read`.
+   */
+  async listGroupMembers(id: string, options?: RequestOptions): Promise<Array<M.User>> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/groups/${seg(String(id))}/members` };
+    return this.calls.json<Array<M.User>>(req, options);
+  }
+
+  /**
+   * Add a group member
+   *
+   * MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).
+   *
+   * `POST /admin/groups/{id}/members/{userId}` (operationId `addGroupMember`); permission `policy.admin`; result stored atomically with the state change.
+   */
+  async addGroupMember(id: string, userId: string, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/groups/${seg(String(id))}/members/${seg(String(userId))}` };
+    await this.calls.none(req, options);
+  }
+
+  /**
+   * Remove a group member
+   *
+   * MEMBERSHIP_CHANGED; policy_version+1.
+   *
+   * `DELETE /admin/groups/{id}/members/{userId}` (operationId `removeGroupMember`); permission `policy.admin`; result stored atomically with the state change.
+   */
+  async removeGroupMember(id: string, userId: string, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/admin/groups/${seg(String(id))}/members/${seg(String(userId))}` };
+    await this.calls.none(req, options);
+  }
+
+  /**
+   * Rename a group
+   *
+   * The name only; memberships and the group's IdP or SCIM reference are kept (MEMBERSHIP_CHANGED, updated).
+   *
+   * `PUT /admin/groups/{id}` (operationId `updateGroup`); permission `policy.admin`; result stored atomically with the state change.
+   */
+  async updateGroup(id: string, body: M.Group, options?: RequestOptions): Promise<M.Group> {
+    const req: ApiRequest = { method: 'PUT', path: `/admin/groups/${seg(String(id))}` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.Group>(req, options);
   }
 }
 
@@ -1387,6 +1407,99 @@ export class AdminSecurityApi {
     const req: ApiRequest = { method: 'POST', path: `/admin/security/module-defaults` };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ModuleDefaultsResult>(req, options);
+  }
+}
+
+/** Typed operations of `Admin /tenants` (7 operations). */
+export class AdminTenantsApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * List tenants
+   *
+   * Tenant-scoped admin list.
+   *
+   * `GET /admin/tenants` (operationId `listTenants`); permission `tenant.admin`.
+   */
+  async listTenants(params?: { q?: string /* Free-text search */; parentId?: string; orgUnitId?: string; seatId?: string; personId?: string; kind?: string; activeOn?: string; includeInactive?: boolean; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.Tenant>> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/tenants`, query: { q: params?.q, parentId: params?.parentId, orgUnitId: params?.orgUnitId, seatId: params?.seatId, personId: params?.personId, kind: params?.kind, activeOn: params?.activeOn, includeInactive: params?.includeInactive, page: params?.page, size: params?.size } };
+    return this.calls.page<M.Tenant>(req, options, params?.page, params?.size);
+  }
+
+  /**
+   * Create tenant
+   *
+   * Creates and audits on the tenant security chain.
+   *
+   * `POST /admin/tenants` (operationId `createTenant`); permission `tenant.admin`; result stored atomically with the state change.
+   */
+  async createTenant(body: M.Tenant, options?: RequestOptions): Promise<M.Tenant> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/tenants` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.Tenant>(req, options);
+  }
+
+  /**
+   * Get tenant
+   *
+   * One item.
+   *
+   * `GET /admin/tenants/{id}` (operationId `getTenant`); permission `tenant.admin`.
+   */
+  async getTenant(id: string, options?: RequestOptions): Promise<M.Tenant> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/tenants/${seg(String(id))}` };
+    return this.calls.json<M.Tenant>(req, options);
+  }
+
+  /**
+   * Update tenant
+   *
+   * Updates and audits.
+   *
+   * `PUT /admin/tenants/{id}` (operationId `updateTenant`); permission `tenant.admin`; result stored atomically with the state change.
+   */
+  async updateTenant(id: string, body: M.Tenant, options?: RequestOptions): Promise<M.Tenant> {
+    const req: ApiRequest = { method: 'PUT', path: `/admin/tenants/${seg(String(id))}` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.Tenant>(req, options);
+  }
+
+  /**
+   * Check a tenant's go-live readiness
+   *
+   * Lists the required go-live checklist items and those without evidence; changes nothing. 404 for a tenant the caller does not administer; 409 ACTIVATION_BLOCKED when a required jurisdiction pack is not installed.
+   *
+   * `POST /admin/tenants/{id}/validate` (operationId `validateTenant`); permission `tenant.admin`.
+   */
+  async validateTenant(id: string, options?: RequestOptions): Promise<M.TenantReadiness> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/tenants/${seg(String(id))}/validate` };
+    return this.calls.json<M.TenantReadiness>(req, options);
+  }
+
+  /**
+   * Activate or resume a tenant
+   *
+   * A suspended tenant is resumed (platform administrator). Any other tenant is activated by its own administrator once every required item has evidence (409 ACTIVATION_BLOCKED names the missing items); naming another tenant is 409 TENANT_ACTIVATION_BY_OWN_ADMIN. TENANT_ACTIVATED. The optional reason is not stored by the activation.
+   *
+   * `POST /admin/tenants/{id}/activate` (operationId `activateTenant`); permission `tenant.admin`; result stored atomically with the state change.
+   */
+  async activateTenant(id: string, body?: M.ReasonRequest, options?: RequestOptions): Promise<M.Tenant> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/tenants/${seg(String(id))}/activate` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.Tenant>(req, options);
+  }
+
+  /**
+   * Suspend a tenant
+   *
+   * Platform administrator only; requests for the tenant are then refused. TENANT_SUSPENDED with the reason.
+   *
+   * `POST /admin/tenants/{id}/suspend` (operationId `suspendTenant`); permission `tenant.admin`; result stored atomically with the state change.
+   */
+  async suspendTenant(id: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.Tenant> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/tenants/${seg(String(id))}/suspend` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.Tenant>(req, options);
   }
 }
 
@@ -7777,7 +7890,7 @@ export class OpsBatchesApi {
   }
 }
 
-/** Typed operations of `Ops /incidents` (7 operations). */
+/** Typed operations of `Ops /incidents` (9 operations). */
 export class OpsIncidentsApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -7864,6 +7977,32 @@ export class OpsIncidentsApi {
    */
   async noteIncident(id: string, body: M.NoteRequest, options?: RequestOptions): Promise<M.Incident> {
     const req: ApiRequest = { method: 'POST', path: `/ops/incidents/${seg(String(id))}/note` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.Incident>(req, options);
+  }
+
+  /**
+   * Skip an incident
+   *
+   * Moves the token past the incident's activity (instance modification, R49): starts after the activity under the same parent, then cancels the incident's own activity or transition instance; the activity's effect does not happen and other instances of the activity are untouched (INCIDENT_SKIPPED; the reason is the modification's annotation). 400 REASON_REQUIRED without a reason; 422 INCIDENT_NOT_SKIPPABLE when the incident has no active token to move.
+   *
+   * `POST /ops/incidents/{id}/skip` (operationId `skipIncident`); permission `ops.write`; result stored atomically with the state change.
+   */
+  async skipIncident(id: string, body: M.IncidentAction, options?: RequestOptions): Promise<M.Incident> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/incidents/${seg(String(id))}/skip` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.Incident>(req, options);
+  }
+
+  /**
+   * Cancel an incident's instance
+   *
+   * Cancels the incident's process instance through the business cancel (VI.5: the model's cancel paths, open external work becomes CANCEL_REQUESTED, INSTANCE_CANCELLED), then audits INCIDENT_CANCELLED with the open operation ids. 400 REASON_REQUIRED without a reason.
+   *
+   * `POST /ops/incidents/{id}/cancel` (operationId `cancelIncident`); permission `ops.write`; result stored atomically with the state change.
+   */
+  async cancelIncident(id: string, body: M.IncidentAction, options?: RequestOptions): Promise<M.Incident> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/incidents/${seg(String(id))}/cancel` };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Incident>(req, options);
   }
@@ -14720,6 +14859,36 @@ export class TenantOperationsVariablesApi {
   }
 }
 
+/** Typed operations of `TenantMigration` (2 operations). */
+export class TenantMigrationApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Tenant migration inventory
+   *
+   * Read-only scan of the engine tables: running root instances without an engine tenant, with or without a tenant variable, and instances whose tenant variable contradicts the engine tenant; consistent instances are not listed. Changes nothing. Platform-only permission platform.tenant-migration.admin (platform administrator on a platform-issuer identity); a tenant administrator never holds it.
+   *
+   * `GET /admin/tenant-migration/instances` (operationId `listTenantFallbackInstances`); permission `platform.tenant-migration.admin`.
+   */
+  async listTenantFallbackInstances(options?: RequestOptions): Promise<Array<M.TenantFallbackInstance>> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/tenant-migration/instances` };
+    return this.calls.json<Array<M.TenantFallbackInstance>>(req, options);
+  }
+
+  /**
+   * Repair an instance's tenant
+   *
+   * Moves one listed instance to the tenant that owns it through the change-tenant cut-over (ChangeTenantService.moveInstance). 409 NOT_IN_INVENTORY when the instance is not listed now; 409 INVALID_TRANSITION when it already runs in targetTenant; 422 REPAIR_REFUSED when the engine refuses the cut-over (for example a called instance: move its root); 400 VALIDATION_FAILED for a missing or too long targetTenant, evidenceRef or reason. Audited TENANT_INSTANCE_REPAIRED (old and new instance, tenants, finding, evidenceRef, reason, actor) on the chains of both instances. A retry with the same Idempotency-Key returns the same result. Platform-only permission platform.tenant-migration.admin (platform administrator on a platform-issuer identity); a tenant administrator never holds it.
+   *
+   * `POST /admin/tenant-migration/instances/{id}/repair` (operationId `repairTenantFallbackInstance`); permission `platform.tenant-migration.admin`; result stored atomically with the state change.
+   */
+  async repairTenantFallbackInstance(id: string, body: M.TenantRepairRequest, options?: RequestOptions): Promise<M.TenantRepairResult> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/tenant-migration/instances/${seg(String(id))}/repair` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.TenantRepairResult>(req, options);
+  }
+}
+
 /** Typed operations of `TestMode` (2 operations). */
 export class TestModeApi {
   constructor(private readonly calls: GeneratedCalls) {}
@@ -14987,14 +15156,16 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1160 operations on 977 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1172 operations on 987 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;
   readonly adminAssignments: AdminAssignmentsApi;
+  readonly adminGroups: AdminGroupsApi;
   readonly adminOrgUnits: AdminOrgUnitsApi;
   readonly adminPowerTables: AdminPowerTablesApi;
   readonly adminSecurity: AdminSecurityApi;
+  readonly adminTenants: AdminTenantsApi;
   readonly analytics: AnalyticsApi;
   readonly apiContracts: ApiContractsApi;
   readonly audit: AuditApi;
@@ -15066,6 +15237,7 @@ export class SangamApis {
   readonly tenantOperationsRetention: TenantOperationsRetentionApi;
   readonly tenantOperationsSecrets: TenantOperationsSecretsApi;
   readonly tenantOperationsVariables: TenantOperationsVariablesApi;
+  readonly tenantMigration: TenantMigrationApi;
   readonly testMode: TestModeApi;
   readonly work: WorkApi;
   readonly workspace: WorkspaceApi;
@@ -15075,9 +15247,11 @@ export class SangamApis {
     this.ai = new AIApi(calls);
     this.admin = new AdminApi(calls);
     this.adminAssignments = new AdminAssignmentsApi(calls);
+    this.adminGroups = new AdminGroupsApi(calls);
     this.adminOrgUnits = new AdminOrgUnitsApi(calls);
     this.adminPowerTables = new AdminPowerTablesApi(calls);
     this.adminSecurity = new AdminSecurityApi(calls);
+    this.adminTenants = new AdminTenantsApi(calls);
     this.analytics = new AnalyticsApi(calls);
     this.apiContracts = new ApiContractsApi(calls);
     this.audit = new AuditApi(calls);
@@ -15149,6 +15323,7 @@ export class SangamApis {
     this.tenantOperationsRetention = new TenantOperationsRetentionApi(calls);
     this.tenantOperationsSecrets = new TenantOperationsSecretsApi(calls);
     this.tenantOperationsVariables = new TenantOperationsVariablesApi(calls);
+    this.tenantMigration = new TenantMigrationApi(calls);
     this.testMode = new TestModeApi(calls);
     this.work = new WorkApi(calls);
     this.workspace = new WorkspaceApi(calls);

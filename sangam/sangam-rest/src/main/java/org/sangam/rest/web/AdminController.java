@@ -239,4 +239,26 @@ public class AdminController {
         permissions.require(ctx, Permissions.TENANT_ADMIN);
         return Lists.okRef(id, admin.updateTenant(ctx, id, body));
     }
+
+    /** A dry run of the activation check (AJ-01 step 10): required go-live items and those without evidence. */
+    @PostMapping("/tenants/{id}/validate")
+    public AdminPort.TenantReadiness validateTenant(RequestContext ctx, @PathVariable String id) {
+        permissions.require(ctx, Permissions.TENANT_ADMIN);
+        return admin.validateTenant(ctx, id);
+    }
+
+    @PostMapping("/tenants/{id}/activate")
+    public ResponseEntity<AdminPort.Tenant> activateTenant(RequestContext ctx, @PathVariable String id,
+                                                           @RequestBody(required = false) ReasonRequest body) {
+        permissions.require(ctx, Permissions.TENANT_ADMIN);
+        return Lists.okRef(id, admin.activateTenant(ctx, id, body == null ? null : body.reason()));
+    }
+
+    @PostMapping("/tenants/{id}/suspend")
+    public ResponseEntity<AdminPort.Tenant> suspendTenant(RequestContext ctx, @PathVariable String id,
+                                                          @RequestBody ReasonRequest body) {
+        permissions.require(ctx, Permissions.TENANT_ADMIN);
+        ProcessController.requireReason(body == null ? null : body.reason());
+        return Lists.okRef(id, admin.suspendTenant(ctx, id, body.reason()));
+    }
 }

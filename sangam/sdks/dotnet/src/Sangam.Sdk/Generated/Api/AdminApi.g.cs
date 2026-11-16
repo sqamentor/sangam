@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Admin (37 operations).
+/// Typed operations of Admin (32 operations).
 /// </summary>
 public sealed class AdminApi
 {
@@ -196,62 +196,6 @@ public sealed class AdminApi
     }
 
     /// <summary>
-    /// List tenants
-    /// Tenant-scoped admin list.
-    /// GET /admin/tenants (operationId listTenants); permission tenant.admin.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.Tenant>> ListTenantsAsync(string? q = null, string? parentId = null, string? orgUnitId = null, string? seatId = null, string? personId = null, string? kind = null, global::System.DateOnly? activeOn = null, bool? includeInactive = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/admin/tenants");
-        req.WithQuery("q", GeneratedCalls.Q(q));
-        req.WithQuery("parentId", GeneratedCalls.Q(parentId));
-        req.WithQuery("orgUnitId", GeneratedCalls.Q(orgUnitId));
-        req.WithQuery("seatId", GeneratedCalls.Q(seatId));
-        req.WithQuery("personId", GeneratedCalls.Q(personId));
-        req.WithQuery("kind", GeneratedCalls.Q(kind));
-        req.WithQuery("activeOn", GeneratedCalls.Q(activeOn));
-        req.WithQuery("includeInactive", GeneratedCalls.Q(includeInactive));
-        req.WithQuery("page", GeneratedCalls.Q(page));
-        req.WithQuery("size", GeneratedCalls.Q(size));
-        return await _calls.PageAsync<M.Tenant>(req, options, page, size, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Create tenant
-    /// Creates and audits on the tenant security chain.
-    /// POST /admin/tenants (operationId createTenant); permission tenant.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<M.Tenant?> CreateTenantAsync(M.Tenant body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Post($"/admin/tenants");
-        if (body is not null) req.WithBody(body);
-        return await _calls.JsonAsync<M.Tenant?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Get tenant
-    /// One item.
-    /// GET /admin/tenants/{id} (operationId getTenant); permission tenant.admin.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<M.Tenant?> GetTenantAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/admin/tenants/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
-        return await _calls.JsonAsync<M.Tenant?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Update tenant
-    /// Updates and audits.
-    /// PUT /admin/tenants/{id} (operationId updateTenant); permission tenant.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<M.Tenant?> UpdateTenantAsync(string id, M.Tenant body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Put($"/admin/tenants/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
-        if (body is not null) req.WithBody(body);
-        return await _calls.JsonAsync<M.Tenant?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
     /// Explain an authorization decision
     /// Which grants and denies match (deny wins, A-13) at the current policy version (VI.4).
     /// POST /admin/policies/explain (operationId explainPolicy); permission policy.admin.
@@ -328,50 +272,15 @@ public sealed class AdminApi
     }
 
     /// <summary>
-    /// Groups
-    /// Groups of the tenant (R67).
-    /// GET /admin/groups (operationId listGroups); permission admin.read.
+    /// Create a user
+    /// A LOCAL user of the caller's tenant (USER_PROVISIONED); an IdP subject is linked separately. 409 USER_EXISTS.
+    /// POST /admin/users (operationId createUser); permission admin.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.Group>> ListGroupsAsync(string? q = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.User?> CreateUserAsync(M.UserRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/admin/groups");
-        req.WithQuery("q", GeneratedCalls.Q(q));
-        req.WithQuery("page", GeneratedCalls.Q(page));
-        req.WithQuery("size", GeneratedCalls.Q(size));
-        return await _calls.PageAsync<M.Group>(req, options, page, size, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Group members
-    /// Members of a group.
-    /// GET /admin/groups/{id}/members (operationId listGroupMembers); permission admin.read.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.User>?> ListGroupMembersAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/admin/groups/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/members");
-        return await _calls.JsonAsync<global::System.Collections.Generic.List<M.User>?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Add a group member
-    /// MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).
-    /// POST /admin/groups/{id}/members/{userId} (operationId addGroupMember); permission policy.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task AddGroupMemberAsync(string id, string userId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Post($"/admin/groups/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/members/{HttpTransport.Seg(GeneratedCalls.Str(userId)!)}");
-        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Remove a group member
-    /// MEMBERSHIP_CHANGED; policy_version+1.
-    /// DELETE /admin/groups/{id}/members/{userId} (operationId removeGroupMember); permission policy.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task RemoveGroupMemberAsync(string id, string userId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Delete($"/admin/groups/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/members/{HttpTransport.Seg(GeneratedCalls.Str(userId)!)}");
-        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
+        var req = ApiRequest.Post($"/admin/users");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.User?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -487,5 +396,29 @@ public sealed class AdminApi
         var req = ApiRequest.Post($"/admin/service-principals/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/revoke");
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.ServicePrincipal?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Update a user
+    /// Display name and e-mail (USER_UPDATED).
+    /// PUT /admin/users/{id} (operationId updateUser); permission admin.write; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.User?> UpdateUserAsync(string id, M.UserRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Put($"/admin/users/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.User?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Disable a user
+    /// USER_DISABLED with the reason; every API token of the user is revoked in the same transaction. 409 SELF_DISABLE for the caller's own user.
+    /// POST /admin/users/{id}/disable (operationId disableUser); permission admin.write; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.User?> DisableUserAsync(string id, M.ReasonRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/admin/users/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/disable");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.User?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 }

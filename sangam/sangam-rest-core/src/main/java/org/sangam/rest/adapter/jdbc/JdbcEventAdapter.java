@@ -63,7 +63,8 @@ public final class JdbcEventAdapter implements EventPort {
     private static final Set<String> TRANSPORTS = Set.of("REST", "WEBHOOK", "KAFKA", "JMS", "AMQP");
     private static final Set<String> RESERVED = Set.of("channels", "definitions");
     private static final Duration INBOX_TTL = Duration.ofHours(24);
-    private static final ObjectMapper JSON = new ObjectMapper();
+    // decision 381(4): event data reaches TypedVariables, so fractions are read exactly
+    private static final ObjectMapper JSON = org.sangam.rest.support.ExactJson.mapper();
 
     private final ProcessPort processes;
     private final TxSupport tx;

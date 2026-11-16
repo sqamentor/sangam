@@ -6,7 +6,7 @@ namespace Sangam.Sdk.Generated;
 using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 /// <summary>
-/// The generated typed surface of sangam-api.yaml 0.1.0: 1160 operations on 977 paths, one property per API class (a tag, or a sub-path of a large tag). Use SangamClient.Api.
+/// The generated typed surface of sangam-api.yaml 0.1.0: 1172 operations on 987 paths, one property per API class (a tag, or a sub-path of a large tag). Use SangamClient.Api.
 /// </summary>
 public sealed class SangamApis
 {
@@ -16,9 +16,11 @@ public sealed class SangamApis
         AI = new AIApi(calls);
         Admin = new AdminApi(calls);
         AdminAssignments = new AdminAssignmentsApi(calls);
+        AdminGroups = new AdminGroupsApi(calls);
         AdminOrgUnits = new AdminOrgUnitsApi(calls);
         AdminPowerTables = new AdminPowerTablesApi(calls);
         AdminSecurity = new AdminSecurityApi(calls);
+        AdminTenants = new AdminTenantsApi(calls);
         Analytics = new AnalyticsApi(calls);
         ApiContracts = new ApiContractsApi(calls);
         Audit = new AuditApi(calls);
@@ -90,6 +92,7 @@ public sealed class SangamApis
         TenantOperationsRetention = new TenantOperationsRetentionApi(calls);
         TenantOperationsSecrets = new TenantOperationsSecretsApi(calls);
         TenantOperationsVariables = new TenantOperationsVariablesApi(calls);
+        TenantMigration = new TenantMigrationApi(calls);
         TestMode = new TestModeApi(calls);
         Work = new WorkApi(calls);
         Workspace = new WorkspaceApi(calls);
@@ -98,9 +101,11 @@ public sealed class SangamApis
     public AIApi AI { get; }
     public AdminApi Admin { get; }
     public AdminAssignmentsApi AdminAssignments { get; }
+    public AdminGroupsApi AdminGroups { get; }
     public AdminOrgUnitsApi AdminOrgUnits { get; }
     public AdminPowerTablesApi AdminPowerTables { get; }
     public AdminSecurityApi AdminSecurity { get; }
+    public AdminTenantsApi AdminTenants { get; }
     public AnalyticsApi Analytics { get; }
     public ApiContractsApi ApiContracts { get; }
     public AuditApi Audit { get; }
@@ -172,6 +177,7 @@ public sealed class SangamApis
     public TenantOperationsRetentionApi TenantOperationsRetention { get; }
     public TenantOperationsSecretsApi TenantOperationsSecrets { get; }
     public TenantOperationsVariablesApi TenantOperationsVariables { get; }
+    public TenantMigrationApi TenantMigration { get; }
     public TestModeApi TestMode { get; }
     public WorkApi Work { get; }
     public WorkspaceApi Workspace { get; }

@@ -153,6 +153,9 @@ tags:
   description: SCIM 2.0 user and group provisioning from an identity provider, mapped to persons, seats and postings (R67; RFC 7643, RFC 7644)
 - name: SharedDeployments
   description: 'Shared-deployment registry (decisions 144 and 197): which engine deployments are platform-owned; platform deployers only'
+- name: TenantMigration
+  description: 'Decision 145 tenant migration: inventory of instances without an authoritative engine tenant and their audited repair; platform
+    administrators only'
 - name: TestMode
   description: Test-mode clock steering (M-021); present only on a test-mode server
 paths:
@@ -12559,6 +12562,62 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
+    post:
+      operationId: createUser
+      tags:
+      - Admin
+      summary: Create a user
+      description: A LOCAL user of the caller's tenant (USER_PROVISIONED); an IdP subject is linked separately. 409 USER_EXISTS.
+      x-sangam-command-type: admin.user.create
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: admin.write
+      x-sangam-requirements:
+      - R67
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: USER_EXISTS, SELF_DISABLE or GROUP_EXISTS
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /admin/groups:
     get:
       operationId: listGroups
@@ -12596,6 +12655,62 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+    post:
+      operationId: createGroup
+      tags:
+      - Admin
+      summary: Create a group
+      description: A LOCAL group of the caller's tenant (MEMBERSHIP_CHANGED, created). 409 GROUP_EXISTS.
+      x-sangam-command-type: admin.group.create
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: policy.admin
+      x-sangam-requirements:
+      - R67
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Group'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: USER_EXISTS, SELF_DISABLE or GROUP_EXISTS
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
   /admin/groups/{id}/members:
@@ -18766,6 +18881,466 @@ paths:
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
       security: []
+  /ops/incidents/{id}/skip:
+    post:
+      operationId: skipIncident
+      tags:
+      - Ops
+      summary: Skip an incident
+      description: 'Moves the token past the incident''s activity (instance modification, R49): starts after the activity under the same parent,
+        then cancels the incident''s own activity or transition instance; the activity''s effect does not happen and other instances of the activity
+        are untouched (INCIDENT_SKIPPED; the reason is the modification''s annotation). 400 REASON_REQUIRED without a reason; 422 INCIDENT_NOT_SKIPPABLE
+        when the incident has no active token to move.'
+      x-sangam-command-type: ops.incident.skip
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.write
+      x-sangam-requirements:
+      - R63
+      - R41
+      - R42
+      - R49
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentAction'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          description: INCIDENT_NOT_SKIPPABLE, or the engine refused the modification (ENGINE_REJECTED)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ops/incidents/{id}/cancel:
+    post:
+      operationId: cancelIncident
+      tags:
+      - Ops
+      summary: Cancel an incident's instance
+      description: 'Cancels the incident''s process instance through the business cancel (VI.5: the model''s cancel paths, open external work
+        becomes CANCEL_REQUESTED, INSTANCE_CANCELLED), then audits INCIDENT_CANCELLED with the open operation ids. 400 REASON_REQUIRED without
+        a reason.'
+      x-sangam-command-type: ops.incident.cancel
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.write
+      x-sangam-requirements:
+      - R63
+      - R41
+      - R42
+      - VI.5
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentAction'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /admin/tenants/{id}/validate:
+    post:
+      operationId: validateTenant
+      tags:
+      - Admin
+      summary: Check a tenant's go-live readiness
+      description: Lists the required go-live checklist items and those without evidence; changes nothing. 404 for a tenant the caller does not
+        administer; 409 ACTIVATION_BLOCKED when a required jurisdiction pack is not installed.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - AJ-01
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantReadiness'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: ACTIVATION_BLOCKED or TENANT_ACTIVATION_BY_OWN_ADMIN
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /admin/tenants/{id}/activate:
+    post:
+      operationId: activateTenant
+      tags:
+      - Admin
+      summary: Activate or resume a tenant
+      description: A suspended tenant is resumed (platform administrator). Any other tenant is activated by its own administrator once every required
+        item has evidence (409 ACTIVATION_BLOCKED names the missing items); naming another tenant is 409 TENANT_ACTIVATION_BY_OWN_ADMIN. TENANT_ACTIVATED.
+        The optional reason is not stored by the activation.
+      x-sangam-command-type: admin.tenant.activate
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - AJ-01
+      - R41
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: ACTIVATION_BLOCKED or TENANT_ACTIVATION_BY_OWN_ADMIN
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /admin/tenants/{id}/suspend:
+    post:
+      operationId: suspendTenant
+      tags:
+      - Admin
+      summary: Suspend a tenant
+      description: Platform administrator only; requests for the tenant are then refused. TENANT_SUSPENDED with the reason.
+      x-sangam-command-type: admin.tenant.suspend
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - AJ-01
+      - R41
+      - R42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /admin/users/{id}:
+    put:
+      operationId: updateUser
+      tags:
+      - Admin
+      summary: Update a user
+      description: Display name and e-mail (USER_UPDATED).
+      x-sangam-command-type: admin.user.update
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: admin.write
+      x-sangam-requirements:
+      - R67
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /admin/users/{id}/disable:
+    post:
+      operationId: disableUser
+      tags:
+      - Admin
+      summary: Disable a user
+      description: USER_DISABLED with the reason; every API token of the user is revoked in the same transaction. 409 SELF_DISABLE for the caller's
+        own user.
+      x-sangam-command-type: admin.user.disable
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: admin.write
+      x-sangam-requirements:
+      - R67
+      - R41
+      - R42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: USER_EXISTS, SELF_DISABLE or GROUP_EXISTS
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /admin/groups/{id}:
+    put:
+      operationId: updateGroup
+      tags:
+      - Admin
+      summary: Rename a group
+      description: The name only; memberships and the group's IdP or SCIM reference are kept (MEMBERSHIP_CHANGED, updated).
+      x-sangam-command-type: admin.group.update
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: policy.admin
+      x-sangam-requirements:
+      - R67
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Group'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /ai/runs:
     post:
       operationId: aiStartRun
@@ -58482,6 +59057,118 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
+  /admin/tenant-migration/instances:
+    get:
+      operationId: listTenantFallbackInstances
+      tags:
+      - TenantMigration
+      summary: Tenant migration inventory
+      description: 'Read-only scan of the engine tables: running root instances without an engine tenant, with or without a tenant variable, and
+        instances whose tenant variable contradicts the engine tenant; consistent instances are not listed. Changes nothing. Platform-only permission
+        platform.tenant-migration.admin (platform administrator on a platform-issuer identity); a tenant administrator never holds it.'
+      x-sangam-permission: platform.tenant-migration.admin
+      x-sangam-requirements:
+      - R42
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TenantFallbackInstance'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '501':
+          description: 'CAPABILITY_NOT_INSTALLED: this server has no process engine port for the tenant migration. Not retryable; checked after
+            the permission'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /admin/tenant-migration/instances/{id}/repair:
+    post:
+      operationId: repairTenantFallbackInstance
+      tags:
+      - TenantMigration
+      summary: Repair an instance's tenant
+      description: 'Moves one listed instance to the tenant that owns it through the change-tenant cut-over (ChangeTenantService.moveInstance).
+        409 NOT_IN_INVENTORY when the instance is not listed now; 409 INVALID_TRANSITION when it already runs in targetTenant; 422 REPAIR_REFUSED
+        when the engine refuses the cut-over (for example a called instance: move its root); 400 VALIDATION_FAILED for a missing or too long targetTenant,
+        evidenceRef or reason. Audited TENANT_INSTANCE_REPAIRED (old and new instance, tenants, finding, evidenceRef, reason, actor) on the chains
+        of both instances. A retry with the same Idempotency-Key returns the same result. Platform-only permission platform.tenant-migration.admin
+        (platform administrator on a platform-issuer identity); a tenant administrator never holds it.'
+      x-sangam-command-type: tenant.migration.repair
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: platform.tenant-migration.admin
+      x-sangam-requirements:
+      - R42
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantRepairRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantRepairResult'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: NOT_IN_INVENTORY or INVALID_TRANSITION
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: 'REPAIR_REFUSED: the engine refused the cut-over'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '501':
+          description: 'CAPABILITY_NOT_INSTALLED: this server has no process engine port for the tenant migration. Not retryable; checked after
+            the permission'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /test-mode/clock:
     get:
       operationId: getTestClock
@@ -65274,6 +65961,56 @@ components:
           additionalProperties: true
         contentHash:
           type: string
+    TenantReadiness:
+      type: object
+      description: 'Go-live readiness of a tenant (AJ-01 step 10): the activation check as a dry run.'
+      properties:
+        tenantId:
+          type: string
+        status:
+          type: string
+        ready:
+          type: boolean
+        required:
+          type: array
+          items:
+            type: string
+          description: 'Checklist items the activation requires: core items, the tenant''s jurisdiction packs, its profile'
+        missing:
+          type: array
+          items:
+            type: string
+          description: Required items without recorded evidence; empty when ready
+      required:
+      - tenantId
+      - ready
+      - required
+      - missing
+    UserRequest:
+      type: object
+      description: A LOCAL user an administrator creates or updates (R67).
+      properties:
+        id:
+          type: string
+          description: Person id of a new user (1-64 characters); username when omitted
+          maxLength: 64
+        username:
+          type: string
+          maxLength: 64
+        displayName:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          maxLength: 255
+        active:
+          type: boolean
+          description: 'Only true: a user is created active and disabled afterwards with a reason'
+        source:
+          type: string
+          enum:
+          - LOCAL
+          description: 'Only LOCAL: SCIM and directory sync provision their own users'
     AiRun:
       type: object
       description: RunView.
@@ -73605,6 +74342,97 @@ components:
           minLength: 1
           maxLength: 1000
           description: Mandatory reason for the audit record (R42)
+    TenantClaim:
+      type: object
+      description: 'A tenant variable of an instance as stored (tenantId or sangamTenantId): untrusted business data, never a tenant source (decision
+        145).'
+      properties:
+        variableName:
+          type: string
+        value:
+          type: string
+      required:
+      - variableName
+    TenantFallbackInstance:
+      type: object
+      description: A running root instance the engine-tenant-only rule refuses (decision 145).
+      properties:
+        processInstanceId:
+          type: string
+        definitionKey:
+          type: string
+        engineTenant:
+          type: string
+          description: The instance's engine tenant; absent when it has none
+        definitionTenant:
+          type: string
+          description: The deployment tenant of its definition (absent for a shared deployment); one piece of ownership evidence, never the answer
+        finding:
+          type: string
+          enum:
+          - TENANT_CONTEXT_MISSING
+          - TENANT_CONTEXT_CONFLICT
+          description: 'TENANT_CONTEXT_MISSING: no engine tenant; TENANT_CONTEXT_CONFLICT: a tenant variable differs from the engine tenant'
+        reliedOnTheFallback:
+          type: boolean
+          description: 'True when the instance had no engine tenant and a tenant variable: the case the removed fallback served'
+        claims:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantClaim'
+          description: Its tenant variables at any scope, as stored
+      required:
+      - processInstanceId
+      - finding
+      - reliedOnTheFallback
+      - claims
+    TenantRepairRequest:
+      type: object
+      description: Repair of one instance on authoritative ownership evidence (decisions 145 and 199).
+      properties:
+        targetTenant:
+          type: string
+          description: The tenant that owns the instance; not the shared scope
+          minLength: 1
+          maxLength: 64
+        evidenceRef:
+          type: string
+          description: Reference of the ownership evidence the operator checked (record id, file, ticket)
+          minLength: 1
+          maxLength: 500
+        reason:
+          type: string
+          description: Reason for the audit record (R42)
+          minLength: 1
+          maxLength: 1000
+      required:
+      - targetTenant
+      - evidenceRef
+      - reason
+    TenantRepairResult:
+      type: object
+      description: 'The cut-over of a repaired instance: the old instance is cancelled and a new one runs in the target tenant at the same active
+        activities, with its variables and business key; a change-tenant link joins the two ids.'
+      properties:
+        processInstanceId:
+          type: string
+        newProcessInstanceId:
+          type: string
+        fromTenant:
+          type: string
+          description: The old engine tenant; absent when it had none
+        targetTenant:
+          type: string
+        finding:
+          type: string
+        evidenceRef:
+          type: string
+      required:
+      - processInstanceId
+      - newProcessInstanceId
+      - targetTenant
+      - finding
+      - evidenceRef
     TestClock:
       type: object
       description: 'The test-mode clock (TestModeClock): the instant the engine and business clocks now read and their offset from the wall clock;

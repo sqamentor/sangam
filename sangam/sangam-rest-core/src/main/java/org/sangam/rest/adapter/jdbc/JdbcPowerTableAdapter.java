@@ -58,7 +58,8 @@ import org.sangam.rest.support.TxSupport;
  */
 public final class JdbcPowerTableAdapter implements PowerTablePort {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
+    // decision 381(4): stored test-case inputs reach TypedVariables, so fractions are read exactly
+    private static final ObjectMapper JSON = org.sangam.rest.support.ExactJson.mapper();
     private static final String COLS = "table_key, version, status, effective_from, dmn_xml, author, approver,"
             + " created_at, name, test_cases, deployment_id, row_revision";
 

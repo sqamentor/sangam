@@ -10,9 +10,11 @@ use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Generated\Api\AIApi;
 use Sangam\Sdk\Generated\Api\AdminApi;
 use Sangam\Sdk\Generated\Api\AdminAssignmentsApi;
+use Sangam\Sdk\Generated\Api\AdminGroupsApi;
 use Sangam\Sdk\Generated\Api\AdminOrgUnitsApi;
 use Sangam\Sdk\Generated\Api\AdminPowerTablesApi;
 use Sangam\Sdk\Generated\Api\AdminSecurityApi;
+use Sangam\Sdk\Generated\Api\AdminTenantsApi;
 use Sangam\Sdk\Generated\Api\AnalyticsApi;
 use Sangam\Sdk\Generated\Api\ApiContractsApi;
 use Sangam\Sdk\Generated\Api\AuditApi;
@@ -84,12 +86,13 @@ use Sangam\Sdk\Generated\Api\TenantOperationsFlowableMigrationsApi;
 use Sangam\Sdk\Generated\Api\TenantOperationsRetentionApi;
 use Sangam\Sdk\Generated\Api\TenantOperationsSecretsApi;
 use Sangam\Sdk\Generated\Api\TenantOperationsVariablesApi;
+use Sangam\Sdk\Generated\Api\TenantMigrationApi;
 use Sangam\Sdk\Generated\Api\TestModeApi;
 use Sangam\Sdk\Generated\Api\WorkApi;
 use Sangam\Sdk\Generated\Api\WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1160 operations on 977 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1172 operations on 987 paths,
  * one property per API class (a tag, or a sub-path of a large tag). Use SangamClient::api().
  */
 final class SangamApis
@@ -97,9 +100,11 @@ final class SangamApis
     public readonly AIApi $ai;
     public readonly AdminApi $admin;
     public readonly AdminAssignmentsApi $adminAssignments;
+    public readonly AdminGroupsApi $adminGroups;
     public readonly AdminOrgUnitsApi $adminOrgUnits;
     public readonly AdminPowerTablesApi $adminPowerTables;
     public readonly AdminSecurityApi $adminSecurity;
+    public readonly AdminTenantsApi $adminTenants;
     public readonly AnalyticsApi $analytics;
     public readonly ApiContractsApi $apiContracts;
     public readonly AuditApi $audit;
@@ -171,6 +176,7 @@ final class SangamApis
     public readonly TenantOperationsRetentionApi $tenantOperationsRetention;
     public readonly TenantOperationsSecretsApi $tenantOperationsSecrets;
     public readonly TenantOperationsVariablesApi $tenantOperationsVariables;
+    public readonly TenantMigrationApi $tenantMigration;
     public readonly TestModeApi $testMode;
     public readonly WorkApi $work;
     public readonly WorkspaceApi $workspace;
@@ -181,9 +187,11 @@ final class SangamApis
         $this->ai = new AIApi($calls);
         $this->admin = new AdminApi($calls);
         $this->adminAssignments = new AdminAssignmentsApi($calls);
+        $this->adminGroups = new AdminGroupsApi($calls);
         $this->adminOrgUnits = new AdminOrgUnitsApi($calls);
         $this->adminPowerTables = new AdminPowerTablesApi($calls);
         $this->adminSecurity = new AdminSecurityApi($calls);
+        $this->adminTenants = new AdminTenantsApi($calls);
         $this->analytics = new AnalyticsApi($calls);
         $this->apiContracts = new ApiContractsApi($calls);
         $this->audit = new AuditApi($calls);
@@ -255,6 +263,7 @@ final class SangamApis
         $this->tenantOperationsRetention = new TenantOperationsRetentionApi($calls);
         $this->tenantOperationsSecrets = new TenantOperationsSecretsApi($calls);
         $this->tenantOperationsVariables = new TenantOperationsVariablesApi($calls);
+        $this->tenantMigration = new TenantMigrationApi($calls);
         $this->testMode = new TestModeApi($calls);
         $this->work = new WorkApi($calls);
         $this->workspace = new WorkspaceApi($calls);
