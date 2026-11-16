@@ -2701,7 +2701,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /deployments/{id}/resources/{resourceName}:
+  /deployments/{id}/resource:
     get:
       operationId: getDeploymentResource
       tags:
@@ -2714,11 +2714,12 @@ paths:
         required: true
         schema:
           type: string
-      - name: resourceName
-        in: path
-        required: true
+      - name: name
+        in: query
         schema:
           type: string
+        description: resource name; may carry '/'
+        required: true
       x-sangam-permission: deployment.read
       responses:
         '200':
@@ -4062,7 +4063,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /audit/{businessKey}/timeline:
+  /audit/timeline:
     get:
       operationId: getAuditTimeline
       tags:
@@ -4072,10 +4073,11 @@ paths:
         is audited (AUDIT_VIEWED).
       parameters:
       - name: businessKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: business key of the case; may carry '/'
+        required: true
       - name: includeHistory
         in: query
         schema:
@@ -7291,7 +7293,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /forms/{key}:
+  /forms/by-key:
     get:
       operationId: getForm
       tags:
@@ -7300,10 +7302,11 @@ paths:
       description: Data schema, layout, field policy and i18n bundles by hash version (R47, FC-39); the key 'drafts' is reserved.
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: form key; may carry '/'
+        required: true
       - name: version
         in: query
         schema:
@@ -7327,7 +7330,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /forms/{key}/validate:
+  /forms/by-key/validate:
     post:
       operationId: validateForm
       tags:
@@ -7336,10 +7339,11 @@ paths:
       description: Authoritative server-side validation (X.2.5.2).
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: form key; may carry '/'
+        required: true
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
       x-sangam-permission: form.read
@@ -10582,7 +10586,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /audit/{businessKey}/evidence-pack:
+  /audit/evidence-pack:
     get:
       operationId: getEvidencePack
       tags:
@@ -10592,10 +10596,11 @@ paths:
         R42).
       parameters:
       - name: businessKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: business key of the case; may carry '/'
+        required: true
       x-sangam-permission: audit.export
       x-sangam-requirements:
       - R42
@@ -18945,7 +18950,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /case-files/by-number/{number}:
+  /case-files/by-number:
     get:
       operationId: caseFileByNumber
       tags:
@@ -18954,10 +18959,11 @@ paths:
       description: A case file by its human-readable number.
       parameters:
       - name: number
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: the human-readable number; may carry / ({prefix}/{yyyy}/{seq:6})
+        required: true
       x-sangam-permission: case.read
       x-sangam-requirements:
       - N04
@@ -24040,7 +24046,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /config/profiles/{id}/versions:
+  /config/profiles/versions:
     get:
       operationId: listConfigProfileVersions
       tags:
@@ -24049,11 +24055,11 @@ paths:
       description: Every stored version with its status and content hash.
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
         description: profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
+        required: true
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/size'
       x-sangam-permission: config.read
@@ -24082,7 +24088,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /config/profiles/{id}/versions/{version}:
+  /config/profiles/version:
     get:
       operationId: getConfigProfileVersion
       tags:
@@ -24091,16 +24097,16 @@ paths:
       description: The version's status, hash and document tree.
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
         description: profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
-      - name: version
-        in: path
         required: true
+      - name: version
+        in: query
         schema:
           type: string
+        required: true
       x-sangam-permission: config.read
       x-sangam-requirements:
       - ADR-D-20
@@ -24131,16 +24137,16 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
         description: profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
-      - name: version
-        in: path
         required: true
+      - name: version
+        in: query
         schema:
           type: string
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -24184,7 +24190,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /config/profiles/{id}/versions/{version}/submit:
+  /config/profiles/version/submit:
     post:
       operationId: submitConfigProfile
       tags:
@@ -24195,16 +24201,16 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
         description: profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
-      - name: version
-        in: path
         required: true
+      - name: version
+        in: query
         schema:
           type: string
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -24232,7 +24238,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /config/profiles/{id}/versions/{version}/approve:
+  /config/profiles/version/approve:
     post:
       operationId: approveConfigProfile
       tags:
@@ -24244,16 +24250,16 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
         description: profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
-      - name: version
-        in: path
         required: true
+      - name: version
+        in: query
         schema:
           type: string
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -24288,7 +24294,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /config/profiles/{id}/versions/{version}/reject:
+  /config/profiles/version/reject:
     post:
       operationId: rejectConfigProfile
       tags:
@@ -24299,16 +24305,16 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
         description: profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
-      - name: version
-        in: path
         required: true
+      - name: version
+        in: query
         schema:
           type: string
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -24342,7 +24348,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /config/profiles/{id}/versions/{version}/activate:
+  /config/profiles/version/activate:
     post:
       operationId: activateConfigProfile
       tags:
@@ -24353,16 +24359,16 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
         description: profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
-      - name: version
-        in: path
         required: true
+      - name: version
+        in: query
         schema:
           type: string
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -24400,7 +24406,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /config/profiles/{id}/history:
+  /config/profiles/history:
     get:
       operationId: getConfigProfileHistory
       tags:
@@ -24409,11 +24415,11 @@ paths:
       description: Every save, submission, approval, rejection, activation and import.
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
         description: profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
+        required: true
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/size'
       x-sangam-permission: config.read
@@ -28485,7 +28491,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ledger/{ledger}/periods/{period}/close:
+  /ledger/{ledger}/periods/close:
     post:
       operationId: closeLedgerPeriod
       tags:
@@ -28502,10 +28508,11 @@ paths:
           type: string
         description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
       - name: period
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: fiscal period label
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -41469,7 +41476,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /registry/objects/by-number/{number}:
+  /registry/objects/by-number:
     get:
       operationId: registryRegistryByNumber
       tags:
@@ -41478,10 +41485,10 @@ paths:
       description: RegistryController.byNumber (sangam-registry).
       parameters:
       - name: number
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        required: true
       - name: typeKey
         in: query
         schema:
@@ -42291,10 +42298,10 @@ paths:
         '200':
           description: Success
           content:
-            application/octet-stream:
+            application/json:
               schema:
-                type: string
-                contentMediaType: application/octet-stream
+                type: object
+                additionalProperties: true
           headers:
             Idempotent-Replayed:
               $ref: '#/components/headers/Idempotent-Replayed'
@@ -42386,10 +42393,10 @@ paths:
         '201':
           description: Success
           content:
-            application/octet-stream:
+            application/json:
               schema:
-                type: string
-                contentMediaType: application/octet-stream
+                type: object
+                additionalProperties: true
           headers:
             Idempotent-Replayed:
               $ref: '#/components/headers/Idempotent-Replayed'
@@ -42504,10 +42511,10 @@ paths:
         '200':
           description: Success
           content:
-            application/octet-stream:
+            application/json:
               schema:
-                type: string
-                contentMediaType: application/octet-stream
+                type: object
+                additionalProperties: true
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -42556,10 +42563,10 @@ paths:
         '200':
           description: Success
           content:
-            application/octet-stream:
+            application/json:
               schema:
-                type: string
-                contentMediaType: application/octet-stream
+                type: object
+                additionalProperties: true
           headers:
             Idempotent-Replayed:
               $ref: '#/components/headers/Idempotent-Replayed'
@@ -42612,10 +42619,10 @@ paths:
         '200':
           description: Success
           content:
-            application/octet-stream:
+            application/json:
               schema:
-                type: string
-                contentMediaType: application/octet-stream
+                type: object
+                additionalProperties: true
           headers:
             Idempotent-Replayed:
               $ref: '#/components/headers/Idempotent-Replayed'
@@ -42668,10 +42675,10 @@ paths:
         '200':
           description: Success
           content:
-            application/octet-stream:
+            application/json:
               schema:
-                type: string
-                contentMediaType: application/octet-stream
+                type: object
+                additionalProperties: true
           headers:
             Idempotent-Replayed:
               $ref: '#/components/headers/Idempotent-Replayed'
@@ -43182,10 +43189,10 @@ paths:
         '200':
           description: Success
           content:
-            application/octet-stream:
+            application/json:
               schema:
-                type: string
-                contentMediaType: application/octet-stream
+                type: object
+                additionalProperties: true
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -43977,10 +43984,10 @@ paths:
         '200':
           description: Success
           content:
-            application/octet-stream:
+            application/json:
               schema:
-                type: string
-                contentMediaType: application/octet-stream
+                type: object
+                additionalProperties: true
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -47680,6 +47687,7 @@ paths:
         in: query
         schema:
           type: string
+        required: true
       - name: page
         in: query
         schema:

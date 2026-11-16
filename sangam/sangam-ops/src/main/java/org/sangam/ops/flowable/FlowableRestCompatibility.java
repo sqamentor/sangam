@@ -114,7 +114,7 @@ public final class FlowableRestCompatibility {
             // decisions and forms
             new Entry("POST", "/service/dmn-rule/execute", Level.MAPPED, "POST", "/decisions/{key}/evaluate",
                     "the decision key moves into the path"),
-            new Entry("GET", "/service/form/form-definitions", Level.PARTIAL, "GET", "/forms/{key}",
+            new Entry("GET", "/service/form/form-definitions", Level.PARTIAL, "GET", "/forms/by-key",
                     "forms are read one key at a time; Flowable form JSON is not served"),
             // history
             new Entry("GET", HI + "/historic-process-instances", Level.MAPPED, "GET", "/history/process-instances", null),

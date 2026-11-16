@@ -121,7 +121,7 @@
    "tag": "Audit",
    "pathPrefix": "",
    "operations": 8,
-   "maxLines": 182
+   "maxLines": 184
   },
   {
    "class": "BillingApi",
@@ -142,7 +142,7 @@
    "tag": "CaseFiles",
    "pathPrefix": "",
    "operations": 31,
-   "maxLines": 612
+   "maxLines": 613
   },
   {
    "class": "CaseFiles2Api",
@@ -191,7 +191,7 @@
    "tag": "Config",
    "pathPrefix": "",
    "operations": 17,
-   "maxLines": 362
+   "maxLines": 376
   },
   {
    "class": "DebugApi",
@@ -212,7 +212,7 @@
    "tag": "Deployments",
    "pathPrefix": "",
    "operations": 5,
-   "maxLines": 113
+   "maxLines": 114
   },
   {
    "class": "DltHooksApi",
@@ -289,7 +289,7 @@
    "tag": "Forms",
    "pathPrefix": "",
    "operations": 11,
-   "maxLines": 231
+   "maxLines": 237
   },
   {
    "class": "GeoApi",
@@ -317,7 +317,7 @@
    "tag": "Ledger",
    "pathPrefix": "",
    "operations": 9,
-   "maxLines": 213
+   "maxLines": 214
   },
   {
    "class": "LinksApi",
@@ -492,7 +492,7 @@
    "tag": "Registry",
    "pathPrefix": "objects",
    "operations": 11,
-   "maxLines": 237
+   "maxLines": 238
   },
   {
    "class": "RegistryPartiesApi",
@@ -513,7 +513,7 @@
    "tag": "Resources",
    "pathPrefix": "",
    "operations": 21,
-   "maxLines": 384
+   "maxLines": 386
   },
   {
    "class": "ResourcesAllotmentsApi",
@@ -527,14 +527,14 @@
    "tag": "Resources",
    "pathPrefix": "bookings",
    "operations": 13,
-   "maxLines": 264
+   "maxLines": 265
   },
   {
    "class": "ResourcesItemsApi",
    "tag": "Resources",
    "pathPrefix": "items",
    "operations": 9,
-   "maxLines": 204
+   "maxLines": 209
   },
   {
    "class": "RostersApi",
@@ -611,7 +611,7 @@
    "tag": "Work",
    "pathPrefix": "",
    "operations": 11,
-   "maxLines": 229
+   "maxLines": 231
   },
   {
    "class": "WorkspaceApi",
@@ -2209,7 +2209,7 @@
   {
    "operationId": "getDeploymentResource",
    "method": "GET",
-   "path": "/deployments/{id}/resources/{resourceName}",
+   "path": "/deployments/{id}/resource",
    "tag": "Deployments",
    "apiClass": "DeploymentsApi",
    "java": "DeploymentsApi#getDeploymentResource",
@@ -2509,7 +2509,7 @@
   {
    "operationId": "getAuditTimeline",
    "method": "GET",
-   "path": "/audit/{businessKey}/timeline",
+   "path": "/audit/timeline",
    "tag": "Audit",
    "apiClass": "AuditApi",
    "java": "AuditApi#getAuditTimeline",
@@ -3349,7 +3349,7 @@
   {
    "operationId": "getForm",
    "method": "GET",
-   "path": "/forms/{key}",
+   "path": "/forms/by-key",
    "tag": "Forms",
    "apiClass": "FormsApi",
    "java": "FormsApi#getForm",
@@ -3361,7 +3361,7 @@
   {
    "operationId": "validateForm",
    "method": "POST",
-   "path": "/forms/{key}/validate",
+   "path": "/forms/by-key/validate",
    "tag": "Forms",
    "apiClass": "FormsApi",
    "java": "FormsApi#validateForm",
@@ -4345,7 +4345,7 @@
   {
    "operationId": "getEvidencePack",
    "method": "GET",
-   "path": "/audit/{businessKey}/evidence-pack",
+   "path": "/audit/evidence-pack",
    "tag": "Audit",
    "apiClass": "AuditApi",
    "java": "AuditApi#getEvidencePack",
@@ -6877,7 +6877,7 @@
   {
    "operationId": "caseFileByNumber",
    "method": "GET",
-   "path": "/case-files/by-number/{number}",
+   "path": "/case-files/by-number",
    "tag": "CaseFiles",
    "apiClass": "CaseFilesApi",
    "java": "CaseFilesApi#caseFileByNumber",
@@ -8245,7 +8245,7 @@
   {
    "operationId": "listConfigProfileVersions",
    "method": "GET",
-   "path": "/config/profiles/{id}/versions",
+   "path": "/config/profiles/versions",
    "tag": "Config",
    "apiClass": "ConfigApi",
    "java": "ConfigApi#listConfigProfileVersions",
@@ -8257,7 +8257,7 @@
   {
    "operationId": "getConfigProfileVersion",
    "method": "GET",
-   "path": "/config/profiles/{id}/versions/{version}",
+   "path": "/config/profiles/version",
    "tag": "Config",
    "apiClass": "ConfigApi",
    "java": "ConfigApi#getConfigProfileVersion",
@@ -8269,7 +8269,7 @@
   {
    "operationId": "saveConfigProfileDraft",
    "method": "PUT",
-   "path": "/config/profiles/{id}/versions/{version}",
+   "path": "/config/profiles/version",
    "tag": "Config",
    "apiClass": "ConfigApi",
    "java": "ConfigApi#saveConfigProfileDraft",
@@ -8281,7 +8281,7 @@
   {
    "operationId": "submitConfigProfile",
    "method": "POST",
-   "path": "/config/profiles/{id}/versions/{version}/submit",
+   "path": "/config/profiles/version/submit",
    "tag": "Config",
    "apiClass": "ConfigApi",
    "java": "ConfigApi#submitConfigProfile",
@@ -8293,7 +8293,7 @@
   {
    "operationId": "approveConfigProfile",
    "method": "POST",
-   "path": "/config/profiles/{id}/versions/{version}/approve",
+   "path": "/config/profiles/version/approve",
    "tag": "Config",
    "apiClass": "ConfigApi",
    "java": "ConfigApi#approveConfigProfile",
@@ -8305,7 +8305,7 @@
   {
    "operationId": "rejectConfigProfile",
    "method": "POST",
-   "path": "/config/profiles/{id}/versions/{version}/reject",
+   "path": "/config/profiles/version/reject",
    "tag": "Config",
    "apiClass": "ConfigApi",
    "java": "ConfigApi#rejectConfigProfile",
@@ -8317,7 +8317,7 @@
   {
    "operationId": "activateConfigProfile",
    "method": "POST",
-   "path": "/config/profiles/{id}/versions/{version}/activate",
+   "path": "/config/profiles/version/activate",
    "tag": "Config",
    "apiClass": "ConfigApi",
    "java": "ConfigApi#activateConfigProfile",
@@ -8329,7 +8329,7 @@
   {
    "operationId": "getConfigProfileHistory",
    "method": "GET",
-   "path": "/config/profiles/{id}/history",
+   "path": "/config/profiles/history",
    "tag": "Config",
    "apiClass": "ConfigApi",
    "java": "ConfigApi#getConfigProfileHistory",
@@ -8509,7 +8509,7 @@
   {
    "operationId": "getCustomFieldVersions",
    "method": "GET",
-   "path": "/custom-fields/{objectType}/{key}",
+   "path": "/custom-fields/versions",
    "tag": "Forms",
    "apiClass": "FormsApi",
    "java": "FormsApi#getCustomFieldVersions",
@@ -8521,7 +8521,7 @@
   {
    "operationId": "retireCustomField",
    "method": "POST",
-   "path": "/custom-fields/{objectType}/{key}/retire",
+   "path": "/custom-fields/retire",
    "tag": "Forms",
    "apiClass": "FormsApi",
    "java": "FormsApi#retireCustomField",
@@ -9925,7 +9925,7 @@
   {
    "operationId": "closeLedgerPeriod",
    "method": "POST",
-   "path": "/ledger/{ledger}/periods/{period}/close",
+   "path": "/ledger/{ledger}/periods/close",
    "tag": "Ledger",
    "apiClass": "LedgerApi",
    "java": "LedgerApi#closeLedgerPeriod",
@@ -13513,7 +13513,7 @@
   {
    "operationId": "registryRegistryByNumber",
    "method": "GET",
-   "path": "/registry/objects/by-number/{number}",
+   "path": "/registry/objects/by-number",
    "tag": "Registry",
    "apiClass": "RegistryObjectsApi",
    "java": "RegistryObjectsApi#registryRegistryByNumber",
@@ -15385,7 +15385,7 @@
   {
    "operationId": "getWorkStep",
    "method": "GET",
-   "path": "/work/{id}/steps/{stepName}",
+   "path": "/work/{id}/step",
    "tag": "Work",
    "apiClass": "WorkApi",
    "java": "WorkApi#getWorkStep",
@@ -15397,7 +15397,7 @@
   {
    "operationId": "recordWorkStep",
    "method": "PUT",
-   "path": "/work/{id}/steps/{stepName}",
+   "path": "/work/{id}/step",
    "tag": "Work",
    "apiClass": "WorkApi",
    "java": "WorkApi#recordWorkStep",

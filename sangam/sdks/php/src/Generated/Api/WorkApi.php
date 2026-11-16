@@ -164,7 +164,8 @@ final class WorkApi
      *
      * The step as recorded for this work's operationId; 404 when the step was never recorded (run it). The caller must hold the current lease: workerId, lockVersion and attemptId as query parameters (409 STALE_LEASE otherwise).
      *
-     * GET /work/{id}/steps/{stepName} (operationId getWorkStep); permission work.execute; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
+     * GET /work/{id}/step (operationId getWorkStep); permission work.execute; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
+     * @param string $stepName query stepName
      * @param string $workerId query workerId
      * @param int $lockVersion query lockVersion
      * @param string $attemptId query attemptId
@@ -172,7 +173,8 @@ final class WorkApi
      */
     public function getWorkStep(string $id, string $stepName, string $workerId, int $lockVersion, string $attemptId, ?RequestOptions $options = null): ?Model\WorkStep
     {
-        $req = ApiRequest::get('/work/' . HttpTransport::seg((string) $id) . '/steps/' . HttpTransport::seg((string) $stepName));
+        $req = ApiRequest::get('/work/' . HttpTransport::seg((string) $id) . '/step');
+        $req->query('stepName', $stepName);
         $req->query('workerId', $workerId);
         $req->query('lockVersion', $lockVersion);
         $req->query('attemptId', $attemptId);
@@ -184,13 +186,15 @@ final class WorkApi
      *
      * Records the step's intent or outcome under the work's operationId, in the same transaction as the lease check. Fenced: a stale lease is 409 STALE_LEASE and records nothing; a deleted instance is 410 GONE_INSTANCE_DELETED.
      *
-     * PUT /work/{id}/steps/{stepName} (operationId recordWorkStep); permission work.execute; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
+     * PUT /work/{id}/step (operationId recordWorkStep); permission work.execute; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
      * @param Model\WorkStepRequest|array $body request body
+     * @param string $stepName query stepName
      * @return Model\WorkStep|null
      */
-    public function recordWorkStep(string $id, string $stepName, Model\WorkStepRequest|array $body, ?RequestOptions $options = null): ?Model\WorkStep
+    public function recordWorkStep(string $id, Model\WorkStepRequest|array $body, string $stepName, ?RequestOptions $options = null): ?Model\WorkStep
     {
-        $req = ApiRequest::put('/work/' . HttpTransport::seg((string) $id) . '/steps/' . HttpTransport::seg((string) $stepName));
+        $req = ApiRequest::put('/work/' . HttpTransport::seg((string) $id) . '/step');
+        $req->query('stepName', $stepName);
         if ($body !== null) {
             $req->body($body);
         }

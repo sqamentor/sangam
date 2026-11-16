@@ -58,8 +58,9 @@ op("get", "/ledger/{ledger}/freeze-orders", "listLedgerFreezeOrders", "Ledger", 
 op("delete", "/ledger/{ledger}/freeze-orders/{id}", "releaseLedgerFreezeOrder", "Ledger", "Release a freeze order",
    "Releases the order; frozen accounts reopen.", LR, params=[LG, pp("id")], resp=(204, None),
    cmd="ledger.freeze.release", perm="ledger.admin")
-op("post", "/ledger/{ledger}/periods/{period}/close", "closeLedgerPeriod", "Ledger", "Close a period",
-   "Year-end lapse and carry-forward.", LR, params=[LG, pp("period")], body="LedgerCloseRequest", body_required=False,
+op("post", "/ledger/{ledger}/periods/close", "closeLedgerPeriod", "Ledger", "Close a period",
+   "Year-end lapse and carry-forward. The period is a query parameter: a fiscal-year label can carry '/' (2026/2027).",
+   LR, params=[LG, q("period", desc="fiscal period label", required=True)], body="LedgerCloseRequest", body_required=False,
    resp=(200, "array:LedgerResult"), cmd="ledger.period.close", perm="ledger.admin")
 op("get", "/ledger/{ledger}/holds", "listLedgerHolds", "Ledger", "List held requests",
    "Requests parked for funds on matching accounts.", LR, params=[LG] + ACC_Q, resp=(200, "array:LedgerHeldRequest"),

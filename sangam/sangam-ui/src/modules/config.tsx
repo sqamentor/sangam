@@ -119,14 +119,15 @@ export function ProfileLifecycle() {
   const [reason, setReason] = useState('');
   const [findings, setFindings] = useState<Finding[]>();
   const pid = encodeURIComponent(active);
-  const versions = useAsync(() => http.page<Row>(`/config/profiles/${pid}/versions`, { size: 100 }), [active], !!active);
-  const history = useAsync(() => http.page<Row>(`/config/profiles/${pid}/history`, { size: 100 }), [active], !!active);
+  // the profile id is a query parameter: an office overlay id carries '/' (RJ.PWD/DIV-1, ProfileValidator)
+  const versions = useAsync(() => http.page<Row>('/config/profiles/versions', { id: active, size: 100 }), [active], !!active);
+  const history = useAsync(() => http.page<Row>('/config/profiles/history', { id: active, size: 100 }), [active], !!active);
   const act = useAction();
   const refresh = () => (versions.reload(), history.reload());
-  const vp = (v: Row) => `/config/profiles/${pid}/versions/${encodeURIComponent(String(v.version))}`;
+  const vp = (v: Row, action = '') => `/config/profiles/version${action}?id=${pid}&version=${encodeURIComponent(String(v.version))}`;
   const save = () =>
     void act
-      .run((k) => request<{ findings?: Finding[] }>('PUT', `/config/profiles/${pid}/versions/${encodeURIComponent(version)}`, { body: doc, idempotencyKey: k }))
+      .run((k) => request<{ findings?: Finding[] }>('PUT', vp({ version }), { body: doc, idempotencyKey: k }))
       .then((r) => {
         if (r) {
           setFindings(r.findings ?? []);
@@ -170,10 +171,10 @@ export function ProfileLifecycle() {
                 header: t('common.actions'),
                 render: (r: Row) => (
                   <span className="toolbar inline">
-                    {r.status === 'DRAFT' && <button type="button" className="link" onClick={() => step((k) => http.post(`${vp(r)}/submit`, {}, k))}>{t('act.submit')}</button>}
-                    {r.status === 'SUBMITTED' && <button type="button" className="link" onClick={() => step((k) => http.post(`${vp(r)}/approve`, { presentedHash: r.hash }, k))}>{t('act.approve')}</button>}
-                    {r.status === 'SUBMITTED' && <button type="button" className="link danger" disabled={reason.trim().length < 5} onClick={() => step((k) => http.post(`${vp(r)}/reject`, { reason }, k))}>{t('act.reject')}</button>}
-                    {r.status === 'APPROVED' && <button type="button" className="link" onClick={() => step((k) => http.post(`${vp(r)}/activate`, {}, k))}>{t('act.activate')}</button>}
+                    {r.status === 'DRAFT' && <button type="button" className="link" onClick={() => step((k) => http.post(vp(r, '/submit'), {}, k))}>{t('act.submit')}</button>}
+                    {r.status === 'SUBMITTED' && <button type="button" className="link" onClick={() => step((k) => http.post(vp(r, '/approve'), { presentedHash: r.hash }, k))}>{t('act.approve')}</button>}
+                    {r.status === 'SUBMITTED' && <button type="button" className="link danger" disabled={reason.trim().length < 5} onClick={() => step((k) => http.post(vp(r, '/reject'), { reason }, k))}>{t('act.reject')}</button>}
+                    {r.status === 'APPROVED' && <button type="button" className="link" onClick={() => step((k) => http.post(vp(r, '/activate'), {}, k))}>{t('act.activate')}</button>}
                   </span>
                 ),
               },
@@ -640,7 +641,7 @@ const customFields: ScreenDef = {
   filters: [f.text('objectType', 'cf.objectType'), f.date('on', 'cf.on')],
   columns: [c('key', 'cf.key'), c('objectType', 'cf.objectType'), c('version'), c('label', 'cf.label'), c('required', 'cf.required'), c('readOnly', 'cf.readOnly'), c('effectiveFrom'), c('effectiveTo', 'cf.effectiveTo')],
   rowKey: ['key'],
-  sections: [{ id: 'versions', label: 'cf.versions', path: '/custom-fields/{objectType}/{key}' }],
+  sections: [{ id: 'versions', label: 'cf.versions', path: '/custom-fields/versions?objectType={objectType}&key={key}' }],
   create: {
     id: 'define',
     label: 'cf.define',
@@ -663,7 +664,7 @@ const customFields: ScreenDef = {
     {
       id: 'retire',
       label: 'act.retire',
-      path: '/custom-fields/{objectType}/{key}/retire',
+      path: '/custom-fields/retire?objectType={objectType}&key={key}',
       fields: [f.date('effectiveTo', 'cf.retireOn', true)],
       reason: 'body',
       danger: true,

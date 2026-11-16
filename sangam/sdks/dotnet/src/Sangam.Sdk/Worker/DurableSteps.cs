@@ -11,7 +11,7 @@ namespace Sangam.Sdk.Worker;
 
 /// <summary>
 /// The algorithm of <see cref="TaskContext.StepAsync{T}"/> (M-025, R37) on the step journal routes
-/// <c>GET/PUT /work/{id}/steps/{stepName}</c>, fenced by the context's lease:
+/// <c>GET/PUT /work/{id}/step?stepName=</c>, fenced by the context's lease:
 /// <list type="number">
 /// <item>read the step: <c>SUCCEEDED</c> replays the recorded result without calling again;</item>
 /// <item><c>INTENT</c> left by an earlier attempt (the crash window): ask the lookup if any (a value is recorded
@@ -115,7 +115,7 @@ internal static class DurableSteps
     {
         try
         {
-            await api.RecordWorkStepAsync(ctx.WorkId, name, new WorkStepRequest
+            await api.RecordWorkStepAsync(ctx.WorkId, new WorkStepRequest
             {
                 WorkerId = ctx.WorkerId,
                 LockVersion = ctx.LockVersion,
@@ -124,7 +124,7 @@ internal static class DurableSteps
                 Result = result,
                 ProviderRef = providerRef,
                 Error = error,
-            }, null, ct).ConfigureAwait(false);
+            }, name, null, ct).ConfigureAwait(false);
         }
         catch (Exception e) when (e is StaleLeaseException or GoneException)
         {

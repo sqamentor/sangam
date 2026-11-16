@@ -152,17 +152,18 @@ public final class LedgerApi {
     /**
      * Close a period
      *
-     * <p>Year-end lapse and carry-forward.
+     * <p>Year-end lapse and carry-forward. The period is a query parameter: a fiscal-year label can carry '/' (2026/2027).
      *
-     * <p>{@code POST /ledger/{ledger}/periods/{period}/close} (operationId {@code closeLedgerPeriod}); permission {@code ledger.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * <p>{@code POST /ledger/{ledger}/periods/close} (operationId {@code closeLedgerPeriod}); permission {@code ledger.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param ledger path parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
-     * @param period path parameter {@code period}
+     * @param period query parameter {@code period}. fiscal period label
      * @param body request body, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<LedgerResult> closeLedgerPeriod(String ledger, String period, LedgerCloseRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ledger/" + HttpTransport.seg(String.valueOf(ledger)) + "/periods/" + HttpTransport.seg(String.valueOf(period)) + "/close");
+        ApiRequest req = ApiRequest.post("/ledger/" + HttpTransport.seg(String.valueOf(ledger)) + "/periods/close");
+        req.query("period", period);
         req.body(body);
         return call.json(req, options, R_closeLedgerPeriod);
     }

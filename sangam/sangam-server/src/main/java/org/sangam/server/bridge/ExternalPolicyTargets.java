@@ -27,7 +27,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  *   <li><b>external-worker calls</b>: every state-changing operation the contract marks {@code x-sangam-fenced}
  *       (fetch-and-lock, extend-lock, complete, fail, bpmn-error, unlock, outcome-unknown, cancel-ack, the step
  *       checkpoint PUT), command type {@code work.<last literal path segment>}, e.g. {@code work.complete},
- *       {@code work.fetch-and-lock}, {@code work.steps};</li>
+ *       {@code work.fetch-and-lock}, {@code work.step};</li>
  *   <li><b>Operaton REST</b>: every POST, PUT, PATCH or DELETE under {@value #ENGINE_REST_PATH}, command type
  *       {@value #ENGINE_REST}; Operaton has no contract here, so the path template sent is the request path itself
  *       (without query) and there are no path parameters.</li>

@@ -781,3 +781,203 @@ corrections:
     to: "declaredCategory required (ADULT or CHILD); an omitted or other value is 400 VALIDATION_FAILED naming the field; a declared CHILD needs guardianVerificationId, which the consent row carries"
     reason: "without a principal directory (the standalone server) a child's consent was stored with no guardian verification; the channel's declaration now carries the category, and the more protective of it and the directory's applies"
     decision: "owner decision 365, 2026-11-15 (0.1.0 unreleased)"
+  - method: GET
+    path: /deployments/{id}/resources/{resourceName}
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/deployments/{id}/resources/{resourceName}: the value as a path parameter"
+    to: "/deployments/{id}/resource?name= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; pack resource names are paths (packs/x/y.bpmn)"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: GET
+    path: /audit/{businessKey}/timeline
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/audit/{businessKey}/timeline: the value as a path parameter"
+    to: "/audit/timeline?businessKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; business keys carry '/' (BK/2026/0001)"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: GET
+    path: /forms/{key}
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/forms/{key}: the value as a path parameter"
+    to: "/forms/by-key?key=&version= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; 147 of 224 start-catalogue form keys carry '/' (rti/request)"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: POST
+    path: /forms/{key}/validate
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/forms/{key}/validate: the value as a path parameter"
+    to: "/forms/by-key/validate?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; form keys carry '/'"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: GET
+    path: /audit/{businessKey}/evidence-pack
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/audit/{businessKey}/evidence-pack: the value as a path parameter"
+    to: "/audit/evidence-pack?businessKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; business keys carry '/'"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: GET
+    path: /case-files/by-number/{number}
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/case-files/by-number/{number}: the value as a path parameter"
+    to: "/case-files/by-number?number= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; the default numbering is {prefix}/{yyyy}/{seq:6}"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: GET
+    path: /config/profiles/{id}/versions
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/config/profiles/{id}/versions: the value as a path parameter"
+    to: "/config/profiles/versions?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; profile ids carry '/' (office overlay RJ.PWD/DIV-1; ProfileValidator)"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: GET
+    path: /config/profiles/{id}/versions/{version}
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/config/profiles/{id}/versions/{version}: the value as a path parameter"
+    to: "/config/profiles/version?id=&version= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; profile ids carry '/'"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: PUT
+    path: /config/profiles/{id}/versions/{version}
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/config/profiles/{id}/versions/{version}: the value as a path parameter"
+    to: "/config/profiles/version?id=&version= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; profile ids carry '/'"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: POST
+    path: /config/profiles/{id}/versions/{version}/submit
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/config/profiles/{id}/versions/{version}/submit: the value as a path parameter"
+    to: "/config/profiles/version/submit?id=&version= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; profile ids carry '/'"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: POST
+    path: /config/profiles/{id}/versions/{version}/approve
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/config/profiles/{id}/versions/{version}/approve: the value as a path parameter"
+    to: "/config/profiles/version/approve?id=&version= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; profile ids carry '/'"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: POST
+    path: /config/profiles/{id}/versions/{version}/reject
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/config/profiles/{id}/versions/{version}/reject: the value as a path parameter"
+    to: "/config/profiles/version/reject?id=&version= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; profile ids carry '/'"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: POST
+    path: /config/profiles/{id}/versions/{version}/activate
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/config/profiles/{id}/versions/{version}/activate: the value as a path parameter"
+    to: "/config/profiles/version/activate?id=&version= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; profile ids carry '/'"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: GET
+    path: /config/profiles/{id}/history
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/config/profiles/{id}/history: the value as a path parameter"
+    to: "/config/profiles/history?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; profile ids carry '/'"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: POST
+    path: /ledger/{ledger}/periods/{period}/close
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ledger/{ledger}/periods/{period}/close: the value as a path parameter"
+    to: "/ledger/{ledger}/periods/close?period= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; a fiscal-year label can be 2026/2027 (FiscalYears START/END)"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: GET
+    path: /registry/objects/by-number/{number}
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/objects/by-number/{number}: the value as a path parameter"
+    to: "/registry/objects/by-number?number=&typeKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "UI-DEMO-1: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, so every value with '/' failed; number series produce '/' ({prefix}/{scope}/{fy}/{seq:6}{check})"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: POST
+    path: /resources/types
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "response 200: application/octet-stream (string)"
+    to: "response 200: application/json (the object the controller returns)"
+    reason: "S9: the route deriver (routes/_v2_spring.py) took any return type whose name contains 'Resource' for a Spring byte-stream resource, so sangam-resources' JSON types (Resource, ResourceType, ResourcesPorts.Quote, ResourcesRestPort.EntryView) were declared octet-stream; the server always answered JSON"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: POST
+    path: /resources/items
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "response 201: application/octet-stream (string)"
+    to: "response 201: application/json (the object the controller returns)"
+    reason: "S9: the route deriver (routes/_v2_spring.py) took any return type whose name contains 'Resource' for a Spring byte-stream resource, so sangam-resources' JSON types (Resource, ResourceType, ResourcesPorts.Quote, ResourcesRestPort.EntryView) were declared octet-stream; the server always answered JSON"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: GET
+    path: /resources/items/{resourceId}
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "response 200: application/octet-stream (string)"
+    to: "response 200: application/json (the object the controller returns)"
+    reason: "S9: the route deriver (routes/_v2_spring.py) took any return type whose name contains 'Resource' for a Spring byte-stream resource, so sangam-resources' JSON types (Resource, ResourceType, ResourcesPorts.Quote, ResourcesRestPort.EntryView) were declared octet-stream; the server always answered JSON"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: PATCH
+    path: /resources/items/{resourceId}
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "response 200: application/octet-stream (string)"
+    to: "response 200: application/json (the object the controller returns)"
+    reason: "S9: the route deriver (routes/_v2_spring.py) took any return type whose name contains 'Resource' for a Spring byte-stream resource, so sangam-resources' JSON types (Resource, ResourceType, ResourcesPorts.Quote, ResourcesRestPort.EntryView) were declared octet-stream; the server always answered JSON"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: POST
+    path: /resources/items/{resourceId}/status
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "response 200: application/octet-stream (string)"
+    to: "response 200: application/json (the object the controller returns)"
+    reason: "S9: the route deriver (routes/_v2_spring.py) took any return type whose name contains 'Resource' for a Spring byte-stream resource, so sangam-resources' JSON types (Resource, ResourceType, ResourcesPorts.Quote, ResourcesRestPort.EntryView) were declared octet-stream; the server always answered JSON"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: POST
+    path: /resources/items/{resourceId}/move
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "response 200: application/octet-stream (string)"
+    to: "response 200: application/json (the object the controller returns)"
+    reason: "S9: the route deriver (routes/_v2_spring.py) took any return type whose name contains 'Resource' for a Spring byte-stream resource, so sangam-resources' JSON types (Resource, ResourceType, ResourcesPorts.Quote, ResourcesRestPort.EntryView) were declared octet-stream; the server always answered JSON"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: POST
+    path: /resources/bookings/quote
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "response 200: application/octet-stream (string)"
+    to: "response 200: application/json (the object the controller returns)"
+    reason: "S9: the route deriver (routes/_v2_spring.py) took any return type whose name contains 'Resource' for a Spring byte-stream resource, so sangam-resources' JSON types (Resource, ResourceType, ResourcesPorts.Quote, ResourcesRestPort.EntryView) were declared octet-stream; the server always answered JSON"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: GET
+    path: /resources/waitlist/{entryId}
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "response 200: application/octet-stream (string)"
+    to: "response 200: application/json (the object the controller returns)"
+    reason: "S9: the route deriver (routes/_v2_spring.py) took any return type whose name contains 'Resource' for a Spring byte-stream resource, so sangam-resources' JSON types (Resource, ResourceType, ResourcesPorts.Quote, ResourcesRestPort.EntryView) were declared octet-stream; the server always answered JSON"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: GET
+    path: /rosters/swaps
+    corrected: 2026-11-16
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "query parameter periodId optional"
+    to: "query parameter periodId required"
+    reason: "UI-DEMO sweep S5: the swaps of a roster are listed per period (RosterService.swaps looks the period up first), so a call without periodId always answered 404 'roster period not found: null'; no working client can omit it. It is now a 400 VALIDATION_FAILED naming periodId"
+    decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"

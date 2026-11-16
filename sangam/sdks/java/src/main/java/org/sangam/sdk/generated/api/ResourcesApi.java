@@ -26,6 +26,7 @@ import org.sangam.sdk.generated.model.ResourcesRestPortBlackoutRequest;
 public final class ResourcesApi {
 
     private static final TypeReference<java.util.List<java.util.Map<String, Object>>> R_resourcesResourcesTypes = new TypeReference<>() { };
+    private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesDefineType = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesSaveCalendar = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesCalendar = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesAddBlackout = new TypeReference<>() { };
@@ -34,6 +35,7 @@ public final class ResourcesApi {
     private static final TypeReference<java.util.List<java.util.Map<String, Object>>> R_resourcesResourcesHistory = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesEnqueue = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesWaitlist = new TypeReference<>() { };
+    private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesWaitlistEntry = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesWithdraw = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesAcceptOffer = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesDraw = new TypeReference<>() { };
@@ -72,10 +74,10 @@ public final class ResourcesApi {
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public byte[] resourcesResourcesDefineType(ResourcesResourcesDefineTypeBody body, RequestOptions options) {
+    public java.util.Map<String, Object> resourcesResourcesDefineType(ResourcesResourcesDefineTypeBody body, RequestOptions options) {
         ApiRequest req = ApiRequest.post("/resources/types");
         req.body(body);
-        return call.bytes(req, options, "application/octet-stream");
+        return call.json(req, options, R_resourcesResourcesDefineType);
     }
 
     /**
@@ -266,9 +268,9 @@ public final class ResourcesApi {
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public byte[] resourcesResourcesWaitlistEntry(String entryId, RequestOptions options) {
+    public java.util.Map<String, Object> resourcesResourcesWaitlistEntry(String entryId, RequestOptions options) {
         ApiRequest req = ApiRequest.get("/resources/waitlist/" + HttpTransport.seg(String.valueOf(entryId)));
-        return call.bytes(req, options, "application/octet-stream");
+        return call.json(req, options, R_resourcesResourcesWaitlistEntry);
     }
 
     /**

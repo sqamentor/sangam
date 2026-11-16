@@ -20,7 +20,12 @@ import org.sangam.sdk.generated.model.ResourcesStatusRequest;
 @SuppressWarnings("unused")
 public final class ResourcesItemsApi {
 
+    private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesCreateResource = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesSearch = new TypeReference<>() { };
+    private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesResource = new TypeReference<>() { };
+    private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesUpdateResource = new TypeReference<>() { };
+    private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesSetStatus = new TypeReference<>() { };
+    private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesMove = new TypeReference<>() { };
     private static final TypeReference<java.util.List<java.util.Map<String, Object>>> R_resourcesResourcesChildren = new TypeReference<>() { };
     private static final TypeReference<java.util.List<java.util.Map<String, Object>>> R_resourcesResourcesSlots = new TypeReference<>() { };
     private static final TypeReference<java.util.List<java.util.Map<String, Object>>> R_resourcesResourcesAvailability = new TypeReference<>() { };
@@ -41,10 +46,10 @@ public final class ResourcesItemsApi {
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
-    public byte[] resourcesResourcesCreateResource(ResourceDraft body, RequestOptions options) {
+    public java.util.Map<String, Object> resourcesResourcesCreateResource(ResourceDraft body, RequestOptions options) {
         ApiRequest req = ApiRequest.post("/resources/items");
         req.body(body);
-        return call.bytes(req, options, "application/octet-stream");
+        return call.json(req, options, R_resourcesResourcesCreateResource);
     }
 
     /**
@@ -91,9 +96,9 @@ public final class ResourcesItemsApi {
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public byte[] resourcesResourcesResource(String resourceId, RequestOptions options) {
+    public java.util.Map<String, Object> resourcesResourcesResource(String resourceId, RequestOptions options) {
         ApiRequest req = ApiRequest.get("/resources/items/" + HttpTransport.seg(String.valueOf(resourceId)));
-        return call.bytes(req, options, "application/octet-stream");
+        return call.json(req, options, R_resourcesResourcesResource);
     }
 
     /**
@@ -108,11 +113,11 @@ public final class ResourcesItemsApi {
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public byte[] resourcesResourcesUpdateResource(String resourceId, ResourcePatch body, Long version, RequestOptions options) {
+    public java.util.Map<String, Object> resourcesResourcesUpdateResource(String resourceId, ResourcePatch body, Long version, RequestOptions options) {
         ApiRequest req = ApiRequest.patch("/resources/items/" + HttpTransport.seg(String.valueOf(resourceId)));
         req.body(body);
         req.query("version", version);
-        return call.bytes(req, options, "application/octet-stream");
+        return call.json(req, options, R_resourcesResourcesUpdateResource);
     }
 
     /**
@@ -126,10 +131,10 @@ public final class ResourcesItemsApi {
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public byte[] resourcesResourcesSetStatus(String resourceId, ResourcesStatusRequest body, RequestOptions options) {
+    public java.util.Map<String, Object> resourcesResourcesSetStatus(String resourceId, ResourcesStatusRequest body, RequestOptions options) {
         ApiRequest req = ApiRequest.post("/resources/items/" + HttpTransport.seg(String.valueOf(resourceId)) + "/status");
         req.body(body);
-        return call.bytes(req, options, "application/octet-stream");
+        return call.json(req, options, R_resourcesResourcesSetStatus);
     }
 
     /**
@@ -143,10 +148,10 @@ public final class ResourcesItemsApi {
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public byte[] resourcesResourcesMove(String resourceId, ResourcesMoveRequest body, RequestOptions options) {
+    public java.util.Map<String, Object> resourcesResourcesMove(String resourceId, ResourcesMoveRequest body, RequestOptions options) {
         ApiRequest req = ApiRequest.post("/resources/items/" + HttpTransport.seg(String.valueOf(resourceId)) + "/move");
         req.body(body);
-        return call.bytes(req, options, "application/octet-stream");
+        return call.json(req, options, R_resourcesResourcesMove);
     }
 
     /**

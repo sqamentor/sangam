@@ -205,9 +205,10 @@ public class LedgerController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{ledger}/periods/{period}/close")
+    /** UI-DEMO-1: a fiscal-year label can carry '/' ("2026/2027"), refused encoded in a path segment, so it is a query parameter. */
+    @PostMapping("/{ledger}/periods/close")
     public ResponseEntity<List<ResultView>> closePeriod(RequestContext ctx, @PathVariable String ledger,
-            @PathVariable String period, @RequestBody(required = false) CloseRequest body) {
+            @RequestParam String period, @RequestBody(required = false) CloseRequest body) {
         permissions.require(ctx, ADMIN);
         definitions.ensure(ctx.tenantId());
         LocalDate asOf = body == null || body.asOf() == null ? service().today(ctx.tenantId()) : body.asOf();

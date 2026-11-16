@@ -36,7 +36,7 @@ use Sangam\Sdk\SangamClient;
  * - R41 for POST /process-instances: same Idempotency-Key + same body -> the stored response with
  *   Idempotent-Replayed: true; same key + another body -> 422 IDEMPOTENCY_KEY_REUSED.
  * - fetch-and-lock answers at once (no long-poll wait); an empty answer comes after a pause of at most 10 ms.
- * - Step journal (M-025, R37): GET/PUT /work/{id}/steps/{name} and GET /work/{id}/steps with the server's
+ * - Step journal (M-025, R37): GET/PUT /work/{id}/step?stepName= and GET /work/{id}/steps with the server's
  *   transitions and fencing (EngineSteps).
  */
 final class SangamTestEngine implements HttpSender
@@ -64,7 +64,7 @@ final class SangamTestEngine implements HttpSender
     /** @var array<string, array{0: string, 1: int, 2: array<string, mixed>}> */
     private array $idem = [];
     private int $reconSeq = 0;
-    /** M-025 step journal: GET/PUT /work/{id}/steps/{name}, GET /work/{id}/steps. */
+    /** M-025 step journal: GET/PUT /work/{id}/step?stepName=, GET /work/{id}/steps. */
     private readonly EngineSteps $journal;
 
     /** @param list<string> $irreversibleTopics */
@@ -289,9 +289,16 @@ final class SangamTestEngine implements HttpSender
     private function route(string $method, string $path, ?string $key, array $b, array $query = []): array
     {
         $parts = array_values(array_filter(explode('/', $path), static fn(string $p): bool => $p !== ''));
-        if (count($parts) >= 3 && count($parts) <= 4 && $parts[0] === 'work' && $parts[2] === 'steps') {
-            return $this->journal->route($method, rawurldecode($parts[1]),
-                isset($parts[3]) ? rawurldecode($parts[3]) : null, $query, $b);
+        if (count($parts) === 3 && $parts[0] === 'work' && ($parts[2] === 'steps' || $parts[2] === 'step')) {
+            // UI-DEMO-1: as on the server, one step is /step with the name in the stepName query ('/' allowed)
+            $name = null;
+            if ($parts[2] === 'step') {
+                $name = $query['stepName'] ?? null;
+                if (!is_string($name)) {
+                    throw new EngineProblem(400, 'VALIDATION_FAILED', 'stepName is required');
+                }
+            }
+            return $this->journal->route($method, rawurldecode($parts[1]), $name, $query, $b);
         }
         if ($method === 'POST' && $parts === ['process-instances']) {
             return $this->start($key, $b);

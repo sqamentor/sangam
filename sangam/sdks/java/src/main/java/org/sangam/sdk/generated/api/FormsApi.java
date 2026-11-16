@@ -42,16 +42,17 @@ public final class FormsApi {
     /**
      * Get a form version
      *
-     * <p>Data schema, layout, field policy and i18n bundles by hash version (R47); the key 'drafts' is reserved.
+     * <p>Data schema, layout, field policy and i18n bundles by hash version (R47).
      *
-     * <p>{@code GET /forms/{key}} (operationId {@code getForm}); permission {@code form.read}.
-     * @param key path parameter {@code key}
+     * <p>{@code GET /forms/by-key} (operationId {@code getForm}); permission {@code form.read}.
+     * @param key query parameter {@code key}. form key; may carry '/'
      * @param version query parameter {@code version}, or null. Form version hash; default the task-bound or ACTIVE version
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public FormVersion getForm(String key, String version, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/forms/" + HttpTransport.seg(String.valueOf(key)));
+        ApiRequest req = ApiRequest.get("/forms/by-key");
+        req.query("key", key);
         req.query("version", version);
         return call.json(req, options, R_getForm);
     }
@@ -61,15 +62,16 @@ public final class FormsApi {
      *
      * <p>Authoritative server-side validation (X.2.5.2).
      *
-     * <p>{@code POST /forms/{key}/validate} (operationId {@code validateForm}); permission {@code form.read}.
-     * @param key path parameter {@code key}
+     * <p>{@code POST /forms/by-key/validate} (operationId {@code validateForm}); permission {@code form.read}.
      * @param body request body
+     * @param key query parameter {@code key}. form key; may carry '/'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public FormValidationResult validateForm(String key, FormValidateRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/forms/" + HttpTransport.seg(String.valueOf(key)) + "/validate");
+    public FormValidationResult validateForm(FormValidateRequest body, String key, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/forms/by-key/validate");
         req.body(body);
+        req.query("key", key);
         return call.json(req, options, R_validateForm);
     }
 
@@ -200,14 +202,16 @@ public final class FormsApi {
      *
      * <p>Every version of one field, oldest first. 404 NOT_FOUND when the key was never defined.
      *
-     * <p>{@code GET /custom-fields/{objectType}/{key}} (operationId {@code getCustomFieldVersions}); permission {@code form.read}.
-     * @param objectType path parameter {@code objectType}. form:&lt;formKey&gt; or a registered object type
-     * @param key path parameter {@code key}. x_&lt;name&gt;
+     * <p>{@code GET /custom-fields/versions} (operationId {@code getCustomFieldVersions}); permission {@code form.read}.
+     * @param objectType query parameter {@code objectType}. form:&lt;formKey&gt; or a registered object type
+     * @param key query parameter {@code key}. x_&lt;name&gt;
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<CustomField> getCustomFieldVersions(String objectType, String key, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/custom-fields/" + HttpTransport.seg(String.valueOf(objectType)) + "/" + HttpTransport.seg(String.valueOf(key)));
+        ApiRequest req = ApiRequest.get("/custom-fields/versions");
+        req.query("objectType", objectType);
+        req.query("key", key);
         return call.json(req, options, R_getCustomFieldVersions);
     }
 
@@ -216,16 +220,18 @@ public final class FormsApi {
      *
      * <p>Closes the current version on effectiveTo, audited (CUSTOM_FIELD_RETIRED); values already stored stay readable. 400 REASON_REQUIRED; 404 NOT_FOUND; 422 CUSTOM_FIELD_INVALID; 409 CUSTOM_FIELD_CONFLICT.
      *
-     * <p>{@code POST /custom-fields/{objectType}/{key}/retire} (operationId {@code retireCustomField}); permission {@code tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param objectType path parameter {@code objectType}. form:&lt;formKey&gt; or a registered object type
-     * @param key path parameter {@code key}. x_&lt;name&gt;
+     * <p>{@code POST /custom-fields/retire} (operationId {@code retireCustomField}); permission {@code tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param objectType query parameter {@code objectType}. form:&lt;formKey&gt; or a registered object type
+     * @param key query parameter {@code key}. x_&lt;name&gt;
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public CustomField retireCustomField(String objectType, String key, CustomFieldRetireRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/custom-fields/" + HttpTransport.seg(String.valueOf(objectType)) + "/" + HttpTransport.seg(String.valueOf(key)) + "/retire");
+    public CustomField retireCustomField(CustomFieldRetireRequest body, String objectType, String key, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/custom-fields/retire");
         req.body(body);
+        req.query("objectType", objectType);
+        req.query("key", key);
         return call.json(req, options, R_retireCustomField);
     }
 }

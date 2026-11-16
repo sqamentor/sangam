@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * The step journal of `SangamTestEngine` (M-025, R37): `GET/PUT /work/{id}/steps/{stepName}` and
+ * The step journal of `SangamTestEngine` (M-025, R37): `GET/PUT /work/{id}/step?stepName=` and
  * `GET /work/{id}/steps`, keyed by (operationId, step name) and fenced by the lease like the server (`WorkStepJournal`
  * + `WorkPort.inFencedWork`). Same transitions: INTENT on a new, INTENT or FAILED step; SUCCEEDED/FAILED need an
  * INTENT (409 STEP_INTENT_REQUIRED); SUCCEEDED is final (409 STEP_ALREADY_RECORDED) unless an identical repeat (same
@@ -63,12 +63,19 @@ export class EngineSteps<W extends JournalWork> {
 
   constructor(private readonly hooks: JournalHooks<W>) {}
 
-  /** Serves a request whose path (without /api/v1) is `/work/{id}/steps` or `/work/{id}/steps/{name}`; else undefined. */
+  /**
+   * Serves a request whose path (without /api/v1) is `/work/{id}/steps` or `/work/{id}/step` (the step name in
+   * the stepName query, '/' allowed, as on the server: UI-DEMO-1); else undefined.
+   */
   route(method: string, path: string, query: URLSearchParams | undefined, body: Json): { status: number; body: unknown } | undefined {
     const parts = path.split('/').filter((p) => p);
-    if (parts[0] !== 'work' || parts[2] !== 'steps' || parts.length < 3 || parts.length > 4) return undefined;
+    if (parts[0] !== 'work' || (parts[2] !== 'steps' && parts[2] !== 'step') || parts.length !== 3) return undefined;
     const workId = decodeURIComponent(parts[1]!);
-    const name = parts.length === 4 ? decodeURIComponent(parts[3]!) : undefined;
+    let name: string | undefined;
+    if (parts[2] === 'step') {
+      name = query?.get('stepName') ?? undefined;
+      if (name === undefined) throw this.hooks.problem(400, 'VALIDATION_FAILED', 'stepName is required');
+    }
     if (name === undefined && method === 'GET') return { status: 200, body: this.list(workId) };
     if (name !== undefined && method === 'GET') {
       const raw = query?.get('lockVersion') ?? '';

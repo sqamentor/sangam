@@ -64,10 +64,10 @@ public sealed class WorkStepProblemsVectorTests
         Expect(c, "GET", await Assert.ThrowsAnyAsync<SangamApiException>(() =>
             client.Api.Work.GetWorkStepAsync(target, step, "w1", lv, w.AttemptId!)));
         Expect(c, "PUT", await Assert.ThrowsAnyAsync<SangamApiException>(() =>
-            client.Api.Work.RecordWorkStepAsync(target, step, new WorkStepRequest
+            client.Api.Work.RecordWorkStepAsync(target, new WorkStepRequest
             {
                 WorkerId = "w1", LockVersion = lv, AttemptId = w.AttemptId, State = "INTENT",
-            })));
+            }, step)));
     }
 
     [Fact]

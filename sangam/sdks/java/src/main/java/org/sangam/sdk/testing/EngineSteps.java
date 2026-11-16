@@ -18,7 +18,7 @@ import org.sangam.sdk.testing.EngineModel.Problem;
 import org.sangam.sdk.testing.EngineModel.Work;
 
 /**
- * The step journal of {@link SangamTestEngine} (M-025, R37): {@code GET/PUT /work/{id}/steps/{stepName}} and
+ * The step journal of {@link SangamTestEngine} (M-025, R37): {@code GET/PUT /work/{id}/step?stepName=} and
  * {@code GET /work/{id}/steps}, keyed by (operationId, step name) and fenced by the lease like the server
  * ({@code WorkStepJournal} + {@code WorkPort.inFencedWork}). Same transitions: INTENT on a new, INTENT or FAILED step;
  * SUCCEEDED/FAILED need an INTENT (409 STEP_INTENT_REQUIRED); SUCCEEDED is final (409 STEP_ALREADY_RECORDED); an

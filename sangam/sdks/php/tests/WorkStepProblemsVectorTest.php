@@ -78,11 +78,12 @@ final class WorkStepProblemsVectorTest extends TestCase
             default:
                 self::fail('unknown scenario ' . $case['scenario']);
         }
-        $path = '/work/' . $target . '/steps/' . rawurlencode((string) $file['stepName']);
+        $path = '/work/' . $target . '/step';
+        $name = ['stepName' => (string) $file['stepName']];
         [$s, , $body] = $e->handle('GET', $path, null, null,
-            ['workerId' => 'w1', 'lockVersion' => (string) $w['lockVersion'], 'attemptId' => $w['attemptId']]);
+            ['workerId' => 'w1', 'lockVersion' => (string) $w['lockVersion'], 'attemptId' => $w['attemptId']] + $name);
         self::expectProblem($case, 'GET', $s, $body);
-        [$s, , $body] = $e->handle('PUT', $path, null, $lease + ['state' => 'INTENT']);
+        [$s, , $body] = $e->handle('PUT', $path, null, $lease + ['state' => 'INTENT'], $name);
         self::expectProblem($case, 'PUT', $s, $body);
     }
 

@@ -14,9 +14,9 @@ public final class AuditApi extends ApiSupport {
         super(http);
     }
 
-    /** {@code GET /audit/{businessKey}/timeline}; {@code includeHistory} merges class-A history (server default true). */
+    /** {@code GET /audit/timeline?businessKey=}; {@code includeHistory} merges class-A history (server default true). */
     public Page<AuditEntry> timeline(String businessKey, Boolean includeHistory, Integer page, Integer size) {
-        return readPage(ApiRequest.get("/audit/" + seg(businessKey) + "/timeline").query("includeHistory", includeHistory)
+        return readPage(ApiRequest.get("/audit/timeline").query("businessKey", businessKey).query("includeHistory", includeHistory)
                 .query("page", page).query("size", size), AuditEntry.class);
     }
 

@@ -20,7 +20,6 @@ import org.sangam.rest.support.RestProperties;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -146,6 +145,12 @@ public class TenantCustomFieldController {
                 .map(CustomField::of).toList();
     }
 
+    /** The versions route of a field, its object type and key query-encoded. */
+    static String location(FieldDefinition d) {
+        return BASE + "/versions?objectType=" + java.net.URLEncoder.encode(d.objectType(), java.nio.charset.StandardCharsets.UTF_8)
+                + "&key=" + java.net.URLEncoder.encode(d.key(), java.nio.charset.StandardCharsets.UTF_8);
+    }
+
     static String ref(FieldDefinition d) {
         return d.objectType() + "/" + d.key() + "@" + d.version();
     }
@@ -174,9 +179,13 @@ public class TenantCustomFieldController {
         return Lists.ok(Page.slice(all, p, props.getCountCap()));
     }
 
-    @GetMapping("/{objectType}/{key}")
-    public ResponseEntity<List<CustomField>> versions(RequestContext ctx, @PathVariable String objectType,
-                                                      @PathVariable String key) {
+    /**
+     * UI-DEMO-1: an object type is "form:" + a form key, and form keys carry '/' ("rti/request"), which is refused
+     * encoded in a path segment before the application, so the field is named by query parameters.
+     */
+    @GetMapping("/versions")
+    public ResponseEntity<List<CustomField>> versions(RequestContext ctx, @RequestParam String objectType,
+                                                      @RequestParam String key) {
         TenantCustomFieldRegistry r = registry(ctx, Permissions.FORM_READ);
         List<FieldDefinition> v = r.versions(tenant(ctx), objectType, key);
         if (v.isEmpty()) {
@@ -202,12 +211,12 @@ public class TenantCustomFieldController {
         FieldDefinition d = call(() -> r.define(tenant, ctx.principalId(), objectType, key, body.label(),
                 Boolean.TRUE.equals(body.required()), Boolean.TRUE.equals(body.readOnly()), body.schema(), from, to,
                 audit(ctx, null)));
-        return Lists.created(BASE + "/" + d.objectType() + "/" + d.key(), ref(d), CustomField.of(d));
+        return Lists.created(location(d), ref(d), CustomField.of(d));
     }
 
-    @PostMapping("/{objectType}/{key}/retire")
-    public ResponseEntity<CustomField> retire(RequestContext ctx, @PathVariable String objectType,
-                                              @PathVariable String key,
+    @PostMapping("/retire")
+    public ResponseEntity<CustomField> retire(RequestContext ctx, @RequestParam String objectType,
+                                              @RequestParam String key,
                                               @RequestBody(required = false) RetireRequest body) {
         TenantCustomFieldRegistry r = registry(ctx, Permissions.TENANT_ADMIN);
         String tenant = tenant(ctx);

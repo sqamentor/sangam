@@ -116,7 +116,7 @@ Each workstream writes **only inside its own directory**. If you need something 
 - Audit: `GET /audit/{businessKey}/timeline`, `GET /audit/verify`.
 - Admin: `/admin/org-units`, `/admin/seats`, `/admin/assignments`, `/admin/delegations`, `/admin/policies`, `/admin/tenants`.
 - Ops: `/ops/incidents`, `/ops/reconciliation`, `/ops/outbox`, `/ops/jobs`.
-- Deploy: `/deployments`. Events: `/events/channels`, `/events/definitions`, `POST /events/{channel}`. Forms: `/forms/{key}`.
+- Deploy: `/deployments`. Events: `/events/channels`, `/events/definitions`, `POST /events/{channel}`. Forms: `/forms/by-key?key=`.
 
 ## 5. Build and working rules for every workstream
 

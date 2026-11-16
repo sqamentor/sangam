@@ -68,11 +68,12 @@ public sealed class DeploymentsApi
     /// <summary>
     /// Deployment resource
     /// Raw resource bytes.
-    /// GET /deployments/{id}/resources/{resourceName} (operationId getDeploymentResource); permission deployment.read.
+    /// GET /deployments/{id}/resource (operationId getDeploymentResource); permission deployment.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<byte[]> GetDeploymentResourceAsync(string id, string resourceName, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<byte[]> GetDeploymentResourceAsync(string id, string name, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/deployments/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/resources/{HttpTransport.Seg(GeneratedCalls.Str(resourceName)!)}");
+        var req = ApiRequest.Get($"/deployments/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/resource");
+        req.WithQuery("name", GeneratedCalls.Q(name));
         return await _calls.BytesAsync(req, options, "application/octet-stream", cancellationToken).ConfigureAwait(false);
     }
 }

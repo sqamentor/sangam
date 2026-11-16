@@ -8040,6 +8040,8 @@ Schema ``ProcessDefinition``."""
     suspended: bool
     resourceName: str
     startableInTasklist: bool
+    runningInstances: int
+    incidents: int
 
 
 class ProcessInstance(TypedDict, total=False):

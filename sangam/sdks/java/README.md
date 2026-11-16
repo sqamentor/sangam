@@ -120,7 +120,7 @@ Runtime guarantees:
 ## Durable steps (M-025, R37)
 
 `ctx.step(name, type, call)` records each side-effecting step of a work item under the work's stable operationId
-(journal routes `GET/PUT /work/{id}/steps/{stepName}`, fenced by the lease). A step that an earlier attempt recorded
+(journal routes `GET/PUT /work/{id}/step?stepName=`, fenced by the lease). A step that an earlier attempt recorded
 `SUCCEEDED` is not called again: its recorded result is replayed.
 
 ```java

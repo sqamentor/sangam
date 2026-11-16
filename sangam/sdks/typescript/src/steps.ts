@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Durable steps (M-025, R37 / E02): the algorithm behind `TaskContext.step`, on the step journal routes
-// `GET/PUT /work/{id}/steps/{stepName}` of the generated surface, fenced by the context's lease.
+// `GET/PUT /work/{id}/step?stepName=` of the generated surface, fenced by the context's lease.
 import { GoneError, SangamApiError, StaleLeaseError } from './errors.js';
 import type { WorkStep, WorkStepRequest } from './generated/models.js';
 import { fromTypedValue } from './typed.js';
@@ -163,8 +163,8 @@ export async function runStep<T>(ctx: TaskContext, name: string, call: StepCall<
 
 async function read(ctx: TaskContext, name: string): Promise<WorkStep | undefined> {
   try {
-    return await ctx.client.api.work.getWorkStep(ctx.workId, name, {
-      workerId: ctx.workerId, lockVersion: ctx.lockVersion, attemptId: ctx.attemptId,
+    return await ctx.client.api.work.getWorkStep(ctx.workId, {
+      stepName: name, workerId: ctx.workerId, lockVersion: ctx.lockVersion, attemptId: ctx.attemptId,
     });
   } catch (e) {
     if (e instanceof StaleLeaseError || e instanceof GoneError) throw leaseLost(ctx, name, e);
@@ -180,7 +180,7 @@ async function write(ctx: TaskContext, name: string, state: StepState, result: u
   if (providerRef !== undefined) body.providerRef = providerRef;
   if (error !== undefined) body.error = error;
   try {
-    await ctx.client.api.work.recordWorkStep(ctx.workId, name, body);
+    await ctx.client.api.work.recordWorkStep(ctx.workId, body, { stepName: name });
   } catch (e) {
     if (e instanceof StaleLeaseError || e instanceof GoneError) throw leaseLost(ctx, name, e);
     throw e;

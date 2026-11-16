@@ -92,12 +92,14 @@ final class DeploymentsApi
      *
      * Raw resource bytes.
      *
-     * GET /deployments/{id}/resources/{resourceName} (operationId getDeploymentResource); permission deployment.read.
+     * GET /deployments/{id}/resource (operationId getDeploymentResource); permission deployment.read.
+     * @param string $name query name
      * @return string
      */
-    public function getDeploymentResource(string $id, string $resourceName, ?RequestOptions $options = null): string
+    public function getDeploymentResource(string $id, string $name, ?RequestOptions $options = null): string
     {
-        $req = ApiRequest::get('/deployments/' . HttpTransport::seg((string) $id) . '/resources/' . HttpTransport::seg((string) $resourceName));
+        $req = ApiRequest::get('/deployments/' . HttpTransport::seg((string) $id) . '/resource');
+        $req->query('name', $name);
         return $this->calls->raw($req, $options, 'application/octet-stream');
     }
 }

@@ -411,7 +411,7 @@ public sealed class RostersApi
     /// RosterController.listSwaps (sangam-rest).
     /// GET /rosters/swaps (operationId rostersRosterListSwaps); permission resources.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RostersRosterListSwapsAsync(string? periodId = null, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RostersRosterListSwapsAsync(string periodId, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Get($"/rosters/swaps");
         req.WithQuery("periodId", GeneratedCalls.Q(periodId));

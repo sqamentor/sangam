@@ -22,6 +22,8 @@ use Sangam\Sdk\Generated\Support;
  * @property-read bool|null $suspended
  * @property-read string|null $resourceName
  * @property-read bool|null $startableInTasklist
+ * @property-read int|null $runningInstances
+ * @property-read int|null $incidents
  */
 final class ProcessDefinition implements \JsonSerializable
 {
@@ -36,6 +38,8 @@ final class ProcessDefinition implements \JsonSerializable
      * @param bool|null $suspended
      * @param string|null $resourceName
      * @param bool|null $startableInTasklist
+     * @param int|null $runningInstances
+     * @param int|null $incidents
      */
     public function __construct(
         public readonly ?string $id = null,
@@ -48,6 +52,8 @@ final class ProcessDefinition implements \JsonSerializable
         public readonly ?bool $suspended = null,
         public readonly ?string $resourceName = null,
         public readonly ?bool $startableInTasklist = null,
+        public readonly ?int $runningInstances = null,
+        public readonly ?int $incidents = null,
     ) {
     }
 
@@ -65,6 +71,8 @@ final class ProcessDefinition implements \JsonSerializable
             Support::bool($data['suspended'] ?? null),
             Support::str($data['resourceName'] ?? null),
             Support::bool($data['startableInTasklist'] ?? null),
+            Support::int($data['runningInstances'] ?? null),
+            Support::int($data['incidents'] ?? null),
         );
     }
 
@@ -100,6 +108,12 @@ final class ProcessDefinition implements \JsonSerializable
         }
         if ($this->startableInTasklist !== null) {
             $out['startableInTasklist'] = $this->startableInTasklist;
+        }
+        if ($this->runningInstances !== null) {
+            $out['runningInstances'] = $this->runningInstances;
+        }
+        if ($this->incidents !== null) {
+            $out['incidents'] = $this->incidents;
         }
         return $out === [] ? new \stdClass() : $out;
     }

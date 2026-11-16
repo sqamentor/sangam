@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 namespace Sangam.Sdk.Testing;
 
 /// <summary>
-/// The step journal of <see cref="SangamTestEngine"/> (M-025, R37): <c>GET/PUT /work/{id}/steps/{stepName}</c> and
+/// The step journal of <see cref="SangamTestEngine"/> (M-025, R37): <c>GET/PUT /work/{id}/step?stepName=</c> and
 /// <c>GET /work/{id}/steps</c>, keyed by (operationId, step name) and fenced by the lease like the server
 /// (<c>WorkStepJournal</c> + <c>WorkPort.inFencedWork</c>). Same transitions: INTENT on a new, INTENT or FAILED step;
 /// SUCCEEDED/FAILED need an INTENT (409 STEP_INTENT_REQUIRED); SUCCEEDED is final (409 STEP_ALREADY_RECORDED) unless
@@ -41,12 +41,12 @@ internal sealed class EngineSteps
         _now = now;
     }
 
-    /// <summary>True for <c>/work/{id}/steps</c> and <c>/work/{id}/steps/{name}</c>.</summary>
+    /// <summary>True for <c>/work/{id}/steps</c> and <c>/work/{id}/step</c> (the name is the stepName query).</summary>
     internal static bool IsStepPath(string apiPath)
     {
         if (!apiPath.StartsWith("/work/", StringComparison.Ordinal)) return false;
-        var seg = apiPath.Split('/');   // "", "work", id, "steps"[, name]
-        return (seg.Length == 4 || seg.Length == 5) && seg[2].Length > 0 && seg[3] == "steps";
+        var seg = apiPath.Split('/');   // "", "work", id, "steps" | "step"
+        return seg.Length == 4 && seg[2].Length > 0 && (seg[3] == "steps" || seg[3] == "step");
     }
 
     /// <summary>Serves one journal request; <paramref name="query"/> is the raw query string (with or without '?').</summary>
@@ -54,11 +54,14 @@ internal sealed class EngineSteps
     {
         var seg = apiPath.Split('/');
         var workId = Uri.UnescapeDataString(seg[2]);
-        var name = seg.Length > 4 ? Uri.UnescapeDataString(seg[4]) : null;
+        var q = Query(query);
+        // UI-DEMO-1: as on the server, one step is /step with the name in the stepName query ('/' allowed)
+        string? name = null;
+        if (seg[3] == "step" && !q.TryGetValue("stepName", out name))
+            throw new ProblemException(400, "VALIDATION_FAILED", null, "stepName is required");
         if (name is null && method == "GET") return new Answer(200, List(workId).ToJsonString(), "application/json");
         if (name is not null && method == "GET")
         {
-            var q = Query(query);
             if (!q.TryGetValue("lockVersion", out var lvText)
                 || !long.TryParse(lvText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var lv))
                 throw new ProblemException(400, "VALIDATION_FAILED", null, "lockVersion is required");

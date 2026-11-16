@@ -125,26 +125,26 @@ public class ConfigController {
         return resolver.resolve(s, blank(office), dates.orToday(asOf, s));
     }
 
-    @GetMapping("/profiles/{id}/versions")
-    public ResponseEntity<List<ProfileVersion>> versions(RequestContext ctx, @PathVariable String id) {
+    @GetMapping("/profiles/versions")
+    public ResponseEntity<List<ProfileVersion>> versions(RequestContext ctx, @RequestParam String id) {
         permissions.require(ctx, ConfigPermissions.READ);
         return Lists.ok(repository.versions(id).stream().map(ConfigController::view).toList());
     }
 
-    @GetMapping("/profiles/{id}/versions/{version}")
-    public ProfileVersionDocument version(RequestContext ctx, @PathVariable String id, @PathVariable String version) {
+    @GetMapping("/profiles/version")
+    public ProfileVersionDocument version(RequestContext ctx, @RequestParam String id, @RequestParam String version) {
         permissions.require(ctx, ConfigPermissions.READ);
         ProfileRepository.Stored s = repository.get(id, version)
                 .orElseThrow(() -> ApiProblem.notFound("profile version", id + "@" + version));
         return new ProfileVersionDocument(view(s), s.document().toTree());
     }
 
-    /** Saves a draft; the body is the profile document as YAML or JSON (its id and version must match the path). */
-    @PutMapping(value = "/profiles/{id}/versions/{version}",
+    /** Saves a draft; the body is the profile document as YAML or JSON (its id and version must match the query). UI-DEMO-1: a profile id may carry '/' (ProfileValidator ID), refused encoded in a path segment, so id and version are query parameters on every profile-version route.. */
+    @PutMapping(value = "/profiles/version",
             consumes = {"application/yaml", "application/x-yaml", "text/yaml", MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<FindingsResult> saveDraft(RequestContext ctx, @PathVariable String id,
-                                                    @PathVariable String version, @RequestBody String body) {
+    public ResponseEntity<FindingsResult> saveDraft(RequestContext ctx, @RequestParam String id,
+                                                    @RequestParam String version, @RequestBody String body) {
         permissions.require(ctx, ConfigPermissions.WRITE);
         requireOwned(ctx, id);
         ProfileDocument doc;
@@ -155,21 +155,21 @@ public class ConfigController {
         }
         if (!id.equals(doc.id()) || !version.equals(doc.version())) {
             throw ApiProblem.badRequest("ID_MISMATCH", "the document is " + doc.id() + "@" + doc.version()
-                    + ", the path is " + id + "@" + version);
+                    + ", the request is " + id + "@" + version);
         }
         return Lists.okRef(id + "@" + version, FindingsResult.of(admin.saveDraft(doc, ctx.principalId())));
     }
 
-    @PostMapping("/profiles/{id}/versions/{version}/submit")
-    public ResponseEntity<Void> submit(RequestContext ctx, @PathVariable String id, @PathVariable String version) {
+    @PostMapping("/profiles/version/submit")
+    public ResponseEntity<Void> submit(RequestContext ctx, @RequestParam String id, @RequestParam String version) {
         permissions.require(ctx, ConfigPermissions.WRITE);
         requireOwned(ctx, id);
         admin.submit(id, version, ctx.principalId());
         return ResponseEntity.noContent().header(Lists.RESOURCE_REF, id + "@" + version).build();
     }
 
-    @PostMapping("/profiles/{id}/versions/{version}/approve")
-    public ResponseEntity<Void> approve(RequestContext ctx, @PathVariable String id, @PathVariable String version,
+    @PostMapping("/profiles/version/approve")
+    public ResponseEntity<Void> approve(RequestContext ctx, @RequestParam String id, @RequestParam String version,
                                         @RequestBody ApproveRequest body) {
         permissions.require(ctx, ConfigPermissions.ADMIN);
         requireOwned(ctx, id);
@@ -180,8 +180,8 @@ public class ConfigController {
         return ResponseEntity.noContent().header(Lists.RESOURCE_REF, id + "@" + version).build();
     }
 
-    @PostMapping("/profiles/{id}/versions/{version}/reject")
-    public ResponseEntity<Void> reject(RequestContext ctx, @PathVariable String id, @PathVariable String version,
+    @PostMapping("/profiles/version/reject")
+    public ResponseEntity<Void> reject(RequestContext ctx, @RequestParam String id, @RequestParam String version,
                                        @RequestBody RejectRequest body) {
         permissions.require(ctx, ConfigPermissions.ADMIN);
         requireOwned(ctx, id);
@@ -192,17 +192,17 @@ public class ConfigController {
         return ResponseEntity.noContent().header(Lists.RESOURCE_REF, id + "@" + version).build();
     }
 
-    @PostMapping("/profiles/{id}/versions/{version}/activate")
-    public ResponseEntity<FindingsResult> activate(RequestContext ctx, @PathVariable String id,
-            @PathVariable String version, @RequestBody(required = false) ActivateRequest body) {
+    @PostMapping("/profiles/version/activate")
+    public ResponseEntity<FindingsResult> activate(RequestContext ctx, @RequestParam String id,
+            @RequestParam String version, @RequestBody(required = false) ActivateRequest body) {
         permissions.require(ctx, ConfigPermissions.ADMIN);
         requireOwned(ctx, id);
         List<String> scopes = body == null || body.scopesToCheck() == null ? List.of() : body.scopesToCheck();
         return Lists.okRef(id + "@" + version, FindingsResult.of(admin.activate(id, version, ctx.principalId(), scopes)));
     }
 
-    @GetMapping("/profiles/{id}/history")
-    public ResponseEntity<List<ConfigAdminService.ChangeRecord>> history(RequestContext ctx, @PathVariable String id) {
+    @GetMapping("/profiles/history")
+    public ResponseEntity<List<ConfigAdminService.ChangeRecord>> history(RequestContext ctx, @RequestParam String id) {
         permissions.require(ctx, ConfigPermissions.READ);
         return Lists.ok(admin.history(id));
     }

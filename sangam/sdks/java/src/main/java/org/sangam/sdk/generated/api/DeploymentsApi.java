@@ -100,14 +100,15 @@ public final class DeploymentsApi {
      *
      * <p>Raw resource bytes.
      *
-     * <p>{@code GET /deployments/{id}/resources/{resourceName}} (operationId {@code getDeploymentResource}); permission {@code deployment.read}.
+     * <p>{@code GET /deployments/{id}/resource} (operationId {@code getDeploymentResource}); permission {@code deployment.read}.
      * @param id path parameter {@code id}
-     * @param resourceName path parameter {@code resourceName}
+     * @param name query parameter {@code name}. resource name; may carry '/'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public byte[] getDeploymentResource(String id, String resourceName, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/deployments/" + HttpTransport.seg(String.valueOf(id)) + "/resources/" + HttpTransport.seg(String.valueOf(resourceName)));
+    public byte[] getDeploymentResource(String id, String name, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/deployments/" + HttpTransport.seg(String.valueOf(id)) + "/resource");
+        req.query("name", name);
         return call.bytes(req, options, "application/octet-stream");
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sangam\Sdk\Testing;
 
 /**
- * The step journal of SangamTestEngine (M-025, R37): GET/PUT /work/{id}/steps/{stepName} and GET /work/{id}/steps,
+ * The step journal of SangamTestEngine (M-025, R37): GET/PUT /work/{id}/step?stepName= and GET /work/{id}/steps,
  * keyed by (operationId, step name) and fenced by the lease like the server (WorkStepJournal + WorkPort.inFencedWork).
  * Same transitions: INTENT on a new, INTENT or FAILED step; SUCCEEDED/FAILED need an INTENT (409
  * STEP_INTENT_REQUIRED); SUCCEEDED is final (409 STEP_ALREADY_RECORDED) unless an identical repeat (same result and

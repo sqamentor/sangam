@@ -20,11 +20,11 @@ public sealed class ResourcesBookingsApi
     /// ResourcesController.quote (sangam-rest).
     /// POST /resources/bookings/quote (operationId resourcesResourcesQuote); permission resources.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<byte[]> ResourcesResourcesQuoteAsync(M.BookingModelHoldRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesQuoteAsync(M.BookingModelHoldRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Post($"/resources/bookings/quote");
         if (body is not null) req.WithBody(body);
-        return await _calls.BytesAsync(req, options, "application/octet-stream", cancellationToken).ConfigureAwait(false);
+        return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -18,6 +18,8 @@ package org.sangam.sdk.generated.model;
  * @param suspended wire field {@code suspended}
  * @param resourceName wire field {@code resourceName}
  * @param startableInTasklist wire field {@code startableInTasklist}
+ * @param runningInstances wire field {@code runningInstances}
+ * @param incidents wire field {@code incidents}
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record ProcessDefinition(
@@ -30,5 +32,7 @@ public record ProcessDefinition(
         @com.fasterxml.jackson.annotation.JsonProperty("versionTag") String versionTag,
         @com.fasterxml.jackson.annotation.JsonProperty("suspended") Boolean suspended,
         @com.fasterxml.jackson.annotation.JsonProperty("resourceName") String resourceName,
-        @com.fasterxml.jackson.annotation.JsonProperty("startableInTasklist") Boolean startableInTasklist) {
+        @com.fasterxml.jackson.annotation.JsonProperty("startableInTasklist") Boolean startableInTasklist,
+        @com.fasterxml.jackson.annotation.JsonProperty("runningInstances") Long runningInstances,
+        @com.fasterxml.jackson.annotation.JsonProperty("incidents") Long incidents) {
 }

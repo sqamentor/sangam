@@ -1640,10 +1640,10 @@ export class AuditApi {
    *
    * Class-B chain events of every root with this business key, optionally merged with class-A history (evidence=false). The read is audited (AUDIT_VIEWED).
    *
-   * `GET /audit/{businessKey}/timeline` (operationId `getAuditTimeline`); permission `audit.read`.
+   * `GET /audit/timeline` (operationId `getAuditTimeline`); permission `audit.read`.
    */
-  async getAuditTimeline(businessKey: string, params?: { includeHistory?: boolean /* Merge class-A history (default true) */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.AuditEntry>> {
-    const req: ApiRequest = { method: 'GET', path: `/audit/${seg(String(businessKey))}/timeline`, query: { includeHistory: params?.includeHistory, page: params?.page, size: params?.size } };
+  async getAuditTimeline(params: { businessKey: string /* business key of the case; may carry '/' */; includeHistory?: boolean /* Merge class-A history (default true) */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.AuditEntry>> {
+    const req: ApiRequest = { method: 'GET', path: `/audit/timeline`, query: { businessKey: params?.businessKey, includeHistory: params?.includeHistory, page: params?.page, size: params?.size } };
     return this.calls.page<M.AuditEntry>(req, options, params?.page, params?.size);
   }
 
@@ -1725,10 +1725,10 @@ export class AuditApi {
    *
    * ZIP of the class-B timeline, chain verification, model and form versions and the document list, with a SHA-256 manifest (U03, R42).
    *
-   * `GET /audit/{businessKey}/evidence-pack` (operationId `getEvidencePack`); permission `audit.export`.
+   * `GET /audit/evidence-pack` (operationId `getEvidencePack`); permission `audit.export`.
    */
-  async getEvidencePack(businessKey: string, options?: RequestOptions): Promise<Uint8Array> {
-    const req: ApiRequest = { method: 'GET', path: `/audit/${seg(String(businessKey))}/evidence-pack` };
+  async getEvidencePack(params: { businessKey: string /* business key of the case; may carry '/' */ }, options?: RequestOptions): Promise<Uint8Array> {
+    const req: ApiRequest = { method: 'GET', path: `/audit/evidence-pack`, query: { businessKey: params?.businessKey } };
     return this.calls.bytes(req, options, 'application/zip');
   }
 }
@@ -2064,10 +2064,10 @@ export class CaseFilesApi {
    *
    * A case file by its human-readable number.
    *
-   * `GET /case-files/by-number/{number}` (operationId `caseFileByNumber`); permission `case.read`.
+   * `GET /case-files/by-number` (operationId `caseFileByNumber`); permission `case.read`.
    */
-  async caseFileByNumber(number: string, options?: RequestOptions): Promise<M.CfCaseView> {
-    const req: ApiRequest = { method: 'GET', path: `/case-files/by-number/${seg(String(number))}` };
+  async caseFileByNumber(params: { number: string /* the human-readable number; may carry / ({prefix}/{yyyy}/{seq:6}) */ }, options?: RequestOptions): Promise<M.CfCaseView> {
+    const req: ApiRequest = { method: 'GET', path: `/case-files/by-number`, query: { number: params?.number } };
     return this.calls.json<M.CfCaseView>(req, options);
   }
 
@@ -4246,10 +4246,10 @@ export class ConfigApi {
    *
    * Every stored version with its status and content hash.
    *
-   * `GET /config/profiles/{id}/versions` (operationId `listConfigProfileVersions`); permission `config.read`.
+   * `GET /config/profiles/versions` (operationId `listConfigProfileVersions`); permission `config.read`.
    */
-  async listConfigProfileVersions(id: string, params?: { page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.ConfigProfileVersion>> {
-    const req: ApiRequest = { method: 'GET', path: `/config/profiles/${seg(String(id))}/versions`, query: { page: params?.page, size: params?.size } };
+  async listConfigProfileVersions(params: { id: string /* profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document) */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.ConfigProfileVersion>> {
+    const req: ApiRequest = { method: 'GET', path: `/config/profiles/versions`, query: { id: params?.id, page: params?.page, size: params?.size } };
     return this.calls.page<M.ConfigProfileVersion>(req, options, params?.page, params?.size);
   }
 
@@ -4258,22 +4258,22 @@ export class ConfigApi {
    *
    * The version's status, hash and document tree.
    *
-   * `GET /config/profiles/{id}/versions/{version}` (operationId `getConfigProfileVersion`); permission `config.read`.
+   * `GET /config/profiles/version` (operationId `getConfigProfileVersion`); permission `config.read`.
    */
-  async getConfigProfileVersion(id: string, version: string, options?: RequestOptions): Promise<M.ConfigProfileVersionDocument> {
-    const req: ApiRequest = { method: 'GET', path: `/config/profiles/${seg(String(id))}/versions/${seg(String(version))}` };
+  async getConfigProfileVersion(params: { id: string /* profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document) */; version: string }, options?: RequestOptions): Promise<M.ConfigProfileVersionDocument> {
+    const req: ApiRequest = { method: 'GET', path: `/config/profiles/version`, query: { id: params?.id, version: params?.version } };
     return this.calls.json<M.ConfigProfileVersionDocument>(req, options);
   }
 
   /**
    * Save a draft version
    *
-   * Maker step: the body is the profile document (YAML or JSON); its id and version must match the path. A version that left DRAFT/REJECTED is frozen (409 VERSION_FROZEN). Writes are limited to the caller's own scope.
+   * Maker step: the body is the profile document (YAML or JSON); its id and version must match the query. A version that left DRAFT/REJECTED is frozen (409 VERSION_FROZEN). Writes are limited to the caller's own scope.
    *
-   * `PUT /config/profiles/{id}/versions/{version}` (operationId `saveConfigProfileDraft`); permission `config.write`; result stored atomically with the state change.
+   * `PUT /config/profiles/version` (operationId `saveConfigProfileDraft`); permission `config.write`; result stored atomically with the state change.
    */
-  async saveConfigProfileDraft(id: string, version: string, body: Uint8Array | string, options?: RequestOptions): Promise<M.ConfigFindingsResult> {
-    const req: ApiRequest = { method: 'PUT', path: `/config/profiles/${seg(String(id))}/versions/${seg(String(version))}` };
+  async saveConfigProfileDraft(body: Uint8Array | string, params: { id: string /* profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document) */; version: string }, options?: RequestOptions): Promise<M.ConfigFindingsResult> {
+    const req: ApiRequest = { method: 'PUT', path: `/config/profiles/version`, query: { id: params?.id, version: params?.version } };
     if (body !== undefined) { req.rawBody = body; req.rawContentType = options?.contentType ?? 'application/yaml'; }
     return this.calls.json<M.ConfigFindingsResult>(req, options);
   }
@@ -4283,10 +4283,10 @@ export class ConfigApi {
    *
    * Maker submits the draft; the content hash is frozen.
    *
-   * `POST /config/profiles/{id}/versions/{version}/submit` (operationId `submitConfigProfile`); permission `config.write`; result stored atomically with the state change.
+   * `POST /config/profiles/version/submit` (operationId `submitConfigProfile`); permission `config.write`; result stored atomically with the state change.
    */
-  async submitConfigProfile(id: string, version: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/config/profiles/${seg(String(id))}/versions/${seg(String(version))}/submit` };
+  async submitConfigProfile(params: { id: string /* profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document) */; version: string }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/config/profiles/version/submit`, query: { id: params?.id, version: params?.version } };
     await this.calls.none(req, options);
   }
 
@@ -4295,10 +4295,10 @@ export class ConfigApi {
    *
    * Checker approval bound to the reviewed hash (409 APPROVAL_INVALIDATED if it changed); checker must differ from the maker (422 SOD_VIOLATION).
    *
-   * `POST /config/profiles/{id}/versions/{version}/approve` (operationId `approveConfigProfile`); permission `config.admin`; result stored atomically with the state change.
+   * `POST /config/profiles/version/approve` (operationId `approveConfigProfile`); permission `config.admin`; result stored atomically with the state change.
    */
-  async approveConfigProfile(id: string, version: string, body: M.ConfigApproveRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/config/profiles/${seg(String(id))}/versions/${seg(String(version))}/approve` };
+  async approveConfigProfile(body: M.ConfigApproveRequest, params: { id: string /* profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document) */; version: string }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/config/profiles/version/approve`, query: { id: params?.id, version: params?.version } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -4308,10 +4308,10 @@ export class ConfigApi {
    *
    * Checker rejection with a reason.
    *
-   * `POST /config/profiles/{id}/versions/{version}/reject` (operationId `rejectConfigProfile`); permission `config.admin`; result stored atomically with the state change.
+   * `POST /config/profiles/version/reject` (operationId `rejectConfigProfile`); permission `config.admin`; result stored atomically with the state change.
    */
-  async rejectConfigProfile(id: string, version: string, body: M.ConfigRejectRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/config/profiles/${seg(String(id))}/versions/${seg(String(version))}/reject` };
+  async rejectConfigProfile(body: M.ConfigRejectRequest, params: { id: string /* profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document) */; version: string }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/config/profiles/version/reject`, query: { id: params?.id, version: params?.version } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -4321,10 +4321,10 @@ export class ConfigApi {
    *
    * Activates an approved version after re-resolving the listed scopes (422 ACTIVATION_REFUSED on errors).
    *
-   * `POST /config/profiles/{id}/versions/{version}/activate` (operationId `activateConfigProfile`); permission `config.admin`; result stored atomically with the state change.
+   * `POST /config/profiles/version/activate` (operationId `activateConfigProfile`); permission `config.admin`; result stored atomically with the state change.
    */
-  async activateConfigProfile(id: string, version: string, body?: M.ConfigActivateRequest, options?: RequestOptions): Promise<M.ConfigFindingsResult> {
-    const req: ApiRequest = { method: 'POST', path: `/config/profiles/${seg(String(id))}/versions/${seg(String(version))}/activate` };
+  async activateConfigProfile(body: M.ConfigActivateRequest | undefined, params: { id: string /* profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document) */; version: string }, options?: RequestOptions): Promise<M.ConfigFindingsResult> {
+    const req: ApiRequest = { method: 'POST', path: `/config/profiles/version/activate`, query: { id: params?.id, version: params?.version } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ConfigFindingsResult>(req, options);
   }
@@ -4334,10 +4334,10 @@ export class ConfigApi {
    *
    * Every save, submission, approval, rejection, activation and import.
    *
-   * `GET /config/profiles/{id}/history` (operationId `getConfigProfileHistory`); permission `config.read`.
+   * `GET /config/profiles/history` (operationId `getConfigProfileHistory`); permission `config.read`.
    */
-  async getConfigProfileHistory(id: string, params?: { page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.ConfigChangeRecord>> {
-    const req: ApiRequest = { method: 'GET', path: `/config/profiles/${seg(String(id))}/history`, query: { page: params?.page, size: params?.size } };
+  async getConfigProfileHistory(params: { id: string /* profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document) */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.ConfigChangeRecord>> {
+    const req: ApiRequest = { method: 'GET', path: `/config/profiles/history`, query: { id: params?.id, page: params?.page, size: params?.size } };
     return this.calls.page<M.ConfigChangeRecord>(req, options, params?.page, params?.size);
   }
 
@@ -4598,10 +4598,10 @@ export class DeploymentsApi {
    *
    * Raw resource bytes.
    *
-   * `GET /deployments/{id}/resources/{resourceName}` (operationId `getDeploymentResource`); permission `deployment.read`.
+   * `GET /deployments/{id}/resource` (operationId `getDeploymentResource`); permission `deployment.read`.
    */
-  async getDeploymentResource(id: string, resourceName: string, options?: RequestOptions): Promise<Uint8Array> {
-    const req: ApiRequest = { method: 'GET', path: `/deployments/${seg(String(id))}/resources/${seg(String(resourceName))}` };
+  async getDeploymentResource(id: string, params: { name: string /* resource name; may carry '/' */ }, options?: RequestOptions): Promise<Uint8Array> {
+    const req: ApiRequest = { method: 'GET', path: `/deployments/${seg(String(id))}/resource`, query: { name: params?.name } };
     return this.calls.bytes(req, options, 'application/octet-stream');
   }
 }
@@ -5851,12 +5851,12 @@ export class FormsApi {
   /**
    * Get a form version
    *
-   * Data schema, layout, field policy and i18n bundles by hash version (R47); the key 'drafts' is reserved.
+   * Data schema, layout, field policy and i18n bundles by hash version (R47).
    *
-   * `GET /forms/{key}` (operationId `getForm`); permission `form.read`.
+   * `GET /forms/by-key` (operationId `getForm`); permission `form.read`.
    */
-  async getForm(key: string, params?: { version?: string /* Form version hash; default the task-bound or ACTIVE version */ }, options?: RequestOptions): Promise<M.FormVersion> {
-    const req: ApiRequest = { method: 'GET', path: `/forms/${seg(String(key))}`, query: { version: params?.version } };
+  async getForm(params: { key: string /* form key; may carry '/' */; version?: string /* Form version hash; default the task-bound or ACTIVE version */ }, options?: RequestOptions): Promise<M.FormVersion> {
+    const req: ApiRequest = { method: 'GET', path: `/forms/by-key`, query: { key: params?.key, version: params?.version } };
     return this.calls.json<M.FormVersion>(req, options);
   }
 
@@ -5865,10 +5865,10 @@ export class FormsApi {
    *
    * Authoritative server-side validation (X.2.5.2).
    *
-   * `POST /forms/{key}/validate` (operationId `validateForm`); permission `form.read`.
+   * `POST /forms/by-key/validate` (operationId `validateForm`); permission `form.read`.
    */
-  async validateForm(key: string, body: M.FormValidateRequest, options?: RequestOptions): Promise<M.FormValidationResult> {
-    const req: ApiRequest = { method: 'POST', path: `/forms/${seg(String(key))}/validate` };
+  async validateForm(body: M.FormValidateRequest, params: { key: string /* form key; may carry '/' */ }, options?: RequestOptions): Promise<M.FormValidationResult> {
+    const req: ApiRequest = { method: 'POST', path: `/forms/by-key/validate`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.FormValidationResult>(req, options);
   }
@@ -5966,10 +5966,10 @@ export class FormsApi {
    *
    * Every version of one field, oldest first. 404 NOT_FOUND when the key was never defined.
    *
-   * `GET /custom-fields/{objectType}/{key}` (operationId `getCustomFieldVersions`); permission `form.read`.
+   * `GET /custom-fields/versions` (operationId `getCustomFieldVersions`); permission `form.read`.
    */
-  async getCustomFieldVersions(objectType: string, key: string, options?: RequestOptions): Promise<Array<M.CustomField>> {
-    const req: ApiRequest = { method: 'GET', path: `/custom-fields/${seg(String(objectType))}/${seg(String(key))}` };
+  async getCustomFieldVersions(params: { objectType: string /* form:<formKey> or a registered object type */; key: string /* x_<name> */ }, options?: RequestOptions): Promise<Array<M.CustomField>> {
+    const req: ApiRequest = { method: 'GET', path: `/custom-fields/versions`, query: { objectType: params?.objectType, key: params?.key } };
     return this.calls.json<Array<M.CustomField>>(req, options);
   }
 
@@ -5978,10 +5978,10 @@ export class FormsApi {
    *
    * Closes the current version on effectiveTo, audited (CUSTOM_FIELD_RETIRED); values already stored stay readable. 400 REASON_REQUIRED; 404 NOT_FOUND; 422 CUSTOM_FIELD_INVALID; 409 CUSTOM_FIELD_CONFLICT.
    *
-   * `POST /custom-fields/{objectType}/{key}/retire` (operationId `retireCustomField`); permission `tenant.admin`; result stored atomically with the state change.
+   * `POST /custom-fields/retire` (operationId `retireCustomField`); permission `tenant.admin`; result stored atomically with the state change.
    */
-  async retireCustomField(objectType: string, key: string, body: M.CustomFieldRetireRequest, options?: RequestOptions): Promise<M.CustomField> {
-    const req: ApiRequest = { method: 'POST', path: `/custom-fields/${seg(String(objectType))}/${seg(String(key))}/retire` };
+  async retireCustomField(body: M.CustomFieldRetireRequest, params: { objectType: string /* form:<formKey> or a registered object type */; key: string /* x_<name> */ }, options?: RequestOptions): Promise<M.CustomField> {
+    const req: ApiRequest = { method: 'POST', path: `/custom-fields/retire`, query: { objectType: params?.objectType, key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CustomField>(req, options);
   }
@@ -6504,12 +6504,12 @@ export class LedgerApi {
   /**
    * Close a period
    *
-   * Year-end lapse and carry-forward.
+   * Year-end lapse and carry-forward. The period is a query parameter: a fiscal-year label can carry '/' (2026/2027).
    *
-   * `POST /ledger/{ledger}/periods/{period}/close` (operationId `closeLedgerPeriod`); permission `ledger.admin`; result stored atomically with the state change.
+   * `POST /ledger/{ledger}/periods/close` (operationId `closeLedgerPeriod`); permission `ledger.admin`; result stored atomically with the state change.
    */
-  async closeLedgerPeriod(ledger: string, period: string, body?: M.LedgerCloseRequest, options?: RequestOptions): Promise<Array<M.LedgerResult>> {
-    const req: ApiRequest = { method: 'POST', path: `/ledger/${seg(String(ledger))}/periods/${seg(String(period))}/close` };
+  async closeLedgerPeriod(ledger: string, body: M.LedgerCloseRequest | undefined, params: { period: string /* fiscal period label */ }, options?: RequestOptions): Promise<Array<M.LedgerResult>> {
+    const req: ApiRequest = { method: 'POST', path: `/ledger/${seg(String(ledger))}/periods/close`, query: { period: params?.period } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Array<M.LedgerResult>>(req, options);
   }
@@ -11800,10 +11800,10 @@ export class RegistryObjectsApi {
    *
    * RegistryController.byNumber (sangam-rest).
    *
-   * `GET /registry/objects/by-number/{number}` (operationId `registryRegistryByNumber`); permission `registry.read`.
+   * `GET /registry/objects/by-number` (operationId `registryRegistryByNumber`); permission `registry.read`.
    */
-  async registryRegistryByNumber(number: string, params?: { typeKey?: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/registry/objects/by-number/${seg(String(number))}`, query: { typeKey: params?.typeKey } };
+  async registryRegistryByNumber(params: { number: string; typeKey?: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/registry/objects/by-number`, query: { number: params?.number, typeKey: params?.typeKey } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -12547,10 +12547,10 @@ export class ResourcesApi {
    *
    * `POST /resources/types` (operationId `resourcesResourcesDefineType`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async resourcesResourcesDefineType(body: M.ResourcesResourcesDefineTypeBody, options?: RequestOptions): Promise<Uint8Array> {
+  async resourcesResourcesDefineType(body: M.ResourcesResourcesDefineTypeBody, options?: RequestOptions): Promise<Record<string, unknown>> {
     const req: ApiRequest = { method: 'POST', path: `/resources/types` };
     if (body !== undefined) req.body = body;
-    return this.calls.bytes(req, options, 'application/octet-stream');
+    return this.calls.json<Record<string, unknown>>(req, options);
   }
 
   /**
@@ -12697,9 +12697,9 @@ export class ResourcesApi {
    *
    * `GET /resources/waitlist/{entryId}` (operationId `resourcesResourcesWaitlistEntry`); permission `resources.read`.
    */
-  async resourcesResourcesWaitlistEntry(entryId: string, options?: RequestOptions): Promise<Uint8Array> {
+  async resourcesResourcesWaitlistEntry(entryId: string, options?: RequestOptions): Promise<Record<string, unknown>> {
     const req: ApiRequest = { method: 'GET', path: `/resources/waitlist/${seg(String(entryId))}` };
-    return this.calls.bytes(req, options, 'application/octet-stream');
+    return this.calls.json<Record<string, unknown>>(req, options);
   }
 
   /**
@@ -12920,10 +12920,10 @@ export class ResourcesBookingsApi {
    *
    * `POST /resources/bookings/quote` (operationId `resourcesResourcesQuote`); permission `resources.read`.
    */
-  async resourcesResourcesQuote(body: M.BookingModelHoldRequest, options?: RequestOptions): Promise<Uint8Array> {
+  async resourcesResourcesQuote(body: M.BookingModelHoldRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
     const req: ApiRequest = { method: 'POST', path: `/resources/bookings/quote` };
     if (body !== undefined) req.body = body;
-    return this.calls.bytes(req, options, 'application/octet-stream');
+    return this.calls.json<Record<string, unknown>>(req, options);
   }
 
   /**
@@ -13088,10 +13088,10 @@ export class ResourcesItemsApi {
    *
    * `POST /resources/items` (operationId `resourcesResourcesCreateResource`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async resourcesResourcesCreateResource(body: M.ResourceDraft, options?: RequestOptions): Promise<Uint8Array> {
+  async resourcesResourcesCreateResource(body: M.ResourceDraft, options?: RequestOptions): Promise<Record<string, unknown>> {
     const req: ApiRequest = { method: 'POST', path: `/resources/items` };
     if (body !== undefined) req.body = body;
-    return this.calls.bytes(req, options, 'application/octet-stream');
+    return this.calls.json<Record<string, unknown>>(req, options);
   }
 
   /**
@@ -13113,9 +13113,9 @@ export class ResourcesItemsApi {
    *
    * `GET /resources/items/{resourceId}` (operationId `resourcesResourcesResource`); permission `resources.read`.
    */
-  async resourcesResourcesResource(resourceId: string, options?: RequestOptions): Promise<Uint8Array> {
+  async resourcesResourcesResource(resourceId: string, options?: RequestOptions): Promise<Record<string, unknown>> {
     const req: ApiRequest = { method: 'GET', path: `/resources/items/${seg(String(resourceId))}` };
-    return this.calls.bytes(req, options, 'application/octet-stream');
+    return this.calls.json<Record<string, unknown>>(req, options);
   }
 
   /**
@@ -13125,10 +13125,10 @@ export class ResourcesItemsApi {
    *
    * `PATCH /resources/items/{resourceId}` (operationId `resourcesResourcesUpdateResource`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async resourcesResourcesUpdateResource(resourceId: string, body: M.ResourcePatch, params: { version: number }, options?: RequestOptions): Promise<Uint8Array> {
+  async resourcesResourcesUpdateResource(resourceId: string, body: M.ResourcePatch, params: { version: number }, options?: RequestOptions): Promise<Record<string, unknown>> {
     const req: ApiRequest = { method: 'PATCH', path: `/resources/items/${seg(String(resourceId))}`, query: { version: params?.version } };
     if (body !== undefined) req.body = body;
-    return this.calls.bytes(req, options, 'application/octet-stream');
+    return this.calls.json<Record<string, unknown>>(req, options);
   }
 
   /**
@@ -13138,10 +13138,10 @@ export class ResourcesItemsApi {
    *
    * `POST /resources/items/{resourceId}/status` (operationId `resourcesResourcesSetStatus`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async resourcesResourcesSetStatus(resourceId: string, body: M.ResourcesStatusRequest, options?: RequestOptions): Promise<Uint8Array> {
+  async resourcesResourcesSetStatus(resourceId: string, body: M.ResourcesStatusRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
     const req: ApiRequest = { method: 'POST', path: `/resources/items/${seg(String(resourceId))}/status` };
     if (body !== undefined) req.body = body;
-    return this.calls.bytes(req, options, 'application/octet-stream');
+    return this.calls.json<Record<string, unknown>>(req, options);
   }
 
   /**
@@ -13151,10 +13151,10 @@ export class ResourcesItemsApi {
    *
    * `POST /resources/items/{resourceId}/move` (operationId `resourcesResourcesMove`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async resourcesResourcesMove(resourceId: string, body: M.ResourcesMoveRequest, options?: RequestOptions): Promise<Uint8Array> {
+  async resourcesResourcesMove(resourceId: string, body: M.ResourcesMoveRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
     const req: ApiRequest = { method: 'POST', path: `/resources/items/${seg(String(resourceId))}/move` };
     if (body !== undefined) req.body = body;
-    return this.calls.bytes(req, options, 'application/octet-stream');
+    return this.calls.json<Record<string, unknown>>(req, options);
   }
 
   /**
@@ -13600,7 +13600,7 @@ export class RostersApi {
    *
    * `GET /rosters/swaps` (operationId `rostersRosterListSwaps`); permission `resources.read`.
    */
-  async rostersRosterListSwaps(params?: { periodId?: string; page?: number; size?: number }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
+  async rostersRosterListSwaps(params: { periodId: string; page?: number; size?: number }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
     const req: ApiRequest = { method: 'GET', path: `/rosters/swaps`, query: { periodId: params?.periodId, page: params?.page, size: params?.size } };
     return this.calls.page<Record<string, unknown>>(req, options, params?.page, params?.size);
   }
@@ -14863,10 +14863,10 @@ export class WorkApi {
    *
    * The step as recorded for this work's operationId; 404 when the step was never recorded (run it). The caller must hold the current lease: workerId, lockVersion and attemptId as query parameters (409 STALE_LEASE otherwise).
    *
-   * `GET /work/{id}/steps/{stepName}` (operationId `getWorkStep`); permission `work.execute`; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
+   * `GET /work/{id}/step` (operationId `getWorkStep`); permission `work.execute`; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
    */
-  async getWorkStep(id: string, stepName: string, params: { workerId: string; lockVersion: number; attemptId: string }, options?: RequestOptions): Promise<M.WorkStep> {
-    const req: ApiRequest = { method: 'GET', path: `/work/${seg(String(id))}/steps/${seg(String(stepName))}`, query: { workerId: params?.workerId, lockVersion: params?.lockVersion, attemptId: params?.attemptId } };
+  async getWorkStep(id: string, params: { stepName: string /* Step name, unique within the work's operation (1-128 printable ASCII) */; workerId: string; lockVersion: number; attemptId: string }, options?: RequestOptions): Promise<M.WorkStep> {
+    const req: ApiRequest = { method: 'GET', path: `/work/${seg(String(id))}/step`, query: { stepName: params?.stepName, workerId: params?.workerId, lockVersion: params?.lockVersion, attemptId: params?.attemptId } };
     return this.calls.json<M.WorkStep>(req, options);
   }
 
@@ -14875,10 +14875,10 @@ export class WorkApi {
    *
    * Records the step's intent or outcome under the work's operationId, in the same transaction as the lease check. Fenced: a stale lease is 409 STALE_LEASE and records nothing; a deleted instance is 410 GONE_INSTANCE_DELETED.
    *
-   * `PUT /work/{id}/steps/{stepName}` (operationId `recordWorkStep`); permission `work.execute`; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
+   * `PUT /work/{id}/step` (operationId `recordWorkStep`); permission `work.execute`; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
    */
-  async recordWorkStep(id: string, stepName: string, body: M.WorkStepRequest, options?: RequestOptions): Promise<M.WorkStep> {
-    const req: ApiRequest = { method: 'PUT', path: `/work/${seg(String(id))}/steps/${seg(String(stepName))}` };
+  async recordWorkStep(id: string, body: M.WorkStepRequest, params: { stepName: string /* Step name, unique within the work's operation (1-128 printable ASCII) */ }, options?: RequestOptions): Promise<M.WorkStep> {
+    const req: ApiRequest = { method: 'PUT', path: `/work/${seg(String(id))}/step`, query: { stepName: params?.stepName } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.WorkStep>(req, options);
   }

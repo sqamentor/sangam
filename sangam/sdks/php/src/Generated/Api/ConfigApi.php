@@ -45,14 +45,16 @@ final class ConfigApi
      *
      * Every stored version with its status and content hash.
      *
-     * GET /config/profiles/{id}/versions (operationId listConfigProfileVersions); permission config.read.
+     * GET /config/profiles/versions (operationId listConfigProfileVersions); permission config.read.
+     * @param string $id query id
      * @param int|null $page query page
      * @param int|null $size query size
      * @return Page<Model\ConfigProfileVersion>
      */
     public function listConfigProfileVersions(string $id, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/config/profiles/' . HttpTransport::seg((string) $id) . '/versions');
+        $req = ApiRequest::get('/config/profiles/versions');
+        $req->query('id', $id);
         $req->query('page', $page);
         $req->query('size', $size);
         return $this->calls->page($req, $options, Model\ConfigProfileVersion::class, $page, $size);
@@ -63,27 +65,35 @@ final class ConfigApi
      *
      * The version's status, hash and document tree.
      *
-     * GET /config/profiles/{id}/versions/{version} (operationId getConfigProfileVersion); permission config.read.
+     * GET /config/profiles/version (operationId getConfigProfileVersion); permission config.read.
+     * @param string $id query id
+     * @param string $version query version
      * @return Model\ConfigProfileVersionDocument|null
      */
     public function getConfigProfileVersion(string $id, string $version, ?RequestOptions $options = null): ?Model\ConfigProfileVersionDocument
     {
-        $req = ApiRequest::get('/config/profiles/' . HttpTransport::seg((string) $id) . '/versions/' . HttpTransport::seg((string) $version));
+        $req = ApiRequest::get('/config/profiles/version');
+        $req->query('id', $id);
+        $req->query('version', $version);
         return $this->calls->model($req, $options, Model\ConfigProfileVersionDocument::class);
     }
 
     /**
      * Save a draft version
      *
-     * Maker step: the body is the profile document (YAML or JSON); its id and version must match the path. A version that left DRAFT/REJECTED is frozen (409 VERSION_FROZEN). Writes are limited to the caller's own scope.
+     * Maker step: the body is the profile document (YAML or JSON); its id and version must match the query. A version that left DRAFT/REJECTED is frozen (409 VERSION_FROZEN). Writes are limited to the caller's own scope.
      *
-     * PUT /config/profiles/{id}/versions/{version} (operationId saveConfigProfileDraft); permission config.write; result stored atomically with the state change.
+     * PUT /config/profiles/version (operationId saveConfigProfileDraft); permission config.write; result stored atomically with the state change.
      * @param string $body request body
+     * @param string $id query id
+     * @param string $version query version
      * @return Model\ConfigFindingsResult|null
      */
-    public function saveConfigProfileDraft(string $id, string $version, string $body, ?RequestOptions $options = null): ?Model\ConfigFindingsResult
+    public function saveConfigProfileDraft(string $body, string $id, string $version, ?RequestOptions $options = null): ?Model\ConfigFindingsResult
     {
-        $req = ApiRequest::put('/config/profiles/' . HttpTransport::seg((string) $id) . '/versions/' . HttpTransport::seg((string) $version));
+        $req = ApiRequest::put('/config/profiles/version');
+        $req->query('id', $id);
+        $req->query('version', $version);
         Support::raw($req, $body, 'application/yaml', $options);
         return $this->calls->model($req, $options, Model\ConfigFindingsResult::class);
     }
@@ -93,11 +103,15 @@ final class ConfigApi
      *
      * Maker submits the draft; the content hash is frozen.
      *
-     * POST /config/profiles/{id}/versions/{version}/submit (operationId submitConfigProfile); permission config.write; result stored atomically with the state change.
+     * POST /config/profiles/version/submit (operationId submitConfigProfile); permission config.write; result stored atomically with the state change.
+     * @param string $id query id
+     * @param string $version query version
      */
     public function submitConfigProfile(string $id, string $version, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/config/profiles/' . HttpTransport::seg((string) $id) . '/versions/' . HttpTransport::seg((string) $version) . '/submit');
+        $req = ApiRequest::post('/config/profiles/version/submit');
+        $req->query('id', $id);
+        $req->query('version', $version);
         $this->calls->none($req, $options);
     }
 
@@ -106,12 +120,16 @@ final class ConfigApi
      *
      * Checker approval bound to the reviewed hash (409 APPROVAL_INVALIDATED if it changed); checker must differ from the maker (422 SOD_VIOLATION).
      *
-     * POST /config/profiles/{id}/versions/{version}/approve (operationId approveConfigProfile); permission config.admin; result stored atomically with the state change.
+     * POST /config/profiles/version/approve (operationId approveConfigProfile); permission config.admin; result stored atomically with the state change.
      * @param Model\ConfigApproveRequest|array $body request body
+     * @param string $id query id
+     * @param string $version query version
      */
-    public function approveConfigProfile(string $id, string $version, Model\ConfigApproveRequest|array $body, ?RequestOptions $options = null): void
+    public function approveConfigProfile(Model\ConfigApproveRequest|array $body, string $id, string $version, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/config/profiles/' . HttpTransport::seg((string) $id) . '/versions/' . HttpTransport::seg((string) $version) . '/approve');
+        $req = ApiRequest::post('/config/profiles/version/approve');
+        $req->query('id', $id);
+        $req->query('version', $version);
         if ($body !== null) {
             $req->body($body);
         }
@@ -123,12 +141,16 @@ final class ConfigApi
      *
      * Checker rejection with a reason.
      *
-     * POST /config/profiles/{id}/versions/{version}/reject (operationId rejectConfigProfile); permission config.admin; result stored atomically with the state change.
+     * POST /config/profiles/version/reject (operationId rejectConfigProfile); permission config.admin; result stored atomically with the state change.
      * @param Model\ConfigRejectRequest|array $body request body
+     * @param string $id query id
+     * @param string $version query version
      */
-    public function rejectConfigProfile(string $id, string $version, Model\ConfigRejectRequest|array $body, ?RequestOptions $options = null): void
+    public function rejectConfigProfile(Model\ConfigRejectRequest|array $body, string $id, string $version, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/config/profiles/' . HttpTransport::seg((string) $id) . '/versions/' . HttpTransport::seg((string) $version) . '/reject');
+        $req = ApiRequest::post('/config/profiles/version/reject');
+        $req->query('id', $id);
+        $req->query('version', $version);
         if ($body !== null) {
             $req->body($body);
         }
@@ -140,12 +162,16 @@ final class ConfigApi
      *
      * Activates an approved version after re-resolving the listed scopes (422 ACTIVATION_REFUSED on errors).
      *
-     * POST /config/profiles/{id}/versions/{version}/activate (operationId activateConfigProfile); permission config.admin; result stored atomically with the state change.
+     * POST /config/profiles/version/activate (operationId activateConfigProfile); permission config.admin; result stored atomically with the state change.
+     * @param string $id query id
+     * @param string $version query version
      * @return Model\ConfigFindingsResult|null
      */
     public function activateConfigProfile(string $id, string $version, Model\ConfigActivateRequest|array|null $body = null, ?RequestOptions $options = null): ?Model\ConfigFindingsResult
     {
-        $req = ApiRequest::post('/config/profiles/' . HttpTransport::seg((string) $id) . '/versions/' . HttpTransport::seg((string) $version) . '/activate');
+        $req = ApiRequest::post('/config/profiles/version/activate');
+        $req->query('id', $id);
+        $req->query('version', $version);
         if ($body !== null) {
             $req->body($body);
         }
@@ -157,14 +183,16 @@ final class ConfigApi
      *
      * Every save, submission, approval, rejection, activation and import.
      *
-     * GET /config/profiles/{id}/history (operationId getConfigProfileHistory); permission config.read.
+     * GET /config/profiles/history (operationId getConfigProfileHistory); permission config.read.
+     * @param string $id query id
      * @param int|null $page query page
      * @param int|null $size query size
      * @return Page<Model\ConfigChangeRecord>
      */
     public function getConfigProfileHistory(string $id, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/config/profiles/' . HttpTransport::seg((string) $id) . '/history');
+        $req = ApiRequest::get('/config/profiles/history');
+        $req->query('id', $id);
         $req->query('page', $page);
         $req->query('size', $size);
         return $this->calls->page($req, $options, Model\ConfigChangeRecord::class, $page, $size);

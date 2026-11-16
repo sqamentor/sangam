@@ -76,9 +76,10 @@ public class DeploymentController {
         return deployments.get(ctx, id);
     }
 
-    @GetMapping("/deployments/{id}/resources/{resourceName}")
+    /** UI-DEMO-1: resource names are paths ("packs/x/y.bpmn"), so the name is a query parameter. */
+    @GetMapping("/deployments/{id}/resource")
     public ResponseEntity<byte[]> resource(RequestContext ctx, @PathVariable String id,
-                                           @PathVariable String resourceName) {
+                                           @RequestParam("name") String resourceName) {
         permissions.require(ctx, Permissions.DEPLOYMENT_READ);
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header("Content-Disposition", ContentDisposition.attachment().filename(resourceName).build().toString())

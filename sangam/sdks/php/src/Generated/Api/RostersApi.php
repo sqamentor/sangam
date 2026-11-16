@@ -569,12 +569,12 @@ final class RostersApi
      * RosterController.listSwaps (sangam-rest).
      *
      * GET /rosters/swaps (operationId rostersRosterListSwaps); permission resources.read.
-     * @param string|null $periodId query periodId
+     * @param string $periodId query periodId
      * @param int|null $page query page
      * @param int|null $size query size
      * @return Page<array<string, mixed>>
      */
-    public function rostersRosterListSwaps(?string $periodId = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
+    public function rostersRosterListSwaps(string $periodId, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
         $req = ApiRequest::get('/rosters/swaps');
         $req->query('periodId', $periodId);

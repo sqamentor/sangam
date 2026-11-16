@@ -423,7 +423,7 @@ public final class SangamTestEngine implements AutoCloseable {
         calls.add(new Call(method, apiPath, action, key, body));
         Answer a;
         try {
-            a = apiPath.matches("/work/[^/]+/steps(/[^/]+)?")
+            a = apiPath.matches("/work/[^/]+/steps?")
                     ? steps(method, apiPath, ex.getRequestURI().getRawQuery(), body)
                     : dispatch(method, apiPath, action, key, body, path);
         } catch (Problem p) {
@@ -664,9 +664,8 @@ public final class SangamTestEngine implements AutoCloseable {
     // ------------------------------------------------------------------ step journal (M-025)
 
     private Answer steps(String method, String apiPath, String rawQuery, JsonNode body) {
-        String[] seg = apiPath.split("/");   // "", "work", id, "steps"[, name]
+        String[] seg = apiPath.split("/");   // "", "work", id, "steps" | "step"
         String workId = java.net.URLDecoder.decode(seg[2], java.nio.charset.StandardCharsets.UTF_8);
-        String name = seg.length > 4 ? java.net.URLDecoder.decode(seg[4], java.nio.charset.StandardCharsets.UTF_8) : null;
         Map<String, String> q = new LinkedHashMap<>();
         if (rawQuery != null) {
             for (String kv : rawQuery.split("&")) {
@@ -674,6 +673,14 @@ public final class SangamTestEngine implements AutoCloseable {
                 if (i > 0) {
                     q.put(kv.substring(0, i), java.net.URLDecoder.decode(kv.substring(i + 1), java.nio.charset.StandardCharsets.UTF_8));
                 }
+            }
+        }
+        // UI-DEMO-1: as on the server, one step is /step with the name in the stepName query ('/' allowed)
+        String name = null;
+        if (seg[3].equals("step")) {
+            name = q.get("stepName");
+            if (name == null) {
+                throw new Problem(400, "VALIDATION_FAILED", null, "stepName is required");
             }
         }
         synchronized (lock) {

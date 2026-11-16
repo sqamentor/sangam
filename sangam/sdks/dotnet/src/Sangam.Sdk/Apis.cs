@@ -230,9 +230,9 @@ public sealed class AuditApi : ApiBase
 {
     public AuditApi(HttpTransport http) : base(http) { }
 
-    /// <summary><c>GET /audit/{businessKey}/timeline</c>: paged audit entries.</summary>
+    /// <summary><c>GET /audit/timeline?businessKey=</c>: paged audit entries.</summary>
     public Task<Page<AuditEntry>> TimelineAsync(string businessKey, bool? includeHistory = null, int? page = null, int? size = null, CancellationToken ct = default) =>
-        ReadPageAsync<AuditEntry>(ApiRequest.Get("/audit/" + Seg(businessKey) + "/timeline")
+        ReadPageAsync<AuditEntry>(ApiRequest.Get("/audit/timeline").WithQuery("businessKey", businessKey)
             .WithQuery("includeHistory", includeHistory).WithQuery("page", page).WithQuery("size", size), ct);
 
     public Task<AuditVerifyResult?> VerifyAsync(string? chainId = null, string? businessKey = null, CancellationToken ct = default) =>
@@ -365,7 +365,7 @@ public sealed class RepositoryApi : ApiBase
     public Task<PublishResult?> PublishEventAsync(string channel, CloudEvent @event, string? idempotencyKey = null, CancellationToken ct = default) =>
         CallAsync<PublishResult>(ApiRequest.Post("/events/" + Seg(channel)).WithBody(@event).WithIdempotencyKey(idempotencyKey ?? @event.Id), ct);
 
-    /// <summary><c>GET /forms/{key}</c>.</summary>
+    /// <summary><c>GET /forms/by-key?key=</c> (a form key may carry '/').</summary>
     public Task<JsonObject?> FormAsync(string formKey, CancellationToken ct = default) =>
-        CallAsync<JsonObject>(ApiRequest.Get("/forms/" + Seg(formKey)), ct);
+        CallAsync<JsonObject>(ApiRequest.Get("/forms/by-key").WithQuery("key", formKey), ct);
 }

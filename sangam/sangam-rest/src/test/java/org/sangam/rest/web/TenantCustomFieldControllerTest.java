@@ -124,7 +124,9 @@ class TenantCustomFieldControllerTest {
         ResponseEntity<CustomField> r = api.define(CTX, new DefineRequest(FORM, "x_code", "Code", true, null,
                 Map.of("type", "string", "pattern", "^[0-9]{3}$"), "2026-04-01", null));
         assertEquals(HttpStatus.CREATED, r.getStatusCode());
-        assertEquals("/api/v1/custom-fields/form:grant-application/x_code", r.getHeaders().getLocation().toString());
+        // UI-DEMO-1: the field is named by query parameters (an object type carries a form key, which may carry '/')
+        assertEquals("/api/v1/custom-fields/versions?objectType=form%3Agrant-application&key=x_code",
+                r.getHeaders().getLocation().toString());
         assertEquals("form:grant-application/x_code@1", r.getHeaders().getFirst(Lists.RESOURCE_REF));
         CustomField f = r.getBody();
         assertEquals(1, f.version());

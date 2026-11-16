@@ -113,8 +113,9 @@ public class RegistryController {
         return ResponseEntity.ok().header("ETag", "\"" + o.version() + "\"").body(o.toMap());
     }
 
-    @GetMapping("/objects/by-number/{number}")
-    public Map<String, Object> byNumber(@PathVariable String number, @RequestParam(required = false) String typeKey) {
+    /** UI-DEMO-1: number series produce '/' ("{prefix}/{scope}/{fy}/{seq:6}"), so the number is a query parameter. */
+    @GetMapping("/objects/by-number")
+    public Map<String, Object> byNumber(@RequestParam String number, @RequestParam(required = false) String typeKey) {
         return support.tx((c, ctx) -> objects.byNumber(c, ctx, typeKey, number).toMap());
     }
 

@@ -27,15 +27,15 @@ final class ResourcesBookingsApi
      *
      * POST /resources/bookings/quote (operationId resourcesResourcesQuote); permission resources.read.
      * @param Model\BookingModelHoldRequest|array $body request body
-     * @return string
+     * @return array<string, mixed>
      */
-    public function resourcesResourcesQuote(Model\BookingModelHoldRequest|array $body, ?RequestOptions $options = null): string
+    public function resourcesResourcesQuote(Model\BookingModelHoldRequest|array $body, ?RequestOptions $options = null): array
     {
         $req = ApiRequest::post('/resources/bookings/quote');
         if ($body !== null) {
             $req->body($body);
         }
-        return $this->calls->raw($req, $options, 'application/octet-stream');
+        return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
     /**

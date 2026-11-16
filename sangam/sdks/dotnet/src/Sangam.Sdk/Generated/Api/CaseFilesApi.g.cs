@@ -98,11 +98,12 @@ public sealed class CaseFilesApi
     /// <summary>
     /// A case file by its human-readable number
     /// A case file by its human-readable number.
-    /// GET /case-files/by-number/{number} (operationId caseFileByNumber); permission case.read.
+    /// GET /case-files/by-number (operationId caseFileByNumber); permission case.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.CfCaseView?> CaseFileByNumberAsync(string number, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/case-files/by-number/{HttpTransport.Seg(GeneratedCalls.Str(number)!)}");
+        var req = ApiRequest.Get($"/case-files/by-number");
+        req.WithQuery("number", GeneratedCalls.Q(number));
         return await _calls.JsonAsync<M.CfCaseView?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 

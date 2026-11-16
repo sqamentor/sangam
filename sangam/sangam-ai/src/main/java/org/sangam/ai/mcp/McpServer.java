@@ -39,7 +39,8 @@ public final class McpServer {
             new Tool("get_process_instance", "Read one process instance", false, "GET", "/process-instances/{id}", List.of("id")),
             new Tool("list_process_definitions", "List process definitions", false, "GET", "/process-definitions", List.of()),
             new Tool("get_process_definition_xml", "Read the BPMN of a definition", false, "GET", "/process-definitions/{id}/xml", List.of("id")),
-            new Tool("audit_timeline", "Read the audit timeline of a business key", false, "GET", "/audit/{businessKey}/timeline", List.of("businessKey")),
+            // UI-DEMO-1: the business key is a query parameter (it may carry '/'); non-path arguments of a read go to the query
+            new Tool("audit_timeline", "Read the audit timeline of a business key", false, "GET", "/audit/timeline", List.of("businessKey")),
             new Tool("list_incidents", "List incidents", false, "GET", "/ops/incidents", List.of()),
             new Tool("start_process", "Start a process instance", true, "POST", "/process-instances", List.of("key", "reason")),
             new Tool("complete_task", "Complete a task", true, "POST", "/tasks/{id}/complete", List.of("id", "reason")));

@@ -198,13 +198,14 @@ public final class CaseFilesApi {
      *
      * <p>A case file by its human-readable number.
      *
-     * <p>{@code GET /case-files/by-number/{number}} (operationId {@code caseFileByNumber}); permission {@code case.read}.
-     * @param number path parameter {@code number}
+     * <p>{@code GET /case-files/by-number} (operationId {@code caseFileByNumber}); permission {@code case.read}.
+     * @param number query parameter {@code number}. the human-readable number; may carry / ({prefix}/{yyyy}/{seq:6})
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public CfCaseView caseFileByNumber(String number, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/case-files/by-number/" + HttpTransport.seg(String.valueOf(number)));
+        ApiRequest req = ApiRequest.get("/case-files/by-number");
+        req.query("number", number);
         return call.json(req, options, R_caseFileByNumber);
     }
 

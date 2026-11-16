@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """The step journal of :class:`~sangam_sdk.testing.SangamTestEngine` (M-025, R37).
 
-``GET/PUT /work/{id}/steps/{stepName}`` and ``GET /work/{id}/steps``, keyed by (operationId, step name) and fenced by
+``GET/PUT /work/{id}/step?stepName=`` and ``GET /work/{id}/steps``, keyed by (operationId, step name) and fenced by
 the lease like the server (``WorkStepJournal`` in the same transaction as the lease check). Transitions:
 
 * ``INTENT`` is allowed on a new, ``INTENT`` or ``FAILED`` step;

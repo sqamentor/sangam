@@ -32,11 +32,12 @@ public sealed class ConfigApi
     /// <summary>
     /// List the versions of a profile
     /// Every stored version with its status and content hash.
-    /// GET /config/profiles/{id}/versions (operationId listConfigProfileVersions); permission config.read.
+    /// GET /config/profiles/versions (operationId listConfigProfileVersions); permission config.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.ConfigProfileVersion>> ListConfigProfileVersionsAsync(string id, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/config/profiles/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/versions");
+        var req = ApiRequest.Get($"/config/profiles/versions");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         req.WithQuery("page", GeneratedCalls.Q(page));
         req.WithQuery("size", GeneratedCalls.Q(size));
         return await _calls.PageAsync<M.ConfigProfileVersion>(req, options, page, size, cancellationToken).ConfigureAwait(false);
@@ -45,22 +46,26 @@ public sealed class ConfigApi
     /// <summary>
     /// Get one profile version
     /// The version's status, hash and document tree.
-    /// GET /config/profiles/{id}/versions/{version} (operationId getConfigProfileVersion); permission config.read.
+    /// GET /config/profiles/version (operationId getConfigProfileVersion); permission config.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.ConfigProfileVersionDocument?> GetConfigProfileVersionAsync(string id, string version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/config/profiles/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}");
+        var req = ApiRequest.Get($"/config/profiles/version");
+        req.WithQuery("id", GeneratedCalls.Q(id));
+        req.WithQuery("version", GeneratedCalls.Q(version));
         return await _calls.JsonAsync<M.ConfigProfileVersionDocument?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Save a draft version
-    /// Maker step: the body is the profile document (YAML or JSON); its id and version must match the path. A version that left DRAFT/REJECTED is frozen (409 VERSION_FROZEN). Writes are limited to the caller's own scope.
-    /// PUT /config/profiles/{id}/versions/{version} (operationId saveConfigProfileDraft); permission config.write; result stored atomically with the state change.
+    /// Maker step: the body is the profile document (YAML or JSON); its id and version must match the query. A version that left DRAFT/REJECTED is frozen (409 VERSION_FROZEN). Writes are limited to the caller's own scope.
+    /// PUT /config/profiles/version (operationId saveConfigProfileDraft); permission config.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.ConfigFindingsResult?> SaveConfigProfileDraftAsync(string id, string version, byte[] body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.ConfigFindingsResult?> SaveConfigProfileDraftAsync(byte[] body, string id, string version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/config/profiles/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}");
+        var req = ApiRequest.Put($"/config/profiles/version");
+        req.WithQuery("id", GeneratedCalls.Q(id));
+        req.WithQuery("version", GeneratedCalls.Q(version));
         if (body is not null) req.WithContent(GeneratedCalls.Raw(body, "application/yaml", options));
         return await _calls.JsonAsync<M.ConfigFindingsResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -68,22 +73,26 @@ public sealed class ConfigApi
     /// <summary>
     /// Submit for approval
     /// Maker submits the draft; the content hash is frozen.
-    /// POST /config/profiles/{id}/versions/{version}/submit (operationId submitConfigProfile); permission config.write; result stored atomically with the state change.
+    /// POST /config/profiles/version/submit (operationId submitConfigProfile); permission config.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task SubmitConfigProfileAsync(string id, string version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/config/profiles/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/submit");
+        var req = ApiRequest.Post($"/config/profiles/version/submit");
+        req.WithQuery("id", GeneratedCalls.Q(id));
+        req.WithQuery("version", GeneratedCalls.Q(version));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Approve a version
     /// Checker approval bound to the reviewed hash (409 APPROVAL_INVALIDATED if it changed); checker must differ from the maker (422 SOD_VIOLATION).
-    /// POST /config/profiles/{id}/versions/{version}/approve (operationId approveConfigProfile); permission config.admin; result stored atomically with the state change.
+    /// POST /config/profiles/version/approve (operationId approveConfigProfile); permission config.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task ApproveConfigProfileAsync(string id, string version, M.ConfigApproveRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task ApproveConfigProfileAsync(M.ConfigApproveRequest body, string id, string version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/config/profiles/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/approve");
+        var req = ApiRequest.Post($"/config/profiles/version/approve");
+        req.WithQuery("id", GeneratedCalls.Q(id));
+        req.WithQuery("version", GeneratedCalls.Q(version));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -91,11 +100,13 @@ public sealed class ConfigApi
     /// <summary>
     /// Reject a version
     /// Checker rejection with a reason.
-    /// POST /config/profiles/{id}/versions/{version}/reject (operationId rejectConfigProfile); permission config.admin; result stored atomically with the state change.
+    /// POST /config/profiles/version/reject (operationId rejectConfigProfile); permission config.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task RejectConfigProfileAsync(string id, string version, M.ConfigRejectRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task RejectConfigProfileAsync(M.ConfigRejectRequest body, string id, string version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/config/profiles/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/reject");
+        var req = ApiRequest.Post($"/config/profiles/version/reject");
+        req.WithQuery("id", GeneratedCalls.Q(id));
+        req.WithQuery("version", GeneratedCalls.Q(version));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -103,11 +114,13 @@ public sealed class ConfigApi
     /// <summary>
     /// Activate a version
     /// Activates an approved version after re-resolving the listed scopes (422 ACTIVATION_REFUSED on errors).
-    /// POST /config/profiles/{id}/versions/{version}/activate (operationId activateConfigProfile); permission config.admin; result stored atomically with the state change.
+    /// POST /config/profiles/version/activate (operationId activateConfigProfile); permission config.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.ConfigFindingsResult?> ActivateConfigProfileAsync(string id, string version, M.ConfigActivateRequest? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/config/profiles/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/activate");
+        var req = ApiRequest.Post($"/config/profiles/version/activate");
+        req.WithQuery("id", GeneratedCalls.Q(id));
+        req.WithQuery("version", GeneratedCalls.Q(version));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.ConfigFindingsResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -115,11 +128,12 @@ public sealed class ConfigApi
     /// <summary>
     /// Profile change register
     /// Every save, submission, approval, rejection, activation and import.
-    /// GET /config/profiles/{id}/history (operationId getConfigProfileHistory); permission config.read.
+    /// GET /config/profiles/history (operationId getConfigProfileHistory); permission config.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.ConfigChangeRecord>> GetConfigProfileHistoryAsync(string id, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/config/profiles/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/history");
+        var req = ApiRequest.Get($"/config/profiles/history");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         req.WithQuery("page", GeneratedCalls.Q(page));
         req.WithQuery("size", GeneratedCalls.Q(size));
         return await _calls.PageAsync<M.ConfigChangeRecord>(req, options, page, size, cancellationToken).ConfigureAwait(false);

@@ -172,7 +172,7 @@ still re-checked in the transaction, VI.4 rule 5).
 
 Owner decision 200 widens the scope: besides the Sangam REST commands, the same filter checks every external-worker
 call (the contract's `x-sangam-fenced` operations, command types `work.<action>`: `work.fetch-and-lock`,
-`work.complete`, `work.fail`, `work.steps`, ...) and every state-changing `/engine-rest` call (POST, PUT, PATCH,
+`work.complete`, `work.fail`, `work.step`, ...) and every state-changing `/engine-rest` call (POST, PUT, PATCH,
 DELETE; command type `engine-rest`, the request path sent as `pathTemplate`). All are checked at entry, outside any
 transaction and lock scope (`org.sangam.server.bridge.ExternalPolicyTargets`); these names are valid in
 `required-commands` and `best-effort-commands`, and `*` covers them.

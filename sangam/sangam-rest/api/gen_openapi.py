@@ -320,7 +320,7 @@ schema("TriggerRequest", "Signal one waiting execution (FC-12 triggerable tasks,
 schema("ActivityInstance", "Activity instance tree.",
        "id activityId activityName activityType parentId executionIds:list:s children:list:ActivityInstance")
 schema("ProcessDefinition", "Deployed BPMN process definition.",
-       "id key name version:int deploymentId tenantId versionTag suspended:bool resourceName startableInTasklist:bool")
+       "id key name version:int deploymentId tenantId versionTag suspended:bool resourceName startableInTasklist:bool runningInstances:long incidents:long")
 schema("MessageRequest", "Correlate a message (exactly one instance unless all=true).",
        "messageName businessKey processInstanceId correlationKeys:map variables:map all:bool", ["messageName"])
 schema("MessageResult", "Correlation result.", "messageName processInstanceIds:list:s executionIds:list:s")
@@ -1074,8 +1074,10 @@ op("get", "/deployments", "listDeployments", "Deployments", "List deployments", 
    params=[q("name")], resp=(200, "array:Deployment"), perm="deployment.read", errors=STD_R)
 op("get", "/deployments/{id}", "getDeployment", "Deployments", "Get a deployment", "Deployment with its definitions.", [], params=[ID],
    resp=(200, "Deployment"), perm="deployment.read", errors=GET_E)
-op("get", "/deployments/{id}/resources/{resourceName}", "getDeploymentResource", "Deployments", "Deployment resource", "Raw resource bytes.",
-   [], params=[ID, pp("resourceName")], resp=(200, {"application/octet-stream": {"schema": {"type": "string", "contentMediaType": "application/octet-stream"}}}),
+# UI-DEMO-1: resource names are paths ("packs/x/y.bpmn"); an encoded '/' in a path segment is refused by the servlet
+# connector before the application, so the name is a query parameter.
+op("get", "/deployments/{id}/resource", "getDeploymentResource", "Deployments", "Deployment resource", "Raw resource bytes.",
+   [], params=[ID, q("name", desc="resource name; may carry '/'", required=True)], resp=(200, {"application/octet-stream": {"schema": {"type": "string", "contentMediaType": "application/octet-stream"}}}),
    perm="deployment.read", errors=GET_E)
 op("delete", "/deployments/{id}", "deleteDeployment", "Deployments", "Delete a deployment", "Deletes a deployment (cascade deletes instances).",
    ["R41", "R42"], params=[ID, q("cascade", "bool"), P("reason")], resp=(204, None), cmd="deployment.delete", perm="deployment.write")
@@ -1176,9 +1178,12 @@ for path, opid, s, sch in [
        ["R63", "PF-01", "VI.4"], list_=True, params=HQ + HQ_EXTRA.get(path, []), resp=(200, "array:" + sch), perm="history.read", errors=STD_R)
 
 # Audit
-op("get", "/audit/{businessKey}/timeline", "getAuditTimeline", "Audit", "Audit timeline of a case",
+# UI-DEMO-1: a business key may carry '/' ("BK/2026/0001"), refused encoded in a path segment by the servlet connector,
+# so it is a query parameter here and on the evidence pack.
+BKQ = q("businessKey", desc="business key of the case; may carry '/'", required=True)
+op("get", "/audit/timeline", "getAuditTimeline", "Audit", "Audit timeline of a case",
    "Class-B chain events of every root with this business key, optionally merged with class-A history (evidence=false). The read is audited (AUDIT_VIEWED).",
-   ["R42", "X.2.3", "T30"], list_=True, params=[pp("businessKey"), q("includeHistory", "bool", "Merge class-A history (default true)")],
+   ["R42", "X.2.3", "T30"], list_=True, params=[BKQ, q("includeHistory", "bool", "Merge class-A history (default true)")],
    resp=(200, "array:AuditEntry"), perm="audit.read", errors=GET_E)
 # Decision 144: a system audit scope (system:...) holds the audit rows of shared deployments, which belong to no
 # tenant. Only a platform identity with platform.audit.system.read (SecurityPermissionBridge.SYSTEM_AUDIT_READ: the
@@ -1351,11 +1356,14 @@ op("post", "/events/{channel}", "publishEvent", "Events", "Publish an event",
    errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "ServiceUnavailable"))
 
 # Forms
-op("get", "/forms/{key}", "getForm", "Forms", "Get a form version", "Data schema, layout, field policy and i18n bundles by hash version (R47, FC-39); the key 'drafts' is reserved.",
-   ["R47", "FC-39", "X.2.5"], params=[KEY, q("version", desc="Form version hash; default the task-bound or ACTIVE version")],
+# UI-DEMO-1: form keys carry '/' ("rti/request"), refused encoded in a path segment by the servlet connector, so the
+# key is a query parameter on literal routes.
+FKQ = q("key", desc="form key; may carry '/'", required=True)
+op("get", "/forms/by-key", "getForm", "Forms", "Get a form version", "Data schema, layout, field policy and i18n bundles by hash version (R47, FC-39).",
+   ["R47", "FC-39", "X.2.5"], params=[FKQ, q("version", desc="Form version hash; default the task-bound or ACTIVE version")],
    resp=(200, "FormVersion"), perm="form.read", errors=GET_E)
-op("post", "/forms/{key}/validate", "validateForm", "Forms", "Validate form data", "Authoritative server-side validation (X.2.5.2).",
-   ["R47", "X.2.5.2"], params=[KEY], body="FormValidateRequest", resp=(200, "FormValidationResult"), perm="form.read", errors=GET_E)
+op("post", "/forms/by-key/validate", "validateForm", "Forms", "Validate form data", "Authoritative server-side validation (X.2.5.2).",
+   ["R47", "X.2.5.2"], params=[FKQ], body="FormValidateRequest", resp=(200, "FormValidationResult"), perm="form.read", errors=GET_E)
 op("get", "/forms/drafts", "listFormDrafts", "Forms", "List drafts", "The caller's drafts (person or seat owned, X.2.5.8).", ["R47"], list_=True,
    params=[q("taskId")], resp=(200, "array:FormDraft"), perm="form.draft", errors=STD_R)
 op("post", "/forms/drafts", "createFormDraft", "Forms", "Create a draft", "Server-side encrypted draft (not a submission).", ["R47", "R41"],
@@ -1610,9 +1618,9 @@ op("get", "/audit/exports", "listAuditExports", "Audit", "Audit exports", "The c
    resp=(200, "array:AuditExportJob"), perm="audit.export", errors=WS_E)
 op("get", "/audit/exports/{id}/content", "getAuditExportContent", "Audit", "Download an audit export", "Content of a READY export.", ["R42"],
    params=[ID], resp=(200, BIN("application/octet-stream")), perm="audit.export", errors=GET_E)
-op("get", "/audit/{businessKey}/evidence-pack", "getEvidencePack", "Audit", "Evidence pack",
+op("get", "/audit/evidence-pack", "getEvidencePack", "Audit", "Evidence pack",
    "ZIP of the class-B timeline, chain verification, model and form versions and the document list, with a SHA-256 manifest (U03, R42).",
-   ["R42", "X.2.3"], params=[pp("businessKey")], resp=(200, BIN("application/zip")), perm="audit.export", errors=GET_E)
+   ["R42", "X.2.3"], params=[BKQ], resp=(200, BIN("application/zip")), perm="audit.export", errors=GET_E)
 
 # Document extras (DocumentExtrasPort)
 op("get", "/documents/{id}/versions", "listDocumentVersions", "Documents", "Document versions", "Every immutable version (R74).", ["R74"],

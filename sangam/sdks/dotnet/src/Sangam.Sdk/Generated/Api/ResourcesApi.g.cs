@@ -31,11 +31,11 @@ public sealed class ResourcesApi
     /// ResourcesController.defineType (sangam-rest).
     /// POST /resources/types (operationId resourcesResourcesDefineType); permission resources.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<byte[]> ResourcesResourcesDefineTypeAsync(M.ResourcesResourcesDefineTypeBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesDefineTypeAsync(M.ResourcesResourcesDefineTypeBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Post($"/resources/types");
         if (body is not null) req.WithBody(body);
-        return await _calls.BytesAsync(req, options, "application/octet-stream", cancellationToken).ConfigureAwait(false);
+        return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -174,10 +174,10 @@ public sealed class ResourcesApi
     /// ResourcesController.waitlistEntry (sangam-rest).
     /// GET /resources/waitlist/{entryId} (operationId resourcesResourcesWaitlistEntry); permission resources.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<byte[]> ResourcesResourcesWaitlistEntryAsync(string entryId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesWaitlistEntryAsync(string entryId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Get($"/resources/waitlist/{HttpTransport.Seg(GeneratedCalls.Str(entryId)!)}");
-        return await _calls.BytesAsync(req, options, "application/octet-stream", cancellationToken).ConfigureAwait(false);
+        return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

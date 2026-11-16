@@ -4,7 +4,7 @@
  *
  * The server keeps custom field values as top-level `x_<name>` keys of the form's `data` and validates them with the
  * form's data schema (OperatonFormAdapter.java:153-164, TenantCustomFieldRegistry.extendSchema :301-322, shipped fields
- * win), but GET /forms/{key} returns the shipped form only (OperatonFormAdapter.java:110-132). So a form screen asks
+ * win), but GET /forms/by-key?key= returns the shipped form only (OperatonFormAdapter.java:110-132). So a form screen asks
  * GET /custom-fields?objectType=form:<formKey>&on=<today> (form.read, TenantCustomFieldController.java:165-175) and
  * appends the fields in force that the form does not already have. Only `form:<formKey>` object types exist
  * (TenantCustomFieldsWiring.java:21-34).

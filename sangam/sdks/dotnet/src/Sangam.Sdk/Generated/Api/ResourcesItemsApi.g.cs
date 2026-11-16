@@ -20,11 +20,11 @@ public sealed class ResourcesItemsApi
     /// ResourcesController.createResource (sangam-rest).
     /// POST /resources/items (operationId resourcesResourcesCreateResource); permission resources.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<byte[]> ResourcesResourcesCreateResourceAsync(M.ResourceDraft body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesCreateResourceAsync(M.ResourceDraft body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Post($"/resources/items");
         if (body is not null) req.WithBody(body);
-        return await _calls.BytesAsync(req, options, "application/octet-stream", cancellationToken).ConfigureAwait(false);
+        return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -53,10 +53,10 @@ public sealed class ResourcesItemsApi
     /// ResourcesController.resource (sangam-rest).
     /// GET /resources/items/{resourceId} (operationId resourcesResourcesResource); permission resources.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<byte[]> ResourcesResourcesResourceAsync(string resourceId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesResourceAsync(string resourceId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Get($"/resources/items/{HttpTransport.Seg(GeneratedCalls.Str(resourceId)!)}");
-        return await _calls.BytesAsync(req, options, "application/octet-stream", cancellationToken).ConfigureAwait(false);
+        return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -64,12 +64,12 @@ public sealed class ResourcesItemsApi
     /// ResourcesController.updateResource (sangam-rest).
     /// PATCH /resources/items/{resourceId} (operationId resourcesResourcesUpdateResource); permission resources.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<byte[]> ResourcesResourcesUpdateResourceAsync(string resourceId, M.ResourcePatch body, long version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesUpdateResourceAsync(string resourceId, M.ResourcePatch body, long version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Patch($"/resources/items/{HttpTransport.Seg(GeneratedCalls.Str(resourceId)!)}");
         req.WithQuery("version", GeneratedCalls.Q(version));
         if (body is not null) req.WithBody(body);
-        return await _calls.BytesAsync(req, options, "application/octet-stream", cancellationToken).ConfigureAwait(false);
+        return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -77,11 +77,11 @@ public sealed class ResourcesItemsApi
     /// ResourcesController.setStatus (sangam-rest).
     /// POST /resources/items/{resourceId}/status (operationId resourcesResourcesSetStatus); permission resources.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<byte[]> ResourcesResourcesSetStatusAsync(string resourceId, M.ResourcesStatusRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesSetStatusAsync(string resourceId, M.ResourcesStatusRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Post($"/resources/items/{HttpTransport.Seg(GeneratedCalls.Str(resourceId)!)}/status");
         if (body is not null) req.WithBody(body);
-        return await _calls.BytesAsync(req, options, "application/octet-stream", cancellationToken).ConfigureAwait(false);
+        return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -89,11 +89,11 @@ public sealed class ResourcesItemsApi
     /// ResourcesController.move (sangam-rest).
     /// POST /resources/items/{resourceId}/move (operationId resourcesResourcesMove); permission resources.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<byte[]> ResourcesResourcesMoveAsync(string resourceId, M.ResourcesMoveRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesMoveAsync(string resourceId, M.ResourcesMoveRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Post($"/resources/items/{HttpTransport.Seg(GeneratedCalls.Str(resourceId)!)}/move");
         if (body is not null) req.WithBody(body);
-        return await _calls.BytesAsync(req, options, "application/octet-stream", cancellationToken).ConfigureAwait(false);
+        return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -76,8 +76,10 @@ public interface ProcessPort {
                             List<String> executionIds, List<ActivityInstance> children) {
     }
 
+    /** UI-DEMO-5: runningInstances and incidents are the caller tenant's active instances and open incidents. */
     record ProcessDefinition(String id, String key, String name, int version, String deploymentId, String tenantId,
-                             String versionTag, boolean suspended, String resourceName, boolean startableInTasklist) {
+                             String versionTag, boolean suspended, String resourceName, boolean startableInTasklist,
+                             long runningInstances, long incidents) {
     }
 
     record DefinitionFilter(String key, Boolean latest, String deploymentId) {

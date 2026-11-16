@@ -38,4 +38,10 @@ public sealed record ProcessDefinition
 
     [global::System.Text.Json.Serialization.JsonPropertyName("startableInTasklist")]
     public bool? StartableInTasklist { get; init; }
+
+    [global::System.Text.Json.Serialization.JsonPropertyName("runningInstances")]
+    public long? RunningInstances { get; init; }
+
+    [global::System.Text.Json.Serialization.JsonPropertyName("incidents")]
+    public long? Incidents { get; init; }
 }

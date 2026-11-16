@@ -478,9 +478,9 @@ export const api = {
     presencePath: (file: string) => `/models/${enc(file)}/presence/stream`,
   },
   forms: {
-    get: async (key: string, version?: number) => A.normForm(await http.get<Record<string, unknown>>(`/forms/${enc(key)}`, { version })),
+    get: async (key: string, version?: number) => A.normForm(await http.get<Record<string, unknown>>('/forms/by-key', { key, version })),
     validate: (key: string, data: Record<string, unknown>) =>
-      http.post<{ valid: boolean; errors?: { field?: string; message: string }[] }>(`/forms/${enc(key)}/validate`, { data: A.toVariableMap(data) }),
+      http.post<{ valid: boolean; errors?: { field?: string; message: string }[] }>(`/forms/by-key/validate?key=${enc(key)}`, { data: A.toVariableMap(data) }),
   },
 
   // ------------------------------------------------------------ operations (R63, R64, O01–O09)
@@ -713,7 +713,7 @@ export const api = {
   // ------------------------------------------------------------ audit (R42)
   audit: {
     timeline: async (businessKey: string, q: ListQuery = {}) =>
-      A.mapPage(await http.page<Record<string, unknown>>(`/audit/${enc(businessKey)}/timeline`, { page: q.page, size: q.size, includeHistory: true, type: q.q }), (e) => A.normAudit(e, businessKey)),
+      A.mapPage(await http.page<Record<string, unknown>>('/audit/timeline', { businessKey, page: q.page, size: q.size, includeHistory: true, type: q.q }), (e) => A.normAudit(e, businessKey)),
     verify: async (businessKey?: string) => A.normVerify(await http.get<Record<string, unknown>>('/audit/verify', { businessKey })),
     search: async (q: ListQuery & { actor?: string; seat?: string; type?: string; operationId?: string; ruleVersion?: string; from?: string; to?: string }) =>
       A.mapPage(await http.page<Record<string, unknown>>('/audit/events', q), (e) => A.normAudit(e)), //
@@ -723,7 +723,7 @@ export const api = {
     createExport: (body: { format: T.AuditExportJob['format']; scope: Record<string, unknown> }, key?: string) => http.post<T.AuditExportJob>('/audit/exports', body, key), // async jobs
     exports: () => http.get<T.AuditExportJob[]>('/audit/exports'),
     downloadExport: (id: string) => download(`/audit/exports/${enc(id)}/content`, undefined, `audit-${id}`),
-    evidencePack: (businessKey: string) => download(`/audit/${enc(businessKey)}/evidence-pack`, undefined, `evidence-${businessKey}.zip`), // (U03)
+    evidencePack: (businessKey: string) => download('/audit/evidence-pack', { businessKey }, `evidence-${businessKey}.zip`), // (U03)
   },
 
   // ------------------------------------------------------------ documents (R74, EC-18)

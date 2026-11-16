@@ -23,15 +23,17 @@ final class FormsApi
     /**
      * Get a form version
      *
-     * Data schema, layout, field policy and i18n bundles by hash version (R47); the key 'drafts' is reserved.
+     * Data schema, layout, field policy and i18n bundles by hash version (R47).
      *
-     * GET /forms/{key} (operationId getForm); permission form.read.
+     * GET /forms/by-key (operationId getForm); permission form.read.
+     * @param string $key query key
      * @param string|null $version query version
      * @return Model\FormVersion|null
      */
     public function getForm(string $key, ?string $version = null, ?RequestOptions $options = null): ?Model\FormVersion
     {
-        $req = ApiRequest::get('/forms/' . HttpTransport::seg((string) $key));
+        $req = ApiRequest::get('/forms/by-key');
+        $req->query('key', $key);
         $req->query('version', $version);
         return $this->calls->model($req, $options, Model\FormVersion::class);
     }
@@ -41,13 +43,15 @@ final class FormsApi
      *
      * Authoritative server-side validation (X.2.5.2).
      *
-     * POST /forms/{key}/validate (operationId validateForm); permission form.read.
+     * POST /forms/by-key/validate (operationId validateForm); permission form.read.
      * @param Model\FormValidateRequest|array $body request body
+     * @param string $key query key
      * @return Model\FormValidationResult|null
      */
-    public function validateForm(string $key, Model\FormValidateRequest|array $body, ?RequestOptions $options = null): ?Model\FormValidationResult
+    public function validateForm(Model\FormValidateRequest|array $body, string $key, ?RequestOptions $options = null): ?Model\FormValidationResult
     {
-        $req = ApiRequest::post('/forms/' . HttpTransport::seg((string) $key) . '/validate');
+        $req = ApiRequest::post('/forms/by-key/validate');
+        $req->query('key', $key);
         if ($body !== null) {
             $req->body($body);
         }
@@ -184,12 +188,16 @@ final class FormsApi
      *
      * Every version of one field, oldest first. 404 NOT_FOUND when the key was never defined.
      *
-     * GET /custom-fields/{objectType}/{key} (operationId getCustomFieldVersions); permission form.read.
+     * GET /custom-fields/versions (operationId getCustomFieldVersions); permission form.read.
+     * @param string $objectType query objectType
+     * @param string $key query key
      * @return list<Model\CustomField>
      */
     public function getCustomFieldVersions(string $objectType, string $key, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/custom-fields/' . HttpTransport::seg((string) $objectType) . '/' . HttpTransport::seg((string) $key));
+        $req = ApiRequest::get('/custom-fields/versions');
+        $req->query('objectType', $objectType);
+        $req->query('key', $key);
         return $this->calls->models($req, $options, Model\CustomField::class);
     }
 
@@ -198,13 +206,17 @@ final class FormsApi
      *
      * Closes the current version on effectiveTo, audited (CUSTOM_FIELD_RETIRED); values already stored stay readable. 400 REASON_REQUIRED; 404 NOT_FOUND; 422 CUSTOM_FIELD_INVALID; 409 CUSTOM_FIELD_CONFLICT.
      *
-     * POST /custom-fields/{objectType}/{key}/retire (operationId retireCustomField); permission tenant.admin; result stored atomically with the state change.
+     * POST /custom-fields/retire (operationId retireCustomField); permission tenant.admin; result stored atomically with the state change.
      * @param Model\CustomFieldRetireRequest|array $body request body
+     * @param string $objectType query objectType
+     * @param string $key query key
      * @return Model\CustomField|null
      */
-    public function retireCustomField(string $objectType, string $key, Model\CustomFieldRetireRequest|array $body, ?RequestOptions $options = null): ?Model\CustomField
+    public function retireCustomField(Model\CustomFieldRetireRequest|array $body, string $objectType, string $key, ?RequestOptions $options = null): ?Model\CustomField
     {
-        $req = ApiRequest::post('/custom-fields/' . HttpTransport::seg((string) $objectType) . '/' . HttpTransport::seg((string) $key) . '/retire');
+        $req = ApiRequest::post('/custom-fields/retire');
+        $req->query('objectType', $objectType);
+        $req->query('key', $key);
         if ($body !== null) {
             $req->body($body);
         }

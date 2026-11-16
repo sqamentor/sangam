@@ -22,8 +22,11 @@ schema("WorkStepRequest", "Record a step of the leased work (fenced by workerId,
        enums={"state": ["INTENT", "SUCCEEDED", "FAILED"]})
 
 _WS_REQ = ["R37", "E02", "VI.3", "A-2", "R36"]
-_WS_P = [pp("id", "External work id"), pp("stepName", "Step name, unique within the work's operation (1-128 printable ASCII)")]
-op("get", "/work/{id}/steps/{stepName}", "getWorkStep", "Work", "Replay a recorded step",
+# UI-DEMO-1: a step name is any printable ASCII, '/' included, which the servlet connector refuses encoded in a path
+# segment, so the step is named by a query parameter.
+_WS_P = [pp("id", "External work id"),
+         q("stepName", desc="Step name, unique within the work's operation (1-128 printable ASCII)", required=True)]
+op("get", "/work/{id}/step", "getWorkStep", "Work", "Replay a recorded step",
    "The step as recorded for this work's operationId; 404 when the step was never recorded (run it). The caller must hold "
    "the current lease: workerId, lockVersion and attemptId as query parameters (409 STALE_LEASE otherwise).",
    _WS_REQ, params=_WS_P + [q("workerId", required=True), q("lockVersion", "long", required=True), q("attemptId", required=True)],
@@ -33,7 +36,7 @@ op("get", "/work/{id}/steps", "listWorkSteps", "Work", "Steps recorded for a wor
    "Every step recorded under the work's operationId, in recording order (for diagnosis and reconciliation; ops.read).",
    _WS_REQ, params=[pp("id", "External work id")], resp=(200, "array:WorkStep"), perm="ops.read",
    errors=("Unauthorized", "Forbidden", "NotFound"))
-op("put", "/work/{id}/steps/{stepName}", "recordWorkStep", "Work", "Record a step",
+op("put", "/work/{id}/step", "recordWorkStep", "Work", "Record a step",
    "Records the step's intent or outcome under the work's operationId, in the same transaction as the lease check. "
    "Fenced: a stale lease is 409 STALE_LEASE and records nothing; a deleted instance is 410 GONE_INSTANCE_DELETED.",
    _WS_REQ, params=_WS_P, body="WorkStepRequest", resp=(200, "WorkStep"), perm="work.execute", fenced=True,

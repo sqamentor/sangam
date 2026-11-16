@@ -9,7 +9,7 @@ use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\CloudEvent;
 use Sangam\Sdk\Model\Page;
 
-/** Deployments, event registry and forms (/deployments, /events/**, /forms/{key}). */
+/** Deployments, event registry and forms (/deployments, /events/**, /forms/by-key). */
 final class RepositoryApi extends ApiSupport
 {
     /**
@@ -74,10 +74,10 @@ final class RepositoryApi extends ApiSupport
             ->idempotencyKey($idempotencyKey));
     }
 
-    /** @return array<string, mixed> GET /forms/{key}: the form JSON schema used by the task UI. */
+    /** @return array<string, mixed> GET /forms/by-key?key=: the form JSON schema used by the task UI. */
     public function form(string $formKey): array
     {
-        return (array) $this->call(ApiRequest::get('/forms/' . self::seg($formKey)));
+        return (array) $this->call(ApiRequest::get('/forms/by-key')->query('key', $formKey));
     }
 
     private static function textPart(string $boundary, string $name, string $value): string

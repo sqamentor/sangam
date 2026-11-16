@@ -57,8 +57,9 @@ public class WorkStepController {
         this.journal = new WorkStepJournal(tx.dialect());
     }
 
-    @GetMapping("/{id}/steps/{stepName}")
-    public WorkStep get(RequestContext ctx, @PathVariable String id, @PathVariable String stepName,
+    /** UI-DEMO-1: a step name is any printable ASCII, '/' included (refused encoded in a path segment), so it is a query parameter. */
+    @GetMapping("/{id}/step")
+    public WorkStep get(RequestContext ctx, @PathVariable String id, @RequestParam String stepName,
                         @RequestParam String workerId, @RequestParam long lockVersion, @RequestParam String attemptId) {
         permissions.require(ctx, Permissions.WORK_EXECUTE);
         Telemetry.workId(id);
@@ -71,8 +72,8 @@ public class WorkStepController {
         });
     }
 
-    @PutMapping("/{id}/steps/{stepName}")
-    public WorkStep record(RequestContext ctx, @PathVariable String id, @PathVariable String stepName,
+    @PutMapping("/{id}/step")
+    public WorkStep record(RequestContext ctx, @PathVariable String id, @RequestParam String stepName,
                            @RequestBody WorkStepRequest body) {
         permissions.require(ctx, Permissions.WORK_EXECUTE);
         Telemetry.workId(id);

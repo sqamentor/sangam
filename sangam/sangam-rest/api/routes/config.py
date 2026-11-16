@@ -45,40 +45,43 @@ TEXT_BODY = {"required": True, "content": {
     "text/csv": {"schema": {"type": "string"}},
     "application/yaml": {"schema": {"type": "string"}},
     "text/plain": {"schema": {"type": "string"}}}}
-PID = pp("id", "profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)")
-VER = pp("version")
+# UI-DEMO-1: a profile id carries '/' (an office overlay RJ.PWD/DIV-1), which the servlet connector refuses encoded
+# in a path segment, so the profile id and version are query parameters on literal routes.
+PID = q("id", desc="profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)",
+        required=True)
+VER = q("version", required=True)
 SCOPE = q("scope", desc="scope id; default: the caller's tenant")
 
 op("get", "/config/profiles", "resolveConfigProfile", "Config", "Resolve the profile of a scope",
    "Merges the layer chain (international > regime > jurisdiction > category > government > department > office) "
    "for the scope and date.", CFR, params=[SCOPE, q("office"), q("asOf", "date")], resp=(200, "ConfigResolvedProfile"),
    perm="config.read")
-op("get", "/config/profiles/{id}/versions", "listConfigProfileVersions", "Config", "List the versions of a profile",
+op("get", "/config/profiles/versions", "listConfigProfileVersions", "Config", "List the versions of a profile",
    "Every stored version with its status and content hash.", CFR, params=[PID],
    resp=(200, "array:ConfigProfileVersion"), perm="config.read", list_=True)
-op("get", "/config/profiles/{id}/versions/{version}", "getConfigProfileVersion", "Config", "Get one profile version",
+op("get", "/config/profiles/version", "getConfigProfileVersion", "Config", "Get one profile version",
    "The version's status, hash and document tree.", CFR, params=[PID, VER], resp=(200, "ConfigProfileVersionDocument"),
    perm="config.read")
-op("put", "/config/profiles/{id}/versions/{version}", "saveConfigProfileDraft", "Config", "Save a draft version",
-   "Maker step: the body is the profile document (YAML or JSON); its id and version must match the path. A version "
+op("put", "/config/profiles/version", "saveConfigProfileDraft", "Config", "Save a draft version",
+   "Maker step: the body is the profile document (YAML or JSON); its id and version must match the query. A version "
    "that left DRAFT/REJECTED is frozen (409 VERSION_FROZEN). Writes are limited to the caller's own scope.",
    CFR, params=[PID, VER], body=YAML_BODY, resp=(200, "ConfigFindingsResult"), cmd="config.profile.save",
    perm="config.write")
-op("post", "/config/profiles/{id}/versions/{version}/submit", "submitConfigProfile", "Config", "Submit for approval",
+op("post", "/config/profiles/version/submit", "submitConfigProfile", "Config", "Submit for approval",
    "Maker submits the draft; the content hash is frozen.", CFR, params=[PID, VER], resp=(204, None),
    cmd="config.profile.submit", perm="config.write")
-op("post", "/config/profiles/{id}/versions/{version}/approve", "approveConfigProfile", "Config", "Approve a version",
+op("post", "/config/profiles/version/approve", "approveConfigProfile", "Config", "Approve a version",
    "Checker approval bound to the reviewed hash (409 APPROVAL_INVALIDATED if it changed); checker must differ from "
    "the maker (422 SOD_VIOLATION).", CFR + ["K5"], params=[PID, VER], body="ConfigApproveRequest", resp=(204, None),
    cmd="config.profile.approve", perm="config.admin")
-op("post", "/config/profiles/{id}/versions/{version}/reject", "rejectConfigProfile", "Config", "Reject a version",
+op("post", "/config/profiles/version/reject", "rejectConfigProfile", "Config", "Reject a version",
    "Checker rejection with a reason.", CFR, params=[PID, VER], body="ConfigRejectRequest", resp=(204, None),
    cmd="config.profile.reject", perm="config.admin")
-op("post", "/config/profiles/{id}/versions/{version}/activate", "activateConfigProfile", "Config", "Activate a version",
+op("post", "/config/profiles/version/activate", "activateConfigProfile", "Config", "Activate a version",
    "Activates an approved version after re-resolving the listed scopes (422 ACTIVATION_REFUSED on errors).", CFR,
    params=[PID, VER], body="ConfigActivateRequest", body_required=False, resp=(200, "ConfigFindingsResult"),
    cmd="config.profile.activate", perm="config.admin")
-op("get", "/config/profiles/{id}/history", "getConfigProfileHistory", "Config", "Profile change register",
+op("get", "/config/profiles/history", "getConfigProfileHistory", "Config", "Profile change register",
    "Every save, submission, approval, rejection, activation and import.", CFR, params=[PID],
    resp=(200, "array:ConfigChangeRecord"), perm="config.read", list_=True)
 op("post", "/config/validate", "validateConfigProfile", "Config", "Validate a resolved profile",
