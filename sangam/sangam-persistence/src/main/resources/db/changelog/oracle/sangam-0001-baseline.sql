@@ -6311,6 +6311,33 @@ CREATE TABLE CMP_OTP_CHALLENGE (
 CREATE INDEX CMP_OTP_IDENTIFIER ON CMP_OTP_CHALLENGE (tenant_id, identifier_hash, status);
 --rollback DROP TABLE CMP_OTP_CHALLENGE;
 
+--changeset sangam:0045-23-ai_ocr_transcript dbms:oracle
+--comment: M-103 OCR transcripts reviewed before knowledge-base ingest (decision 378)
+CREATE TABLE AI_OCR_TRANSCRIPT (
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  transcript_id VARCHAR2(64 CHAR) NOT NULL,
+  kb_key VARCHAR2(255 CHAR) NOT NULL,
+  kb_version NUMBER(10) NOT NULL,
+  document_id VARCHAR2(255 CHAR) NOT NULL,
+  doc_version VARCHAR2(64 CHAR),
+  image_sha256 VARCHAR2(64 CHAR) NOT NULL,
+  media_type VARCHAR2(64 CHAR) NOT NULL,
+  engine VARCHAR2(255 CHAR),
+  language_codes VARCHAR2(255 CHAR) NOT NULL,
+  ocr_text CLOB,
+  state VARCHAR2(64 CHAR) NOT NULL,
+  corrected_text CLOB,
+  chunks NUMBER(10),
+  created_by VARCHAR2(255 CHAR) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  reviewed_by VARCHAR2(255 CHAR),
+  reviewed_at TIMESTAMP WITH TIME ZONE,
+  review_note CLOB,
+  CONSTRAINT PK_AI_OCR_TRANSCRIPT PRIMARY KEY (tenant_id, transcript_id)
+);
+CREATE INDEX AI_OCR_TRANSCRIPT_STATE ON AI_OCR_TRANSCRIPT (tenant_id, state, created_at);
+--rollback DROP TABLE AI_OCR_TRANSCRIPT;
+
 --changeset sangam:0016-03-form_draft-alter dbms:oracle
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD (form_version_hash VARCHAR2(64 CHAR));
@@ -6496,6 +6523,11 @@ CREATE INDEX CONNECTOR_CALL_DELIVERY ON CONNECTOR_CALL (connector_id, last_resul
 ALTER TABLE CMP_OTP_CHALLENGE ADD (client_hash VARCHAR2(64 CHAR));
 CREATE INDEX CMP_OTP_CLIENT ON CMP_OTP_CHALLENGE (tenant_id, client_hash, issued_at);
 --rollback DROP INDEX CMP_OTP_CLIENT; ALTER TABLE CMP_OTP_CHALLENGE DROP COLUMN client_hash;
+
+--changeset sangam:0045-24-ai_kb_chunk-alter dbms:oracle
+--comment: M-103 knowledge-base chunk provenance: the approved OCR transcript (decision 378)
+ALTER TABLE AI_KB_CHUNK ADD (ocr_transcript_id VARCHAR2(64 CHAR));
+--rollback ALTER TABLE AI_KB_CHUNK DROP COLUMN ocr_transcript_id;
 
 --changeset sangam:0033-01-cfg_master_code-data dbms:oracle
 --comment: SL-84 root master codes: parent_code '' becomes the absent-key value '-'

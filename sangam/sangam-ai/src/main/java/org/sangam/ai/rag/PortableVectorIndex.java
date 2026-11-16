@@ -37,7 +37,7 @@ final class PortableVectorIndex implements VectorIndex {
         if (k < 1) {
             throw new IllegalArgumentException("k must be at least 1, was " + k);
         }
-        String sql = "SELECT k.document_id,k.doc_version,k.seq,k.text_value,k.embedding FROM AI_KB_CHUNK k WHERE k.tenant_id=? AND k.kb_key=? AND k.version="
+        String sql = "SELECT k.document_id,k.doc_version,k.seq,k.text_value,k.embedding,k.ocr_transcript_id FROM AI_KB_CHUNK k WHERE k.tenant_id=? AND k.kb_key=? AND k.version="
                 + "(SELECT v.version FROM AI_KB_VERSION v WHERE v.tenant_id=? AND v.kb_key=? AND v.state='ACTIVE') AND (" + visible.sql() + ") ORDER BY k.id";
         List<Object> params = new ArrayList<>(List.of(tenantId, kb, tenantId, kb));
         params.addAll(visible.params());
@@ -45,7 +45,7 @@ final class PortableVectorIndex implements VectorIndex {
     }
 
     /**
-     * Runs {@code sql}, which must select {@code document_id, doc_version, seq, text_value, embedding} in this order and
+     * Runs {@code sql}, which must select {@code document_id, doc_version, seq, text_value, embedding, ocr_transcript_id} in this order and
      * {@code ORDER BY k.id}, and keeps the best {@code k} by the portable cosine. Every implementation of the port ranks
      * its final candidates here, so scores and tie order are those of the portable index.
      */
@@ -60,7 +60,7 @@ final class PortableVectorIndex implements VectorIndex {
                 while (rs.next()) {
                     double score = KnowledgeBaseService.cosine(query, KnowledgeBaseService.decode(rs.getBytes(5)));
                     offer(best, new Scored(new KnowledgeBaseService.Hit(rs.getString(1), rs.getString(2), rs.getInt(3),
-                            rs.getString(4), score), arrival++), k);
+                            rs.getString(4), score, rs.getString(6)), arrival++), k);
                 }
             }
         } catch (SQLException e) {

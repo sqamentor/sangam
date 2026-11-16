@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 966,
- "operations": 1148,
- "schemas": 877,
+ "paths": 970,
+ "operations": 1152,
+ "schemas": 881,
  "tags": [
   "AI",
   "Admin",
@@ -64,8 +64,8 @@
    "class": "AIApi",
    "tag": "AI",
    "pathPrefix": "",
-   "operations": 34,
-   "maxLines": 656
+   "operations": 38,
+   "maxLines": 734
   },
   {
    "class": "AdminApi",
@@ -656,10 +656,14 @@
   "AiEvaluation",
   "AiIngest",
   "AiIngestResult",
+  "AiKbHit",
   "AiKbSearch",
   "AiKbVersion",
   "AiMcpBody",
   "AiMcpBodyParams",
+  "AiOcrDecide",
+  "AiOcrTranscript",
+  "AiOcrTranscriptSummary",
   "AiProposal",
   "AiPropose",
   "AiReason",
@@ -6240,6 +6244,54 @@
    "python": "ai.ai_kb_search",
    "dotnet": "AIApi#AiKbSearchAsync",
    "php": "AIApi#aiKbSearch"
+  },
+  {
+   "operationId": "aiKbOcr",
+   "method": "POST",
+   "path": "/ai/knowledge-bases/{kb}/versions/{version}/ocr",
+   "tag": "AI",
+   "apiClass": "AIApi",
+   "java": "AIApi#aiKbOcr",
+   "typescript": "ai.aiKbOcr",
+   "python": "ai.ai_kb_ocr",
+   "dotnet": "AIApi#AiKbOcrAsync",
+   "php": "AIApi#aiKbOcr"
+  },
+  {
+   "operationId": "aiListOcrTranscripts",
+   "method": "GET",
+   "path": "/ai/ocr-transcripts",
+   "tag": "AI",
+   "apiClass": "AIApi",
+   "java": "AIApi#aiListOcrTranscripts",
+   "typescript": "ai.aiListOcrTranscripts",
+   "python": "ai.ai_list_ocr_transcripts",
+   "dotnet": "AIApi#AiListOcrTranscriptsAsync",
+   "php": "AIApi#aiListOcrTranscripts"
+  },
+  {
+   "operationId": "aiGetOcrTranscript",
+   "method": "GET",
+   "path": "/ai/ocr-transcripts/{id}",
+   "tag": "AI",
+   "apiClass": "AIApi",
+   "java": "AIApi#aiGetOcrTranscript",
+   "typescript": "ai.aiGetOcrTranscript",
+   "python": "ai.ai_get_ocr_transcript",
+   "dotnet": "AIApi#AiGetOcrTranscriptAsync",
+   "php": "AIApi#aiGetOcrTranscript"
+  },
+  {
+   "operationId": "aiDecideOcrTranscript",
+   "method": "POST",
+   "path": "/ai/ocr-transcripts/{id}/decide",
+   "tag": "AI",
+   "apiClass": "AIApi",
+   "java": "AIApi#aiDecideOcrTranscript",
+   "typescript": "ai.aiDecideOcrTranscript",
+   "python": "ai.ai_decide_ocr_transcript",
+   "dotnet": "AIApi#AiDecideOcrTranscriptAsync",
+   "php": "AIApi#aiDecideOcrTranscript"
   },
   {
    "operationId": "aiGenerateDraft",

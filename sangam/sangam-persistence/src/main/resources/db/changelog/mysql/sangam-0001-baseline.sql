@@ -6311,6 +6311,33 @@ CREATE TABLE CMP_OTP_CHALLENGE (
 CREATE INDEX CMP_OTP_IDENTIFIER ON CMP_OTP_CHALLENGE (tenant_id, identifier_hash, status);
 --rollback DROP TABLE CMP_OTP_CHALLENGE;
 
+--changeset sangam:0045-23-ai_ocr_transcript dbms:mysql
+--comment: M-103 OCR transcripts reviewed before knowledge-base ingest (decision 378)
+CREATE TABLE AI_OCR_TRANSCRIPT (
+  tenant_id VARCHAR(64) NOT NULL,
+  transcript_id VARCHAR(64) NOT NULL,
+  kb_key VARCHAR(255) NOT NULL,
+  kb_version INT NOT NULL,
+  document_id VARCHAR(255) NOT NULL,
+  doc_version VARCHAR(64),
+  image_sha256 VARCHAR(64) NOT NULL,
+  media_type VARCHAR(64) NOT NULL,
+  engine VARCHAR(255),
+  language_codes VARCHAR(255) NOT NULL,
+  ocr_text LONGTEXT,
+  state VARCHAR(64) NOT NULL,
+  corrected_text LONGTEXT,
+  chunks INT,
+  created_by VARCHAR(255) NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  reviewed_by VARCHAR(255),
+  reviewed_at DATETIME(6),
+  review_note LONGTEXT,
+  CONSTRAINT PK_AI_OCR_TRANSCRIPT PRIMARY KEY (tenant_id, transcript_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX AI_OCR_TRANSCRIPT_STATE ON AI_OCR_TRANSCRIPT (tenant_id, state, created_at);
+--rollback DROP TABLE AI_OCR_TRANSCRIPT;
+
 --changeset sangam:0016-03-form_draft-alter dbms:mysql
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD COLUMN form_version_hash VARCHAR(64);
@@ -6496,6 +6523,11 @@ CREATE INDEX CONNECTOR_CALL_DELIVERY ON CONNECTOR_CALL (connector_id, last_resul
 ALTER TABLE CMP_OTP_CHALLENGE ADD COLUMN client_hash VARCHAR(64);
 CREATE INDEX CMP_OTP_CLIENT ON CMP_OTP_CHALLENGE (tenant_id, client_hash, issued_at);
 --rollback DROP INDEX CMP_OTP_CLIENT ON CMP_OTP_CHALLENGE; ALTER TABLE CMP_OTP_CHALLENGE DROP COLUMN client_hash;
+
+--changeset sangam:0045-24-ai_kb_chunk-alter dbms:mysql
+--comment: M-103 knowledge-base chunk provenance: the approved OCR transcript (decision 378)
+ALTER TABLE AI_KB_CHUNK ADD COLUMN ocr_transcript_id VARCHAR(64);
+--rollback ALTER TABLE AI_KB_CHUNK DROP COLUMN ocr_transcript_id;
 
 --changeset sangam:0033-01-cfg_master_code-data dbms:mysql
 --comment: SL-84 root master codes: parent_code '' becomes the absent-key value '-'
