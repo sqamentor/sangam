@@ -594,6 +594,10 @@ def decisions():
               ([q('DC'), '-'], ['1000000000', 'true'], 'Deputy Commissioner (no money limit)'),
               ([q('HOD'), '-'], ['10000000', 'true'], 'Head of department up to 1 crore'),
               ([q('DDO'), '-'], ['1000000', 'true'], 'Drawing and disbursing officer up to 10 lakh'),
+              # decision 391: the leave pack's competent sanctioning role (leave-authority r1, leave-routing r2); its
+              # lv_sanction is non-monetary with ruleCaseType LEAVE, so a zero ceiling confers the power and no money
+              # power exists for any other case type (those fall to the catch-all below)
+              ([q('CONTROLLING'), q('LEAVE')], ['0', 'true'], 'Controlling officer: leave sanction only, no money power'),
               (['-', '-'], ['0', 'false'], 'no delegated power')]
     core.dmn('sangam-core-powers', 'Delegation of powers by seat role', 'FIRST',
              [('Seat role', 'seatRole', 'string'), ('Case type', 'caseType', 'string')],

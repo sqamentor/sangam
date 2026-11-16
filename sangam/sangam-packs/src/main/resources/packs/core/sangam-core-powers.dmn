@@ -98,11 +98,17 @@
         <outputEntry id="sangam-core-powers_r14_o0"><text>100000000</text></outputEntry>
         <outputEntry id="sangam-core-powers_r14_o1"><text>true</text></outputEntry>
       </rule>
-      <rule id="sangam-core-powers_r15"><description>no delegated power</description>
-        <inputEntry id="sangam-core-powers_r15_i0"><text>-</text></inputEntry>
-        <inputEntry id="sangam-core-powers_r15_i1"><text>-</text></inputEntry>
+      <rule id="sangam-core-powers_r15"><description>Controlling officer: leave sanction only, no money power</description>
+        <inputEntry id="sangam-core-powers_r15_i0"><text>"CONTROLLING"</text></inputEntry>
+        <inputEntry id="sangam-core-powers_r15_i1"><text>"LEAVE"</text></inputEntry>
         <outputEntry id="sangam-core-powers_r15_o0"><text>0</text></outputEntry>
-        <outputEntry id="sangam-core-powers_r15_o1"><text>false</text></outputEntry>
+        <outputEntry id="sangam-core-powers_r15_o1"><text>true</text></outputEntry>
+      </rule>
+      <rule id="sangam-core-powers_r16"><description>no delegated power</description>
+        <inputEntry id="sangam-core-powers_r16_i0"><text>-</text></inputEntry>
+        <inputEntry id="sangam-core-powers_r16_i1"><text>-</text></inputEntry>
+        <outputEntry id="sangam-core-powers_r16_o0"><text>0</text></outputEntry>
+        <outputEntry id="sangam-core-powers_r16_o1"><text>false</text></outputEntry>
       </rule>
     </decisionTable>
   </decision>
