@@ -189,6 +189,11 @@ public final class ChannelMediaWorker implements InboundMedia, AutoCloseable {
                 }
                 MediaDownloads.Media media = download.fetch(p.tenantId(), entry.get(), p.mediaRef());
                 stored = MediaDownloads.store(documents, scanner, p.tenantId(), p.channel(), media);
+                // SL-176: the copy goes on the row before anything else, so a takeover reuses it instead of storing again
+                if (!queue.remember(p, stored)) {
+                    discard(p, stored);
+                    return;
+                }
             }
             Map<String, Object> attrs = new LinkedHashMap<>();
             attrs.put("documentKey", stored.documentKey());
@@ -215,6 +220,17 @@ public final class ChannelMediaWorker implements InboundMedia, AutoCloseable {
             park(p, e.getMessage());
         } catch (Exception e) {
             retryOrPark(p, stored, true, e.toString());
+        }
+    }
+
+    /** The claim was lost before the copy reached the row: no row references it, so it is removed (SL-176). */
+    private void discard(InboundMediaQueue.Pending p, MediaDownloads.StoredMedia stored) {
+        LOG.info("inbound media of {} message {} (tenant {}): claim taken over before the stored copy was recorded; removing copy {}",
+                p.channel(), p.messageId(), p.tenantId(), stored.documentKey());
+        try {
+            documents.delete(stored.documentKey());
+        } catch (Exception e) {
+            LOG.warn("removing unreferenced inbound media copy {} failed: {}", stored.documentKey(), e.toString());
         }
     }
 
