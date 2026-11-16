@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 987,
- "operations": 1172,
- "schemas": 892,
+ "paths": 988,
+ "operations": 1173,
+ "schemas": 894,
  "tags": [
   "AI",
   "Admin",
@@ -359,8 +359,8 @@
    "class": "ModellerApi",
    "tag": "Modeller",
    "pathPrefix": "",
-   "operations": 36,
-   "maxLines": 663
+   "operations": 37,
+   "maxLines": 683
   },
   {
    "class": "OnboardingApi",
@@ -765,8 +765,10 @@
   "CatalogueExtensionEntry",
   "CatalogueHostedEntry",
   "CatalogueInstallRequest",
+  "CatalogueInstalledTemplate",
   "CatalogueReviewRequest",
   "CatalogueSubmissionRequest",
+  "CatalogueTemplatesInstalled",
   "CellActivateRequest",
   "CellDrainStatus",
   "CellExportHandle",
@@ -8065,6 +8067,18 @@
    "python": "modeller.install_catalogue_entry",
    "dotnet": "ModellerApi#InstallCatalogueEntryAsync",
    "php": "ModellerApi#installCatalogueEntry"
+  },
+  {
+   "operationId": "installCatalogueTemplates",
+   "method": "POST",
+   "path": "/catalogue/{id}/{version}/install-templates",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#installCatalogueTemplates",
+   "typescript": "modeller.installCatalogueTemplates",
+   "python": "modeller.install_catalogue_templates",
+   "dotnet": "ModellerApi#InstallCatalogueTemplatesAsync",
+   "php": "ModellerApi#installCatalogueTemplates"
   },
   {
    "operationId": "submitCatalogueEntry",

@@ -48,6 +48,32 @@ public final class ElementTemplates {
 
     /** Validates and publishes the next version of a template; returns it. */
     public Template publish(String tenantId, Kind kind, Map<String, Object> document, String actor) {
+        check(kind, document);
+        return tx.inTransaction(c -> insert(c, tenantId, kind, document, actor));
+    }
+
+    /**
+     * Publishes the next version of every document in one transaction, and runs {@code inSameTransaction} with the
+     * published templates before it commits (an audit record of the batch), so either all of them and that work commit
+     * or none does. Every document is checked before anything is written.
+     */
+    public List<Template> publishAll(String tenantId, Kind kind, List<Map<String, Object>> documents, String actor,
+                                     java.util.function.Consumer<List<Template>> inSameTransaction) {
+        for (Map<String, Object> d : documents) {
+            check(kind, d);
+        }
+        return tx.inTransaction(c -> {
+            List<Template> out = new ArrayList<>();
+            for (Map<String, Object> d : documents) {
+                out.add(insert(c, tenantId, kind, d, actor));
+            }
+            inSameTransaction.accept(List.copyOf(out));
+            return List.copyOf(out);
+        });
+    }
+
+    /** Refuses an invalid id or document with {@link IllegalArgumentException} (the reasons, joined). */
+    public static void check(Kind kind, Map<String, Object> document) {
         String id = String.valueOf(document.get("id"));
         if (!id.matches("[A-Za-z0-9_.-]{1,120}")) {
             throw new IllegalArgumentException("template id is invalid");
@@ -56,13 +82,15 @@ public final class ElementTemplates {
         if (!errors.isEmpty()) {
             throw new IllegalArgumentException(String.join("; ", errors));
         }
-        return tx.inTransaction(c -> {
-            int v = Jdbc.one(c, "SELECT COALESCE(MAX(version),0)+1 FROM MOD_TEMPLATE WHERE tenant_id=? AND template_id=?", rs -> rs.getInt(1), tenantId, id).orElse(1);
-            Map<String, Object> doc = new LinkedHashMap<>(document);
-            doc.put("version", v);
-            Jdbc.update(c, "INSERT INTO MOD_TEMPLATE(tenant_id,template_id,version,kind,document,created_by,created_at) VALUES (?,?,?,?,?,?,?)", tenantId, id, v, kind.name(), Json.write(doc), actor, Jdbc.dbNow(c, dialect));
-            return parse(kind, doc);
-        });
+    }
+
+    private Template insert(java.sql.Connection c, String tenantId, Kind kind, Map<String, Object> document, String actor) {
+        String id = String.valueOf(document.get("id"));
+        int v = Jdbc.one(c, "SELECT COALESCE(MAX(version),0)+1 FROM MOD_TEMPLATE WHERE tenant_id=? AND template_id=?", rs -> rs.getInt(1), tenantId, id).orElse(1);
+        Map<String, Object> doc = new LinkedHashMap<>(document);
+        doc.put("version", v);
+        Jdbc.update(c, "INSERT INTO MOD_TEMPLATE(tenant_id,template_id,version,kind,document,created_by,created_at) VALUES (?,?,?,?,?,?,?)", tenantId, id, v, kind.name(), Json.write(doc), actor, Jdbc.dbNow(c, dialect));
+        return parse(kind, doc);
     }
 
     public Optional<Template> find(String tenantId, String id, Integer versionOrNull) {

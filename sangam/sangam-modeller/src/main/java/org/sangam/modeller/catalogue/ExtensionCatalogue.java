@@ -23,8 +23,17 @@ import java.util.Set;
  */
 public final class ExtensionCatalogue {
 
-    /** The one kind an install accepts (decision 380 P2 (a)): a signed package bundle. Code kinds are refused. */
+    /** Decision 380 P2 (a): a signed package bundle, installed through the package import. */
     public static final String KIND_PACKAGE = "package";
+
+    /**
+     * Decision 380 P2 (b): connector element templates, data only ({@code {"templates": [ {id, name, description,
+     * appliesTo, fields} ]}}, the format of the built-in connector templates), published into the installing tenant.
+     */
+    public static final String KIND_CONNECTOR_TEMPLATE = "connector-template";
+
+    /** The kinds an install accepts; every other kind (domain packs, connector jars) is code and is refused (P2 (c)). */
+    public static final Set<String> INSTALLABLE_KINDS = Set.of(KIND_PACKAGE, KIND_CONNECTOR_TEMPLATE);
 
     public record Entry(String id, String version, String kind, String publisher, String licence, String sha256, String minPlatform, String artifactPath) {
     }

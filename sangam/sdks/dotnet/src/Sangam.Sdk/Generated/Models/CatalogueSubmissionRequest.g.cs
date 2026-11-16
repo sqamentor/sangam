@@ -4,7 +4,7 @@
 namespace Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// A signed package bundle submitted to the platform-wide catalogue, with its catalogue fields.
+/// An entry submitted to the platform-wide catalogue, with its catalogue fields and the artefact of its kind: bundle (a signed package bundle) for kind package, templates (connector element templates) for kind connector-template; exactly the one of the kind.
 /// Schema CatalogueSubmissionRequest.
 /// </summary>
 public sealed record CatalogueSubmissionRequest
@@ -28,16 +28,28 @@ public sealed record CatalogueSubmissionRequest
     public string? Licence { get; init; }
 
     /// <summary>
-    /// The oldest Sangam version the package runs on Required.
+    /// The oldest Sangam version the entry runs on Required.
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("minPlatform")]
     public string? MinPlatform { get; init; }
 
     /// <summary>
-    /// Required.
+    /// Default package (decision 380 P2) One of: package, connector-template.
+    /// </summary>
+    [global::System.Text.Json.Serialization.JsonPropertyName("kind")]
+    public string? Kind { get; init; }
+
+    /// <summary>
+    /// Kind package: the signed package bundle
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("bundle")]
     public PackageBundle? Bundle { get; init; }
+
+    /// <summary>
+    /// Kind connector-template: {templates: [{id, name, description, appliesTo, fields}]}, ids in the entry's namespace (the entry id, or the entry id and a dot)
+    /// </summary>
+    [global::System.Text.Json.Serialization.JsonPropertyName("templates")]
+    public global::System.Collections.Generic.Dictionary<string, object?>? Templates { get; init; }
 
     [global::System.Text.Json.Serialization.JsonPropertyName("reason")]
     public string? Reason { get; init; }

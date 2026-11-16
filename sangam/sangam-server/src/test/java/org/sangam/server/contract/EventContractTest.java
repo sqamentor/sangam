@@ -106,6 +106,10 @@ class EventContractTest {
             caseStates.add(s.auditEvent());
         }
         written.put("CaseState", caseStates);
+        // decision 380: the hosted catalogue's review events and the connector-template install event
+        written.put("CatalogueHostController", org.sangam.rest.modules.modeller.CatalogueHostController.AUDIT_EVENTS);
+        written.put("ExtensionCatalogueController",
+                List.of(org.sangam.rest.modules.modeller.ExtensionCatalogueController.TEMPLATES_INSTALLED));
 
         for (var e : written.entrySet()) {
             Set<String> notPublished = new TreeSet<>(e.getValue());

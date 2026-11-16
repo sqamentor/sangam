@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +17,10 @@ import org.sangam.modeller.catalogue.CatalogueClient;
 import org.sangam.modeller.catalogue.CatalogueKeys;
 import org.sangam.modeller.catalogue.CatalogueSource;
 import org.sangam.modeller.catalogue.ExtensionCatalogue;
+import org.sangam.modeller.template.CatalogueConnectorTemplates;
+import org.sangam.modeller.template.ElementTemplates;
 import org.sangam.rest.port.ApiProblem;
+import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.port.PackagePort;
 import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.RequestContext;
@@ -49,9 +53,13 @@ import org.springframework.web.bind.annotation.RestController;
  *       Ed25519 public keys an index may be signed with (decision 380 P3). The former literal
  *       {@code sangam.modeller.catalogue.public-key} is refused at start-up.</li>
  *   <li>{@code sangam.modeller.catalogue.allowed-licences}: the licences an install accepts (none: no install passes).</li>
- *   <li>Install: kind {@code package} only; the catalogue checks run first, then {@link PackagePort#importBundle} in the
+ *   <li>Install of kind {@code package} (P2 (a)): the catalogue checks run first, then {@link PackagePort#importBundle} in the
  *       caller's tenant (T70: the bundle's own signatures and hash, PACKAGE_IMPORTED audit; the package lands APPROVED
  *       and activation still needs a deployer and the ENV_BINDING values).</li>
+ *   <li>Install of kind {@code connector-template} (P2 (b)): the same catalogue checks, then the artefact's connector
+ *       element templates ({@link CatalogueConnectorTemplates}) are published in the caller's tenant, each changed one
+ *       as a new version, in one transaction with the {@value #TEMPLATES_INSTALLED} audit event. Code kinds are never
+ *       installed (P2 (c)).</li>
  * </ul>
  * Start-up refuses an inconsistent configuration (both sources, a literal key, a missing or unresolved key reference).
  */
@@ -60,23 +68,44 @@ import org.springframework.web.bind.annotation.RestController;
 public class ExtensionCatalogueController {
 
     static final String P = "sangam.modeller.catalogue.";
+
+    /** Class-B audit event of a connector-template install (SANGAM.md X.4.0.3, Admin group; decision 380 P2 (b)). */
+    public static final String TEMPLATES_INSTALLED = "CATALOGUE_TEMPLATES_INSTALLED";
     private static final ObjectMapper BUNDLES = new ObjectMapper().registerModule(new JavaTimeModule())
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
     private final PackagePort packages;
     private final PermissionPort permissions;
     private final CatalogueClient client;
+    private final ElementTemplates templates;
+    private final AuditPort audit;
 
     @Autowired
     public ExtensionCatalogueController(PackagePort packages, PermissionPort permissions, Environment env,
-                                        ObjectProvider<SecretResolver> secrets) {
-        this(packages, permissions, client(env, secrets.getIfAvailable(SecretResolver::fromEnvironment)));
+                                        ObjectProvider<SecretResolver> secrets, ObjectProvider<ElementTemplates> templates,
+                                        ObjectProvider<AuditPort> audit) {
+        this(packages, permissions, client(env, secrets.getIfAvailable(SecretResolver::fromEnvironment)),
+                templates.getIfAvailable(), audit.getIfAvailable());
     }
 
     ExtensionCatalogueController(PackagePort packages, PermissionPort permissions, CatalogueClient client) {
+        this(packages, permissions, client, null, null);
+    }
+
+    ExtensionCatalogueController(PackagePort packages, PermissionPort permissions, CatalogueClient client,
+                                 ElementTemplates templates, AuditPort audit) {
         this.packages = packages;
         this.permissions = permissions;
         this.client = client;
+        this.templates = templates;
+        this.audit = audit;
+    }
+
+    /** What a connector-template install did: the templates published (id and new version) and those already current. */
+    public record CatalogueTemplatesInstalled(String id, String version, List<CatalogueInstalledTemplate> published, List<String> unchanged) {
+    }
+
+    public record CatalogueInstalledTemplate(String id, int version) {
     }
 
     /** The install request: why the package is installed (kept in the import's audit note). */
@@ -107,6 +136,40 @@ public class ExtensionCatalogueController {
                 + (b == null || b.reason() == null || b.reason().isBlank() ? "" : ": " + b.reason());
         PackagePort.Package p = packages.importBundle(ctx, new PackagePort.PackageImportRequest(bundle, note));
         return Lists.created("/api/v1/packages/" + p.id(), p.id(), p);
+    }
+
+    /**
+     * Decision 380 P2 (b): publishes the connector element templates of entry {@code id}@{@code version} (kind
+     * {@code connector-template}) in the caller's tenant, after the same catalogue checks as a package install. Only
+     * changed templates get a new version, together with one {@value #TEMPLATES_INSTALLED} event in the same
+     * transaction; a repeated install writes nothing.
+     */
+    @PostMapping("/catalogue/{id}/{version}/install-templates")
+    public CatalogueTemplatesInstalled installTemplates(RequestContext ctx, @PathVariable String id, @PathVariable String version,
+                                                        @RequestBody(required = false) CatalogueInstallRequest b) {
+        permissions.require(ctx, Permissions.PACKAGE_AUTHOR);
+        CatalogueClient c = configured();
+        if (templates == null || audit == null) {
+            throw ApiProblem.notInstalled("catalogue connector templates", "the modeller template store and the audit port");
+        }
+        CatalogueClient.Verified v = c.forInstall(id, version, ExtensionCatalogue.KIND_CONNECTOR_TEMPLATE);
+        List<Map<String, Object>> docs = CatalogueConnectorTemplates.read(id, v.artifact());
+        String reason = b == null || b.reason() == null || b.reason().isBlank() ? null : b.reason().strip();
+        CatalogueConnectorTemplates.Installed done = CatalogueConnectorTemplates.install(templates, ctx.tenantId(), ctx.principalId(), docs,
+                published -> {
+                    Map<String, Object> p = new java.util.LinkedHashMap<>();
+                    p.put("entryId", id);
+                    p.put("entryVersion", version);
+                    p.put("publisher", v.entry().publisher());
+                    p.put("sha256", v.entry().sha256());
+                    p.put("templates", published.stream().map(t -> t.id() + "@" + t.version()).toList());
+                    if (reason != null) {
+                        p.put("reason", reason);
+                    }
+                    audit.record(ctx, "catalogue-install:" + id + "@" + version, TEMPLATES_INSTALLED, p);
+                });
+        return new CatalogueTemplatesInstalled(id, version,
+                done.published().stream().map(t -> new CatalogueInstalledTemplate(t.id(), t.version())).toList(), done.unchanged());
     }
 
     /** The problem of a catalogue refusal, for {@link CatalogueProblemAdvice} (both catalogue controllers). */

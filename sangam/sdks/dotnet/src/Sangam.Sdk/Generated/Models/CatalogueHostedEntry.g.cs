@@ -22,7 +22,7 @@ public sealed record CatalogueHostedEntry
     public string? Version { get; init; }
 
     /// <summary>
-    /// One of: package. Required.
+    /// One of: package, connector-template. Required.
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("kind")]
     public string? Kind { get; init; }
@@ -40,7 +40,7 @@ public sealed record CatalogueHostedEntry
     public string? Licence { get; init; }
 
     /// <summary>
-    /// Hex SHA-256 of the exact bundle bytes served at artifactPath Required.
+    /// Hex SHA-256 of the exact artefact bytes served at artifactPath Required.
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("sha256")]
     public string? Sha256 { get; init; }

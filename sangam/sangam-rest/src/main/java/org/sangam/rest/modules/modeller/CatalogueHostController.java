@@ -4,6 +4,7 @@ package org.sangam.rest.modules.modeller;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,11 +17,14 @@ import org.sangam.core.layer.Hashes;
 import org.sangam.integration.connector.SecretResolver;
 import org.sangam.modeller.catalogue.CatalogueIndex;
 import org.sangam.modeller.catalogue.ExtensionCatalogue;
+import org.sangam.modeller.template.CatalogueConnectorTemplates;
 import org.sangam.rest.port.ApiProblem;
+import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.port.PackagePort;
 import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.DocumentStore;
+import org.sangam.rest.support.TxSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.env.Environment;
@@ -38,12 +42,17 @@ import org.springframework.web.bind.annotation.RestController;
  * M-128 / NG-17 step 2, owner decision 380: the hosting side of the platform-wide extension catalogue.
  *
  * <ul>
- *   <li>Submit ({@value #PUBLISH}): a signed package bundle with its catalogue id, version, licence and minimum platform.
- *       Only kind {@code package} is hosted (P2 (a); code jars are never staged). The bundle must pass the package
- *       verification of this environment (T70: its hash recomputes, every artefact matches, it carries valid
- *       signatures); the stored artefact is the exact bundle bytes and the entry's SHA-256 is taken over them.</li>
+ *   <li>Submit ({@value #PUBLISH}): an entry with its catalogue id, version, licence and minimum platform, of kind
+ *       {@code package} (P2 (a)): a signed package bundle that must pass the package verification of this environment
+ *       (T70: its hash recomputes, every artefact matches, it carries valid signatures); or of kind
+ *       {@code connector-template} (P2 (b)): connector element templates, data only, checked by
+ *       {@link CatalogueConnectorTemplates#read}. Code jars are never staged (P2 (c)). The stored artefact is the exact
+ *       bytes served, and the entry's SHA-256 is taken over them.</li>
  *   <li>Approve or reject ({@value #REVIEW}): only a SUBMITTED entry, and never by its publisher (422
  *       SEGREGATION_OF_DUTIES).</li>
+ *   <li>Audit (SANGAM.md X.4.0.3, Admin group): {@value #SUBMITTED_EVENT}, {@value #APPROVED_EVENT} and
+ *       {@value #REJECTED_EVENT}, class B on chain {@code catalogue:<id>@<version>} of the caller's tenant, each in the
+ *       same transaction as the entry change it records, so an entry never changes without its event.</li>
  *   <li>Index, signature and artefacts ({@code GET /catalogue/hosted/...}): the approved entries only, the index signed
  *       with the host's own catalogue key, given as two {@code secret://} references
  *       ({@code sangam.modeller.catalogue.host.signing-key-ref}, PKCS#8, and {@code .host.public-key-ref}, X.509; decision
@@ -63,6 +72,15 @@ public class CatalogueHostController {
     /** Platform-only: approve or reject a submitted entry. */
     public static final String REVIEW = "platform.catalogue.review";
 
+    /** Class-B audit event of a submission (SANGAM.md X.4.0.3). */
+    public static final String SUBMITTED_EVENT = "CATALOGUE_ENTRY_SUBMITTED";
+    /** Class-B audit event of an approval (SANGAM.md X.4.0.3). */
+    public static final String APPROVED_EVENT = "CATALOGUE_ENTRY_APPROVED";
+    /** Class-B audit event of a rejection (SANGAM.md X.4.0.3). */
+    public static final String REJECTED_EVENT = "CATALOGUE_ENTRY_REJECTED";
+    /** Every audit event name this controller writes (the contract test checks each is catalogued). */
+    public static final List<String> AUDIT_EVENTS = List.of(SUBMITTED_EVENT, APPROVED_EVENT, REJECTED_EVENT);
+
     static final String KIND = "catalogue:entry";
     static final String P = ExtensionCatalogueController.P + "host.";
     static final String SUBMITTED = "SUBMITTED";
@@ -77,26 +95,47 @@ public class CatalogueHostController {
     private final PermissionPort permissions;
     private final DocumentStore store;
     private final AuditCheckpoints.Signer signer;
+    private final AuditPort audit;
+    private final TxSupport tx;
 
     @Autowired
     public CatalogueHostController(PackagePort packages, PermissionPort permissions, Environment env,
-                                   ObjectProvider<DocumentStore> store, ObjectProvider<SecretResolver> secrets) {
-        this(packages, permissions, store.getIfAvailable(), signer(env, secrets.getIfAvailable(SecretResolver::fromEnvironment)));
+                                   ObjectProvider<DocumentStore> store, ObjectProvider<SecretResolver> secrets,
+                                   ObjectProvider<AuditPort> audit, ObjectProvider<TxSupport> tx) {
+        this(packages, permissions, store.getIfAvailable(), signer(env, secrets.getIfAvailable(SecretResolver::fromEnvironment)),
+                audit.getIfAvailable(), tx.getIfAvailable());
     }
 
-    CatalogueHostController(PackagePort packages, PermissionPort permissions, DocumentStore store, AuditCheckpoints.Signer signer) {
+    CatalogueHostController(PackagePort packages, PermissionPort permissions, DocumentStore store, AuditCheckpoints.Signer signer,
+                            AuditPort audit, TxSupport tx) {
         if (signer != null && store == null) {
             throw new IllegalStateException(P + "enabled=true needs the document store (REST_DOCUMENT)");
+        }
+        if (signer != null && (audit == null || tx == null)) {
+            throw new IllegalStateException(P + "enabled=true needs the audit port and the transaction support: every "
+                    + "submission and review is audited in its own transaction (SANGAM.md X.4.0.3)");
         }
         this.packages = packages;
         this.permissions = permissions;
         this.store = store;
         this.signer = signer;
+        this.audit = audit;
+        this.tx = tx;
     }
 
-    /** A submission: the catalogue fields and the signed package bundle. */
+    /**
+     * A submission: the catalogue fields and the artefact, by kind (default {@code package}): {@code bundle}, a signed
+     * package bundle, for kind {@code package}; {@code templates}, a connector-template document
+     * ({@code {"templates": [...]}}), for kind {@code connector-template}. Exactly the one of the kind is given.
+     */
     public record CatalogueSubmissionRequest(String id, String version, String licence, String minPlatform,
-                                             PackagePort.PackageBundle bundle, String reason) {
+                                             PackagePort.PackageBundle bundle, String reason, String kind,
+                                             Map<String, Object> templates) {
+
+        public CatalogueSubmissionRequest(String id, String version, String licence, String minPlatform,
+                                          PackagePort.PackageBundle bundle, String reason) {
+            this(id, version, licence, minPlatform, bundle, reason, null, null);
+        }
     }
 
     public record CatalogueReviewRequest(String reason) {
@@ -109,22 +148,57 @@ public class CatalogueHostController {
                                        java.time.Instant submittedAt, java.time.Instant updatedAt) {
     }
 
-    /** The stored body; {@code artifact} is the base64 of the exact bundle bytes. */
+    /**
+     * The stored body; {@code artifact} is the base64 of the exact artefact bytes. {@code kind} is null on entries
+     * stored before kinds were hosted, which are packages.
+     */
     public record Stored(String id, String version, String publisher, String licence, String sha256, String minPlatform,
-                  String artifact, String submittedBy, String reviewedBy, String reason, String reviewReason) {
+                  String artifact, String submittedBy, String reviewedBy, String reason, String reviewReason, String kind) {
+
+        String kindOrPackage() {
+            return kind == null ? ExtensionCatalogue.KIND_PACKAGE : kind;
+        }
     }
 
     @PostMapping("/catalogue/entries")
     public ResponseEntity<CatalogueHostedEntry> submit(RequestContext ctx, @RequestBody CatalogueSubmissionRequest b) {
         permissions.require(ctx, PUBLISH);
         host();
-        if (b == null || b.bundle() == null) {
+        if (b == null) {
             throw ApiProblem.badRequest("CATALOGUE_BUNDLE_REQUIRED", "bundle is required");
+        }
+        String kind = b.kind() == null || b.kind().isBlank() ? ExtensionCatalogue.KIND_PACKAGE : b.kind().strip();
+        if (!ExtensionCatalogue.INSTALLABLE_KINDS.contains(kind)) {
+            throw ApiProblem.unprocessable("CATALOGUE_KIND_NOT_INSTALLABLE", "kind " + kind
+                    + " is never hosted; hosted kinds are " + new java.util.TreeSet<>(ExtensionCatalogue.INSTALLABLE_KINDS));
         }
         String id = CatalogueIndex.token(b.id(), "id");
         String version = CatalogueIndex.token(b.version(), "version");
         String licence = required(b.licence(), "licence");
         String minPlatform = required(b.minPlatform(), "minPlatform");
+        byte[] artifact = ExtensionCatalogue.KIND_PACKAGE.equals(kind) ? packageArtifact(ctx, b) : templatesArtifact(id, b);
+        String key = id + "@" + version;
+        Stored s = new Stored(id, version, ctx.tenantId() + "/" + ctx.principalId(), licence,
+                Hashes.hex(Hashes.sha256(artifact)), minPlatform, Base64.getEncoder().encodeToString(artifact),
+                ctx.principalId(), null, blankToNull(b.reason()), null, kind);
+        DocumentStore.Doc d = tx.inTx(() -> {
+            if (store.get(DocumentStore.GLOBAL, KIND, docId(key)).isPresent()) {
+                throw ApiProblem.conflict("CATALOGUE_ENTRY_EXISTS", key + " is already in the catalogue; publish a new version");
+            }
+            // the document id is derived from id@version, so a concurrent second submission hits the primary key (409)
+            DocumentStore.Doc inserted = store.insert(DocumentStore.GLOBAL, KIND, docId(key), key, SUBMITTED, ctx.principalId(),
+                    ctx.tenantId(), s, ctx.principalId());
+            record(ctx, SUBMITTED_EVENT, s, SUBMITTED, s.reason());
+            return inserted;
+        });
+        return org.sangam.rest.web.Lists.created("/api/v1/catalogue/entries?state=" + SUBMITTED, key, view(d));
+    }
+
+    /** The exact bytes of a verified package bundle (kind package). */
+    private byte[] packageArtifact(RequestContext ctx, CatalogueSubmissionRequest b) {
+        if (b.bundle() == null || b.templates() != null) {
+            throw ApiProblem.badRequest("CATALOGUE_BUNDLE_REQUIRED", "kind package needs bundle and no templates");
+        }
         PackagePort.PackageVerification v = packages.verify(ctx, b.bundle());
         List<String> refused = new ArrayList<>();
         if (!v.hashMatches()) {
@@ -140,23 +214,26 @@ public class CatalogueHostController {
         if (!refused.isEmpty()) {
             throw ApiProblem.unprocessable("CATALOGUE_BUNDLE_UNVERIFIED", String.join("; ", refused));
         }
-        byte[] artifact;
         try {
-            artifact = BUNDLES.writeValueAsBytes(b.bundle());
+            return BUNDLES.writeValueAsBytes(b.bundle());
         } catch (JsonProcessingException e) {
             throw ApiProblem.unprocessable("CATALOGUE_ARTIFACT_INVALID", "the bundle cannot be written");
         }
-        String key = id + "@" + version;
-        if (store.get(DocumentStore.GLOBAL, KIND, docId(key)).isPresent()) {
-            throw ApiProblem.conflict("CATALOGUE_ENTRY_EXISTS", key + " is already in the catalogue; publish a new version");
+    }
+
+    /** The exact bytes of a checked connector-template document (kind connector-template, decision 380 P2 (b)). */
+    private static byte[] templatesArtifact(String id, CatalogueSubmissionRequest b) {
+        if (b.templates() == null || b.bundle() != null) {
+            throw ApiProblem.badRequest("CATALOGUE_TEMPLATES_REQUIRED", "kind connector-template needs templates and no bundle");
         }
-        Stored s = new Stored(id, version, ctx.tenantId() + "/" + ctx.principalId(), licence,
-                Hashes.hex(Hashes.sha256(artifact)), minPlatform, Base64.getEncoder().encodeToString(artifact),
-                ctx.principalId(), null, blankToNull(b.reason()), null);
-        // the document id is derived from id@version, so a concurrent second submission hits the primary key (409)
-        DocumentStore.Doc d = store.insert(DocumentStore.GLOBAL, KIND, docId(key), key, SUBMITTED, ctx.principalId(), ctx.tenantId(),
-                s, ctx.principalId());
-        return org.sangam.rest.web.Lists.created("/api/v1/catalogue/entries?state=" + SUBMITTED, key, view(d));
+        byte[] artifact;
+        try {
+            artifact = BUNDLES.writeValueAsBytes(b.templates());
+        } catch (JsonProcessingException e) {
+            throw ApiProblem.unprocessable("CATALOGUE_ARTIFACT_INVALID", "the templates cannot be written");
+        }
+        CatalogueConnectorTemplates.read(id, artifact);
+        return artifact;
     }
 
     @GetMapping("/catalogue/entries")
@@ -198,8 +275,34 @@ public class CatalogueHostController {
             throw ApiProblem.unprocessable("SEGREGATION_OF_DUTIES", "the reviewer of a catalogue entry must differ from its publisher");
         }
         Stored next = new Stored(s.id(), s.version(), s.publisher(), s.licence(), s.sha256(), s.minPlatform(), s.artifact(),
-                s.submittedBy(), ctx.principalId(), s.reason(), b == null ? null : blankToNull(b.reason()));
-        return view(store.update(DocumentStore.GLOBAL, KIND, d.id(), d.revision(), key, to, d.ownerId(), d.refId(), next));
+                s.submittedBy(), ctx.principalId(), s.reason(), b == null ? null : blankToNull(b.reason()), s.kind());
+        // the update is fenced by the read revision, so of two concurrent reviews one fails and writes no event
+        return view(tx.inTx(() -> {
+            DocumentStore.Doc updated = store.update(DocumentStore.GLOBAL, KIND, d.id(), d.revision(), key, to, d.ownerId(), d.refId(), next);
+            record(ctx, APPROVED.equals(to) ? APPROVED_EVENT : REJECTED_EVENT, next, to, next.reviewReason());
+            return updated;
+        }));
+    }
+
+    /** One class-B event on {@code catalogue:<id>@<version>}, in the caller's transaction. */
+    private void record(RequestContext ctx, String event, Stored s, String state, String reason) {
+        Map<String, Object> p = new java.util.LinkedHashMap<>();
+        p.put("entryId", s.id());
+        p.put("entryVersion", s.version());
+        p.put("kind", s.kindOrPackage());
+        p.put("publisher", s.publisher());
+        p.put("licence", s.licence());
+        p.put("minPlatform", s.minPlatform());
+        p.put("sha256", s.sha256());
+        p.put("state", state);
+        p.put("submittedBy", s.submittedBy());
+        if (s.reviewedBy() != null) {
+            p.put("reviewedBy", s.reviewedBy());
+        }
+        if (reason != null) {
+            p.put("reason", reason);
+        }
+        audit.record(ctx, "catalogue:" + s.id() + "@" + s.version(), event, p);
     }
 
     /** The signed index of the approved entries (the hosted catalogue a consumer reads). */
@@ -229,7 +332,7 @@ public class CatalogueHostController {
         host();
         List<ExtensionCatalogue.Entry> approved = store.all(DocumentStore.GLOBAL, KIND, DocumentStore.Filter.state(APPROVED)).stream()
                 .map(d -> d.as(Stored.class))
-                .map(s -> new ExtensionCatalogue.Entry(s.id(), s.version(), ExtensionCatalogue.KIND_PACKAGE, s.publisher(), s.licence(),
+                .map(s -> new ExtensionCatalogue.Entry(s.id(), s.version(), s.kindOrPackage(), s.publisher(), s.licence(),
                         s.sha256(), s.minPlatform(), CatalogueIndex.artifactPath(s.id(), s.version())))
                 .toList();
         return CatalogueIndex.write(approved);
@@ -248,7 +351,7 @@ public class CatalogueHostController {
 
     static CatalogueHostedEntry view(DocumentStore.Doc d) {
         Stored s = d.as(Stored.class);
-        return new CatalogueHostedEntry(s.id(), s.version(), ExtensionCatalogue.KIND_PACKAGE, s.publisher(), s.licence(), s.sha256(),
+        return new CatalogueHostedEntry(s.id(), s.version(), s.kindOrPackage(), s.publisher(), s.licence(), s.sha256(),
                 s.minPlatform(), CatalogueIndex.artifactPath(s.id(), s.version()), d.state(), s.submittedBy(), s.reviewedBy(),
                 s.reason(), s.reviewReason(), d.createdAt(), d.updatedAt());
     }

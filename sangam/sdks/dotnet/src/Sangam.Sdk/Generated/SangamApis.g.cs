@@ -6,7 +6,7 @@ namespace Sangam.Sdk.Generated;
 using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 /// <summary>
-/// The generated typed surface of sangam-api.yaml 0.1.0: 1172 operations on 987 paths, one property per API class (a tag, or a sub-path of a large tag). Use SangamClient.Api.
+/// The generated typed surface of sangam-api.yaml 0.1.0: 1173 operations on 988 paths, one property per API class (a tag, or a sub-path of a large tag). Use SangamClient.Api.
 /// </summary>
 public sealed class SangamApis
 {

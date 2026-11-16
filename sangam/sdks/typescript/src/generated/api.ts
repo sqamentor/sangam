@@ -6903,7 +6903,7 @@ export class MeApi {
   }
 }
 
-/** Typed operations of `Modeller` (36 operations). */
+/** Typed operations of `Modeller` (37 operations). */
 export class ModellerApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -6933,9 +6933,22 @@ export class ModellerApi {
   }
 
   /**
+   * Install the connector templates of a catalogue entry
+   *
+   * Decision 380 P2 (b): publishes the connector element templates of a kind connector-template entry in the caller's tenant after the same catalogue checks as a package install (index signature, licence allow-list, platform version, artefact SHA-256). The artefact is data only ({templates: [{id, name, description, appliesTo, fields}]}, the format of the built-in connector templates); every template id is the entry id or starts with it and a dot, so an entry never replaces a built-in or another entry's template, and no field may be named like a credential. Only changed templates get a new version, with one CATALOGUE_TEMPLATES_INSTALLED audit event in the same transaction; a repeated install writes nothing. 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds), CATALOGUE_KIND_MISMATCH (a package entry), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_EGRESS_DENIED; 501 when the modeller template store is not installed.
+   *
+   * `POST /catalogue/{id}/{version}/install-templates` (operationId `installCatalogueTemplates`); permission `package.author`; result stored atomically with the state change.
+   */
+  async installCatalogueTemplates(id: string, version: string, body?: M.CatalogueInstallRequest, options?: RequestOptions): Promise<M.CatalogueTemplatesInstalled> {
+    const req: ApiRequest = { method: 'POST', path: `/catalogue/${seg(String(id))}/${seg(String(version))}/install-templates` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.CatalogueTemplatesInstalled>(req, options);
+  }
+
+  /**
    * Submit a catalogue entry
    *
-   * Submits a signed package bundle to the platform-wide catalogue (decision 380 P4 (i)); kind package only, code jars are never staged. The bundle must pass this environment's package verification (hash recomputes, artefacts match, valid signatures), else 422 CATALOGUE_BUNDLE_UNVERIFIED; the entry's SHA-256 is taken over the stored bundle bytes. 422 CATALOGUE_ENTRY_ID_INVALID; 409 CATALOGUE_ENTRY_EXISTS (a version is never replaced). The entry is SUBMITTED until another person approves it. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+   * Submits an entry to the platform-wide catalogue (decision 380 P4 (i)): kind package, a signed package bundle that must pass this environment's package verification (hash recomputes, artefacts match, valid signatures), else 422 CATALOGUE_BUNDLE_UNVERIFIED; or kind connector-template, data-only connector element templates in the entry's namespace, else 422 CATALOGUE_ARTIFACT_INVALID (P2 (b)). Code jars are never staged (422 CATALOGUE_KIND_NOT_INSTALLABLE). The entry's SHA-256 is taken over the stored artefact bytes. 400 CATALOGUE_BUNDLE_REQUIRED or CATALOGUE_TEMPLATES_REQUIRED; 422 CATALOGUE_ENTRY_ID_INVALID; 409 CATALOGUE_ENTRY_EXISTS (a version is never replaced). The entry is SUBMITTED until another person approves it. Audited CATALOGUE_ENTRY_SUBMITTED in the same transaction. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
    *
    * `POST /catalogue/entries` (operationId `submitCatalogueEntry`); permission `platform.catalogue.publish`; result stored atomically with the state change.
    */
@@ -6960,7 +6973,7 @@ export class ModellerApi {
   /**
    * Approve a catalogue entry
    *
-   * Adds a SUBMITTED entry to the signed hosted index. The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+   * Adds a SUBMITTED entry to the signed hosted index; audited CATALOGUE_ENTRY_APPROVED in the same transaction. The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
    *
    * `POST /catalogue/entries/{id}/{version}/approve` (operationId `approveCatalogueEntry`); permission `platform.catalogue.review`; result stored atomically with the state change.
    */
@@ -6973,7 +6986,7 @@ export class ModellerApi {
   /**
    * Reject a catalogue entry
    *
-   * Rejects a SUBMITTED entry; reason is required (400 REASON_REQUIRED). The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+   * Rejects a SUBMITTED entry; reason is required (400 REASON_REQUIRED); audited CATALOGUE_ENTRY_REJECTED in the same transaction. The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
    *
    * `POST /catalogue/entries/{id}/{version}/reject` (operationId `rejectCatalogueEntry`); permission `platform.catalogue.review`; result stored atomically with the state change.
    */
@@ -7010,7 +7023,7 @@ export class ModellerApi {
   /**
    * Hosted catalogue artefact
    *
-   * The exact bundle bytes of an approved entry (404 for any other state). Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+   * The exact artefact bytes of an approved entry (404 for any other state). Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
    *
    * `GET /catalogue/hosted/artifacts/{id}/{version}` (operationId `getHostedCatalogueArtifact`).
    */
@@ -15156,7 +15169,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1172 operations on 987 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1173 operations on 988 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;
