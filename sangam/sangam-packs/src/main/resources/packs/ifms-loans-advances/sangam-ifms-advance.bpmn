@@ -21,7 +21,7 @@
     <exclusiveGateway id="av_sanGw" name="sanctionOutcome?" default="ifms_advance_f10"></exclusiveGateway>
     <endEvent id="av_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <exclusiveGateway id="av_sanctionPrepareGw" name="Document to sign?" default="ifms_advance_f21"></exclusiveGateway>
-    <userTask id="av_sanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:ifms-loans-advances/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="av_sanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:ifms-loans-advances/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.DocumentSlotReadyListener"><operaton:field name="slots"><operaton:string>sanctionDocumentId:SANCTION_NOTE</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <sequenceFlow id="ifms_advance_f1" sourceRef="av_rj_reject" targetRef="av_rj_endRejected"/>
     <sequenceFlow id="ifms_advance_f2" sourceRef="av_start" targetRef="av_defaults"/>
     <sequenceFlow id="ifms_advance_f3" sourceRef="av_defaults" targetRef="av_rules"/>

@@ -15,7 +15,7 @@ P = 'org.sangam.packs.core.'
 C = dict(
     LIFE=P + 'LifecycleStateDelegate', START=P + 'PackStartListener', ACTOR=P + 'ActorRecorderListener',
     SOD=P + 'SodGuardListener', POWER=P + 'PowerLimitGuardListener', BIND=P + 'ApprovalBindingListener',
-    DSC=P + 'DscSignatureGuardListener',
+    DSC=P + 'DscSignatureGuardListener', SLOT_READY=P + 'DocumentSlotReadyListener',
     REC=P + 'RecommendationLevelDelegate', SLA=P + 'SlaDelegate', OP=P + 'ExternalOperationDelegate',
     CALL=P + 'ConnectorCallDelegate', DEC=P + 'DecisionDelegate', DOC=P + 'DocumentDelegate',
     SIGN=P + 'SignatureDelegate', CASE=P + 'CaseRecordDelegate', SEAT=P + 'SeatResolutionDelegate',

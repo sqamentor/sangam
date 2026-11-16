@@ -229,12 +229,13 @@ public class PacksWiring {
     /**
      * Owner decision 385 (2), layer 1: the DSC completion gate asks whether the document route
      * ({@link org.sangam.server.bridge.OperatonDocumentSlots}) bound the slot's document to this case, read from the
-     * route's own audit events ({@link org.sangam.server.bridge.AuditDocumentSlotBindings}). Without an engine there is
+     * route's own audit events ({@link org.sangam.server.bridge.AuditDocumentSlotBindings}); a gate that signs consumes
+     * the binding on the same audit chain (decision 390). Without an engine there is
      * no route, so nothing is bound and every slot is empty (fail closed).
      */
     static PackRuntime.Ports withDocumentRoute(PackRuntime.Ports ports, ProcessEngine engine, TxSupport tx) {
         return ports.withSlotBindings(engine == null ? org.sangam.packs.port.DocumentSlotBindings.NONE
-                : new org.sangam.server.bridge.AuditDocumentSlotBindings(tx));
+                : new org.sangam.server.bridge.AuditDocumentSlotBindings(tx, new AuditChain(tx.dialect())));
     }
 
     /**

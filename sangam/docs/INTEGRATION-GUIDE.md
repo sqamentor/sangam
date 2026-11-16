@@ -270,6 +270,7 @@ Worker credentials are a service-principal API token, or the Keycloak client `sa
 - Only the document route fills a slot, on an open user task of the case (decisions 267, 268 and 385 (2)).
 - So a gate process is started by a call from a pack process, with `in variables="all"`. Where no user task of the caller comes before the call, packgen puts a prepare task there; its form requires the slot (`sangam-packs/tools/packgen/prepare.py`).
 - A gate process started directly, with no caller, has no user task before its gate. Its slot stays empty, and the signature is refused with `422 DSC_SIGNATURE_NOT_VERIFIED`. Start the pack process that calls it instead.
+- A gate that signs consumes its slot for its gate instance (decision 390): the audit event `DOCUMENT_SLOT_CONSUMED` goes on the chain where the route bound the slot. The other levels of the same gate instance still sign that document. A gate reached again (a return and resubmission, or another call) needs the document uploaded again, as a new document or a new version. The prepare task refuses a slot that was already signed, is empty, or was not bound by the route, with `422 DOCUMENT_SLOT_NOT_READY`.
 
 **Deployment**
 - `PackDeployer.deployAll(tenantId)` makes one engine deployment per pack (`pack:<id>@<version>`).

@@ -25,7 +25,7 @@
     <serviceTask id="db_report" name="Batch report" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>dbt-batch-report</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="db_end" name="Batch closed"></endEvent>
     <exclusiveGateway id="db_sanctionPrepareGw" name="Document to sign?" default="dbt_batch_f25"></exclusiveGateway>
-    <userTask id="db_sanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:dbt-batch/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="db_sanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:dbt-batch/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.DocumentSlotReadyListener"><operaton:field name="slots"><operaton:string>sanctionDocumentId:SANCTION_NOTE</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <sequenceFlow id="dbt_batch_f1" sourceRef="db_start" targetRef="db_defaults"/>
     <sequenceFlow id="dbt_batch_f2" sourceRef="db_defaults" targetRef="db_load"/>
     <sequenceFlow id="dbt_batch_f3" sourceRef="db_load" targetRef="db_sanctionPrepareGw"/>

@@ -23,6 +23,10 @@ until the officer has uploaded the document of each slot through the document ro
 A Sangam form is read from the deployment of the task's process (TaskFormRequirements), so the form is written into
 each calling pack, under that pack's form key prefix like every pack form, from this single definition.
 
+Decisions 387 (9) and 390: a gate that signs consumes the slot's binding for its gate instance, and every prepare task
+completes only over a slot whose document the route bound and no gate instance consumed (slot_ready(),
+DocumentSlotReadyListener, 422 DOCUMENT_SLOT_NOT_READY), so a return loop or a second call uploads the document again.
+
 A call activity whose callee reaches a gated process only through calls of its own (gem-purchase gm_bid into the
 tender, for example) needs nothing from its caller: the callee's own calls into the gate follow the same rule, so the
 slot is filled on the callee's instance. Pairs a pack declares for the document route therefore follow in-all calls
@@ -140,6 +144,14 @@ def form(form_dir, gates):
     return form_dir + '/' + name, [s + '*' for s in slots]
 
 
+def slot_ready(gates):
+    """Decision 390: the complete listener of a prepare task: each called gate's slot must hold a document the route
+    bound and no gate instance consumed yet (DocumentSlotReadyListener), so a slot left from an earlier round is
+    uploaded again before the call."""
+    pairs = ','.join(sorted({f'{g["slot"]}:{g["type"]}' for g in gates}))
+    return tlistener('complete', C['SLOT_READY'], {'slots': pairs})
+
+
 def apply(all_procs, prepare_seats_of, form_dir_of):
     """Inserts the prepare tasks, refuses a gate call without in-all, then checks precedence; returns the inserted
     prepare task ids by process id. prepare_seats_of(proc) -> {call activity id: seat expression}; form_dir_of(proc)
@@ -190,7 +202,7 @@ def _insert(scope, call_id, seat, when, gates, form_dir):
     if when:
         scope.xgw(gw_id, 'Document to sign?')
     key, fields = form(form_dir, gates)
-    task = scope.user(task_id, PREPARE_NAME, seat, form=key, fields=fields,
+    task = scope.user(task_id, PREPARE_NAME, seat, form=key, fields=fields, listeners=[slot_ready(gates)],
                       doc=f'Upload the {types} the next step signs with DSC (decisions 267, 382 and 385).')
     if when:
         scope.flow(gw_id, task, when, 'DSC signature needed')

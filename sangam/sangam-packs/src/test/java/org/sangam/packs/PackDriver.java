@@ -77,6 +77,8 @@ final class PackDriver {
             org.sangam.packs.port.DocumentSlotBindings {
         private final java.util.Set<String> signed = java.util.concurrent.ConcurrentHashMap.newKeySet();
         private final java.util.Set<String> bound = java.util.concurrent.ConcurrentHashMap.newKeySet();
+        /** Decision 390: binding key to the gate instances that signed it (consumed it). */
+        private final Map<String, java.util.Set<String>> consumedBy = new java.util.concurrent.ConcurrentHashMap<>();
 
         /** Every slot any pack declares (decision 269), the slots the document route fills. */
         private static final List<String> SLOTS = org.sangam.packs.spi.PackRegistry.discover().all().stream()
@@ -93,13 +95,17 @@ final class PackDriver {
 
         /**
          * The officer at user task {@code t} uploads the document of every declared slot still empty on its instance,
-         * through the (simulated) document route: the slot is set on the instance and the route's binding recorded.
+         * or holding a document a gate instance other than this task's instance has already signed (decision 390: a
+         * return loop or a second call needs the document again), through the (simulated) document route: the slot is
+         * set on the instance and the route's binding recorded.
          */
         void upload(ProcessEngine engine, Task t) {
             install();
             var runtime = engine.getRuntimeService();
             for (String slot : SLOTS) {
-                if (runtime.getVariable(t.getProcessInstanceId(), slot) == null) {
+                Object held = runtime.getVariable(t.getProcessInstanceId(), slot);
+                if (held == null || consumedElsewhere(t.getTenantId() + "|" + slot + "|" + held,
+                        t.getProcessInstanceId())) {
                     String documentId = "sim-doc-" + slot + "-" + t.getId();
                     bound.add(t.getTenantId() + "|" + slot + "|" + documentId);
                     runtime.setVariable(t.getProcessInstanceId(), slot, documentId);
@@ -122,10 +128,25 @@ final class PackDriver {
             return signed.contains(tenantId + "|" + taskId + "|" + documentId + "|" + principal);
         }
 
+        private boolean consumedElsewhere(String key, String gateInstance) {
+            return consumedBy.getOrDefault(key, java.util.Set.of()).stream().anyMatch(g -> !g.equals(gateInstance));
+        }
+
         @Override
         public boolean isBound(String tenantId, List<String> processInstances, String slot, String documentType,
                                String documentId) {
-            return bound.contains(tenantId + "|" + slot + "|" + documentId);
+            String key = tenantId + "|" + slot + "|" + documentId;
+            return bound.contains(key) && !consumedElsewhere(key, processInstances.get(0));
+        }
+
+        @Override
+        public void consume(String tenantId, List<String> processInstances, String slot, String documentType,
+                            String documentId, String taskId) {
+            if (!isBound(tenantId, processInstances, slot, documentType, documentId)) {
+                throw new IllegalStateException("not bound for this gate instance: " + slot + " " + documentId);
+            }
+            consumedBy.computeIfAbsent(tenantId + "|" + slot + "|" + documentId,
+                    k -> java.util.concurrent.ConcurrentHashMap.newKeySet()).add(processInstances.get(0));
         }
     }
 

@@ -108,12 +108,25 @@ class DscSignatureGuardListenerTest {
 
     /** Decision 385 (2): the route bound {@link #ROUTE_BOUND} into this slot, with this type, in this tenant. */
     DocumentSlotBindings routeBound() {
-        return (tenant, processInstance, slot, type, document) -> {
-            bindingsAsked.add(tenant + "|" + processInstance + "|" + slot + "|" + type + "|" + document);
-            return TENANT.equals(tenant) && SLOT.equals(slot) && "SANCTION_NOTE".equals(type)
-                    && ROUTE_BOUND.contains(document);
+        return new DocumentSlotBindings() {
+            @Override
+            public boolean isBound(String tenant, List<String> processInstance, String slot, String type,
+                                   String document) {
+                bindingsAsked.add(tenant + "|" + processInstance + "|" + slot + "|" + type + "|" + document);
+                return TENANT.equals(tenant) && SLOT.equals(slot) && "SANCTION_NOTE".equals(type)
+                        && ROUTE_BOUND.contains(document);
+            }
+
+            @Override
+            public void consume(String tenant, List<String> processInstance, String slot, String type, String document,
+                                String taskId) {
+                consumed.add(tenant + "|" + processInstance + "|" + slot + "|" + type + "|" + document + "|" + taskId);
+            }
         };
     }
+
+    /** Decision 390: the consumptions the listener recorded through the port. */
+    final List<String> consumed = new ArrayList<>();
 
     @AfterEach
     void resetPorts() {
@@ -390,8 +403,16 @@ class DscSignatureGuardListenerTest {
 
     @Test
     void decision385AFailingBindingCheckIsAnEmptySlot() {
-        PackRuntime.install(PackRuntime.ports().withSlotBindings((tenant, pi, slot, type, doc) -> {
-            throw new IllegalStateException("audit store down");
+        PackRuntime.install(PackRuntime.ports().withSlotBindings(new DocumentSlotBindings() {
+            @Override
+            public boolean isBound(String tenant, List<String> pi, String slot, String type, String doc) {
+                throw new IllegalStateException("audit store down");
+            }
+
+            @Override
+            public void consume(String tenant, List<String> pi, String slot, String type, String doc, String task) {
+                throw new IllegalStateException("audit store down");
+            }
         }));
         Task task = start(true, "dsc", "doc-1");
         verifiedOnly(task.getId(), "doc-1", SIGNER);
@@ -420,6 +441,47 @@ class DscSignatureGuardListenerTest {
         complete(task, "approve", "doc-1");
         assertFalse(open(task));
         assertEquals(2, bindingsAsked.size(), () -> "create and complete: " + bindingsAsked);
+    }
+
+    @Test
+    void decision390AVerifiedSignatureConsumesTheBindingForThisGateInstance() {
+        Task task = start(true, "dsc", "doc-1");
+        verifiedOnly(task.getId(), "doc-1", SIGNER);
+        complete(task, "approve", "doc-1");
+        assertFalse(open(task));
+        assertEquals(List.of(TENANT + "|" + List.of(task.getProcessInstanceId()) + "|" + SLOT + "|SANCTION_NOTE|doc-1|"
+                + task.getId()), consumed, "this gate instance first, the slot, the type, the document, the task");
+    }
+
+    @Test
+    void decision390ARefusedOrUnsignedCompletionConsumesNothing() {
+        Task refused = start(true, "dsc", "doc-1");
+        verifiedOnly("another-task", "doc-1", SIGNER);
+        assertRefused(refused, "approve", null);
+        Task unsigned = start(true, "dsc", "doc-1");
+        complete(unsigned, "return", null);
+        assertFalse(open(unsigned), "a step that signs nothing completes");
+        assertTrue(consumed.isEmpty(), () -> "only a verified signature consumes: " + consumed);
+    }
+
+    @Test
+    void decision390AConsumptionThatCannotBeRecordedRefusesTheCompletion() {
+        PackRuntime.install(PackRuntime.ports().withSlotBindings(new DocumentSlotBindings() {
+            @Override
+            public boolean isBound(String tenant, List<String> pi, String slot, String type, String doc) {
+                return ROUTE_BOUND.contains(doc);
+            }
+
+            @Override
+            public void consume(String tenant, List<String> pi, String slot, String type, String doc, String task) {
+                throw new IllegalStateException("audit store down");
+            }
+        }));
+        Task task = start(true, "dsc", "doc-1");
+        verifiedOnly(task.getId(), "doc-1", SIGNER);
+        assertThrows(RuntimeException.class, () -> complete(task, "approve", "doc-1"));
+        assertTrue(open(task), "the completion rolled back");
+        assertNull(var(task, DscSignatureGuardListener.EVIDENCE_TASK), "no evidence written");
     }
 
     @Test
