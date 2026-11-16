@@ -40,7 +40,7 @@ import org.eclipse.jgit.transport.URIish;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
-import org.sangam.core.engine.LockScope;
+import org.sangam.engine.tx.LockScope;
 import org.sangam.integration.connector.EgressPolicy;
 import org.sangam.integration.connector.SecretResolver;
 import org.slf4j.Logger;

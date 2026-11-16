@@ -14,7 +14,6 @@ import org.operaton.bpm.engine.impl.context.Context;
 import org.operaton.bpm.engine.impl.db.sql.DbSqlSession;
 import org.operaton.bpm.engine.impl.interceptor.CommandContext;
 import org.operaton.bpm.engine.impl.interceptor.Session;
-import org.sangam.core.engine.LockScope;
 import org.sangam.engine.db.EngineDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

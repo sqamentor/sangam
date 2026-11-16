@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.sangam.core.engine.LockScope;
+import org.sangam.engine.tx.LockScope;
 import org.sangam.integration.sim.SimHttpServer;
 
 /** SANGAM.md VI.1 rule 5, owner decision 86: no outbound HTTP call while an L2 root lock is held. */

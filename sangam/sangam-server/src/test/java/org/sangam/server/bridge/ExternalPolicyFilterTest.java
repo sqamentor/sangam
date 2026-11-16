@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.junit.jupiter.api.Test;
-import org.sangam.core.engine.LockScope;
+import org.sangam.engine.tx.LockScope;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.port.IdempotencyPort;
