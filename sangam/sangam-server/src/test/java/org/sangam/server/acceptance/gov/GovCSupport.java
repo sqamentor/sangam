@@ -119,7 +119,7 @@ abstract class GovCSupport extends EngineScenarioSupport {
             }
             res.put(n, out.getBytes(StandardCharsets.UTF_8));
         }
-        deployments.add(adapter.deploy(null, "govc-" + String.join("+", models) + "-" + RUN, res));
+        deployments.add(adapter.deploy(SCENARIO_TENANT, "govc-" + String.join("+", models) + "-" + RUN, res));
     }
 
     private static String callIo(List<String> in, List<String> out, boolean businessKey) {
@@ -363,7 +363,7 @@ abstract class GovCSupport extends EngineScenarioSupport {
         Map<String, Object> v = new LinkedHashMap<>(vars);
         v.put("linkRefId", refId);
         v.put("linkRefType", refType);
-        return adapter.startProcess(null, processKey, businessKey, v);
+        return adapter.startProcess(SCENARIO_TENANT, processKey, businessKey, v);
     }
 
     protected List<String> linkedInstances(String refId, String refType) {

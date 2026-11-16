@@ -65,7 +65,7 @@ class E8DstTimerIT extends EngineScenarioSupport {
 
     @BeforeAll
     void deploy() {
-        adapter.deploy(null, "e8-" + RUN, Map.of("e8-cycle.bpmn", MODEL.getBytes(StandardCharsets.UTF_8)));
+        adapter.deploy(SCENARIO_TENANT, "e8-" + RUN, Map.of("e8-cycle.bpmn", MODEL.getBytes(StandardCharsets.UTF_8)));
     }
 
     private void window(String id, String zone, Instant start, int hours, Duration step) {
@@ -74,7 +74,7 @@ class E8DstTimerIT extends EngineScenarioSupport {
         scenario("E8-" + id + "-step" + step.toMinutes() + "m", ctx -> {
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mmXXX").withZone(ZoneId.of(zone));
             clock(start);
-            String pid = adapter.startProcess(null, "e8-cycle", key("e8-" + id), Map.of());
+            String pid = adapter.startProcess(SCENARIO_TENANT, "e8-cycle", key("e8-" + id), Map.of());
             Instant end = start.plus(Duration.ofHours(hours));
             List<String> fires = new ArrayList<>();
             int count = 0;

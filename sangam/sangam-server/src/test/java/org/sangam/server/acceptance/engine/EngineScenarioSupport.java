@@ -47,6 +47,14 @@ public abstract class EngineScenarioSupport extends AbstractAcceptanceIT {
     /** Per-JVM run suffix for business keys and deployment names. */
     protected static final String RUN = UUID.randomUUID().toString().substring(0, 8);
 
+    /**
+     * The engine tenant every scenario deploys, starts and correlates under. Decisions 144 and 197: tenant-owned work is
+     * the product rule, and work without an engine tenant runs only for a registered shared deployment, otherwise its
+     * jobs are refused (TENANT_CONTEXT_MISSING); the scenarios model tenant work, so they run in a tenant, as the gov-a
+     * ({@code GovATenantAdapter}) and gov-b ports already do.
+     */
+    protected static final String SCENARIO_TENANT = "acc-scenario";
+
     @Autowired
     protected SangamEngineAdapter adapter;
 
@@ -171,7 +179,7 @@ public abstract class EngineScenarioSupport extends AbstractAcceptanceIT {
         for (String f : files) {
             res.put(f, resource("corpus/" + f + ".model"));
         }
-        return adapter.deploy(null, name + "-" + RUN, res);
+        return adapter.deploy(SCENARIO_TENANT, name + "-" + RUN, res);
     }
 
     protected List<TaskView> tasks(String instanceId, String key) {

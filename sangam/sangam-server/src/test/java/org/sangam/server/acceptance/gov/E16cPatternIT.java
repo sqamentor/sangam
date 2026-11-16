@@ -40,9 +40,9 @@ class E16cPatternIT extends GovCSupport {
             deploy("gp41-bg.bpmn");
             Instant t0 = now;
             String bg1 = b("BG-1");
-            String a = adapter.startProcess(null, "gp41-bg", bg1,
+            String a = adapter.startProcess(SCENARIO_TENANT, "gp41-bg", bg1,
                     vars("bgExpiry", date(t0.plus(Duration.ofDays(180))), "reminderAt", date(t0.plus(Duration.ofDays(150)))));
-            adapter.correlateMessage(null, "bgConfirmed", bg1, vars("genuine", true));
+            adapter.correlateMessage(SCENARIO_TENANT, "bgConfirmed", bg1, vars("genuine", true));
             ctx.check("after bank confirmation: reminder timer due at reminderAt (+150d)",
                     dueIs(timerAt(a, "gp41_reminderDue"), t0.plus(Duration.ofDays(150))));
 
@@ -54,7 +54,7 @@ class E16cPatternIT extends GovCSupport {
             ctx.check("native set-due-date moved the reminder to +125d", dueIs(timerAt(a, "gp41_reminderDue"), t0.plus(Duration.ofDays(125))));
             ctx.check("still exactly one timer", timers(a).size() == 1);
 
-            adapter.correlateMessage(null, "bgExtended", bg1,
+            adapter.correlateMessage(SCENARIO_TENANT, "bgExtended", bg1,
                     vars("bgExpiry", date(t0.plus(Duration.ofDays(365))), "reminderAt", date(t0.plus(Duration.ofDays(335)))));
             ctx.check("model re-arm: one timer, due at the new reminderAt (+335d)",
                     timers(a).size() == 1 && dueIs(timerAt(a, "gp41_reminderDue"), t0.plus(Duration.ofDays(335))));
@@ -65,7 +65,7 @@ class E16cPatternIT extends GovCSupport {
             ctx.check("expiry timer armed at bgExpiry (+365d)", dueIs(timerAt(a, "gp41_expiryDue"), t0.plus(Duration.ofDays(365))));
 
             advance(Duration.ofDays(30)); // day 366
-            adapter.correlateMessage(null, "bgExtended", bg1,
+            adapter.correlateMessage(SCENARIO_TENANT, "bgExtended", bg1,
                     vars("bgExpiry", date(t0.plus(Duration.ofDays(500))), "reminderAt", date(t0.plus(Duration.ofDays(470)))));
             adapter.executeDueJobs();
             ctx.check("race: extension correlated before the overdue expiry job ran -> no encashment",
@@ -79,21 +79,21 @@ class E16cPatternIT extends GovCSupport {
             adapter.executeDueJobs();
             ctx.check("expiry fired -> encash task", tasks(a, "gp41_encash").size() == 1);
             ctx.check("late extension after expiry is refused (no waiting subscription)",
-                    throwsOn(() -> adapter.correlateMessage(null, "bgExtended", bg1, vars("bgExpiry", date(now)))));
+                    throwsOn(() -> adapter.correlateMessage(SCENARIO_TENANT, "bgExtended", bg1, vars("bgExpiry", date(now)))));
             complete(ctx, a, "gp41_encash", "accounts", null);
             ctx.check("instance ended at gp41_end_encashed", ended(a) && visited(a, "gp41_end_encashed"));
 
             String bg2 = b("BG-2");
-            String bb = adapter.startProcess(null, "gp41-bg", bg2,
+            String bb = adapter.startProcess(SCENARIO_TENANT, "gp41-bg", bg2,
                     vars("bgExpiry", date(now.plus(Duration.ofDays(180))), "reminderAt", date(now.plus(Duration.ofDays(150)))));
-            adapter.correlateMessage(null, "bgConfirmed", bg2, vars("genuine", true));
-            adapter.correlateMessage(null, "contractClosed", bg2, null);
+            adapter.correlateMessage(SCENARIO_TENANT, "bgConfirmed", bg2, vars("genuine", true));
+            adapter.correlateMessage(SCENARIO_TENANT, "contractClosed", bg2, null);
             complete(ctx, bb, "gp41_release", "accounts", null);
             ctx.check("release path ended", ended(bb) && visited(bb, "gp41_end_released"));
             String bg3 = b("BG-3");
-            String c = adapter.startProcess(null, "gp41-bg", bg3,
+            String c = adapter.startProcess(SCENARIO_TENANT, "gp41-bg", bg3,
                     vars("bgExpiry", date(now.plus(Duration.ofDays(180))), "reminderAt", date(now.plus(Duration.ofDays(150)))));
-            adapter.correlateMessage(null, "bgConfirmed", bg3, vars("genuine", false));
+            adapter.correlateMessage(SCENARIO_TENANT, "bgConfirmed", bg3, vars("genuine", false));
             ctx.check("non-genuine BG goes to vigilance", countForGroup(c, "gp41_reportFake", "vigilance") == 1);
         });
     }
@@ -103,7 +103,7 @@ class E16cPatternIT extends GovCSupport {
     void gp42() {
         scenario("GP-42", ctx -> {
             deploy("gp42-cumulative.bpmn", "gp42-revised-sanction.bpmn");
-            String p = adapter.startProcess(null, "gp42-cumulative", b("WORK-42"),
+            String p = adapter.startProcess(SCENARIO_TENANT, "gp42-cumulative", b("WORK-42"),
                     vars("sanctioned", 1_000_000L, "cumulative", 0L, "revisionPending", false, "excessNoted", false, "done", false));
             for (long amt : new long[]{400_000L, 450_000L}) {
                 complete(ctx, p, "gp42_raBill", "ee", vars("billAmount", amt, "done", false));
@@ -141,14 +141,14 @@ class E16cPatternIT extends GovCSupport {
             Instant t0 = now;
             Instant stipulated = t0.plus(Duration.ofDays(365));
             String wo = b("WO-43");
-            String p = adapter.startProcess(null, "gp43-contract", wo,
+            String p = adapter.startProcess(SCENARIO_TENANT, "gp43-contract", wo,
                     vars("completionDate", date(stipulated), "contractValue", 10_000_000L));
             TaskView workTask = single(ctx, p, "gp43_execution");
             ctx.check("LD timer at the stipulated date", dueIs(timerAt(p, "gp43_ldStart"), stipulated));
 
             advance(Duration.ofDays(200));
             Instant extended = stipulated.plus(Duration.ofDays(90));
-            adapter.correlateMessage(null, "amendmentRequested", wo,
+            adapter.correlateMessage(SCENARIO_TENANT, "amendmentRequested", wo,
                     vars("amendType", "EOT", "proposedCompletion", date(extended), "extraAmount", 0L));
             List<String> subs = subInstances(p);
             ctx.require("amendment child started", subs.size() == 1);
@@ -174,7 +174,7 @@ class E16cPatternIT extends GovCSupport {
             ctx.check("main work task still exactly one", work.size() == 1);
             ctx.detail("mainWorkTaskKeptItsId", work.size() == 1 && work.get(0).id().equals(workTask.id()));
             ctx.check("LD timer still at the extended date after the modification", dueIs(timerAt(p, "gp43_ldStart"), extended));
-            adapter.correlateMessage(null, "amendmentRequested", wo,
+            adapter.correlateMessage(SCENARIO_TENANT, "amendmentRequested", wo,
                     vars("amendType", "EXTRA_ITEM", "proposedCompletion", date(extended), "extraAmount", 450_000L));
             String child2 = subInstances(p).get(0);
             complete(ctx, child2, "gp43a_examine", "ee", null);
@@ -205,7 +205,7 @@ class E16cPatternIT extends GovCSupport {
             deploy("gp44-deemed.bpmn");
             Instant t0 = now;
             String r1 = b("RTI-1");
-            String a = adapter.startProcess(null, "gp44-deemed", r1, Map.of());
+            String a = adapter.startProcess(SCENARIO_TENANT, "gp44-deemed", r1, Map.of());
             ctx.check("deadline at +30 days", dueIs(timerAt(a, "gp44_deadline"), t0.plus(Duration.ofDays(30))));
             TaskView stale = single(ctx, a, "gp44_pioDecide");
             advance(Duration.ofDays(30).plusMinutes(1));
@@ -214,14 +214,14 @@ class E16cPatternIT extends GovCSupport {
             ctx.check("PIO task withdrawn", tasks(a, "gp44_pioDecide").isEmpty());
             ctx.check("late decision by the PIO is blocked (task no longer exists)",
                     throwsOn(() -> adapter.completeTask(stale.id(), Map.of())));
-            adapter.correlateMessage(null, "firstAppealFiled", r1, null);
+            adapter.correlateMessage(SCENARIO_TENANT, "firstAppealFiled", r1, null);
             ctx.check("first appeal goes to the FAA", countForGroup(a, "gp44_faaHearing", "faa") == 1);
 
-            String bb = adapter.startProcess(null, "gp44-deemed", b("RTI-2"), Map.of());
+            String bb = adapter.startProcess(SCENARIO_TENANT, "gp44-deemed", b("RTI-2"), Map.of());
             complete(ctx, bb, "gp44_pioDecide", "pio", null);
             ctx.check("decided in time ends normally", ended(bb) && visited(bb, "gp44_end_decided"));
 
-            String c = adapter.startProcess(null, "gp44-deemed", b("RTI-3"), Map.of());
+            String c = adapter.startProcess(SCENARIO_TENANT, "gp44-deemed", b("RTI-3"), Map.of());
             advance(Duration.ofDays(31));
             adapter.executeDueJobs();
             advance(Duration.ofDays(31));
@@ -242,7 +242,7 @@ class E16cPatternIT extends GovCSupport {
         scenario("GP-45", ctx -> {
             deploy("gp45-pausable.bpmn");
             Instant t0 = now;
-            String p = adapter.startProcess(null, "gp45-pausable", b("RTI-45"), vars("slaDue", date(t0.plus(Duration.ofDays(30)))));
+            String p = adapter.startProcess(SCENARIO_TENANT, "gp45-pausable", b("RTI-45"), vars("slaDue", date(t0.plus(Duration.ofDays(30)))));
             TaskView task = single(ctx, p, "gp45_process");
             advance(Duration.ofDays(10));
             Instant pausedAt = now;
@@ -276,7 +276,7 @@ class E16cPatternIT extends GovCSupport {
         scenario("GP-46", ctx -> {
             deploy("gp46-objections.bpmn");
             Instant end = now.plus(Duration.ofDays(30));
-            String p = adapter.startProcess(null, "gp46-objections", b("S11-1"), vars("partyCount", 3, "windowEnd", date(end)));
+            String p = adapter.startProcess(SCENARIO_TENANT, "gp46-objections", b("S11-1"), vars("partyCount", 3, "windowEnd", date(end)));
             complete(ctx, p, "gp46_notice", "pio", null);
             ctx.check("three party branches waiting", messageSubscriptions(p, "thirdPartyObjection").size() == 3);
             advance(Duration.ofDays(5));
@@ -290,7 +290,7 @@ class E16cPatternIT extends GovCSupport {
             ctx.check("2 objections, 1 silent", countVisits(p, "gp46_endObjected") == 2 && countVisits(p, "gp46_endSilent") == 1);
             ctx.check("late objection finds no waiting branch", messageSubscriptions(p, "thirdPartyObjection").isEmpty());
 
-            String q = adapter.startProcess(null, "gp46-objections", b("S11-2"), vars("partyCount", 3, "windowEnd", date(now.plus(Duration.ofDays(30)))));
+            String q = adapter.startProcess(SCENARIO_TENANT, "gp46-objections", b("S11-2"), vars("partyCount", 3, "windowEnd", date(now.plus(Duration.ofDays(30)))));
             complete(ctx, q, "gp46_notice", "pio", null);
             for (int i = 0; i < 3; i++) {
                 deliverToBranch(q, "thirdPartyObjection", i, vars("objection", "objection " + i));
@@ -310,7 +310,7 @@ class E16cPatternIT extends GovCSupport {
     void gp47() {
         scenario("GP-47", ctx -> {
             deploy("gp47-answer-key.bpmn", "gp47-challenge.bpmn", "probe-mi-external.bpmn");
-            String probe = adapter.startProcess(null, "probe-mi-external", b("PROBE"), Map.of());
+            String probe = adapter.startProcess(SCENARIO_TENANT, "probe-mi-external", b("PROBE"), Map.of());
             List<ExternalWork> pf = fetch("probe-mi", 10);
             List<ExternalWork> pf1 = pf.isEmpty() ? fetch("probe-mi", 1) : List.of();
             ctx.detail("probeDefaultMiFetch10", pf.size());
@@ -324,7 +324,7 @@ class E16cPatternIT extends GovCSupport {
             adapter.cancelInstance(probe, "probe done");
 
             // GP-09 guard: 300 candidates in one multi-instance is refused
-            String big = adapter.startProcess(null, "gp47-answer-key", b("EXAM-47-300"),
+            String big = adapter.startProcess(SCENARIO_TENANT, "gp47-answer-key", b("EXAM-47-300"),
                     vars("windowEnd", date(now.plus(Duration.ofDays(7))), "candidateCount", 300));
             complete(ctx, big, "gp47_publishProvisional", "exam-cell", null);
             advance(Duration.ofDays(7).plusMinutes(1));
@@ -363,19 +363,19 @@ class E16cPatternIT extends GovCSupport {
                 return null;
             });
             Instant windowEnd = now.plus(Duration.ofDays(7));
-            String key = adapter.startProcess(null, "gp47-answer-key", b("EXAM-47"), vars("windowEnd", date(windowEnd), "candidateCount", n));
+            String key = adapter.startProcess(SCENARIO_TENANT, "gp47-answer-key", b("EXAM-47"), vars("windowEnd", date(windowEnd), "candidateCount", n));
             complete(ctx, key, "gp47_publishProvisional", "exam-cell", null);
             List<String> ch = new ArrayList<>();
             for (int i = 0; i < 6; i++) {
-                ch.add(adapter.startProcess(null, "gp47-challenge", b("CH-" + i), vars("windowEnd", date(windowEnd))));
+                ch.add(adapter.startProcess(SCENARIO_TENANT, "gp47-challenge", b("CH-" + i), vars("windowEnd", date(windowEnd))));
             }
             for (int i = 0; i < 4; i++) {
-                adapter.correlateMessage(null, "challengeFeePaid", b("CH-" + i), vars("question", 10 + i));
+                adapter.correlateMessage(SCENARIO_TENANT, "challengeFeePaid", b("CH-" + i), vars("question", 10 + i));
             }
             advance(Duration.ofDays(7).plusMinutes(1));
             adapter.executeDueJobs();
             ctx.check("late fee after the window is refused",
-                    throwsOn(() -> adapter.correlateMessage(null, "challengeFeePaid", b("CH-5"), null)));
+                    throwsOn(() -> adapter.correlateMessage(SCENARIO_TENANT, "challengeFeePaid", b("CH-5"), null)));
             long admitted = ch.stream().filter(id -> visited(id, "gp47c_admitted")).count();
             long lapsed = ch.stream().filter(id -> visited(id, "gp47c_lapsed")).count();
             ctx.check("4 paid challenges admitted, 2 lapsed", admitted == 4 && lapsed == 2);
@@ -437,7 +437,7 @@ class E16cPatternIT extends GovCSupport {
             int requests = 30;
             List<String> pids = new ArrayList<>();
             for (int i = 0; i < requests; i++) {
-                pids.add(adapter.startProcess(null, "gp48-leave", b("LV-" + i), vars("emp", "E1", "days", 1, "requestId", b("LV-" + i))));
+                pids.add(adapter.startProcess(SCENARIO_TENANT, "gp48-leave", b("LV-" + i), vars("emp", "E1", "days", 1, "requestId", b("LV-" + i))));
             }
             for (String pid : pids) {
                 complete(ctx, pid, "gp48_approve", "controlling-officer", null);
@@ -578,7 +578,7 @@ class E16cPatternIT extends GovCSupport {
             for (int i = 0; i < 10; i++) {
                 sql("insert into govc_dbt_item values (" + i + ", 'NEW')");
             }
-            String p = adapter.startProcess(null, "gp49-dbt", b("BATCH-49"), vars("itemCount", 10, "round", 1));
+            String p = adapter.startProcess(SCENARIO_TENANT, "gp49-dbt", b("BATCH-49"), vars("itemCount", 10, "round", 1));
             Map<Integer, String> round1 = new HashMap<>();
             for (int i = 0; i < 10; i++) {
                 round1.put(i, "PAID");
@@ -657,27 +657,27 @@ class E16cPatternIT extends GovCSupport {
             Map<String, String> pid = new LinkedHashMap<>();
             for (int i = 1; i <= 5; i++) {
                 String bk = b("BILL-" + i);
-                pid.put(bk, adapter.startProcess(null, "gp50-objection-loop", bk, vars("objectionCount", 0)));
+                pid.put(bk, adapter.startProcess(SCENARIO_TENANT, "gp50-objection-loop", bk, vars("objectionCount", 0)));
                 complete(ctx, pid.get(bk), "gp50_prepare", "ddo", null);
                 work(ctx, pid.get(bk), "treasury-submit", null);
             }
             for (int i = 1; i <= 5; i++) {
                 if (i != 3) {
-                    String got = adapter.correlateMessage(null, "treasuryVerdict", b("BILL-" + i), vars("verdict", "PASSED"));
+                    String got = adapter.correlateMessage(SCENARIO_TENANT, "treasuryVerdict", b("BILL-" + i), vars("verdict", "PASSED"));
                     ctx.check("BILL-" + i + " verdict reached its own instance", pid.get(b("BILL-" + i)).equals(got));
                 }
             }
             String bk3 = b("BILL-3");
             String p3 = pid.get(bk3);
             for (int k = 0; k < 2; k++) {
-                String got = adapter.correlateMessage(null, "treasuryVerdict", bk3, vars("verdict", "OBJECTED", "objection", "O-" + k));
+                String got = adapter.correlateMessage(SCENARIO_TENANT, "treasuryVerdict", bk3, vars("verdict", "OBJECTED", "objection", "O-" + k));
                 ctx.check("objection " + k + " correlated to the same instance", p3.equals(got));
                 ctx.check("verdict for a bill not waiting is refused", throwsOn(() ->
-                        adapter.correlateMessage(null, "treasuryVerdict", bk3, vars("verdict", "PASSED"))));
+                        adapter.correlateMessage(SCENARIO_TENANT, "treasuryVerdict", bk3, vars("verdict", "PASSED"))));
                 complete(ctx, p3, "gp50_rectify", "ddo", null);
                 work(ctx, p3, "treasury-submit", null);
             }
-            adapter.correlateMessage(null, "treasuryVerdict", bk3, vars("verdict", "PASSED"));
+            adapter.correlateMessage(SCENARIO_TENANT, "treasuryVerdict", bk3, vars("verdict", "PASSED"));
             ctx.check("BILL-3 passed after 2 objections, same instance id and business key",
                     ended(p3) && num(var(p3, "objectionCount")) == 2 && bk3.equals(adapter.getInstance(p3).businessKey()));
             ctx.check("3 submissions on the one identity", countVisits(p3, "gp50_submit") == 3);
@@ -692,13 +692,13 @@ class E16cPatternIT extends GovCSupport {
             deploy("gp51-hearings.bpmn");
             Instant t0 = now;
             String wp = b("WP-123-2027");
-            String p = adapter.startProcess(null, "gp51-hearings", wp, Map.of());
-            adapter.correlateMessage(null, "hearingListed", wp,
+            String p = adapter.startProcess(SCENARIO_TENANT, "gp51-hearings", wp, Map.of());
+            adapter.correlateMessage(SCENARIO_TENANT, "hearingListed", wp,
                     vars("nextHearing", date(t0.plus(Duration.ofDays(30))), "briefDue", date(t0.plus(Duration.ofDays(23)))));
             ctx.check("hearing timer +30d, brief deadline +23d",
                     dueIs(timerAt(p, "gp51_hearingDay"), t0.plus(Duration.ofDays(30))) && dueIs(timerAt(p, "gp51_briefDue"), t0.plus(Duration.ofDays(23))));
             advance(Duration.ofDays(5));
-            adapter.correlateMessage(null, "hearingRescheduled", wp,
+            adapter.correlateMessage(SCENARIO_TENANT, "hearingRescheduled", wp,
                     vars("nextHearing", date(t0.plus(Duration.ofDays(45))), "briefDue", date(t0.plus(Duration.ofDays(38)))));
             ctx.check("hearing timer re-armed by the model to +45d", dueIs(timerAt(p, "gp51_hearingDay"), t0.plus(Duration.ofDays(45))));
             ctx.check("brief deadline NOT moved by the model (still +23d)", dueIs(timerAt(p, "gp51_briefDue"), t0.plus(Duration.ofDays(23))));
@@ -734,12 +734,12 @@ class E16cPatternIT extends GovCSupport {
             deploy("gp52-retention.bpmn");
             Instant t0 = now;
             String file = b("FILE-52");
-            String p = adapter.startProcess(null, "gp52-retention", file, Map.of());
+            String p = adapter.startProcess(SCENARIO_TENANT, "gp52-retention", file, Map.of());
             complete(ctx, p, "gp52_work", "section", null);
             complete(ctx, p, "gp52_close", "section-officer", vars("retentionUntil", date(t0.plus(Duration.ofDays(3 * 365)))));
             ctx.check("retention timer +3 years", dueIs(timerAt(p, "gp52_retentionOver"), t0.plus(Duration.ofDays(3 * 365))));
             advance(Duration.ofDays(365));
-            adapter.correlateMessage(null, "fileReopened", file, null);
+            adapter.correlateMessage(SCENARIO_TENANT, "fileReopened", file, null);
             ctx.check("reopened file back in work", tasks(p, "gp52_work").size() == 1 && timers(p).isEmpty());
             complete(ctx, p, "gp52_work", "section", null);
             Instant ret2 = now.plus(Duration.ofDays(3 * 365));
@@ -753,7 +753,7 @@ class E16cPatternIT extends GovCSupport {
             complete(ctx, p, "gp52_review", "record-officer", vars("reviewDecision", "WEED"));
             ctx.check("weeded: instance ended", ended(p) && visited(p, "gp52_end_weeded"));
             ctx.check("reopen after closure: no waiting instance (refused)",
-                    throwsOn(() -> adapter.correlateMessage(null, "fileReopened", file, null)));
+                    throwsOn(() -> adapter.correlateMessage(SCENARIO_TENANT, "fileReopened", file, null)));
             ctx.check("history still finds the file by its number", historicInstancesByBusinessKey("gp52-retention", file).size() == 1);
             deleteHistoricInstance(p);
             ctx.check("after weeding the engine record is gone", historicInstancesByBusinessKey("gp52-retention", file).isEmpty()
@@ -767,11 +767,11 @@ class E16cPatternIT extends GovCSupport {
         scenario("GP-53", ctx -> {
             deploy("gp53-custody.bpmn");
             String mb = b("MB-53");
-            String p = adapter.startProcess(null, "gp53-custody", mb, vars("mbCustodian", "JE", "mbNo", "MB-1047"));
+            String p = adapter.startProcess(SCENARIO_TENANT, "gp53-custody", mb, vars("mbCustodian", "JE", "mbNo", "MB-1047"));
             complete(ctx, p, "gp53_record", "je", vars("mbCustodian", "JE"));
             ctx.check("check blocked while the MB is with the JE (hand-over task instead)",
                     tasks(p, "gp53_check").isEmpty() && tasks(p, "gp53_transfer").size() == 1);
-            adapter.correlateMessage(null, "mbLost", mb, vars("lostOn", date(now)));
+            adapter.correlateMessage(SCENARIO_TENANT, "mbLost", mb, vars("lostOn", date(now)));
             ctx.check("loss interrupts the custody flow", tasks(p, "gp53_transfer").isEmpty() && tasks(p, "gp53_reportLoss").size() == 1);
             complete(ctx, p, "gp53_reportLoss", "ee", null);
             complete(ctx, p, "gp53_reconstruct", "je", vars("mbNo", "MB-1047-R", "mbCustodian", "JE"));
@@ -791,9 +791,9 @@ class E16cPatternIT extends GovCSupport {
         scenario("GP-54", ctx -> {
             deploy("gp54-main.bpmn", "gp54-part.bpmn");
             String f100 = b("F-100");
-            String main = adapter.startProcess(null, "gp54-main", f100, vars("openParts", 0, "fileNo", f100));
-            adapter.correlateMessage(null, "createPart", f100, vars("partSubject", "land"));
-            adapter.correlateMessage(null, "createPart", f100, vars("partSubject", "finance"));
+            String main = adapter.startProcess(SCENARIO_TENANT, "gp54-main", f100, vars("openParts", 0, "fileNo", f100));
+            adapter.correlateMessage(SCENARIO_TENANT, "createPart", f100, vars("partSubject", "land"));
+            adapter.correlateMessage(SCENARIO_TENANT, "createPart", f100, vars("partSubject", "finance"));
             List<String> parts = subInstances(main);
             ctx.check("two part files running as children", parts.size() == 2 && num(var(main, "openParts")) == 2);
             ctx.require("2 parts", parts.size() == 2);
@@ -848,7 +848,7 @@ class E16cPatternIT extends GovCSupport {
             for (int k = 0; k < 4; k++) {
                 for (ExternalWork w : fetch("open-discrepancy", 10)) {
                     Object item = w.variables().get("itemNo");
-                    adapter.startProcess(null, "gp55-discrepancy", b("DISC-2027-" + item),
+                    adapter.startProcess(SCENARIO_TENANT, "gp55-discrepancy", b("DISC-2027-" + item),
                             vars("itemNo", item, "shortBy", ((Number) w.variables().get("bookQty")).intValue()
                                     - ((Number) w.variables().get("physicalQty")).intValue()));
                     completeWork(w, Map.of());

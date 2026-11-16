@@ -40,7 +40,7 @@ class E1CorpusCoverageIT extends EngineScenarioSupport {
     // ================================================================ WF-1
 
     private String startBill(String bk, long amount, String head) {
-        return adapter.startProcess(null, "wf1-bill", bk, vars("billId", bk, "beneficiary", "Synthetic Vendor Pvt Ltd",
+        return adapter.startProcess(SCENARIO_TENANT, "wf1-bill", bk, vars("billId", bk, "beneficiary", "Synthetic Vendor Pvt Ltd",
                 "budgetHead", head, "initiatorSeat", "SEAT-INITIATOR", "checkerGroup", "SEAT-CHECKER", "amount", amount));
     }
 
@@ -120,7 +120,7 @@ class E1CorpusCoverageIT extends EngineScenarioSupport {
 
     private String startFile() {
         String bk = key("FILE");
-        return adapter.startProcess(null, "wf2-file", bk, wf2Vars(bk));
+        return adapter.startProcess(SCENARIO_TENANT, "wf2-file", bk, wf2Vars(bk));
     }
 
     @Test
@@ -219,7 +219,7 @@ class E1CorpusCoverageIT extends EngineScenarioSupport {
         scenario("WF3-FULL-SLA-CLARIFY-ISSUE", ctx -> {
             clock(BASE);
             String bk = key("LIC");
-            String pid = adapter.startProcess(null, "wf3-licence", bk,
+            String pid = adapter.startProcess(SCENARIO_TENANT, "wf3-licence", bk,
                     vars("applicationId", bk, "applicantId", "APPLICANT-1", "licenceType", "TRADE"));
             single(ctx, pid, "wf3_scrutiny");
             ctx.check("scrutiny offered to licence-scrutiny", countForGroup(pid, "wf3_scrutiny", "licence-scrutiny") == 1);
@@ -240,7 +240,7 @@ class E1CorpusCoverageIT extends EngineScenarioSupport {
 
             complete(ctx, pid, "wf3_scrutiny", "licence-scrutiny", vars("scrutinyDecision", "clarify"));
             ctx.check("waiting for applicant message", active(pid).contains("wf3_awaitApplicantResponse"));
-            String corr = adapter.correlateMessage(null, "applicantResponse", bk, vars("applicantReply", "documents attached"));
+            String corr = adapter.correlateMessage(SCENARIO_TENANT, "applicantResponse", bk, vars("applicantReply", "documents attached"));
             ctx.check("message correlated to this instance", pid.equals(corr));
             single(ctx, pid, "wf3_scrutiny");
             advance(Duration.ofHours(73));
@@ -262,7 +262,7 @@ class E1CorpusCoverageIT extends EngineScenarioSupport {
         scenario("WF3-REJECT-AT-SCRUTINY", ctx -> {
             clock(BASE);
             String bk = key("LIC");
-            String pid = adapter.startProcess(null, "wf3-licence", bk, vars("applicationId", bk));
+            String pid = adapter.startProcess(SCENARIO_TENANT, "wf3-licence", bk, vars("applicationId", bk));
             complete(ctx, pid, "wf3_scrutiny", "licence-scrutiny", vars("scrutinyDecision", "reject"));
             ctx.check("ended at wf3_rejectedEnd", ended(pid) && historicActivityIds(pid).contains("wf3_rejectedEnd"));
             advance(Duration.ofHours(80));
@@ -275,7 +275,7 @@ class E1CorpusCoverageIT extends EngineScenarioSupport {
     void wf3RejectAtApproval() {
         scenario("WF3-REJECT-AT-APPROVAL", ctx -> {
             String bk = key("LIC");
-            String pid = adapter.startProcess(null, "wf3-licence", bk, vars("applicationId", bk));
+            String pid = adapter.startProcess(SCENARIO_TENANT, "wf3-licence", bk, vars("applicationId", bk));
             complete(ctx, pid, "wf3_scrutiny", "licence-scrutiny", vars("scrutinyDecision", "accept"));
             complete(ctx, pid, "wf3_inspection", "licence-inspector", vars());
             complete(ctx, pid, "wf3_approval", "licence-approver", vars("approvalDecision", "reject"));
@@ -290,7 +290,7 @@ class E1CorpusCoverageIT extends EngineScenarioSupport {
         scenario("WF3-CASE-CMMN", ctx -> {
             clock(BASE);
             String bk = key("CASE");
-            String cid = adapter.startCase(null, "wf3-licence-case", bk, vars("applicationId", bk));
+            String cid = adapter.startCase(SCENARIO_TENANT, "wf3-licence-case", bk, vars("applicationId", bk));
             List<TaskView> t1 = tasks(cid, null);
             ctx.require("one case task after start (found " + t1.size() + ")", t1.size() == 1);
             ctx.check("first task is Scrutiny", "Scrutiny".equals(t1.get(0).name()));
