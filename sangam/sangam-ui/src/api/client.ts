@@ -211,6 +211,12 @@ export const http = {
   /** Contract DELETEs carry the audit reason as ?reason= (parameter eason). */
   del: <T>(path: string, query?: Query, idempotencyKey?: string) => request<T>('DELETE', path, { query, idempotencyKey }),
   engine: <T>(path: string, query?: Query) => request<T>('GET', path, { query, base: '/engine-rest' }),
+  /**
+   * GET of an operation whose success answer is not JSON (sangam-api.yaml: /process-definitions/{id}/xml and
+   * /decision-definitions/{id}/xml produce application/xml, /ops/jobs/{id}/stacktrace text/plain). It asks for exactly
+   * the declared media type, with problem+json for a refusal: the default JSON Accept is answered 406 there.
+   */
+  text: (path: string, mediaType: string, query?: Query) => request<string>('GET', path, { query, headers: { Accept: `${mediaType}, application/problem+json` } }),
   /** GET returning the body and the ETag (optimistic concurrency with If-Match). */
   getTagged: async <T>(path: string, query?: Query): Promise<{ body: T; etag: string | null }> => {
     const res = await raw('GET', path, { query });

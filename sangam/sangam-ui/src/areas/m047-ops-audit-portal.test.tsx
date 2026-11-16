@@ -47,7 +47,8 @@ const L = (k: string) => new RegExp(`^${esc(T(k))}(\\s*\\*.*)?$`);
 const problem = (status: number, code?: string) => new ApiError({ status, title: 't', code });
 const KEY = expect.any(String);
 const EMPTY_PAGE = { items: [], page: 0, size: 25, total: 0, capped: false };
-const DAY = /^\d{4}-\d{2}-\d{2}$/;
+/** An ISO instant (the contract's date-time; the server parses it with Instant.parse, so a bare date is a 400). */
+const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
 let routes: Record<string, unknown> = {};
 
@@ -365,24 +366,25 @@ describe('M-047 migration', () => {
 
 // ====================================================================== analytics
 
-/** Evidence: Analytics.tsx:18-129 (filters, dashboard, export); endpoints.ts:562-583 (summary, throughput, sla, export). */
+/** Evidence: Analytics.tsx:18-129 (filters, dashboard, export); endpoints.ts:562-583 (summary, throughput, sla, export).
+ * UI-DEMO sweep S1: from/to are instants and the bucket is the contract's interval; date-only values were a 400. */
 describe('M-047 analytics dashboard', () => {
   it('reads summary, throughput and SLA with the date range and bucket, and re-reads on a bucket change', async () => {
     show(<AnalyticsDashboard />);
     await waitFor(() =>
-      expect(api.get).toHaveBeenCalledWith('/analytics/summary', { processDefinitionKey: undefined, from: expect.stringMatching(DAY), to: expect.stringMatching(DAY) }),
+      expect(api.get).toHaveBeenCalledWith('/analytics/summary', { processDefinitionKey: undefined, from: expect.stringMatching(INSTANT), to: expect.stringMatching(INSTANT) }),
     );
-    expect(api.get).toHaveBeenCalledWith('/analytics/throughput', expect.objectContaining({ bucket: 'day', from: expect.stringMatching(DAY) }));
-    expect(api.get).toHaveBeenCalledWith('/analytics/sla', expect.objectContaining({ bucket: 'day' }));
+    expect(api.get).toHaveBeenCalledWith('/analytics/throughput', expect.objectContaining({ interval: 'day', from: expect.stringMatching(INSTANT) }));
+    expect(api.get).toHaveBeenCalledWith('/analytics/sla', { processDefinitionKey: undefined, from: expect.stringMatching(INSTANT), to: expect.stringMatching(INSTANT) });
     fireEvent.change(screen.getByLabelText(T('analytics.bucket')), { target: { value: 'week' } });
-    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/analytics/throughput', expect.objectContaining({ bucket: 'week' })));
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/analytics/throughput', expect.objectContaining({ interval: 'week' })));
   });
 
   it('XES export downloads the event log for the same range', async () => {
     show(<AnalyticsDashboard />);
     fireEvent.click(screen.getByRole('button', { name: T('analytics.exportXes') }));
     await waitFor(() =>
-      expect(api.download).toHaveBeenCalledWith('/analytics/export/xes', { processDefinitionKey: undefined, from: expect.stringMatching(DAY), to: expect.stringMatching(DAY) }, 'sangam-log.xes'),
+      expect(api.download).toHaveBeenCalledWith('/analytics/export/xes', { processDefinitionKey: undefined, from: expect.stringMatching(INSTANT), to: expect.stringMatching(INSTANT) }, 'sangam-log.xes'),
     );
   });
 

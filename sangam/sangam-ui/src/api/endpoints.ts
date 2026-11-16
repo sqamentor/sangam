@@ -32,6 +32,34 @@ function sortParams(sort?: string): Query {
 }
 
 /**
+ * A calendar-day range of the filters (date inputs, YYYY-MM-DD in the viewer's zone) as the contract's date-time
+ * query: the analytics operations bind from / to as ISO-8601 instants (AnalyticsMeController, DATE_TIME) and read them
+ * as startedAfter / startedBefore, so a bare date is refused (400) and the end is exclusive. The range runs from the
+ * start of `from` to the start of the day after `to`, so the `to` day is included. A value that already carries a time
+ * is passed as it is; an empty one is left out.
+ */
+export function dayRange(from?: unknown, to?: unknown): { from?: string; to?: string } {
+  const at = (v: unknown, nextDay: boolean): string | undefined => {
+    if (typeof v !== 'string' || !v.trim()) return undefined;
+    if (v.includes('T')) return v;
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v.trim());
+    if (!m) return v;
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + (nextDay ? 1 : 0)).toISOString();
+  };
+  const out: { from?: string; to?: string } = {};
+  const f = at(from, false);
+  const t = at(to, true);
+  if (f) out.from = f;
+  if (t) out.to = t;
+  return out;
+}
+
+/** The analytics filters (AnalyticsQuery in the screens) as the contract's processDefinitionKey / from / to. */
+function analyticsQuery(q: Query): Query {
+  return { processDefinitionKey: (q.definitionKey as string | undefined) || undefined, ...dayRange(q.from, q.to) };
+}
+
+/**
  * Inbox columns → the contract's task sort keys. M-042: amount and reference sort on the typed task-index column
  * (W3-G) through sortBy=amount / sortBy=reference (W3-M contract REQUEST, WAVE3-SYNC-BOARD 2026-11-12T11:28:00Z).
  */
@@ -231,10 +259,14 @@ export const api = {
   processes: {
     definitions: (q: ListQuery & { latest?: boolean; key?: string }) => http.page<T.ProcessDefinition>('/process-definitions', { ...q, key: q.key ?? q.q }),
     definition: (id: string) => http.get<T.ProcessDefinition>(`/process-definitions/${enc(id)}`),
-    xml: async (id: string) => ({ bpmn20Xml: A.xmlOf(await http.get<unknown>(`/process-definitions/${enc(id)}/xml`), 'bpmn20Xml') }),
-    /** /analytics/activities: active = runtime tokens, count = history heatmap. */
+    /** getProcessDefinitionXml produces application/xml only (ProcessController.definitionXml). */
+    xml: async (id: string) => ({ bpmn20Xml: A.xmlOf(await http.text(`/process-definitions/${enc(id)}/xml`, 'application/xml'), 'bpmn20Xml') }),
+    /**
+     * /analytics/activities: active = runtime tokens, count = history heatmap. processDefinitionKey is required
+     * (400 PROCESS_DEFINITION_KEY_REQUIRED), so a caller asks only once it knows the key; from / to are calendar days.
+     */
     statistics: async (id: string, mode: 'runtime' | 'history', q: Query = {}, definitionKey?: string) =>
-      A.normActivityStats(id, await http.get<Record<string, unknown>[]>('/analytics/activities', { processDefinitionKey: definitionKey, from: q.from, to: q.to }), mode),
+      A.normActivityStats(id, await http.get<Record<string, unknown>[]>('/analytics/activities', { processDefinitionKey: definitionKey, ...dayRange(q.from, q.to) }), mode),
     suspendDefinition: (id: string, suspended: boolean, reason: string, includeInstances: boolean) =>
       http.post<void>(`/process-definitions/${enc(id)}/suspension`, { suspended, reason, includeInstances }),
     start: (body: { key: string; businessKey?: string; variables?: Record<string, unknown> }, key?: string) =>
@@ -369,8 +401,11 @@ export const api = {
   },
   decisions: {
     definitions: (q: ListQuery) => http.page<T.DecisionDefinition>('/decision-definitions', { ...q, key: q.q }),
-    xml: async (id: string) => ({ dmnXml: A.xmlOf(await http.get<unknown>(`/decision-definitions/${enc(id)}/xml`), 'dmnXml') }),
-    instances: (q: ListQuery & { decisionKey?: string; processInstanceId?: string }) => http.page<T.DecisionInstance>('/history/decisions', q),
+    /** getDecisionDefinitionXml produces application/xml only (CaseDecisionController). */
+    xml: async (id: string) => ({ dmnXml: A.xmlOf(await http.text(`/decision-definitions/${enc(id)}/xml`, 'application/xml'), 'dmnXml') }),
+    /** listHistoricDecisions needs processInstanceId or caseInstanceId (400 FILTER_REQUIRED); it has no decision-key filter. */
+    instances: async (q: ListQuery & { processInstanceId?: string; caseInstanceId?: string }) =>
+      A.mapPage(await http.page<Record<string, unknown>>('/history/decisions', { page: q.page, size: q.size, processInstanceId: q.processInstanceId, caseInstanceId: q.caseInstanceId }), A.normDecisionInstance),
     evaluate: (key: string, variables: Record<string, unknown>) =>
       http.post<{ outputs: Record<string, unknown>[] }>(`/decisions/${enc(key)}/evaluate`, { variables: A.toVariableMap(variables) }),
   },
@@ -480,7 +515,8 @@ export const api = {
     /** JobRetriesRequest {retries, reason}; dueDate is a UI proposal. */
     jobRetry: (id: string, retries: number, reason: string, dueDate?: string) => http.post<void>(`/ops/jobs/${enc(id)}/retries`, { retries, reason, dueDate }),
     jobExecute: (id: string, reason: string) => http.post<void>(`/ops/jobs/${enc(id)}/execute?reason=${enc(reason)}`),
-    jobStacktrace: (id: string) => http.get<string>(`/ops/jobs/${enc(id)}/stacktrace`),
+    /** getJobStacktrace produces text/plain only (OpsConsoleController). */
+    jobStacktrace: (id: string) => http.text(`/ops/jobs/${enc(id)}/stacktrace`, 'text/plain'),
     outbox: async (q: ListQuery & { status?: string; destination?: string }) =>
       A.mapPage(await http.page<Record<string, unknown>>('/ops/outbox', { page: q.page, size: q.size, state: q.status, destination: q.destination }), A.normOutbox),
     outboxAction: (id: string, action: 'requeue' | 'skip', reason: string, key?: string) => http.post<void>(`/ops/outbox/${enc(id)}/${action}`, { reason }, key),
@@ -642,29 +678,34 @@ export const api = {
 
   // ------------------------------------------------------------ analytics (R65, R66, R79)
   analytics: {
+    // The screens' filters are {definitionKey, from, to (calendar days), bucket}; each call sends the contract's own
+    // parameters (analyticsQuery): processDefinitionKey, date-time from / to, and the bucket as interval or period.
     kpis: async (q: Query) => {
-      const s = await http.get<Record<string, unknown>>('/analytics/summary', { processDefinitionKey: q.definitionKey, from: q.from, to: q.to });
+      const s = await http.get<Record<string, unknown>>('/analytics/summary', analyticsQuery(q));
       return A.kpisFromSummary(s);
     },
-    throughput: (q: Query) => http.get<T.TimePoint[]>('/analytics/throughput', q),
-    sla: (q: Query) => http.get<T.SlaRow[]>('/analytics/sla', q), // (R79)
+    throughput: (q: Query) => http.get<T.TimePoint[]>('/analytics/throughput', { ...analyticsQuery(q), interval: q.bucket || undefined }),
+    sla: (q: Query) => http.get<T.SlaRow[]>('/analytics/sla', analyticsQuery(q)), // (R79)
     bottlenecks: async (q: Query) =>
-      ((await http.get<Record<string, unknown>[]>('/analytics/activities', { processDefinitionKey: q.definitionKey, from: q.from, to: q.to })) ?? []).map(A.bottleneckFromActivity),
+      ((await http.get<Record<string, unknown>[]>('/analytics/activities', analyticsQuery(q))) ?? []).map(A.bottleneckFromActivity),
     variants: async (q: Query) =>
-      ((await http.get<Record<string, unknown>[]>('/analytics/variants', { processDefinitionKey: q.definitionKey, from: q.from, to: q.to, limit: 50 })) ?? []).map(A.normVariant),
-    conformance: (q: Query) => http.get<T.ConformanceResult>('/analytics/conformance', q), // (R66)
-    durationReport: (q: Query) => http.get<T.DurationReportRow[]>('/analytics/reports/duration', q), // (PF-07)
+      ((await http.get<Record<string, unknown>[]>('/analytics/variants', { ...analyticsQuery(q), limit: 50 })) ?? []).map(A.normVariant),
+    conformance: (q: Query) => http.get<T.ConformanceResult>('/analytics/conformance', analyticsQuery(q)), // (R66)
+    /** getDurationReport: period is day | week | month (contract enum); an hour bucket asks for the server default. */
+    durationReport: (q: Query) =>
+      http.get<T.DurationReportRow[]>('/analytics/reports/duration', { ...analyticsQuery(q), period: q.bucket === 'hour' ? undefined : q.bucket || undefined }), // (PF-07)
     taskReport: async (q: Query) =>
-      ((await http.get<{ name?: string; taskDefinitionKey?: string; completed?: number; avgDurationMs?: number }[]>('/analytics/tasks', { processDefinitionKey: q.definitionKey, from: q.from, to: q.to })) ?? []).map(
+      ((await http.get<{ name?: string; taskDefinitionKey?: string; completed?: number; avgDurationMs?: number }[]>('/analytics/tasks', analyticsQuery(q))) ?? []).map(
         (r) => ({ taskName: r.name ?? r.taskDefinitionKey ?? '', completed: Number(r.completed ?? 0), avgMs: Number(r.avgDurationMs ?? 0), byUser: undefined as { user: string; count: number }[] | undefined }),
       ),
     alerts: () => http.get<T.AlertRule[]>('/analytics/alerts'),
     saveAlert: (a: Partial<T.AlertRule>) => (a.id ? http.put<T.AlertRule>(`/analytics/alerts/${enc(a.id)}`, a) : http.post<T.AlertRule>('/analytics/alerts', a)),
     deleteAlert: (id: string) => http.del<void>(`/analytics/alerts/${enc(id)}`),
     exportLog: (format: 'xes' | 'ocel', q: Query) =>
-      download(`/analytics/export/${format}`, { processDefinitionKey: q.definitionKey, from: q.from, to: q.to }, `sangam-log.${format === 'xes' ? 'xes' : 'jsonocel'}`),
+      download(`/analytics/export/${format}`, analyticsQuery(q), `sangam-log.${format === 'xes' ? 'xes' : 'jsonocel'}`),
+    /** getAgentUsage takes from / to only. */
     agentUsage: (q: Query) =>
-      http.get<{ agent: string; runs: number; tokens: number; costUnits: number; budget?: number; guardrailBlocks: number; humanReviews: number }[]>('/analytics/agents', q), // (R72)
+      http.get<{ agent: string; runs: number; tokens: number; costUnits: number; budget?: number; guardrailBlocks: number; humanReviews: number }[]>('/analytics/agents', dayRange(q.from, q.to)), // (R72)
   },
 
   // ------------------------------------------------------------ audit (R42)

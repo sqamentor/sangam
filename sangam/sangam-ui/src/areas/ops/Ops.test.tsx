@@ -10,12 +10,12 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 
-const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), del: vi.fn(), page: vi.fn(), upload: vi.fn() }));
+const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), del: vi.fn(), page: vi.fn(), upload: vi.fn(), text: vi.fn() }));
 const auth = vi.hoisted(() => ({ roles: [] as string[] }));
 
 vi.mock('../../api/client', async (orig) => {
   const real = await orig<typeof import('../../api/client')>();
-  return { ...real, http: { ...real.http, get: api.get, post: api.post, put: api.put, del: api.del, page: api.page, upload: api.upload } };
+  return { ...real, http: { ...real.http, get: api.get, post: api.post, put: api.put, del: api.del, page: api.page, upload: api.upload, text: api.text } };
 });
 vi.mock('../../auth/AuthProvider', () => ({
   useAuth: () => ({ me: { userId: 'demo', tenantId: 't1', roles: auth.roles, seats: [] }, seat: null, mode: 'dev', hasRole: (r: string) => auth.roles.includes(r) }),
@@ -59,6 +59,8 @@ beforeEach(() => {
     return v ?? fallback;
   };
   api.get.mockImplementation(async (path: string) => answer(routes, path, []));
+  // XML and plain-text operations (UI-DEMO-2): the body as the server sends it, a string
+  api.text.mockImplementation(async (path: string) => answer(routes, path, ''));
   api.page.mockImplementation(async (path: string) => answer(pages, path, EMPTY_PAGE));
   api.post.mockResolvedValue({});
   api.put.mockResolvedValue({});
@@ -127,7 +129,7 @@ describe('definition detail', () => {
   const def = { id: 'grv-4', key: 'grievance', name: 'Grievance', version: 4, suspended: false };
   const setup = () => {
     routes['/process-definitions/grv-4'] = def;
-    routes['/process-definitions/grv-4/xml'] = { bpmn20Xml: '<bpmn/>' };
+    routes['/process-definitions/grv-4/xml'] = '<bpmn/>';
     pages['/process-definitions'] = pageOf([def]);
     pages['/process-instances'] = pageOf([{ id: 'pi1', businessKey: 'GRV-1', state: 'ACTIVE', processDefinitionVersion: 4 }]);
   };
@@ -166,7 +168,23 @@ describe('definition detail', () => {
     reasonAndConfirm('Office renamed by order');
     expect(await within(d).findByText(T('mod.common.invalidJson'))).toBeTruthy();
     expect(api.post.mock.calls.some((c) => c[0] === '/ops/batches')).toBe(false);
-  });});
+  });
+
+  it('UI-DEMO-2 and UI-DEMO-8: the XML is read as application/xml, and activity statistics only once the key is known', async () => {
+    setup();
+    let release: (v: unknown) => void = () => undefined;
+    const held = new Promise((r) => (release = r));
+    api.get.mockImplementation(async (path: string) => (path === '/process-definitions/grv-4' ? (await held, def) : (routes[path] ?? [])));
+    show(<DefinitionDetail />, '/ops/processes/grv-4', '/ops/processes/:id');
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/process-definitions/grv-4'));
+    // while the definition (and so its key) is unknown, the statistics read (processDefinitionKey required) waits
+    expect(api.get.mock.calls.some((c) => c[0] === '/analytics/activities')).toBe(false);
+    release(undefined);
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/analytics/activities', expect.objectContaining({ processDefinitionKey: 'grievance' })));
+    expect(api.get.mock.calls.filter((c) => c[0] === '/analytics/activities').every((c) => (c[1] as { processDefinitionKey?: string }).processDefinitionKey === 'grievance')).toBe(true);
+    expect(api.text).toHaveBeenCalledWith('/process-definitions/grv-4/xml', 'application/xml');
+  });
+});
 
 /** Evidence: Processes.tsx:293-311; endpoints.ts:238-257 (INCIDENT is withIncidents, history reads /history/process-instances). */
 describe('instance search', () => {
@@ -297,6 +315,8 @@ describe('incident detail', () => {
     open();
     fireEvent.click(await screen.findByRole('button', { name: T('ops.showStacktrace') }));
     expect(await screen.findByText('java.net.SocketTimeoutException: Read timed out')).toBeTruthy();
+    // UI-DEMO-2: the operation produces text/plain only; a JSON Accept is a 406
+    expect(api.text).toHaveBeenCalledWith('/ops/jobs/j7/stacktrace', 'text/plain');
   });
 
   it('a refused stack-trace read is shown, not swallowed', async () => {
@@ -336,7 +356,7 @@ describe('instance detail', () => {
   const running = { id: 'pi1', businessKey: 'GRV-1', processDefinitionId: 'grv-4', processDefinitionKey: 'grievance', state: 'ACTIVE' };
   const open = (i: Record<string, unknown> = running) => {
     routes['/process-instances/pi1'] = i;
-    routes['/process-definitions/grv-4/xml'] = { bpmn20Xml: '<bpmn/>' };
+    routes['/process-definitions/grv-4/xml'] = '<bpmn/>';
     routes['/process-instances/pi1/activity-tree'] = { id: 'pi1', activityId: 'grievance', activityType: 'processDefinition', children: [] };
     routes['/process-instances/pi1/variables'] = { amount: { type: 'Long', value: 500 }, aadhaar: { type: 'String', value: null, masked: true } };
     return show(<InstanceDetail />, '/ops/instances/pi1', '/ops/instances/:id');

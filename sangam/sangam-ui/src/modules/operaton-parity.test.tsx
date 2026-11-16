@@ -21,11 +21,12 @@ const api = vi.hoisted(() => ({
   page: vi.fn(),
   request: vi.fn(),
   download: vi.fn(),
+  text: vi.fn(),
 }));
 
 vi.mock('../api/client', async (orig) => {
   const real = await orig<typeof import('../api/client')>();
-  return { ...real, http: { ...real.http, get: api.get, post: api.post, put: api.put, del: api.del, upload: api.upload, page: api.page }, request: api.request, download: api.download };
+  return { ...real, http: { ...real.http, get: api.get, post: api.post, put: api.put, del: api.del, upload: api.upload, page: api.page, text: api.text }, request: api.request, download: api.download };
 });
 vi.mock('../auth/AuthProvider', () => ({
   useAuth: () => ({ me: { userId: 'demo', displayName: 'Demo', tenantId: 't1', roles: ['PLATFORM_ADMIN', 'PLATFORM_OPERATOR'], seats: [] }, mode: 'dev', hasRole: () => true }),
@@ -75,6 +76,8 @@ beforeEach(() => {
   routes = {};
   for (const m of Object.values(api)) m.mockReset();
   api.get.mockImplementation(async (path: string) => answer(path));
+  // the job stack trace (UI-DEMO-2) is read as text/plain
+  api.text.mockImplementation(async (path: string) => answer(path));
   api.page.mockImplementation(async () => ({ items: [], page: 0, size: 25, total: 0, capped: false }));
   api.request.mockResolvedValue(undefined);
   api.post.mockResolvedValue({ id: 'new-1' });
@@ -392,6 +395,7 @@ describe('Cockpit process instance', () => {
       await open();
       fireEvent.click(screen.getByRole('tab', { name: T('ops.stacktrace') }));
       expect(await screen.findByText(/IllegalStateException/)).toBeTruthy();
+      expect(api.text).toHaveBeenCalledWith('/engine-rest/job/j1/stacktrace', 'text/plain');
     });
   });
 

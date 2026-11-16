@@ -107,6 +107,11 @@ export interface DetailSection {
   label: string; // i18n key
   path: string;
   columns?: Col[];
+  /**
+   * The media type the endpoint produces when it is not JSON (for example text/plain for a job stack trace): the
+   * section asks for exactly that type, since a JSON Accept is answered 406 there.
+   */
+  produces?: string;
 }
 
 export interface ScreenDef {
@@ -461,7 +466,10 @@ function DetailView({ value }: { value: unknown }) {
 
 function SectionList({ section, row, context }: { section: DetailSection; row: Row; context?: FormValues }) {
   const { t } = useTranslation();
-  const data = useAsync(() => http.get<unknown>(fill(section.path, row, context)), [section.path, JSON.stringify(row)]);
+  const data = useAsync(
+    () => (section.produces ? http.text(fill(section.path, row, context), section.produces) : http.get<unknown>(fill(section.path, row, context))),
+    [section.path, section.produces, JSON.stringify(row)],
+  );
   if (data.loading) return <Loading />;
   if (data.error) return <ProblemAlert error={data.error} onRetry={data.reload} />;
   const v = data.data as unknown;

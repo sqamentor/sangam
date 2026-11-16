@@ -11,11 +11,11 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { cleanup, fireEvent, waitFor, within } from '@testing-library/react';
 import i18n from 'i18next';
 
-const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), page: vi.fn() }));
+const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), page: vi.fn(), text: vi.fn() }));
 
 vi.mock('../api/client', async (orig) => {
   const real = await orig<typeof import('../api/client')>();
-  return { ...real, http: { ...real.http, get: api.get, post: api.post, page: api.page } };
+  return { ...real, http: { ...real.http, get: api.get, post: api.post, page: api.page, text: api.text } };
 });
 vi.mock('../components/BpmnDiagram', () => ({
   BpmnDiagram: (p: { title: string; xml: string; stats?: { activityId: string }[]; onSelect?: (id: string, name?: string) => void }) => (
@@ -72,6 +72,8 @@ beforeEach(() => {
     return typeof v === 'function' ? (v as () => unknown)() : (v ?? []);
   });
   api.page.mockResolvedValue({ items: [], page: 0, size: 25, total: 0, capped: false });
+  // XML operations (UI-DEMO-2): the body as the server sends it, a string
+  api.text.mockImplementation(async (path: string) => routes[path] ?? '');
 });
 
 afterEach(() => {
@@ -210,7 +212,7 @@ describe('<sangam-task-form>', () => {
 
 describe('<sangam-process-diagram>', () => {
   it('reads the definition XML and the instance tokens, and emits sangam-element-selected', async () => {
-    routes['/process-definitions/d1/xml'] = { bpmn20Xml: '<definitions/>' };
+    routes['/process-definitions/d1/xml'] = '<definitions/>';
     routes['/process-instances/p1/activity-tree'] = { id: 'p1', activityId: 'proc', children: [{ id: 'a1', activityId: 'Task_1', children: [] }] };
     const selected: CustomEvent[] = [];
     document.addEventListener('sangam-element-selected', (e) => selected.push(e as CustomEvent), { once: true });
@@ -220,6 +222,7 @@ describe('<sangam-process-diagram>', () => {
     expect(d.textContent).toContain('Leave');
     await waitFor(() => expect(within(shadow(el)).getByTestId('bpmn').getAttribute('data-stats')).toBe('Task_1'));
     expect(api.get).toHaveBeenCalledWith('/process-instances/p1/activity-tree');
+    expect(api.text).toHaveBeenCalledWith('/process-definitions/d1/xml', 'application/xml');
     fireEvent.click(within(d).getByText('select'));
     expect(selected[0].detail).toEqual({ definitionId: 'd1', activityId: 'Task_1', name: 'Check' });
   });
