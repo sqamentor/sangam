@@ -76,6 +76,19 @@ public final class CommandState {
         return c;
     }
 
+    /**
+     * RM-30: runs {@code work} once the current engine command has committed, and not at all when it rolls back;
+     * outside a command it runs at once. For a host whose transaction is the engine command (the plain-Java host's
+     * {@code EngineTxSupport}).
+     */
+    public static void afterCommit(Runnable work) {
+        CommandContext cc = Context.hasActiveCommandContext() ? Context.getCommandContext() : null;
+        if (cc == null) {
+            work.run();
+            return;
+        }
+        cc.getTransactionContext().addTransactionListener(TransactionState.COMMITTED, x -> work.run());
+    }
     /** {@link #connection(CommandContext)} for the current command. */
     public static Connection currentConnection() {
         CommandContext cc = Context.hasActiveCommandContext() ? Context.getCommandContext() : null;
