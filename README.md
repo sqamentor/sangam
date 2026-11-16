@@ -19,6 +19,10 @@
 This repository currently contains:
 - **[SANGAM.md](SANGAM.md):** the master specification. It holds the Approved Baseline, decisions (ADRs), requirements R1–R84, specifications, government research and the evidence register. Start with the "APPROVED BASELINE" section at the top.
 - **[spike/](spike/):** the Stage B evaluation code and results. It contains adapters for both engines, a product layer, government-system simulators, a process corpus and experiments E1–E17. Results are in [spike/results/](spike/results/), and the decision scorecard is in [spike/results/scorecard.md](spike/results/scorecard.md).
+- **[sangam/docs/](sangam/docs/):** the integration documentation:
+  - [INTEGRATION-GUIDE.md](sangam/docs/INTEGRATION-GUIDE.md): how to integrate Sangam into an application (M-018).
+  - [PLUG-AND-PLAY.md](sangam/docs/PLUG-AND-PLAY.md): how far Sangam is plug and play today, mode by mode, with evidence.
+  - [IFMS-INTEGRATION-GUIDE.md](sangam/docs/IFMS-INTEGRATION-GUIDE.md): the end-to-end guide to plugging Sangam into IFMS.
 
 ## Build the spike
 
