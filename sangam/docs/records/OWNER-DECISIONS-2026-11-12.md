@@ -591,3 +591,9 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - Q3: if no existing capability or extension read can tell the UI which modules are installed, a small read-only endpoint for that is approved. It reads only, and is announced in the contract register and to IFMS.
   - Q4: the team.read permission is approved, mapped to a new group.
   - Q12: phase 2 is split into lanes that do not share files.
+
+- **400 (owner chat 2026-11-17, recommended answers)**:
+  - (1) Decision 393 is built split: first the engine and admin routes plus the guard, then each module in its own batch.
+  - (2) F7-2: when the profile binding is missing, the case waits on a visible hold task, "Profile binding missing", until the binding is fixed, instead of raising an incident.
+  - (3) UI-DEMO-1: serving pack start forms (server endpoint plus start screen) is a new 0.1.0 item.
+  - All three are assigned to R7-ui.
