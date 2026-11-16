@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-budget-preparation/circular",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-budget-preparation",
   "title": {
     "en": "Budget circular",

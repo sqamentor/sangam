@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-motor-claim/survey",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ins.motor-claim",
   "title": {
     "en": "Survey report (15 days)",

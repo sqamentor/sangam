@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-transfer-deadline/overdue",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-transfer-deadline",
   "title": {
     "en": "Transfer overdue: pursue the collecting agent",

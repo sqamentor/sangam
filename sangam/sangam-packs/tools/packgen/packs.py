@@ -276,6 +276,15 @@ def write_all(root):
     """root = src/main/resources. Writes packs/<dir>/..., META-INF/sangam/packs.idx; returns catalogue rows."""
     idx = ['# Sangam pack manifests (generated). One manifest path per line.']
     owner = {p.pid: pk for pk in ALL for p in pk.procs}
+    # UI-DEMO-7: which models start each process (call activities, batch children, linked instances), across packs
+    starters = {}
+    for pk in ALL:
+        for p in pk.procs:
+            for target in p.calls | p.spawns:
+                starters.setdefault(target, set()).add(p.pid)
+    for pk in ALL:
+        for p in pk.procs:
+            p.started_by = tuple(sorted(starters.get(p.pid, ())))
     core_tables = {did: xml for pk in ALL if pk.id == 'sangam.core' for did, xml in pk.dmns}
     # decision 382: every process is generated first, so a pack's manifest can name the DSC gates of the processes
     # it calls, whichever pack holds them

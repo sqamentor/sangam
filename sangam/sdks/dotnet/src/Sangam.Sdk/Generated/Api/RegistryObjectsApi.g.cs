@@ -74,11 +74,12 @@ public sealed class RegistryObjectsApi
     /// <summary>
     /// By number
     /// RegistryController.byNumber (sangam-rest).
-    /// GET /registry/objects/by-number/{number} (operationId registryRegistryByNumber); permission registry.read.
+    /// GET /registry/objects/by-number (operationId registryRegistryByNumber); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryByNumberAsync(string number, string? typeKey = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/registry/objects/by-number/{HttpTransport.Seg(GeneratedCalls.Str(number)!)}");
+        var req = ApiRequest.Get($"/registry/objects/by-number");
+        req.WithQuery("number", GeneratedCalls.Q(number));
         req.WithQuery("typeKey", GeneratedCalls.Q(typeKey));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }

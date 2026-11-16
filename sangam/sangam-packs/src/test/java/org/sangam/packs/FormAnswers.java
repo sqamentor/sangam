@@ -59,6 +59,23 @@ final class FormAnswers {
         }
     }
 
+    /**
+     * A typed value a person could enter in the form field {@code fld}, from its declared type only (null for a field
+     * the person does not fill: readonly, hidden).
+     */
+    static Object sample(JsonNode fld) {
+        return switch (fld.path("type").asText()) {
+            case "decimal", "number" -> new java.math.BigDecimal("1000"); // decision 138: exact, never a float
+            case "money" -> 100_000L; // integer minor units: 1,000.00 of the pack currency (SD-398)
+            case "integer" -> 1;
+            case "boolean" -> true;
+            case "date", "datetime" -> new Date(System.currentTimeMillis() + 86_400_000L);
+            case "json" -> "[]";
+            case "readonly", "hidden" -> null;
+            default -> "X-" + fld.path("id").asText();
+        };
+    }
+
     Answer answer(Task t) {
         String seat = engine.getTaskService().getIdentityLinksForTask(t.getId()).stream()
                 .map(IdentityLink::getGroupId).filter(Objects::nonNull).findFirst().orElse("none");
@@ -72,16 +89,7 @@ final class FormAnswers {
                 if (!fld.path("required").asBoolean() || existing.get(id) != null) {
                     continue;
                 }
-                Object val = switch (fld.path("type").asText()) {
-                    case "decimal", "number" -> new java.math.BigDecimal("1000"); // decision 138: exact, never a float
-                    case "money" -> 100_000L; // integer minor units: 1,000.00 of the pack currency (SD-398)
-                    case "integer" -> 1;
-                    case "boolean" -> true;
-                    case "date", "datetime" -> new Date(System.currentTimeMillis() + 86_400_000L);
-                    case "json" -> "[]";
-                    case "readonly", "hidden" -> null;
-                    default -> "X-" + id;
-                };
+                Object val = sample(fld);
                 if (val != null) {
                     v.put(id, val);
                 }

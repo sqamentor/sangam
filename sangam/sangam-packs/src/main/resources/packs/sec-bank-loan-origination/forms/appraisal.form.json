@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-loan-origination/appraisal",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.bank.loan-origination",
   "title": {
     "en": "Credit appraisal",

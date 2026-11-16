@@ -291,6 +291,18 @@ def _v2_header_param(src_path, src, p):
     return h
 
 
+def _v2_spring_io_resource(ret, src):
+    """True when the return type is a Spring core.io resource (a byte stream). S9: a substring test on "Resource"
+    also matched domain types (sangam-resources' Resource, ResourceType, ResourcesPorts.Quote,
+    ResourcesRestPort.EntryView) and declared their JSON answers application/octet-stream."""
+    inner = ret.split("<")[-1].replace(">", "").strip()
+    if inner.startswith("org.springframework.core.io."):
+        return True
+    if not _v2_re.fullmatch(r"\w*Resource", inner):
+        return False
+    return _v2_re.search(r"import\s+org\.springframework\.core\.io\.(?:\*|%s)\s*;" % inner, src) is not None
+
+
 def v2_spring_routes(rel_java_dir, tag, opid_prefix, cmd_prefix, perm_read, perm_write, reqs, no_cmd=(),
                      public_paths=(), files=None):
     """Adds every @XxxMapping of the controllers in rel_java_dir (relative to sangam/). Returns the operation count."""
@@ -357,7 +369,7 @@ def v2_spring_routes(rel_java_dir, tag, opid_prefix, cmd_prefix, perm_read, perm
                 resp = (200, {"application/json": {"schema": {"type": "array", "items": _V2_OBJECT}}})
             elif "Void" in ret or ret.strip() == "void":
                 resp = (204, None)
-            elif "byte[]" in ret or "StreamingResponseBody" in ret or "Resource" in ret.split("<")[-1]:
+            elif "byte[]" in ret or "StreamingResponseBody" in ret or _v2_spring_io_resource(ret, src):
                 resp = (200, {"application/octet-stream": {"schema": {"type": "string", "contentMediaType": "application/octet-stream"}}})
             else:
                 resp = (200, {"application/json": {"schema": _V2_OBJECT}})

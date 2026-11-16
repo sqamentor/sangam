@@ -94,12 +94,13 @@ public sealed class LedgerApi
 
     /// <summary>
     /// Close a period
-    /// Year-end lapse and carry-forward.
-    /// POST /ledger/{ledger}/periods/{period}/close (operationId closeLedgerPeriod); permission ledger.admin; result stored atomically with the state change.
+    /// Year-end lapse and carry-forward. The period is a query parameter: a fiscal-year label can carry '/' (2026/2027).
+    /// POST /ledger/{ledger}/periods/close (operationId closeLedgerPeriod); permission ledger.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.LedgerResult>?> CloseLedgerPeriodAsync(string ledger, string period, M.LedgerCloseRequest? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ledger/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/periods/{HttpTransport.Seg(GeneratedCalls.Str(period)!)}/close");
+        var req = ApiRequest.Post($"/ledger/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/periods/close");
+        req.WithQuery("period", GeneratedCalls.Q(period));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.LedgerResult>?>(req, options, cancellationToken).ConfigureAwait(false);
     }

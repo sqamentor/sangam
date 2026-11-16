@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ecom_tcs_rounding" name="TCS amount rounding (GST, CGST Act s.52) (decision 139 rounding policy)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- Decision 139 rounding policy, generated from tools/packgen/rounding.py -->
-  <decision id="sec-ecom-tcs-rounding" name="TCS amount rounding (GST, CGST Act s.52) (decision 139 rounding policy)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-ecom-tcs-rounding" name="TCS amount rounding (GST, CGST Act s.52) (decision 139 rounding policy)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-ecom-tcs-rounding_t" hitPolicy="UNIQUE">
       <input id="sec-ecom-tcs-rounding_i0" label="As of"><inputExpression id="sec-ecom-tcs-rounding_ie0" typeRef="date"><text>date(asOfDate)</text></inputExpression></input>
       <output id="sec-ecom-tcs-rounding_o0" label="Policy" name="policyId" typeRef="string"/>

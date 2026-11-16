@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// M-025: the R18 test engine's step journal (GET/PUT /work/{id}/steps/{name}, GET /work/{id}/steps), same transitions
+// M-025: the R18 test engine's step journal (GET/PUT /work/{id}/step?stepName=, GET /work/{id}/steps), same transitions
 // and fencing as the server, through `SangamTestEngine.handle`.
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -18,14 +18,14 @@ function leased(e: SangamTestEngine, worker = 'w1'): { wid: string; w: Json } {
 const fence = (w: Json, extra: Json = {}): Json => ({ workerId: 'w1', lockVersion: w.lockVersion, attemptId: w.attemptId, ...extra });
 
 function put(e: SangamTestEngine, wid: string, name: string, body: Json): [number, Json] {
-  const a = e.handle('PUT', `/work/${wid}/steps/${encodeURIComponent(name)}`, undefined, body);
+  const a = e.handle('PUT', `/work/${wid}/step`, undefined, body, new URLSearchParams({ stepName: name }));
   return [a.status, (a.body ?? {}) as Json];
 }
 
 function get(e: SangamTestEngine, wid: string, name: string, q: Json): [number, Json] {
-  const query = new URLSearchParams();
+  const query = new URLSearchParams({ stepName: name });
   for (const [k, v] of Object.entries(q)) if (v !== undefined) query.set(k, String(v));
-  const a = e.handle('GET', `/work/${wid}/steps/${encodeURIComponent(name)}`, undefined, undefined, query);
+  const a = e.handle('GET', `/work/${wid}/step`, undefined, undefined, query);
   return [a.status, (a.body ?? {}) as Json];
 }
 

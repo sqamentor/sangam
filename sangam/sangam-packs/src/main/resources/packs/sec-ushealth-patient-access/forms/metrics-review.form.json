@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-patient-access/metrics-review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ushealth.patient-access",
   "title": {
     "en": "Review the usage metrics report",

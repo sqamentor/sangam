@@ -34,6 +34,7 @@ vi.mock('../../components/Editors', () => ({
 }));
 
 import apiYaml from '../../../../sangam-rest/api/sangam-api.yaml?raw';
+import permissionJava from '../../../../sangam-security/src/main/java/org/sangam/security/policy/Permission.java?raw';
 import { initI18n } from '../../i18n';
 import { EMPTY_PAGE, KEY, L, T, buttonIn, contractOperations, dialog, noDialog, outsideContract, pageOf, problem, reasonAndConfirm, recordCalls, rowWith, show, type } from '../../test/screens';
 import {
@@ -46,6 +47,7 @@ import {
   IdentityProviders,
   ModuleSecurityDefaults,
   OrgHierarchy,
+  POLICY_ACTIONS,
   Policies,
   RetentionClasses,
   RoutingStrategies,
@@ -487,18 +489,45 @@ describe('A04 delegation tables', () => {
 
 // ====================================================================== A08 policies
 
-/** Evidence: Admin.tsx:695-851 (filters, explain, editor, delete), endpoints.ts:597-607 (edit = create + delete old). */
+/**
+ * Evidence: Admin.tsx Policies (search, explain, editor, delete), endpoints.ts savePolicy (edit = create + delete old).
+ * The rows are components.schemas.Policy as the server sends them (SecurityAdminBridge.policy): effect GRANT/DENY,
+ * actions, conditionId. UI-DEMO sweep S7: the screen read permissions/condition/validTo and crashed on the first row.
+ */
 describe('A08 policies', () => {
-  const pol = { id: 'po1', effect: 'DENY', principalType: 'GROUP', principalId: 'clerks', resourceType: 'PROCESS_INSTANCE', resourceId: '*', permissions: ['DELETE_INSTANCE'], policyVersion: 7 };
+  const pol = { id: 'po1', tenantId: 't1', effect: 'DENY', principalType: 'GROUP', principalId: 'clerks', resourceType: 'PROCESS_INSTANCE', resourceId: '*', actions: ['DELETE_INSTANCE'], conditionId: null, policyVersion: 7, createdBy: null, createdAt: null };
 
-  it('lists policies (deny wins is stated) and filters by effect and resource type', async () => {
-    pages['/admin/policies'] = pageOf([pol]);
+  it('lists the server rows (deny wins is stated) and searches with the contract q', async () => {
+    pages['/admin/policies'] = pageOf([pol, { ...pol, id: 'bootstrap', effect: 'GRANT', principalId: 'sangam-admin', actions: ['READ', 'ADMIN'] }]);
     show(<Policies />);
     expect(await screen.findByText('GROUP:clerks')).toBeTruthy();
     expect(screen.getByText(T('admin.denyWins'))).toBeTruthy();
     expect(within(rowWith('GROUP:clerks')).getByText('PROCESS_INSTANCE/*')).toBeTruthy();
-    fireEvent.change(screen.getByLabelText(L('admin.effect')), { target: { value: 'DENY' } });
-    await waitFor(() => expect(api.page).toHaveBeenLastCalledWith('/admin/policies', { page: 0, size: 25, effect: 'DENY', resourceType: undefined }));
+    expect(within(rowWith('GROUP:clerks')).getByText('DELETE_INSTANCE')).toBeTruthy();
+    expect(within(rowWith('GROUP:sangam-admin')).getByText('READ, ADMIN')).toBeTruthy();
+    expect(within(rowWith('GROUP:sangam-admin')).getByText(T('enum.GRANT'))).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(L('common.search')), { target: { value: 'clerks' } });
+    await waitFor(() => expect(api.page).toHaveBeenLastCalledWith('/admin/policies', { page: 0, size: 25, q: 'clerks' }));
+  });
+
+  it('a definition with several principals shows one row per principal', async () => {
+    // the server pages definitions and answers one row per (definition, subject); both rows carry the definition id
+    pages['/admin/policies'] = pageOf([{ ...pol, id: 'bootstrap-admin', effect: 'GRANT', principalId: 'sangam-admin' }, { ...pol, id: 'bootstrap-admin', effect: 'GRANT', principalId: 'platform-admin' }]);
+    show(<Policies />);
+    expect(await screen.findByText('GROUP:sangam-admin')).toBeTruthy();
+    expect(screen.getByText('GROUP:platform-admin')).toBeTruthy();
+  });
+
+  it('offers exactly the server actions, effects and principal types', async () => {
+    const java = permissionJava.slice(permissionJava.indexOf('public enum Permission {'));
+    const names = java.slice(java.indexOf('{') + 1, java.indexOf(';')).replace(/\/\/[^\n]*/g, '').split(',').map((s) => s.trim()).filter(Boolean);
+    expect(POLICY_ACTIONS).toEqual(names);
+    show(<Policies />);
+    fireEvent.click(await screen.findByRole('button', { name: T('common.new') }));
+    const d = dialog();
+    const opts = (label: string) => Array.from((within(d).getByLabelText(L(label)) as HTMLSelectElement).options).map((o) => o.value).filter(Boolean);
+    expect(opts('admin.effect')).toEqual(['GRANT', 'DENY']);
+    expect(opts('admin.principalType')).toEqual(['USER', 'GROUP', 'SEAT']);
   });
 
   it('explain sends the question and shows the decision with the matched policies', async () => {
@@ -515,6 +544,21 @@ describe('A08 policies', () => {
     expect(screen.getByText(/po1 · tenant/)).toBeTruthy();
   });
 
+  it('a new policy is created with the contract body', async () => {
+    api.post.mockResolvedValueOnce({ ...pol, id: 'po9', effect: 'GRANT' });
+    show(<Policies />);
+    fireEvent.click(await screen.findByRole('button', { name: T('common.new') }));
+    const d = dialog();
+    type(d, 'admin.principal', 'clerks');
+    type(d, 'admin.resourceType', 'TASK');
+    fireEvent.click(within(d).getByLabelText('CLAIM'));
+    fireEvent.click(buttonIn(d, 'common.save'));
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith('/admin/policies', { effect: 'GRANT', principalType: 'GROUP', principalId: 'clerks', resourceType: 'TASK', resourceId: '*', actions: ['READ', 'CLAIM'], conditionId: undefined }),
+    );
+    expect(api.del).not.toHaveBeenCalled();
+  });
+
   it('an edit creates the new version and removes the old one, so history stays', async () => {
     pages['/admin/policies'] = pageOf([pol]);
     api.post.mockResolvedValueOnce({ ...pol, id: 'po2' });
@@ -524,7 +568,14 @@ describe('A08 policies', () => {
     fireEvent.click(within(d).getByLabelText('READ'));
     fireEvent.click(buttonIn(d, 'common.save'));
     await waitFor(() => expect(api.del).toHaveBeenCalledWith('/admin/policies/po1', { reason: 'replaced by po2' }));
-    expect(api.post).toHaveBeenCalledWith('/admin/policies', { ...pol, id: undefined, permissions: ['DELETE_INSTANCE', 'READ'] });
+    expect(api.post).toHaveBeenCalledWith('/admin/policies', { effect: 'DENY', principalType: 'GROUP', principalId: 'clerks', resourceType: 'PROCESS_INSTANCE', resourceId: '*', actions: ['DELETE_INSTANCE', 'READ'], conditionId: null });
+  });
+
+  it('a conditional policy says its condition cannot be kept through this screen', async () => {
+    pages['/admin/policies'] = pageOf([{ ...pol, conditionId: 'condition' }]);
+    show(<Policies />);
+    fireEvent.click(within(rowWith(await screen.findByText('GROUP:clerks').then((e) => e.textContent!))).getByRole('button', { name: T('common.edit') }));
+    expect(within(dialog()).getByText(new RegExp(T('admin.policyConditionNotEditable').slice(0, 30)))).toBeTruthy();
   });
 
   it('delete asks for a reason', async () => {

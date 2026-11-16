@@ -30,8 +30,8 @@ public sealed class DurableStepsTests
             WorkerId = "seed", LockVersion = w.LockVersion, AttemptId = w.AttemptId, State = s, Result = r, ProviderRef = p,
             Error = s == "FAILED" ? "refused" : null,
         };
-        await c.Api.Work.RecordWorkStepAsync(id, name, Req("INTENT", null, null));
-        if (state != "INTENT") await c.Api.Work.RecordWorkStepAsync(id, name, Req(state, result, providerRef));
+        await c.Api.Work.RecordWorkStepAsync(id, Req("INTENT", null, null), name);
+        if (state != "INTENT") await c.Api.Work.RecordWorkStepAsync(id, Req(state, result, providerRef), name);
         await c.Work.UnlockAsync(id, new UnlockRequest("seed", w.LockVersion!.Value, w.AttemptId), "seed-unlock");
     }
 

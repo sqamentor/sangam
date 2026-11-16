@@ -95,7 +95,7 @@ class WorkCallProblemsVectorH2Test {
     }
 
     /**
-     * The step routes' fence ({@code WorkPort.inFencedWork}, behind PUT /work/{id}/steps/{stepName}) on both adapters, for
+     * The step routes' fence ({@code WorkPort.inFencedWork}, behind PUT /work/{id}/step?stepName=) on both adapters, for
      * the step vectors whose scenario is a lease state (RELEASED, UNKNOWN_OUTCOME); WorkStepJournalH2Test checks every
      * step vector through the controller on the Operaton adapter.
      */

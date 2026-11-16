@@ -31,7 +31,7 @@
  * - R41 for `POST /process-instances`: same Idempotency-Key + same body -> the stored response with
  *   `Idempotent-Replayed: true`; same key + another body -> `422 IDEMPOTENCY_KEY_REUSED`.
  * - `fetch-and-lock` answers at once (no long-poll wait); an empty answer comes after one timer tick of at most 10 ms.
- * - The step journal of durable steps (M-025): `GET/PUT /work/{id}/steps/{name}`, `GET /work/{id}/steps`, with the
+ * - The step journal of durable steps (M-025): `GET/PUT /work/{id}/step?stepName=`, `GET /work/{id}/steps`, with the
  *   server's transitions and fencing (`testing-steps.ts`).
  */
 import { SangamClient, type SangamClientOptions } from './client.js';

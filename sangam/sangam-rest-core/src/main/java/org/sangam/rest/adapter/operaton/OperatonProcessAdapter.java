@@ -661,12 +661,12 @@ public class OperatonProcessAdapter implements ProcessPort {
             }
         }
         q.orderByProcessDefinitionKey().asc().orderByProcessDefinitionVersion().desc();
-        return OperatonSupport.page(q, page, props.getCountCap(), OperatonProcessAdapter::mapDefinition);
+        return OperatonSupport.page(q, page, props.getCountCap(), d -> mapDefinition(ctx, d));
     }
 
     @Override
     public ProcessDefinition definition(RequestContext ctx, String definitionId) {
-        return mapDefinition(requireDefinition(ctx, definitionId));
+        return mapDefinition(ctx, requireDefinition(ctx, definitionId));
     }
 
     @Override
@@ -691,9 +691,28 @@ public class OperatonProcessAdapter implements ProcessPort {
         return d;
     }
 
-    private static ProcessDefinition mapDefinition(org.operaton.bpm.engine.repository.ProcessDefinition d) {
+    /**
+     * UI-DEMO-5: a definition carries its running instance and open incident counts, scoped like every instance read
+     * (the caller's tenant; a shared definition counts only this tenant's instances).
+     */
+    private ProcessDefinition mapDefinition(RequestContext ctx, org.operaton.bpm.engine.repository.ProcessDefinition d) {
+        long running = OperatonSupport.call(() -> {
+            var iq = runtime.createProcessInstanceQuery().processDefinitionId(d.getId());
+            if (ctx.tenantId() != null) {
+                iq.tenantIdIn(ctx.tenantId());
+            }
+            return iq.count();
+        });
+        long incidents = OperatonSupport.call(() -> {
+            var nq = runtime.createIncidentQuery().processDefinitionId(d.getId());
+            if (ctx.tenantId() != null) {
+                nq.tenantIdIn(ctx.tenantId());
+            }
+            return nq.count();
+        });
         return new ProcessDefinition(d.getId(), d.getKey(), d.getName(), d.getVersion(), d.getDeploymentId(),
-                d.getTenantId(), d.getVersionTag(), d.isSuspended(), d.getResourceName(), d.isStartableInTasklist());
+                d.getTenantId(), d.getVersionTag(), d.isSuspended(), d.getResourceName(), d.isStartableInTasklist(),
+                running, incidents);
     }
 
     // ------------------------------------------------------------------ messages / signals

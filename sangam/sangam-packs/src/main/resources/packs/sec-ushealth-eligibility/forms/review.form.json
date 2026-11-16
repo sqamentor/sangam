@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-eligibility/review",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ushealth.eligibility",
   "title": {
     "en": "Review benefits and estimate patient responsibility",

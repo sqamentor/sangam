@@ -1,6 +1,6 @@
 {
   "key": "sec-health-admission-discharge/triage",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.health.admission-discharge",
   "title": {
     "en": "Triage and stabilise",

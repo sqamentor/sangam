@@ -58,7 +58,7 @@ import java.util.Set;
  * DELETE /assignments/{assignmentId}               unassign
  * GET    /people/{personId}/assignments?from=&to=  personalRoster    (/people/me/... for the caller)
  * POST   /swaps                                    requestSwap
- * GET    /periods/{periodId}/swaps                 listSwaps
+ * GET    /swaps?periodId=                          listSwaps         (periodId required)
  * GET    /swaps/{swapId}                           getSwap
  * POST   /swaps/{swapId}/accept                    acceptSwap
  * POST   /swaps/{swapId}/decision                  decideSwap

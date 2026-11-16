@@ -22,6 +22,7 @@ import org.sangam.sdk.generated.model.ResourcesSeriesRequest;
 @SuppressWarnings("unused")
 public final class ResourcesBookingsApi {
 
+    private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesQuote = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesHold = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesHoldSeries = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_resourcesResourcesBookings = new TypeReference<>() { };
@@ -51,10 +52,10 @@ public final class ResourcesBookingsApi {
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public byte[] resourcesResourcesQuote(BookingModelHoldRequest body, RequestOptions options) {
+    public java.util.Map<String, Object> resourcesResourcesQuote(BookingModelHoldRequest body, RequestOptions options) {
         ApiRequest req = ApiRequest.post("/resources/bookings/quote");
         req.body(body);
-        return call.bytes(req, options, "application/octet-stream");
+        return call.json(req, options, R_resourcesResourcesQuote);
     }
 
     /**

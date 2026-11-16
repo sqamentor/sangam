@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import type { Role } from '../api/types';
@@ -201,6 +201,8 @@ function AuthedRoutes() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/tasks" element={g(WORK, <TaskInbox />)} />
+          {/* the menu calls the task list Inbox (nav.inbox): /inbox is the same screen */}
+          <Route path="/inbox" element={<Navigate to="/tasks" replace />} />
           <Route path="/tasks/filters" element={g(['PLATFORM_OPERATOR', 'PLATFORM_ADMIN'], <TaskFiltersPage />)} />
           <Route path="/tasks/:id" element={g(WORK, <TaskDetail />)} />
           <Route path="/welcome" element={<Welcome />} />
@@ -324,9 +326,17 @@ function AuthedRoutes() {
   );
 }
 
+/** An address no screen answers: said as such, never as a missing permission (error.notAvailable is for a guarded screen). */
 function NotFound() {
   const { t } = useTranslation();
-  return <PageHeader title={t('error.notAvailable')} />;
+  return (
+    <>
+      <PageHeader title={t('error.pageNotFound')} />
+      <Notice>
+        {t('error.pageNotFoundHint')} <Link to="/">{t('error.goHome')}</Link>
+      </Notice>
+    </>
+  );
 }
 
 function Gate() {

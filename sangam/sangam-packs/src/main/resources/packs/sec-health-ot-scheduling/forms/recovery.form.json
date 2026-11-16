@@ -1,6 +1,6 @@
 {
   "key": "sec-health-ot-scheduling/recovery",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.health.ot-scheduling",
   "title": {
     "en": "Post-operative recovery and handover",

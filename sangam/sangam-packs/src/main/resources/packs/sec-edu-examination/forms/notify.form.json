@@ -1,6 +1,6 @@
 {
   "key": "sec-edu-examination/notify",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.edu.examination",
   "title": {
     "en": "Examination notification",

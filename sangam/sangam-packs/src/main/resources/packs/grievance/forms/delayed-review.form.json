@@ -1,6 +1,6 @@
 {
   "key": "grievance/delayed-review",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.grievance",
   "title": {
     "en": "Senior officer review of a delayed grievance",

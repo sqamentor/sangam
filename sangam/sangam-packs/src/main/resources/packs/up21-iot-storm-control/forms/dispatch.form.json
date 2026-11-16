@@ -1,6 +1,6 @@
 {
   "key": "up21-iot-storm-control/dispatch",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "universal.up21-iot-storm-control",
   "title": {
     "en": "Field maintenance",

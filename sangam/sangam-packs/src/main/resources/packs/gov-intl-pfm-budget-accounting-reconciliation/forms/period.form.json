@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-budget-accounting-reconciliation/period",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-budget-accounting-reconciliation",
   "title": {
     "en": "Reconciliation period",

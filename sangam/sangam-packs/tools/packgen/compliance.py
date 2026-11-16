@@ -152,8 +152,10 @@ class Model:
                'xmlns:di="http://www.omg.org/spec/DD/20100524/DI" '
                f'id="defs_{p.pid.replace("-", "_")}" targetNamespace="{NAMESPACE}" exporter="{EXPORTER}" '
                f'exporterVersion="{self.exporter_version}">',
+               # UI-DEMO-7: a compliance model declares no start form; its seats (M-010c), deadlines and request id
+               # are bound by its starter service, so it is not offered in the start catalogue
                f'  <process id="{p.pid}" name="{lib.a(p.name)}" isExecutable="true" '
-               f'operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">',
+               f'operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0" operaton:isStartableInTasklist="false">',
                f'    <documentation>{escape(p.doc)}</documentation>']
         out.extend('    ' + line for line in self.lines)
         out.append('  </process>')

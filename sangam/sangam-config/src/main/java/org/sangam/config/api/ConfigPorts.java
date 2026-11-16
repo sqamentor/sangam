@@ -16,13 +16,13 @@ import java.util.Map;
  * {@code /api/v1}, problem+json errors, Idempotency-Key on mutations):
  * <pre>
  * GET    /config/profiles?scope=&amp;office=&amp;asOf=          → resolved profile (data, chain, binding, placeholders, findings)
- * GET    /config/profiles/{id}/versions                     → versions with status
- * PUT    /config/profiles/{id}/versions/{version}           → save draft (YAML or JSON body)
- * POST   /config/profiles/{id}/versions/{version}/submit
- * POST   /config/profiles/{id}/versions/{version}/approve   {presentedHash}
- * POST   /config/profiles/{id}/versions/{version}/reject    {reason}
- * POST   /config/profiles/{id}/versions/{version}/activate  {scopesToCheck[]}
- * GET    /config/profiles/{id}/history                      → change register
+ * GET    /config/profiles/versions?id=                      → versions with status (id may carry '/': query)
+ * PUT    /config/profiles/version?id=&amp;version=           → save draft (YAML or JSON body)
+ * POST   /config/profiles/version/submit?id=&amp;version=
+ * POST   /config/profiles/version/approve?id=&amp;version=   {presentedHash}
+ * POST   /config/profiles/version/reject?id=&amp;version=    {reason}
+ * POST   /config/profiles/version/activate?id=&amp;version=  {scopesToCheck[]}
+ * GET    /config/profiles/history?id=                       → change register
  * POST   /config/validate                                    {scope, office, asOf} → findings
  * GET    /config/master/{scheme}/{segment}?scope=&amp;asOf=     → codes
  * POST   /config/master/seed                                 CSV / YAML body → count

@@ -13,6 +13,10 @@ const enc = encodeURIComponent;
 /** The edit-lease fence header of a package save (ModellerWiring.FENCE_HEADER). */
 export const EDIT_FENCE_HEADER = 'X-Sangam-Edit-Fence';
 
+/** The scope of a document list (listDocuments): exactly what the server accepts. */
+export type DocumentScope = { taskId?: string; processInstanceId?: string; caseInstanceId?: string };
+export const DOCUMENT_SCOPES = ['processInstanceId', 'caseInstanceId', 'taskId'] as const;
+
 export interface ListQuery extends Query {
   page?: number;
   size?: number;
@@ -25,6 +29,34 @@ function sortParams(sort?: string): Query {
   if (!sort) return {};
   const keys = sort.split(',').filter(Boolean);
   return { sortBy: keys.map((k) => k.replace(/^-/, '')).join(','), sortOrder: keys.map((k) => (k.startsWith('-') ? 'desc' : 'asc')).join(',') };
+}
+
+/**
+ * A calendar-day range of the filters (date inputs, YYYY-MM-DD in the viewer's zone) as the contract's date-time
+ * query: the analytics operations bind from / to as ISO-8601 instants (AnalyticsMeController, DATE_TIME) and read them
+ * as startedAfter / startedBefore, so a bare date is refused (400) and the end is exclusive. The range runs from the
+ * start of `from` to the start of the day after `to`, so the `to` day is included. A value that already carries a time
+ * is passed as it is; an empty one is left out.
+ */
+export function dayRange(from?: unknown, to?: unknown): { from?: string; to?: string } {
+  const at = (v: unknown, nextDay: boolean): string | undefined => {
+    if (typeof v !== 'string' || !v.trim()) return undefined;
+    if (v.includes('T')) return v;
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v.trim());
+    if (!m) return v;
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + (nextDay ? 1 : 0)).toISOString();
+  };
+  const out: { from?: string; to?: string } = {};
+  const f = at(from, false);
+  const t = at(to, true);
+  if (f) out.from = f;
+  if (t) out.to = t;
+  return out;
+}
+
+/** The analytics filters (AnalyticsQuery in the screens) as the contract's processDefinitionKey / from / to. */
+function analyticsQuery(q: Query): Query {
+  return { processDefinitionKey: (q.definitionKey as string | undefined) || undefined, ...dayRange(q.from, q.to) };
 }
 
 /**
@@ -230,10 +262,14 @@ export const api = {
   processes: {
     definitions: (q: ListQuery & { latest?: boolean; key?: string }) => http.page<T.ProcessDefinition>('/process-definitions', { ...q, key: q.key ?? q.q }),
     definition: (id: string) => http.get<T.ProcessDefinition>(`/process-definitions/${enc(id)}`),
-    xml: async (id: string) => ({ bpmn20Xml: A.xmlOf(await http.get<unknown>(`/process-definitions/${enc(id)}/xml`), 'bpmn20Xml') }),
-    /** /analytics/activities: active = runtime tokens, count = history heatmap. */
+    /** getProcessDefinitionXml produces application/xml only (ProcessController.definitionXml). */
+    xml: async (id: string) => ({ bpmn20Xml: A.xmlOf(await http.text(`/process-definitions/${enc(id)}/xml`, 'application/xml'), 'bpmn20Xml') }),
+    /**
+     * /analytics/activities: active = runtime tokens, count = history heatmap. processDefinitionKey is required
+     * (400 PROCESS_DEFINITION_KEY_REQUIRED), so a caller asks only once it knows the key; from / to are calendar days.
+     */
     statistics: async (id: string, mode: 'runtime' | 'history', q: Query = {}, definitionKey?: string) =>
-      A.normActivityStats(id, await http.get<Record<string, unknown>[]>('/analytics/activities', { processDefinitionKey: definitionKey, from: q.from, to: q.to }), mode),
+      A.normActivityStats(id, await http.get<Record<string, unknown>[]>('/analytics/activities', { processDefinitionKey: definitionKey, ...dayRange(q.from, q.to) }), mode),
     suspendDefinition: (id: string, suspended: boolean, reason: string, includeInstances: boolean) =>
       http.post<void>(`/process-definitions/${enc(id)}/suspension`, { suspended, reason, includeInstances }),
     start: (body: { key: string; businessKey?: string; variables?: Record<string, unknown> }, key?: string) =>
@@ -368,8 +404,11 @@ export const api = {
   },
   decisions: {
     definitions: (q: ListQuery) => http.page<T.DecisionDefinition>('/decision-definitions', { ...q, key: q.q }),
-    xml: async (id: string) => ({ dmnXml: A.xmlOf(await http.get<unknown>(`/decision-definitions/${enc(id)}/xml`), 'dmnXml') }),
-    instances: (q: ListQuery & { decisionKey?: string; processInstanceId?: string }) => http.page<T.DecisionInstance>('/history/decisions', q),
+    /** getDecisionDefinitionXml produces application/xml only (CaseDecisionController). */
+    xml: async (id: string) => ({ dmnXml: A.xmlOf(await http.text(`/decision-definitions/${enc(id)}/xml`, 'application/xml'), 'dmnXml') }),
+    /** listHistoricDecisions needs processInstanceId or caseInstanceId (400 FILTER_REQUIRED); it has no decision-key filter. */
+    instances: async (q: ListQuery & { processInstanceId?: string; caseInstanceId?: string }) =>
+      A.mapPage(await http.page<Record<string, unknown>>('/history/decisions', { page: q.page, size: q.size, processInstanceId: q.processInstanceId, caseInstanceId: q.caseInstanceId }), A.normDecisionInstance),
     evaluate: (key: string, variables: Record<string, unknown>) =>
       http.post<{ outputs: Record<string, unknown>[] }>(`/decisions/${enc(key)}/evaluate`, { variables: A.toVariableMap(variables) }),
   },
@@ -442,9 +481,9 @@ export const api = {
     presencePath: (file: string) => `/models/${enc(file)}/presence/stream`,
   },
   forms: {
-    get: async (key: string, version?: number) => A.normForm(await http.get<Record<string, unknown>>(`/forms/${enc(key)}`, { version })),
+    get: async (key: string, version?: number) => A.normForm(await http.get<Record<string, unknown>>('/forms/by-key', { key, version })),
     validate: (key: string, data: Record<string, unknown>) =>
-      http.post<{ valid: boolean; errors?: { field?: string; message: string }[] }>(`/forms/${enc(key)}/validate`, { data: A.toVariableMap(data) }),
+      http.post<{ valid: boolean; errors?: { field?: string; message: string }[] }>(`/forms/by-key/validate?key=${enc(key)}`, { data: A.toVariableMap(data) }),
   },
 
   // ------------------------------------------------------------ operations (R63, R64, O01–O09)
@@ -479,7 +518,8 @@ export const api = {
     /** JobRetriesRequest {retries, reason}; dueDate is a UI proposal. */
     jobRetry: (id: string, retries: number, reason: string, dueDate?: string) => http.post<void>(`/ops/jobs/${enc(id)}/retries`, { retries, reason, dueDate }),
     jobExecute: (id: string, reason: string) => http.post<void>(`/ops/jobs/${enc(id)}/execute?reason=${enc(reason)}`),
-    jobStacktrace: (id: string) => http.get<string>(`/ops/jobs/${enc(id)}/stacktrace`),
+    /** getJobStacktrace produces text/plain only (OpsConsoleController). */
+    jobStacktrace: (id: string) => http.text(`/ops/jobs/${enc(id)}/stacktrace`, 'text/plain'),
     outbox: async (q: ListQuery & { status?: string; destination?: string }) =>
       A.mapPage(await http.page<Record<string, unknown>>('/ops/outbox', { page: q.page, size: q.size, state: q.status, destination: q.destination }), A.normOutbox),
     outboxAction: (id: string, action: 'requeue' | 'skip', reason: string, key?: string) => http.post<void>(`/ops/outbox/${enc(id)}/${action}`, { reason }, key),
@@ -595,10 +635,12 @@ export const api = {
     /** Person / seat delegations (contract /admin/delegations). */
     delegations: (q: ListQuery & { personId?: string; seatId?: string }) => http.page<T.Assignment>('/admin/delegations', q),
     revokeDelegation: (id: string, reason: string) => http.post<void>(`/admin/delegations/${enc(id)}/revoke`, { reason }),
-    policies: (q: ListQuery & { effect?: string; resourceType?: string }) => http.page<T.Policy>('/admin/policies', q),
+    policies: (q: ListQuery) => http.page<T.Policy>('/admin/policies', q),
     /** create; an edit is create-new + delete-old in the contract (no PUT), so the version history stays intact. */
     savePolicy: async (p: Partial<T.Policy>) => {
-      const created = await http.post<T.Policy>('/admin/policies', { ...p, id: undefined });
+      // the request fields of components.schemas.Policy; id, version and audit fields are server-assigned
+      const body = { effect: p.effect, principalType: p.principalType, principalId: p.principalId, resourceType: p.resourceType, resourceId: p.resourceId, actions: p.actions, conditionId: p.conditionId };
+      const created = await http.post<T.Policy>('/admin/policies', body);
       if (p.id) await http.del<void>(`/admin/policies/${enc(p.id)}`, { reason: `replaced by ${created.id}` });
       return created;
     },
@@ -644,35 +686,40 @@ export const api = {
 
   // ------------------------------------------------------------ analytics (R65, R66, R79)
   analytics: {
+    // The screens' filters are {definitionKey, from, to (calendar days), bucket}; each call sends the contract's own
+    // parameters (analyticsQuery): processDefinitionKey, date-time from / to, and the bucket as interval or period.
     kpis: async (q: Query) => {
-      const s = await http.get<Record<string, unknown>>('/analytics/summary', { processDefinitionKey: q.definitionKey, from: q.from, to: q.to });
+      const s = await http.get<Record<string, unknown>>('/analytics/summary', analyticsQuery(q));
       return A.kpisFromSummary(s);
     },
-    throughput: (q: Query) => http.get<T.TimePoint[]>('/analytics/throughput', q),
-    sla: (q: Query) => http.get<T.SlaRow[]>('/analytics/sla', q), // (R79)
+    throughput: (q: Query) => http.get<T.TimePoint[]>('/analytics/throughput', { ...analyticsQuery(q), interval: q.bucket || undefined }),
+    sla: (q: Query) => http.get<T.SlaRow[]>('/analytics/sla', analyticsQuery(q)), // (R79)
     bottlenecks: async (q: Query) =>
-      ((await http.get<Record<string, unknown>[]>('/analytics/activities', { processDefinitionKey: q.definitionKey, from: q.from, to: q.to })) ?? []).map(A.bottleneckFromActivity),
+      ((await http.get<Record<string, unknown>[]>('/analytics/activities', analyticsQuery(q))) ?? []).map(A.bottleneckFromActivity),
     variants: async (q: Query) =>
-      ((await http.get<Record<string, unknown>[]>('/analytics/variants', { processDefinitionKey: q.definitionKey, from: q.from, to: q.to, limit: 50 })) ?? []).map(A.normVariant),
-    conformance: (q: Query) => http.get<T.ConformanceResult>('/analytics/conformance', q), // (R66)
-    durationReport: (q: Query) => http.get<T.DurationReportRow[]>('/analytics/reports/duration', q), // (PF-07)
+      ((await http.get<Record<string, unknown>[]>('/analytics/variants', { ...analyticsQuery(q), limit: 50 })) ?? []).map(A.normVariant),
+    conformance: (q: Query) => http.get<T.ConformanceResult>('/analytics/conformance', analyticsQuery(q)), // (R66)
+    /** getDurationReport: period is day | week | month (contract enum); an hour bucket asks for the server default. */
+    durationReport: (q: Query) =>
+      http.get<T.DurationReportRow[]>('/analytics/reports/duration', { ...analyticsQuery(q), period: q.bucket === 'hour' ? undefined : q.bucket || undefined }), // (PF-07)
     taskReport: async (q: Query) =>
-      ((await http.get<{ name?: string; taskDefinitionKey?: string; completed?: number; avgDurationMs?: number }[]>('/analytics/tasks', { processDefinitionKey: q.definitionKey, from: q.from, to: q.to })) ?? []).map(
+      ((await http.get<{ name?: string; taskDefinitionKey?: string; completed?: number; avgDurationMs?: number }[]>('/analytics/tasks', analyticsQuery(q))) ?? []).map(
         (r) => ({ taskName: r.name ?? r.taskDefinitionKey ?? '', completed: Number(r.completed ?? 0), avgMs: Number(r.avgDurationMs ?? 0), byUser: undefined as { user: string; count: number }[] | undefined }),
       ),
     alerts: () => http.get<T.AlertRule[]>('/analytics/alerts'),
     saveAlert: (a: Partial<T.AlertRule>) => (a.id ? http.put<T.AlertRule>(`/analytics/alerts/${enc(a.id)}`, a) : http.post<T.AlertRule>('/analytics/alerts', a)),
     deleteAlert: (id: string) => http.del<void>(`/analytics/alerts/${enc(id)}`),
     exportLog: (format: 'xes' | 'ocel', q: Query) =>
-      download(`/analytics/export/${format}`, { processDefinitionKey: q.definitionKey, from: q.from, to: q.to }, `sangam-log.${format === 'xes' ? 'xes' : 'jsonocel'}`),
+      download(`/analytics/export/${format}`, analyticsQuery(q), `sangam-log.${format === 'xes' ? 'xes' : 'jsonocel'}`),
+    /** getAgentUsage takes from / to only. */
     agentUsage: (q: Query) =>
-      http.get<{ agent: string; runs: number; tokens: number; costUnits: number; budget?: number; guardrailBlocks: number; humanReviews: number }[]>('/analytics/agents', q), // (R72)
+      http.get<{ agent: string; runs: number; tokens: number; costUnits: number; budget?: number; guardrailBlocks: number; humanReviews: number }[]>('/analytics/agents', dayRange(q.from, q.to)), // (R72)
   },
 
   // ------------------------------------------------------------ audit (R42)
   audit: {
     timeline: async (businessKey: string, q: ListQuery = {}) =>
-      A.mapPage(await http.page<Record<string, unknown>>(`/audit/${enc(businessKey)}/timeline`, { page: q.page, size: q.size, includeHistory: true, type: q.q }), (e) => A.normAudit(e, businessKey)),
+      A.mapPage(await http.page<Record<string, unknown>>('/audit/timeline', { businessKey, page: q.page, size: q.size, includeHistory: true, type: q.q }), (e) => A.normAudit(e, businessKey)),
     verify: async (businessKey?: string) => A.normVerify(await http.get<Record<string, unknown>>('/audit/verify', { businessKey })),
     search: async (q: ListQuery & { actor?: string; seat?: string; type?: string; operationId?: string; ruleVersion?: string; from?: string; to?: string }) =>
       A.mapPage(await http.page<Record<string, unknown>>('/audit/events', q), (e) => A.normAudit(e)), //
@@ -682,13 +729,14 @@ export const api = {
     createExport: (body: { format: T.AuditExportJob['format']; scope: Record<string, unknown> }, key?: string) => http.post<T.AuditExportJob>('/audit/exports', body, key), // async jobs
     exports: () => http.get<T.AuditExportJob[]>('/audit/exports'),
     downloadExport: (id: string) => download(`/audit/exports/${enc(id)}/content`, undefined, `audit-${id}`),
-    evidencePack: (businessKey: string) => download(`/audit/${enc(businessKey)}/evidence-pack`, undefined, `evidence-${businessKey}.zip`), // (U03)
+    evidencePack: (businessKey: string) => download('/audit/evidence-pack', { businessKey }, `evidence-${businessKey}.zip`), // (U03)
   },
 
   // ------------------------------------------------------------ documents (R74, EC-18)
   documents: {
-    list: async (q: ListQuery & { businessKey?: string }) =>
-      A.mapPage(await http.page<Record<string, unknown>>('/documents', { page: q.page, size: q.size, name: q.q, businessKey: q.businessKey }), A.normDocument),
+    /** listDocuments is scoped: one of taskId, processInstanceId or caseInstanceId is required (400 SCOPE_REQUIRED). */
+    list: async (q: ListQuery & DocumentScope) =>
+      A.mapPage(await http.page<Record<string, unknown>>('/documents', { page: q.page, size: q.size, name: q.q, taskId: q.taskId, processInstanceId: q.processInstanceId, caseInstanceId: q.caseInstanceId }), A.normDocument),
     versions: (id: string) => http.get<T.Attachment[]>(`/documents/${enc(id)}/versions`),
     content: (id: string, name: string, version?: number) => download(`/documents/${enc(id)}/content`, { version }, name),
     setHold: (id: string, hold: boolean, reason: string) => http.post<void>(`/documents/${enc(id)}/legal-hold`, { hold, reason }),

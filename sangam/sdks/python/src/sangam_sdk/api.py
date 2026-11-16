@@ -279,8 +279,8 @@ class AuditApi(_Api):
 
     def timeline(self, business_key: str, include_history: bool | None = None, page: int | None = None,
                  size: int | None = None) -> Page[AuditEntry]:
-        q = {"includeHistory": include_history, "page": page, "size": size}
-        return self._page(ApiRequest("GET", f"/audit/{seg(business_key)}/timeline", query=q), AuditEntry.from_dict)
+        q = {"businessKey": business_key, "includeHistory": include_history, "page": page, "size": size}
+        return self._page(ApiRequest("GET", "/audit/timeline", query=q), AuditEntry.from_dict)
 
     def verify(self, chain_id: str | None = None, business_key: str | None = None) -> AuditVerifyResult:
         return AuditVerifyResult.from_dict(self._call(ApiRequest(
@@ -447,4 +447,4 @@ class RepositoryApi(_Api):
         return self.publish_event(channel, ev)
 
     def form(self, form_key: str) -> dict[str, Any]:
-        return self._call(ApiRequest("GET", f"/forms/{seg(form_key)}"))
+        return self._call(ApiRequest("GET", "/forms/by-key", query={"key": form_key}))

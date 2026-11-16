@@ -87,7 +87,9 @@ export function Decisions() {
   const defs = usePaged((p) => api.decisions.definitions(p), []);
   const [sel, setSel] = useState<DecisionDefinition | null>(null);
   const xml = useAsync(() => api.decisions.xml(sel!.id), [sel?.id], !!sel);
-  const inst = usePaged((p) => api.decisions.instances({ ...p, decisionKey: sel?.key }), [sel?.key]);
+  // UI-DEMO sweep S3: decision history is read per process instance (400 FILTER_REQUIRED without one)
+  const [pi, setPi] = useState('');
+  const inst = usePaged((p) => api.decisions.instances({ ...p, processInstanceId: pi.trim() }), [pi], 25, !!pi.trim());
   const [vars, setVars] = useState('{}');
   // the variables box is refused by name when it is not a JSON object; it is never evaluated as {} instead
   const [varsTouched, setVarsTouched] = useState(false);
@@ -143,6 +145,8 @@ export function Decisions() {
             {out !== undefined && <JsonView value={out} />}
           </Section>
           <Section title={t('ops.decisionInstances')}>
+            <SearchBox label={t('ops.decisionsOfInstance')} value={pi} onChange={setPi} />
+            {!pi.trim() && <Notice>{t('ops.decisionsOfInstanceHint')}</Notice>}
             <ProblemAlert error={inst.error} />
             {inst.data && (
               <DataTable
@@ -160,7 +164,7 @@ export function Decisions() {
                       </button>
                     ),
                   },
-                  { key: 'v', header: t('ops.version'), render: (r) => String(r.decisionVersion) },
+                  { key: 'd', header: t('ops.definition'), render: (r) => (r.decisionKey === sel.key ? <strong>{r.decisionKey}</strong> : r.decisionKey) },
                   { key: 'pi', header: t('ops.instance'), render: (r) => (r.processInstanceId ? <Link to={`/ops/instances/${encodeURIComponent(r.processInstanceId)}`}>{r.businessKey ?? r.processInstanceId}</Link> : '—') },
                   { key: 'in', header: t('ops.inputs'), render: (r) => r.inputs.map((x) => `${x.name}=${JSON.stringify(x.value)}`).join(', ') },
                   { key: 'out', header: t('ops.outputs'), render: (r) => r.outputs.map((x) => `${x.rule ? `[${x.rule}] ` : ''}${x.name}=${JSON.stringify(x.value)}`).join(', ') },

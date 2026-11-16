@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-collections/contact",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.bank.collections",
   "title": {
     "en": "Contact borrower (08:00-19:00, agent identity disclosed)",

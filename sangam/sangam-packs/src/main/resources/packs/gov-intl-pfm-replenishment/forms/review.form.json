@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-replenishment/review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-replenishment",
   "title": {
     "en": "Review the application and statement of expenditure (treasury)",

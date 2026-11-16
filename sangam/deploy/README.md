@@ -385,8 +385,17 @@ started run.
 On a **Windows** host, set both temp directories to a folder the service account owns outside the user profile
 (for example `D:\sangam\tmp`). The JDK's Windows selector opens an AF_UNIX socket in `jdk.net.unixdomain.tmpdir`
 (default: the user temp folder). Endpoint-protection filters on `C:\Users\...` can block such sockets; the server
-then fails at start-up with `IOException: Unable to establish loopback connection`. The build sets the same
-property for its test JVMs (root `pom.xml`, surefire and failsafe).
+then fails at start-up with `IOException: Unable to establish loopback connection`. The same error comes from a
+long temp path: an AF_UNIX socket path is limited to 108 bytes (`sun_path`), and a deep `%TEMP%` (a long user name, a
+temp folder redirected by a tool or a sandbox) leaves no room for the socket name. Keep the folder short, for
+example `D:\sangam\tmp`. This applies equally to a developer or demo run with `java -jar` on a Windows laptop:
+
+```powershell
+New-Item -ItemType Directory -Force D:\sangam\tmp | Out-Null
+java "-Djava.io.tmpdir=D:\sangam\tmp" "-Djdk.net.unixdomain.tmpdir=D:\sangam\tmp" -jar sangam-server.jar --spring.profiles.active=h2
+```
+
+The build sets the same property for its test JVMs (root `pom.xml`, surefire and failsafe).
 
 On VMs, run the database migrations **once** before starting the nodes:
 

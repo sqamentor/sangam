@@ -1,6 +1,6 @@
 {
   "id": "universal.billing-cycle",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Billing cycle: invoice, collection, arrears, penalty, waiver",
     "hi": "बिलिंग चक्र: बीजक, संग्रह, बकाया, दंड, माफ़ी"

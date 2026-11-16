@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-budget-preparation/ceilingHold",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-budget-preparation",
   "title": {
     "en": "Ceiling not confirmed: confirm it in the ledger",

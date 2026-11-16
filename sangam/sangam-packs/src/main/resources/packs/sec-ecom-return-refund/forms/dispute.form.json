@@ -1,6 +1,6 @@
 {
   "key": "sec-ecom-return-refund/dispute",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ecom.return-refund",
   "title": {
     "en": "Marketplace arbitration of the seller dispute",

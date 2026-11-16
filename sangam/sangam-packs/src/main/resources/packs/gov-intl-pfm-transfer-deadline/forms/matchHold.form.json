@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-transfer-deadline/matchHold",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-transfer-deadline",
   "title": {
     "en": "TSA credit not confirmed: check the bank statement",

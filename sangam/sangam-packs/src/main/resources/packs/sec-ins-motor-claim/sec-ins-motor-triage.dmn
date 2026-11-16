@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ins_motor_triage" name="Motor claim triage (SYNTHETIC)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-ins-motor-triage" name="Motor claim triage (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-ins-motor-triage" name="Motor claim triage (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-ins-motor-triage_t" hitPolicy="FIRST">
       <input id="sec-ins-motor-triage_i0" label="Claim amount"><inputExpression id="sec-ins-motor-triage_ie0" typeRef="number"><text>claimAmount</text></inputExpression></input>
       <input id="sec-ins-motor-triage_i1" label="Fraud score"><inputExpression id="sec-ins-motor-triage_ie1" typeRef="integer"><text>fraudScore</text></inputExpression></input>

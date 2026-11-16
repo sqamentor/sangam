@@ -1,6 +1,6 @@
 {
   "key": "sec-eu-gdpr-dsr/respond",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.eu.gdpr-dsr",
   "title": {
     "en": "Respond to the data subject",

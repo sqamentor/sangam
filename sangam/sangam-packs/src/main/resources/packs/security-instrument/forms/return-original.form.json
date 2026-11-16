@@ -1,6 +1,6 @@
 {
   "key": "security-instrument/return-original",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.security-instrument",
   "title": {
     "en": "Return the original instrument",

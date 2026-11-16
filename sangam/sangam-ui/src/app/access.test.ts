@@ -43,7 +43,8 @@ describe('M-028 route guards', () => {
     // for platform users only, inside the screen). /pages/:key (lowcode.read, LowCodeController.java:53) is outside
     // M-028 and unchanged.
     // /privacy/:tenant? (M-033): the privacy policy is public on the server (security: [], SecurityConfig.java:80-81).
-    const open = new Set(['/', '*', '/welcome', '/account', '/pages/:key', '/help/accessibility', '/help/about', '/privacy/:tenant?', ...SIGNED_IN_ROUTES]);
+    // /inbox (UI-DEMO-6): a redirect to the guarded /tasks, the screen the menu calls Inbox; it renders nothing itself.
+    const open = new Set(['/', '*', '/welcome', '/account', '/pages/:key', '/help/accessibility', '/help/about', '/privacy/:tenant?', '/inbox', ...SIGNED_IN_ROUTES]);
     const unguarded = routes().filter((r) => !r.guarded).map((r) => r.path);
     expect(unguarded.filter((p) => !open.has(p))).toEqual([]);
     for (const p of SIGNED_IN_ROUTES) expect(unguarded).toContain(p);
@@ -115,5 +116,30 @@ describe('W2-C admin screens follow the server gates', () => {
     for (const r of ['/admin/onboarding', '/admin/packs', '/admin/custom-fields', '/admin/bulk', '/admin/security-defaults']) {
       expect(admin.items.find((i) => i.to === r)?.access, r).toBe(ROUTE_ACCESS[r]);
     }
+  });
+});
+
+describe('UI-DEMO-6: menu entries and addresses', () => {
+  /** A route path of App.tsx as a matcher: :param matches one segment, a trailing * the rest, an optional :param? may be absent. */
+  const matcher = (route: string) =>
+    new RegExp(`^${route.replace(/\/:\w+\?/g, '(?:/[^/]+)?').replace(/:\w+/g, '[^/]+').replace(/\/\*$/, '(?:/.*)?')}$`);
+  const paths = () => routes().map((r) => r.path).filter((p) => p !== '*');
+  const resolves = (to: string) => paths().some((r) => matcher(r).test(to.split('?')[0]));
+
+  it('every menu entry opens a real route, not the not-found page', () => {
+    const missing = NAV.flatMap((a) => a.items.map((i) => i.to)).filter((to) => !resolves(to));
+    expect(missing).toEqual([]);
+  });
+
+  it('/inbox, the menu name of the task list, is an address that leads to /tasks', () => {
+    expect(appSource).toMatch(/<Route path="\/inbox" element=\{<Navigate to="\/tasks" replace \/>\} \/>/);
+    expect(NAV.flatMap((a) => a.items).find((i) => i.label === 'nav.inbox')?.to).toBe('/tasks');
+  });
+
+  it('every redirect in the route table leads to a real route', () => {
+    const table = appSource.slice(appSource.indexOf('function AuthedRoutes'), appSource.indexOf('function NotFound'));
+    const targets = [...table.matchAll(/<Route path="[^"]+" element=\{<Navigate to="([^"]+)"/g)].map((m) => m[1]);
+    expect(targets.length).toBeGreaterThan(0);
+    expect(targets.filter((t) => !resolves(t))).toEqual([]);
   });
 });

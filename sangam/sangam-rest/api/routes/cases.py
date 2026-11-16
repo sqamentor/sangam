@@ -177,8 +177,9 @@ op('get', '/case-files', 'caseFileList', 'CaseFiles', 'List case files visible t
    params=[q('caseType', 's'), q('status', 's'), q('stage', 's'), q('orgUnit', 's'), q('ownerSeat', 's'), q('text', 's'), q('partyId', 's'), q('openedFrom', 'dt'), q('openedTo', 'dt')], resp=(200, 'array:CfCaseFile'), perm='case.read', list_=True)
 op('get', '/case-files/{id}', 'caseFileGet', 'CaseFiles', 'The whole case file: parties (masked without READ_SENSITIVE), records, documents, links, deadlines, hearings', 'The whole case file: parties (masked without READ_SENSITIVE), records, documents, links, deadlines, hearings.', ['N04', 'N16', 'VI.4', 'R41', 'R42'],
    params=[pp('id')], resp=(200, 'CfCaseView'), perm='case.read')
-op('get', '/case-files/by-number/{number}', 'caseFileByNumber', 'CaseFiles', 'A case file by its human-readable number', 'A case file by its human-readable number.', ['N04', 'N16', 'VI.4', 'R41', 'R42'],
-   params=[pp('number')], resp=(200, 'CfCaseView'), perm='case.read')
+op('get', '/case-files/by-number', 'caseFileByNumber', 'CaseFiles', 'A case file by its human-readable number', 'A case file by its human-readable number.', ['N04', 'N16', 'VI.4', 'R41', 'R42'],
+   params=[q('number', desc='the human-readable number; may carry ''/'' ({prefix}/{yyyy}/{seq:6})', required=True)],
+   resp=(200, 'CfCaseView'), perm='case.read')
 op('patch', '/case-files/{id}', 'caseFileUpdate', 'CaseFiles', 'Update attributes, title, priority or confidentiality (optimistic rowVersion)', 'Update attributes, title, priority or confidentiality (optimistic rowVersion).', ['N04', 'N16', 'VI.4', 'R41', 'R42'],
    params=[pp('id')], body='CfUpdateRequest', resp=(200, 'CfCaseFile'), cmd='case-file.update', perm='case.write')
 op('post', '/case-files/{id}/stage', 'caseFileStage', 'CaseFiles', 'Move the case to another stage', 'Move the case to another stage.', ['N04', 'N16', 'VI.4', 'R41', 'R42'],

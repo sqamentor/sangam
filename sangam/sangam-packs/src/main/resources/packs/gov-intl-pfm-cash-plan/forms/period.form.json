@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-cash-plan/period",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-cash-plan",
   "title": {
     "en": "Cash plan period",

@@ -17,12 +17,13 @@ public sealed class FormsApi
 
     /// <summary>
     /// Get a form version
-    /// Data schema, layout, field policy and i18n bundles by hash version (R47); the key 'drafts' is reserved.
-    /// GET /forms/{key} (operationId getForm); permission form.read.
+    /// Data schema, layout, field policy and i18n bundles by hash version (R47).
+    /// GET /forms/by-key (operationId getForm); permission form.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.FormVersion?> GetFormAsync(string key, string? version = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/forms/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}");
+        var req = ApiRequest.Get($"/forms/by-key");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         req.WithQuery("version", GeneratedCalls.Q(version));
         return await _calls.JsonAsync<M.FormVersion?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -30,11 +31,12 @@ public sealed class FormsApi
     /// <summary>
     /// Validate form data
     /// Authoritative server-side validation (X.2.5.2).
-    /// POST /forms/{key}/validate (operationId validateForm); permission form.read.
+    /// POST /forms/by-key/validate (operationId validateForm); permission form.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.FormValidationResult?> ValidateFormAsync(string key, M.FormValidateRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.FormValidationResult?> ValidateFormAsync(M.FormValidateRequest body, string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/forms/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/validate");
+        var req = ApiRequest.Post($"/forms/by-key/validate");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.FormValidationResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -130,22 +132,26 @@ public sealed class FormsApi
     /// <summary>
     /// Custom field versions
     /// Every version of one field, oldest first. 404 NOT_FOUND when the key was never defined.
-    /// GET /custom-fields/{objectType}/{key} (operationId getCustomFieldVersions); permission form.read.
+    /// GET /custom-fields/versions (operationId getCustomFieldVersions); permission form.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.CustomField>?> GetCustomFieldVersionsAsync(string objectType, string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/custom-fields/{HttpTransport.Seg(GeneratedCalls.Str(objectType)!)}/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}");
+        var req = ApiRequest.Get($"/custom-fields/versions");
+        req.WithQuery("objectType", GeneratedCalls.Q(objectType));
+        req.WithQuery("key", GeneratedCalls.Q(key));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.CustomField>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Retire a custom field
     /// Closes the current version on effectiveTo, audited (CUSTOM_FIELD_RETIRED); values already stored stay readable. 400 REASON_REQUIRED; 404 NOT_FOUND; 422 CUSTOM_FIELD_INVALID; 409 CUSTOM_FIELD_CONFLICT.
-    /// POST /custom-fields/{objectType}/{key}/retire (operationId retireCustomField); permission tenant.admin; result stored atomically with the state change.
+    /// POST /custom-fields/retire (operationId retireCustomField); permission tenant.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.CustomField?> RetireCustomFieldAsync(string objectType, string key, M.CustomFieldRetireRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.CustomField?> RetireCustomFieldAsync(M.CustomFieldRetireRequest body, string objectType, string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/custom-fields/{HttpTransport.Seg(GeneratedCalls.Str(objectType)!)}/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/retire");
+        var req = ApiRequest.Post($"/custom-fields/retire");
+        req.WithQuery("objectType", GeneratedCalls.Q(objectType));
+        req.WithQuery("key", GeneratedCalls.Q(key));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.CustomField?>(req, options, cancellationToken).ConfigureAwait(false);
     }

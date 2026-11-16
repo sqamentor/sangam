@@ -1,6 +1,6 @@
 {
   "id": "sec.hr.payroll",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Monthly payroll with PF and ESI returns",
     "hi": "पीएफ एवं ईएसआई विवरणी सहित मासिक वेतन"

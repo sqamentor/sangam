@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-emandate/verify",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.bank.emandate",
   "title": {
     "en": "Verify signed NACH form (maker)",

@@ -29,7 +29,7 @@ export const jobsEngine: ScreenDef = {
   filters: [f.text('processInstanceId'), f.text('jobDefinitionId'), f.bool('withException'), f.bool('noRetriesLeft')],
   columns: [c('id'), c('dueDate'), c('retries'), c('priority'), c('suspended'), c('exceptionMessage')],
   rowKey: ['id'],
-  sections: [{ id: 'trace', label: 'ops.stacktrace', path: `${E}/job/{id}/stacktrace` }, { id: 'log', label: 'ops.log.jobs', path: `${E}/history/job-log?jobId={id}` }],
+  sections: [{ id: 'trace', label: 'ops.stacktrace', path: `${E}/job/{id}/stacktrace`, produces: 'text/plain' }, { id: 'log', label: 'ops.log.jobs', path: `${E}/history/job-log?jobId={id}` }],
   actions: [
     { id: 'retries', label: 'ops.setRetries', method: 'PUT', path: `${E}/job/{id}/retries`, fields: [f.num('retries', undefined, true)], noJson: true },
     { id: 'suspend', label: 'act.setSuspension', method: 'PUT', path: `${E}/job/{id}/suspended`, fields: [f.bool('suspended')], noJson: true },

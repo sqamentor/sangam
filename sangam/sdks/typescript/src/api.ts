@@ -252,7 +252,7 @@ export class AuditApi extends ApiGroup {
     q: { includeHistory?: boolean; page?: number; size?: number } = {},
     o?: CallOptions,
   ): Promise<Page<AuditEntry>> {
-    return this.listPage<AuditEntry>(`/audit/${seg(businessKey)}/timeline`, asQuery(q), o);
+    return this.listPage<AuditEntry>('/audit/timeline', { businessKey, ...asQuery(q) }, o);
   }
 
   verify(q: { chainId?: string; businessKey?: string } = {}, o?: CallOptions): Promise<AuditVerifyResult> {
@@ -414,7 +414,7 @@ export class RepositoryApi extends ApiGroup {
   }
 
   form(formKey: string, o?: CallOptions): Promise<JsonObject> {
-    return this.getJson(`/forms/${seg(formKey)}`, undefined, o);
+    return this.getJson('/forms/by-key', { key: formKey }, o);
   }
 }
 

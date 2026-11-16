@@ -106,8 +106,9 @@ public class HistoryAuditController {
         return Lists.ok(history.operationLog(ctx, f, Lists.page(q.page(), q.size())));
     }
 
-    @GetMapping("/audit/{businessKey}/timeline")
-    public ResponseEntity<List<AuditPort.AuditEntry>> timeline(RequestContext ctx, @PathVariable String businessKey,
+    /** UI-DEMO-1: a business key may carry '/' ("BK/2026/0001"), refused encoded in a path segment, so it is a query parameter. */
+    @GetMapping("/audit/timeline")
+    public ResponseEntity<List<AuditPort.AuditEntry>> timeline(RequestContext ctx, @RequestParam String businessKey,
             @RequestParam(required = false, defaultValue = "true") boolean includeHistory,
             @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
         permissions.require(ctx, Permissions.AUDIT_READ);

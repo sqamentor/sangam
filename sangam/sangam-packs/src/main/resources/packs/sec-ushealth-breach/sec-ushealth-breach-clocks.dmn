@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ushealth_breach_clocks" name="Breach notification rules (45 CFR 164.404-408; state law overrides)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- US-HLT-022, US-HLT-026, US-HLT-027. Add tenant overrides for shorter state deadlines (US-HLT-031). -->
-  <decision id="sec-ushealth-breach-clocks" name="Breach notification rules (45 CFR 164.404-408; state law overrides)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-ushealth-breach-clocks" name="Breach notification rules (45 CFR 164.404-408; state law overrides)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-ushealth-breach-clocks_t" hitPolicy="FIRST">
       <input id="sec-ushealth-breach-clocks_i0" label="Individuals affected"><inputExpression id="sec-ushealth-breach-clocks_ie0" typeRef="integer"><text>affectedCount</text></inputExpression></input>
       <input id="sec-ushealth-breach-clocks_i1" label="Largest count in one state"><inputExpression id="sec-ushealth-breach-clocks_ie1" typeRef="integer"><text>maxStateCount</text></inputExpression></input>

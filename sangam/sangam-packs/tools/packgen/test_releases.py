@@ -73,7 +73,7 @@ class HeldContentTest(unittest.TestCase):
         self.assertEqual(('1.0.1', '1.0.2'), releases.SHIPS[pid])
         self.assertEqual('1.0.2', releases.version_of(pid, '1.0.0'), 'BUMPED to 1.0.1, then SHIPS to 1.0.2')
         self.assertEqual('2.0.0', releases.version_of(pid, '2.0.0'), 'a pack declaring another version keeps it')
-        self.assertEqual('1.0.1', releases.version_of('gov.rti', '1.0.0'), 'not in SHIPS')
+        self.assertEqual('1.0.1', releases.version_of('gov.work-order', '1.0.0'), 'not in SHIPS')
 
 
 if __name__ == '__main__':

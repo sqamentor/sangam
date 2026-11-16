@@ -10,7 +10,6 @@ import json
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Optional
-from urllib.parse import unquote
 
 import pytest
 
@@ -21,7 +20,7 @@ from sangam_sdk.models import ExternalWork
 
 
 class Journal:
-    """Answers GET/PUT /work/{id}/steps/{name} from ``rows``; ``get_error`` / ``put_error`` script an error answer."""
+    """Answers GET/PUT /work/{id}/step?stepName= from ``rows``; ``get_error`` / ``put_error`` script an error answer."""
 
     def __init__(self, real: Any) -> None:
         self.real = real
@@ -36,8 +35,8 @@ class Journal:
 
     def execute(self, req: ApiRequest) -> ApiResponse:
         parts = req.path.strip("/").split("/")
-        assert parts[0] == "work" and parts[2] == "steps"
-        name = unquote(parts[3])
+        assert parts[0] == "work" and parts[2] == "step"
+        name = req.query["stepName"]
         if req.method == "GET":
             self.gets.append(req)
             if self.get_error is not None:
@@ -109,7 +108,7 @@ def test_first_run_records_intent_then_succeeded_with_result_and_provider_ref() 
     assert done["result"] == {"amount": {"type": "Decimal", "value": "12.50"}, "ok": True}
     assert done["providerRef"] == "PAY-1"
     [get] = h.journal.gets
-    assert get.query == {"workerId": "worker-1", "lockVersion": 3, "attemptId": "att-1"}
+    assert get.query == {"stepName": "charge", "workerId": "worker-1", "lockVersion": 3, "attemptId": "att-1"}
 
 
 def test_replay_of_succeeded_step_does_not_call_and_unwraps_typed_values() -> None:
@@ -268,6 +267,8 @@ def test_bad_step_names_are_rejected_before_any_call(bad: str) -> None:
 def test_longest_and_widest_names_are_accepted() -> None:
     h = Harness()
     assert h.ctx.step("x" * 128, Calls(1)) == 1
-    assert h.ctx.step(" ~!/?", Calls(2)) == 2  # printable ASCII; seg() percent-encodes '/' and '?'
-    assert h.journal.gets[1].path.endswith("/steps/%20~%21%2F%3F")
+    assert h.ctx.step(" ~!/?", Calls(2)) == 2  # printable ASCII, '/' included
+    # UI-DEMO-1: the name travels as the stepName query parameter; an encoded '/' in the path is refused by the server
+    assert h.journal.gets[1].path.endswith("/step") and "%2F" not in h.journal.gets[1].path
+    assert h.journal.gets[1].query["stepName"] == " ~!/?"
     assert h.journal.rows[" ~!/?"]["state"] == "SUCCEEDED"

@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ushealth_access_clocks" name="Right-of-access timeframes (45 CFR 164.524(b)(2), 171.204(b); tenant overridable)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- US-HLT-002, US-HLT-048. -->
-  <decision id="sec-ushealth-access-clocks" name="Right-of-access timeframes (45 CFR 164.524(b)(2), 171.204(b); tenant overridable)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-ushealth-access-clocks" name="Right-of-access timeframes (45 CFR 164.524(b)(2), 171.204(b); tenant overridable)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-ushealth-access-clocks_t" hitPolicy="FIRST">
       <input id="sec-ushealth-access-clocks_i0" label="Request type"><inputExpression id="sec-ushealth-access-clocks_ie0" typeRef="string"><text>requestType</text></inputExpression></input>
       <output id="sec-ushealth-access-clocks_o0" label="Act within" name="accessSpec" typeRef="string"/>

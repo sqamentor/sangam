@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Asynchronous audit exports and evidence packs (R42, U02/U03). Every export is itself audited. */
@@ -48,8 +49,9 @@ public class AuditExportController {
         return DocumentController.download(exports.content(ctx, id));
     }
 
-    @GetMapping("/{businessKey}/evidence-pack")
-    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> evidencePack(RequestContext ctx, @PathVariable String businessKey) {
+    /** UI-DEMO-1: a business key may carry '/', refused encoded in a path segment, so it is a query parameter. */
+    @GetMapping("/evidence-pack")
+    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> evidencePack(RequestContext ctx, @RequestParam String businessKey) {
         permissions.require(ctx, Permissions.AUDIT_EXPORT);
         Telemetry.businessKey(businessKey);
         return DocumentController.download(exports.evidencePack(ctx, businessKey));

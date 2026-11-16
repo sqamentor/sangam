@@ -4,7 +4,10 @@
 
 CF = ["SL-40", "R47"]
 CF_W = CF + ["R41", "R42"]
-CF_PATH = [pp("objectType", "form:<formKey> or a registered object type"), pp("key", "x_<name>")]
+# UI-DEMO-1: an object type is form:<formKey> and form keys carry '/', which the servlet connector refuses encoded in a
+# path segment, so a field is named by query parameters on literal routes.
+CF_PATH = [q("objectType", desc="form:<formKey> or a registered object type", required=True),
+           q("key", desc="x_<name>", required=True)]
 
 schema("CustomField", "One effective-dated version of a tenant custom field; effectiveTo is exclusive (null: open-ended).",
        "objectType key version:int label required:bool readOnly:bool schema:obj effectiveFrom:date effectiveTo:date",
@@ -20,7 +23,7 @@ op("get", "/custom-fields", "listCustomFields", "Forms", "List custom fields",
    "that date. 400 VALIDATION_FAILED for a malformed date.", CF, list_=True,
    params=[q("objectType"), q("on", "date", "only the versions in force on this date")],
    resp=(200, "array:CustomField"), perm="form.read", errors=STD_R)
-op("get", "/custom-fields/{objectType}/{key}", "getCustomFieldVersions", "Forms", "Custom field versions",
+op("get", "/custom-fields/versions", "getCustomFieldVersions", "Forms", "Custom field versions",
    "Every version of one field, oldest first. 404 NOT_FOUND when the key was never defined.", CF,
    params=CF_PATH, resp=(200, "array:CustomField"), perm="form.read", errors=GET_E)
 op("post", "/custom-fields", "defineCustomField", "Forms", "Define a custom field version",
@@ -29,7 +32,7 @@ op("post", "/custom-fields", "defineCustomField", "Forms", "Define a custom fiel
    "object type not extensible); 409 CUSTOM_FIELD_CONFLICT when changed concurrently.", CF_W,
    body="CustomFieldDefineRequest", resp=(201, "CustomField"), cmd="custom-field.define", perm="tenant.admin",
    created=True)
-op("post", "/custom-fields/{objectType}/{key}/retire", "retireCustomField", "Forms", "Retire a custom field",
+op("post", "/custom-fields/retire", "retireCustomField", "Forms", "Retire a custom field",
    "Closes the current version on effectiveTo, audited (CUSTOM_FIELD_RETIRED); values already stored stay readable. "
    "400 REASON_REQUIRED; 404 NOT_FOUND; 422 CUSTOM_FIELD_INVALID; 409 CUSTOM_FIELD_CONFLICT.", CF_W,
    params=CF_PATH, body="CustomFieldRetireRequest", resp=(200, "CustomField"), cmd="custom-field.retire",

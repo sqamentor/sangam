@@ -273,9 +273,10 @@ public class RosterController {
         return Lists.created("/api/v1/rosters/swaps/" + s.swapId(), s.swapId(), s);
     }
 
+    /** Swap requests of one roster period; the period is required (a missing one is 400, not a lookup of "null"). */
     @GetMapping("/swaps")
     public ResponseEntity<List<RosterModel.SwapRequest>> listSwaps(RequestContext ctx,
-            @RequestParam(required = false) String periodId,
+            @RequestParam String periodId,
             @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
         Page.PageRequest pr = Lists.page(page, size);
         return Lists.ok(port.listSwaps(read(ctx), periodId, pr.firstResult(), pr.size()));

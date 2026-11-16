@@ -47,7 +47,7 @@ same ledger (profile section `ledgers:`).
 - **REST endpoints** (WS-REST): `GET /ledger/{ledger}/accounts?period=&line=&holder=&stage=`,
   `GET /ledger/accounts/{accountId}`, `POST /ledger/{ledger}/operations` (LedgerRequest, Idempotency-Key = reference),
   `POST /ledger/{ledger}/freeze-orders`, `DELETE /ledger/{ledger}/freeze-orders/{id}`,
-  `POST /ledger/{ledger}/periods/{period}/close`, `GET /ledger/{ledger}/holds`, `POST /ledger/{ledger}/reconcile`.
+  `POST /ledger/{ledger}/periods/close?period=`, `GET /ledger/{ledger}/holds`, `POST /ledger/{ledger}/reconcile`.
 - Built with `-f sangam-ledger/pom.xml` (see the reactor note in sangam-config).
 
 ## Dependencies

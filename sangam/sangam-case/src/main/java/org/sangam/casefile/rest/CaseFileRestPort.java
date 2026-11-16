@@ -74,7 +74,7 @@ public interface CaseFileRestPort {
 
     List<CaseConfigRegistry.ConfigEntry> configs(ApiContext ctx, String kind);
 
-    // cases                    POST /case-files, GET /case-files, GET /case-files/{id}, GET /case-files/by-number/{number}
+    // cases                    POST /case-files, GET /case-files, GET /case-files/{id}, GET /case-files/by-number?number=
     CaseFileService.CaseFile open(ApiContext ctx, CaseFileService.OpenRequest request);
 
     Paging.PageResult<CaseFileService.CaseFile> list(ApiContext ctx, CaseFileService.Filter filter, Paging.PageRequest page);

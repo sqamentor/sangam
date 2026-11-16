@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-motor-claim/subrogation",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ins.motor-claim",
   "title": {
     "en": "Collect RC transfer, keys and subrogation letter",

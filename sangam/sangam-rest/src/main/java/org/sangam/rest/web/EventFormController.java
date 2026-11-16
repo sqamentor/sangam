@@ -155,7 +155,7 @@ public class EventFormController {
         return Lists.accepted(r.eventId(), r);
     }
 
-    // ---------------------------------------------------------------- forms (literal /forms/drafts wins over /forms/{key})
+    // ---------------------------------------------------------------- forms (form keys are a query parameter of /forms/by-key)
 
     @GetMapping("/forms/drafts")
     public ResponseEntity<List<FormPort.Draft>> drafts(RequestContext ctx, @RequestParam(required = false) String taskId,
@@ -195,15 +195,17 @@ public class EventFormController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/forms/{key}")
-    public FormPort.FormVersion form(RequestContext ctx, @PathVariable String key,
+    // UI-DEMO-1: a form key carries '/' ("rti/request"), which the servlet connector refuses encoded in a path
+    // segment (HTML 400 before the application), so the key is a query parameter on a literal route.
+    @GetMapping("/forms/by-key")
+    public FormPort.FormVersion form(RequestContext ctx, @RequestParam String key,
                                      @RequestParam(required = false) String version) {
         permissions.require(ctx, Permissions.FORM_READ);
         return forms.get(ctx, key, version);
     }
 
-    @PostMapping("/forms/{key}/validate")
-    public FormPort.ValidationResult validate(RequestContext ctx, @PathVariable String key,
+    @PostMapping("/forms/by-key/validate")
+    public FormPort.ValidationResult validate(RequestContext ctx, @RequestParam String key,
                                               @RequestBody FormPort.ValidateRequest body) {
         permissions.require(ctx, Permissions.FORM_READ);
         return forms.validate(ctx, key, body);

@@ -39,7 +39,8 @@ final class EngineStepsTest extends TestCase
     {
         $body = $extra + ['workerId' => 'w1', 'lockVersion' => $this->w['lockVersion'],
             'attemptId' => $this->w['attemptId'], 'state' => $state];
-        [$s, , $out] = $this->e->handle('PUT', '/work/' . $this->wid . '/steps/' . rawurlencode($name), null, $body);
+        [$s, , $out] = $this->e->handle('PUT', '/work/' . $this->wid . '/step', null, $body,
+            ['stepName' => $name]);
         return [$s, is_array($out) ? $out : []];
     }
 
@@ -50,9 +51,8 @@ final class EngineStepsTest extends TestCase
     private function get(string $name, array $query = []): array
     {
         $query += ['workerId' => 'w1', 'lockVersion' => (string) $this->w['lockVersion'],
-            'attemptId' => $this->w['attemptId']];
-        [$s, , $out] = $this->e->handle('GET', '/work/' . $this->wid . '/steps/' . rawurlencode($name), null, null,
-            $query);
+            'attemptId' => $this->w['attemptId'], 'stepName' => $name];
+        [$s, , $out] = $this->e->handle('GET', '/work/' . $this->wid . '/step', null, null, $query);
         return [$s, $out];
     }
 
@@ -117,7 +117,7 @@ final class EngineStepsTest extends TestCase
         self::assertSame([400, 'VALIDATION_FAILED'], [$s, $p['code']]);
         [$s, $p] = $this->get('a', ['attemptId' => '']);
         self::assertSame([400, 'VALIDATION_FAILED'], [$s, $p['code']]);
-        [$s, , $p] = $this->e->handle('POST', '/work/' . $this->wid . '/steps/a', null, []);
+        [$s, , $p] = $this->e->handle('POST', '/work/' . $this->wid . '/step', null, [], ['stepName' => 'a']);
         self::assertSame([405, 'METHOD_NOT_ALLOWED'], [$s, $p['code']]);
     }
 
@@ -135,8 +135,8 @@ final class EngineStepsTest extends TestCase
         // the sweep ends the expired lease first (AVAILABLE, lockVersion + 1): the old version is stale
         [$s, $p] = $this->put('a', 'INTENT');
         self::assertSame([409, 'STALE_LEASE'], [$s, $p['code']]);
-        [$s, , $p] = $this->e->handle('PUT', '/work/nope/steps/a', null, ['workerId' => 'w1', 'lockVersion' => 1,
-            'attemptId' => 'x', 'state' => 'INTENT']);
+        [$s, , $p] = $this->e->handle('PUT', '/work/nope/step', null, ['workerId' => 'w1', 'lockVersion' => 1,
+            'attemptId' => 'x', 'state' => 'INTENT'], ['stepName' => 'a']);
         self::assertSame([404, 'NOT_FOUND'], [$s, $p['code']]);
     }
 

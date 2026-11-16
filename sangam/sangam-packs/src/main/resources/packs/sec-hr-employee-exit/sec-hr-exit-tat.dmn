@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_hr_exit_tat" name="Exit settlement periods (Code on Wages s.17(2); Code on Social Security; verify)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-hr-exit-tat" name="Exit settlement periods (Code on Wages s.17(2); Code on Social Security; verify)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-hr-exit-tat" name="Exit settlement periods (Code on Wages s.17(2); Code on Social Security; verify)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-hr-exit-tat_t" hitPolicy="FIRST">
       <input id="sec-hr-exit-tat_i0" label="Exit type"><inputExpression id="sec-hr-exit-tat_ie0" typeRef="string"><text>exitType</text></inputExpression></input>
       <input id="sec-hr-exit-tat_i1" label="Qualifying service (years)"><inputExpression id="sec-hr-exit-tat_ie1" typeRef="number"><text>qualifyingService</text></inputExpression></input>

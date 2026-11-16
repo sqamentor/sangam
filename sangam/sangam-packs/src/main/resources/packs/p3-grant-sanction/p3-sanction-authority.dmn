@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_p3_sanction_authority" name="P3 sanctioning authority by amount" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="p3-sanction-authority" name="P3 sanctioning authority by amount" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="p3-sanction-authority" name="P3 sanctioning authority by amount" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="p3-sanction-authority_t" hitPolicy="FIRST">
       <input id="p3-sanction-authority_i0" label="Amount"><inputExpression id="p3-sanction-authority_ie0" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="p3-sanction-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>

@@ -1,6 +1,6 @@
 {
   "key": "sec-eu-gdpr-dsr/decide",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.eu.gdpr-dsr",
   "title": {
     "en": "Decide the request",

@@ -621,7 +621,7 @@ public final class RostersApi {
      * <p>RosterController.listSwaps (sangam-rest).
      *
      * <p>{@code GET /rosters/swaps} (operationId {@code rostersRosterListSwaps}); permission {@code resources.read}.
-     * @param periodId query parameter {@code periodId}, or null
+     * @param periodId query parameter {@code periodId}
      * @param page query parameter {@code page}, or null
      * @param size query parameter {@code size}, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null

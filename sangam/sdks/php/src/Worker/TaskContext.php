@@ -252,7 +252,7 @@ final class TaskContext
 
     /**
      * Runs one side-effecting step of this work at most once per recorded outcome (M-025, R37 / E02), journalled under
-     * the work's operationId on GET/PUT /work/{id}/steps/{name} and fenced by this lease.
+     * the work's operationId on GET/PUT /work/{id}/step?stepName= and fenced by this lease.
      *
      * $fn receives the Step: send Step::idempotencyKey() (operationId . ':' . name) to the remote API as its
      * idempotency key and report the provider's reference with Step::setProviderRef(). Then:

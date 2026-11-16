@@ -1553,14 +1553,14 @@ class AuditApi:
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
 
-    def get_audit_timeline(self, business_key: str, *, include_history: Optional[bool] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.AuditEntry]:
+    def get_audit_timeline(self, *, business_key: str, include_history: Optional[bool] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.AuditEntry]:
         """Audit timeline of a case
 
         Class-B chain events of every root with this business key, optionally merged with class-A history (evidence=false). The read is audited (AUDIT_VIEWED).
 
-        ``GET /audit/{businessKey}/timeline`` (operationId ``getAuditTimeline``); permission ``audit.read``.
+        ``GET /audit/timeline`` (operationId ``getAuditTimeline``); permission ``audit.read``.
         """
-        req = ApiRequest("GET", f"/audit/{seg(str(business_key))}/timeline", query={"includeHistory": include_history, "page": page, "size": size})
+        req = ApiRequest("GET", f"/audit/timeline", query={"businessKey": business_key, "includeHistory": include_history, "page": page, "size": size})
         return cast("Page[M.AuditEntry]", self._c.page(req, options, page, size))
 
     def search_audit_events(self, *, chain_id: Optional[str] = None, type_: Optional[str] = None, actor: Optional[str] = None, from_: Optional[str] = None, to: Optional[str] = None, scope: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.AuditEntry]:
@@ -1624,14 +1624,14 @@ class AuditApi:
         req = ApiRequest("GET", f"/audit/exports/{seg(str(id))}/content")
         return self._c.raw(req, options, "application/octet-stream")
 
-    def get_evidence_pack(self, business_key: str, *, options: Optional[RequestOptions] = None) -> bytes:
+    def get_evidence_pack(self, *, business_key: str, options: Optional[RequestOptions] = None) -> bytes:
         """Evidence pack
 
         ZIP of the class-B timeline, chain verification, model and form versions and the document list, with a SHA-256 manifest (U03, R42).
 
-        ``GET /audit/{businessKey}/evidence-pack`` (operationId ``getEvidencePack``); permission ``audit.export``.
+        ``GET /audit/evidence-pack`` (operationId ``getEvidencePack``); permission ``audit.export``.
         """
-        req = ApiRequest("GET", f"/audit/{seg(str(business_key))}/evidence-pack")
+        req = ApiRequest("GET", f"/audit/evidence-pack", query={"businessKey": business_key})
         return self._c.raw(req, options, "application/zip")
 
 class BillingApi:
@@ -1914,14 +1914,14 @@ class CaseFilesApi:
         req.body = body
         return cast("M.CfCaseFile", self._c.json(req, options))
 
-    def case_file_by_number(self, number: str, *, options: Optional[RequestOptions] = None) -> M.CfCaseView:
+    def case_file_by_number(self, *, number: str, options: Optional[RequestOptions] = None) -> M.CfCaseView:
         """A case file by its human-readable number
 
         A case file by its human-readable number.
 
-        ``GET /case-files/by-number/{number}`` (operationId ``caseFileByNumber``); permission ``case.read``.
+        ``GET /case-files/by-number`` (operationId ``caseFileByNumber``); permission ``case.read``.
         """
-        req = ApiRequest("GET", f"/case-files/by-number/{seg(str(number))}")
+        req = ApiRequest("GET", f"/case-files/by-number", query={"number": number})
         return cast("M.CfCaseView", self._c.json(req, options))
 
     def case_file_stage(self, id: str, body: M.CfStageRequest, *, options: Optional[RequestOptions] = None) -> M.CfCaseFile:
@@ -3763,88 +3763,88 @@ class ConfigApi:
         req = ApiRequest("GET", f"/config/profiles", query={"scope": scope, "office": office, "asOf": as_of})
         return cast("M.ConfigResolvedProfile", self._c.json(req, options))
 
-    def list_config_profile_versions(self, id: str, *, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.ConfigProfileVersion]:
+    def list_config_profile_versions(self, *, id: str, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.ConfigProfileVersion]:
         """List the versions of a profile
 
         Every stored version with its status and content hash.
 
-        ``GET /config/profiles/{id}/versions`` (operationId ``listConfigProfileVersions``); permission ``config.read``.
+        ``GET /config/profiles/versions`` (operationId ``listConfigProfileVersions``); permission ``config.read``.
         """
-        req = ApiRequest("GET", f"/config/profiles/{seg(str(id))}/versions", query={"page": page, "size": size})
+        req = ApiRequest("GET", f"/config/profiles/versions", query={"id": id, "page": page, "size": size})
         return cast("Page[M.ConfigProfileVersion]", self._c.page(req, options, page, size))
 
-    def get_config_profile_version(self, id: str, version: str, *, options: Optional[RequestOptions] = None) -> M.ConfigProfileVersionDocument:
+    def get_config_profile_version(self, *, id: str, version: str, options: Optional[RequestOptions] = None) -> M.ConfigProfileVersionDocument:
         """Get one profile version
 
         The version's status, hash and document tree.
 
-        ``GET /config/profiles/{id}/versions/{version}`` (operationId ``getConfigProfileVersion``); permission ``config.read``.
+        ``GET /config/profiles/version`` (operationId ``getConfigProfileVersion``); permission ``config.read``.
         """
-        req = ApiRequest("GET", f"/config/profiles/{seg(str(id))}/versions/{seg(str(version))}")
+        req = ApiRequest("GET", f"/config/profiles/version", query={"id": id, "version": version})
         return cast("M.ConfigProfileVersionDocument", self._c.json(req, options))
 
-    def save_config_profile_draft(self, id: str, version: str, body: Union[bytes, str], *, options: Optional[RequestOptions] = None) -> M.ConfigFindingsResult:
+    def save_config_profile_draft(self, body: Union[bytes, str], *, id: str, version: str, options: Optional[RequestOptions] = None) -> M.ConfigFindingsResult:
         """Save a draft version
 
-        Maker step: the body is the profile document (YAML or JSON); its id and version must match the path. A version that left DRAFT/REJECTED is frozen (409 VERSION_FROZEN). Writes are limited to the caller's own scope.
+        Maker step: the body is the profile document (YAML or JSON); its id and version must match the query. A version that left DRAFT/REJECTED is frozen (409 VERSION_FROZEN). Writes are limited to the caller's own scope.
 
-        ``PUT /config/profiles/{id}/versions/{version}`` (operationId ``saveConfigProfileDraft``); permission ``config.write``; result stored atomically with the state change.
+        ``PUT /config/profiles/version`` (operationId ``saveConfigProfileDraft``); permission ``config.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("PUT", f"/config/profiles/{seg(str(id))}/versions/{seg(str(version))}")
+        req = ApiRequest("PUT", f"/config/profiles/version", query={"id": id, "version": version})
         _raw(req, body, "application/yaml", options)
         return cast("M.ConfigFindingsResult", self._c.json(req, options))
 
-    def submit_config_profile(self, id: str, version: str, *, options: Optional[RequestOptions] = None) -> None:
+    def submit_config_profile(self, *, id: str, version: str, options: Optional[RequestOptions] = None) -> None:
         """Submit for approval
 
         Maker submits the draft; the content hash is frozen.
 
-        ``POST /config/profiles/{id}/versions/{version}/submit`` (operationId ``submitConfigProfile``); permission ``config.write``; result stored atomically with the state change.
+        ``POST /config/profiles/version/submit`` (operationId ``submitConfigProfile``); permission ``config.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/config/profiles/{seg(str(id))}/versions/{seg(str(version))}/submit")
+        req = ApiRequest("POST", f"/config/profiles/version/submit", query={"id": id, "version": version})
         self._c.none(req, options)
 
-    def approve_config_profile(self, id: str, version: str, body: M.ConfigApproveRequest, *, options: Optional[RequestOptions] = None) -> None:
+    def approve_config_profile(self, body: M.ConfigApproveRequest, *, id: str, version: str, options: Optional[RequestOptions] = None) -> None:
         """Approve a version
 
         Checker approval bound to the reviewed hash (409 APPROVAL_INVALIDATED if it changed); checker must differ from the maker (422 SOD_VIOLATION).
 
-        ``POST /config/profiles/{id}/versions/{version}/approve`` (operationId ``approveConfigProfile``); permission ``config.admin``; result stored atomically with the state change.
+        ``POST /config/profiles/version/approve`` (operationId ``approveConfigProfile``); permission ``config.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/config/profiles/{seg(str(id))}/versions/{seg(str(version))}/approve")
+        req = ApiRequest("POST", f"/config/profiles/version/approve", query={"id": id, "version": version})
         req.body = body
         self._c.none(req, options)
 
-    def reject_config_profile(self, id: str, version: str, body: M.ConfigRejectRequest, *, options: Optional[RequestOptions] = None) -> None:
+    def reject_config_profile(self, body: M.ConfigRejectRequest, *, id: str, version: str, options: Optional[RequestOptions] = None) -> None:
         """Reject a version
 
         Checker rejection with a reason.
 
-        ``POST /config/profiles/{id}/versions/{version}/reject`` (operationId ``rejectConfigProfile``); permission ``config.admin``; result stored atomically with the state change.
+        ``POST /config/profiles/version/reject`` (operationId ``rejectConfigProfile``); permission ``config.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/config/profiles/{seg(str(id))}/versions/{seg(str(version))}/reject")
+        req = ApiRequest("POST", f"/config/profiles/version/reject", query={"id": id, "version": version})
         req.body = body
         self._c.none(req, options)
 
-    def activate_config_profile(self, id: str, version: str, body: Optional[M.ConfigActivateRequest] = None, *, options: Optional[RequestOptions] = None) -> M.ConfigFindingsResult:
+    def activate_config_profile(self, body: Optional[M.ConfigActivateRequest] = None, *, id: str, version: str, options: Optional[RequestOptions] = None) -> M.ConfigFindingsResult:
         """Activate a version
 
         Activates an approved version after re-resolving the listed scopes (422 ACTIVATION_REFUSED on errors).
 
-        ``POST /config/profiles/{id}/versions/{version}/activate`` (operationId ``activateConfigProfile``); permission ``config.admin``; result stored atomically with the state change.
+        ``POST /config/profiles/version/activate`` (operationId ``activateConfigProfile``); permission ``config.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/config/profiles/{seg(str(id))}/versions/{seg(str(version))}/activate")
+        req = ApiRequest("POST", f"/config/profiles/version/activate", query={"id": id, "version": version})
         req.body = body
         return cast("M.ConfigFindingsResult", self._c.json(req, options))
 
-    def get_config_profile_history(self, id: str, *, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.ConfigChangeRecord]:
+    def get_config_profile_history(self, *, id: str, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.ConfigChangeRecord]:
         """Profile change register
 
         Every save, submission, approval, rejection, activation and import.
 
-        ``GET /config/profiles/{id}/history`` (operationId ``getConfigProfileHistory``); permission ``config.read``.
+        ``GET /config/profiles/history`` (operationId ``getConfigProfileHistory``); permission ``config.read``.
         """
-        req = ApiRequest("GET", f"/config/profiles/{seg(str(id))}/history", query={"page": page, "size": size})
+        req = ApiRequest("GET", f"/config/profiles/history", query={"id": id, "page": page, "size": size})
         return cast("Page[M.ConfigChangeRecord]", self._c.page(req, options, page, size))
 
     def validate_config_profile(self, body: M.ConfigValidateRequest, *, options: Optional[RequestOptions] = None) -> M.ConfigFindingsResult:
@@ -4064,14 +4064,14 @@ class DeploymentsApi:
         req = ApiRequest("DELETE", f"/deployments/{seg(str(id))}", query={"cascade": cascade, "reason": reason})
         self._c.none(req, options)
 
-    def get_deployment_resource(self, id: str, resource_name: str, *, options: Optional[RequestOptions] = None) -> bytes:
+    def get_deployment_resource(self, id: str, *, name: str, options: Optional[RequestOptions] = None) -> bytes:
         """Deployment resource
 
         Raw resource bytes.
 
-        ``GET /deployments/{id}/resources/{resourceName}`` (operationId ``getDeploymentResource``); permission ``deployment.read``.
+        ``GET /deployments/{id}/resource`` (operationId ``getDeploymentResource``); permission ``deployment.read``.
         """
-        req = ApiRequest("GET", f"/deployments/{seg(str(id))}/resources/{seg(str(resource_name))}")
+        req = ApiRequest("GET", f"/deployments/{seg(str(id))}/resource", query={"name": name})
         return self._c.raw(req, options, "application/octet-stream")
 
 class DltHooksApi:
@@ -5138,24 +5138,24 @@ class FormsApi:
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
 
-    def get_form(self, key: str, *, version: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.FormVersion:
+    def get_form(self, *, key: str, version: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.FormVersion:
         """Get a form version
 
-        Data schema, layout, field policy and i18n bundles by hash version (R47); the key 'drafts' is reserved.
+        Data schema, layout, field policy and i18n bundles by hash version (R47).
 
-        ``GET /forms/{key}`` (operationId ``getForm``); permission ``form.read``.
+        ``GET /forms/by-key`` (operationId ``getForm``); permission ``form.read``.
         """
-        req = ApiRequest("GET", f"/forms/{seg(str(key))}", query={"version": version})
+        req = ApiRequest("GET", f"/forms/by-key", query={"key": key, "version": version})
         return cast("M.FormVersion", self._c.json(req, options))
 
-    def validate_form(self, key: str, body: M.FormValidateRequest, *, options: Optional[RequestOptions] = None) -> M.FormValidationResult:
+    def validate_form(self, body: M.FormValidateRequest, *, key: str, options: Optional[RequestOptions] = None) -> M.FormValidationResult:
         """Validate form data
 
         Authoritative server-side validation (X.2.5.2).
 
-        ``POST /forms/{key}/validate`` (operationId ``validateForm``); permission ``form.read``.
+        ``POST /forms/by-key/validate`` (operationId ``validateForm``); permission ``form.read``.
         """
-        req = ApiRequest("POST", f"/forms/{seg(str(key))}/validate")
+        req = ApiRequest("POST", f"/forms/by-key/validate", query={"key": key})
         req.body = body
         return cast("M.FormValidationResult", self._c.json(req, options))
 
@@ -5233,24 +5233,24 @@ class FormsApi:
         req.body = body
         return cast("M.CustomField", self._c.json(req, options))
 
-    def get_custom_field_versions(self, object_type: str, key: str, *, options: Optional[RequestOptions] = None) -> list[M.CustomField]:
+    def get_custom_field_versions(self, *, object_type: str, key: str, options: Optional[RequestOptions] = None) -> list[M.CustomField]:
         """Custom field versions
 
         Every version of one field, oldest first. 404 NOT_FOUND when the key was never defined.
 
-        ``GET /custom-fields/{objectType}/{key}`` (operationId ``getCustomFieldVersions``); permission ``form.read``.
+        ``GET /custom-fields/versions`` (operationId ``getCustomFieldVersions``); permission ``form.read``.
         """
-        req = ApiRequest("GET", f"/custom-fields/{seg(str(object_type))}/{seg(str(key))}")
+        req = ApiRequest("GET", f"/custom-fields/versions", query={"objectType": object_type, "key": key})
         return cast("list[M.CustomField]", self._c.json(req, options))
 
-    def retire_custom_field(self, object_type: str, key: str, body: M.CustomFieldRetireRequest, *, options: Optional[RequestOptions] = None) -> M.CustomField:
+    def retire_custom_field(self, body: M.CustomFieldRetireRequest, *, object_type: str, key: str, options: Optional[RequestOptions] = None) -> M.CustomField:
         """Retire a custom field
 
         Closes the current version on effectiveTo, audited (CUSTOM_FIELD_RETIRED); values already stored stay readable. 400 REASON_REQUIRED; 404 NOT_FOUND; 422 CUSTOM_FIELD_INVALID; 409 CUSTOM_FIELD_CONFLICT.
 
-        ``POST /custom-fields/{objectType}/{key}/retire`` (operationId ``retireCustomField``); permission ``tenant.admin``; result stored atomically with the state change.
+        ``POST /custom-fields/retire`` (operationId ``retireCustomField``); permission ``tenant.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/custom-fields/{seg(str(object_type))}/{seg(str(key))}/retire")
+        req = ApiRequest("POST", f"/custom-fields/retire", query={"objectType": object_type, "key": key})
         req.body = body
         return cast("M.CustomField", self._c.json(req, options))
 
@@ -5693,14 +5693,14 @@ class LedgerApi:
         req = ApiRequest("DELETE", f"/ledger/{seg(str(ledger))}/freeze-orders/{seg(str(id))}")
         self._c.none(req, options)
 
-    def close_ledger_period(self, ledger: str, period: str, body: Optional[M.LedgerCloseRequest] = None, *, options: Optional[RequestOptions] = None) -> list[M.LedgerResult]:
+    def close_ledger_period(self, ledger: str, body: Optional[M.LedgerCloseRequest] = None, *, period: str, options: Optional[RequestOptions] = None) -> list[M.LedgerResult]:
         """Close a period
 
-        Year-end lapse and carry-forward.
+        Year-end lapse and carry-forward. The period is a query parameter: a fiscal-year label can carry '/' (2026/2027).
 
-        ``POST /ledger/{ledger}/periods/{period}/close`` (operationId ``closeLedgerPeriod``); permission ``ledger.admin``; result stored atomically with the state change.
+        ``POST /ledger/{ledger}/periods/close`` (operationId ``closeLedgerPeriod``); permission ``ledger.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/ledger/{seg(str(ledger))}/periods/{seg(str(period))}/close")
+        req = ApiRequest("POST", f"/ledger/{seg(str(ledger))}/periods/close", query={"period": period})
         req.body = body
         return cast("list[M.LedgerResult]", self._c.json(req, options))
 
@@ -10219,14 +10219,14 @@ class RegistryObjectsApi:
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
 
-    def registry_registry_by_number(self, number: str, *, type_key: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
+    def registry_registry_by_number(self, *, number: str, type_key: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """By number
 
         RegistryController.byNumber (sangam-rest).
 
-        ``GET /registry/objects/by-number/{number}`` (operationId ``registryRegistryByNumber``); permission ``registry.read``.
+        ``GET /registry/objects/by-number`` (operationId ``registryRegistryByNumber``); permission ``registry.read``.
         """
-        req = ApiRequest("GET", f"/registry/objects/by-number/{seg(str(number))}", query={"typeKey": type_key})
+        req = ApiRequest("GET", f"/registry/objects/by-number", query={"number": number, "typeKey": type_key})
         return cast("dict[str, Any]", self._c.json(req, options))
 
     def registry_registry_transition(self, id: str, name: str, body: Optional[M.RegistryRegistryTransitionBody] = None, *, if_match: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
@@ -10851,7 +10851,7 @@ class ResourcesApi:
         req = ApiRequest("GET", f"/resources/types")
         return cast("list[dict[str, Any]]", self._c.json(req, options))
 
-    def resources_resources_define_type(self, body: M.ResourcesResourcesDefineTypeBody, *, options: Optional[RequestOptions] = None) -> bytes:
+    def resources_resources_define_type(self, body: M.ResourcesResourcesDefineTypeBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Define type
 
         ResourcesController.defineType (sangam-rest).
@@ -10860,7 +10860,7 @@ class ResourcesApi:
         """
         req = ApiRequest("POST", f"/resources/types")
         req.body = body
-        return self._c.raw(req, options, "application/octet-stream")
+        return cast("dict[str, Any]", self._c.json(req, options))
 
     def resources_resources_retire_type(self, type_id: str, *, options: Optional[RequestOptions] = None) -> None:
         """Retire type
@@ -10977,7 +10977,7 @@ class ResourcesApi:
         req = ApiRequest("GET", f"/resources/waitlist", query={"scopeKey": scope_key, "state": state, "page": page, "size": size})
         return cast("Page[dict[str, Any]]", self._c.page(req, options, page, size))
 
-    def resources_resources_waitlist_entry(self, entry_id: str, *, options: Optional[RequestOptions] = None) -> bytes:
+    def resources_resources_waitlist_entry(self, entry_id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Waitlist entry
 
         ResourcesController.waitlistEntry (sangam-rest).
@@ -10985,7 +10985,7 @@ class ResourcesApi:
         ``GET /resources/waitlist/{entryId}`` (operationId ``resourcesResourcesWaitlistEntry``); permission ``resources.read``.
         """
         req = ApiRequest("GET", f"/resources/waitlist/{seg(str(entry_id))}")
-        return self._c.raw(req, options, "application/octet-stream")
+        return cast("dict[str, Any]", self._c.json(req, options))
 
     def resources_resources_withdraw(self, entry_id: str, body: M.ResourcesReasonRequest, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Withdraw
@@ -11168,7 +11168,7 @@ class ResourcesBookingsApi:
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
 
-    def resources_resources_quote(self, body: M.BookingModelHoldRequest, *, options: Optional[RequestOptions] = None) -> bytes:
+    def resources_resources_quote(self, body: M.BookingModelHoldRequest, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Quote
 
         ResourcesController.quote (sangam-rest).
@@ -11177,7 +11177,7 @@ class ResourcesBookingsApi:
         """
         req = ApiRequest("POST", f"/resources/bookings/quote")
         req.body = body
-        return self._c.raw(req, options, "application/octet-stream")
+        return cast("dict[str, Any]", self._c.json(req, options))
 
     def resources_resources_hold(self, body: M.BookingModelHoldRequest, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Hold
@@ -11311,7 +11311,7 @@ class ResourcesItemsApi:
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
 
-    def resources_resources_create_resource(self, body: M.ResourceDraft, *, options: Optional[RequestOptions] = None) -> bytes:
+    def resources_resources_create_resource(self, body: M.ResourceDraft, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Create resource
 
         ResourcesController.createResource (sangam-rest).
@@ -11320,7 +11320,7 @@ class ResourcesItemsApi:
         """
         req = ApiRequest("POST", f"/resources/items")
         req.body = body
-        return self._c.raw(req, options, "application/octet-stream")
+        return cast("dict[str, Any]", self._c.json(req, options))
 
     def resources_resources_search(self, *, type_id: Optional[str] = None, parent_id: Optional[str] = None, ancestor_id: Optional[str] = None, org_unit_id: Optional[str] = None, location_id: Optional[str] = None, min_capacity: Optional[int] = None, status: Optional[str] = None, text: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
         """Search
@@ -11332,7 +11332,7 @@ class ResourcesItemsApi:
         req = ApiRequest("GET", f"/resources/items", query={"typeId": type_id, "parentId": parent_id, "ancestorId": ancestor_id, "orgUnitId": org_unit_id, "locationId": location_id, "minCapacity": min_capacity, "status": status, "text": text, "page": page, "size": size})
         return cast("Page[dict[str, Any]]", self._c.page(req, options, page, size))
 
-    def resources_resources_resource(self, resource_id: str, *, options: Optional[RequestOptions] = None) -> bytes:
+    def resources_resources_resource(self, resource_id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Resource
 
         ResourcesController.resource (sangam-rest).
@@ -11340,9 +11340,9 @@ class ResourcesItemsApi:
         ``GET /resources/items/{resourceId}`` (operationId ``resourcesResourcesResource``); permission ``resources.read``.
         """
         req = ApiRequest("GET", f"/resources/items/{seg(str(resource_id))}")
-        return self._c.raw(req, options, "application/octet-stream")
+        return cast("dict[str, Any]", self._c.json(req, options))
 
-    def resources_resources_update_resource(self, resource_id: str, body: M.ResourcePatch, *, version: int, options: Optional[RequestOptions] = None) -> bytes:
+    def resources_resources_update_resource(self, resource_id: str, body: M.ResourcePatch, *, version: int, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Update resource
 
         ResourcesController.updateResource (sangam-rest).
@@ -11351,9 +11351,9 @@ class ResourcesItemsApi:
         """
         req = ApiRequest("PATCH", f"/resources/items/{seg(str(resource_id))}", query={"version": version})
         req.body = body
-        return self._c.raw(req, options, "application/octet-stream")
+        return cast("dict[str, Any]", self._c.json(req, options))
 
-    def resources_resources_set_status(self, resource_id: str, body: M.ResourcesStatusRequest, *, options: Optional[RequestOptions] = None) -> bytes:
+    def resources_resources_set_status(self, resource_id: str, body: M.ResourcesStatusRequest, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Set status
 
         ResourcesController.setStatus (sangam-rest).
@@ -11362,9 +11362,9 @@ class ResourcesItemsApi:
         """
         req = ApiRequest("POST", f"/resources/items/{seg(str(resource_id))}/status")
         req.body = body
-        return self._c.raw(req, options, "application/octet-stream")
+        return cast("dict[str, Any]", self._c.json(req, options))
 
-    def resources_resources_move(self, resource_id: str, body: M.ResourcesMoveRequest, *, options: Optional[RequestOptions] = None) -> bytes:
+    def resources_resources_move(self, resource_id: str, body: M.ResourcesMoveRequest, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Move
 
         ResourcesController.move (sangam-rest).
@@ -11373,7 +11373,7 @@ class ResourcesItemsApi:
         """
         req = ApiRequest("POST", f"/resources/items/{seg(str(resource_id))}/move")
         req.body = body
-        return self._c.raw(req, options, "application/octet-stream")
+        return cast("dict[str, Any]", self._c.json(req, options))
 
     def resources_resources_children(self, resource_id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Children
@@ -11742,7 +11742,7 @@ class RostersApi:
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
 
-    def rosters_roster_list_swaps(self, *, period_id: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
+    def rosters_roster_list_swaps(self, *, period_id: str, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
         """List swaps
 
         RosterController.listSwaps (sangam-rest).
@@ -12848,24 +12848,24 @@ class WorkApi:
         req.body = body
         self._c.none(req, options)
 
-    def get_work_step(self, id: str, step_name: str, *, worker_id: str, lock_version: int, attempt_id: str, options: Optional[RequestOptions] = None) -> M.WorkStep:
+    def get_work_step(self, id: str, *, step_name: str, worker_id: str, lock_version: int, attempt_id: str, options: Optional[RequestOptions] = None) -> M.WorkStep:
         """Replay a recorded step
 
         The step as recorded for this work's operationId; 404 when the step was never recorded (run it). The caller must hold the current lease: workerId, lockVersion and attemptId as query parameters (409 STALE_LEASE otherwise).
 
-        ``GET /work/{id}/steps/{stepName}`` (operationId ``getWorkStep``); permission ``work.execute``; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
+        ``GET /work/{id}/step`` (operationId ``getWorkStep``); permission ``work.execute``; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
         """
-        req = ApiRequest("GET", f"/work/{seg(str(id))}/steps/{seg(str(step_name))}", query={"workerId": worker_id, "lockVersion": lock_version, "attemptId": attempt_id})
+        req = ApiRequest("GET", f"/work/{seg(str(id))}/step", query={"stepName": step_name, "workerId": worker_id, "lockVersion": lock_version, "attemptId": attempt_id})
         return cast("M.WorkStep", self._c.json(req, options))
 
-    def record_work_step(self, id: str, step_name: str, body: M.WorkStepRequest, *, options: Optional[RequestOptions] = None) -> M.WorkStep:
+    def record_work_step(self, id: str, body: M.WorkStepRequest, *, step_name: str, options: Optional[RequestOptions] = None) -> M.WorkStep:
         """Record a step
 
         Records the step's intent or outcome under the work's operationId, in the same transaction as the lease check. Fenced: a stale lease is 409 STALE_LEASE and records nothing; a deleted instance is 410 GONE_INSTANCE_DELETED.
 
-        ``PUT /work/{id}/steps/{stepName}`` (operationId ``recordWorkStep``); permission ``work.execute``; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
+        ``PUT /work/{id}/step`` (operationId ``recordWorkStep``); permission ``work.execute``; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
         """
-        req = ApiRequest("PUT", f"/work/{seg(str(id))}/steps/{seg(str(step_name))}")
+        req = ApiRequest("PUT", f"/work/{seg(str(id))}/step", query={"stepName": step_name})
         req.body = body
         return cast("M.WorkStep", self._c.json(req, options))
 

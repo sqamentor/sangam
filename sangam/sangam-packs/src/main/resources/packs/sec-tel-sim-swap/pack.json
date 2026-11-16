@@ -1,6 +1,6 @@
 {
   "id": "sec.tel.sim-swap",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "SIM replacement with re-verification",
     "hi": "पुनः सत्यापन सहित सिम प्रतिस्थापन"

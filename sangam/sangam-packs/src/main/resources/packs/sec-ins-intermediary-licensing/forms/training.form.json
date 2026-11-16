@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-intermediary-licensing/training",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ins.intermediary-licensing",
   "title": {
     "en": "Pre-licensing training completed",

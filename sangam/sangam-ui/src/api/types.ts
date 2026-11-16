@@ -526,12 +526,14 @@ export interface DecisionDefinition {
   decisionRequirementsKey?: string;
 }
 
+/** A view of components.schemas.HistoricDecision (adapters.normDecisionInstance): inputs and outputs are name/value maps there. */
 export interface DecisionInstance {
   id: Id;
   decisionKey: string;
-  decisionVersion: number;
+  decisionDefinitionId?: Id;
   evaluationTime: Iso;
   processInstanceId?: Id;
+  activityId?: string;
   businessKey?: string;
   inputs: { name: string; value: unknown }[];
   outputs: { rule?: string; name: string; value: unknown }[];
@@ -944,19 +946,20 @@ export interface DelegationCheckResult {
   tests: { id: string; passed: boolean; actual?: Record<string, unknown> }[];
 }
 
+/** components.schemas.Policy: one (definition, principal) row; several rows can share a definition id. */
 export interface Policy {
   id: Id;
-  effect: 'ALLOW' | 'DENY';
-  principalType: 'USER' | 'GROUP' | 'ROLE' | 'SEAT' | 'SERVICE';
+  tenantId?: Id;
+  effect: 'GRANT' | 'DENY';
+  principalType: 'USER' | 'GROUP' | 'SEAT';
   principalId: Id;
   resourceType: string;
   resourceId: string;
-  permissions: string[];
-  condition?: string;
-  scope?: string;
-  validTo?: Iso;
+  actions: string[];
+  conditionId?: string;
   policyVersion?: number;
-  note?: string;
+  createdBy?: Id;
+  createdAt?: Iso;
 }
 
 export interface SodException {
@@ -1104,13 +1107,20 @@ export interface AuditEvent {
   details?: Record<string, unknown>;
   prevHash: string;
   hash: string;
+  /** The hash chain the event belongs to (AuditEvent.chainId); seq and prevHash link within one chain only. */
+  chainId?: string;
 }
 
+/** The screen's reading of AuditVerifyResult (adapters.normVerify). */
 export interface AuditVerifyResult {
+  /** Every chain verified and at least one event checked; never true for a check over nothing. */
   valid: boolean;
+  /** Events checked over all chains (sum of ChainVerification.eventsChecked). */
   checked: number;
-  headHash?: string;
+  /** Chains the server checked. */
+  chains: number;
   firstBrokenSeq?: number;
+  brokenChainId?: string;
   anchoredAt?: Iso;
   message?: string;
 }

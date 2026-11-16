@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-suspense-ageing/clear",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-suspense-ageing",
   "title": {
     "en": "Clear the suspense item to the correct head",

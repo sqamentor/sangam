@@ -1,6 +1,6 @@
 {
   "key": "sec-hr-employee-exit/it-assets",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.hr.employee-exit",
   "title": {
     "en": "Recover assets",

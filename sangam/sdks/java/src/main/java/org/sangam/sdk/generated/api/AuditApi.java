@@ -36,8 +36,8 @@ public final class AuditApi {
      *
      * <p>Class-B chain events of every root with this business key, optionally merged with class-A history (evidence=false). The read is audited (AUDIT_VIEWED).
      *
-     * <p>{@code GET /audit/{businessKey}/timeline} (operationId {@code getAuditTimeline}); permission {@code audit.read}.
-     * @param businessKey path parameter {@code businessKey}
+     * <p>{@code GET /audit/timeline} (operationId {@code getAuditTimeline}); permission {@code audit.read}.
+     * @param businessKey query parameter {@code businessKey}. business key of the case; may carry '/'
      * @param includeHistory query parameter {@code includeHistory}, or null. Merge class-A history (default true)
      * @param page query parameter {@code page}, or null. 0-based page index
      * @param size query parameter {@code size}, or null. Page size
@@ -45,7 +45,8 @@ public final class AuditApi {
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<AuditEntry> getAuditTimeline(String businessKey, Boolean includeHistory, Long page, Long size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/audit/" + HttpTransport.seg(String.valueOf(businessKey)) + "/timeline");
+        ApiRequest req = ApiRequest.get("/audit/timeline");
+        req.query("businessKey", businessKey);
         req.query("includeHistory", includeHistory);
         req.query("page", page);
         req.query("size", size);
@@ -170,13 +171,14 @@ public final class AuditApi {
      *
      * <p>ZIP of the class-B timeline, chain verification, model and form versions and the document list, with a SHA-256 manifest (U03, R42).
      *
-     * <p>{@code GET /audit/{businessKey}/evidence-pack} (operationId {@code getEvidencePack}); permission {@code audit.export}.
-     * @param businessKey path parameter {@code businessKey}
+     * <p>{@code GET /audit/evidence-pack} (operationId {@code getEvidencePack}); permission {@code audit.export}.
+     * @param businessKey query parameter {@code businessKey}. business key of the case; may carry '/'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public byte[] getEvidencePack(String businessKey, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/audit/" + HttpTransport.seg(String.valueOf(businessKey)) + "/evidence-pack");
+        ApiRequest req = ApiRequest.get("/audit/evidence-pack");
+        req.query("businessKey", businessKey);
         return call.bytes(req, options, "application/zip");
     }
 }

@@ -1,6 +1,6 @@
 {
   "key": "ifms-bill/contingent",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.ifms.bill",
   "title": {
     "en": "Contingent / imprest bill",

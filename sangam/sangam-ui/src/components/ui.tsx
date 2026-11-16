@@ -72,7 +72,7 @@ export function Badge({ value, tone }: { value: string; tone?: 'ok' | 'warn' | '
       ? 'bad'
       : /WARN|PENDING|REVIEW|PAUSED|AWAIT|DEGRADED|SUSPEND|PARKED|CLARIFICATION|RETURNED/.test(value)
         ? 'warn'
-        : /OK|ACTIVE|COMPLETED|APPROVED|UP|CLEAN|DELIVERED|ALLOW|SUCCEEDED|DEPLOYED|PAID|VALID|PASS/.test(value)
+        : /OK|ACTIVE|COMPLETED|APPROVED|UP|CLEAN|DELIVERED|ALLOW|GRANT|SUCCEEDED|DEPLOYED|PAID|VALID|PASS/.test(value)
           ? 'ok'
           : 'neutral');
   return <span className={`badge badge-${auto}`}>{t(`enum.${value}`, { defaultValue: value })}</span>;

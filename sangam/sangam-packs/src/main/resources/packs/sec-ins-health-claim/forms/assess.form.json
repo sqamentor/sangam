@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-health-claim/assess",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ins.health-claim",
   "title": {
     "en": "Assess reimbursement claim",

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_tel_mnp_timeline" name="Porting timeline (verify against the current TRAI MNP regulations)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-tel-mnp-timeline" name="Porting timeline (verify against the current TRAI MNP regulations)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-tel-mnp-timeline" name="Porting timeline (verify against the current TRAI MNP regulations)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-tel-mnp-timeline_t" hitPolicy="FIRST">
       <input id="sec-tel-mnp-timeline_i0" label="Service area"><inputExpression id="sec-tel-mnp-timeline_ie0" typeRef="string"><text>lsaType</text></inputExpression></input>
       <input id="sec-tel-mnp-timeline_i1" label="Customer type"><inputExpression id="sec-tel-mnp-timeline_ie1" typeRef="string"><text>customerType</text></inputExpression></input>

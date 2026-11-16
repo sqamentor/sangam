@@ -2,7 +2,7 @@
 """Durable steps (M-025, R37 / E02): :meth:`TaskContext.step <sangam_sdk.worker.TaskContext.step>`.
 
 A worker records each side-effecting step of a leased work item in the step journal
-(``GET/PUT /work/{id}/steps/{stepName}``) under the work's stable operationId (R36), fenced by the context's lease:
+(``GET/PUT /work/{id}/step?stepName=``) under the work's stable operationId (R36), fenced by the context's lease:
 
 1. read the step: ``SUCCEEDED`` replays the recorded result without calling ``fn`` again;
 2. ``INTENT`` left by an earlier attempt (the crash window): ask ``lookup`` if given (a value is recorded
@@ -145,7 +145,7 @@ def run_step(ctx: "TaskContext", name: str, fn: StepFn[T], *, idempotent: bool =
 
 def _read(ctx: "TaskContext", name: str) -> Optional[Mapping[str, Any]]:
     try:
-        out = ctx.client.api.work.get_work_step(ctx.work_id, name, worker_id=ctx.worker_id,
+        out = ctx.client.api.work.get_work_step(ctx.work_id, step_name=name, worker_id=ctx.worker_id,
                                                 lock_version=ctx.lock_version, attempt_id=ctx.attempt_id or "")
     except (StaleLeaseError, GoneError) as e:
         raise _lease_lost(ctx, name, e) from e
@@ -162,7 +162,7 @@ def _write(ctx: "TaskContext", name: str, state: str, result: Any, provider_ref:
                             "attemptId": ctx.attempt_id or "", "state": state, "result": encode_result(result),
                             "providerRef": provider_ref, "error": error}
     try:
-        ctx.client.api.work.record_work_step(ctx.work_id, name, body)  # type: ignore[arg-type]
+        ctx.client.api.work.record_work_step(ctx.work_id, body, step_name=name)  # type: ignore[arg-type]
     except (StaleLeaseError, GoneError) as e:
         raise _lease_lost(ctx, name, e) from e
 

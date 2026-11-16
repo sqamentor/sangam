@@ -41,15 +41,15 @@ final class ResourcesApi
      *
      * POST /resources/types (operationId resourcesResourcesDefineType); permission resources.admin; result stored atomically with the state change.
      * @param Model\ResourcesResourcesDefineTypeBody|array $body request body
-     * @return string
+     * @return array<string, mixed>
      */
-    public function resourcesResourcesDefineType(Model\ResourcesResourcesDefineTypeBody|array $body, ?RequestOptions $options = null): string
+    public function resourcesResourcesDefineType(Model\ResourcesResourcesDefineTypeBody|array $body, ?RequestOptions $options = null): array
     {
         $req = ApiRequest::post('/resources/types');
         if ($body !== null) {
             $req->body($body);
         }
-        return $this->calls->raw($req, $options, 'application/octet-stream');
+        return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
     /**
@@ -239,12 +239,12 @@ final class ResourcesApi
      * ResourcesController.waitlistEntry (sangam-rest).
      *
      * GET /resources/waitlist/{entryId} (operationId resourcesResourcesWaitlistEntry); permission resources.read.
-     * @return string
+     * @return array<string, mixed>
      */
-    public function resourcesResourcesWaitlistEntry(string $entryId, ?RequestOptions $options = null): string
+    public function resourcesResourcesWaitlistEntry(string $entryId, ?RequestOptions $options = null): array
     {
         $req = ApiRequest::get('/resources/waitlist/' . HttpTransport::seg((string) $entryId));
-        return $this->calls->raw($req, $options, 'application/octet-stream');
+        return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
     /**

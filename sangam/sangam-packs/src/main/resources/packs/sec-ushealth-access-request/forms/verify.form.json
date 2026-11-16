@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-access-request/verify",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ushealth.access-request",
   "title": {
     "en": "Verify identity and authority",

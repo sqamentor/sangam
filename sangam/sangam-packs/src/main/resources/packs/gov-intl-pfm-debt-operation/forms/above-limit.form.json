@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-debt-operation/above-limit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-debt-operation",
   "title": {
     "en": "Above the remaining authority: record the outcome",

@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-pefa-evidence/compile",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-pefa-evidence",
   "title": {
     "en": "Compile the evidence by indicator",

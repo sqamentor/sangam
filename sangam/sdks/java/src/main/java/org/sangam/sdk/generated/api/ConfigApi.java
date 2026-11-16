@@ -74,15 +74,16 @@ public final class ConfigApi {
      *
      * <p>Every stored version with its status and content hash.
      *
-     * <p>{@code GET /config/profiles/{id}/versions} (operationId {@code listConfigProfileVersions}); permission {@code config.read}.
-     * @param id path parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
+     * <p>{@code GET /config/profiles/versions} (operationId {@code listConfigProfileVersions}); permission {@code config.read}.
+     * @param id query parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
      * @param page query parameter {@code page}, or null. 0-based page index
      * @param size query parameter {@code size}, or null. Page size
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<ConfigProfileVersion> listConfigProfileVersions(String id, Long page, Long size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/config/profiles/" + HttpTransport.seg(String.valueOf(id)) + "/versions");
+        ApiRequest req = ApiRequest.get("/config/profiles/versions");
+        req.query("id", id);
         req.query("page", page);
         req.query("size", size);
         return call.page(req, options, ConfigProfileVersion.class, page, size);
@@ -93,32 +94,36 @@ public final class ConfigApi {
      *
      * <p>The version's status, hash and document tree.
      *
-     * <p>{@code GET /config/profiles/{id}/versions/{version}} (operationId {@code getConfigProfileVersion}); permission {@code config.read}.
-     * @param id path parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
-     * @param version path parameter {@code version}
+     * <p>{@code GET /config/profiles/version} (operationId {@code getConfigProfileVersion}); permission {@code config.read}.
+     * @param id query parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
+     * @param version query parameter {@code version}
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public ConfigProfileVersionDocument getConfigProfileVersion(String id, String version, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/config/profiles/" + HttpTransport.seg(String.valueOf(id)) + "/versions/" + HttpTransport.seg(String.valueOf(version)));
+        ApiRequest req = ApiRequest.get("/config/profiles/version");
+        req.query("id", id);
+        req.query("version", version);
         return call.json(req, options, R_getConfigProfileVersion);
     }
 
     /**
      * Save a draft version
      *
-     * <p>Maker step: the body is the profile document (YAML or JSON); its id and version must match the path. A version that left DRAFT/REJECTED is frozen (409 VERSION_FROZEN). Writes are limited to the caller's own scope.
+     * <p>Maker step: the body is the profile document (YAML or JSON); its id and version must match the query. A version that left DRAFT/REJECTED is frozen (409 VERSION_FROZEN). Writes are limited to the caller's own scope.
      *
-     * <p>{@code PUT /config/profiles/{id}/versions/{version}} (operationId {@code saveConfigProfileDraft}); permission {@code config.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
-     * @param version path parameter {@code version}
+     * <p>{@code PUT /config/profiles/version} (operationId {@code saveConfigProfileDraft}); permission {@code config.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
+     * @param version query parameter {@code version}
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public ConfigFindingsResult saveConfigProfileDraft(String id, String version, byte[] body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/config/profiles/" + HttpTransport.seg(String.valueOf(id)) + "/versions/" + HttpTransport.seg(String.valueOf(version)));
+    public ConfigFindingsResult saveConfigProfileDraft(byte[] body, String id, String version, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/config/profiles/version");
         GeneratedCalls.raw(req, body, "application/yaml", options);
+        req.query("id", id);
+        req.query("version", version);
         return call.json(req, options, R_saveConfigProfileDraft);
     }
 
@@ -127,13 +132,15 @@ public final class ConfigApi {
      *
      * <p>Maker submits the draft; the content hash is frozen.
      *
-     * <p>{@code POST /config/profiles/{id}/versions/{version}/submit} (operationId {@code submitConfigProfile}); permission {@code config.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
-     * @param version path parameter {@code version}
+     * <p>{@code POST /config/profiles/version/submit} (operationId {@code submitConfigProfile}); permission {@code config.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
+     * @param version query parameter {@code version}
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void submitConfigProfile(String id, String version, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/config/profiles/" + HttpTransport.seg(String.valueOf(id)) + "/versions/" + HttpTransport.seg(String.valueOf(version)) + "/submit");
+        ApiRequest req = ApiRequest.post("/config/profiles/version/submit");
+        req.query("id", id);
+        req.query("version", version);
         call.none(req, options);
     }
 
@@ -142,15 +149,17 @@ public final class ConfigApi {
      *
      * <p>Checker approval bound to the reviewed hash (409 APPROVAL_INVALIDATED if it changed); checker must differ from the maker (422 SOD_VIOLATION).
      *
-     * <p>{@code POST /config/profiles/{id}/versions/{version}/approve} (operationId {@code approveConfigProfile}); permission {@code config.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
-     * @param version path parameter {@code version}
+     * <p>{@code POST /config/profiles/version/approve} (operationId {@code approveConfigProfile}); permission {@code config.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
+     * @param version query parameter {@code version}
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void approveConfigProfile(String id, String version, ConfigApproveRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/config/profiles/" + HttpTransport.seg(String.valueOf(id)) + "/versions/" + HttpTransport.seg(String.valueOf(version)) + "/approve");
+    public void approveConfigProfile(ConfigApproveRequest body, String id, String version, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/config/profiles/version/approve");
         req.body(body);
+        req.query("id", id);
+        req.query("version", version);
         call.none(req, options);
     }
 
@@ -159,15 +168,17 @@ public final class ConfigApi {
      *
      * <p>Checker rejection with a reason.
      *
-     * <p>{@code POST /config/profiles/{id}/versions/{version}/reject} (operationId {@code rejectConfigProfile}); permission {@code config.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
-     * @param version path parameter {@code version}
+     * <p>{@code POST /config/profiles/version/reject} (operationId {@code rejectConfigProfile}); permission {@code config.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
+     * @param version query parameter {@code version}
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void rejectConfigProfile(String id, String version, ConfigRejectRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/config/profiles/" + HttpTransport.seg(String.valueOf(id)) + "/versions/" + HttpTransport.seg(String.valueOf(version)) + "/reject");
+    public void rejectConfigProfile(ConfigRejectRequest body, String id, String version, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/config/profiles/version/reject");
         req.body(body);
+        req.query("id", id);
+        req.query("version", version);
         call.none(req, options);
     }
 
@@ -176,15 +187,17 @@ public final class ConfigApi {
      *
      * <p>Activates an approved version after re-resolving the listed scopes (422 ACTIVATION_REFUSED on errors).
      *
-     * <p>{@code POST /config/profiles/{id}/versions/{version}/activate} (operationId {@code activateConfigProfile}); permission {@code config.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
-     * @param version path parameter {@code version}
+     * <p>{@code POST /config/profiles/version/activate} (operationId {@code activateConfigProfile}); permission {@code config.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
+     * @param version query parameter {@code version}
      * @param body request body, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public ConfigFindingsResult activateConfigProfile(String id, String version, ConfigActivateRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/config/profiles/" + HttpTransport.seg(String.valueOf(id)) + "/versions/" + HttpTransport.seg(String.valueOf(version)) + "/activate");
+        ApiRequest req = ApiRequest.post("/config/profiles/version/activate");
+        req.query("id", id);
+        req.query("version", version);
         req.body(body);
         return call.json(req, options, R_activateConfigProfile);
     }
@@ -194,15 +207,16 @@ public final class ConfigApi {
      *
      * <p>Every save, submission, approval, rejection, activation and import.
      *
-     * <p>{@code GET /config/profiles/{id}/history} (operationId {@code getConfigProfileHistory}); permission {@code config.read}.
-     * @param id path parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
+     * <p>{@code GET /config/profiles/history} (operationId {@code getConfigProfileHistory}); permission {@code config.read}.
+     * @param id query parameter {@code id}. profile id (a scope id such as RJ.PWD, an office overlay RJ.PWD/DIV-1, or a shared document)
      * @param page query parameter {@code page}, or null. 0-based page index
      * @param size query parameter {@code size}, or null. Page size
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<ConfigChangeRecord> getConfigProfileHistory(String id, Long page, Long size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/config/profiles/" + HttpTransport.seg(String.valueOf(id)) + "/history");
+        ApiRequest req = ApiRequest.get("/config/profiles/history");
+        req.query("id", id);
         req.query("page", page);
         req.query("size", size);
         return call.page(req, options, ConfigChangeRecord.class, page, size);

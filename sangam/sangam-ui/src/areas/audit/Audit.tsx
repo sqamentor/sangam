@@ -10,16 +10,33 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { api } from '../../api/endpoints';
+import { api, DOCUMENT_SCOPES } from '../../api/endpoints';
 import type { AuditEvent, AuditVerifyResult } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate, fmtNumber } from '../../i18n';
 import { Badge, DataTable, Empty, JsonView, Loading, Notice, PageHeader, Pagination, ProblemAlert, ReasonDialog, SearchBox, Section, SelectField, TextField } from '../../components/ui';
 
-export function verifyLinkage(events: AuditEvent[]): { ok: boolean; brokenAt?: number } {
-  const sorted = [...events].sort((a, b) => a.seq - b.seq);
-  for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i].prevHash && sorted[i].seq === sorted[i - 1].seq + 1 && sorted[i].prevHash !== sorted[i - 1].hash) return { ok: false, brokenAt: sorted[i].seq };
+/**
+ * The client check of the loaded page: within each hash chain (AuditEvent.chainId), an event that directly follows
+ * another (seq + 1) must carry that event's hash as its prevHash. A business key's timeline interleaves several chains
+ * (the engine chain of each process instance and the product chain of the key), each numbered from #1, so events are
+ * only ever compared with events of their own chain. Events without a hash (class-A history) are not linked. Hashed
+ * events that name no chain are not skipped (fail closed): they are compared with each other as one unnamed chain, and
+ * a break there is reported without a chain id.
+ */
+export function verifyLinkage(events: AuditEvent[]): { ok: boolean; brokenAt?: number; chainId?: string } {
+  const chains = new Map<string | undefined, AuditEvent[]>();
+  for (const e of events) {
+    if (!e.hash) continue;
+    const c = chains.get(e.chainId || undefined);
+    if (c) c.push(e);
+    else chains.set(e.chainId || undefined, [e]);
+  }
+  for (const [chainId, chain] of chains) {
+    const sorted = [...chain].sort((a, b) => a.seq - b.seq);
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i].prevHash && sorted[i].seq === sorted[i - 1].seq + 1 && sorted[i].prevHash !== sorted[i - 1].hash) return chainId === undefined ? { ok: false, brokenAt: sorted[i].seq } : { ok: false, brokenAt: sorted[i].seq, chainId };
+    }
   }
   return { ok: true };
 }
@@ -33,13 +50,14 @@ export function Timeline() {
   const [open, setOpen] = useState<string | null>(null);
   const act = useAction();
   const linkage = useMemo(() => (list.data ? verifyLinkage(list.data.items) : undefined), [list.data]);
+  const verdict = (r: AuditVerifyResult) => (r.valid ? t('audit.chainValid') : r.checked === 0 && !r.brokenChainId ? t('audit.nothingChecked') : t('audit.chainBroken'));
   return (
     <>
       <PageHeader
         title={t('audit.timelineTitle', { key: businessKey })}
         actions={
           <>
-            <button type="button" className="primary" disabled={act.busy} onClick={() => void act.run(() => api.audit.verify(businessKey)).then((r) => r && (setVerify(r), announce(r.valid ? t('audit.chainValid') : t('audit.chainBroken'))))}>
+            <button type="button" className="primary" disabled={act.busy} onClick={() => void act.run(() => api.audit.verify(businessKey)).then((r) => r && (setVerify(r), announce(verdict(r))))}>
               {t('audit.verify')}
             </button>
             <button type="button" onClick={() => void act.run(() => api.audit.evidencePack(businessKey).then(() => true))}>
@@ -49,17 +67,14 @@ export function Timeline() {
         }
       />
       <ProblemAlert error={list.error ?? act.error} onRetry={list.reload} />
-      {linkage && !linkage.ok && <Notice tone="bad">{t('audit.linkBroken', { seq: linkage.brokenAt })}</Notice>}
+      {linkage && !linkage.ok && <Notice tone="bad">{linkage.chainId === undefined ? t('audit.linkBroken', { seq: linkage.brokenAt }) : t('audit.chainLinkBroken', { seq: linkage.brokenAt, chain: linkage.chainId })}</Notice>}
       {verify && (
-        <Notice tone={verify.valid ? 'ok' : 'bad'}>
-          <strong>{verify.valid ? t('audit.chainValid') : t('audit.chainBroken')}</strong> · {t('audit.checked', { n: fmtNumber(verify.checked) })}
+        // fail closed: a check over nothing is neither verified (green) nor broken; it says that nothing was checked
+        <Notice tone={verify.valid ? 'ok' : verify.checked === 0 && !verify.brokenChainId ? 'warn' : 'bad'}>
+          <strong>{verdict(verify)}</strong> · {t('audit.checked', { n: fmtNumber(verify.checked) })}
           {verify.firstBrokenSeq !== undefined && ` · ${t('audit.firstBroken', { seq: verify.firstBrokenSeq })}`}
-          {verify.headHash && (
-            <div className="small">
-              {t('audit.headHash')}: <code className="hash">{verify.headHash}</code>
-              {verify.anchoredAt && ` · ${t('audit.anchored', { at: fmtDate(verify.anchoredAt) })}`}
-            </div>
-          )}
+          {verify.brokenChainId && ` · ${t('audit.inChain', { chain: verify.brokenChainId })}`}
+          {verify.anchoredAt && <div className="small">{t('audit.verifiedAt', { at: fmtDate(verify.anchoredAt) })}</div>}
           {verify.message && <p>{verify.message}</p>}
         </Notice>
       )}
@@ -236,8 +251,12 @@ export function AuditExports() {
 
 export function Documents() {
   const { t, i18n } = useTranslation();
-  const [bk, setBk] = useState('');
-  const list = usePaged((p) => api.documents.list({ ...p, businessKey: bk || undefined }), [bk]);
+  // UI-DEMO sweep S2: the server lists the documents of one task, process instance or case (400 SCOPE_REQUIRED
+  // otherwise), so nothing is read until a scope is given
+  const [scopeKind, setScopeKind] = useState<(typeof DOCUMENT_SCOPES)[number]>('processInstanceId');
+  const [scopeId, setScopeId] = useState('');
+  const scope = scopeId.trim();
+  const list = usePaged((p) => api.documents.list({ ...p, [scopeKind]: scope }), [scopeKind, scope], 25, !!scope);
   const templates = useAsync(() => api.documents.templates(), []);
   const [versionsOf, setVersionsOf] = useState<string | null>(null);
   const versions = useAsync(() => api.documents.versions(versionsOf!), [versionsOf], !!versionsOf);
@@ -247,7 +266,11 @@ export function Documents() {
   return (
     <>
       <PageHeader title={t('docs.title')} description={t('docs.description')} />
-      <SearchBox label={t('ops.businessKey')} value={bk} onChange={setBk} />
+      <div className="filters">
+        <SelectField label={t('docs.scope')} value={scopeKind} onChange={(v) => setScopeKind(v as typeof scopeKind)} options={DOCUMENT_SCOPES.map((s) => ({ value: s, label: t(`docs.scope_${s}`) }))} />
+        <SearchBox label={t(`docs.scope_${scopeKind}`)} value={scopeId} onChange={setScopeId} />
+      </div>
+      {!scope && <Notice>{t('docs.scopeHint')}</Notice>}
       <ProblemAlert error={list.error ?? act.error} onRetry={list.reload} />
       {list.data && list.data.items.length === 0 && <Empty message={t('docs.empty')} />}
       {list.data && list.data.items.length > 0 && (

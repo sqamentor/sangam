@@ -27,15 +27,15 @@ final class ResourcesItemsApi
      *
      * POST /resources/items (operationId resourcesResourcesCreateResource); permission resources.admin; result stored atomically with the state change.
      * @param Model\ResourceDraft|array $body request body
-     * @return string
+     * @return array<string, mixed>
      */
-    public function resourcesResourcesCreateResource(Model\ResourceDraft|array $body, ?RequestOptions $options = null): string
+    public function resourcesResourcesCreateResource(Model\ResourceDraft|array $body, ?RequestOptions $options = null): array
     {
         $req = ApiRequest::post('/resources/items');
         if ($body !== null) {
             $req->body($body);
         }
-        return $this->calls->raw($req, $options, 'application/octet-stream');
+        return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
     /**
@@ -78,12 +78,12 @@ final class ResourcesItemsApi
      * ResourcesController.resource (sangam-rest).
      *
      * GET /resources/items/{resourceId} (operationId resourcesResourcesResource); permission resources.read.
-     * @return string
+     * @return array<string, mixed>
      */
-    public function resourcesResourcesResource(string $resourceId, ?RequestOptions $options = null): string
+    public function resourcesResourcesResource(string $resourceId, ?RequestOptions $options = null): array
     {
         $req = ApiRequest::get('/resources/items/' . HttpTransport::seg((string) $resourceId));
-        return $this->calls->raw($req, $options, 'application/octet-stream');
+        return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
     /**
@@ -94,16 +94,16 @@ final class ResourcesItemsApi
      * PATCH /resources/items/{resourceId} (operationId resourcesResourcesUpdateResource); permission resources.admin; result stored atomically with the state change.
      * @param Model\ResourcePatch|array $body request body
      * @param int $version query version
-     * @return string
+     * @return array<string, mixed>
      */
-    public function resourcesResourcesUpdateResource(string $resourceId, Model\ResourcePatch|array $body, int $version, ?RequestOptions $options = null): string
+    public function resourcesResourcesUpdateResource(string $resourceId, Model\ResourcePatch|array $body, int $version, ?RequestOptions $options = null): array
     {
         $req = ApiRequest::patch('/resources/items/' . HttpTransport::seg((string) $resourceId));
         $req->query('version', $version);
         if ($body !== null) {
             $req->body($body);
         }
-        return $this->calls->raw($req, $options, 'application/octet-stream');
+        return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
     /**
@@ -113,15 +113,15 @@ final class ResourcesItemsApi
      *
      * POST /resources/items/{resourceId}/status (operationId resourcesResourcesSetStatus); permission resources.admin; result stored atomically with the state change.
      * @param Model\ResourcesStatusRequest|array $body request body
-     * @return string
+     * @return array<string, mixed>
      */
-    public function resourcesResourcesSetStatus(string $resourceId, Model\ResourcesStatusRequest|array $body, ?RequestOptions $options = null): string
+    public function resourcesResourcesSetStatus(string $resourceId, Model\ResourcesStatusRequest|array $body, ?RequestOptions $options = null): array
     {
         $req = ApiRequest::post('/resources/items/' . HttpTransport::seg((string) $resourceId) . '/status');
         if ($body !== null) {
             $req->body($body);
         }
-        return $this->calls->raw($req, $options, 'application/octet-stream');
+        return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
     /**
@@ -131,15 +131,15 @@ final class ResourcesItemsApi
      *
      * POST /resources/items/{resourceId}/move (operationId resourcesResourcesMove); permission resources.admin; result stored atomically with the state change.
      * @param Model\ResourcesMoveRequest|array $body request body
-     * @return string
+     * @return array<string, mixed>
      */
-    public function resourcesResourcesMove(string $resourceId, Model\ResourcesMoveRequest|array $body, ?RequestOptions $options = null): string
+    public function resourcesResourcesMove(string $resourceId, Model\ResourcesMoveRequest|array $body, ?RequestOptions $options = null): array
     {
         $req = ApiRequest::post('/resources/items/' . HttpTransport::seg((string) $resourceId) . '/move');
         if ($body !== null) {
             $req->body($body);
         }
-        return $this->calls->raw($req, $options, 'application/octet-stream');
+        return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
     /**

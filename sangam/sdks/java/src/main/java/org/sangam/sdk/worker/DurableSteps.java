@@ -14,7 +14,7 @@ import org.sangam.sdk.model.TypedValue;
 
 /**
  * The algorithm of {@link TaskContext#step} (M-025, R37 / E02) on the step journal routes {@code GET/PUT
- * /work/{id}/steps/{stepName}}, fenced by the context's lease:
+ * /work/{id}/step?stepName=}, fenced by the context's lease:
  *
  * <ol>
  *   <li>read the step: {@code SUCCEEDED} replays the recorded result without calling again;</li>
@@ -104,8 +104,8 @@ final class DurableSteps {
     private static void write(TaskContext ctx, WorkApi api, String name, String state, Object result, String providerRef,
                               String error) {
         try {
-            api.recordWorkStep(ctx.workId(), name, new WorkStepRequest(ctx.workerId(), ctx.lockVersion(),
-                    ctx.attemptId(), state, result, providerRef, error), null);
+            api.recordWorkStep(ctx.workId(), new WorkStepRequest(ctx.workerId(), ctx.lockVersion(),
+                    ctx.attemptId(), state, result, providerRef, error), name, null);
         } catch (StaleLeaseException | GoneException e) {
             throw leaseLost(ctx, name, e);
         }

@@ -167,7 +167,7 @@ FetchAndLockRequest.usePriority. `ExternalWork::$errorMessage` carries the previ
 ### Durable steps (M-025, R37)
 
 `$ctx->step($name, $fn, ?StepOptions $options)` journals one side-effecting call under the work's operationId
-(`GET/PUT /work/{id}/steps/{name}`, fenced by the lease). `$fn` gets a `Step`: send `$step->idempotencyKey()`
+(`GET/PUT /work/{id}/step?stepName=`, fenced by the lease). `$fn` gets a `Step`: send `$step->idempotencyKey()`
 (`operationId:name`) to the remote API and report its reference with `$step->setProviderRef()`.
 
 ```php

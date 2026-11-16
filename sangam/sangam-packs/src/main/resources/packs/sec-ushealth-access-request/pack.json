@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.access-request",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "HIPAA right of access (30 days, one 30-day extension)",
     "es": "Derecho de acceso HIPAA (30 días, una prórroga de 30 días)"

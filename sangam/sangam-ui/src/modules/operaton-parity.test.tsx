@@ -21,11 +21,12 @@ const api = vi.hoisted(() => ({
   page: vi.fn(),
   request: vi.fn(),
   download: vi.fn(),
+  text: vi.fn(),
 }));
 
 vi.mock('../api/client', async (orig) => {
   const real = await orig<typeof import('../api/client')>();
-  return { ...real, http: { ...real.http, get: api.get, post: api.post, put: api.put, del: api.del, upload: api.upload, page: api.page }, request: api.request, download: api.download };
+  return { ...real, http: { ...real.http, get: api.get, post: api.post, put: api.put, del: api.del, upload: api.upload, page: api.page, text: api.text }, request: api.request, download: api.download };
 });
 vi.mock('../auth/AuthProvider', () => ({
   useAuth: () => ({ me: { userId: 'demo', displayName: 'Demo', tenantId: 't1', roles: ['PLATFORM_ADMIN', 'PLATFORM_OPERATOR'], seats: [] }, mode: 'dev', hasRole: () => true }),
@@ -43,6 +44,7 @@ import { InstanceDetail } from '../areas/ops/InstanceDetail';
 import { Incidents } from '../areas/ops/IncidentsRecon';
 import { StartCatalog } from '../areas/tasklist/StartAndCases';
 import { api as contract } from '../api/endpoints';
+import { ApiError } from '../api/client';
 
 const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -75,6 +77,8 @@ beforeEach(() => {
   routes = {};
   for (const m of Object.values(api)) m.mockReset();
   api.get.mockImplementation(async (path: string) => answer(path));
+  // the job stack trace (UI-DEMO-2) is read as text/plain
+  api.text.mockImplementation(async (path: string) => answer(path));
   api.page.mockImplementation(async () => ({ items: [], page: 0, size: 25, total: 0, capped: false }));
   api.request.mockResolvedValue(undefined);
   api.post.mockResolvedValue({ id: 'new-1' });
@@ -392,6 +396,7 @@ describe('Cockpit process instance', () => {
       await open();
       fireEvent.click(screen.getByRole('tab', { name: T('ops.stacktrace') }));
       expect(await screen.findByText(/IllegalStateException/)).toBeTruthy();
+      expect(api.text).toHaveBeenCalledWith('/engine-rest/job/j1/stacktrace', 'text/plain');
     });
   });
 
@@ -798,5 +803,20 @@ describe('Admin and account', () => {
     await waitFor(() => expect(api.put).toHaveBeenCalledWith('/engine-rest/tenant/t2/user-members/demo', undefined, expect.any(String)));
     fireEvent.click(screen.getByRole('button', { name: T('act.removeFromTenant') }));
     await waitFor(() => expect(api.del).toHaveBeenCalledWith('/engine-rest/tenant/t2/user-members/demo', undefined, expect.any(String)));
+  });
+
+  it('UI-DEMO sweep S6: a platform user with no engine identity sees the Sangam identity, not "Not available"', async () => {
+    // a dev-token or OIDC user is not in the engine identity store: the engine answers its profile with 404
+    api.get.mockImplementation(async (path: string) => {
+      if (path === '/engine-rest/user/demo/profile') throw new ApiError({ status: 404, title: 'Not Found' });
+      return answer(path);
+    });
+    show(<Account />);
+    expect(await screen.findByText(T('mod.op.noEngineUser'))).toBeTruthy();
+    expect(screen.getByText('demo')).toBeTruthy();
+    expect(screen.queryByLabelText(L('fld.firstName'))).toBeNull();
+    expect(document.querySelector('[role="alert"]')).toBeNull();
+    expect(screen.queryByText(T('error.notAvailable'))).toBeNull();
+    expect(screen.getByText(T('mod.op.passwordAtIdp'))).toBeTruthy();
   });
 });

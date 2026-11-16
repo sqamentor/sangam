@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-debt-operation/limitHold",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-debt-operation",
   "title": {
     "en": "Remaining authority not confirmed: check the debt system",

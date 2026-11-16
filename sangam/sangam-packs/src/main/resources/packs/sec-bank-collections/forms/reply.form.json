@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-collections/reply",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.bank.collections",
   "title": {
     "en": "Reply to representation with reasons (15 days)",

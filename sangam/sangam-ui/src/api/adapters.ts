@@ -463,20 +463,45 @@ export function normAudit(e: Any, businessKey = ''): T.AuditEvent {
     details: e.details ?? (e.payload ? fromVariableMap(e.payload) : undefined),
     prevHash: e.prevHash ?? '',
     hash: e.hash ?? '',
+    // AuditEvent.chainId: a business key's timeline merges several chains (the engine chain of each process instance
+    // and the product chain of the key), each numbered from seq 1
+    chainId: e.chainId ?? undefined,
   };
 }
 
-export function normVerify(v: Any): T.AuditVerifyResult {
-  if (typeof v.valid === 'boolean') return v as T.AuditVerifyResult;
-  const chains = (v.chains ?? []) as Any[];
-  const broken = chains.find((c) => c.ok === false || c.valid === false);
+/** components.schemas.HistoricDecision → DecisionInstance: the input and output maps become name/value rows. */
+export function normDecisionInstance(v: Any): T.DecisionInstance {
+  const rows = (m: unknown) => (m && typeof m === 'object' && !Array.isArray(m) ? Object.entries(m as Record<string, unknown>).map(([name, value]) => ({ name, value })) : []);
   return {
-    valid: !!v.ok,
-    checked: chains.reduce((a, c) => a + Number(c.checked ?? c.count ?? c.length ?? 0), 0),
-    headHash: chains[0]?.headHash ?? chains[0]?.head,
-    firstBrokenSeq: broken?.firstBrokenSeq ?? broken?.brokenAtSeq,
+    id: v.id,
+    decisionKey: v.decisionDefinitionKey,
+    decisionDefinitionId: v.decisionDefinitionId ?? undefined,
+    evaluationTime: v.evaluationTime,
+    processInstanceId: v.processInstanceId ?? undefined,
+    activityId: v.activityId ?? undefined,
+    inputs: rows(v.inputs),
+    outputs: rows(v.outputs),
+  };
+}
+
+/**
+ * AuditVerifyResult {tenantId, ok, verifiedAt, chains: ChainVerification[]} (sangam-api.yaml), each chain
+ * {chainId, ok, eventsChecked, firstBadSeq, reason}. Fail closed: `valid` is true only when the server says ok AND at
+ * least one event was checked; a check over nothing is `checked: 0` and never reads as verified (the screen shows it
+ * as "nothing checked").
+ */
+export function normVerify(v: Any): T.AuditVerifyResult {
+  const chains = (Array.isArray(v.chains) ? v.chains : []) as Any[];
+  const broken = chains.find((c) => c.ok !== true);
+  const checked = chains.reduce((a, c) => a + (Number.isFinite(Number(c.eventsChecked)) ? Number(c.eventsChecked) : 0), 0);
+  return {
+    valid: v.ok === true && !broken && checked > 0,
+    checked,
+    chains: chains.length,
+    firstBrokenSeq: broken?.firstBadSeq ?? undefined,
+    brokenChainId: broken?.chainId ?? undefined,
     anchoredAt: v.verifiedAt,
-    message: broken?.message,
+    message: broken?.reason ?? undefined,
   };
 }
 

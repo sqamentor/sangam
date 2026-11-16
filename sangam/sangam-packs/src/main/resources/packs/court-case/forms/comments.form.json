@@ -1,6 +1,6 @@
 {
   "key": "court-case/comments",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.court-case",
   "title": {
     "en": "Para-wise comments",

@@ -1,6 +1,6 @@
 {
   "key": "sec-util-meter-to-cash/dispute",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.util.meter-to-cash",
   "title": {
     "en": "Examine dispute and revise bill",

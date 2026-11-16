@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -20,6 +21,9 @@ import org.sangam.rest.port.ApiProblem;
  * {@code {"type":"Decimal","value":"1234.50"}}; money is never a binary float and large integers are strings (E18).
  * Supported types: Decimal, BigInteger, Long, Integer, Boolean, String, Date (ISO-8601 instant), LocalDate, Json.
  * Outbound, BigDecimal/BigInteger/Date/LocalDate are written back in the typed form.
+ * A typed value that is not of its declared type (a {@code Date} that is not an ISO-8601 instant such as
+ * {@code 2026-03-31T18:30:00Z}, a {@code Long} that is not an integer, a {@code Boolean} other than {@code true} or
+ * {@code false}) or an unknown type is refused with {@code VALIDATION_FAILED} (400), never coerced.
  *
  * <p>Decision 333: {@code {"type":"LocalDate","value":"2026-03-31"}} becomes a {@link LocalDate}, which the engine stores
  * as a variable type of its own ({@code sangam-local-date-v1}, ISO text) and which comes back as the same typed value,
@@ -56,17 +60,22 @@ public final class TypedVariables {
                 return decimal(value);
             }
             String s = String.valueOf(value);
-            return switch (type) {
-                case "BigInteger", "integer-string" -> new BigInteger(s);
-                case "Long", "long" -> Long.parseLong(s);
-                case "Integer", "integer" -> Integer.parseInt(s);
-                case "Boolean", "boolean" -> Boolean.parseBoolean(s);
-                case "String", "string" -> s;
-                case "Date", "date-time" -> Date.from(Instant.parse(s));
-                case "LocalDate", "date" -> localDate(s);
-                case "Json", "json" -> value;
-                default -> throw new IllegalArgumentException("unknown typed variable type " + type);
-            };
+            try {
+                return switch (type) {
+                    case "BigInteger", "integer-string" -> new BigInteger(s);
+                    case "Long", "long" -> Long.parseLong(s);
+                    case "Integer", "integer" -> Integer.parseInt(s);
+                    case "Boolean", "boolean" -> bool(s);
+                    case "String", "string" -> s;
+                    case "Date", "date-time" -> Date.from(Instant.parse(s));
+                    case "LocalDate", "date" -> localDate(s);
+                    case "Json", "json" -> value;
+                    default -> throw ApiProblem.badRequest("VALIDATION_FAILED", "unknown typed variable type " + type);
+                };
+            } catch (NumberFormatException | DateTimeParseException e) {
+                // UI-DEMO sweep S8: a value that is not of its declared type is the caller's error (400), never a 500
+                throw ApiProblem.badRequest("VALIDATION_FAILED", "typed variable " + type + ": not a valid value: " + s);
+            }
         }
         if (v instanceof Map<?, ?> m) {
             Map<String, Object> out = new LinkedHashMap<>();
@@ -170,6 +179,15 @@ public final class TypedVariables {
         }
         String plain = d.toPlainString();
         return plain.length() <= DecimalText.MAX_CHARS ? plain : canonical;
+    }
+
+    /** A typed Boolean is {@code true} or {@code false}; any other text is refused, never read as {@code false}. */
+    private static Boolean bool(String text) {
+        return switch (text) {
+            case "true" -> Boolean.TRUE;
+            case "false" -> Boolean.FALSE;
+            default -> throw ApiProblem.badRequest("VALIDATION_FAILED", "typed variable Boolean: not a valid value: " + text);
+        };
     }
 
     /** Decision 333: strict ISO date text as a {@link LocalDate}; invalid text is a validation problem. */

@@ -125,14 +125,15 @@ public final class RegistryObjectsApi {
      *
      * <p>RegistryController.byNumber (sangam-rest).
      *
-     * <p>{@code GET /registry/objects/by-number/{number}} (operationId {@code registryRegistryByNumber}); permission {@code registry.read}.
-     * @param number path parameter {@code number}
+     * <p>{@code GET /registry/objects/by-number} (operationId {@code registryRegistryByNumber}); permission {@code registry.read}.
+     * @param number query parameter {@code number}
      * @param typeKey query parameter {@code typeKey}, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> registryRegistryByNumber(String number, String typeKey, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/registry/objects/by-number/" + HttpTransport.seg(String.valueOf(number)));
+        ApiRequest req = ApiRequest.get("/registry/objects/by-number");
+        req.query("number", number);
         req.query("typeKey", typeKey);
         return call.json(req, options, R_registryRegistryByNumber);
     }

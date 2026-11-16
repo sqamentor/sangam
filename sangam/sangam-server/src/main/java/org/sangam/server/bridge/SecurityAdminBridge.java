@@ -50,6 +50,9 @@ import org.sangam.security.policy.Permission;
  */
 public final class SecurityAdminBridge implements AdminPort {
 
+    /** The principal types {@link #subject} maps; anything else is refused, not stored as a user grant. */
+    private static final List<String> PRINCIPAL_TYPES = List.of("USER", "GROUP", "SEAT", "ROLE");
+
     private final SangamSecurity security;
     private final TxSupport tx;
     private final AdminPort fallback;
@@ -313,11 +316,31 @@ public final class SecurityAdminBridge implements AdminPort {
         if (p.actions() == null || p.actions().isEmpty()) {
             throw ApiProblem.badRequest("VALIDATION_FAILED", "actions must not be empty").with("field", "actions");
         }
-        PolicyAdminService.Effect effect = "DENY".equalsIgnoreCase(p.effect()) ? PolicyAdminService.Effect.DENY
-                : PolicyAdminService.Effect.ALLOW;
+        // UI-DEMO sweep S13, fail closed: every field the request carries is applied or refused, never dropped. An
+        // effect outside the contract's GRANT/DENY used to become a grant, an unknown principal type a user grant,
+        // and a conditionId was dropped, which turned a conditional grant into an unconditional one. This API
+        // carries no condition definition, so a policy with a condition cannot be created through it.
+        PolicyAdminService.Effect effect = switch (p.effect() == null ? "" : p.effect().trim().toUpperCase(Locale.ROOT)) {
+            case "GRANT" -> PolicyAdminService.Effect.ALLOW;
+            case "DENY" -> PolicyAdminService.Effect.DENY;
+            default -> throw ApiProblem.badRequest("VALIDATION_FAILED", "effect must be GRANT or DENY")
+                    .with("field", "effect");
+        };
+        if (p.principalType() != null && !PRINCIPAL_TYPES.contains(p.principalType().trim().toUpperCase(Locale.ROOT))) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "principalType must be one of " + PRINCIPAL_TYPES)
+                    .with("field", "principalType");
+        }
+        if (p.conditionId() != null && !p.conditionId().isBlank()) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED",
+                    "a policy condition cannot be set through this API; the policy was not created").with("field", "conditionId");
+        }
         Set<Permission> perms = EnumSet.noneOf(Permission.class);
         for (String a : p.actions()) {
-            perms.add(Permission.parse(a));
+            try {
+                perms.add(Permission.parse(a));
+            } catch (IllegalArgumentException | NullPointerException e) {
+                throw ApiProblem.badRequest("VALIDATION_FAILED", "unknown action: " + a).with("field", "actions");
+            }
         }
         String id = p.id() != null && !p.id().isBlank() ? p.id() : Hashes.uuidV7().toString();
         String subject = subject(p.principalType(), p.principalId());

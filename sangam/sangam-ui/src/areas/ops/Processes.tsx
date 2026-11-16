@@ -88,9 +88,11 @@ export function DefinitionDetail() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const history = mode !== 'tokens';
+  // getActivityStats requires processDefinitionKey (400 PROCESS_DEFINITION_KEY_REQUIRED): asked once the definition is read
   const stats = useAsync(
-    () => api.processes.statistics(id, history ? 'history' : 'runtime', history ? { from: from || undefined, to: to || undefined } : {}, def.data?.key),
+    () => api.processes.statistics(id, history ? 'history' : 'runtime', history ? { from: from || undefined, to: to || undefined } : {}, def.data!.key),
     [id, history, from, to, def.data?.key],
+    !!def.data,
   );
   const { hasRole } = useAuth();
   const platform = hasRole('PLATFORM_OPERATOR');

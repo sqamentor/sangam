@@ -1,6 +1,6 @@
 {
   "key": "sec-health-admission-discharge/register",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.health.admission-discharge",
   "title": {
     "en": "Patient registration",

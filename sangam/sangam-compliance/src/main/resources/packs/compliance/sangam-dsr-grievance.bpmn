@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- Data-subject grievance redressal. Sangam compliance pack (jurisdiction-neutral): timelines arrive as process variables computed from the jurisdiction pack. Generated with its diagram layout by sangam-packs/tools/packgen (compliance.py): change the generator, then regenerate. -->
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sangam_dsr_grievance" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
-  <process id="sangam-dsr-grievance" name="Data-subject grievance redressal" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <process id="sangam-dsr-grievance" name="Data-subject grievance redressal" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0" operaton:isStartableInTasklist="false">
     <documentation>Grievance (IN: DPDP s.13, r.14(3) at most 90 days; SPDI r.5(9) one month for body corporates). Warning at three quarters of the period, escalation at the due date; the response names the authority complaint route.</documentation>
     <startEvent id="start" name="Grievance lodged"/>
     <serviceTask id="s_start" name="Mark in progress" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.start</operaton:string></operaton:field></extensionElements></serviceTask>

@@ -1,6 +1,6 @@
 {
   "key": "sec-ecom-seller-onboarding/portal",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ecom.seller-onboarding",
   "title": {
     "en": "Upload requested documents",

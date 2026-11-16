@@ -8,7 +8,7 @@
  * - POST /actions/{key}/run {subjectRef, input} runs one (:326-334). It is subject-bound (subjectRef is the task or case
  *   id) and idempotent: the Idempotency-Key is the client key (:332), so a retry after a timeout replays the stored
  *   result instead of acting twice (ActionModels.invoke, :91-110; `replayed` in the answer).
- * - An action with a form (formKey) is filled in through that form (GET /forms/{key}); otherwise the input is optional
+ * - An action with a form (formKey) is filled in through that form (GET /forms/by-key?key=); otherwise the input is optional
  *   JSON.
  * The scopeType filter is not sent: an action bound to a scopeType is offered only once its meaning (process, task or
  * case definition key) is confirmed; until then the menu lists the actions without one (ActionModels.java:83).

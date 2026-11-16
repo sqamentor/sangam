@@ -33,7 +33,7 @@ vi.mock('../plugins/host', () => ({ PluginSlot: () => null, usePlugins: () => []
 import { ApiError } from '../api/client';
 import { initI18n } from '../i18n';
 import type { AuditEvent } from '../api/types';
-import { Timeline, verifyLinkage } from './audit/Audit';
+import { Documents, Timeline, verifyLinkage } from './audit/Audit';
 import { Reconciliation, ReconciliationDetail } from './ops/IncidentsRecon';
 import { BatchDetail, Migration } from './ops/BatchMigration';
 import { AnalyticsDashboard } from './analytics/Analytics';
@@ -47,7 +47,8 @@ const L = (k: string) => new RegExp(`^${esc(T(k))}(\\s*\\*.*)?$`);
 const problem = (status: number, code?: string) => new ApiError({ status, title: 't', code });
 const KEY = expect.any(String);
 const EMPTY_PAGE = { items: [], page: 0, size: 25, total: 0, capped: false };
-const DAY = /^\d{4}-\d{2}-\d{2}$/;
+/** An ISO instant (the contract's date-time; the server parses it with Instant.parse, so a bare date is a 400). */
+const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
 let routes: Record<string, unknown> = {};
 
@@ -103,38 +104,77 @@ function reasonAndConfirm(reason: string) {
 
 /**
  * Evidence: Audit.tsx:19-25 (verifyLinkage), :27-111 (Timeline: verify button, linkage notice, verify notice);
- * endpoints.ts:590-592 (timeline GET /audit/{bk}/timeline, verify GET /audit/verify ?businessKey); adapters.ts:456 (normVerify).
+ * endpoints.ts audit (timeline GET /audit/timeline?businessKey, verify GET /audit/verify ?businessKey); adapters.ts:456 (normVerify).
  */
 describe('M-047 audit verify', () => {
-  const ev = (seq: number, hash: string, prevHash: string): AuditEvent => ({ seq, id: `e${seq}`, time: '2026-11-12T10:00:00Z', type: 'TASK_COMPLETED', businessKey: 'BK-1', actor: 'demo', hash, prevHash });
+  const ev = (seq: number, hash: string, prevHash: string, chainId = 'case:BK-1'): AuditEvent => ({ seq, id: `${chainId}#${seq}`, time: '2026-11-12T10:00:00Z', type: 'TASK_COMPLETED', businessKey: 'BK-1', actor: 'demo', hash, prevHash, chainId });
   const open = () => show(<Timeline />, '/audit/timeline/BK-1', '/audit/timeline/:businessKey');
+  /** components.schemas.AuditVerifyResult as the server sends it: ok, verifiedAt and one ChainVerification per chain. */
+  const verified = (...chains: { chainId: string; ok: boolean; eventsChecked: number; firstBadSeq?: number; reason?: string }[]) => ({
+    tenantId: 't1',
+    ok: chains.every((c) => c.ok),
+    verifiedAt: '2026-11-16T10:00:00Z',
+    chains,
+  });
 
   it('linkage check of a loaded page finds the first broken link', () => {
     expect(verifyLinkage([ev(1, 'h1', 'g'), ev(2, 'h2', 'h1'), ev(3, 'h3', 'h2')])).toEqual({ ok: true });
-    expect(verifyLinkage([ev(2, 'h2', 'xx'), ev(1, 'h1', 'g')])).toEqual({ ok: false, brokenAt: 2 });
+    expect(verifyLinkage([ev(2, 'h2', 'xx'), ev(1, 'h1', 'g')])).toEqual({ ok: false, brokenAt: 2, chainId: 'case:BK-1' });
   });
 
-  it('reads the timeline with history and shows a broken link of the loaded page', async () => {
+  it('UI-DEMO-4: two interleaved chains, each numbered from #1, are checked each on its own', () => {
+    // the demo timeline: the engine chain and the product chain of the key, both consistent, interleaved by time
+    const engine = [ev(1, 'e1', 'g', 'engine:pi-1'), ev(2, 'e2', 'e1', 'engine:pi-1')];
+    const product = [ev(1, 'p1', 'g', 'case:BK-1'), ev(2, 'p2', 'p1', 'case:BK-1')];
+    expect(verifyLinkage([engine[0], product[0], engine[1], product[1]])).toEqual({ ok: true });
+    expect(verifyLinkage([engine[0], product[0], { ...engine[1], prevHash: 'p1' }, product[1]])).toEqual({ ok: false, brokenAt: 2, chainId: 'engine:pi-1' });
+    // class-A history rows carry no chain and no hash and are never linked
+    expect(verifyLinkage([...engine, { ...product[1], chainId: undefined, hash: undefined as unknown as string, prevHash: undefined as unknown as string }])).toEqual({ ok: true });
+    // hashed events that name no chain are not skipped (fail closed): they are checked as one unnamed chain
+    expect(verifyLinkage([...engine, { ...product[0], chainId: undefined }, { ...product[1], chainId: undefined, prevHash: 'zz' }])).toEqual({ ok: false, brokenAt: 2 });
+  });
+
+  it('reads the timeline with history and shows a broken link of the loaded page, naming the chain', async () => {
     api.page.mockResolvedValue({ items: [ev(1, 'h1', 'g'), ev(2, 'h2', 'zz')], page: 0, size: 50, total: 2, capped: false });
     open();
-    expect(await screen.findByText(T('audit.linkBroken', { seq: 2 }))).toBeTruthy();
-    expect(api.page).toHaveBeenCalledWith('/audit/BK-1/timeline', { page: 0, size: 50, includeHistory: true, type: undefined });
+    expect(await screen.findByText(T('audit.chainLinkBroken', { seq: 2, chain: 'case:BK-1' }))).toBeTruthy();
+    // UI-DEMO-1: the business key is a query parameter (a key such as BK/2026/0001 carries '/')
+    expect(api.page).toHaveBeenCalledWith('/audit/timeline', { businessKey: 'BK-1', page: 0, size: 50, includeHistory: true, type: undefined });
   });
 
   it('verify asks the server for the chain of the business key and reports a valid chain', async () => {
-    routes['/audit/verify'] = { valid: true, checked: 12, headHash: 'abcdef' };
+    routes['/audit/verify'] = verified({ chainId: 'case:BK-1', ok: true, eventsChecked: 12 }, { chainId: 'engine:pi-1', ok: true, eventsChecked: 4 });
     open();
     fireEvent.click(await screen.findByRole('button', { name: T('audit.verify') }));
     expect(await screen.findByText(T('audit.chainValid'))).toBeTruthy();
+    expect(screen.getByText(new RegExp(esc(T('audit.checked', { n: '16' }))))).toBeTruthy();
     expect(api.get).toHaveBeenCalledWith('/audit/verify', { businessKey: 'BK-1' });
   });
 
-  it('a broken chain names the first broken entry', async () => {
-    routes['/audit/verify'] = { valid: false, checked: 5, firstBrokenSeq: 3 };
+  it('UI-DEMO-3: a check over zero events is not shown as verified (fail closed)', async () => {
+    routes['/audit/verify'] = verified({ chainId: 'case:BK-1', ok: true, eventsChecked: 0 });
+    open();
+    fireEvent.click(await screen.findByRole('button', { name: T('audit.verify') }));
+    expect(await screen.findByText(T('audit.nothingChecked'))).toBeTruthy();
+    expect(screen.queryByText(T('audit.chainValid'))).toBeNull();
+    expect(screen.getByText(T('audit.nothingChecked')).closest('.alert')?.className).toBe('alert alert-warn');
+  });
+
+  it('UI-DEMO-3: a server answer without chains is not verified either', async () => {
+    routes['/audit/verify'] = { tenantId: 't1', ok: true, verifiedAt: '2026-11-16T10:00:00Z', chains: [] };
+    open();
+    fireEvent.click(await screen.findByRole('button', { name: T('audit.verify') }));
+    expect(await screen.findByText(T('audit.nothingChecked'))).toBeTruthy();
+  });
+
+  it('a broken chain names the first broken entry and its chain', async () => {
+    routes['/audit/verify'] = verified({ chainId: 'case:BK-1', ok: true, eventsChecked: 5 }, { chainId: 'engine:pi-1', ok: false, eventsChecked: 3, firstBadSeq: 3, reason: 'hash mismatch' });
     open();
     fireEvent.click(await screen.findByRole('button', { name: T('audit.verify') }));
     expect(await screen.findByText(T('audit.chainBroken'))).toBeTruthy();
     expect(screen.getByText(new RegExp(esc(T('audit.firstBroken', { seq: 3 }))))).toBeTruthy();
+    expect(screen.getByText(new RegExp(esc(T('audit.inChain', { chain: 'engine:pi-1' }))))).toBeTruthy();
+    expect(screen.getByText('hash mismatch')).toBeTruthy();
   });
 
   it('a refused verify is shown as "not available"', async () => {
@@ -142,6 +182,29 @@ describe('M-047 audit verify', () => {
     open();
     fireEvent.click(await screen.findByRole('button', { name: T('audit.verify') }));
     expect(await screen.findByText(T('error.notAvailable'))).toBeTruthy();
+  });
+});
+
+// ====================================================================== documents
+
+/** UI-DEMO sweep S2: listDocuments needs taskId, processInstanceId or caseInstanceId (PortsDocumentBridge, 400 SCOPE_REQUIRED). */
+describe('documents screen', () => {
+  it('reads nothing until a scope is given, then lists that scope only', async () => {
+    show(<Documents />);
+    expect(await screen.findByText(T('docs.scopeHint'))).toBeTruthy();
+    expect(api.page.mock.calls.some((c) => c[0] === '/documents')).toBe(false);
+    const box = screen.getByLabelText(L('docs.scope_processInstanceId'));
+    fireEvent.change(box, { target: { value: 'pi-7' } });
+    fireEvent.submit(box.closest('form')!);
+    await waitFor(() =>
+      expect(api.page).toHaveBeenCalledWith('/documents', { page: 0, size: 25, name: undefined, taskId: undefined, processInstanceId: 'pi-7', caseInstanceId: undefined }),
+    );
+    fireEvent.change(screen.getByLabelText(L('docs.scope')), { target: { value: 'caseInstanceId' } });
+    await waitFor(() => expect(api.page).toHaveBeenLastCalledWith('/documents', expect.objectContaining({ caseInstanceId: 'pi-7', processInstanceId: undefined })));
+    for (const c of api.page.mock.calls.filter((x) => x[0] === '/documents')) {
+      const q = c[1] as Record<string, unknown>;
+      expect([q.taskId, q.processInstanceId, q.caseInstanceId].filter(Boolean).length).toBe(1);
+    }
   });
 });
 
@@ -303,24 +366,25 @@ describe('M-047 migration', () => {
 
 // ====================================================================== analytics
 
-/** Evidence: Analytics.tsx:18-129 (filters, dashboard, export); endpoints.ts:562-583 (summary, throughput, sla, export). */
+/** Evidence: Analytics.tsx:18-129 (filters, dashboard, export); endpoints.ts:562-583 (summary, throughput, sla, export).
+ * UI-DEMO sweep S1: from/to are instants and the bucket is the contract's interval; date-only values were a 400. */
 describe('M-047 analytics dashboard', () => {
   it('reads summary, throughput and SLA with the date range and bucket, and re-reads on a bucket change', async () => {
     show(<AnalyticsDashboard />);
     await waitFor(() =>
-      expect(api.get).toHaveBeenCalledWith('/analytics/summary', { processDefinitionKey: undefined, from: expect.stringMatching(DAY), to: expect.stringMatching(DAY) }),
+      expect(api.get).toHaveBeenCalledWith('/analytics/summary', { processDefinitionKey: undefined, from: expect.stringMatching(INSTANT), to: expect.stringMatching(INSTANT) }),
     );
-    expect(api.get).toHaveBeenCalledWith('/analytics/throughput', expect.objectContaining({ bucket: 'day', from: expect.stringMatching(DAY) }));
-    expect(api.get).toHaveBeenCalledWith('/analytics/sla', expect.objectContaining({ bucket: 'day' }));
+    expect(api.get).toHaveBeenCalledWith('/analytics/throughput', expect.objectContaining({ interval: 'day', from: expect.stringMatching(INSTANT) }));
+    expect(api.get).toHaveBeenCalledWith('/analytics/sla', { processDefinitionKey: undefined, from: expect.stringMatching(INSTANT), to: expect.stringMatching(INSTANT) });
     fireEvent.change(screen.getByLabelText(T('analytics.bucket')), { target: { value: 'week' } });
-    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/analytics/throughput', expect.objectContaining({ bucket: 'week' })));
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/analytics/throughput', expect.objectContaining({ interval: 'week' })));
   });
 
   it('XES export downloads the event log for the same range', async () => {
     show(<AnalyticsDashboard />);
     fireEvent.click(screen.getByRole('button', { name: T('analytics.exportXes') }));
     await waitFor(() =>
-      expect(api.download).toHaveBeenCalledWith('/analytics/export/xes', { processDefinitionKey: undefined, from: expect.stringMatching(DAY), to: expect.stringMatching(DAY) }, 'sangam-log.xes'),
+      expect(api.download).toHaveBeenCalledWith('/analytics/export/xes', { processDefinitionKey: undefined, from: expect.stringMatching(INSTANT), to: expect.stringMatching(INSTANT) }, 'sangam-log.xes'),
     );
   });
 

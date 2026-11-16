@@ -242,18 +242,18 @@ class DurableStepsTest {
             String id = e.addWork("pay", Map.of());
             TaskContext ctx = lease(e, "w1", "pay");
             var api = e.client().api().work();
-            SangamApiException noIntent = assertThrows(SangamApiException.class, () -> api.recordWorkStep(id, "s",
+            SangamApiException noIntent = assertThrows(SangamApiException.class, () -> api.recordWorkStep(id,
                     new org.sangam.sdk.generated.model.WorkStepRequest("w1", ctx.lockVersion(), ctx.attemptId(),
-                            "SUCCEEDED", "v", null, null), null));
+                            "SUCCEEDED", "v", null, null), "s", null));
             assertEquals(409, noIntent.status());
             assertEquals("STEP_INTENT_REQUIRED", noIntent.problem().code);
             ctx.step("s", String.class, s -> "v");
             // an identical repeat is a no-op; a different outcome is refused
-            api.recordWorkStep(id, "s", new org.sangam.sdk.generated.model.WorkStepRequest("w1", ctx.lockVersion(),
-                    ctx.attemptId(), "SUCCEEDED", "v", null, null), null);
-            SangamApiException changed = assertThrows(SangamApiException.class, () -> api.recordWorkStep(id, "s",
+            api.recordWorkStep(id, new org.sangam.sdk.generated.model.WorkStepRequest("w1", ctx.lockVersion(),
+                    ctx.attemptId(), "SUCCEEDED", "v", null, null), "s", null);
+            SangamApiException changed = assertThrows(SangamApiException.class, () -> api.recordWorkStep(id,
                     new org.sangam.sdk.generated.model.WorkStepRequest("w1", ctx.lockVersion(), ctx.attemptId(),
-                            "SUCCEEDED", "other", null, null), null));
+                            "SUCCEEDED", "other", null, null), "s", null));
             assertEquals("STEP_ALREADY_RECORDED", changed.problem().code);
         }
     }

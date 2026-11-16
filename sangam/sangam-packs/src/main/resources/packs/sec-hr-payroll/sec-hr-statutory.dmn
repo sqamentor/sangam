@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_hr_statutory" name="PF and ESI rates (EPF Scheme / ESI Act; verify current notifications)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-hr-statutory" name="PF and ESI rates (EPF Scheme / ESI Act; verify current notifications)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-hr-statutory" name="PF and ESI rates (EPF Scheme / ESI Act; verify current notifications)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-hr-statutory_t" hitPolicy="FIRST">
       <input id="sec-hr-statutory_i0" label="Period"><inputExpression id="sec-hr-statutory_ie0" typeRef="string"><text>period</text></inputExpression></input>
       <output id="sec-hr-statutory_o0" label="PF employee %" name="pfEmployeePct" typeRef="number"/>

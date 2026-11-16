@@ -1,6 +1,6 @@
 {
   "key": "sec-edu-scholarship/fix",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.edu.scholarship",
   "title": {
     "en": "Correct bank / Aadhaar seeding after failure",

@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-debt-operation/recordHold",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-debt-operation",
   "title": {
     "en": "Recording not confirmed by the debt system: confirm and resend",

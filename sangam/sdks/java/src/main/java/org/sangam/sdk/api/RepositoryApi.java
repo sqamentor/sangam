@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** Deployments, event registry and forms ({@code /deployments}, {@code /events/**}, {@code /forms/{key}}). */
+/** Deployments, event registry and forms ({@code /deployments}, {@code /events/**}, {@code /forms/by-key}). */
 public final class RepositoryApi extends ApiSupport {
 
     public RepositoryApi(HttpTransport http) {
@@ -70,9 +70,9 @@ public final class RepositoryApi extends ApiSupport {
                 "application/json", null, data, null);
     }
 
-    /** {@code GET /forms/{key}}: the form JSON schema used by the task UI. */
+    /** {@code GET /forms/by-key?key=}: the form JSON schema used by the task UI (a form key may carry '/'). */
     public Map<String, Object> form(String formKey) {
-        return call(ApiRequest.get("/forms/" + seg(formKey)), MAP);
+        return call(ApiRequest.get("/forms/by-key").query("key", formKey), MAP);
     }
 
     private static void textPart(ByteArrayOutputStream out, String boundary, String name, String value) {

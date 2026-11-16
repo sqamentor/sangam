@@ -63,11 +63,12 @@ def test_step_routes_on_work_that_is_not_open_answer_the_servers_problem(case: d
         _await_reconciliation(e, wid, lease)
     else:
         pytest.fail(f"unknown scenario {scenario}")
-    path = f"/work/{target}/steps/{VECTORS['stepName']}"
-    query = {"workerId": "w1", "lockVersion": str(w["lockVersion"]), "attemptId": w["attemptId"]}
+    path = f"/work/{target}/step"
+    name = {"stepName": VECTORS["stepName"]}
+    query = {"workerId": "w1", "lockVersion": str(w["lockVersion"]), "attemptId": w["attemptId"], **name}
     status, _, body, _ = e.handle("GET", path, None, None, query)
     _expect(case, "GET", status, body)
-    status, _, body, _ = e.handle("PUT", path, None, {**lease, "state": "INTENT"})
+    status, _, body, _ = e.handle("PUT", path, None, {**lease, "state": "INTENT"}, name)
     _expect(case, "PUT", status, body)
 
 

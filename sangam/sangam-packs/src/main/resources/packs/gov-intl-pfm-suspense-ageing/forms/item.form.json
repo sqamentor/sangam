@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-suspense-ageing/item",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-suspense-ageing",
   "title": {
     "en": "Suspense item",

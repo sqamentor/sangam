@@ -109,13 +109,15 @@ final class RegistryObjectsApi
      *
      * RegistryController.byNumber (sangam-rest).
      *
-     * GET /registry/objects/by-number/{number} (operationId registryRegistryByNumber); permission registry.read.
+     * GET /registry/objects/by-number (operationId registryRegistryByNumber); permission registry.read.
+     * @param string $number query number
      * @param string|null $typeKey query typeKey
      * @return array<string, mixed>
      */
     public function registryRegistryByNumber(string $number, ?string $typeKey = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/registry/objects/by-number/' . HttpTransport::seg((string) $number));
+        $req = ApiRequest::get('/registry/objects/by-number');
+        $req->query('number', $number);
         $req->query('typeKey', $typeKey);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }

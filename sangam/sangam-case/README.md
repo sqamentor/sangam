@@ -64,7 +64,7 @@ Paths are under `src/main/java/org/sangam/casefile/`.
 | Area | Routes |
 |---|---|
 | Config | `PUT/GET /case-config/{CASE_TYPE\|REFERENCE_KIND\|COMMITTEE_KIND}` |
-| Case files | `POST/GET /case-files`, `GET /case-files/{id}`, `GET /case-files/by-number/{n}`, `PATCH /case-files/{id}`, `POST /case-files/{id}/stage\|assign\|close\|reopen\|milestones` |
+| Case files | `POST/GET /case-files`, `GET /case-files/{id}`, `GET /case-files/by-number?number=`, `PATCH /case-files/{id}`, `POST /case-files/{id}/stage\|assign\|close\|reopen\|milestones` |
 | Parties | `POST /parties`, `GET /parties/candidates`, `GET /parties/{id}/cases`, `POST /case-files/{id}/parties`, `DELETE /case-files/{id}/parties/{cpId}`, `GET /case-files/{id}/conflicts`, `GET /case-files/{id}/duplicates` |
 | Contents | `POST/DELETE /case-files/{id}/records[/{rid}]`, `POST /case-files/{id}/folders`, `POST /case-files/{id}/documents` (JSON attach or multipart upload), `GET /case-files/{id}/documents/{d}/content`, `DELETE /case-files/{id}/documents/{d}`, `GET/POST /case-files/{id}/notes`, `PUT /case-files/{id}/notes/{n}`, `GET /case-files/{id}/timeline` |
 | Related | `POST/DELETE /case-files/{id}/links[/{l}]`, `POST /case-files/{id}/merge`, `POST /case-files/{id}/split` |

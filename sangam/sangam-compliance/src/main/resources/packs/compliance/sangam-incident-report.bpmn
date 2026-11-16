@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- Cyber incident report to an incident authority. Sangam compliance pack (jurisdiction-neutral): timelines arrive as process variables computed from the jurisdiction pack. Generated with its diagram layout by sangam-packs/tools/packgen (compliance.py): change the generator, then regenerate. -->
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sangam_incident_report" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
-  <process id="sangam-incident-report" name="Cyber incident report to an incident authority" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <process id="sangam-incident-report" name="Cyber incident report to an incident authority" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0" operaton:isStartableInTasklist="false">
     <documentation>Incident reporting with the authority deadline from the pack (IN: CERT-In 6 hours from noticing, Annexure I types). Unknown details are reported as such and followed up.</documentation>
     <startEvent id="start" name="Incident registered"/>
     <userTask id="u_prepare" name="Prepare and approve incident report" operaton:candidateGroups="${cisoSeat}" operaton:formKey="sangam:compliance/incident-prepare"/>

@@ -22,13 +22,13 @@ def fetch(e: SangamTestEngine, worker: str = "w1") -> dict[str, Any]:
 def put(e: SangamTestEngine, w: dict[str, Any], name: str, state: str, worker: str = "w1",
         **extra: Any) -> tuple[int, Any]:
     body = {"workerId": worker, "lockVersion": w["lockVersion"], "attemptId": w["attemptId"], "state": state, **extra}
-    status, _, out, _ = e.handle("PUT", f"/work/{w['id']}/steps/{name}", None, body)
+    status, _, out, _ = e.handle("PUT", f"/work/{w['id']}/step", None, body, {"stepName": name})
     return status, out
 
 
 def get(e: SangamTestEngine, w: dict[str, Any], name: str, **over: Any) -> tuple[int, Any]:
-    q = {"workerId": "w1", "lockVersion": str(w["lockVersion"]), "attemptId": w["attemptId"], **over}
-    status, _, out, _ = e.handle("GET", f"/work/{w['id']}/steps/{name}", None, None, q)
+    q = {"workerId": "w1", "lockVersion": str(w["lockVersion"]), "attemptId": w["attemptId"], "stepName": name, **over}
+    status, _, out, _ = e.handle("GET", f"/work/{w['id']}/step", None, None, q)
     return status, out
 
 
@@ -84,8 +84,8 @@ def test_validation_and_unknown_work() -> None:
     e, _, w = started()
     s, p = put(e, w, "charge", "DONE")
     assert (s, p["code"]) == (400, "VALIDATION_FAILED")
-    s, _, p, _ = e.handle("PUT", f"/work/{w['id']}/steps/charge", None,
-                          {"workerId": "w1", "lockVersion": w["lockVersion"], "state": "INTENT"})
+    s, _, p, _ = e.handle("PUT", f"/work/{w['id']}/step", None,
+                          {"workerId": "w1", "lockVersion": w["lockVersion"], "state": "INTENT"}, {"stepName": "charge"})
     assert (s, p["code"]) == (400, "VALIDATION_FAILED")  # attemptId missing
     s, p = put(e, w, "x" * 129, "INTENT")
     assert (s, p["code"]) == (400, "VALIDATION_FAILED")
@@ -116,8 +116,9 @@ def test_expired_lease_and_new_attempt() -> None:
     assert w2["operationId"] == w["operationId"] and w2["attemptId"] != w["attemptId"]
     s, p = put(e, w, "charge", "SUCCEEDED", result=1)
     assert (s, p["code"]) == (409, "STALE_LEASE")
-    s, _, row, _ = e.handle("GET", f"/work/{wid}/steps/charge", None, None,
-                            {"workerId": "w2", "lockVersion": str(w2["lockVersion"]), "attemptId": w2["attemptId"]})
+    s, _, row, _ = e.handle("GET", f"/work/{wid}/step", None, None,
+                            {"workerId": "w2", "lockVersion": str(w2["lockVersion"]), "attemptId": w2["attemptId"],
+                             "stepName": "charge"})
     assert s == 200 and row["state"] == "INTENT" and row["attemptId"] == w["attemptId"]
 
 
@@ -202,5 +203,5 @@ def test_worker_reports_outcome_unknown_for_an_intent_left_by_an_earlier_attempt
 @pytest.mark.parametrize("method", ["DELETE", "POST"])
 def test_unsupported_methods_on_the_journal(method: str) -> None:
     e, wid, _ = started()
-    s, _, p, _ = e.handle(method, f"/work/{wid}/steps/charge", None, {})
+    s, _, p, _ = e.handle(method, f"/work/{wid}/step", None, {}, {"stepName": "charge"})
     assert (s, p["code"]) == (405, "METHOD_NOT_ALLOWED")

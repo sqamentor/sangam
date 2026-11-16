@@ -18,11 +18,12 @@ public sealed class AuditApi
     /// <summary>
     /// Audit timeline of a case
     /// Class-B chain events of every root with this business key, optionally merged with class-A history (evidence=false). The read is audited (AUDIT_VIEWED).
-    /// GET /audit/{businessKey}/timeline (operationId getAuditTimeline); permission audit.read.
+    /// GET /audit/timeline (operationId getAuditTimeline); permission audit.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.AuditEntry>> GetAuditTimelineAsync(string businessKey, bool? includeHistory = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/audit/{HttpTransport.Seg(GeneratedCalls.Str(businessKey)!)}/timeline");
+        var req = ApiRequest.Get($"/audit/timeline");
+        req.WithQuery("businessKey", GeneratedCalls.Q(businessKey));
         req.WithQuery("includeHistory", GeneratedCalls.Q(includeHistory));
         req.WithQuery("page", GeneratedCalls.Q(page));
         req.WithQuery("size", GeneratedCalls.Q(size));
@@ -112,11 +113,12 @@ public sealed class AuditApi
     /// <summary>
     /// Evidence pack
     /// ZIP of the class-B timeline, chain verification, model and form versions and the document list, with a SHA-256 manifest (U03, R42).
-    /// GET /audit/{businessKey}/evidence-pack (operationId getEvidencePack); permission audit.export.
+    /// GET /audit/evidence-pack (operationId getEvidencePack); permission audit.export.
     /// </summary>
     public async global::System.Threading.Tasks.Task<byte[]> GetEvidencePackAsync(string businessKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/audit/{HttpTransport.Seg(GeneratedCalls.Str(businessKey)!)}/evidence-pack");
+        var req = ApiRequest.Get($"/audit/evidence-pack");
+        req.WithQuery("businessKey", GeneratedCalls.Q(businessKey));
         return await _calls.BytesAsync(req, options, "application/zip", cancellationToken).ConfigureAwait(false);
     }
 }

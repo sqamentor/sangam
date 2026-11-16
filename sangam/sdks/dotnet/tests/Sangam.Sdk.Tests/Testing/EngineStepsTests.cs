@@ -8,7 +8,7 @@ using WorkStepRequest = Sangam.Sdk.Generated.Models.WorkStepRequest;
 namespace Sangam.Sdk.Tests.Testing;
 
 /// <summary>
-/// M-025 / R37: the test engine's step journal (GET/PUT /work/{id}/steps/{name}, GET /work/{id}/steps) follows the
+/// M-025 / R37: the test engine's step journal (GET/PUT /work/{id}/step?stepName=, GET /work/{id}/steps) follows the
 /// server's transitions and fencing, driven through the generated WorkApi.
 /// </summary>
 public sealed class EngineStepsTests
@@ -40,10 +40,10 @@ public sealed class EngineStepsTests
         var w = await Lease(c, "w1");
         var nf = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.GetWorkStepAsync(id, "charge", "w1", 1, w.AttemptId!));
         Assert.Equal(404, nf.Status);
-        var noIntent = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "SUCCEEDED", 1)));
+        var noIntent = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.RecordWorkStepAsync(id, Req(w, "SUCCEEDED", 1), "charge"));
         Assert.Equal(409, noIntent.Status);
         Assert.Equal("STEP_INTENT_REQUIRED", noIntent.Problem.Code);
-        var noIntentFailed = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "FAILED")));
+        var noIntentFailed = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.RecordWorkStepAsync(id, Req(w, "FAILED"), "charge"));
         Assert.Equal("STEP_INTENT_REQUIRED", noIntentFailed.Problem.Code);
     }
 
@@ -54,21 +54,21 @@ public sealed class EngineStepsTests
         using var c = e.Client();
         var id = e.AddWork("pay");
         var w = await Lease(c, "w1");
-        var intent = await c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "INTENT"));
+        var intent = await c.Api.Work.RecordWorkStepAsync(id, Req(w, "INTENT"), "charge");
         Assert.Equal("INTENT", intent!.State);
         Assert.Equal(e.OperationId(id), intent.OperationId);
-        await c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "INTENT")); // identical repeat by the same attempt
-        var done = await c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "SUCCEEDED", new Dictionary<string, object?> { ["ref"] = "P-1" }, "P-1"));
+        await c.Api.Work.RecordWorkStepAsync(id, Req(w, "INTENT"), "charge"); // identical repeat by the same attempt
+        var done = await c.Api.Work.RecordWorkStepAsync(id, Req(w, "SUCCEEDED", new Dictionary<string, object?> { ["ref"] = "P-1" }, "P-1"), "charge");
         Assert.Equal("SUCCEEDED", done!.State);
         Assert.Equal("P-1", done.ProviderRef);
         Assert.Equal(w.AttemptId, done.AttemptId);
-        var again = await c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "SUCCEEDED", new Dictionary<string, object?> { ["ref"] = "P-1" }, "P-1"));
+        var again = await c.Api.Work.RecordWorkStepAsync(id, Req(w, "SUCCEEDED", new Dictionary<string, object?> { ["ref"] = "P-1" }, "P-1"), "charge");
         Assert.Equal("SUCCEEDED", again!.State);
         var other = await Assert.ThrowsAsync<SangamApiException>(() =>
-            c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "SUCCEEDED", new Dictionary<string, object?> { ["ref"] = "P-2" }, "P-2")));
+            c.Api.Work.RecordWorkStepAsync(id, Req(w, "SUCCEEDED", new Dictionary<string, object?> { ["ref"] = "P-2" }, "P-2"), "charge"));
         Assert.Equal(409, other.Status);
         Assert.Equal("STEP_ALREADY_RECORDED", other.Problem.Code);
-        var reIntent = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "INTENT")));
+        var reIntent = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.RecordWorkStepAsync(id, Req(w, "INTENT"), "charge"));
         Assert.Equal("STEP_ALREADY_RECORDED", reIntent.Problem.Code);
         var read = await c.Api.Work.GetWorkStepAsync(id, "charge", "w1", 1, w.AttemptId!);
         Assert.Equal("SUCCEEDED", read!.State);
@@ -82,11 +82,11 @@ public sealed class EngineStepsTests
         using var c = e.Client();
         var id = e.AddWork("pay");
         var w = await Lease(c, "w1");
-        await c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "INTENT"));
-        var failed = await c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "FAILED", error: "card refused"));
+        await c.Api.Work.RecordWorkStepAsync(id, Req(w, "INTENT"), "charge");
+        var failed = await c.Api.Work.RecordWorkStepAsync(id, Req(w, "FAILED", error: "card refused"), "charge");
         Assert.Equal("FAILED", failed!.State);
         Assert.Equal("card refused", failed.Error);
-        var again = await c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "INTENT"));
+        var again = await c.Api.Work.RecordWorkStepAsync(id, Req(w, "INTENT"), "charge");
         Assert.Equal("INTENT", again!.State);
     }
 
@@ -100,25 +100,25 @@ public sealed class EngineStepsTests
         var stale = await Assert.ThrowsAsync<StaleLeaseException>(() => c.Api.Work.GetWorkStepAsync(id, "charge", "w1", 99, w.AttemptId!));
         Assert.Equal("STALE_VERSION", stale.Problem.Extensions!["reason"].GetString());
         var owner = await Assert.ThrowsAsync<StaleLeaseException>(() =>
-            c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "INTENT") with { WorkerId = "other" }));
+            c.Api.Work.RecordWorkStepAsync(id, Req(w, "INTENT") with { WorkerId = "other" }, "charge"));
         Assert.Equal("NOT_OWNER", owner.Problem.Extensions!["reason"].GetString());
         var attempt = await Assert.ThrowsAsync<StaleLeaseException>(() =>
-            c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "INTENT") with { AttemptId = "x" }));
+            c.Api.Work.RecordWorkStepAsync(id, Req(w, "INTENT") with { AttemptId = "x" }, "charge"));
         Assert.Equal("ATTEMPT_MISMATCH", attempt.Problem.Extensions!["reason"].GetString());
         var noAttempt = await Assert.ThrowsAsync<SangamApiException>(() =>
-            c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "INTENT") with { AttemptId = null }));
+            c.Api.Work.RecordWorkStepAsync(id, Req(w, "INTENT") with { AttemptId = null }, "charge"));
         Assert.Equal(400, noAttempt.Status);
         Assert.Equal("VALIDATION_FAILED", noAttempt.Problem.Code);
-        var badName = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.RecordWorkStepAsync(id, new string('x', 129), Req(w, "INTENT")));
+        var badName = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.RecordWorkStepAsync(id, Req(w, "INTENT"), new string('x', 129)));
         Assert.Equal("VALIDATION_FAILED", badName.Problem.Code);
-        var control = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.RecordWorkStepAsync(id, "a\u0001b", Req(w, "INTENT")));
+        var control = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.RecordWorkStepAsync(id, Req(w, "INTENT"), "a\u0001b"));
         Assert.Equal(400, control.Status);
-        var badState = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "DONE")));
+        var badState = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.RecordWorkStepAsync(id, Req(w, "DONE"), "charge"));
         Assert.Equal("VALIDATION_FAILED", badState.Problem.Code);
-        var unknown = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.RecordWorkStepAsync("nope", "charge", Req(w, "INTENT")));
+        var unknown = await Assert.ThrowsAsync<SangamApiException>(() => c.Api.Work.RecordWorkStepAsync("nope", Req(w, "INTENT"), "charge"));
         Assert.Equal(404, unknown.Status);
         e.DeleteInstance(id);
-        var gone = await Assert.ThrowsAsync<GoneException>(() => c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "INTENT")));
+        var gone = await Assert.ThrowsAsync<GoneException>(() => c.Api.Work.RecordWorkStepAsync(id, Req(w, "INTENT"), "charge"));
         Assert.Equal("GONE_INSTANCE_DELETED", gone.Problem.Code);
     }
 
@@ -129,9 +129,9 @@ public sealed class EngineStepsTests
         using var c = e.Client();
         var id = e.AddWork("pay");
         var w = await Lease(c, "w1");
-        await c.Api.Work.RecordWorkStepAsync(id, "reserve", Req(w, "INTENT"));
-        await c.Api.Work.RecordWorkStepAsync(id, "reserve", Req(w, "SUCCEEDED", TypedValue.Decimal(12.50m)));
-        await c.Api.Work.RecordWorkStepAsync(id, "charge", Req(w, "INTENT"));
+        await c.Api.Work.RecordWorkStepAsync(id, Req(w, "INTENT"), "reserve");
+        await c.Api.Work.RecordWorkStepAsync(id, Req(w, "SUCCEEDED", TypedValue.Decimal(12.50m)), "reserve");
+        await c.Api.Work.RecordWorkStepAsync(id, Req(w, "INTENT"), "charge");
         await c.Work.UnlockAsync(id, new UnlockRequest("w1", 1, w.AttemptId), "u");
         var w2 = await Lease(c, "w1");
         Assert.NotEqual(w.AttemptId, w2.AttemptId);

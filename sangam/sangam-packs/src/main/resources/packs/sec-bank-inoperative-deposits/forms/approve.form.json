@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-inoperative-deposits/approve",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.bank.inoperative-deposits",
   "title": {
     "en": "Approve DEA Fund transfer (checker)",

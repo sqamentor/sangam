@@ -1,6 +1,6 @@
 {
   "key": "sec-cap-corporate-action/declare",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.cap.corporate-action",
   "title": {
     "en": "Dividend declaration",

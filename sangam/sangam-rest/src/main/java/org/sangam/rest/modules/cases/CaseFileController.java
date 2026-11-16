@@ -107,9 +107,12 @@ public class CaseFileController {
         return port.get(CaseIdentity.require(permissions, ctx, CaseIdentity.READ), id);
     }
 
-    /** A case file by its human-readable number. */
-    @GetMapping("/case-files/by-number/{number}")
-    public CaseFileRestPort.CaseView byNumber(RequestContext ctx, @PathVariable String number) {
+    /**
+     * A case file by its human-readable number. UI-DEMO-1: the default numbering is "{prefix}/{yyyy}/{seq:6}", and an
+     * encoded '/' in a path segment is refused before the application, so the number is a query parameter.
+     */
+    @GetMapping("/case-files/by-number")
+    public CaseFileRestPort.CaseView byNumber(RequestContext ctx, @RequestParam String number) {
         return port.byNumber(CaseIdentity.require(permissions, ctx, CaseIdentity.READ), number);
     }
 

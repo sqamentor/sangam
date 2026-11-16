@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sangam_core_competent_authority" name="Competent authority (generic amount bands)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- SYNTHETIC bands for the pilot tenant, not a real delegation-of-powers order. Packs set routingDecisionKey to their own table. -->
-  <decision id="sangam-core-competent-authority" name="Competent authority (generic amount bands)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sangam-core-competent-authority" name="Competent authority (generic amount bands)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sangam-core-competent-authority_t" hitPolicy="FIRST">
       <input id="sangam-core-competent-authority_i0" label="Case type"><inputExpression id="sangam-core-competent-authority_ie0" typeRef="string"><text>caseType</text></inputExpression></input>
       <input id="sangam-core-competent-authority_i1" label="Amount (INR)"><inputExpression id="sangam-core-competent-authority_ie1" typeRef="number"><text>amount</text></inputExpression></input>

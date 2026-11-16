@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-breach/media",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ushealth.breach",
   "title": {
     "en": "Notify prominent media in each affected state",

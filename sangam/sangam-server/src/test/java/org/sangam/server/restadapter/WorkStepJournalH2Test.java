@@ -41,7 +41,7 @@ import org.sangam.rest.web.WorkStepController.WorkStep;
 import org.sangam.rest.web.WorkStepController.WorkStepRequest;
 
 /**
- * M-025 (R37): the step journal behind {@code GET/PUT /work/{id}/steps/{stepName}} and {@code GET /work/{id}/steps} on
+ * M-025 (R37): the step journal behind {@code GET/PUT /work/{id}/step?stepName=} and {@code GET /work/{id}/steps} on
  * the Operaton worker port, H2 in PostgreSQL mode with the generated {@code WORK_STEP} DDL. The lease check and the
  * journal row share one transaction: a stale lease records nothing; steps are keyed by the work's stable operationId,
  * so a later attempt replays them; the INTENT / SUCCEEDED / FAILED transitions follow the contract.

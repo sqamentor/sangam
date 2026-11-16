@@ -1,6 +1,6 @@
 {
   "key": "consultancy/technical-scores",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.consultancy",
   "title": {
     "en": "Record technical scores",

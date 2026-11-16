@@ -53,10 +53,10 @@ describe('step routes on work that is not open (SL-174)', () => {
         case 'UNKNOWN_OUTCOME': awaitReconciliation(e, wid, lease); break;
         default: assert.fail(`unknown scenario ${String(c.scenario)}`);
       }
-      const path = `/work/${target}/steps/${encodeURIComponent(VECTORS.stepName)}`;
-      const query = new URLSearchParams({ workerId: 'w1', lockVersion: String(w.lockVersion), attemptId: String(w.attemptId) });
+      const path = `/work/${target}/step`;
+      const query = new URLSearchParams({ workerId: 'w1', lockVersion: String(w.lockVersion), attemptId: String(w.attemptId), stepName: VECTORS.stepName });
       expectProblem(c, 'GET', e.handle('GET', path, undefined, undefined, query));
-      expectProblem(c, 'PUT', e.handle('PUT', path, undefined, { ...lease, state: 'INTENT' }));
+      expectProblem(c, 'PUT', e.handle('PUT', path, undefined, { ...lease, state: 'INTENT' }, new URLSearchParams({ stepName: VECTORS.stepName })));
     });
   }
 

@@ -15,7 +15,7 @@
                   id="sangam-roster-publish-definitions"
                   targetNamespace="http://sangam.org/resources">
 
-  <bpmn:process id="sangam-roster-publish" name="Roster publication" isExecutable="true"
+  <bpmn:process id="sangam-roster-publish" name="Roster publication" isExecutable="true" operaton:isStartableInTasklist="false"
                 operaton:historyTimeToLive="P365D">
     <bpmn:extensionElements>
       <operaton:properties>

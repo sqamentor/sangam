@@ -14,7 +14,7 @@ use Sangam\Sdk\Model\TypedValue;
 
 /**
  * The algorithm of TaskContext::step() (M-025, R37 / E02) on the step journal routes GET/PUT
- * /work/{id}/steps/{stepName}, fenced by the context's lease:
+ * /work/{id}/step?stepName=, fenced by the context's lease:
  *
  * 1. read the step: SUCCEEDED replays the recorded result without calling again;
  * 2. INTENT left by an earlier attempt (the crash window): ask the lookup if any (a value is recorded SUCCEEDED and
@@ -112,8 +112,8 @@ final class DurableSteps
                                   ?string $providerRef, ?string $error): void
     {
         try {
-            $api->recordWorkStep($ctx->workId(), $name, new WorkStepRequest($ctx->workerId(), $ctx->lockVersion(),
-                $ctx->attemptId(), $state, $result, $providerRef, $error));
+            $api->recordWorkStep($ctx->workId(), new WorkStepRequest($ctx->workerId(), $ctx->lockVersion(),
+                $ctx->attemptId(), $state, $result, $providerRef, $error), $name);
         } catch (StaleLeaseException|GoneException $e) {
             throw self::leaseLost($ctx, $name, $e);
         }

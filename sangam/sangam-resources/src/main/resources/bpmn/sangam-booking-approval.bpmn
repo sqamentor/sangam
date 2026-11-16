@@ -14,7 +14,7 @@
                   id="sangam-booking-approval-definitions"
                   targetNamespace="http://sangam.org/resources">
 
-  <bpmn:process id="sangam-booking-approval" name="Booking approval" isExecutable="true"
+  <bpmn:process id="sangam-booking-approval" name="Booking approval" isExecutable="true" operaton:isStartableInTasklist="false"
                 operaton:historyTimeToLive="P180D">
     <bpmn:extensionElements>
       <operaton:properties>

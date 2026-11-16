@@ -132,14 +132,16 @@ final class LedgerApi
     /**
      * Close a period
      *
-     * Year-end lapse and carry-forward.
+     * Year-end lapse and carry-forward. The period is a query parameter: a fiscal-year label can carry '/' (2026/2027).
      *
-     * POST /ledger/{ledger}/periods/{period}/close (operationId closeLedgerPeriod); permission ledger.admin; result stored atomically with the state change.
+     * POST /ledger/{ledger}/periods/close (operationId closeLedgerPeriod); permission ledger.admin; result stored atomically with the state change.
+     * @param string $period query period
      * @return list<Model\LedgerResult>
      */
     public function closeLedgerPeriod(string $ledger, string $period, Model\LedgerCloseRequest|array|null $body = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/ledger/' . HttpTransport::seg((string) $ledger) . '/periods/' . HttpTransport::seg((string) $period) . '/close');
+        $req = ApiRequest::post('/ledger/' . HttpTransport::seg((string) $ledger) . '/periods/close');
+        $req->query('period', $period);
         if ($body !== null) {
             $req->body($body);
         }

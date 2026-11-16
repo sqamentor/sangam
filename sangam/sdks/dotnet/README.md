@@ -158,7 +158,7 @@ Fields always include `workerId`, `workId`, `topic`, `operationId`, `attemptId`,
 ## Durable steps
 
 `ctx.StepAsync<T>(name, fn, options?, cancellationToken)` (M-025, R37) runs one side-effecting call per step name of the
-work's operation, journalled on `GET/PUT /work/{id}/steps/{name}` and fenced by the lease:
+work's operation, journalled on `GET/PUT /work/{id}/step?stepName=` and fenced by the lease:
 
 ```csharp
 var paymentId = await ctx.StepAsync("charge", async (step, ct) =>

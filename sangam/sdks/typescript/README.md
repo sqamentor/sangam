@@ -156,7 +156,7 @@ Run it with `npm run example:bill-payment`.
 
 ### Durable steps (M-025, R37)
 
-`ctx.step(name, fn, options?)` (`src/steps.ts`) records each side effect of a handler in the server's step journal (`GET/PUT /work/{id}/steps/{name}`), keyed by the work's operationId. Every journal call is fenced by the current lease.
+`ctx.step(name, fn, options?)` (`src/steps.ts`) records each side effect of a handler in the server's step journal (`GET/PUT /work/{id}/step?stepName=`), keyed by the work's operationId. Every journal call is fenced by the current lease.
 
 ```ts
 const ref = await ctx.step('charge', async (step) => {

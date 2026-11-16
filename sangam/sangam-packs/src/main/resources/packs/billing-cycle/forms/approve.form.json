@@ -1,6 +1,6 @@
 {
   "key": "billing-cycle/approve",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "universal.billing-cycle",
   "title": {
     "en": "Approve waiver (checker)",

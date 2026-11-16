@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-patient-access/pa-change",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ushealth.patient-access",
   "title": {
     "en": "Prior authorization change",

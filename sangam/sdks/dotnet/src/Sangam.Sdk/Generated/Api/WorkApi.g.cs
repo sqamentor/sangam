@@ -114,11 +114,12 @@ public sealed class WorkApi
     /// <summary>
     /// Replay a recorded step
     /// The step as recorded for this work's operationId; 404 when the step was never recorded (run it). The caller must hold the current lease: workerId, lockVersion and attemptId as query parameters (409 STALE_LEASE otherwise).
-    /// GET /work/{id}/steps/{stepName} (operationId getWorkStep); permission work.execute; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
+    /// GET /work/{id}/step (operationId getWorkStep); permission work.execute; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.WorkStep?> GetWorkStepAsync(string id, string stepName, string workerId, long lockVersion, string attemptId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/work/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/steps/{HttpTransport.Seg(GeneratedCalls.Str(stepName)!)}");
+        var req = ApiRequest.Get($"/work/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/step");
+        req.WithQuery("stepName", GeneratedCalls.Q(stepName));
         req.WithQuery("workerId", GeneratedCalls.Q(workerId));
         req.WithQuery("lockVersion", GeneratedCalls.Q(lockVersion));
         req.WithQuery("attemptId", GeneratedCalls.Q(attemptId));
@@ -128,11 +129,12 @@ public sealed class WorkApi
     /// <summary>
     /// Record a step
     /// Records the step's intent or outcome under the work's operationId, in the same transaction as the lease check. Fenced: a stale lease is 409 STALE_LEASE and records nothing; a deleted instance is 410 GONE_INSTANCE_DELETED.
-    /// PUT /work/{id}/steps/{stepName} (operationId recordWorkStep); permission work.execute; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
+    /// PUT /work/{id}/step (operationId recordWorkStep); permission work.execute; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.WorkStep?> RecordWorkStepAsync(string id, string stepName, M.WorkStepRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.WorkStep?> RecordWorkStepAsync(string id, M.WorkStepRequest body, string stepName, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/work/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/steps/{HttpTransport.Seg(GeneratedCalls.Str(stepName)!)}");
+        var req = ApiRequest.Put($"/work/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/step");
+        req.WithQuery("stepName", GeneratedCalls.Q(stepName));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.WorkStep?>(req, options, cancellationToken).ConfigureAwait(false);
     }

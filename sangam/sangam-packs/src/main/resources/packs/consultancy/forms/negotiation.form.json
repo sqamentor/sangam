@@ -1,6 +1,6 @@
 {
   "key": "consultancy/negotiation",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.consultancy",
   "title": {
     "en": "Negotiate with the top-ranked firm",

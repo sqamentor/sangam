@@ -1,6 +1,6 @@
 {
   "key": "core/sanction",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sangam.core",
   "title": {
     "en": "Sanction / approval",

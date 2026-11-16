@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-baa/security",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ushealth.baa",
   "title": {
     "en": "Security assessment of the business associate",

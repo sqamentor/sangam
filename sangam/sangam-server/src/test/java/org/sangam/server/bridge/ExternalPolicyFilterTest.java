@@ -73,7 +73,7 @@ class ExternalPolicyFilterTest {
         return new ExternalPolicyTargets(catalog(), Map.of("paths", Map.of(
                 "/work/fetch-and-lock", Map.of("post", fenced),
                 "/work/{id}/complete", Map.of("post", fenced),
-                "/work/{id}/steps/{stepName}", Map.of("get", fenced, "put", fenced))));
+                "/work/{id}/step", Map.of("get", fenced, "put", fenced))));
     }
 
     ExternalPolicyGate gate(ExternalPolicyCheck answer, List<String> required, List<String> bestEffort) {
@@ -294,10 +294,10 @@ class ExternalPolicyFilterTest {
         assertEquals(403, alone(gate, request("POST", "/api/v1/work/fetch-and-lock", true)).getStatus());
         assertTrue(events.get(0).contains("work.fetch-and-lock"), events.toString());
         events.clear();
-        assertEquals(403, alone(gate, request("PUT", "/api/v1/work/w-9/steps/s1", true)).getStatus());
-        assertTrue(events.get(0).contains("work.steps"), events.toString());
+        assertEquals(403, alone(gate, request("PUT", "/api/v1/work/w-9/step", true)).getStatus());
+        assertTrue(events.get(0).contains("work.step "), events.toString());
         events.clear();
-        assertEquals(200, alone(gate, request("GET", "/api/v1/work/w-9/steps/s1", true)).getStatus(), "a read");
+        assertEquals(200, alone(gate, request("GET", "/api/v1/work/w-9/step", true)).getStatus(), "a read");
         assertEquals(List.of("next"), events);
     }
 
@@ -331,7 +331,7 @@ class ExternalPolicyFilterTest {
     void theTargetsKnowEveryCheckedType() {
         Set<String> types = targets().commandTypes();
         assertTrue(types.containsAll(Set.of("task.complete", "process.start", "work.fetch-and-lock", "work.complete",
-                "work.steps", ExternalPolicyTargets.ENGINE_REST)), types.toString());
+                "work.step", ExternalPolicyTargets.ENGINE_REST)), types.toString());
         assertEquals("work.cancel-ack", ExternalPolicyTargets.workerCommandType("/work/{id}/cancel-ack"));
     }
 }

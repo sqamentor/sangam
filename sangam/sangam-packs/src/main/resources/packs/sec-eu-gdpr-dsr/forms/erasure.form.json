@@ -1,6 +1,6 @@
 {
   "key": "sec-eu-gdpr-dsr/erasure",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.eu.gdpr-dsr",
   "title": {
     "en": "Erasure: check the Art. 17(3) exceptions",

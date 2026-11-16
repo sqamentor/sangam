@@ -112,7 +112,7 @@ Money: JSON numbers with a fraction are decoded as `Decimal`; outgoing `Decimal`
 ## Durable steps
 
 `ctx.step(name, fn, *, idempotent=False, lookup=None)` (M-025, R37) runs a side-effecting call once per operation and
-records it in the step journal (`GET/PUT /work/{id}/steps/{name}`, fenced by the lease):
+records it in the step journal (`GET/PUT /work/{id}/step?stepName=`, fenced by the lease):
 
 ```python
 from sangam_sdk import StepNoEffectError

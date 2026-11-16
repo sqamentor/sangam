@@ -177,9 +177,9 @@ public final class WorkApi {
      *
      * <p>The step as recorded for this work's operationId; 404 when the step was never recorded (run it). The caller must hold the current lease: workerId, lockVersion and attemptId as query parameters (409 STALE_LEASE otherwise).
      *
-     * <p>{@code GET /work/{id}/steps/{stepName}} (operationId {@code getWorkStep}); permission {@code work.execute}; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
+     * <p>{@code GET /work/{id}/step} (operationId {@code getWorkStep}); permission {@code work.execute}; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
      * @param id path parameter {@code id}. External work id
-     * @param stepName path parameter {@code stepName}. Step name, unique within the work's operation (1-128 printable ASCII)
+     * @param stepName query parameter {@code stepName}. Step name, unique within the work's operation (1-128 printable ASCII)
      * @param workerId query parameter {@code workerId}
      * @param lockVersion query parameter {@code lockVersion}
      * @param attemptId query parameter {@code attemptId}
@@ -187,7 +187,8 @@ public final class WorkApi {
      * @return the 200 response
      */
     public WorkStep getWorkStep(String id, String stepName, String workerId, Long lockVersion, String attemptId, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/work/" + HttpTransport.seg(String.valueOf(id)) + "/steps/" + HttpTransport.seg(String.valueOf(stepName)));
+        ApiRequest req = ApiRequest.get("/work/" + HttpTransport.seg(String.valueOf(id)) + "/step");
+        req.query("stepName", stepName);
         req.query("workerId", workerId);
         req.query("lockVersion", lockVersion);
         req.query("attemptId", attemptId);
@@ -199,16 +200,17 @@ public final class WorkApi {
      *
      * <p>Records the step's intent or outcome under the work's operationId, in the same transaction as the lease check. Fenced: a stale lease is 409 STALE_LEASE and records nothing; a deleted instance is 410 GONE_INSTANCE_DELETED.
      *
-     * <p>{@code PUT /work/{id}/steps/{stepName}} (operationId {@code recordWorkStep}); permission {@code work.execute}; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
+     * <p>{@code PUT /work/{id}/step} (operationId {@code recordWorkStep}); permission {@code work.execute}; fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE changes nothing (VI.3).
      * @param id path parameter {@code id}. External work id
-     * @param stepName path parameter {@code stepName}. Step name, unique within the work's operation (1-128 printable ASCII)
      * @param body request body
+     * @param stepName query parameter {@code stepName}. Step name, unique within the work's operation (1-128 printable ASCII)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public WorkStep recordWorkStep(String id, String stepName, WorkStepRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/work/" + HttpTransport.seg(String.valueOf(id)) + "/steps/" + HttpTransport.seg(String.valueOf(stepName)));
+    public WorkStep recordWorkStep(String id, WorkStepRequest body, String stepName, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/work/" + HttpTransport.seg(String.valueOf(id)) + "/step");
         req.body(body);
+        req.query("stepName", stepName);
         return call.json(req, options, R_recordWorkStep);
     }
 

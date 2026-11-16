@@ -1,6 +1,6 @@
 {
   "key": "ifms-budget-formulation/estimates",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.ifms.budget-formulation",
   "title": {
     "en": "Budget estimates",

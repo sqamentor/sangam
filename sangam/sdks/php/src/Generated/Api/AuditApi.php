@@ -25,7 +25,8 @@ final class AuditApi
      *
      * Class-B chain events of every root with this business key, optionally merged with class-A history (evidence=false). The read is audited (AUDIT_VIEWED).
      *
-     * GET /audit/{businessKey}/timeline (operationId getAuditTimeline); permission audit.read.
+     * GET /audit/timeline (operationId getAuditTimeline); permission audit.read.
+     * @param string $businessKey query businessKey
      * @param bool|null $includeHistory query includeHistory
      * @param int|null $page query page
      * @param int|null $size query size
@@ -33,7 +34,8 @@ final class AuditApi
      */
     public function getAuditTimeline(string $businessKey, ?bool $includeHistory = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/audit/' . HttpTransport::seg((string) $businessKey) . '/timeline');
+        $req = ApiRequest::get('/audit/timeline');
+        $req->query('businessKey', $businessKey);
         $req->query('includeHistory', $includeHistory);
         $req->query('page', $page);
         $req->query('size', $size);
@@ -159,12 +161,14 @@ final class AuditApi
      *
      * ZIP of the class-B timeline, chain verification, model and form versions and the document list, with a SHA-256 manifest (U03, R42).
      *
-     * GET /audit/{businessKey}/evidence-pack (operationId getEvidencePack); permission audit.export.
+     * GET /audit/evidence-pack (operationId getEvidencePack); permission audit.export.
+     * @param string $businessKey query businessKey
      * @return string
      */
     public function getEvidencePack(string $businessKey, ?RequestOptions $options = null): string
     {
-        $req = ApiRequest::get('/audit/' . HttpTransport::seg((string) $businessKey) . '/evidence-pack');
+        $req = ApiRequest::get('/audit/evidence-pack');
+        $req->query('businessKey', $businessKey);
         return $this->calls->raw($req, $options, 'application/zip');
     }
 }

@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-replenishment/difference",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-replenishment",
   "title": {
     "en": "Credit differs from the claim: record ineligible or unpaid amounts",

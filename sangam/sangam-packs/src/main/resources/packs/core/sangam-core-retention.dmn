@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sangam_core_retention" name="Retention category by case type (R61)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sangam-core-retention" name="Retention category by case type (R61)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sangam-core-retention" name="Retention category by case type (R61)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sangam-core-retention_t" hitPolicy="FIRST">
       <input id="sangam-core-retention_i0" label="Case type"><inputExpression id="sangam-core-retention_ie0" typeRef="string"><text>caseType</text></inputExpression></input>
       <output id="sangam-core-retention_o0" label="Category" name="retentionCategory" typeRef="string"/>

@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-discharge/choice",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ushealth.discharge",
   "title": {
     "en": "Patient choice of post-acute provider (list with quality data)",

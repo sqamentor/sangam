@@ -1,6 +1,6 @@
 {
   "key": "sec-mfg-mrp-planning/review",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.mfg.mrp-planning",
   "title": {
     "en": "Review exception messages",

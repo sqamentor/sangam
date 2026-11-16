@@ -9279,6 +9279,8 @@ export interface ProcessDefinition {
   suspended?: boolean;
   resourceName?: string;
   startableInTasklist?: boolean;
+  runningInstances?: number;
+  incidents?: number;
 }
 
 /**

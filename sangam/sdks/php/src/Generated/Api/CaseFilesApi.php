@@ -143,12 +143,14 @@ final class CaseFilesApi
      *
      * A case file by its human-readable number.
      *
-     * GET /case-files/by-number/{number} (operationId caseFileByNumber); permission case.read.
+     * GET /case-files/by-number (operationId caseFileByNumber); permission case.read.
+     * @param string $number query number
      * @return Model\CfCaseView|null
      */
     public function caseFileByNumber(string $number, ?RequestOptions $options = null): ?Model\CfCaseView
     {
-        $req = ApiRequest::get('/case-files/by-number/' . HttpTransport::seg((string) $number));
+        $req = ApiRequest::get('/case-files/by-number');
+        $req->query('number', $number);
         return $this->calls->model($req, $options, Model\CfCaseView::class);
     }
 

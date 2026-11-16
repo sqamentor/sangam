@@ -30,7 +30,7 @@ Semantics (mirrors sangam-rest OperatonWorkAdapter, sangam-core LeaseTable, ApiP
 * ``fetch-and-lock`` answers at once (no long-poll wait): work that is there is returned, otherwise ``[]`` after a
   pause of at most 10 ms, so a worker loop on the engine does not spin.
 
-Step journal (M-025, :mod:`sangam_sdk.testing_steps`): ``GET/PUT /work/{id}/steps/{name}`` and ``GET /work/{id}/steps``,
+Step journal (M-025, :mod:`sangam_sdk.testing_steps`): ``GET/PUT /work/{id}/step?stepName=`` and ``GET /work/{id}/steps``,
 with the server's transitions and fencing; :meth:`steps` lists the recorded steps of a work's operation.
 
 Steering: :meth:`advance`, :meth:`request_cancel`, :meth:`delete_instance`, :meth:`resolve_reconciliation`,
@@ -92,9 +92,9 @@ def _canonical(v: Any) -> str:
 
 
 def _is_steps(path: str) -> bool:
-    """``/work/{id}/steps`` or ``/work/{id}/steps/{name}`` (M-025)."""
+    """``/work/{id}/steps`` or ``/work/{id}/step`` with the name in the stepName query (M-025, UI-DEMO-1)."""
     parts = [p for p in path.split("/") if p]
-    return len(parts) in (3, 4) and parts[0] == "work" and parts[2] == "steps"
+    return len(parts) == 3 and parts[0] == "work" and parts[2] in ("steps", "step")
 
 
 def _iso(ms: int) -> str:
@@ -156,7 +156,7 @@ class SangamTestEngine:
         self.reconciliation_items: list[dict[str, Any]] = []
         self._server: Optional[ThreadingHTTPServer] = None
         self._thread: Optional[threading.Thread] = None
-        #: the step journal (M-025): GET/PUT /work/{id}/steps/{name}, GET /work/{id}/steps
+        #: the step journal (M-025): GET/PUT /work/{id}/step?stepName=, GET /work/{id}/steps
         self._journal = EngineSteps(self._work, self._fence, lambda: _iso(self._now))
 
     # ------------------------------------------------------------------ lifecycle
@@ -360,9 +360,16 @@ class SangamTestEngine:
 
     def _steps_route(self, method: str, path: str, query: Mapping[str, Any],
                      b: dict[str, Any]) -> tuple[int, dict[str, str], Any]:
-        parts = [unquote(p) for p in path.split("/") if p]  # work, id, steps[, name]
+        parts = [unquote(p) for p in path.split("/") if p]  # work, id, steps | step
         wid = parts[1]
-        name = parts[3] if len(parts) > 3 else None
+        name = None
+        if parts[2] == "step":
+            # UI-DEMO-1: as on the server, the step name is the stepName query parameter ('/' allowed)
+            name = query.get("stepName")
+            if isinstance(name, (list, tuple)):
+                name = name[0] if name else None
+            if not isinstance(name, str):
+                raise EngineProblem(400, "VALIDATION_FAILED", "stepName is required")
         if name is None and method == "GET":
             return 200, {}, self._journal.list_steps(wid)
         if name is not None and method == "GET":

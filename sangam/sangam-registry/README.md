@@ -36,7 +36,7 @@ Base `/api/v1/registry`.
 ### Kernel
 
 - Types: `POST /types`, `GET /types?kind`, `GET /types/{typeKey}`, `GET /types/{typeKey}/versions/{v}`, `POST /types/{typeKey}/versions/{v}/retire`
-- Objects: `POST /objects`, `GET /objects?typeKey&kind&state&holderPartyId&parentId&number&subjectRef&page&size`, `GET /objects/{id}`, `GET /objects/by-number/{number}?typeKey`, `PATCH /objects/{id}`, `GET /objects/{id}/transitions`, `POST /objects/{id}/transitions/{name}`, `GET /objects/{id}/versions`, `GET /objects/{id}/as-of?at`, `GET /objects/{id}/audit/verify`, `POST /objects/mirror`
+- Objects: `POST /objects`, `GET /objects?typeKey&kind&state&holderPartyId&parentId&number&subjectRef&page&size`, `GET /objects/{id}`, `GET /objects/by-number?number&typeKey`, `PATCH /objects/{id}`, `GET /objects/{id}/transitions`, `POST /objects/{id}/transitions/{name}`, `GET /objects/{id}/versions`, `GET /objects/{id}/as-of?at`, `GET /objects/{id}/audit/verify`, `POST /objects/mirror`
 
 ### Numbering
 

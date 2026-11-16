@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-procurement-complaint/suspendHold",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-procurement-complaint",
   "title": {
     "en": "Suspension not confirmed: confirm with the e-procurement system",

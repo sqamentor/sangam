@@ -81,7 +81,7 @@ const accounts: ScreenDef = {
       hint: 'mod.ledger.operationHint',
     },
     // M-051: CloseRequest(nextPeriod, asOf) (LedgerController.java:108); the period is the path only
-    { id: 'close', label: 'act.closePeriod', path: '/ledger/{ledger}/periods/{period}/close', fields: [f.path(f.text('period', undefined, true)), f.text('nextPeriod'), f.date('asOf')], showResult: true, danger: true, hint: 'mod.ledger.closeHint' },
+    { id: 'close', label: 'act.closePeriod', path: '/ledger/{ledger}/periods/close', fields: [f.q(f.text('period', undefined, true)), f.text('nextPeriod'), f.date('asOf')], showResult: true, danger: true, hint: 'mod.ledger.closeHint' },
     { id: 'reconcile', label: 'act.reconcile', path: '/ledger/{ledger}/reconcile', fields: [f.text('period', undefined, true)], showResult: true },
   ],
 };

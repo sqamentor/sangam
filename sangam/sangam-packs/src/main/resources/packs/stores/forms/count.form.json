@@ -1,6 +1,6 @@
 {
   "key": "stores/count",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.stores",
   "title": {
     "en": "Physical verification count",

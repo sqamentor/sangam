@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-proposal-underwriting/consent",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ins.proposal-underwriting",
   "title": {
     "en": "Proposer accepts revised terms",

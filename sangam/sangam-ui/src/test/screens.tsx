@@ -92,13 +92,14 @@ type Mocked = { mock: { calls: unknown[][] } };
  * Collects "METHOD /path" of every call the mocked client saw (http.get/post/put/del/page/upload and raw), without the
  * query string; /engine-rest (the unchanged Operaton API, not in the Sangam contract) is left out.
  */
-export function recordCalls(into: Set<string>, api: { get: Mocked; post: Mocked; put: Mocked; del: Mocked; page: Mocked; upload: Mocked; raw?: Mocked }) {
+export function recordCalls(into: Set<string>, api: { get: Mocked; post: Mocked; put: Mocked; del: Mocked; page: Mocked; upload: Mocked; raw?: Mocked; text?: Mocked }) {
   const add = (method: string, path: unknown) => {
     const p = String(path).split('?')[0];
     if (!p.startsWith('/engine-rest')) into.add(`${method} ${p}`);
   };
   for (const c of api.get.mock.calls) add('GET', c[0]);
   for (const c of api.page.mock.calls) add('GET', c[0]);
+  for (const c of api.text?.mock.calls ?? []) add('GET', c[0]); // http.text: a GET of a non-JSON media type
   for (const c of api.post.mock.calls) add('POST', c[0]);
   for (const c of api.upload.mock.calls) add('POST', c[0]);
   for (const c of api.put.mock.calls) add('PUT', c[0]);

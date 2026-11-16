@@ -1,6 +1,6 @@
 {
   "key": "sec-legal-litigation/hearing",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.legal.litigation",
   "title": {
     "en": "Attend hearing and record the order",

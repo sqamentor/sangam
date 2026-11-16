@@ -13,13 +13,13 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import i18n from 'i18next';
 
-const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), del: vi.fn(), page: vi.fn(), request: vi.fn(), download: vi.fn() }));
+const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), del: vi.fn(), page: vi.fn(), request: vi.fn(), download: vi.fn(), text: vi.fn() }));
 const plug = vi.hoisted(() => ({ run: vi.fn(), overlays: [] as unknown[], actions: [] as unknown[] }));
 const cfg = vi.hoisted(() => ({ links: [] as { url: string; label: { en: string; hi: string } }[] }));
 
 vi.mock('../api/client', async (orig) => {
   const real = await orig<typeof import('../api/client')>();
-  return { ...real, http: { ...real.http, get: api.get, post: api.post, put: api.put, del: api.del, page: api.page }, request: api.request, download: api.download };
+  return { ...real, http: { ...real.http, get: api.get, post: api.post, put: api.put, del: api.del, page: api.page, text: api.text }, request: api.request, download: api.download };
 });
 vi.mock('../config', async (orig) => {
   const real = await orig<typeof import('../config')>();
@@ -86,6 +86,8 @@ beforeEach(() => {
   plug.actions = NONE;
   for (const m of [...Object.values(api), plug.run]) m.mockReset();
   api.get.mockImplementation(async (path: string) => answer(path));
+  // XML operations (UI-DEMO-2) are read as text in their own media type
+  api.text.mockImplementation(async (path: string) => answer(path));
   api.page.mockImplementation(async (path: string) => (pages[path] ? pageOf(pages[path]) : EMPTY));
   api.request.mockResolvedValue(undefined);
   api.post.mockResolvedValue({ id: 'new-1' });
@@ -390,7 +392,7 @@ describe('P02 diagram overlays and thumbnails', () => {
     expect(screen.queryByTestId('thumb')).toBeNull();
     fireEvent.click(screen.getByLabelText(new RegExp(esc(T('ops.showPreviews')))));
     expect((await screen.findByTestId('thumb')).getAttribute('title')).toBe('Leave');
-    expect(api.get).toHaveBeenCalledWith('/process-definitions/d1/xml');
+    expect(api.text).toHaveBeenCalledWith('/process-definitions/d1/xml', 'application/xml');
   });
 });
 

@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-do-not-pay/adjudicate",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.intl.pfm-do-not-pay",
   "title": {
     "en": "Adjudicate the list match",

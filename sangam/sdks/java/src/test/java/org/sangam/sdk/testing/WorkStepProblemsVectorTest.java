@@ -64,8 +64,8 @@ class WorkStepProblemsVectorTest {
                 }
                 String work = target;
                 expect(c, "GET", () -> client.api().work().getWorkStep(work, step, "w1", w.lockVersion(), w.attemptId(), null));
-                expect(c, "PUT", () -> client.api().work().recordWorkStep(work, step,
-                        new WorkStepRequest("w1", w.lockVersion(), w.attemptId(), "INTENT", null, null, null), null));
+                expect(c, "PUT", () -> client.api().work().recordWorkStep(work,
+                        new WorkStepRequest("w1", w.lockVersion(), w.attemptId(), "INTENT", null, null, null), step, null));
                 checked++;
             }
         }
