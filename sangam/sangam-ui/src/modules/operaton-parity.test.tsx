@@ -44,6 +44,7 @@ import { InstanceDetail } from '../areas/ops/InstanceDetail';
 import { Incidents } from '../areas/ops/IncidentsRecon';
 import { StartCatalog } from '../areas/tasklist/StartAndCases';
 import { api as contract } from '../api/endpoints';
+import { ApiError } from '../api/client';
 
 const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -802,5 +803,20 @@ describe('Admin and account', () => {
     await waitFor(() => expect(api.put).toHaveBeenCalledWith('/engine-rest/tenant/t2/user-members/demo', undefined, expect.any(String)));
     fireEvent.click(screen.getByRole('button', { name: T('act.removeFromTenant') }));
     await waitFor(() => expect(api.del).toHaveBeenCalledWith('/engine-rest/tenant/t2/user-members/demo', undefined, expect.any(String)));
+  });
+
+  it('UI-DEMO sweep S6: a platform user with no engine identity sees the Sangam identity, not "Not available"', async () => {
+    // a dev-token or OIDC user is not in the engine identity store: the engine answers its profile with 404
+    api.get.mockImplementation(async (path: string) => {
+      if (path === '/engine-rest/user/demo/profile') throw new ApiError({ status: 404, title: 'Not Found' });
+      return answer(path);
+    });
+    show(<Account />);
+    expect(await screen.findByText(T('mod.op.noEngineUser'))).toBeTruthy();
+    expect(screen.getByText('demo')).toBeTruthy();
+    expect(screen.queryByLabelText(L('fld.firstName'))).toBeNull();
+    expect(document.querySelector('[role="alert"]')).toBeNull();
+    expect(screen.queryByText(T('error.notAvailable'))).toBeNull();
+    expect(screen.getByText(T('mod.op.passwordAtIdp'))).toBeTruthy();
   });
 });

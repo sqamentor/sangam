@@ -14,7 +14,7 @@ import { PluginSlot } from '../plugins/host';
 import { AttachmentByUrl, FilterBoard, TaskSearch } from './operaton3';
 import { BinaryVariable, BulkPriority, BulkRetry, DeploymentResources, MetricsChart, attachments, batchesEngine, decisionDefs, jobsEngine, opLog, variablesEngine } from './operaton2';
 import { useTranslation } from 'react-i18next';
-import { http } from '../api/client';
+import { ApiError, http } from '../api/client';
 import { useAuth } from '../auth/AuthProvider';
 import { NAV } from '../app/nav';
 import { announce, useAction, useAsync } from '../lib/hooks';
@@ -439,12 +439,18 @@ export function Account() {
   const [cur, setCur] = useState('');
   const [next, setNext] = useState('');
   const act = useAction();
+  // UI-DEMO sweep S6: a platform user signed in through OIDC or the dev token has no user in the engine's own identity
+  // store, so /engine-rest/user/{id}/profile answers 404. That is a fact about the account, not an error: the Sangam
+  // identity is shown, and the engine-only parts (profile edit, engine password) are not offered.
+  const noEngineUser = profile.error instanceof ApiError && profile.error.status === 404;
+  const engineUser = platform && !noEngineUser;
   return (
     <>
       <PageHeader title={t('mod.op.account')} />
-      <ProblemAlert error={profile.error} onRetry={profile.reload} />
-      {!platform && <KeyValues items={[[t('fld.userId'), me?.userId], [t('common.name'), me?.displayName], [t('mod.op.roles'), me?.roles.join(', ')]]} />}
-      {platform && <><Section title={t('mod.op.profile')}>
+      {!noEngineUser && <ProblemAlert error={profile.error} onRetry={profile.reload} />}
+      {!engineUser && <KeyValues items={[[t('fld.userId'), me?.userId], [t('common.name'), me?.displayName], [t('mod.op.roles'), me?.roles.join(', ')]]} />}
+      {platform && noEngineUser && <Notice>{t('mod.op.noEngineUser')}</Notice>}
+      {engineUser && <><Section title={t('mod.op.profile')}>
         <KeyValues items={Object.entries(profile.data ?? {}).map(([k, v]) => [k, cell(v)])} />
       </Section>
       <AccountEdit id={me?.userId ?? ''} profile={profile.data} onSaved={profile.reload} onTenants={tenants.reload} />
@@ -453,7 +459,7 @@ export function Account() {
       </Section>
       </>}
       <Section title={t('mod.op.changePassword')}>
-        {mode === 'oidc' || !platform ? (
+        {mode === 'oidc' || !engineUser ? (
           <Notice>{t('mod.op.passwordAtIdp')}</Notice>
         ) : (
           <form

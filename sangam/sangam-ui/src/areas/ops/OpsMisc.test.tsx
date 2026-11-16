@@ -9,11 +9,11 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 
-const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), del: vi.fn(), page: vi.fn(), upload: vi.fn() }));
+const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), del: vi.fn(), page: vi.fn(), upload: vi.fn(), text: vi.fn() }));
 
 vi.mock('../../api/client', async (orig) => {
   const real = await orig<typeof import('../../api/client')>();
-  return { ...real, http: { ...real.http, get: api.get, post: api.post, put: api.put, del: api.del, page: api.page, upload: api.upload } };
+  return { ...real, http: { ...real.http, get: api.get, post: api.post, put: api.put, del: api.del, page: api.page, upload: api.upload, text: api.text } };
 });
 vi.mock('../../auth/AuthProvider', () => ({ useAuth: () => ({ me: { userId: 'demo', tenantId: 't1', roles: [], seats: [] }, seat: null, mode: 'dev', hasRole: () => false }) }));
 vi.mock('../../components/BpmnDiagram', () => ({
@@ -49,6 +49,8 @@ beforeEach(() => {
     return v ?? fallback;
   };
   api.get.mockImplementation(async (path: string) => answer(routes, path, []));
+  // XML and plain-text operations (UI-DEMO-2): the body as the server sends it, a string
+  api.text.mockImplementation(async (path: string) => answer(routes, path, ''));
   api.page.mockImplementation(async (path: string) => answer(pages, path, EMPTY_PAGE));
   api.post.mockResolvedValue({});
   api.put.mockResolvedValue({});
@@ -81,21 +83,26 @@ describe('operator case view', () => {
 describe('decisions', () => {
   const def = { id: 'dd1', key: 'fee', name: 'Fee table', version: 3, decisionRequirementsKey: 'drd-fees' };
 
-  it('picking a definition shows its table and instances; an instance highlights the rules that fired', async () => {
+  it('picking a definition shows its table; decision history is read per process instance (sweep S3)', async () => {
     pages['/decision-definitions'] = pageOf([def]);
-    routes['/decision-definitions/dd1/xml'] = { dmnXml: '<dmn/>' };
+    routes['/decision-definitions/dd1/xml'] = '<dmn/>';
+    // components.schemas.HistoricDecision: inputs and outputs are name/value maps
     pages['/history/decisions'] = pageOf([
-      { id: 'di1', decisionKey: 'fee', decisionVersion: 3, evaluationTime: '2026-11-10T08:00:00Z', processInstanceId: 'pi1', businessKey: 'APP-1', inputs: [{ name: 'amount', value: 500 }], outputs: [{ rule: 'r2', name: 'fee', value: 20 }] },
+      { id: 'di1', decisionDefinitionKey: 'fee', decisionDefinitionId: 'fee:3:x', evaluationTime: '2026-11-10T08:00:00Z', processInstanceId: 'pi1', activityId: 'Task_Fee', inputs: { amount: 500 }, outputs: { fee: 20 } },
     ]);
     show(<Decisions />);
     fireEvent.click(await screen.findByRole('button', { name: 'Fee table' }));
     expect((await screen.findByTestId('dmn')).textContent).toBe('Fee table');
-    await waitFor(() => expect(api.page).toHaveBeenLastCalledWith('/history/decisions', { page: 0, size: 25, decisionKey: 'fee' }));
+    // no instance yet: nothing is read (the server answers 400 FILTER_REQUIRED without processInstanceId or caseInstanceId)
+    expect(await screen.findByText(T('ops.decisionsOfInstanceHint'))).toBeTruthy();
+    expect(api.page.mock.calls.some((c) => c[0] === '/history/decisions')).toBe(false);
+    const box = screen.getByLabelText(L('ops.decisionsOfInstance'));
+    fireEvent.change(box, { target: { value: 'pi1' } });
+    fireEvent.submit(box.closest('form')!);
+    await waitFor(() => expect(api.page).toHaveBeenLastCalledWith('/history/decisions', { page: 0, size: 25, processInstanceId: 'pi1', caseInstanceId: undefined }));
     expect(await screen.findByText('amount=500')).toBeTruthy();
-    expect(screen.getByText('[r2] fee=20')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'APP-1' }).getAttribute('href')).toBe('/ops/instances/pi1');
-    fireEvent.click(within(rowWith('amount=500')).getAllByRole('button')[0]);
-    expect(screen.getByTestId('dmn').getAttribute('data-rules')).toBe('r2');
+    expect(screen.getByText('fee=20')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'pi1' }).getAttribute('href')).toBe('/ops/instances/pi1');
   });
 
   it('evaluate sends the variables as typed values and shows the outputs; a refusal is shown', async () => {
@@ -379,7 +386,7 @@ describe('sandbox debugger', () => {
   it('attach, toggle a breakpoint, step and fire a timer', async () => {
     routes['/debug/status'] = { enabled: true, profile: 'sandbox', sandboxTenant: 'sbx' };
     routes['/process-instances/pi1'] = { id: 'pi1', processDefinitionId: 'def1', state: 'ACTIVE' };
-    routes['/process-definitions/def1/xml'] = { bpmn20Xml: '<bpmn/>' };
+    routes['/process-definitions/def1/xml'] = '<bpmn/>';
     routes['/process-instances/pi1/activity-tree'] = { id: 'pi1', activityId: 'proc', activityType: 'processDefinition', childActivityInstances: [] };
     routes['/debug/instances/pi1/breakpoints'] = ['Task_Start'];
     pages['/ops/jobs'] = pageOf([{ id: 'job-t', activityId: 'Timer_1', dueDate: '2026-11-20T10:00:00Z' }]);
@@ -402,7 +409,7 @@ describe('sandbox debugger', () => {
   it('a refused step (production guard) is shown', async () => {
     routes['/debug/status'] = { enabled: true, profile: 'sandbox' };
     routes['/process-instances/pi1'] = { id: 'pi1', processDefinitionId: 'def1', state: 'ACTIVE' };
-    routes['/process-definitions/def1/xml'] = { bpmn20Xml: '<bpmn/>' };
+    routes['/process-definitions/def1/xml'] = '<bpmn/>';
     api.post.mockRejectedValueOnce(problem(403, 'DEBUG_NOT_ALLOWED'));
     show(<Debugger />);
     await screen.findByRole('button', { name: T('debug.attach') });

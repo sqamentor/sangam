@@ -300,7 +300,9 @@ const pendingTransfers: ScreenDef = {
   id: 'pending',
   title: 'mod.registry.pendingTransfers',
   list: '/registry/custody/transfers/pending',
-  filters: [f.text('toCustodian')],
+  // UI-DEMO sweep S4: toCustodian is a required query parameter (registryCustodyPending); nothing is read without it
+  filters: [f.text('toCustodian', undefined, true)],
+  requireFilters: ['toCustodian'],
   columns: [c('transferId'), c('itemId'), c('fromCustodian'), c('toCustodian'), c('initiatedAt')],
   rowKey: ['transferId', 'id'],
   actions: [

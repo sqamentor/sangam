@@ -480,7 +480,9 @@ const swaps: ScreenDef = {
   id: 'swaps',
   title: 'mod.rosters.swaps',
   list: '/rosters/swaps',
-  filters: [f.text('periodId')],
+  // UI-DEMO sweep S5: swaps are listed per roster period (the server has no list without one)
+  filters: [f.text('periodId', undefined, true)],
+  requireFilters: ['periodId'],
   columns: [c('swapId'), c('fromPersonId'), c('toPersonId'), c('state'), c('version')],
   rowKey: ['swapId', 'id'],
   // M-051: SwapCreateRequest(assignmentId, counterpartId, counterpartAssignmentId, reason) (RosterRestPort.java:101)

@@ -526,12 +526,14 @@ export interface DecisionDefinition {
   decisionRequirementsKey?: string;
 }
 
+/** A view of components.schemas.HistoricDecision (adapters.normDecisionInstance): inputs and outputs are name/value maps there. */
 export interface DecisionInstance {
   id: Id;
   decisionKey: string;
-  decisionVersion: number;
+  decisionDefinitionId?: Id;
   evaluationTime: Iso;
   processInstanceId?: Id;
+  activityId?: string;
   businessKey?: string;
   inputs: { name: string; value: unknown }[];
   outputs: { rule?: string; name: string; value: unknown }[];
