@@ -666,7 +666,15 @@ All of these are off by default; the chart's `values.schema.json` checks each va
   and the Bouncy Castle jars the server does not ship to `/opt/sangam/lib-ext`, listed in `ESIGN-ADDON.txt`), or put
   the files of the release asset `sangam-esign-<v>.tgz` (the jar and `lib/*.jar`, flat) into `/opt/sangam/lib-ext`
   of a VM install or `PREBUILT_LIB_EXT` of a prebuilt image build. Live eSign stays off until its ESP profile is
-  confirmed (decision 215).
+  confirmed (decision 215). After that confirmation the live eSign connector is switched on with
+  `sangam.integration.esign.enabled=true` (`SANGAM_INTEGRATION_ESIGN_ENABLED`, default off) and its
+  `sangam.integration.esign.*` settings, set like the DSC settings: as environment variables through
+  `server.envFrom` (Helm) or `.env` (Compose), with the ASP key store and its password file mounted from a secret. The
+  settings are listed in `EsignWiring` (ESP https base URI, ASP id, trust anchors, the ESP response-signing
+  certificate, revocation origins, the ASP PKCS#12 key, and the request-signature algorithms, which have no default).
+  The server refuses to start with `ESIGN_CONFIG_INVALID` when a setting is missing or unusable, and with
+  `ESIGN_MODULE_MISSING` when `sangam-esign` is not installed, so it never holds an eSign connector that cannot verify
+  the response (decision 140).
 - **NATS add-on (decision 232).** The NATS client (jnats) and the Bouncy Castle jar it needs for nkey signing
   (`bcprov-lts8on`) are not in the server. Without the add-on the server refuses every NATS setting at start (NATS
   channel adapters, NATS wake-up bus) and a route that needs NATS answers 501 `CAPABILITY_NOT_INSTALLED`. To add it:

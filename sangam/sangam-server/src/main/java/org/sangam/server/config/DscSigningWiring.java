@@ -112,8 +112,13 @@ public class DscSigningWiring {
     }
 
     static HttpTransport revocationTransport(Environment env, Duration timeout) {
+        return revocationTransport(env, P, timeout);
+    }
+
+    /** The revocation transport of the signing feature under {@code prefix} (DSC, or eSign in {@link EsignWiring}). */
+    static HttpTransport revocationTransport(Environment env, String prefix, Duration timeout) {
         List<EgressPolicy.Rule> rules = new ArrayList<>();
-        for (String origin : env.getProperty(P + "revocation-egress", String[].class, new String[0])) {
+        for (String origin : env.getProperty(prefix + "revocation-egress", String[].class, new String[0])) {
             if (!origin.isBlank()) {
                 rules.add(EgressPolicy.Rule.parse("*", origin.trim(), false));
             }
