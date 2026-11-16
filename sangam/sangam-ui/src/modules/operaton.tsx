@@ -16,7 +16,7 @@ import { BinaryVariable, BulkPriority, BulkRetry, DeploymentResources, MetricsCh
 import { useTranslation } from 'react-i18next';
 import { ApiError, http } from '../api/client';
 import { useAuth } from '../auth/AuthProvider';
-import { NAV } from '../app/nav';
+import { areaItems, visibleNav } from '../app/nav';
 import { announce, useAction, useAsync } from '../lib/hooks';
 import { fmtDate } from '../i18n';
 import { Badge, DataTable, Empty, KeyValues, Notice, PageHeader, ProblemAlert, Section, TextArea, TextField } from '../components/ui';
@@ -376,8 +376,8 @@ function SystemInfo() {
 
 export function Welcome() {
   const { t, i18n } = useTranslation();
-  const { me, hasRole } = useAuth();
-  const areas = NAV.filter((a) => hasRole(...a.roles));
+  const { me } = useAuth();
+  const areas = visibleNav(me).filter((a) => a.id !== 'help');
   const links = config().welcomeLinks;
   return (
     <>
@@ -386,7 +386,7 @@ export function Welcome() {
         {areas.map((a) => (
           <li key={a.id} className="card">
             <h2>{t(a.label)}</h2>
-            <ul>{a.items.slice(0, 5).map((i) => <li key={i.to}><Link to={i.to}>{t(i.label)}</Link></li>)}</ul>
+            <ul>{areaItems(a).slice(0, 5).map((i) => <li key={i.to}><Link to={i.to}>{t(i.label)}</Link></li>)}</ul>
           </li>
         ))}
       </ul>

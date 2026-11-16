@@ -250,7 +250,7 @@ describe('package workspace', () => {
   it('a missing package is shown by name', async () => {
     routes['/packages/p1'] = problem(404, 'PACKAGE_NOT_FOUND');
     show(<PackageWorkspace />, '/modeller/p1', '/modeller/:id');
-    expect(await screen.findByText(T('error.notAvailable'))).toBeTruthy();
+    expect(await screen.findByText(T('error.notFound'))).toBeTruthy();
   });
 });
 

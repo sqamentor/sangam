@@ -505,7 +505,7 @@ function PlayPanel({ pkg }: { pkg: ModelPackage }) {
       {msg && <Notice tone="ok">{msg}</Notice>}
       <ProblemAlert error={act.error} />
       <p>
-        <Link to="/ops/debugger">{t('nav.debugger')}</Link>
+        <Link to="/design/test">{t('nav.debugger')}</Link>
       </p>
     </>
   );

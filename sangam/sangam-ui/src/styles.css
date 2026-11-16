@@ -203,6 +203,15 @@ h3 {
   color: var(--muted);
   margin: 0.75rem 1rem 0.25rem;
 }
+.nav-subheading {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin: 0.5rem 1rem 0.1rem 1.25rem;
+}
+.banner .bell {
+  margin-right: 0.75rem;
+}
 .sidenav ul {
   list-style: none;
   margin: 0;

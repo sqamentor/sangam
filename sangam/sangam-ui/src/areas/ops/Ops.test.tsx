@@ -405,7 +405,7 @@ describe('incident detail', () => {
     routes['/ops/jobs/j7/stacktrace'] = problem(404, 'JOB_NOT_FOUND');
     open();
     fireEvent.click(await screen.findByRole('button', { name: T('ops.showStacktrace') }));
-    expect(await screen.findByText(T('error.notAvailable'))).toBeTruthy();
+    expect(await screen.findByText(T('error.notFound'))).toBeTruthy();
   });
 });
 
@@ -569,6 +569,6 @@ describe('instance detail', () => {
   it('a missing instance is shown by name', async () => {
     routes['/process-instances/pi1'] = problem(404, 'INSTANCE_NOT_FOUND');
     show(<InstanceDetail />, '/ops/instances/pi1', '/ops/instances/:id');
-    expect(await screen.findByText(T('error.notAvailable'))).toBeTruthy();
+    expect(await screen.findByText(T('error.notFound'))).toBeTruthy();
   });
 });
