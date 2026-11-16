@@ -112,6 +112,23 @@ class HostedCatalogueSecurityH2Test {
         assertEquals("NOT_FOUND", code(artefact), artefact.body());
     }
 
+    /**
+     * Follow-up (catalogue-scoped problem advice): a refusal of the consumer catalogue controller answers through
+     * CatalogueProblemAdvice like the host controller's, with the route itself as {@code instance}. Before, it went
+     * through the servlet error dispatch and named {@code /error}.
+     */
+    @Test
+    void aSignedInCallerGetsTheCatalogueProblemOfTheRouteItself() throws Exception {
+        String token = AcceptanceIdp.get().token("dev", "r6-catalogue-reader", List.of("sangam-admin"));
+        HttpRequest req = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/v1/catalogue"))
+                .timeout(Duration.ofSeconds(60)).header("Authorization", "Bearer " + token).GET().build();
+        HttpResponse<String> res = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
+        assertEquals(404, res.statusCode(), res.body());
+        assertTrue(res.headers().firstValue("content-type").orElse("").startsWith("application/problem+json"), res.body());
+        assertEquals("NOT_FOUND", code(res), res.body());
+        assertEquals("/api/v1/catalogue", Json.tree(res.body()).path("instance").asText(), res.body());
+    }
+
     @Test
     void everyOtherCatalogueRouteStillNeedsAToken() throws Exception {
         for (String[] r : new String[][] {

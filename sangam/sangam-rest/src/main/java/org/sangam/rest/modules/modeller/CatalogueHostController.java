@@ -4,7 +4,6 @@ package org.sangam.rest.modules.modeller;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -27,7 +26,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -226,20 +224,6 @@ public class CatalogueHostController {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(Base64.getDecoder().decode(d.as(Stored.class).artifact()));
     }
 
-    @ExceptionHandler(ExtensionCatalogue.CatalogueException.class)
-    public ResponseEntity<Map<String, Object>> refused(ExtensionCatalogue.CatalogueException e, jakarta.servlet.http.HttpServletRequest req) {
-        return org.sangam.rest.modules.config.ModuleProblems.respond(ExtensionCatalogueController.problem(e), req);
-    }
-
-    /**
-     * This controller's own refusals answer here, not through the servlet error dispatch: that dispatch is kept for
-     * signed-in callers only, so on the public hosted routes (decision 380) an anonymous consumer would get 401 instead
-     * of the 404 of an unknown or unapproved artefact, or of hosting being off.
-     */
-    @ExceptionHandler(ApiProblem.class)
-    public ResponseEntity<Map<String, Object>> problem(ApiProblem p, jakarta.servlet.http.HttpServletRequest req) {
-        return org.sangam.rest.modules.config.ModuleProblems.respond(p, req);
-    }
 
     private byte[] indexBytes() {
         host();
