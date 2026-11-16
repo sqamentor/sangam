@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_scm_pr_authority" name="Requisition approver" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- SYNTHETIC bands; replace with the board policy. -->
-  <decision id="sec-scm-pr-authority" name="Requisition approver" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-scm-pr-authority" name="Requisition approver" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-scm-pr-authority_t" hitPolicy="FIRST">
       <input id="sec-scm-pr-authority_i0" label="Amount (INR)"><inputExpression id="sec-scm-pr-authority_ie0" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="sec-scm-pr-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>

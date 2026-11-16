@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_bank_kyc_risk" name="Customer risk category and re-KYC cycle" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-bank-kyc-risk" name="Customer risk category and re-KYC cycle" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-bank-kyc-risk" name="Customer risk category and re-KYC cycle" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-bank-kyc-risk_t" hitPolicy="FIRST">
       <input id="sec-bank-kyc-risk_i0" label="PEP"><inputExpression id="sec-bank-kyc-risk_ie0" typeRef="boolean"><text>pepFlag</text></inputExpression></input>
       <input id="sec-bank-kyc-risk_i1" label="Occupation"><inputExpression id="sec-bank-kyc-risk_ie1" typeRef="string"><text>occupation</text></inputExpression></input>

@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_procurement_mode" name="Procurement mode by value (pack copy of the GOI profile table)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- Decision 225 (IFC-189). Same rows as profiles/in/dmn/GOI/ifms-procurement-mode.dmn (status P). -->
-  <decision id="ifms-procurement-mode" name="Procurement mode by value (pack copy of the GOI profile table)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="ifms-procurement-mode" name="Procurement mode by value (pack copy of the GOI profile table)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="ifms-procurement-mode_t" hitPolicy="FIRST">
       <input id="ifms-procurement-mode_i0" label="Estimated value"><inputExpression id="ifms-procurement-mode_ie0" typeRef="number"><text>amount</text></inputExpression></input>
       <input id="ifms-procurement-mode_i1" label="Scientific department"><inputExpression id="ifms-procurement-mode_ie1" typeRef="boolean"><text>scientificDepartment</text></inputExpression></input>

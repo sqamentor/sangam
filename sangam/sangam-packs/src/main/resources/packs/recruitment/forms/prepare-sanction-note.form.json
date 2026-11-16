@@ -1,6 +1,6 @@
 {
   "key": "recruitment/prepare-sanction-note",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.recruitment",
   "title": {
     "en": "Prepare the document to sign",

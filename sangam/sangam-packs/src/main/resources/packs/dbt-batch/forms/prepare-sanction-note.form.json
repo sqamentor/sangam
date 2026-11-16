@@ -1,6 +1,6 @@
 {
   "key": "dbt-batch/prepare-sanction-note",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.dbt.batch",
   "title": {
     "en": "Prepare the document to sign",
