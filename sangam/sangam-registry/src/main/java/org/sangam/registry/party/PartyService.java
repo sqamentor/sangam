@@ -430,14 +430,12 @@ public final class PartyService {
 
     /** The clear value of a vaulted identifier, for a declared purpose; consent-checked and audited. */
     public String revealIdentifier(Connection c, RegistryContext ctx, String identifierId) {
-        if (ctx.purpose() == null || ctx.purpose().isBlank()) {
-            throw RegistryException.invalid("revealing an identifier requires a declared purpose");
-        }
+        RegistryPorts.IdentifierVault.requireRevealReason(ctx.purpose(), ctx.actor());   // decision 389
         Identifier i = identifier(c, ctx.tenant(), identifierId);
         get(c, ctx, i.partyId());
         consent(c, ctx, i.partyId(), "REVEAL_IDENTIFIER");
         String value = i.vaultRef() == null ? i.value()
-                : ports.vault().reveal(ctx.tenant(), i.vaultRef(), ctx.purpose())
+                : ports.vault().reveal(ctx.tenant(), i.vaultRef(), ctx.purpose(), ctx.actor())
                 .orElseThrow(() -> RegistryException.notFound("vault token", i.vaultRef()));
         audit.record(c, ctx, i.partyId(), "PARTY_IDENTIFIER_REVEALED", Maps.of("identifierId", identifierId, "type", i.idType()));
         return value;

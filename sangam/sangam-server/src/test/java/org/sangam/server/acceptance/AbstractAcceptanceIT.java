@@ -34,6 +34,8 @@ public abstract class AbstractAcceptanceIT {
     // Fresh random keys per run, never committed secrets: non-development profiles refuse ephemeral defaults.
     private static final String TEST_KEK = randomBase64(32);
     private static final String TEST_PEPPER = randomBase64(32);
+    /** Decision 389: the national-id vault, the custody store of vaulted registry identifiers (own pepper, decision 37). */
+    private static final String TEST_NATIONAL_ID_PEPPER = randomBase64(32);
     private static final String[] REGISTRY_SIGNER = ed25519();
     private static final String[] BUNDLE_SIGNER = ed25519();
     /**
@@ -111,6 +113,7 @@ public abstract class AbstractAcceptanceIT {
         r.add("sangam.registry.signer.private-key", () -> REGISTRY_SIGNER[0]);
         r.add("sangam.registry.signer.public-key", () -> REGISTRY_SIGNER[1]);
         r.add("sangam.registry.vault.hmac-pepper", () -> TEST_PEPPER);
+        r.add("sangam.compliance.national-id-vault.hmac-pepper", () -> TEST_NATIONAL_ID_PEPPER);
         // onboarding bundle signing (AT-7 and every signed bundle): own key pair, trusted by id
         r.add("sangam.onboarding.bundle.key-id", () -> "acc-bundle");
         r.add("sangam.onboarding.bundle.private-key", () -> BUNDLE_SIGNER[0]);

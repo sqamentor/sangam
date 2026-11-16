@@ -111,7 +111,7 @@ Base `/custody`.
    - `DocumentPort` → flowable-ports `OutputTemplateRenderer` and `ContentService`.
    - `PublishPort` → the integration module's document-locker push connector, idempotent by object id.
    - `ConsentPort` and `PrivacyPort` → sangam-compliance and the security `FieldMaskService` through an adapter. The registry never imports compliance.
-   - `IdentifierVault` → the vault service. The default HMAC pepper is random per start, which is development only.
+   - `IdentifierVault` → the keyed hash (`sangam.registry.vault.hmac-pepper`) plus, for identifier types that vault the clear value (for example BANK_ACCOUNT), the server's `RegistryCustodyVault` (decision 389): the clear value is held encrypted per tenant by the compliance national-id vault (`CMP_NATIONAL_ID_VAULT`, on with `sangam.compliance.national-id-vault.hmac-pepper`), and `reveal(tenant, ref, purpose, actor)` needs both purpose and actor and is audited. Without that vault, vaulting a clear value is refused. The default HMAC pepper is random per start, which is development only.
    - `VisibilityPort` → security `AuthorizedQueryBuilder`. Resource types are `registry-object`, `registry-party`, plus the asset and custody aliases. The public actor `system:public-verification` must see instruments for verification.
    - `DecisionPort` → the engine's DMN service.
    - `SystemOfRecordPort` → connectors, for facade mode (type `extensions.systemOfRecord = EXTERNAL`).
