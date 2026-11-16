@@ -4,6 +4,10 @@ package org.sangam.packs.core;
 import java.time.Instant;
 import java.util.Date;
 
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+
+import org.operaton.bpm.engine.ProcessEngineException;
 import org.operaton.bpm.engine.delegate.DelegateExecution;
 import org.operaton.bpm.engine.delegate.ExecutionListener;
 import org.operaton.bpm.engine.delegate.Expression;
@@ -20,6 +24,10 @@ import org.sangam.packs.port.PackRuntime;
  *       {@code initiatorPerson} (or Operaton's {@code operaton:initiator}) and {@code actingSeat};</li>
  *   <li>stores the material field list and the submitted payload hash (K4) and starts {@code caseVersion} at 1;</li>
  *   <li>starts the case-level statutory clock {@code caseDueAt} when {@code caseSla} is given (R31, GP-35);</li>
+ *   <li>decision 394: refuses the start ({@code 422 VALIDATION_FAILED}) when a field named in {@code durationFields}
+ *       (the start form's fields of type {@code duration}, written by packgen) has a value that is not a positive
+ *       ISO-8601 duration, read with the parser Operaton's timers use ({@link javax.xml.datatype.DatatypeFactory});
+ *       an absent field is left to the model's default;</li>
  *   <li>writes {@code CASE_CREATED} (decision 299: the case exists, with its bound package version and initial
  *       state), then the audit event of entering the initial state ({@code CASE_SUBMITTED} by default).</li>
  * </ul>
@@ -31,12 +39,14 @@ public class PackStartListener implements ExecutionListener {
     private Expression materialFields;
     private Expression caseSla;
     private Expression initialState;
+    private Expression durationFields;
 
     @Override
     public void notify(DelegateExecution ex) {
         // decision 145: the engine tenant, resolved before anything is written; a forged tenantId start variable or a
         // case without an engine tenant stops here
         String tenant = Vars.tenant(ex);
+        requireDurations(ex, Vars.field(durationFields, ex));
         String id = Vars.field(packId, ex, "unknown");
         String ver = Vars.field(packVersion, ex, "0");
         ex.setVariable(Vars.PACK_VERSION, id + "@" + ver);
@@ -87,5 +97,34 @@ public class PackStartListener implements ExecutionListener {
                 "profileVersion", ex.getVariable("profileVersion")));
         Vars.audit(ex, st.auditEvent(), Vars.map("package", id + "@" + ver,
                 "payloadHash", Vars.str(ex, "submittedPayloadHash")));
+    }
+
+    /** Decision 394: every named field that has a value holds a positive ISO-8601 duration, else the start is refused. */
+    static void requireDurations(DelegateExecution ex, String names) {
+        if (names == null) {
+            return;
+        }
+        for (String name : names.split(",")) {
+            String n = name.trim();
+            Object v = n.isEmpty() ? null : ex.getVariable(n);
+            if (v == null || v.toString().isBlank()) {
+                continue;
+            }
+            if (!isPositiveDuration(v.toString().trim())) {
+                throw new ProcessEngineException("422 VALIDATION_FAILED: " + n + " must be an ISO-8601 duration counted "
+                        + "from the start, for example P15D");
+            }
+        }
+    }
+
+    static boolean isPositiveDuration(String s) {
+        if (s.length() > 64 || !s.startsWith("P")) {
+            return false;
+        }
+        try {
+            return DatatypeFactory.newInstance().newDuration(s).getSign() > 0;
+        } catch (IllegalArgumentException | DatatypeConfigurationException e) {
+            return false;
+        }
     }
 }

@@ -261,7 +261,10 @@ SHIPS['sec.ecom.order-to-cash'] = ('1.0.1', '1.0.2')
 SHIPS['sec.ecom.return-refund'] = ('1.0.1', '1.0.2')
 SHIPS['sec.ecom.seller-onboarding'] = ('1.0.1', '1.0.2')
 SHIPS['sec.edu.admission'] = ('1.0.1', '1.0.2')
-SHIPS['sec.edu.examination'] = ('1.0.1', '1.0.2')
+# decision 394 (lane R7-ui): registrationWindow is an ISO-8601 duration from the cycle start (form type 'duration', the
+# start listener checks it). 1.0.2 already carried other content on the integration branch and may be deployed in a
+# dev environment, so the new content ships as 1.0.3 (decision 390 (4): a deployed version is immutable).
+SHIPS['sec.edu.examination'] = ('1.0.1', '1.0.3')
 SHIPS['sec.edu.scholarship'] = ('1.0.1', '1.0.2')
 SHIPS['sec.health.admission-discharge'] = ('1.0.1', '1.0.2')
 SHIPS['sec.health.ot-scheduling'] = ('1.0.1', '1.0.2')
