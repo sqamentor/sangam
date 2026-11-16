@@ -525,7 +525,7 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
     @Test
     void gpfAdvance() throws Exception {
         Run r = drive("sangam-ifms-gpf", bk("GPF"), employee("gpfAccount", "GPF-123", "gpfPurpose", "ADVANCE",
-                "amount", 5_000_000L, "gpfBalance", 40_000_000L, "qualifyingService", 12.0, "employeeId", EMPLOYEE,
+                "amount", 5_000_000L, "gpfBalance", 40_000_000L, "qualifyingService", new BigDecimal("12.0"), "employeeId", EMPLOYEE,
                 "payee", "A Subscriber", "payeeAccount", "XXXX1001", "ifsc", "SBIN0000001"));
         assertClosed("GPF advance", r);
     }
@@ -544,7 +544,7 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
     @Test
     void pensionSanctionAndStatus() throws Exception {
         Run r = drive("sangam-pension-sanction", bk("PEN"), employee("employeeId", EMPLOYEE,
-                "employeeName", "A Pensioner", "retirementDate", date(60), "qualifyingService", 33.0, "lastPay", 900_000_000L,
+                "employeeName", "A Pensioner", "retirementDate", date(60), "qualifyingService", new BigDecimal("33.0"), "lastPay", 900_000_000L,
                 "bankAccount", "XXXX5678", "ifsc", "SBIN0000001"));
         assertClosed("pension sanction", r);
     }

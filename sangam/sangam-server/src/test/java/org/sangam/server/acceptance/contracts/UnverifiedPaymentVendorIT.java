@@ -19,6 +19,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.sangam.billing.AccrualPauses;
 import org.sangam.billing.JdbcUnverifiedPaymentStore;
@@ -44,10 +45,24 @@ import org.sangam.ledger.AccountKey;
  */
 class UnverifiedPaymentVendorIT extends LayerSpecSupport {
 
+    /** The drainers this test created: each runs its drains on its own worker thread (SL-133). */
+    private final List<PendingAuditDrainer> drainers = new ArrayList<>();
+
     private JdbcUnverifiedPaymentStore store() {
         PendingAuditDrainer drainer = new PendingAuditDrainer(new PendingAudit(TX, DIALECT, new AuditChain(DIALECT)),
                 new PendingAuditDrainer.Settings(1, Duration.ZERO, Duration.ZERO, 10));
+        drainers.add(drainer);
         return new JdbcUnverifiedPaymentStore(TX, DIALECT, drainer);
+    }
+
+    /**
+     * Stops and joins this test's drainers, so no drain of this test is still inside a transaction on AUDIT_EVENT when
+     * the next test truncates the tables (Oracle's TRUNCATE does not wait for it: ORA-00054).
+     */
+    @AfterEach
+    void closeDrainers() {
+        drainers.forEach(PendingAuditDrainer::close);
+        drainers.clear();
     }
 
     private static UnverifiedPayment pending(String tenant, String ref) {
@@ -79,8 +94,20 @@ class UnverifiedPaymentVendorIT extends LayerSpecSupport {
         assertEquals(List.of(), back.downstreamPermitted());
         assertEquals(null, back.payerName());
         assertEquals(null, back.resolution());
-        assertEquals(1, (long) inTx(c -> Jdbc.one(c, "SELECT COUNT(*) FROM AUDIT_PENDING WHERE tenant_id=?",
-                rs -> rs.getLong(1), tenant).orElse(0L)));
+        assertEquals(1, audited(tenant, null));
+    }
+
+    /**
+     * Audit events of the tenant (of one type, or all when {@code eventType} is null), counted where they are pending
+     * and where the drain moved them (SL-133): the drain runs on the drainer's own thread and moves a row from
+     * AUDIT_PENDING into AUDIT_EVENT in one transaction, so only the two together are exact at any moment. One
+     * statement, so both counts come from the same snapshot.
+     */
+    private long audited(String tenant, String eventType) {
+        String where = " WHERE tenant_id=?" + (eventType == null ? "" : " AND event_type=?");
+        Object[] args = eventType == null ? new Object[]{tenant, tenant} : new Object[]{tenant, eventType, tenant, eventType};
+        return inTx(c -> Jdbc.one(c, "SELECT COUNT(*) FROM (SELECT tenant_id FROM AUDIT_PENDING" + where
+                + " UNION ALL SELECT tenant_id FROM AUDIT_EVENT" + where + ") k", rs -> rs.getLong(1), args).orElse(0L));
     }
 
     @Test
@@ -186,8 +213,7 @@ class UnverifiedPaymentVendorIT extends LayerSpecSupport {
         assertTrue(s.resumptionDue(tenant, 10).isEmpty());
         assertTrue(s.pausesToResume(tenant, p.id()).isEmpty());
         assertEquals(1, s.pausesOf(tenant, p.id()).size(), "a levied pause stays on record");
-        assertEquals(1, (long) inTx(c -> Jdbc.one(c, "SELECT COUNT(*) FROM AUDIT_PENDING WHERE tenant_id=? AND"
-                + " event_type=?", rs -> rs.getLong(1), tenant, "PAYMENT_UNVERIFIED_ACCRUAL_RESUMED").orElse(0L)));
+        assertEquals(1, audited(tenant, "PAYMENT_UNVERIFIED_ACCRUAL_RESUMED"), "the resumption is audited once");
     }
 
     @Test

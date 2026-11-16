@@ -108,7 +108,12 @@ public enum Dialect {
             // both accept this; H2 rejects INTERVAL '1 millisecond' and an untyped "? * INTERVAL".
             case POSTGRESQL -> "(CURRENT_TIMESTAMP + (CAST(? AS BIGINT) * INTERVAL '0.001' SECOND))";
             case ORACLE -> "(SYSTIMESTAMP + NUMTODSINTERVAL(? / 1000, 'SECOND'))";
-            case SQLSERVER -> "DATEADD(millisecond, ?, SYSDATETIMEOFFSET())";
+            // DATEADD takes an int increment: a millisecond count beyond 2^31-1 (24.8 days, e.g. an idempotency key or
+            // tombstone retention of 30 days) failed with "Arithmetic overflow error converting expression to data type
+            // int". The one bound BIGINT is split into whole seconds (int up to about 68 years) and the remaining
+            // milliseconds, in a derived table so the parameter is still bound once.
+            case SQLSERVER -> "(SELECT DATEADD(millisecond, CAST(p.v % 1000 AS INT), DATEADD(second, CAST(p.v / 1000 AS INT),"
+                    + " SYSDATETIMEOFFSET())) FROM (SELECT CAST(? AS BIGINT) AS v) p)";
             case MYSQL -> "TIMESTAMPADD(MICROSECOND, ? * 1000, UTC_TIMESTAMP(6))";
         };
     }

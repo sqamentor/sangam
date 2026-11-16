@@ -237,20 +237,21 @@ class E2AuthorizationIT extends ContractSupport {
                 ps.executeBatch();
             }
             try (PreparedStatement ps = c.prepareStatement("INSERT INTO AUTH_MEMBERSHIP(tenant_id, member_id, principal_id,"
-                    + " source_id, valid_from, valid_to) VALUES (?,?,?,?,CURRENT_TIMESTAMP - INTERVAL '1 day',NULL)")) {
+                    + " source_id, valid_from, valid_to) VALUES (?,?,?,?," + dialect().nowPlusMillisParam() + ",NULL)")) {
                 for (P p : principals) {
                     for (String g : p.groups()) {
                         ps.setString(1, p.tenant());
                         ps.setString(2, uid(p.user()));
                         ps.setString(3, gid(g));
                         ps.setString(4, key("e2"));
+                        ps.setLong(5, -java.time.Duration.ofDays(1).toMillis());   // valid since a day ago (database clock)
                         ps.addBatch();
                     }
                 }
                 ps.executeBatch();
             }
-            st.execute("ANALYZE AUTH_EFFECTIVE");
-            st.execute("ANALYZE AUTH_MEMBERSHIP");
+            analyze(st, "AUTH_EFFECTIVE");
+            analyze(st, "AUTH_MEMBERSHIP");
         }
         return new ArrayList<>(rows.values());
     }
@@ -465,7 +466,7 @@ class E2AuthorizationIT extends ContractSupport {
                 List<String> concat = new ArrayList<>();
                 for (int offset = 0; ; offset += 50) {
                     List<String> page = query("SELECT r.ID_ FROM ACT_RU_TASK r WHERE " + pred.sql()
-                            + " ORDER BY r.CREATE_TIME_, r.ID_ LIMIT 50 OFFSET " + offset, pred);
+                            + " ORDER BY r.CREATE_TIME_, r.ID_" + IsolationPlan.page(dialect(), 50, offset), pred);
                     if (offset + 50 < full.size()) {
                         assertEquals(50, page.size(), "a non-last page is full");
                     }
@@ -607,7 +608,7 @@ class E2AuthorizationIT extends ContractSupport {
         for (Form f : Form.values()) {
             SqlPredicate pred = predicate(f, big, "r");
             String page = "SELECT r.ID_, r.NAME_, r.CREATE_TIME_ FROM ACT_RU_TASK r WHERE " + pred.sql()
-                    + " ORDER BY r.CREATE_TIME_ DESC, r.ID_ LIMIT 50";
+                    + " ORDER BY r.CREATE_TIME_ DESC, r.ID_" + IsolationPlan.page(dialect(), 50, 0);
             String count = "SELECT count(*) FROM ACT_RU_TASK r WHERE " + pred.sql();
             Map<String, Object> list = time(() -> query(page, pred).size(), 30, 300);
             Map<String, Object> cnt = time(() -> query(count, pred).size(), 30, 300);
@@ -622,10 +623,33 @@ class E2AuthorizationIT extends ContractSupport {
             }
             // the plan of the count query goes into the report (A-16 evidence for the index plan)
             report.append(f).append(" count plan:\n");
-            query("EXPLAIN (ANALYZE, BUFFERS) " + count, pred).forEach(l -> report.append("  ").append(l).append('\n'));
+            plan(count, pred).forEach(l -> report.append("  ").append(l).append('\n'));
         }
         System.out.println("[E2-7] " + tasks.size() + " tasks, 300 groups, visible " + sqlCount(Form.COMPILER, big) + "\n" + report);
         assertEquals(List.of(), failures, report.toString());
+    }
+
+    /** Fresh optimiser statistics after the bulk policy load, in the lane's own statement. */
+    void analyze(Statement st, String table) throws SQLException {
+        st.execute(switch (dialect()) {
+            case POSTGRESQL -> "ANALYZE " + table;
+            case MYSQL -> "ANALYZE TABLE " + table;
+            case SQLSERVER -> "UPDATE STATISTICS " + table;
+            case ORACLE -> "BEGIN DBMS_STATS.GATHER_TABLE_STATS(USER, '" + table + "'); END;";
+        });
+    }
+
+    /**
+     * The executed plan of {@code sql} for the report (A-16 evidence) where the lane returns it as rows: PostgreSQL
+     * {@code EXPLAIN (ANALYZE, BUFFERS)}, MySQL {@code EXPLAIN ANALYZE}. SQL Server and Oracle give plans through session
+     * settings and DBMS_XPLAN, so their report says so. The latency assertion is the same on every lane.
+     */
+    List<String> plan(String sql, SqlPredicate pred) {
+        return switch (dialect()) {
+            case POSTGRESQL -> query("EXPLAIN (ANALYZE, BUFFERS) " + sql, pred);
+            case MYSQL -> query("EXPLAIN ANALYZE " + sql, pred);
+            case SQLSERVER, ORACLE -> List.of("(plan not captured on " + dialect() + ")");
+        };
     }
 
     static Map<String, Object> time(Supplier<Integer> q, int warmup, int runs) {

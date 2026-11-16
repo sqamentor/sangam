@@ -80,6 +80,47 @@ class DialectSchemaIT extends ContractSupport {
     }
 
     /**
+     * Decision 388: every product table of the changelog exists in the connection's own schema, and an unqualified
+     * name (as the product's SQL writes it) resolves to that table. PostgreSQL searches pg_catalog before the
+     * search_path, so a product table named like a catalog relation (PG_CONFIG, the view pg_catalog.pg_config) was
+     * shadowed there: to_regclass resolves the name exactly as an unqualified statement does, against the live server's
+     * catalog (the generator refuses the names it knows; this check also covers relations a newer server adds).
+     */
+    @Test
+    void everyProductTableResolvesToTheOwnSchema() throws Exception {
+        Dialect dialect = dialect();
+        List<String> absent = new ArrayList<>();
+        List<String> shadowed = new ArrayList<>();
+        try (Connection c = dataSource.getConnection()) {
+            Map<String, String> stored = tablesInOwnSchema(c);
+            for (String t : org.sangam.persistence.SangamSchema.PRODUCT_TABLES) {
+                if (!stored.containsKey(t.toUpperCase(Locale.ROOT))) {
+                    absent.add(t);
+                }
+            }
+            if (dialect == Dialect.POSTGRESQL) {
+                try (java.sql.PreparedStatement ps = c.prepareStatement("SELECT n.nspname, current_schema() FROM"
+                        + " pg_catalog.pg_class r JOIN pg_catalog.pg_namespace n ON n.oid = r.relnamespace"
+                        + " WHERE r.oid = to_regclass(?)")) {
+                    for (String t : org.sangam.persistence.SangamSchema.PRODUCT_TABLES) {
+                        ps.setString(1, t);
+                        try (ResultSet rs = ps.executeQuery()) {
+                            if (!rs.next()) {
+                                shadowed.add(t + " -> (unresolved)");
+                            } else if (!rs.getString(1).equals(rs.getString(2))) {
+                                shadowed.add(t + " -> " + rs.getString(1) + "." + t.toLowerCase(Locale.ROOT));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        assertTrue(absent.isEmpty(), dialect + ": product tables missing from the connection's schema: " + absent);
+        assertTrue(shadowed.isEmpty(), dialect + ": unqualified product table names resolve outside the connection's"
+                + " schema: " + shadowed);
+    }
+
+    /**
      * The core DDL statement with every table and index name prefixed (columns, types and keys untouched). Fails on a
      * statement form it does not know, and on any unprefixed product table name left in the result (e.g. a new
      * {@code REFERENCES}), so the probe can never touch the Liquibase tables.

@@ -27,11 +27,11 @@ class E10PlatformFitIT extends EngineScenarioSupport {
     void platform() {
         scenario("E10-sangam", ctx -> {
             ctx.detail("javaVersion", System.getProperty("java.version"));
-            adapter.deploy(null, "e10-" + RUN, Map.of("e10.bpmn", ("<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\""
+            adapter.deploy(SCENARIO_TENANT, "e10-" + RUN, Map.of("e10.bpmn", ("<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\""
                     + " targetNamespace=\"e10\"><process id=\"e10\" isExecutable=\"true\"><startEvent id=\"s\"/>"
                     + "<sequenceFlow id=\"f\" sourceRef=\"s\" targetRef=\"e\"/><endEvent id=\"e\"/></process></definitions>")
                     .getBytes(StandardCharsets.UTF_8)));
-            String pid = adapter.startProcess(null, "e10", key("e10"), Map.of());
+            String pid = adapter.startProcess(SCENARIO_TENANT, "e10", key("e10"), Map.of());
             ctx.check("engine deploys and runs a process on JDK " + System.getProperty("java.version"), ended(pid));
 
             // LIC-1..4 are measured on what ships: BOOT-INF/lib of the repackaged Boot jar built by this reactor

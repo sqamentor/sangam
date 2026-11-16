@@ -117,7 +117,7 @@ public final class SangamSchema {
             "CF_AGENDA_ITEM", "CF_ATTENDANCE", "CF_NOTICE", "CF_MINUTES", "CF_DECISION", "CF_ACTION_ITEM",
             "CF_REFERENCE", "CF_REFERENCE_MOVE",
             // sangam-programme ProgrammeSchema
-            "PG_CONFIG", "PG_PROGRAMME", "PG_INDICATOR", "PG_PERIOD", "PG_TARGET", "PG_MILESTONE",
+            "PG_PROGRAMME_CONFIG", "PG_PROGRAMME", "PG_INDICATOR", "PG_PERIOD", "PG_TARGET", "PG_MILESTONE",
             "PG_RETURN_DEF", "PG_RETURN", "PG_RETURN_VALUE", "PG_RETURN_FINDING", "PG_RETURN_EVENT",
             "PG_ACHIEVEMENT", "PG_FINANCIAL", "PG_ALERT", "PG_DASHBOARD_SNAPSHOT",
             "SANGAM_FEEL_BINDING", // R10
@@ -207,13 +207,15 @@ public final class SangamSchema {
      * CONNECTOR_CALL_DELIVERY (0045-20); plus the decision 369 OTP issue limit per client address:
      * CMP_OTP_CHALLENGE.client_hash and the index CMP_OTP_CLIENT (0045-22); plus the M-103 chunk provenance
      * AI_KB_CHUNK.ocr_transcript_id (0045-24, decision 378); plus the generator {@code DATA}
-     * changeset that seeds the OPS_UTC_GATE row ENGINE_WORK in state OPEN (0045-14).
+     * changeset that seeds the OPS_UTC_GATE row ENGINE_WORK in state OPEN (0045-14); plus the generator {@code RENAMES}
+     * changeset PG_CONFIG to PG_PROGRAMME_CONFIG (0046-01, decision 388: pg_catalog.pg_config shadowed the table on
+     * PostgreSQL).
      * The PostgreSQL changelog also holds optional extension changesets (generator {@code PG_EXTENSION_OPTIONAL}: the
      * pgvector column AI_KB_CHUNK.embedding_vec, 0044-08, decision 170). They are recorded only where the extension is
      * enabled, so they are not in this count.
      * The changelog holds {@code PRODUCT_TABLES.size() + ADDITIONAL_CHANGESETS} changesets.
      */
-    public static final int ADDITIONAL_CHANGESETS = 93;
+    public static final int ADDITIONAL_CHANGESETS = 94;
 
     /** Liquibase dbms names used in the changelogs. */
     public enum Dbms {

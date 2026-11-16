@@ -46,7 +46,7 @@ class FetchLockVerificationIT extends EngineScenarioSupport {
     /** A model with its own topic per scenario, so scenarios never see each other's work. */
     private String deploy(String topic, String processId) {
         String xml = MODEL.replace("TOPIC", topic).replace("\"d147\" isExecutable", "\"" + processId + "\" isExecutable");
-        adapter.deploy(null, processId + "-" + RUN, Map.of(processId + ".bpmn", xml.getBytes(StandardCharsets.UTF_8)));
+        adapter.deploy(SCENARIO_TENANT, processId + "-" + RUN, Map.of(processId + ".bpmn", xml.getBytes(StandardCharsets.UTF_8)));
         return processId;
     }
 
@@ -56,7 +56,7 @@ class FetchLockVerificationIT extends EngineScenarioSupport {
             String topic = key("d147c");
             String process = deploy(topic, "d147c" + RUN.replace("-", ""));
             for (int i = 0; i < 40; i++) {
-                adapter.startProcess(null, process, key("d147c"), Map.of());
+                adapter.startProcess(SCENARIO_TENANT, process, key("d147c"), Map.of());
             }
             int workers = 8;
             CyclicBarrier barrier = new CyclicBarrier(workers);
@@ -114,7 +114,7 @@ class FetchLockVerificationIT extends EngineScenarioSupport {
             clock(Instant.now().truncatedTo(ChronoUnit.SECONDS));
             String topic = key("d147e");
             String process = deploy(topic, "d147e" + RUN.replace("-", ""));
-            String pid = adapter.startProcess(null, process, key("d147e"), Map.of());
+            String pid = adapter.startProcess(SCENARIO_TENANT, process, key("d147e"), Map.of());
             ExternalWork first = adapter.fetchAndLock("w1", topic, 1, Duration.ofMinutes(1)).getFirst();
             adapter.extendLock(first.id(), "w1", first.lockVersion(), Duration.ofMinutes(10));
             advance(Duration.ofMinutes(5));
@@ -143,7 +143,7 @@ class FetchLockVerificationIT extends EngineScenarioSupport {
         scenario("D147-retries-" + AcceptanceDatabase.name(), ctx -> {
             String topic = key("d147r");
             String process = deploy(topic, "d147r" + RUN.replace("-", ""));
-            adapter.startProcess(null, process, key("d147r"), Map.of());
+            adapter.startProcess(SCENARIO_TENANT, process, key("d147r"), Map.of());
             ExternalWork w = adapter.fetchAndLock("w1", topic, 1, Duration.ofMinutes(5)).getFirst();
             adapter.failExternal(w.id(), "w1", w.lockVersion(), "transient", 1, Duration.ZERO);
             ExternalWork again = adapter.fetchAndLock("w2", topic, 1, Duration.ofMinutes(5)).getFirst();

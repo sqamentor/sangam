@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Versioned, hash-pinned programme configuration per tenant (R43 style): the whole configuration is stored in
- * {@code PG_CONFIG}; indicator and return definitions are materialised in {@code PG_INDICATOR} / {@code PG_RETURN_DEF}
+ * {@code PG_PROGRAMME_CONFIG}; indicator and return definitions are materialised in {@code PG_INDICATOR} / {@code PG_RETURN_DEF}
  * so reports can join them. A definition key+version is immutable: re-publishing it with other content is refused,
  * a change needs a new version. Values already reported keep their meaning because returns pin the definition version.
  */
@@ -29,7 +29,7 @@ public final class IndicatorRegistry {
 
     /**
      * The current published configuration (C3-09, {@code GET /programme-config}): {@code config} is the object as it was
-     * published (the {@code PUT /programme-config} body, read back from {@code PG_CONFIG.config_json}).
+     * published (the {@code PUT /programme-config} body, read back from {@code PG_PROGRAMME_CONFIG.config_json}).
      */
     public record Current(int version, String contentHash, String definedBy, Instant definedAt, Map<String, Object> config) {
     }
@@ -50,7 +50,7 @@ public final class IndicatorRegistry {
         ProgrammeConfig cfg = ProgrammeConfig.parse(configMap);
         String json = Db.json(configMap);
         String hash = Db.hashOf(configMap);
-        Optional<Object[]> cur = Jdbc.one(c, "SELECT version, content_hash FROM PG_CONFIG WHERE tenant_id=? AND current_flag=1",
+        Optional<Object[]> cur = Jdbc.one(c, "SELECT version, content_hash FROM PG_PROGRAMME_CONFIG WHERE tenant_id=? AND current_flag=1",
                 rs -> new Object[]{rs.getInt("version"), rs.getString("content_hash")}, t);
         if (cur.isPresent() && hash.equals(cur.get()[1])) {
             return new Published((Integer) cur.get()[0], hash, false);
@@ -61,9 +61,9 @@ public final class IndicatorRegistry {
         for (ReturnDefinition r : cfg.returns().values()) {
             pinReturn(c, t, r, actor);
         }
-        int next = Jdbc.one(c, "SELECT COALESCE(MAX(version),0) AS v FROM PG_CONFIG WHERE tenant_id=?", rs -> rs.getInt("v"), t).orElse(0) + 1;
-        Jdbc.update(c, "UPDATE PG_CONFIG SET current_flag=0 WHERE tenant_id=? AND current_flag=1", t);
-        Jdbc.update(c, "INSERT INTO PG_CONFIG(tenant_id, version, config_json, content_hash, current_flag, defined_by, defined_at)"
+        int next = Jdbc.one(c, "SELECT COALESCE(MAX(version),0) AS v FROM PG_PROGRAMME_CONFIG WHERE tenant_id=?", rs -> rs.getInt("v"), t).orElse(0) + 1;
+        Jdbc.update(c, "UPDATE PG_PROGRAMME_CONFIG SET current_flag=0 WHERE tenant_id=? AND current_flag=1", t);
+        Jdbc.update(c, "INSERT INTO PG_PROGRAMME_CONFIG(tenant_id, version, config_json, content_hash, current_flag, defined_by, defined_at)"
                 + " VALUES (?,?,?,?,1,?," + dialect.now() + ")", t, next, json, hash, actor);
         cache.put(t, new Cached(next, cfg));
         return new Published(next, hash, true);
@@ -112,7 +112,7 @@ public final class IndicatorRegistry {
     /** The current configuration of the tenant. */
     public ProgrammeConfig config(Connection c, String tenant) {
         String t = Db.tenant(tenant);
-        Optional<Object[]> cur = Jdbc.one(c, "SELECT version, config_json FROM PG_CONFIG WHERE tenant_id=? AND current_flag=1",
+        Optional<Object[]> cur = Jdbc.one(c, "SELECT version, config_json FROM PG_PROGRAMME_CONFIG WHERE tenant_id=? AND current_flag=1",
                 rs -> new Object[]{rs.getInt("version"), rs.getString("config_json")}, t);
         if (cur.isEmpty()) {
             throw new ProgrammeException(ProgrammeException.Code.NOT_FOUND, "no programme configuration published for the tenant");
@@ -129,7 +129,7 @@ public final class IndicatorRegistry {
 
     /** The current published configuration of the tenant, as published; empty when nothing is published yet. */
     public Optional<Current> current(Connection c, String tenant) {
-        return Jdbc.one(c, "SELECT version, content_hash, defined_by, defined_at, config_json FROM PG_CONFIG"
+        return Jdbc.one(c, "SELECT version, content_hash, defined_by, defined_at, config_json FROM PG_PROGRAMME_CONFIG"
                         + " WHERE tenant_id=? AND current_flag=1",
                 rs -> new Current(rs.getInt("version"), rs.getString("content_hash"), rs.getString("defined_by"),
                         Jdbc.instant(rs, "defined_at"), Db.map(rs.getString("config_json"))), Db.tenant(tenant));
@@ -181,7 +181,7 @@ public final class IndicatorRegistry {
     }
 
     public List<Map<String, Object>> history(Connection c, String tenant) {
-        return Jdbc.query(c, "SELECT version, content_hash, current_flag, defined_by, defined_at FROM PG_CONFIG WHERE tenant_id=? ORDER BY version DESC",
+        return Jdbc.query(c, "SELECT version, content_hash, current_flag, defined_by, defined_at FROM PG_PROGRAMME_CONFIG WHERE tenant_id=? ORDER BY version DESC",
                 rs -> Db.kv("version", rs.getInt("version"), "contentHash", rs.getString("content_hash"),
                         "current", rs.getInt("current_flag") != 0, "definedBy", rs.getString("defined_by"),
                         "definedAt", Jdbc.instant(rs, "defined_at")), Db.tenant(tenant));

@@ -34,38 +34,38 @@ class E17cDomainIT extends GovCSupport {
             deploy("d-bg-contract.bpmn", "gp41-bg.bpmn");
             Instant t0 = now;
             String con1 = b("CON-1");
-            String p = adapter.startProcess(null, "d-bg-contract", con1, vars("bgAmount", 300_000L,
+            String p = adapter.startProcess(SCENARIO_TENANT, "d-bg-contract", con1, vars("bgAmount", 300_000L,
                     "bgExpiry", date(t0.plus(Duration.ofDays(400))), "reminderAt", date(t0.plus(Duration.ofDays(370)))));
             complete(ctx, p, "dbg_issueLoA", "contracts", null);
             List<String> kids = subInstances(p);
             ctx.require("BG child started", kids.size() == 1);
             String bg = kids.get(0);
             ctx.check("child carries the contract number as business key", con1.equals(adapter.getInstance(bg).businessKey()));
-            ctx.check("bank confirmation reaches the child by business key", bg.equals(adapter.correlateMessage(null, "bgConfirmed", con1, vars("genuine", true))));
+            ctx.check("bank confirmation reaches the child by business key", bg.equals(adapter.correlateMessage(SCENARIO_TENANT, "bgConfirmed", con1, vars("genuine", true))));
             clock(t0.plus(Duration.ofDays(200)));
             complete(ctx, p, "dbg_execute", "ee", vars("dlpEnd", date(t0.plus(Duration.ofDays(565)))));
             clock(t0.plus(Duration.ofDays(371)));
             adapter.executeDueJobs();
             complete(ctx, bg, "gp41_requestExtension", "contracts", null);
-            adapter.correlateMessage(null, "bgExtended", con1,
+            adapter.correlateMessage(SCENARIO_TENANT, "bgExtended", con1,
                     vars("bgExpiry", date(t0.plus(Duration.ofDays(700))), "reminderAt", date(t0.plus(Duration.ofDays(670)))));
             ctx.check("extended BG watched until +670d", dueIs(timerAt(bg, "gp41_reminderDue"), t0.plus(Duration.ofDays(670))));
             clock(t0.plus(Duration.ofDays(566)));
             adapter.executeDueJobs();
             complete(ctx, p, "dbg_finalBill", "accounts", null);
             ctx.check("contract waits for the security branch", tasks(p, "dbg_close").isEmpty());
-            adapter.correlateMessage(null, "contractClosed", con1, null);
+            adapter.correlateMessage(SCENARIO_TENANT, "contractClosed", con1, null);
             complete(ctx, bg, "gp41_release", "accounts", null);
             complete(ctx, p, "dbg_close", "contracts", null);
             ctx.check("contract 1 closed, BG released", ended(p) && visited(bg, "gp41_end_released"));
 
             Instant t1 = now;
             String con2 = b("CON-2");
-            String q = adapter.startProcess(null, "d-bg-contract", con2, vars("bgAmount", 300_000L,
+            String q = adapter.startProcess(SCENARIO_TENANT, "d-bg-contract", con2, vars("bgAmount", 300_000L,
                     "bgExpiry", date(t1.plus(Duration.ofDays(300))), "reminderAt", date(t1.plus(Duration.ofDays(270)))));
             complete(ctx, q, "dbg_issueLoA", "contracts", null);
             String bg2 = subInstances(q).get(0);
-            adapter.correlateMessage(null, "bgConfirmed", con2, vars("genuine", true));
+            adapter.correlateMessage(SCENARIO_TENANT, "bgConfirmed", con2, vars("genuine", true));
             clock(t1.plus(Duration.ofDays(271)));
             adapter.executeDueJobs();
             complete(ctx, bg2, "gp41_requestExtension", "contracts", null);
@@ -78,11 +78,11 @@ class E17cDomainIT extends GovCSupport {
             adapter.executeDueJobs();
             complete(ctx, q, "dbg_finalBill", "accounts", null);
             ctx.check("release request after encashment is refused (no BG instance waiting)",
-                    throwsOn(() -> adapter.correlateMessage(null, "contractClosed", con2, null)));
+                    throwsOn(() -> adapter.correlateMessage(SCENARIO_TENANT, "contractClosed", con2, null)));
             complete(ctx, q, "dbg_close", "contracts", null);
             ctx.check("contract 2 closed", ended(q));
 
-            String r = adapter.startProcess(null, "d-bg-contract", b("CON-3"), vars("bgAmount", 1L,
+            String r = adapter.startProcess(SCENARIO_TENANT, "d-bg-contract", b("CON-3"), vars("bgAmount", 1L,
                     "bgExpiry", date(now.plus(Duration.ofDays(300))), "reminderAt", date(now.plus(Duration.ofDays(270)))));
             complete(ctx, r, "dbg_issueLoA", "contracts", null);
             String bg3 = subInstances(r).get(0);
@@ -100,11 +100,11 @@ class E17cDomainIT extends GovCSupport {
             Instant t0 = now;
             Instant stipulated = t0.plus(Duration.ofDays(365));
             String wo = b("WO-2027-17");
-            String p = adapter.startProcess(null, "d-works-contract", wo,
+            String p = adapter.startProcess(SCENARIO_TENANT, "d-works-contract", wo,
                     vars("completionDate", date(stipulated), "contractValue", 10_000_000L, "ldWaived", false));
             clock(t0.plus(Duration.ofDays(300)));
             Instant eot = stipulated.plus(Duration.ofDays(60));
-            adapter.correlateMessage(null, "variationProposed", wo,
+            adapter.correlateMessage(SCENARIO_TENANT, "variationProposed", wo,
                     vars("varType", "EOT", "days", 60, "amount", 0L, "proposedCompletion", date(eot)));
             String v1 = subInstances(p).get(0);
             complete(ctx, v1, "dvar_examine", "ee", null);
@@ -115,7 +115,7 @@ class E17cDomainIT extends GovCSupport {
             ctx.check("LD timer still at the old date until the engine is told", dueIs(timerAt(p, "dcv_ldStart"), stipulated));
             recalculateTimerFromModel(timerAt(p, "dcv_ldStart").jobId());
             ctx.check("LD timer re-armed to the EoT date", dueIs(timerAt(p, "dcv_ldStart"), eot));
-            adapter.correlateMessage(null, "variationProposed", wo,
+            adapter.correlateMessage(SCENARIO_TENANT, "variationProposed", wo,
                     vars("varType", "EXTRA_ITEM", "days", 0, "amount", 600_000L, "proposedCompletion", date(eot)));
             String v2 = subInstances(p).get(0);
             complete(ctx, v2, "dvar_examine", "ee", null);
@@ -137,7 +137,7 @@ class E17cDomainIT extends GovCSupport {
             ctx.check("LD = 0.05 %/day x 10 days x 10,600,000 = 53,000", ld == 53_000L);
             complete(ctx, p, "dcv_ldAccrues", "ee", null);
             complete(ctx, p, "dcv_execute", "ee", vars("actualCompletion", date(now)));
-            adapter.correlateMessage(null, "variationProposed", wo,
+            adapter.correlateMessage(SCENARIO_TENANT, "variationProposed", wo,
                     vars("varType", "LD_WAIVER", "days", 0, "amount", ld, "proposedCompletion", date(eot)));
             String v3 = subInstances(p).get(0);
             complete(ctx, v3, "dvar_examine", "ee", null);
@@ -159,15 +159,15 @@ class E17cDomainIT extends GovCSupport {
         scenario("D-COURT-CASE", ctx -> {
             deploy("d-court-case.bpmn", "d-impugned.bpmn");
             Instant t0 = now;
-            String imp = adapter.startProcess(null, "d-impugned", b("REC-ORDER-9"), Map.of());
+            String imp = adapter.startProcess(SCENARIO_TENANT, "d-impugned", b("REC-ORDER-9"), Map.of());
             String wp = b("WP-4411-2027");
-            String p = adapter.startProcess(null, "d-court-case", wp, vars("impugnedInstance", imp));
+            String p = adapter.startProcess(SCENARIO_TENANT, "d-court-case", wp, vars("impugnedInstance", imp));
             complete(ctx, p, "dcc_examine", "nodal-officer", null);
             complete(ctx, p, "dcc_lawVetting", "law-ministry", null);
-            adapter.correlateMessage(null, "hearingListed", wp,
+            adapter.correlateMessage(SCENARIO_TENANT, "hearingListed", wp,
                     vars("nextHearing", date(t0.plus(Duration.ofDays(30))), "briefDue", date(t0.plus(Duration.ofDays(23)))));
             advance(Duration.ofDays(3));
-            adapter.correlateMessage(null, "hearingRescheduled", wp,
+            adapter.correlateMessage(SCENARIO_TENANT, "hearingRescheduled", wp,
                     vars("nextHearing", date(t0.plus(Duration.ofDays(40))), "briefDue", date(t0.plus(Duration.ofDays(33)))));
             recalculateTimerFromModel(timerAt(p, "dcc_briefDue").jobId());
             ctx.check("after reschedule: hearing +40d (model), counter due +33d (native)",
@@ -240,7 +240,7 @@ class E17cDomainIT extends GovCSupport {
             int opened = 0;
             for (ExternalWork w : fetch("open-discrepancy", 10)) {
                 int item = ((Number) w.variables().get("itemNo")).intValue();
-                adapter.startProcess(null, "d-stores-discrepancy", b("DISC-2027-" + item), vars("itemNo", item,
+                adapter.startProcess(SCENARIO_TENANT, "d-stores-discrepancy", b("DISC-2027-" + item), vars("itemNo", item,
                         "shortBy", ((Number) w.variables().get("bookQty")).intValue() - ((Number) w.variables().get("physicalQty")).intValue()));
                 completeWork(w, Map.of());
                 opened++;
@@ -292,7 +292,7 @@ class E17cDomainIT extends GovCSupport {
     void landAcquisition() {
         scenario("D-LAND-ACQUISITION", ctx -> {
             deploy("d-land-acquisition.bpmn");
-            String a = adapter.startProcess(null, "d-land-acquisition", b("LA-1"), vars("landholderCount", 4));
+            String a = adapter.startProcess(SCENARIO_TENANT, "d-land-acquisition", b("LA-1"), vars("landholderCount", 4));
             complete(ctx, a, "dla_sia", "sia-unit", null);
             complete(ctx, a, "dla_appraisal", "expert-group", vars("siaLapse", date(plusMonths(now, 12))));
             ctx.check("s11 window: 12 calendar months from the appraisal", dueIs(timerAt(a, "dla_siaLapse"), plusMonths(now, 12)));
@@ -319,7 +319,7 @@ class E17cDomainIT extends GovCSupport {
             complete(ctx, a, "dla_s31", "collector", null);
             ctx.check("acquisition completed through s31", ended(a) && visited(a, "dla_end"));
 
-            String bb = adapter.startProcess(null, "d-land-acquisition", b("LA-2"), vars("landholderCount", 1));
+            String bb = adapter.startProcess(SCENARIO_TENANT, "d-land-acquisition", b("LA-2"), vars("landholderCount", 1));
             complete(ctx, bb, "dla_sia", "sia-unit", null);
             complete(ctx, bb, "dla_appraisal", "expert-group", vars("siaLapse", date(plusMonths(now, 12))));
             Instant s11b = now;
@@ -334,7 +334,7 @@ class E17cDomainIT extends GovCSupport {
             ctx.check("s19 lapse after 12 months", ended(bb) && visited(bb, "dla_end_s19Lapsed"));
             ctx.check("late declaration blocked", throwsOn(() -> adapter.completeTask(late.id(), Map.of())));
 
-            String c = adapter.startProcess(null, "d-land-acquisition", b("LA-3"), vars("landholderCount", 1));
+            String c = adapter.startProcess(SCENARIO_TENANT, "d-land-acquisition", b("LA-3"), vars("landholderCount", 1));
             complete(ctx, c, "dla_sia", "sia-unit", null);
             complete(ctx, c, "dla_appraisal", "expert-group", vars("siaLapse", date(plusMonths(now, 12))));
             clock(plusMonths(now, 12).plus(Duration.ofMinutes(1)));
@@ -349,7 +349,7 @@ class E17cDomainIT extends GovCSupport {
         scenario("D-AUDIT-PARA", ctx -> {
             deploy("d-audit-para.bpmn");
             Instant t0 = now;
-            String a = adapter.startProcess(null, "d-audit-para", b("PARA-3.2-2026"), vars("returnCount", 0));
+            String a = adapter.startProcess(SCENARIO_TENANT, "d-audit-para", b("PARA-3.2-2026"), vars("returnCount", 0));
             ctx.check("reminder due at +2 calendar months", dueIs(timerAt(a, "dap_reminder"), plusMonths(t0, 2)));
             ctx.check("ATN due at +3 calendar months", dueIs(timerAt(a, "dap_due"), plusMonths(t0, 3)));
             ctx.detail("reminderDue", String.valueOf(timerAt(a, "dap_reminder")));
@@ -372,7 +372,7 @@ class E17cDomainIT extends GovCSupport {
             ctx.check("para settled; exactly one reminder and one escalation", ended(a)
                     && countVisits(a, "dap_remind") == 1 && countVisits(a, "dap_escalate") == 1);
 
-            String bb = adapter.startProcess(null, "d-audit-para", b("PARA-4.1-2026"), vars("returnCount", 0));
+            String bb = adapter.startProcess(SCENARIO_TENANT, "d-audit-para", b("PARA-4.1-2026"), vars("returnCount", 0));
             advance(Duration.ofDays(25));
             complete(ctx, bb, "dap_draftAtn", "department", null);
             complete(ctx, bb, "dap_vet", "audit", vars("vetted", true));

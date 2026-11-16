@@ -76,7 +76,8 @@ public final class HmacIdentifierVault implements RegistryPorts.IdentifierVault,
     }
 
     @Override
-    public Optional<String> reveal(String tenant, String vaultRef, String purpose) {
+    public Optional<String> reveal(String tenant, String vaultRef, String purpose, String actor) {
+        RegistryPorts.IdentifierVault.requireRevealReason(purpose, actor);
         return Optional.ofNullable(tokens.get(tenant + "|" + vaultRef));
     }
 

@@ -167,9 +167,15 @@ class OutboxRelayIT extends LayerSpecSupport {
         assertTrue(published.contains("history:rootA#2"));
         List<String> auditTypes = inTx(c -> Jdbc.query(c, "SELECT event_type FROM AUDIT_EVENT WHERE chain_id='rootA' ORDER BY seq",
                 rs -> rs.getString(1)));
-        assertEquals(3, auditTypes.size());
-        assertTrue(auditTypes.containsAll(List.of("OUTBOX_DELIVERY_SKIPPED", "OUTBOX_DELIVERY_PARKED")));
-        assertEquals("OUTBOX_SKIP", auditTypes.get(2));
+        // owner decisions 300 to 303: parking an ordered delivery appends OUTBOX_DELIVERY_PARKED and, in the same
+        // transaction, INCIDENT_OPENED (incidentType DELIVERY_PARKED); the unordered webhook's skip writes no incident.
+        // The webhook skip and the history park happen in the same drain, in either order; the repair comes last.
+        assertEquals(4, auditTypes.size(), auditTypes.toString());
+        assertEquals(java.util.Set.of("OUTBOX_DELIVERY_SKIPPED", "OUTBOX_DELIVERY_PARKED", Relay.INCIDENT_OPENED),
+                java.util.Set.copyOf(auditTypes.subList(0, 3)), auditTypes.toString());
+        assertEquals(Relay.INCIDENT_OPENED, auditTypes.get(auditTypes.indexOf("OUTBOX_DELIVERY_PARKED") + 1),
+                "the incident is appended right after the park, in its transaction: " + auditTypes);
+        assertEquals("OUTBOX_SKIP", auditTypes.get(3));
         assertTrue(inTx(c -> audit.verify(c, "t1", "rootA")).ok());
     }
 

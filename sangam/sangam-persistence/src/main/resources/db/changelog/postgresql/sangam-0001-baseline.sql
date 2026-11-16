@@ -6559,6 +6559,13 @@ ALTER TABLE AI_AGENT_RUN ALTER COLUMN input_text DROP NOT NULL;
 ALTER TABLE OPS_BULK_ROW ALTER COLUMN external_id DROP NOT NULL;
 --rollback UPDATE OPS_BULK_ROW SET external_id = '' WHERE external_id IS NULL; ALTER TABLE OPS_BULK_ROW ALTER COLUMN external_id SET NOT NULL;
 
+--changeset sangam:0046-01-pg_config-rename dbms:postgresql,cockroachdb
+--comment: decision 388: PG_CONFIG collides with the PostgreSQL system view pg_catalog.pg_config
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:1 SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = current_schema() AND table_schema = '${database.defaultSchemaName}' AND table_name = 'pg_config' AND table_type = 'BASE TABLE'
+ALTER TABLE "${database.defaultSchemaName}".pg_config RENAME TO pg_programme_config;
+--rollback ALTER TABLE "${database.defaultSchemaName}".pg_programme_config RENAME TO pg_config;
+
 --changeset sangam:0036-01-cf_config-shared-tenant dbms:postgresql,cockroachdb
 --comment: SL-86 shared rows of CF_CONFIG: tenant_id '' becomes the reserved shared key '-'
 --preconditions onFail:HALT onError:HALT
@@ -6735,11 +6742,11 @@ UPDATE CF_REFERENCE_MOVE SET tenant_id = '-' WHERE tenant_id = '';
 --rollback UPDATE CF_REFERENCE_MOVE SET tenant_id = '' WHERE tenant_id = '-';
 
 --changeset sangam:0036-26-pg_config-shared-tenant dbms:postgresql,cockroachdb
---comment: SL-86 shared rows of PG_CONFIG: tenant_id '' becomes the reserved shared key '-'
+--comment: SL-86 shared rows of PG_PROGRAMME_CONFIG: tenant_id '' becomes the reserved shared key '-'
 --preconditions onFail:HALT onError:HALT
---precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT version FROM PG_CONFIG WHERE tenant_id IN ('-', '') AND version IS NOT NULL GROUP BY version HAVING COUNT(DISTINCT tenant_id) > 1) k)
-UPDATE PG_CONFIG SET tenant_id = '-' WHERE tenant_id = '';
---rollback UPDATE PG_CONFIG SET tenant_id = '' WHERE tenant_id = '-';
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT version FROM PG_PROGRAMME_CONFIG WHERE tenant_id IN ('-', '') AND version IS NOT NULL GROUP BY version HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_PROGRAMME_CONFIG SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_PROGRAMME_CONFIG SET tenant_id = '' WHERE tenant_id = '-';
 
 --changeset sangam:0036-27-pg_programme-shared-tenant dbms:postgresql,cockroachdb
 --comment: SL-86 shared rows of PG_PROGRAMME: tenant_id '' becomes the reserved shared key '-'

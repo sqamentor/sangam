@@ -33,6 +33,12 @@ public final class AuthorizationService implements SecurityPorts.Authorization {
 
     @Override
     public SqlPredicate visible(Connection c, SecurityIdentity identity, String resourceType, String permission, String alias) {
+        if (identity.system()) {
+            // the list form of the system rule of allow(): its own tenant only, never an explicit-only permission.
+            // Through the grant predicate the system principal (which holds no grant rows) saw nothing, so a connector
+            // running as system could not read back the party it had just created (IfmsPacksIT, PAYEE_DIRECTORY_ERROR)
+            return compiler.tenantScope(identity, resourceType, Permission.parse(permission), alias);
+        }
         return compiler.visible(c, identity, resourceType, Permission.parse(permission), alias);
     }
 

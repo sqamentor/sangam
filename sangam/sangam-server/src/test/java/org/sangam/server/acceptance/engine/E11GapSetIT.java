@@ -26,7 +26,7 @@ class E11GapSetIT extends EngineScenarioSupport {
     AdHocSubProcessService adHoc;
 
     private String start(String processKey) {
-        return adapter.startProcess(null, processKey, key(processKey), Map.of());
+        return adapter.startProcess(SCENARIO_TENANT, processKey, key(processKey), Map.of());
     }
 
     private void gap(String model, Body probe) {
@@ -83,9 +83,9 @@ class E11GapSetIT extends EngineScenarioSupport {
     @Test
     void conditionalStart() {
         gap("gap-conditional-start", ctx -> {
-            List<ProcessInstance> none = engine.getRuntimeService().createConditionEvaluation()
+            List<ProcessInstance> none = engine.getRuntimeService().createConditionEvaluation().tenantId(SCENARIO_TENANT)
                     .setVariables(Map.of("feePaid", false)).evaluateStartConditions();
-            List<ProcessInstance> one = engine.getRuntimeService().createConditionEvaluation()
+            List<ProcessInstance> one = engine.getRuntimeService().createConditionEvaluation().tenantId(SCENARIO_TENANT)
                     .setVariables(Map.of("feePaid", true)).evaluateStartConditions();
             ctx.check("feePaid=false starts nothing (got " + none.size() + ")", none.isEmpty());
             ctx.check("feePaid=true starts exactly one (got " + one.size() + ")", one.size() == 1);
@@ -128,7 +128,7 @@ class E11GapSetIT extends EngineScenarioSupport {
     @Test
     void ioMapping() {
         gap("gap-io-mapping", ctx -> {
-            String pid = adapter.startProcess(null, "gap-io-mapping", key("gap-io"), Map.of("amount", 1234L));
+            String pid = adapter.startProcess(SCENARIO_TENANT, "gap-io-mapping", key("gap-io"), Map.of("amount", 1234L));
             ExternalWork w = null;
             for (ExternalWork x : adapter.fetchAndLock("io-worker", "io-mapping", 10, Duration.ofMinutes(5))) {
                 if (pid.equals(x.processInstanceId()) && w == null) {
