@@ -1622,6 +1622,90 @@ NULLABLE_UNIQUE = [
      "PACKAGE_VERSION", "package_hash", "{bytes32}", "PACKAGE_VERSION_HASH", ["tenant_id", "package_hash"], "00" * 32),
 ]
 
+# Tables renamed after their CREATE was applied: (changeset id, comment, catalogued name, new name). TABLES keeps the
+# catalogued name, because its CREATE changeset is applied and never edited; the code uses the new name.
+# Decision 388: PostgreSQL searches pg_catalog before the search_path (unless the path lists it), so an unqualified
+# PG_CONFIG means the system view pg_catalog.pg_config, never the product table 0025-01 created; 0036-26 halted there
+# on every PostgreSQL database. On PostgreSQL the rename is written before the SHARED_TENANT changesets (none of those
+# ever completed there) and names the table by the connection's own schema; on the other dialects it comes after them.
+RENAMES = [
+    ("0046-01", "decision 388: PG_CONFIG collides with the PostgreSQL system view pg_catalog.pg_config",
+     "PG_CONFIG", "PG_PROGRAMME_CONFIG"),
+]
+
+# Relation names of the PostgreSQL system catalog (pg_catalog tables and views, PostgreSQL 17). An unqualified product
+# table of the same name resolves to the catalog relation (see RENAMES), so the generator refuses one (decision 388).
+# DialectSchemaIT checks every product table against the live server's catalog as well.
+PG_CATALOG_RELATIONS = frozenset("""
+pg_aggregate pg_am pg_amop pg_amproc pg_attrdef pg_attribute pg_auth_members pg_authid pg_cast pg_class pg_collation
+pg_constraint pg_conversion pg_database pg_db_role_setting pg_default_acl pg_depend pg_description pg_enum
+pg_event_trigger pg_extension pg_foreign_data_wrapper pg_foreign_server pg_foreign_table pg_index pg_inherits
+pg_init_privs pg_language pg_largeobject pg_largeobject_metadata pg_namespace pg_opclass pg_operator pg_opfamily
+pg_parameter_acl pg_partitioned_table pg_policy pg_proc pg_publication pg_publication_namespace pg_publication_rel
+pg_range pg_replication_origin pg_rewrite pg_seclabel pg_sequence pg_shdepend pg_shdescription pg_shseclabel
+pg_statistic pg_statistic_ext pg_statistic_ext_data pg_subscription pg_subscription_rel pg_tablespace pg_transform
+pg_trigger pg_ts_config pg_ts_config_map pg_ts_dict pg_ts_parser pg_ts_template pg_type pg_user_mapping
+pg_aios pg_available_extension_versions pg_available_extensions pg_backend_memory_contexts pg_config pg_cursors
+pg_file_settings pg_group pg_hba_file_rules pg_ident_file_mappings pg_indexes pg_locks pg_matviews pg_policies
+pg_prepared_statements pg_prepared_xacts pg_publication_tables pg_replication_origin_status pg_replication_slots
+pg_roles pg_rules pg_seclabels pg_sequences pg_settings pg_shadow pg_shmem_allocations pg_stats pg_stats_ext
+pg_stats_ext_exprs pg_tables pg_timezone_abbrevs pg_timezone_names pg_user pg_user_mappings pg_views
+pg_wait_events pg_stat_activity pg_stat_all_indexes pg_stat_all_tables pg_stat_archiver pg_stat_bgwriter
+pg_stat_checkpointer pg_stat_database pg_stat_database_conflicts pg_stat_gssapi pg_stat_io pg_stat_progress_analyze
+pg_stat_progress_basebackup pg_stat_progress_cluster pg_stat_progress_copy pg_stat_progress_create_index
+pg_stat_progress_vacuum pg_stat_recovery_prefetch pg_stat_replication pg_stat_replication_slots pg_stat_slru
+pg_stat_ssl pg_stat_subscription pg_stat_subscription_stats pg_stat_sys_indexes pg_stat_sys_tables
+pg_stat_user_functions pg_stat_user_indexes pg_stat_user_tables pg_stat_wal pg_stat_wal_receiver
+pg_stat_xact_all_tables pg_stat_xact_sys_tables pg_stat_xact_user_functions pg_stat_xact_user_tables
+pg_statio_all_indexes pg_statio_all_sequences pg_statio_all_tables pg_statio_sys_indexes pg_statio_sys_sequences
+pg_statio_sys_tables pg_statio_user_indexes pg_statio_user_sequences pg_statio_user_tables
+""".split())
+
+
+def renamed(table):
+    """The name the code uses for a catalogued table (RENAMES applied)."""
+    for _, _, old, new in RENAMES:
+        if old == table:
+            return new
+    return table
+
+
+def check_pg_catalog_names():
+    """Decision 388: no product table, under the name the code uses, may be a pg_catalog relation name."""
+    names = [renamed(t[2]) for t in TABLES] + [new for _, _, _, new in RENAMES]
+    clash = sorted(n for n in names if n.lower() in PG_CATALOG_RELATIONS)
+    if clash:
+        raise SystemExit(f"product tables named like a PostgreSQL system catalog relation: {clash}; rename them (RENAMES)")
+    for cs_id, _, old, new in RENAMES:
+        if old not in (t[2] for t in TABLES) or new in (t[2] for t in TABLES):
+            raise SystemExit(f"RENAMES {cs_id}: {old} must be catalogued in TABLES and {new} must not be")
+
+
+def rename_changeset(dbms, cs_id, comment, old, new):
+    """One RENAMES changeset. PostgreSQL: the table is named by the connection's own schema (Liquibase's
+    database.defaultSchemaName, which is current_schema() when none is configured), and a precondition proves that schema
+    is current_schema() and holds the base table, so the statement can never reach pg_catalog."""
+    out = [f"--changeset sangam:{cs_id}-{old.lower()}-rename dbms:{dbms_tag(dbms)}", f"--comment: {comment}"]
+    if dbms == "postgresql":
+        schema = '"${database.defaultSchemaName}"'
+        out.append("--preconditions onFail:HALT onError:HALT")
+        out.append("--precondition-sql-check expectedResult:1 SELECT COUNT(*) FROM information_schema.tables WHERE "
+                   "table_schema = current_schema() AND table_schema = '${database.defaultSchemaName}' "
+                   f"AND table_name = '{old.lower()}' AND table_type = 'BASE TABLE'")
+        out.append(f"ALTER TABLE {schema}.{old.lower()} RENAME TO {new.lower()};")
+        out.append(f"--rollback ALTER TABLE {schema}.{new.lower()} RENAME TO {old.lower()};")
+    elif dbms == "mysql":
+        out.append(f"RENAME TABLE {old} TO {new};")
+        out.append(f"--rollback RENAME TABLE {new} TO {old};")
+    elif dbms == "mssql":
+        out.append(f"EXEC sp_rename '{old}', '{new}';")
+        out.append(f"--rollback EXEC sp_rename '{new}', '{old}';")
+    else:  # oracle, h2
+        out.append(f"ALTER TABLE {old} RENAME TO {new};")
+        out.append(f"--rollback ALTER TABLE {new} RENAME TO {old};")
+    out.append("")
+    return out
+
 # Optional PostgreSQL-only changesets that depend on an extension the operator may or may not have enabled, applied
 # last and written to the PostgreSQL changelog only (no other dialect has them, so the H2 changeset count in
 # SangamSchema is unaffected): (changeset id, comment, extension name, statement, rollback).
@@ -1778,8 +1862,12 @@ def render(dbms):
         backfill = "" if dbms == "oracle" else f"UPDATE {table} SET {column} = '' WHERE {column} IS NULL; "
         out.append("--rollback " + backfill + restore)
         out.append("")
+    if dbms == "postgresql":  # decision 388: before the SHARED_TENANT changesets, which never completed there
+        for cs_id, comment, old, new in RENAMES:
+            out.extend(rename_changeset(dbms, cs_id, comment, old, new))
     for n, (table, include_null) in enumerate(SHARED_TENANT, start=SHARED_TENANT_FIRST_ID):
-        out.extend(shared_tenant_changeset(dbms, f"0036-{n:02d}", table, include_null))
+        out.extend(shared_tenant_changeset(dbms, f"0036-{n:02d}", table, include_null,
+                                           renamed(table) if dbms == "postgresql" else table))
     for cs_id, comment, table, column, old, new in WIDEN:
         out.append(f"--changeset sangam:{cs_id}-{table.lower()}-{column.lower()}-widen dbms:{dbms_tag(dbms)}")
         out.append(f"--comment: {comment}")
@@ -1793,6 +1881,9 @@ def render(dbms):
         out.append(forward)
         out.append("--rollback " + rollback)
         out.append("")
+    if dbms != "postgresql":  # decision 388: after every changeset applied under the catalogued name
+        for cs_id, comment, old, new in RENAMES:
+            out.extend(rename_changeset(dbms, cs_id, comment, old, new))
     if dbms == "postgresql":
         for cs_id, comment, extension, statement, rollback in PG_EXTENSION_OPTIONAL:
             out.append(f"--changeset sangam:{cs_id}-{extension}-optional dbms:{dbms}")
@@ -1882,8 +1973,10 @@ def table_meta(table):
     raise SystemExit(f"SHARED_TENANT: {table} is not in TABLES")
 
 
-def shared_tenant_changeset(dbms, cs_id, table, include_null):
-    """SL-86: '' (and NULL) tenant_id -> '-' after a collision preflight over every unique key holding tenant_id."""
+def shared_tenant_changeset(dbms, cs_id, table, include_null, name):
+    """SL-86: '' (and NULL) tenant_id -> '-' after a collision preflight over every unique key holding tenant_id.
+    table is the catalogued name (its keys); name is what the SQL calls the table at this point of the changelog
+    (decision 388: on PostgreSQL the RENAMES precede these changesets). The changeset id keeps the catalogued name."""
     cols, pk, uniques = table_meta(table)
     nullable = "NOT NULL" not in (cols["tenant_id"][2] or "")
     if nullable != include_null:
@@ -1898,23 +1991,23 @@ def shared_tenant_changeset(dbms, cs_id, table, include_null):
         rest = ", ".join(others)
         # a collision is the same non-null rest of the key under both '' and '-' (NULL key parts never collide)
         not_null = "".join(f" AND {k} IS NOT NULL" for k in others)
-        checks.append(f"(SELECT COUNT(*) FROM (SELECT {rest} FROM {table} WHERE tenant_id IN ('-', ''){not_null} "
+        checks.append(f"(SELECT COUNT(*) FROM (SELECT {rest} FROM {name} WHERE tenant_id IN ('-', ''){not_null} "
                       f"GROUP BY {rest} HAVING COUNT(DISTINCT tenant_id) > 1) k)")
     if checks and include_null:
         # the check compares '' and '-' only; a NULL tenant in a unique key would need its own comparison
         raise SystemExit(f"SHARED_TENANT: {table} has a nullable tenant_id inside a unique key; extend the preflight")
     out = [f"--changeset sangam:{cs_id}-{table.lower()}-shared-tenant dbms:{dbms_tag(dbms)}",
-           f"--comment: SL-86 shared rows of {table}: tenant_id '' becomes the reserved shared key '-'"]
+           f"--comment: SL-86 shared rows of {name}: tenant_id '' becomes the reserved shared key '-'"]
     if checks:
         out.append("--preconditions onFail:HALT onError:HALT")
         out.append("--precondition-sql-check expectedResult:0 SELECT " + " + ".join(checks)
                    + (" FROM DUAL" if dbms == "oracle" else ""))
-    out.append(f"UPDATE {table} SET tenant_id = '-' WHERE {old};")
+    out.append(f"UPDATE {name} SET tenant_id = '-' WHERE {old};")
     if dbms == "oracle":
-        out.append("--rollback " + (f"UPDATE {table} SET tenant_id = NULL WHERE tenant_id = '-';" if include_null
+        out.append("--rollback " + (f"UPDATE {name} SET tenant_id = NULL WHERE tenant_id = '-';" if include_null
                                     else "SELECT 1 FROM DUAL;"))
     else:
-        out.append(f"--rollback UPDATE {table} SET tenant_id = '' WHERE tenant_id = '-';")
+        out.append(f"--rollback UPDATE {name} SET tenant_id = '' WHERE tenant_id = '-';")
     out.append("")
     return out
 
@@ -2004,7 +2097,8 @@ def ts_protected(cols):
 def timestamp_inventory():
     rows = []
     columns = {}
-    for cs_id, comment, table, cols, pk, indexes in TABLES:
+    for cs_id, comment, catalogued, cols, pk, indexes in TABLES:
+        table = renamed(catalogued)  # decision 388: the inventory names the table the code uses
         columns[table] = list(cols)
         for c in cols:
             rows.append((table, c, cs_id))
@@ -2031,6 +2125,7 @@ def timestamp_inventory():
 
 
 def main():
+    check_pg_catalog_names()
     base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "main", "resources", "db", "changelog")
     for dbms in DIALECTS:
         d = os.path.join(base, dbms)
@@ -2042,7 +2137,7 @@ def main():
     os.makedirs(os.path.join(base, "oracle-vector"), exist_ok=True)
     with open(os.path.join(base, "oracle-vector", "oracle.sql"), "w", encoding="utf-8", newline="\n") as f:
         f.write(render_oracle_vector())
-    print(f"{len(TABLES)} tables + {len(ALTERS)} alter + {len(DATA)} data + {len(NULLABLE)} nullable + {len(SHARED_TENANT)} shared-tenant + {len(WIDEN)} widen + {len(NULLABLE_UNIQUE)} nullable-unique changesets x {len(DIALECTS)} dialects, + {len(PG_EXTENSION_OPTIONAL)} PostgreSQL-only optional, + {len(ORACLE_VECTOR_OPTIONAL)} Oracle context-only, written under "
+    print(f"{len(TABLES)} tables + {len(ALTERS)} alter + {len(DATA)} data + {len(NULLABLE)} nullable + {len(SHARED_TENANT)} shared-tenant + {len(WIDEN)} widen + {len(NULLABLE_UNIQUE)} nullable-unique + {len(RENAMES)} rename changesets x {len(DIALECTS)} dialects, + {len(PG_EXTENSION_OPTIONAL)} PostgreSQL-only optional, + {len(ORACLE_VECTOR_OPTIONAL)} Oracle context-only, written under "
           f"{os.path.normpath(base)}")
 
 

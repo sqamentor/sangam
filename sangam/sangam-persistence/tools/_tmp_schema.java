@@ -23,7 +23,7 @@ public final class ProgrammeSchema {
     private static final String[] TABLES = {
             // versioned, hash-pinned tenant configuration (the whole JSON); indicators and returns are also materialised below
             """
-            CREATE TABLE PG_CONFIG (tenant_id {str64} NOT NULL, version {int} NOT NULL, config_json {text} NOT NULL, content_hash {str64} NOT NULL,
+            CREATE TABLE PG_PROGRAMME_CONFIG (tenant_id {str64} NOT NULL, version {int} NOT NULL, config_json {text} NOT NULL, content_hash {str64} NOT NULL,
               current_flag {small} NOT NULL, defined_by {str}, defined_at {ts} NOT NULL, PRIMARY KEY (tenant_id, version))""",
             // programme / scheme / component / project hierarchy; kind is data from the configuration
             """
