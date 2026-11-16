@@ -113,6 +113,30 @@ public final class PolicyCompiler {
         return new SqlPredicate(sql.toString(), params);
     }
 
+    /**
+     * The list predicate of the system identity: every row of its own tenant in the type's set (the base filter), and
+     * none for an explicit-only permission. It is the list form of the system rule of
+     * {@link AuthorizationService#allow}, so the list path and the object check decide the same rows; grant rows are
+     * not read (the system principal holds none).
+     */
+    public SqlPredicate tenantScope(SecurityIdentity system, String resourceType, Permission permission, String alias) {
+        if (!system.system()) {
+            throw new IllegalArgumentException("the tenant scope is the system identity's predicate only");
+        }
+        ResourceDescriptor d = registry.get(resourceType);
+        if (!d.hasTable()) {
+            throw new IllegalArgumentException(resourceType + " is a virtual resource type; use allow()");
+        }
+        if (permission.explicitOnly()) {
+            return SqlPredicate.alwaysFalse();
+        }
+        StringBuilder sql = new StringBuilder(alias).append('.').append(d.tenantColumn()).append(" = ?");
+        if (d.baseFilter() != null) {
+            sql.append(" AND (").append(d.baseFilter().replace("r.", alias + ".")).append(")");
+        }
+        return new SqlPredicate(sql.toString(), List.of(system.tenantId()));
+    }
+
     // ------------------------------------------------------------------ object check
 
     /** Object check by id, through the same predicate (table-backed) or the grant rows (virtual types). */
