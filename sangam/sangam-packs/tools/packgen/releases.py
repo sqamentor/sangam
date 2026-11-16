@@ -238,7 +238,10 @@ SHIPS['gov.consultancy'] = ('1.0.1', '1.0.2')
 SHIPS['gov.court-case'] = ('1.0.1', '1.0.2')
 SHIPS['gov.grievance'] = ('1.0.1', '1.0.2')
 SHIPS['gov.ifms.audit-para-settlement'] = ('1.0.1', '1.0.2')
-SHIPS['gov.ifms.bill'] = ('1.0.1', '1.0.2')
+# R7UI-F7-2 (decision 400 (2), lane R7-ui): a type or classification check without a result (profile binding missing)
+# holds the case for a person instead of an EL incident at the validity gateway. 1.0.2 already carried other content
+# and may be deployed in a dev environment, so the new content ships as 1.0.3 (decision 390 (4)).
+SHIPS['gov.ifms.bill'] = ('1.0.1', '1.0.3')
 SHIPS['gov.ifms.budget-formulation'] = ('1.0.1', '1.0.2')
 SHIPS['gov.ifms.monthly-accounts'] = ('1.0.1', '1.0.2')
 SHIPS['gov.ifms.reappropriation'] = ('1.0.1', '1.0.2')

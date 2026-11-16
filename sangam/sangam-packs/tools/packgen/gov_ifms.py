@@ -13,7 +13,7 @@ Requirement ids: IFC-nnn (spike/results/IFMS-CENTRAL-REQUIREMENTS.md), IFS-nnn /
 from lib import C, q
 from packs import Pack
 from common import core, outcome, end_ok, rejection, reject_with, withdraw, availability_query, availability_conditions, \
-    checked_query, check_conditions
+    checked_query, check_conditions, unconfirmed_hold
 import forms
 from money import M, major  # noqa: F401  (amounts inside FEEL expressions, minor units)
 from sector import powers
@@ -333,25 +333,34 @@ def bill():
                             'payee,amount,claimPeriod', 'dup', ['dupDuplicate'])
     pe, payee = checked_query(s, 'bl_payee', 'Payee golden record (party registry)', 'registry.party', 'payee.resolve',
                               'partyId,payee,payeeAccount,ifsc', 'payee', ['payeeMultiple'])
-    s.seq(st, d, bind, typ, cls, chk, de)
+    # R7UI-F7-2 (decision 400 (2)): the type and classification results are cleared before the profile is bound, so a
+    # check that could not run (BINDING_UNRESOLVABLE when the tenant's profile does not bind the bill type: FAILED with no
+    # result) is told apart from an answer; an invalid answer keeps its result (valid=false, failedWhenInvalid)
+    vclr = s.setv('bl_checkClear', 'Clear the previous check results', values='docValid=null;clsValid=null')
+    s.seq(st, d, vclr, bind, typ, cls, chk, de)
     s.seq(dup, pe)
     vg = s.xgw('bl_validGw', 'Valid?', policy='priority')  # ADR-D-25: conditions can both be true; explicit precedence
     s.flow(payee, vg)
-    s.flow(vg, reject_with(p, s, 'bl_rjInvalid', 'BILL_INVALID'), '!docValid || !clsValid', 'invalid (findings cite the rule)', priority=1)
+    # SL-115: a type or classification check without a result holds the case for a person (the profile administrator
+    # binds the bill type in the tenant's profile, the scrutiny seat confirms), then the checks run again from the clear
+    s.flow(vg, unconfirmed_hold(p, s, 'bl_bindingHold', 'Profile binding missing: bind the bill type in the profile, '
+                                'then check again | प्रोफ़ाइल बाइंडिंग नहीं मिली', '${scrutinySeat}', vclr),
+           'docValid == null || clsValid == null', 'profile binding missing', priority=1)
+    s.flow(vg, reject_with(p, s, 'bl_rjInvalid', 'BILL_INVALID'), '!docValid || !clsValid', 'invalid (findings cite the rule)', priority=2)
     dup_unconfirmed, dup_found = check_conditions([('dup', ['dupDuplicate'])], 'dupDuplicate')
     payee_unconfirmed, payee_multiple = check_conditions([('payee', ['payeeMultiple'])], 'payeeMultiple')
     s.flow(vg, reject_with(p, s, 'bl_rjDupCheck', 'DUPLICATE_CHECK_NOT_CONFIRMED'), dup_unconfirmed,
-           'duplicate check not confirmed', priority=2)
-    s.flow(vg, reject_with(p, s, 'bl_rjDup', 'DUPLICATE_CLAIM'), dup_found, 'duplicate', priority=3)
+           'duplicate check not confirmed', priority=3)
+    s.flow(vg, reject_with(p, s, 'bl_rjDup', 'DUPLICATE_CLAIM'), dup_found, 'duplicate', priority=4)
     s.flow(vg, reject_with(p, s, 'bl_rjPayeeCheck', 'PAYEE_CHECK_NOT_CONFIRMED'), payee_unconfirmed,
-           'payee check not confirmed', priority=4)
+           'payee check not confirmed', priority=5)
     # SL-113: the funds check fails closed: no default stands in for it (availability_query clears the result first)
     fe, fa = availability_query(s, 'bl_funds', 'Funds at the control dimension', 'ledger.available', 'available',
                                 'ledgerId,headOfAccount,ddoCode')
     pr = s.user('bl_payeeReview', 'Confirm payee: account held by several parties | आदाता की पुष्टि', 'PAO-1',
                 form='ifms-bill/payee-review', decision=('payeeDecision', ['approve', 'reject']),
                 fields=['payee', 'payeeAccount', 'remarks*'], sod=True)
-    s.flow(vg, pr, payee_multiple, 'several beneficiaries on the account', priority=5)
+    s.flow(vg, pr, payee_multiple, 'several beneficiaries on the account', priority=6)
     pg = s.xgw('bl_payeeGw')
     s.flow(pr, pg)
     s.flow(pg, fe, "payeeDecision == 'approve'", 'confirmed')
