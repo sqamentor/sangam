@@ -24,6 +24,13 @@ import org.sangam.rest.port.TenantMigrationPort;
  * {@code change-tenant} link). A repair is accepted only for an instance the inventory lists at that moment and only
  * to a tenant other than its current engine tenant; it is audited as {@value #REPAIRED} with the evidence reference,
  * reason and actor, on the new instance's chain and the old one's.
+ *
+ * <p><b>Audit inside the cut-over.</b> Both audit events are written inside the cut-over transaction
+ * ({@link ChangeTenantService#moveInstance(String, String, String, ChangeTenantService.ProductRowRewriter)}), so a
+ * repair and its record commit together: when an event cannot be written the cut-over rolls back (the old instance
+ * keeps running, no new instance or link remains) and the call fails closed with the audit's own problem, or
+ * {@code 503 AUDIT_UNAVAILABLE} for any other failure. On the server the engine command joins the Spring transaction
+ * on the same connection (see {@code EngineConfigurationCustomizer}), which the audit chain's {@code TxSupport} joins.
  */
 public final class TenantMigrationBridge implements TenantMigrationPort {
 
@@ -62,25 +69,54 @@ public final class TenantMigrationBridge implements TenantMigrationPort {
         }
         String moved;
         try {
-            moved = changeTenant.moveInstance(processInstanceId, target, ctx.principalId());
+            moved = changeTenant.moveInstance(processInstanceId, target, ctx.principalId(),
+                    (c, oldId, newId, fromTenant, toTenant) -> auditInCutOver(ctx, entry, request, from, oldId, newId));
+        } catch (AuditFailure e) {
+            throw e.problem;
         } catch (ProcessEngineException | IllegalArgumentException e) {
             throw ApiProblem.unprocessable("REPAIR_REFUSED", "The cut-over was refused: " + e.getMessage());
         }
+        return new TenantRepairResult(processInstanceId, moved, from, target, entry.finding().code(),
+                request.evidenceRef());
+    }
+
+    /** Runs inside the cut-over transaction: any failure here rolls the move back. */
+    private void auditInCutOver(RequestContext ctx, TenantFallbackInventory.Entry entry, TenantRepairRequest request,
+                                String from, String oldId, String newId) {
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("processInstanceId", processInstanceId);
-        payload.put("newProcessInstanceId", moved);
+        payload.put("processInstanceId", oldId);
+        payload.put("newProcessInstanceId", newId);
         payload.put("fromTenant", from);
-        payload.put("targetTenant", target);
+        payload.put("targetTenant", request.targetTenant());
         payload.put("definitionKey", entry.definitionKey());
         payload.put("definitionTenant", entry.definitionTenant());
         payload.put("finding", entry.finding().code());
         payload.put("evidenceRef", request.evidenceRef());
         payload.put("reason", request.reason());
         payload.put("actor", ctx.actor());
-        audit.record(ctx, moved, REPAIRED, payload);
-        audit.record(ctx, processInstanceId, REPAIRED, payload);
-        return new TenantRepairResult(processInstanceId, moved, from, target, entry.finding().code(),
-                request.evidenceRef());
+        try {
+            audit.record(ctx, newId, REPAIRED, payload);
+            audit.record(ctx, oldId, REPAIRED, payload);
+        } catch (ApiProblem p) {
+            throw new AuditFailure(p);
+        } catch (RuntimeException e) {
+            throw new AuditFailure(ApiProblem.unavailable(AUDIT_UNAVAILABLE, "The repair could not be audited, so it "
+                    + "was rolled back and the instance was not moved", 30));
+        }
+    }
+
+    /** Problem code of a repair rolled back because its audit event could not be written. */
+    public static final String AUDIT_UNAVAILABLE = "AUDIT_UNAVAILABLE";
+
+    /** Carries an audit failure out of the cut-over (it rolls the cut-over back) to the caller as its problem. */
+    private static final class AuditFailure extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+        private final transient ApiProblem problem;
+
+        AuditFailure(ApiProblem problem) {
+            super(problem.getMessage(), problem, false, false);
+            this.problem = problem;
+        }
     }
 
     private List<TenantFallbackInventory.Entry> scan() {

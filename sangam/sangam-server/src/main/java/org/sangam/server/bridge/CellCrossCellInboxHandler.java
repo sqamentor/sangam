@@ -21,7 +21,8 @@ import org.sangam.core.engine.DocumentSlotNames;
  */
 public final class CellCrossCellInboxHandler implements InboxHandler {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
+    // decision 381(4): fractions of the stored payload are read exactly; the variables go through TypedVariables
+    private static final ObjectMapper JSON = org.sangam.rest.support.ExactJson.mapper();
 
     private final RuntimeService runtime;
 
@@ -45,7 +46,8 @@ public final class CellCrossCellInboxHandler implements InboxHandler {
         }
         Map<String, Object> vars = new LinkedHashMap<>();
         if (data.get("variables") instanceof Map<?, ?> v) {
-            ((Map<String, Object>) v).forEach(vars::put);
+            // R33 typed JSON as the sending cell's API wrote it; a binary float is refused by name (DECIMAL_FROM_FLOAT)
+            vars.putAll(org.sangam.rest.support.TypedVariables.fromJson((Map<String, Object>) v));
         }
         vars.put("sangamXcellSource", m.source());
         vars.put("sangamXcellOperationId", data.get("operationId") == null ? m.messageId() : data.get("operationId").toString());

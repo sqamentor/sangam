@@ -6,7 +6,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,7 +28,6 @@ import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -111,11 +109,7 @@ public class ExtensionCatalogueController {
         return Lists.created("/api/v1/packages/" + p.id(), p.id(), p);
     }
 
-    @ExceptionHandler(ExtensionCatalogue.CatalogueException.class)
-    public ResponseEntity<Map<String, Object>> refused(ExtensionCatalogue.CatalogueException e, jakarta.servlet.http.HttpServletRequest req) {
-        return org.sangam.rest.modules.config.ModuleProblems.respond(problem(e), req);
-    }
-
+    /** The problem of a catalogue refusal, for {@link CatalogueProblemAdvice} (both catalogue controllers). */
     static ApiProblem problem(ExtensionCatalogue.CatalogueException e) {
         return switch (e.code()) {
             case "CATALOGUE_ENTRY_NOT_FOUND" -> ApiProblem.notFound("catalogue entry", e.getMessage().substring(e.code().length()).replaceFirst("^: ", ""));

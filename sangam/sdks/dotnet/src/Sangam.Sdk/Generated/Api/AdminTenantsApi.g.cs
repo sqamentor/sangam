@@ -84,7 +84,7 @@ public sealed class AdminTenantsApi
 
     /// <summary>
     /// Activate or resume a tenant
-    /// A suspended tenant is resumed (platform administrator). Any other tenant is activated by its own administrator once every required item has evidence (409 ACTIVATION_BLOCKED names the missing items); naming another tenant is 409 TENANT_ACTIVATION_BY_OWN_ADMIN. TENANT_ACTIVATED. The optional reason is not stored by the activation.
+    /// A suspended tenant is resumed (platform administrator). Any other tenant is activated by its own administrator once every required item has evidence (409 ACTIVATION_BLOCKED names the missing items); naming another tenant is 409 TENANT_ACTIVATION_BY_OWN_ADMIN. TENANT_ACTIVATED, with the reason when one is given.
     /// POST /admin/tenants/{id}/activate (operationId activateTenant); permission tenant.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.Tenant?> ActivateTenantAsync(string id, M.ReasonRequest? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

@@ -25,6 +25,13 @@ import java.util.Map;
  *
  * <p>SL-92: modules are registered explicitly (java.time, Optional), never discovered from the class path; discovery
  * also registers the FEEL engine's jackson-module-scala, which turns untyped nested JSON into Scala collections.
+ *
+ * <p>Owner decisions 138 and 381(4): a JSON number with a fraction is read as the {@link java.math.BigDecimal} of its
+ * text ({@code USE_BIG_DECIMAL_FOR_FLOATS}), never as a binary {@code Double}; {@link #plain} answers the same. What
+ * the ports read back (a stored {@code PORT_BATCH} configuration, a stored event or inbox payload) reaches engine
+ * variables, where a Double is refused by name ({@code DECIMAL_FROM_FLOAT}). A row stored before this rule carries the
+ * fraction as JSON text that Jackson wrote from a Double, which is that Double's shortest round-trip decimal, so it is
+ * read back exactly as the decimal it stood for, with no rewrite of stored data.
  */
 public final class Json {
 
@@ -44,6 +51,7 @@ public final class Json {
                     .build())
             .build())
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true)
             .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
             .registerModule(new JavaTimeModule())
             .registerModule(new Jdk8Module());
@@ -113,7 +121,7 @@ public final class Json {
         return n.isMissingNode() ? null : n;
     }
 
-    /** Converts a JSON value to a plain Java value (String, Long/Double, Boolean, Map, List, or null). */
+    /** Converts a JSON value to a plain Java value (String, Long, BigDecimal, Boolean, Map, List, or null). */
     public static Object plain(JsonNode n) {
         if (n == null || n.isNull()) {
             return null;
@@ -125,7 +133,7 @@ public final class Json {
             return n.asLong();
         }
         if (n.isNumber()) {
-            return n.asDouble();
+            return n.decimalValue(); // decision 381(4): the exact decimal of the text, never a binary float
         }
         if (n.isBoolean()) {
             return n.asBoolean();

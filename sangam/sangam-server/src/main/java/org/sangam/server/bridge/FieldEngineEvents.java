@@ -35,7 +35,8 @@ public final class FieldEngineEvents {
     public static final String DESTINATION = "field-events";
 
     private static final Logger LOG = LoggerFactory.getLogger(FieldEngineEvents.class);
-    private static final ObjectMapper JSON = new ObjectMapper();
+    // decision 381(4): fractions of the event payload are read exactly; the variables go through TypedVariables
+    private static final ObjectMapper JSON = org.sangam.rest.support.ExactJson.mapper();
 
     private final OutboxWriter writer;
     private final Outbox outbox;
@@ -98,7 +99,7 @@ public final class FieldEngineEvents {
             }
             try {
                 runtime.createMessageCorrelation(type).tenantId(tenant).processInstanceBusinessKey(businessKey)
-                        .setVariables(vars).correlateAll();
+                        .setVariables(org.sangam.rest.support.TypedVariables.fromJson(vars)).correlateAll();
             } catch (MismatchingMessageCorrelationException e) {
                 LOG.debug("no process waits for {} on {}: {}", type, businessKey, e.getMessage());
             }

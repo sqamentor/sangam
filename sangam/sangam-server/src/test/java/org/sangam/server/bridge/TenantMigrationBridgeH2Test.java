@@ -58,6 +58,8 @@ class TenantMigrationBridgeH2Test {
     private ProcessEngine engine;
     private TenantMigrationBridge bridge;
     private final List<Audited> audited = new ArrayList<>();
+    /** When set, the audit's second record (the old instance's chain) throws it. */
+    private RuntimeException failSecondRecord;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -88,6 +90,9 @@ class TenantMigrationBridgeH2Test {
                     if ("record".equals(m.getName())) {
                         @SuppressWarnings("unchecked")
                         Map<String, ?> payload = (Map<String, ?>) args[3];
+                        if (failSecondRecord != null && audited.size() == 1) {
+                            throw failSecondRecord;
+                        }
                         audited.add(new Audited((String) args[1], (String) args[2], payload));
                         return "e-" + audited.size();
                     }
@@ -154,6 +159,46 @@ class TenantMigrationBridgeH2Test {
         assertEquals("owner confirmed by registry", a.payload().get("reason"));
         assertEquals("TENANT_CONTEXT_MISSING", a.payload().get("finding"));
         assertEquals(List.of(), bridge.inventory(PLATFORM), "nothing left to repair");
+    }
+
+    /**
+     * Follow-up to decision 381(3): the audit events are written inside the cut-over transaction. When the second one
+     * cannot be written, the move rolls back: the old instance keeps running at its task, nothing runs in the target
+     * tenant, the inventory still lists the instance, and the call fails closed with the audit's problem (or 503
+     * AUDIT_UNAVAILABLE for any other failure). Before the fix the move had committed when the audit failed.
+     */
+    @Test
+    void aRepairWhoseAuditFailsIsRolledBackAndFailsClosed() throws SQLException {
+        ProcessInstance legacy = start("GR-4", Map.of("tenantId", "b"));
+        failSecondRecord = new IllegalStateException("audit chain unavailable");
+
+        ApiProblem p = assertThrows(ApiProblem.class, () -> bridge.repair(PLATFORM, legacy.getId(), to("b")));
+        assertEquals(503, p.status());
+        assertEquals(TenantMigrationBridge.AUDIT_UNAVAILABLE, p.code());
+        assertNotMoved(legacy);
+
+        failSecondRecord = ApiProblem.unavailable("AUDIT_CHAIN_LOCKED", "chain busy", 5);
+        ApiProblem own = assertThrows(ApiProblem.class, () -> bridge.repair(PLATFORM, legacy.getId(), to("b")));
+        assertEquals("AUDIT_CHAIN_LOCKED", own.code(), "the audit's own problem is passed on");
+        assertNotMoved(legacy);
+
+        failSecondRecord = null;
+        audited.clear();
+        TenantMigrationPort.TenantRepairResult r = bridge.repair(PLATFORM, legacy.getId(), to("b"));
+        assertEquals(List.of(r.newProcessInstanceId(), legacy.getId()), audited.stream().map(Audited::chain).toList());
+        assertEquals(0, engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(legacy.getId()).count());
+    }
+
+    private void assertNotMoved(ProcessInstance legacy) throws SQLException {
+        assertEquals(1, engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(legacy.getId()).count(),
+                "the old instance keeps running");
+        assertEquals("review", engine.getTaskService().createTaskQuery().processInstanceId(legacy.getId()).singleResult()
+                .getTaskDefinitionKey());
+        assertEquals(0, engine.getRuntimeService().createProcessInstanceQuery().tenantIdIn("b").count(),
+                "no instance remains in the target tenant");
+        assertEquals(List.of(legacy.getId()), bridge.inventory(PLATFORM).stream()
+                .map(TenantMigrationPort.TenantFallbackInstance::processInstanceId).toList(), "still listed for repair");
+        assertEquals(1, engine.getRuntimeService().createProcessInstanceQuery().count(), "no second instance remains");
     }
 
     @Test

@@ -106,7 +106,9 @@ public final class Remittance835Router {
     public static InboxHandler handler(ProcessEngine engine, UniqueStartGuard uniqueStart) {
         return (Connection c, InboxHandler.Envelope m) -> {
             RuntimeService rs = engine.getRuntimeService();
-            Map<String, Object> vars = new LinkedHashMap<>(Json.readMap(m.dataJson()));
+            // decision 381(4): the stored payload (exact fractions) reaches the engine through TypedVariables
+            Map<String, Object> vars = new LinkedHashMap<>(org.sangam.rest.support.TypedVariables.fromJson(
+                    Json.readMap(m.dataJson())));
             vars.put("sangamInboxSource", m.source());
             vars.put("sangamInboxMessageId", m.messageId());
             vars.put("sangamEventType", m.eventType());
