@@ -26,6 +26,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.sangam.integration.connector.SecretResolver;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
@@ -43,8 +46,9 @@ import org.springframework.core.env.Environment;
  * key of an X.509 public key), so the same bytes as a raw key of another purpose are caught too.
  *
  * <p>A reference that does not resolve is compared by reference only; the setting's own wiring refuses it when it
- * uses the key. The environment part of decision 37 (a key of its own per environment) is not checked here: one
- * server sees one environment's settings.
+ * uses the key. The environment part of decision 37 (a key of its own per environment, owner decision 385 (3)) is
+ * {@link KeyEnvironmentSeparation}: it compares the one-way {@link Entry#fingerprints} of the keys this environment
+ * holds with the lists other environments publish.
  */
 public final class KeyPurposeSeparation {
 
@@ -68,43 +72,85 @@ public final class KeyPurposeSeparation {
     }
 
     /**
+     * Whose key a setting holds (owner decision 385 (3)): a secret of this environment, a public key of this environment,
+     * or a trust list of public keys of others (publishers, signers). Only the environment's own keys have a
+     * fingerprint: a trusted key is someone else's and may be trusted by several environments.
+     */
+    enum Role {
+        /** This environment's secret (a private key, a symmetric key, a pepper): HMAC-SHA256 fingerprint. */
+        SECRET,
+        /** This environment's public key: SHA-256 fingerprint. */
+        PUBLIC,
+        /** Public keys this environment trusts: no fingerprint. */
+        TRUST
+    }
+
+    /**
      * One key setting of a purpose; {@code fallback} is the value the server uses when the setting is unset (a
      * placeholder expression resolved against the environment), or null.
      */
-    record Setting(String purpose, String property, Source source, String fallback) {
-        Setting(String purpose, String property, Source source) {
-            this(purpose, property, source, null);
+    record Setting(String purpose, String property, Source source, Role role, String fallback) {
+        Setting(String purpose, String property, Source source, Role role) {
+            this(purpose, property, source, role, null);
         }
     }
 
-    /** The key settings the server reads, by purpose (owner decision 37). */
+    /** The key settings the server reads, by purpose (owner decision 37) and role (owner decision 385 (3)). */
     static final List<Setting> SETTINGS = List.of(
-            new Setting("key-encryption key", "sangam.security.kek.keys", Source.LITERAL_MAP),
-            new Setting("key-encryption key", "sangam.security.kek.pkcs12", Source.PKCS12),
-            new Setting("registry signer", "sangam.registry.signer.private-key", Source.LITERAL),
-            new Setting("registry signer", "sangam.registry.signer.public-key", Source.LITERAL),
-            new Setting("registry identifier vault pepper", "sangam.registry.vault.hmac-pepper", Source.LITERAL),
-            new Setting("national-id vault pepper", "sangam.compliance.national-id-vault.hmac-pepper", Source.LITERAL),
-            new Setting("compliance principal key", "sangam.compliance.principal-key-ref", Source.REFERENCE),
-            new Setting("audit checkpoint signing", "sangam.audit.checkpoint.private-key-ref", Source.REFERENCE),
-            new Setting("audit checkpoint signing", "sangam.audit.checkpoint.public-key-ref", Source.REFERENCE),
+            new Setting("key-encryption key", "sangam.security.kek.keys", Source.LITERAL_MAP, Role.SECRET),
+            new Setting("key-encryption key", "sangam.security.kek.pkcs12", Source.PKCS12, Role.SECRET),
+            new Setting("registry signer", "sangam.registry.signer.private-key", Source.LITERAL, Role.SECRET),
+            new Setting("registry signer", "sangam.registry.signer.public-key", Source.LITERAL, Role.PUBLIC),
+            new Setting("registry identifier vault pepper", "sangam.registry.vault.hmac-pepper", Source.LITERAL, Role.SECRET),
+            new Setting("national-id vault pepper", "sangam.compliance.national-id-vault.hmac-pepper", Source.LITERAL, Role.SECRET),
+            new Setting("compliance principal key", "sangam.compliance.principal-key-ref", Source.REFERENCE, Role.SECRET),
+            new Setting("audit checkpoint signing", "sangam.audit.checkpoint.private-key-ref", Source.REFERENCE, Role.SECRET),
+            new Setting("audit checkpoint signing", "sangam.audit.checkpoint.public-key-ref", Source.REFERENCE, Role.PUBLIC),
             new Setting("audit checkpoint signing", "sangam.audit.checkpoint.trusted-public-key-refs",
-                    Source.REFERENCE_LIST),
-            new Setting("package signing", "sangam.packages.signing.private-key-ref", Source.REFERENCE),
-            new Setting("package signing", "sangam.packages.signing.public-key-ref", Source.REFERENCE),
-            new Setting("package signing", "sangam.packages.signing.trusted-public-key-refs", Source.REFERENCE_LIST),
-            new Setting("onboarding bundle signing", "sangam.onboarding.bundle.private-key", Source.LITERAL),
-            new Setting("onboarding bundle signing", "sangam.onboarding.bundle.trusted-keys", Source.LITERAL_MAP),
-            new Setting("extension catalogue trust", "sangam.modeller.catalogue.public-key", Source.LITERAL),
+                    Source.REFERENCE_LIST, Role.TRUST),
+            new Setting("package signing", "sangam.packages.signing.private-key-ref", Source.REFERENCE, Role.SECRET),
+            new Setting("package signing", "sangam.packages.signing.public-key-ref", Source.REFERENCE, Role.PUBLIC),
+            new Setting("package signing", "sangam.packages.signing.trusted-public-key-refs", Source.REFERENCE_LIST, Role.TRUST),
+            new Setting("onboarding bundle signing", "sangam.onboarding.bundle.private-key", Source.LITERAL, Role.SECRET),
+            new Setting("onboarding bundle signing", "sangam.onboarding.bundle.trusted-keys", Source.LITERAL_MAP, Role.TRUST),
+            new Setting("extension catalogue trust", "sangam.modeller.catalogue.public-key", Source.LITERAL, Role.TRUST),
             // PluginWiring: default <sangam.plugins.folder>/trusted-keys
-            new Setting("plugin signing trust", "sangam.plugins.trusted-keys", Source.KEY_DIRECTORY,
+            new Setting("plugin signing trust", "sangam.plugins.trusted-keys", Source.KEY_DIRECTORY, Role.TRUST,
                     "${sangam.plugins.folder:lib-ext/plugins}/trusted-keys"));
 
     /** The DER prefix of an X.509 SubjectPublicKeyInfo of an Ed25519 key; the raw 32-byte key follows it. */
     private static final byte[] ED25519_X509_PREFIX = HexFormat.of().parseHex("302a300506032b6570032100");
 
-    /** One configured key: its purpose, the setting that holds it, its reference (or null) and material digests. */
-    record Entry(String purpose, String setting, String reference, Set<String> material) {
+    /** The fixed HMAC key of a secret's fingerprint (owner decision 385 (3)); a label, not a secret. */
+    static final byte[] FINGERPRINT_LABEL = "sangam:key-fingerprint:v1".getBytes(StandardCharsets.UTF_8);
+
+    /**
+     * One configured key: its purpose, the setting that holds it, its reference (or null), material digests (compared
+     * within this environment, never published) and fingerprints (published to other environments, owner decision 385
+     * (3): SHA-256 of an own public key, HMAC-SHA256 under {@link #FINGERPRINT_LABEL} of an own secret, none for a
+     * trusted key; each over the same forms as the material).
+     */
+    record Entry(String purpose, String setting, String reference, Set<String> material, Set<String> fingerprints) {
+        static Entry of(Setting s, String setting, String reference, byte[] bytes) {
+            Set<String> material = new LinkedHashSet<>();
+            Set<String> fingerprints = new LinkedHashSet<>();
+            for (byte[] f : forms(bytes)) {
+                material.add(digest(f));
+                switch (s.role()) {
+                    case SECRET -> fingerprints.add(hmac(f));
+                    case PUBLIC -> fingerprints.add(digest(f));
+                    case TRUST -> {
+                        // someone else's key: no fingerprint of this environment
+                    }
+                }
+            }
+            return new Entry(s.purpose(), setting, reference, Set.copyOf(material), Set.copyOf(fingerprints));
+        }
+
+        /** A reference that does not resolve here: compared by reference only, no material, no fingerprint. */
+        static Entry unresolved(Setting s, String reference) {
+            return new Entry(s.purpose(), s.property(), reference, Set.of(), Set.of());
+        }
     }
 
     private KeyPurposeSeparation() {
@@ -115,7 +161,11 @@ public final class KeyPurposeSeparation {
      * entries checked.
      */
     public static int check(Environment env, SecretResolver secrets) {
-        List<Entry> entries = entries(env, secrets);
+        return check(entries(env, secrets));
+    }
+
+    /** {@link #check(Environment, SecretResolver)} over entries already read. */
+    static int check(List<Entry> entries) {
         for (int i = 0; i < entries.size(); i++) {
             for (int j = i + 1; j < entries.size(); j++) {
                 Entry a = entries.get(i);
@@ -147,7 +197,7 @@ public final class KeyPurposeSeparation {
                 case LITERAL -> {
                     String v = env.getProperty(s.property());
                     if (notBlank(v)) {
-                        out.add(new Entry(s.purpose(), s.property(), null, material(v)));
+                        out.add(Entry.of(s, s.property(), null, bytes(v)));
                     }
                 }
                 case LITERAL_MAP -> {
@@ -155,22 +205,21 @@ public final class KeyPurposeSeparation {
                             Bindable.mapOf(String.class, String.class)).orElse(Map.of());
                     for (Map.Entry<String, String> e : new TreeMap<>(m).entrySet()) {
                         if (notBlank(e.getValue())) {
-                            out.add(new Entry(s.purpose(), s.property() + "." + e.getKey(), null,
-                                    material(e.getValue())));
+                            out.add(Entry.of(s, s.property() + "." + e.getKey(), null, bytes(e.getValue())));
                         }
                     }
                 }
                 case REFERENCE -> {
                     String v = env.getProperty(s.property());
                     if (notBlank(v)) {
-                        out.add(referenced(s.purpose(), s.property(), v.strip(), secrets));
+                        out.add(referenced(s, v.strip(), secrets));
                     }
                 }
                 case REFERENCE_LIST -> {
                     String v = env.getProperty(s.property(), "");
                     for (String ref : v.split(",")) {
                         if (notBlank(ref)) {
-                            out.add(referenced(s.purpose(), s.property(), ref.strip(), secrets));
+                            out.add(referenced(s, ref.strip(), secrets));
                         }
                     }
                 }
@@ -182,10 +231,10 @@ public final class KeyPurposeSeparation {
     }
 
     /** A setting that should hold a {@code secret://} reference; a literal is compared as material. */
-    private static Entry referenced(String purpose, String setting, String ref, SecretResolver secrets) {
+    private static Entry referenced(Setting s, String ref, SecretResolver secrets) {
         if (!ref.startsWith("secret://")) {
             // the setting's own wiring refuses a literal; compared as material meanwhile
-            return new Entry(purpose, setting, null, material(ref));
+            return Entry.of(s, s.property(), null, bytes(ref));
         }
         Optional<String> value;
         try {
@@ -194,8 +243,9 @@ public final class KeyPurposeSeparation {
             // not resolvable here: compared by reference only, the setting's wiring refuses it when it uses the key
             value = Optional.empty();
         }
-        return new Entry(purpose, setting, ref, value.filter(KeyPurposeSeparation::notBlank)
-                .map(KeyPurposeSeparation::material).orElse(Set.of()));
+        return value.filter(KeyPurposeSeparation::notBlank)
+                .map(v -> Entry.of(s, s.property(), ref, bytes(v)))
+                .orElseGet(() -> Entry.unresolved(s, ref));
     }
 
     /** Every secret key in the PKCS#12 key store of the key-encryption key, as SecurityKeysWiring reads it. */
@@ -217,7 +267,7 @@ public final class KeyPurposeSeparation {
                 Key k = ks.getKey(alias, keyPw.toCharArray());
                 byte[] encoded = k == null ? null : k.getEncoded();
                 if (encoded != null) {
-                    out.add(new Entry(s.purpose(), s.property() + ".path#" + alias, null, material(encoded)));
+                    out.add(Entry.of(s, s.property() + ".path#" + alias, null, encoded));
                 }
             }
         } catch (java.io.IOException | GeneralSecurityException | RuntimeException e) {
@@ -242,7 +292,7 @@ public final class KeyPurposeSeparation {
                 String text = Files.readString(p, StandardCharsets.UTF_8)
                         .replaceAll("-----[A-Z ]+-----", "").replaceAll("\\s", "");
                 if (notBlank(text)) {
-                    out.add(new Entry(s.purpose(), s.property() + "/" + p.getFileName(), null, material(text)));
+                    out.add(Entry.of(s, s.property() + "/" + p.getFileName(), null, bytes(text)));
                 }
             }
         } catch (java.io.IOException | RuntimeException e) {
@@ -252,28 +302,26 @@ public final class KeyPurposeSeparation {
         return out;
     }
 
-    /** Digests of a configured value: base64-decoded when it is base64, else its text. */
-    static Set<String> material(String value) {
+    /** The bytes of a configured value: base64-decoded when it is base64, else its text. */
+    static byte[] bytes(String value) {
         String v = value.strip();
-        byte[] bytes;
         try {
-            bytes = Base64.getDecoder().decode(v);
+            return Base64.getDecoder().decode(v);
         } catch (IllegalArgumentException e) {
-            bytes = v.getBytes(StandardCharsets.UTF_8);
+            return v.getBytes(StandardCharsets.UTF_8);
         }
-        return material(bytes);
     }
 
-    /** The digest of the bytes, plus the digest of the raw key when the bytes are an Ed25519 PKCS#8 or X.509 key. */
-    static Set<String> material(byte[] bytes) {
-        Set<String> out = new LinkedHashSet<>();
-        out.add(digest(bytes));
+    /** The bytes, plus the raw key when the bytes are an Ed25519 PKCS#8 or X.509 key. */
+    static List<byte[]> forms(byte[] bytes) {
+        List<byte[]> out = new ArrayList<>();
+        out.add(bytes);
         if (bytes.length == ED25519_X509_PREFIX.length + 32
                 && Arrays.equals(bytes, 0, ED25519_X509_PREFIX.length, ED25519_X509_PREFIX, 0,
                 ED25519_X509_PREFIX.length)) {
-            out.add(digest(Arrays.copyOfRange(bytes, ED25519_X509_PREFIX.length, bytes.length)));
+            out.add(Arrays.copyOfRange(bytes, ED25519_X509_PREFIX.length, bytes.length));
         } else {
-            ed25519Seed(bytes).ifPresent(seed -> out.add(digest(seed)));
+            ed25519Seed(bytes).ifPresent(out::add);
         }
         return out;
     }
@@ -287,10 +335,21 @@ public final class KeyPurposeSeparation {
         }
     }
 
-    private static String digest(byte[] bytes) {
+    static String digest(byte[] bytes) {
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
         } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /** HMAC-SHA256 of the bytes under {@link #FINGERPRINT_LABEL}: one-way, and not the plain digest of the secret. */
+    static String hmac(byte[] bytes) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(FINGERPRINT_LABEL, "HmacSHA256"));
+            return HexFormat.of().formatHex(mac.doFinal(bytes));
+        } catch (GeneralSecurityException e) {
             throw new IllegalStateException(e);
         }
     }

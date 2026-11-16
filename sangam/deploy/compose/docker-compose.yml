@@ -126,6 +126,15 @@ x-server-common: &server-common
     # server refuses to start. With SANGAM_SECURITY_PRODUCTION=false, unset, consents and one-time codes are refused
     # with PRINCIPAL_KEY_NOT_CONFIGURED. A reference whose secret is missing, empty or short stops the start.
     SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF: ${SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF:-}
+    # Owner decision 385 (3): one key per environment. This environment's name and the list of the other environments'
+    # key fingerprints (a file under ./config/server, mounted at /opt/sangam/config). Required with
+    # SANGAM_SECURITY_PRODUCTION=true (this file's default): without them the server refuses to start
+    # (KEY_ENVIRONMENT_LIST_REQUIRED); a key of another environment is refused in every mode
+    # (KEY_SHARED_ACROSS_ENVIRONMENTS). Set SANGAM_KEYS_FINGERPRINT_EXPORT to a writable path to export this
+    # environment's own list (deploy/README.md section 1).
+    SANGAM_KEYS_ENVIRONMENT: ${SANGAM_KEYS_ENVIRONMENT:-}
+    SANGAM_KEYS_FOREIGN_FINGERPRINTS: ${SANGAM_KEYS_FOREIGN_FINGERPRINTS:-}
+    SANGAM_KEYS_FINGERPRINT_EXPORT: ${SANGAM_KEYS_FINGERPRINT_EXPORT:-}
     SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY: ${SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY:-}
     # In-process simulators of sangam-integration (SimulatorProfile); the sim-* containers are the standalone variant.
     SANGAM_INTEGRATION_SIMULATORS_ENABLED: ${SANGAM_SIMULATORS_ENABLED:-false}
