@@ -51,7 +51,7 @@ final class RouteCorrection {
             throw new ProcessEngineException("instance " + processInstanceId + " has no routing incident");
         }
         if (variables != null && !variables.isEmpty()) {
-            runtimeService.setVariables(processInstanceId, variables);
+            runtimeService.setVariables(processInstanceId, org.sangam.core.engine.DocumentSlotNames.checked(variables));
         }
         List<String> taken = new ArrayList<>();
         for (String executionId : parked) {

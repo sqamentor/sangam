@@ -2,6 +2,7 @@
 package org.sangam.core.engine;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -13,7 +14,9 @@ import java.util.function.Supplier;
  * engine (task completion and return, worker completion, variable set, resubmission, process start and modification,
  * message correlation, signals, inbound messages) passes the names of the variables it writes to {@link #refuse},
  * which throws {@link Refused} ({@value #CODE}) for a declared slot name before anything is written; the REST adapters
- * answer it as {@code 422 DOCUMENT_SLOT_VARIABLE}.
+ * answer it as {@code 422 DOCUMENT_SLOT_VARIABLE}. Decision 387 (1): so does every other module that writes engine
+ * variables whose names it does not fix in code (the engine adapter, the ports services, delegates that take a name
+ * from a connector response, a decision output or a process variable), {@link #checked} on a map.
  *
  * <p>Generic: the names are data. {@code sangam-server} installs the slot names of its pack registry at start
  * ({@link #install}); before that, and in a host that installs nothing, no name is declared. This layer is defence in
@@ -84,6 +87,17 @@ public final class DocumentSlotNames {
         if (!hit.isEmpty()) {
             throw new Refused(hit);
         }
+    }
+
+    /**
+     * Decision 387 (1): {@link #refuse} over the names of {@code variables}, then {@code variables} itself, so a write
+     * path guards the map it passes to the engine in place; null passes.
+     */
+    public static <V> Map<String, V> checked(Map<String, V> variables) {
+        if (variables != null) {
+            refuse(variables.keySet());
+        }
+        return variables;
     }
 
     private static String describe(Set<String> variables) {

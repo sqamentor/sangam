@@ -152,6 +152,7 @@ public class BatchDelegate implements JavaDelegate {
             for (String n : Vars.csv(Vars.field(inherit, ex))) {
                 vars.put(n, ex.getVariable(n));
             }
+            org.sangam.core.engine.DocumentSlotNames.refuse(it.keySet()); // decision 387 (1): item fields are data
             it.forEach((k, v) -> vars.put(k, Vars.engineValue(v)));
             vars.put("batchId", batchId);
             vars.put("batchRound", round);

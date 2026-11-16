@@ -32,7 +32,7 @@ public final class OperatonApprovalPort implements ResourcesPorts.ApprovalPort {
     @Override
     public String startApproval(Connection c, SecurityIdentity actor, String processKey, String subjectType, String subjectId,
                                 String businessKey, Map<String, Object> variables) {
-        Map<String, Object> vars = new LinkedHashMap<>(variables == null ? Map.of() : variables);
+        Map<String, Object> vars = new LinkedHashMap<>(variables == null ? Map.of() : org.sangam.core.engine.DocumentSlotNames.checked(variables));
         vars.put("subjectType", subjectType);
         vars.put("subjectId", subjectId);
         vars.put("tenantId", actor.tenantId());

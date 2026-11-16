@@ -287,7 +287,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
     /** Starts a BPMN process by key; falls back to a CMMN case of that key (spike behaviour). A new root: no L2. */
     @Override
     public String startProcess(String tenantId, String processKey, String businessKey, Map<String, Object> variables) {
-        Map<String, Object> vars = variables == null ? Map.of() : variables;
+        Map<String, Object> vars = variables == null ? Map.of() : org.sangam.core.engine.DocumentSlotNames.checked(variables);
         return command("startProcess", (cc, conn) -> {
             if (!hasProcessDefinition(tenantId, processKey) && hasCaseDefinition(tenantId, processKey)) {
                 return startCaseInCommand(tenantId, processKey, businessKey, vars);
@@ -303,7 +303,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
 
     @Override
     public String startCase(String tenantId, String caseKey, String businessKey, Map<String, Object> variables) {
-        Map<String, Object> vars = variables == null ? Map.of() : variables;
+        Map<String, Object> vars = variables == null ? Map.of() : org.sangam.core.engine.DocumentSlotNames.checked(variables);
         return command("startCase", (cc, conn) -> startCaseInCommand(tenantId, caseKey, businessKey, vars));
     }
 
@@ -367,7 +367,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
                 b.tenantId(tenantId);
             }
             if (variables != null) {
-                b.setVariables(variables);
+                b.setVariables(org.sangam.core.engine.DocumentSlotNames.checked(variables));
             }
             MessageCorrelationResult r = c.capture().correlate(cc, roots.isEmpty(), tenantId, messageName, businessKey,
                     variables, b::correlateWithResult); // decisions 151, 332 and 354
@@ -401,7 +401,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
                 // event-based gateway): deliver to the one waiting execution below the matching scope.
                 String target = waitingBelowScope(messageName, processInstanceId, localVariableName, localVariableValue);
                 if (target != null) {
-                    runtimeService.messageEventReceived(messageName, target, variables);
+                    runtimeService.messageEventReceived(messageName, target, org.sangam.core.engine.DocumentSlotNames.checked(variables));
                     return target;
                 }
             }
@@ -409,7 +409,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
                     .processInstanceId(processInstanceId)
                     .localVariableEquals(localVariableName, localVariableValue);
             if (variables != null) {
-                b.setVariables(variables);
+                b.setVariables(org.sangam.core.engine.DocumentSlotNames.checked(variables));
             }
             MessageCorrelationResult r = b.correlateWithResult();
             return r.getExecution() != null ? r.getExecution().getId() : null;
@@ -512,7 +512,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
     public void completeTask(String taskId, Map<String, Object> variables) {
         command("completeTask", (cc, conn) -> {
             lock(cc, rootOfTask(taskId));
-            taskService.complete(taskId, variables);
+            taskService.complete(taskId, org.sangam.core.engine.DocumentSlotNames.checked(variables));
             return null;
         });
     }
@@ -780,7 +780,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         command("completeExternal", (cc, conn) -> {
             lockRootOfWork(cc, conn, workId);
             SangamLeaseTable.Row row = leases.check(conn, workId, workerId, lockVersion, clock.now().toEpochMilli());
-            c.capture().externalResult(workId, row.attemptNo(), "SUCCESS", null, variables, null, null); // decision 151
+            c.capture().externalResult(workId, row.attemptNo(), "SUCCESS", null, org.sangam.core.engine.DocumentSlotNames.checked(variables), null, null); // decision 151
             externalTaskService.complete(workId, workerId, variables);
             leases.remove(conn, workId);
             expiry.releaseExclusive(conn, row);
@@ -810,7 +810,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         command("bpmnErrorExternal", (cc, conn) -> {
             lockRootOfWork(cc, conn, workId);
             SangamLeaseTable.Row row = leases.check(conn, workId, workerId, lockVersion, clock.now().toEpochMilli());
-            c.capture().externalResult(workId, row.attemptNo(), "BPMN_ERROR", null, variables, "errorCode", errorCode);
+            c.capture().externalResult(workId, row.attemptNo(), "BPMN_ERROR", null, org.sangam.core.engine.DocumentSlotNames.checked(variables), "errorCode", errorCode);
             externalTaskService.handleBpmnError(workId, workerId, errorCode, null, variables);
             leases.remove(conn, workId);
             expiry.releaseExclusive(conn, row);

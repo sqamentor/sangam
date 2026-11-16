@@ -135,7 +135,7 @@ public class MigrationDocumentService {
                 }
             }
             if (!doc.variables().isEmpty()) {
-                engine.getRuntimeService().setVariables(processInstanceId, doc.variables());
+                engine.getRuntimeService().setVariables(processInstanceId, org.sangam.core.engine.DocumentSlotNames.checked(doc.variables()));
             }
             if (doc.postHook() != null) {
                 hook(doc.postHook()).run(engine, processInstanceId, doc);
