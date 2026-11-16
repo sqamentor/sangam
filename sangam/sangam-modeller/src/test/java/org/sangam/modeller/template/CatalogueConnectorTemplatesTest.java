@@ -127,6 +127,7 @@ class CatalogueConnectorTemplatesTest {
         assertThrows(IllegalStateException.class, () -> CatalogueConnectorTemplates.install(store, "t1", "carol", docs, p -> {
             throw new IllegalStateException("audit store down");
         }));
-        assertEquals(0, tx.inTransaction(c -> Jdbc.one(c, "SELECT COUNT(*) FROM MOD_TEMPLATE", rs -> rs.getInt(1)).orElse(-1)));
+        int rows = tx.inTransaction(c -> Jdbc.one(c, "SELECT COUNT(*) FROM MOD_TEMPLATE", rs -> rs.getInt(1)).orElse(-1));
+        assertEquals(0, rows);
     }
 }
