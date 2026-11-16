@@ -81,12 +81,13 @@ import org.sangam.sdk.generated.api.TenantOperationsFlowableMigrationsApi;
 import org.sangam.sdk.generated.api.TenantOperationsRetentionApi;
 import org.sangam.sdk.generated.api.TenantOperationsSecretsApi;
 import org.sangam.sdk.generated.api.TenantOperationsVariablesApi;
+import org.sangam.sdk.generated.api.TenantMigrationApi;
 import org.sangam.sdk.generated.api.TestModeApi;
 import org.sangam.sdk.generated.api.WorkApi;
 import org.sangam.sdk.generated.api.WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1148 operations on 966 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1150 operations on 968 paths,
  * one accessor per API class (a tag, or a sub-path of a large tag: M-098 class-size gate). Obtain it with {@code SangamClient.api()}; it shares the client's transport
  * (auth, retries, Idempotency-Key, seat headers). The hand-written groups and the worker runtime are unchanged.
  */
@@ -169,6 +170,7 @@ public final class SangamApis {
     private final TenantOperationsRetentionApi tenantOperationsRetention;
     private final TenantOperationsSecretsApi tenantOperationsSecrets;
     private final TenantOperationsVariablesApi tenantOperationsVariables;
+    private final TenantMigrationApi tenantMigration;
     private final TestModeApi testMode;
     private final WorkApi work;
     private final WorkspaceApi workspace;
@@ -251,6 +253,7 @@ public final class SangamApis {
         this.tenantOperationsRetention = new TenantOperationsRetentionApi(http);
         this.tenantOperationsSecrets = new TenantOperationsSecretsApi(http);
         this.tenantOperationsVariables = new TenantOperationsVariablesApi(http);
+        this.tenantMigration = new TenantMigrationApi(http);
         this.testMode = new TestModeApi(http);
         this.work = new WorkApi(http);
         this.workspace = new WorkspaceApi(http);
@@ -410,6 +413,8 @@ public final class SangamApis {
     public TenantOperationsSecretsApi tenantOperationsSecrets() { return tenantOperationsSecrets; }
     /** {@code Tenant operations /variables}: 7 operations. */
     public TenantOperationsVariablesApi tenantOperationsVariables() { return tenantOperationsVariables; }
+    /** {@code TenantMigration}: 2 operations. */
+    public TenantMigrationApi tenantMigration() { return tenantMigration; }
     /** {@code TestMode}: 2 operations. */
     public TestModeApi testMode() { return testMode; }
     /** {@code Work}: 11 operations. */

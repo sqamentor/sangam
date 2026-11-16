@@ -14570,6 +14570,36 @@ export class TenantOperationsVariablesApi {
   }
 }
 
+/** Typed operations of `TenantMigration` (2 operations). */
+export class TenantMigrationApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Tenant migration inventory
+   *
+   * Read-only scan of the engine tables: running root instances without an engine tenant, with or without a tenant variable, and instances whose tenant variable contradicts the engine tenant; consistent instances are not listed. Changes nothing. Platform-only permission platform.tenant-migration.admin (platform administrator on a platform-issuer identity); a tenant administrator never holds it.
+   *
+   * `GET /admin/tenant-migration/instances` (operationId `listTenantFallbackInstances`); permission `platform.tenant-migration.admin`.
+   */
+  async listTenantFallbackInstances(options?: RequestOptions): Promise<Array<M.TenantFallbackInstance>> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/tenant-migration/instances` };
+    return this.calls.json<Array<M.TenantFallbackInstance>>(req, options);
+  }
+
+  /**
+   * Repair an instance's tenant
+   *
+   * Moves one listed instance to the tenant that owns it through the change-tenant cut-over (ChangeTenantService.moveInstance). 409 NOT_IN_INVENTORY when the instance is not listed now; 409 INVALID_TRANSITION when it already runs in targetTenant; 422 REPAIR_REFUSED when the engine refuses the cut-over (for example a called instance: move its root); 400 VALIDATION_FAILED for a missing or too long targetTenant, evidenceRef or reason. Audited TENANT_INSTANCE_REPAIRED (old and new instance, tenants, finding, evidenceRef, reason, actor) on the chains of both instances. A retry with the same Idempotency-Key returns the same result. Platform-only permission platform.tenant-migration.admin (platform administrator on a platform-issuer identity); a tenant administrator never holds it.
+   *
+   * `POST /admin/tenant-migration/instances/{id}/repair` (operationId `repairTenantFallbackInstance`); permission `platform.tenant-migration.admin`; result stored atomically with the state change.
+   */
+  async repairTenantFallbackInstance(id: string, body: M.TenantRepairRequest, options?: RequestOptions): Promise<M.TenantRepairResult> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/tenant-migration/instances/${seg(String(id))}/repair` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.TenantRepairResult>(req, options);
+  }
+}
+
 /** Typed operations of `TestMode` (2 operations). */
 export class TestModeApi {
   constructor(private readonly calls: GeneratedCalls) {}
@@ -14837,7 +14867,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1148 operations on 966 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1150 operations on 968 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;
@@ -14916,6 +14946,7 @@ export class SangamApis {
   readonly tenantOperationsRetention: TenantOperationsRetentionApi;
   readonly tenantOperationsSecrets: TenantOperationsSecretsApi;
   readonly tenantOperationsVariables: TenantOperationsVariablesApi;
+  readonly tenantMigration: TenantMigrationApi;
   readonly testMode: TestModeApi;
   readonly work: WorkApi;
   readonly workspace: WorkspaceApi;
@@ -14999,6 +15030,7 @@ export class SangamApis {
     this.tenantOperationsRetention = new TenantOperationsRetentionApi(calls);
     this.tenantOperationsSecrets = new TenantOperationsSecretsApi(calls);
     this.tenantOperationsVariables = new TenantOperationsVariablesApi(calls);
+    this.tenantMigration = new TenantMigrationApi(calls);
     this.testMode = new TestModeApi(calls);
     this.work = new WorkApi(calls);
     this.workspace = new WorkspaceApi(calls);

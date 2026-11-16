@@ -79,6 +79,7 @@ export { TenantOperationsFlowableMigrationsApi } from './api.js';
 export { TenantOperationsRetentionApi } from './api.js';
 export { TenantOperationsSecretsApi } from './api.js';
 export { TenantOperationsVariablesApi } from './api.js';
+export { TenantMigrationApi } from './api.js';
 export { TestModeApi } from './api.js';
 export { WorkApi } from './api.js';
 export { WorkspaceApi } from './api.js';

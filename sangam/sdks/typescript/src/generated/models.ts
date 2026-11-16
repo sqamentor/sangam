@@ -12336,6 +12336,65 @@ export interface TenantBundle {
 }
 
 /**
+ * A tenant variable of an instance as stored (tenantId or sangamTenantId): untrusted business data, never a tenant source (decision 145).
+ *
+ * Schema `TenantClaim`.
+ */
+export interface TenantClaim {
+  variableName: string;
+  value?: string;
+}
+
+/**
+ * A running root instance the engine-tenant-only rule refuses (decision 145).
+ *
+ * Schema `TenantFallbackInstance`.
+ */
+export interface TenantFallbackInstance {
+  processInstanceId: string;
+  definitionKey?: string;
+  /** The instance's engine tenant; absent when it has none */
+  engineTenant?: string;
+  /** The deployment tenant of its definition (absent for a shared deployment); one piece of ownership evidence, never the answer */
+  definitionTenant?: string;
+  /** TENANT_CONTEXT_MISSING: no engine tenant; TENANT_CONTEXT_CONFLICT: a tenant variable differs from the engine tenant One of: TENANT_CONTEXT_MISSING, TENANT_CONTEXT_CONFLICT. */
+  finding: 'TENANT_CONTEXT_MISSING' | 'TENANT_CONTEXT_CONFLICT';
+  /** True when the instance had no engine tenant and a tenant variable: the case the removed fallback served */
+  reliedOnTheFallback: boolean;
+  /** Its tenant variables at any scope, as stored */
+  claims: Array<TenantClaim>;
+}
+
+/**
+ * Repair of one instance on authoritative ownership evidence (decisions 145 and 199).
+ *
+ * Schema `TenantRepairRequest`.
+ */
+export interface TenantRepairRequest {
+  /** The tenant that owns the instance; not the shared scope */
+  targetTenant: string;
+  /** Reference of the ownership evidence the operator checked (record id, file, ticket) */
+  evidenceRef: string;
+  /** Reason for the audit record (R42) */
+  reason: string;
+}
+
+/**
+ * The cut-over of a repaired instance: the old instance is cancelled and a new one runs in the target tenant at the same active activities, with its variables and business key; a change-tenant link joins the two ids.
+ *
+ * Schema `TenantRepairResult`.
+ */
+export interface TenantRepairResult {
+  processInstanceId: string;
+  newProcessInstanceId: string;
+  /** The old engine tenant; absent when it had none */
+  fromTenant?: string;
+  targetTenant: string;
+  finding: string;
+  evidenceRef: string;
+}
+
+/**
  * Reason for cancel/delete (VI.5).
  *
  * Schema `TerminateRequest`.

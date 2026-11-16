@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 966,
- "operations": 1148,
- "schemas": 877,
+ "paths": 968,
+ "operations": 1150,
+ "schemas": 881,
  "tags": [
   "AI",
   "Admin",
@@ -54,6 +54,7 @@
   "SharedDeployments",
   "Tasks",
   "Tenant operations",
+  "TenantMigration",
   "TestMode",
   "Work",
   "Workspace"
@@ -598,6 +599,13 @@
    "pathPrefix": "variables",
    "operations": 7,
    "maxLines": 141
+  },
+  {
+   "class": "TenantMigrationApi",
+   "tag": "TenantMigration",
+   "pathPrefix": "",
+   "operations": 2,
+   "maxLines": 61
   },
   {
    "class": "TestModeApi",
@@ -1463,6 +1471,10 @@
   "TaskStat",
   "Tenant",
   "TenantBundle",
+  "TenantClaim",
+  "TenantFallbackInstance",
+  "TenantRepairRequest",
+  "TenantRepairResult",
   "TerminateRequest",
   "TerminationResult",
   "TestBundleExport",
@@ -15204,6 +15216,30 @@
    "python": "shared_deployments.revoke_shared_deployment",
    "dotnet": "SharedDeploymentsApi#RevokeSharedDeploymentAsync",
    "php": "SharedDeploymentsApi#revokeSharedDeployment"
+  },
+  {
+   "operationId": "listTenantFallbackInstances",
+   "method": "GET",
+   "path": "/admin/tenant-migration/instances",
+   "tag": "TenantMigration",
+   "apiClass": "TenantMigrationApi",
+   "java": "TenantMigrationApi#listTenantFallbackInstances",
+   "typescript": "tenantMigration.listTenantFallbackInstances",
+   "python": "tenant_migration.list_tenant_fallback_instances",
+   "dotnet": "TenantMigrationApi#ListTenantFallbackInstancesAsync",
+   "php": "TenantMigrationApi#listTenantFallbackInstances"
+  },
+  {
+   "operationId": "repairTenantFallbackInstance",
+   "method": "POST",
+   "path": "/admin/tenant-migration/instances/{id}/repair",
+   "tag": "TenantMigration",
+   "apiClass": "TenantMigrationApi",
+   "java": "TenantMigrationApi#repairTenantFallbackInstance",
+   "typescript": "tenantMigration.repairTenantFallbackInstance",
+   "python": "tenant_migration.repair_tenant_fallback_instance",
+   "dotnet": "TenantMigrationApi#RepairTenantFallbackInstanceAsync",
+   "php": "TenantMigrationApi#repairTenantFallbackInstance"
   },
   {
    "operationId": "getTestClock",

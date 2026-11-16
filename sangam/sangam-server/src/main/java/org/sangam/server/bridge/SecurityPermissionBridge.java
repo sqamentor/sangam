@@ -84,7 +84,9 @@ public final class SecurityPermissionBridge implements PermissionPort {
             SHARED_DEPLOYMENT_READ, Set.of(GROUP_PLATFORM_DEPLOYER, Permissions.GROUP_ADMIN, Permissions.GROUP_OPERATOR),
             SYSTEM_AUDIT_READ, Set.of(Permissions.GROUP_ADMIN, Permissions.GROUP_AUDITOR),
             // decision 146: partition resize request, get and list act on the engine of every tenant
-            Permissions.ADMIN_EXECUTOR, Set.of(Permissions.GROUP_ADMIN, Permissions.GROUP_OPERATOR));
+            Permissions.ADMIN_EXECUTOR, Set.of(Permissions.GROUP_ADMIN, Permissions.GROUP_OPERATOR),
+            // decision 381(3): the tenant migration inventory and repair span tenants; platform administrator only
+            Permissions.TENANT_MIGRATION_ADMIN, Set.of(Permissions.GROUP_ADMIN));
 
     /** Command type prefix of the decision 146 partition resize. */
     private static final String EXECUTOR_COMMANDS = "executor.partitions.";

@@ -6,7 +6,7 @@ namespace Sangam.Sdk.Generated;
 using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 /// <summary>
-/// The generated typed surface of sangam-api.yaml 0.1.0: 1148 operations on 966 paths, one property per API class (a tag, or a sub-path of a large tag). Use SangamClient.Api.
+/// The generated typed surface of sangam-api.yaml 0.1.0: 1150 operations on 968 paths, one property per API class (a tag, or a sub-path of a large tag). Use SangamClient.Api.
 /// </summary>
 public sealed class SangamApis
 {
@@ -90,6 +90,7 @@ public sealed class SangamApis
         TenantOperationsRetention = new TenantOperationsRetentionApi(calls);
         TenantOperationsSecrets = new TenantOperationsSecretsApi(calls);
         TenantOperationsVariables = new TenantOperationsVariablesApi(calls);
+        TenantMigration = new TenantMigrationApi(calls);
         TestMode = new TestModeApi(calls);
         Work = new WorkApi(calls);
         Workspace = new WorkspaceApi(calls);
@@ -172,6 +173,7 @@ public sealed class SangamApis
     public TenantOperationsRetentionApi TenantOperationsRetention { get; }
     public TenantOperationsSecretsApi TenantOperationsSecrets { get; }
     public TenantOperationsVariablesApi TenantOperationsVariables { get; }
+    public TenantMigrationApi TenantMigration { get; }
     public TestModeApi TestMode { get; }
     public WorkApi Work { get; }
     public WorkspaceApi Workspace { get; }

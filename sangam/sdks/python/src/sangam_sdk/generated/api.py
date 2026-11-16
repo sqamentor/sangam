@@ -12442,6 +12442,33 @@ class TenantOperationsVariablesApi:
         req = ApiRequest("DELETE", f"/ops/variables/{seg(str(id))}", query={"reason": reason})
         self._c.none(req, options)
 
+class TenantMigrationApi:
+    """``TenantMigration`` (2 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def list_tenant_fallback_instances(self, *, options: Optional[RequestOptions] = None) -> list[M.TenantFallbackInstance]:
+        """Tenant migration inventory
+
+        Read-only scan of the engine tables: running root instances without an engine tenant, with or without a tenant variable, and instances whose tenant variable contradicts the engine tenant; consistent instances are not listed. Changes nothing. Platform-only permission platform.tenant-migration.admin (platform administrator on a platform-issuer identity); a tenant administrator never holds it.
+
+        ``GET /admin/tenant-migration/instances`` (operationId ``listTenantFallbackInstances``); permission ``platform.tenant-migration.admin``.
+        """
+        req = ApiRequest("GET", f"/admin/tenant-migration/instances")
+        return cast("list[M.TenantFallbackInstance]", self._c.json(req, options))
+
+    def repair_tenant_fallback_instance(self, id: str, body: M.TenantRepairRequest, *, options: Optional[RequestOptions] = None) -> M.TenantRepairResult:
+        """Repair an instance's tenant
+
+        Moves one listed instance to the tenant that owns it through the change-tenant cut-over (ChangeTenantService.moveInstance). 409 NOT_IN_INVENTORY when the instance is not listed now; 409 INVALID_TRANSITION when it already runs in targetTenant; 422 REPAIR_REFUSED when the engine refuses the cut-over (for example a called instance: move its root); 400 VALIDATION_FAILED for a missing or too long targetTenant, evidenceRef or reason. Audited TENANT_INSTANCE_REPAIRED (old and new instance, tenants, finding, evidenceRef, reason, actor) on the chains of both instances. A retry with the same Idempotency-Key returns the same result. Platform-only permission platform.tenant-migration.admin (platform administrator on a platform-issuer identity); a tenant administrator never holds it.
+
+        ``POST /admin/tenant-migration/instances/{id}/repair`` (operationId ``repairTenantFallbackInstance``); permission ``platform.tenant-migration.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/tenant-migration/instances/{seg(str(id))}/repair")
+        req.body = body
+        return cast("M.TenantRepairResult", self._c.json(req, options))
+
 class TestModeApi:
     """``TestMode`` (2 operations)."""
 
@@ -12674,7 +12701,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1148 operations on 966 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1150 operations on 968 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)
@@ -12755,6 +12782,7 @@ class SangamApis:
         self.tenant_operations_retention = TenantOperationsRetentionApi(calls)
         self.tenant_operations_secrets = TenantOperationsSecretsApi(calls)
         self.tenant_operations_variables = TenantOperationsVariablesApi(calls)
+        self.tenant_migration = TenantMigrationApi(calls)
         self.test_mode = TestModeApi(calls)
         self.work = WorkApi(calls)
         self.workspace = WorkspaceApi(calls)

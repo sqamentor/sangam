@@ -84,12 +84,13 @@ use Sangam\Sdk\Generated\Api\TenantOperationsFlowableMigrationsApi;
 use Sangam\Sdk\Generated\Api\TenantOperationsRetentionApi;
 use Sangam\Sdk\Generated\Api\TenantOperationsSecretsApi;
 use Sangam\Sdk\Generated\Api\TenantOperationsVariablesApi;
+use Sangam\Sdk\Generated\Api\TenantMigrationApi;
 use Sangam\Sdk\Generated\Api\TestModeApi;
 use Sangam\Sdk\Generated\Api\WorkApi;
 use Sangam\Sdk\Generated\Api\WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1148 operations on 966 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1150 operations on 968 paths,
  * one property per API class (a tag, or a sub-path of a large tag). Use SangamClient::api().
  */
 final class SangamApis
@@ -171,6 +172,7 @@ final class SangamApis
     public readonly TenantOperationsRetentionApi $tenantOperationsRetention;
     public readonly TenantOperationsSecretsApi $tenantOperationsSecrets;
     public readonly TenantOperationsVariablesApi $tenantOperationsVariables;
+    public readonly TenantMigrationApi $tenantMigration;
     public readonly TestModeApi $testMode;
     public readonly WorkApi $work;
     public readonly WorkspaceApi $workspace;
@@ -255,6 +257,7 @@ final class SangamApis
         $this->tenantOperationsRetention = new TenantOperationsRetentionApi($calls);
         $this->tenantOperationsSecrets = new TenantOperationsSecretsApi($calls);
         $this->tenantOperationsVariables = new TenantOperationsVariablesApi($calls);
+        $this->tenantMigration = new TenantMigrationApi($calls);
         $this->testMode = new TestModeApi($calls);
         $this->work = new WorkApi($calls);
         $this->workspace = new WorkspaceApi($calls);

@@ -153,6 +153,9 @@ tags:
   description: SCIM 2.0 user and group provisioning from an identity provider, mapped to persons, seats and postings (R67; RFC 7643, RFC 7644)
 - name: SharedDeployments
   description: 'Shared-deployment registry (decisions 144 and 197): which engine deployments are platform-owned; platform deployers only'
+- name: TenantMigration
+  description: 'Decision 145 tenant migration: inventory of instances without an authoritative engine tenant and their audited repair; platform
+    administrators only'
 - name: TestMode
   description: Test-mode clock steering (M-021); present only on a test-mode server
 paths:
@@ -57859,6 +57862,118 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
+  /admin/tenant-migration/instances:
+    get:
+      operationId: listTenantFallbackInstances
+      tags:
+      - TenantMigration
+      summary: Tenant migration inventory
+      description: 'Read-only scan of the engine tables: running root instances without an engine tenant, with or without a tenant variable, and
+        instances whose tenant variable contradicts the engine tenant; consistent instances are not listed. Changes nothing. Platform-only permission
+        platform.tenant-migration.admin (platform administrator on a platform-issuer identity); a tenant administrator never holds it.'
+      x-sangam-permission: platform.tenant-migration.admin
+      x-sangam-requirements:
+      - R42
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TenantFallbackInstance'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '501':
+          description: 'CAPABILITY_NOT_INSTALLED: this server has no process engine port for the tenant migration. Not retryable; checked after
+            the permission'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /admin/tenant-migration/instances/{id}/repair:
+    post:
+      operationId: repairTenantFallbackInstance
+      tags:
+      - TenantMigration
+      summary: Repair an instance's tenant
+      description: 'Moves one listed instance to the tenant that owns it through the change-tenant cut-over (ChangeTenantService.moveInstance).
+        409 NOT_IN_INVENTORY when the instance is not listed now; 409 INVALID_TRANSITION when it already runs in targetTenant; 422 REPAIR_REFUSED
+        when the engine refuses the cut-over (for example a called instance: move its root); 400 VALIDATION_FAILED for a missing or too long targetTenant,
+        evidenceRef or reason. Audited TENANT_INSTANCE_REPAIRED (old and new instance, tenants, finding, evidenceRef, reason, actor) on the chains
+        of both instances. A retry with the same Idempotency-Key returns the same result. Platform-only permission platform.tenant-migration.admin
+        (platform administrator on a platform-issuer identity); a tenant administrator never holds it.'
+      x-sangam-command-type: tenant.migration.repair
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: platform.tenant-migration.admin
+      x-sangam-requirements:
+      - R42
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantRepairRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantRepairResult'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: NOT_IN_INVENTORY or INVALID_TRANSITION
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: 'REPAIR_REFUSED: the engine refused the cut-over'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '501':
+          description: 'CAPABILITY_NOT_INSTALLED: this server has no process engine port for the tenant migration. Not retryable; checked after
+            the permission'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /test-mode/clock:
     get:
       operationId: getTestClock
@@ -72703,6 +72818,97 @@ components:
           minLength: 1
           maxLength: 1000
           description: Mandatory reason for the audit record (R42)
+    TenantClaim:
+      type: object
+      description: 'A tenant variable of an instance as stored (tenantId or sangamTenantId): untrusted business data, never a tenant source (decision
+        145).'
+      properties:
+        variableName:
+          type: string
+        value:
+          type: string
+      required:
+      - variableName
+    TenantFallbackInstance:
+      type: object
+      description: A running root instance the engine-tenant-only rule refuses (decision 145).
+      properties:
+        processInstanceId:
+          type: string
+        definitionKey:
+          type: string
+        engineTenant:
+          type: string
+          description: The instance's engine tenant; absent when it has none
+        definitionTenant:
+          type: string
+          description: The deployment tenant of its definition (absent for a shared deployment); one piece of ownership evidence, never the answer
+        finding:
+          type: string
+          enum:
+          - TENANT_CONTEXT_MISSING
+          - TENANT_CONTEXT_CONFLICT
+          description: 'TENANT_CONTEXT_MISSING: no engine tenant; TENANT_CONTEXT_CONFLICT: a tenant variable differs from the engine tenant'
+        reliedOnTheFallback:
+          type: boolean
+          description: 'True when the instance had no engine tenant and a tenant variable: the case the removed fallback served'
+        claims:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantClaim'
+          description: Its tenant variables at any scope, as stored
+      required:
+      - processInstanceId
+      - finding
+      - reliedOnTheFallback
+      - claims
+    TenantRepairRequest:
+      type: object
+      description: Repair of one instance on authoritative ownership evidence (decisions 145 and 199).
+      properties:
+        targetTenant:
+          type: string
+          description: The tenant that owns the instance; not the shared scope
+          minLength: 1
+          maxLength: 64
+        evidenceRef:
+          type: string
+          description: Reference of the ownership evidence the operator checked (record id, file, ticket)
+          minLength: 1
+          maxLength: 500
+        reason:
+          type: string
+          description: Reason for the audit record (R42)
+          minLength: 1
+          maxLength: 1000
+      required:
+      - targetTenant
+      - evidenceRef
+      - reason
+    TenantRepairResult:
+      type: object
+      description: 'The cut-over of a repaired instance: the old instance is cancelled and a new one runs in the target tenant at the same active
+        activities, with its variables and business key; a change-tenant link joins the two ids.'
+      properties:
+        processInstanceId:
+          type: string
+        newProcessInstanceId:
+          type: string
+        fromTenant:
+          type: string
+          description: The old engine tenant; absent when it had none
+        targetTenant:
+          type: string
+        finding:
+          type: string
+        evidenceRef:
+          type: string
+      required:
+      - processInstanceId
+      - newProcessInstanceId
+      - targetTenant
+      - finding
+      - evidenceRef
     TestClock:
       type: object
       description: 'The test-mode clock (TestModeClock): the instant the engine and business clocks now read and their offset from the wall clock;
