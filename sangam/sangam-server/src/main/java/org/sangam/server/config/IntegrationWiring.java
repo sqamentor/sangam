@@ -31,6 +31,7 @@ import org.sangam.integration.bridge.ConnectorExternalTaskWorker;
 import org.sangam.integration.broker.BrokerWakeupBus;
 import org.sangam.integration.bridge.TopicBinding;
 import org.sangam.integration.bridge.WorkContextResolver;
+import org.sangam.integration.connector.gov.EsignConnector;
 import org.sangam.integration.bridge.operaton.IntegrationBridge;
 import org.sangam.integration.bridge.operaton.OperatonHeldWorkReleaser;
 import org.sangam.integration.bridge.operaton.OperatonLifecyclePorts;
@@ -271,13 +272,24 @@ public class IntegrationWiring {
      */
     @Bean
     public ConnectorRegistry sangamConnectorRegistry(ObjectProvider<SimulatorProfile> sims, Environment env,
-                                                     DltRegistrationStore sangamDltRegistrationStore) {
+                                                     DltRegistrationStore sangamDltRegistrationStore,
+                                                     ObjectProvider<EsignConnector> sangamLiveEsignConnector) {
         SimulatorProfile profile = sims.getIfAvailable();
+        ConnectorRegistry registry;
         if (profile != null) {
             LOG.warn("Connector catalogue: SIMULATORS (development)");
-            return Connectors.simulatorRegistry(profile, sangamDltRegistrationStore.registry(), defaultTenant(env));
+            registry = Connectors.simulatorRegistry(profile, sangamDltRegistrationStore.registry(), defaultTenant(env));
+        } else {
+            registry = new ConnectorRegistry();
         }
-        return new ConnectorRegistry();
+        // DEC-140: the live eSign connector exists only when EsignWiring built it with its decision 140 verifier
+        EsignConnector esign = sangamLiveEsignConnector.getIfAvailable();
+        if (esign != null) {
+            LOG.warn("Connector catalogue: live eSign connector {} (decision 215: only after the ESP sandbox confirmed"
+                    + " the profile)", esign.descriptor().id());
+            registry.register(esign);
+        }
+        return registry;
     }
 
     /** The invoker used by delegates: own transaction, so the intent commits before the remote call. */

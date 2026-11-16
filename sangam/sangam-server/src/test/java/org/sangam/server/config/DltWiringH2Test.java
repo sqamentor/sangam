@@ -513,7 +513,8 @@ class DltWiringH2Test {
     void theConnectorRegistryOfTheServerValidatesAgainstTheStoredRegistration() {
         try (SimulatorProfile sims = new SimulatorProfile()) {
             ConnectorRegistry built = new IntegrationWiring().sangamConnectorRegistry(provider(SimulatorProfile.class, sims),
-                    new MockEnvironment().withProperty("sangam.tenant.default", TENANT), store);
+                    new MockEnvironment().withProperty("sangam.tenant.default", TENANT), store,
+                    provider(org.sangam.integration.connector.gov.EsignConnector.class, null));
             DltSmsConnector connector = (DltSmsConnector) built.find(TENANT, "sms-dlt-sim").orElseThrow();
             assertSame(store.registry(), connector.config().registry(),
                     "the stored registration, not an empty in-memory registry");
