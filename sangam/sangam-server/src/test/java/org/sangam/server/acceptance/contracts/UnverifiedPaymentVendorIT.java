@@ -19,6 +19,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.sangam.billing.AccrualPauses;
 import org.sangam.billing.JdbcUnverifiedPaymentStore;
@@ -44,10 +45,24 @@ import org.sangam.ledger.AccountKey;
  */
 class UnverifiedPaymentVendorIT extends LayerSpecSupport {
 
+    /** The drainers this test created: each runs its drains on its own worker thread (SL-133). */
+    private final List<PendingAuditDrainer> drainers = new ArrayList<>();
+
     private JdbcUnverifiedPaymentStore store() {
         PendingAuditDrainer drainer = new PendingAuditDrainer(new PendingAudit(TX, DIALECT, new AuditChain(DIALECT)),
                 new PendingAuditDrainer.Settings(1, Duration.ZERO, Duration.ZERO, 10));
+        drainers.add(drainer);
         return new JdbcUnverifiedPaymentStore(TX, DIALECT, drainer);
+    }
+
+    /**
+     * Stops and joins this test's drainers, so no drain of this test is still inside a transaction on AUDIT_EVENT when
+     * the next test truncates the tables (Oracle's TRUNCATE does not wait for it: ORA-00054).
+     */
+    @AfterEach
+    void closeDrainers() {
+        drainers.forEach(PendingAuditDrainer::close);
+        drainers.clear();
     }
 
     private static UnverifiedPayment pending(String tenant, String ref) {
