@@ -75,6 +75,9 @@ export const historyFilterable = (kind: T.HistoryLogKind): boolean => kind !== '
 const draftIds = new Map<string, { id: string; etag: string | null }>();
 const packageTags = new Map<string, string | null>();
 
+/** The incident commands that take an IncidentAction (POST /ops/incidents/{id}/retry | resolve | skip | cancel). */
+export type IncidentVerb = 'retry' | 'resolve' | 'skip' | 'cancel';
+
 export const api = {
   me: {
     get: async () => A.normMe(await http.get<Record<string, unknown>>('/me')),
@@ -451,9 +454,9 @@ export const api = {
     incidents: async (q: ListQuery & { type?: string; owner?: string }) => A.mapPage(await http.page<Record<string, unknown>>('/ops/incidents', q), A.normIncident),
     incident: async (id: string) => A.normIncident(await http.get<Record<string, unknown>>(`/ops/incidents/${enc(id)}`)),
     incidentPreview: (id: string, action: 'retry' | 'skip' | 'cancel') => http.get<T.ConsequencePreview>(`/ops/incidents/${enc(id)}/preview`, { action }),
-    /** retry / resolve: IncidentAction {reason, retries, annotation}; claim / note have their own routes. */
-    incidentAction: (id: string, action: 'retry' | 'claim' | 'note' | 'resolve', body: { reason?: string; note?: string; retries?: number }, key?: string) =>
-      action === 'retry' || action === 'resolve'
+    /** retry / resolve / skip / cancel: IncidentAction {reason (mandatory), retries, annotation}; claim / note have their own routes. */
+    incidentAction: (id: string, action: IncidentVerb | 'claim' | 'note', body: { reason?: string; note?: string; retries?: number }, key?: string) =>
+      action === 'retry' || action === 'resolve' || action === 'skip' || action === 'cancel'
         ? http.post<void>(`/ops/incidents/${enc(id)}/${action}`, { reason: body.reason ?? '', retries: body.retries, annotation: body.note }, key)
         : http.post<void>(`/ops/incidents/${enc(id)}/${action}`, body, key),
     batches: async (q: ListQuery & { status?: T.BatchStatus }) =>
@@ -622,8 +625,11 @@ export const api = {
   /** Declarative CRUD screens. DELETE carries ?reason=. */
   resource: {
     list: <R>(path: string, q: ListQuery) => http.page<R>(path, q),
-    /** create (POST) or update (PUT of the id); `create` says which, since some entries carry a user-chosen id when new. */
-    save: <R extends { id?: string }>(path: string, r: R, create = !r.id) => (create ? http.post<R>(path, r) : http.put<R>(`${path}/${enc(r.id!)}`, r)),
+    /**
+     * create (POST) or update (PUT of the id); `create` says which, since some entries carry a user-chosen id when new.
+     * `id` names the entry when the body sent is not the entry itself (a request schema without the id).
+     */
+    save: <R extends { id?: string }>(path: string, r: R, create = !r.id, id = r.id) => (create ? http.post<R>(path, r) : http.put<R>(`${path}/${enc(id!)}`, r)),
     remove: (path: string, id: string, reason: string) => http.del<void>(`${path}/${enc(id)}`, { reason }),
     action: <R>(path: string, id: string, action: string, body: unknown = {}) => http.post<R>(`${path}/${enc(id)}/${action}`, body),
   },

@@ -124,8 +124,26 @@ export function TraceRef({ id }: { id: string }) {
   );
 }
 
-/** Stable refusal codes with a title of their own (i18n error.code.<CODE>); M-103 OCR review (decision 378(3)). */
-const CODE_TITLES = new Set(['KB_VERSION_NOT_BUILDING', 'OCR_REJECTED', 'OCR_UNAVAILABLE', 'OCR_TRANSCRIPT_NOT_PENDING', 'OCR_TRANSCRIPT_EMPTY', 'SELF_REVIEW_FORBIDDEN']);
+/**
+ * Stable refusal codes with a title of their own (i18n error.code.<CODE>): M-103 OCR review (decision 378(3)); round 6
+ * item 2 incident skip/cancel, tenant validate/activate, user and group administration.
+ */
+const CODE_TITLES = new Set([
+  'KB_VERSION_NOT_BUILDING',
+  'OCR_REJECTED',
+  'OCR_UNAVAILABLE',
+  'OCR_TRANSCRIPT_NOT_PENDING',
+  'OCR_TRANSCRIPT_EMPTY',
+  'SELF_REVIEW_FORBIDDEN',
+  'INCIDENT_NOT_SKIPPABLE',
+  'ENGINE_REJECTED',
+  'REASON_REQUIRED',
+  'ACTIVATION_BLOCKED',
+  'TENANT_ACTIVATION_BY_OWN_ADMIN',
+  'USER_EXISTS',
+  'SELF_DISABLE',
+  'GROUP_EXISTS',
+]);
 
 /**
  * The i18n key of the title a refusal is shown under: by its stable code first, then by its status. A 501 is a module

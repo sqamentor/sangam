@@ -24,8 +24,12 @@ export interface CrudRowAction<R> {
   label: string; // i18n key
   reason?: boolean;
   danger?: boolean;
+  /** The action is the contract's DELETE of the entry with ?reason= (for example a seat's deactivation), not POST {path}/{id}/{action}. */
+  remove?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   visible?: (r: R & Record<string, any>) => boolean;
+  /** Called with the answer of a successful action (for example a readiness report the screen shows). */
+  onResult?: (r: R, result: unknown) => void;
 }
 
 /**
@@ -67,6 +71,8 @@ export function CrudPage<R extends { id?: string }>({
   canDelete = false,
   newDefaults = {},
   extraToolbar,
+  editFields,
+  toBody,
 }: {
   title: string;
   description?: string;
@@ -78,6 +84,10 @@ export function CrudPage<R extends { id?: string }>({
   canDelete?: boolean;
   newDefaults?: Record<string, unknown>;
   extraToolbar?: ReactNode;
+  /** The fields an existing entry is edited with, when they differ from those of a new one. */
+  editFields?: FormField[];
+  /** The request body for the entry, when the contract's request schema is not the entry itself. */
+  toBody?: (values: FormValues, creating: boolean) => Record<string, unknown>;
 }) {
   const { t } = useTranslation();
   const [q, setQ] = useState('');
@@ -95,7 +105,8 @@ export function CrudPage<R extends { id?: string }>({
   const [pending, setPending] = useState<{ row: R; action: CrudRowAction<R> | 'delete' } | null>(null);
   const save = useAction();
   const act = useAction();
-  const schema: FormSchema = useMemo(() => ({ components: translateFields(fields, t) }), [fields, t]);
+  const shown = !creating && editFields ? editFields : fields;
+  const schema: FormSchema = useMemo(() => ({ components: translateFields(shown, t) }), [shown, t]);
 
   const cols: Column<R>[] = [
     ...columns.map((c) => ({ key: c.key, header: t(c.label), render: c.render as ((r: R) => ReactNode) | undefined, sortable: !c.render })),
@@ -117,7 +128,10 @@ export function CrudPage<R extends { id?: string }>({
                 onClick={() =>
                   a.reason
                     ? setPending({ row: r, action: a })
-                    : void act.run(() => api.resource.action(path, r.id!, a.id)).then(() => list.reload())
+                    : void act.run(() => api.resource.action(path, r.id!, a.id)).then((res) => {
+                        if (res !== undefined) a.onResult?.(r, res);
+                        list.reload();
+                      })
                 }
               >
                 {t(a.label)}
@@ -138,7 +152,8 @@ export function CrudPage<R extends { id?: string }>({
     const errs = validateForm(schema, editing, t);
     setErrors(errs);
     if (Object.keys(errs).length) return;
-    const r = await save.run(() => api.resource.save(path, editing as unknown as R, creating));
+    const body = (toBody ? toBody(editing, creating) : editing) as unknown as R;
+    const r = await save.run(() => api.resource.save(path, body, creating, (editing as { id?: string }).id));
     if (r) {
       announce(t('common.saved'));
       edit(null);
@@ -209,7 +224,12 @@ export function CrudPage<R extends { id?: string }>({
           const a = pending.action;
           void act
             .run(async () => {
-              await (a === 'delete' ? api.resource.remove(path, id, reason) : api.resource.action(path, id, a.id, { reason }));
+              if (a === 'delete' || a.remove) await api.resource.remove(path, id, reason);
+              else {
+                // the request first: an optional call a.onResult?.(…) would not evaluate its arguments without a callback
+                const res = await api.resource.action(path, id, a.id, { reason });
+                a.onResult?.(pending.row, res);
+              }
               return true;
             })
             .then((ok) => {
