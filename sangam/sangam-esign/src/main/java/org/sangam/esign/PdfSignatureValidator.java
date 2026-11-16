@@ -57,7 +57,9 @@ import org.bouncycastle.tsp.TimeStampToken;
  *   <li><b>Long-term validation (M-080, PAdES B-LT).</b> {@link PadesLtv}: from the material embedded in the PDF only
  *       (the document security store, the CMS and the signature time-stamp), with nothing fetched: the signer's and the
  *       time-stamp authority's paths to a configured anchor at the time-stamp time, and an authentic, fresh revocation
- *       answer for every certificate on them. Every signature gets an {@link Ltv} with a stable code; with
+ *       answer for every certificate on them (the DSS and the signature's {@code adbe-revocationInfoArchival} are one
+ *       pool); a document time-stamp (B-LTA) is not evaluated and is the problem
+ *       {@code DOCUMENT_TIMESTAMP_NOT_EVALUATED}. Every signature gets an {@link Ltv} with a stable code; with
  *       {@code requireLtv} a signature that is not {@code LTV_VALID} makes the report invalid.</li>
  *   <li><b>After the last signature.</b> {@code afterLastSignature} is null when the last signature covers the whole
  *       file, {@code VALIDATION_DATA_ONLY} when the only later change is the catalog's {@code /DSS} (how PAdES adds
@@ -69,8 +71,9 @@ public final class PdfSignatureValidator {
 
     /** What this validator does not check (reported with every result). */
     public static final String LIMITS = "online revocation (OCSP/CRL fetch) is not checked; long-term validation uses"
-            + " only the DSS material embedded in the PDF; document time-stamps (PAdES B-LTA) and"
-            + " adbe-revocationInfoArchival are not evaluated";
+            + " only the material embedded in the PDF (the DSS and each signature's adbe-revocationInfoArchival);"
+            + " document time-stamps (PAdES B-LTA) are not evaluated and make the report invalid"
+            + " (DOCUMENT_TIMESTAMP_NOT_EVALUATED)";
 
     /**
      * The long-term validation of one signature ({@link PadesLtv}): {@code code} is {@code LTV_VALID} or the first
@@ -179,6 +182,10 @@ public final class PdfSignatureValidator {
             return fail(sig, whole, null, "BYTE_RANGE_INVALID: " + e.getMessage());
         }
         String digest = HexFormat.of().formatHex(PadesSigning.sha256(content));
+        if (documentTimeStamp(sig)) {
+            return fail(sig, whole, digest, PadesLtv.DOCUMENT_TIMESTAMP_NOT_EVALUATED + ": a PAdES B-LTA document"
+                    + " time-stamp is not evaluated (it needs past-signature validation), so the report cannot be valid");
+        }
         CMSSignedData cms;
         SignerInformation signer;
         X509CertificateHolder holder;
@@ -251,13 +258,20 @@ public final class PdfSignatureValidator {
                 problem = "UNTRUSTED: the signer certificate does not chain to a configured trust anchor";
             }
         }
-        Ltv ltv = PadesLtv.check(anchors, cert, certificates(cms), token, tsValid, material, clock.instant());
+        Ltv ltv = PadesLtv.check(anchors, cert, certificates(cms), token, tsValid, material,
+                PadesLtv.archival(signer.getSignedAttributes()), clock.instant());
         if (requireLtv && !ltv.valid() && problem == null) {
             problem = "LTV: " + ltv.code() + ": " + ltv.detail();
         }
         return new SignatureReport(sig.getSubFilter(), whole, intact, digest,
                 cert.getSubjectX500Principal().getName(), certSha, signingTime, tsAttr != null, tsValid, tsTime, trusted,
                 ltv, problem);
+    }
+
+    /** A document time-stamp (ISO 32000-2 12.8.5): {@code /Type /DocTimeStamp} or sub-filter {@code ETSI.RFC3161}. */
+    static boolean documentTimeStamp(PDSignature sig) {
+        return "ETSI.RFC3161".equals(sig.getSubFilter())
+                || "DocTimeStamp".equals(sig.getCOSObject().getNameAsString(org.apache.pdfbox.cos.COSName.TYPE));
     }
 
     private static List<X509Certificate> certificates(CMSSignedData cms) {
