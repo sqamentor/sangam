@@ -13,7 +13,7 @@ import { fmtDate } from '../../i18n';
 import { textIncludes } from '../../lib/text';
 import { useWithCustomFields } from '../../api/customFields';
 import { ActionMenu } from '../../components/ActionMenu';
-import { FormRenderer, validateForm, type FormValues } from '../../components/FormRenderer';
+import { FormRenderer, submitValues, validateForm, type FormValues } from '../../components/FormRenderer';
 import { AddVariables } from '../../modules/operaton3';
 import { ConversationPanel } from '../../modules/platform';
 import { Badge, DataTable, Empty, KeyValues, Loading, Notice, PageHeader, Pagination, ProblemAlert, ReasonDialog, Section, TabPanel, Tabs, TextArea, TextField } from '../../components/ui';
@@ -85,8 +85,8 @@ function StartForm({ item, onCancel }: { item: { key: string; name: string; kind
             void act
               .run((k) =>
                 item.kind === 'CASE'
-                  ? api.cases.start({ key: item.key, businessKey: businessKey || undefined, variables: values }, k).then((c) => `/cases/${encodeURIComponent(c.id)}`)
-                  : api.processes.start({ key: item.key, businessKey: businessKey || undefined, variables: values }, k).then(() => '/tasks'),
+                  ? api.cases.start({ key: item.key, businessKey: businessKey || undefined, variables: submitValues(schema, values) }, k).then((c) => `/cases/${encodeURIComponent(c.id)}`)
+                  : api.processes.start({ key: item.key, businessKey: businessKey || undefined, variables: submitValues(schema, values) }, k).then(() => '/tasks'),
               )
               .then((to) => {
                 if (to) {

@@ -324,6 +324,7 @@
     "pattern": "The format is not valid",
     "required": "This field is required",
     "notANumber": "Enter a number, for example 1250.50",
+    "moneyScale": "At most {{n}} decimal places",
     "wholeNumber": "Enter a whole number",
     "jsonObject": "Enter a JSON object, for example {\"amount\": 100}",
     "jsonListOfObjects": "Enter a JSON list of objects, for example [{\"id\": \"case-1\", \"inputs\": {}, \"expected\": {}}]",
