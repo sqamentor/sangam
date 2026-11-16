@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Test;
 import org.operaton.bpm.engine.ProcessEngine;
 import org.operaton.bpm.engine.ProcessEngineException;
 import org.operaton.bpm.engine.task.Task;
+import org.sangam.assembly.packs.AuditDocumentSlotBindings;
+import org.sangam.assembly.packs.PackDocumentSlotNames;
 import org.sangam.core.engine.DocumentSlotNames;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.packs.core.DscSignatureGuardListener;
@@ -41,9 +43,7 @@ import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.port.TaskPort;
 import org.sangam.rest.support.DocumentSlots;
 import org.sangam.rest.support.RestProperties;
-import org.sangam.server.bridge.AuditDocumentSlotBindings;
 import org.sangam.server.bridge.OperatonDocumentSlots;
-import org.sangam.server.bridge.PackRegistryDocumentSlots;
 import org.sangam.server.bridge.PortsDocumentBridge;
 import org.sangam.server.config.PacksWiring;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -178,7 +178,7 @@ class DscSlotBindingH2Test {
                 .withSlotBindings(bindings())
                 .withSignatures((tenant, task, doc, who) -> signed.contains(tenant + "|" + task + "|" + doc + "|" + who)));
         PackRegistry registry = PackRegistry.discover();
-        DocumentSlotNames.install(() -> PackRegistryDocumentSlots.slotNames(registry));
+        PackDocumentSlotNames.install(registry);
     }
 
     @AfterEach
@@ -189,7 +189,8 @@ class DscSlotBindingH2Test {
 
     /** The server's binding check and consumption, as PacksWiring builds it. */
     static AuditDocumentSlotBindings bindings() {
-        return new AuditDocumentSlotBindings(fx.tx, new org.sangam.core.layer.AuditChain(fx.tx.dialect()));
+        return new AuditDocumentSlotBindings(fx.tx::withConnection,
+                org.sangam.server.config.PacksWiring::engineCommand, new org.sangam.core.layer.AuditChain(fx.tx.dialect()));
     }
 
     static String startCaller() {

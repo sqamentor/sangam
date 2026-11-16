@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-package org.sangam.server.bridge;
+package org.sangam.assembly.packs;
 
 import java.sql.Connection;
 import java.util.LinkedHashMap;
@@ -11,9 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.sangam.core.layer.AuditChain;
 import org.sangam.core.layer.Jdbc;
+import org.sangam.core.layer.Transactions;
 import org.sangam.packs.port.DocumentSlotBindings;
-import org.sangam.ports.support.EngineTx;
-import org.sangam.rest.support.TxSupport;
 
 /**
  * Owner decision 385 (2), layer 1, on the server: a slot's document is bound only when the document route
@@ -33,6 +32,10 @@ import org.sangam.rest.support.TxSupport;
  * first instance passed) is passed over, so the levels of one gate instance still find the binding; a consumption by
  * any other gate instance ends the binding, so a binding older than it is not bound and the slot needs a new upload or
  * version (a newer binding).
+ *
+ * <p>Owner decision 387 (2) (decision 390 (5)): plain Java in sangam-assembly, so any host that installs the packs'
+ * runtime ports can install it; the Spring host does ({@code PacksWiring}). The Quarkus host installs no pack runtime
+ * yet, so every DSC step there keeps the fail-closed default ({@code DocumentSlotBindings.NONE}).
  */
 public final class AuditDocumentSlotBindings implements DocumentSlotBindings {
 
@@ -43,11 +46,21 @@ public final class AuditDocumentSlotBindings implements DocumentSlotBindings {
     static final List<String> EVENTS = List.of(UPLOADED, VERSION_ADDED, CONSUMED);
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    private final TxSupport tx;
+    private final Transactions tx;
+    private final java.util.function.Supplier<Optional<Connection>> engineCommand;
     private final AuditChain chain;
 
-    public AuditDocumentSlotBindings(TxSupport tx, AuditChain chain) {
+    /**
+     * @param tx joins the caller's transaction or starts one (the server passes its {@code TxSupport::withConnection});
+     *           outside an engine command a consumption is written in it
+     * @param engineCommand the connection of the engine command running on this thread, or empty outside one (the
+     *           Spring host passes {@code EngineTx}); a consumption inside a command is written on it, so it commits or
+     *           rolls back with the completion. A host seam, so this class needs no engine internals.
+     */
+    public AuditDocumentSlotBindings(Transactions tx, java.util.function.Supplier<Optional<Connection>> engineCommand,
+                                     AuditChain chain) {
         this.tx = java.util.Objects.requireNonNull(tx, "tx");
+        this.engineCommand = java.util.Objects.requireNonNull(engineCommand, "engineCommand");
         this.chain = java.util.Objects.requireNonNull(chain, "chain");
     }
 
@@ -74,7 +87,7 @@ public final class AuditDocumentSlotBindings implements DocumentSlotBindings {
         if (!valid(tenantId, processInstances, slot, documentType, documentId)) {
             return false;
         }
-        return tx.withConnection(c -> nearest(c, tenantId, processInstances, slot))
+        return tx.inTransaction(c -> nearest(c, tenantId, processInstances, slot))
                 .map(found -> found.binding().matches(documentId, documentType)).orElse(false);
     }
 
@@ -85,11 +98,12 @@ public final class AuditDocumentSlotBindings implements DocumentSlotBindings {
             throw new IllegalArgumentException("decision 390: a consumption names the tenant, the gate's instance chain,"
                     + " the slot, the type, the document and the task");
         }
-        if (EngineTx.inCommand()) {
+        Optional<Connection> command = engineCommand.get();
+        if (command.isPresent()) {
             // the completion's own command: the record commits or rolls back with it
-            consume(EngineTx.connection(), tenantId, processInstances, slot, documentType, documentId, taskId);
+            consume(command.get(), tenantId, processInstances, slot, documentType, documentId, taskId);
         } else {
-            tx.withConnection(c -> {
+            tx.inTransaction(c -> {
                 consume(c, tenantId, processInstances, slot, documentType, documentId, taskId);
                 return null;
             });
