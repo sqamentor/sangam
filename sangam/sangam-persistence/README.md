@@ -289,7 +289,7 @@ Exact columns are in each owner's `*Schema.java`; the generator mirrors them.
 | Dependency | Licence |
 |---|---|
 | org.liquibase:liquibase-core 4.33.0 (+ snakeyaml, opencsv, commons-*) | Apache-2.0 |
-| org.slf4j:slf4j-api 2.0.17 | MIT |
+| org.slf4j:slf4j-api 2.0.20 | MIT |
 | test: H2 2.3.232, JUnit 5.11.4 | EPL-1.0/MPL-2.0, EPL-2.0 |
 
 ## Coverage check

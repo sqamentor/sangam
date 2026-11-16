@@ -148,7 +148,9 @@
     <version.mariadb>3.5.11</version.mariadb>
     <version.mssql>12.10.2.jre11</version.mssql>
     <version.hikari>6.3.0</version.hikari>
-    <version.slf4j>2.0.17</version.slf4j>
+    <!-- RM-31: the slf4j family ships as one version; Spring Boot 4.1.2 brings jul-to-slf4j 2.0.20, so the API is 2.0.20
+         too (test_version_families.py) -->
+    <version.slf4j>2.0.20</version.slf4j>
     <version.h2>2.3.232</version.h2>
     <!-- broker clients (R38 inbound, ports channels): one version for every module, also for hosts (M-014); the
          Spring Boot BOM would otherwise resolve a different kafka-clients for a module that gets it transitively -->

@@ -291,7 +291,7 @@ Ports added to `sangam-core/src/main/java/org/sangam/core/engine/` (engine-neutr
 | org.operaton.bpm:operaton-engine, operaton-engine-dmn, operaton-engine-feel-scala 2.2.0 (BOM) | Apache-2.0 (transitives as in the spike ledger LIC-1: MIT/BSD/Apache/EPL) |
 | com.fasterxml.jackson.core:jackson-databind 2.22.3 | Apache-2.0 |
 | io.github.sqamentor:sangam-packs (internal; for the LedgerStore/BatchLedger ports; packs depends only on core + Operaton, no cycle) | Apache-2.0 |
-| org.slf4j:slf4j-api 2.0.17 | MIT |
+| org.slf4j:slf4j-api 2.0.20 | MIT |
 | test: H2 2.3.232, JUnit 5.11.4 | EPL-1.0/MPL-2.0, EPL-2.0 |
 
 ## Not done, and why

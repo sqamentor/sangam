@@ -935,7 +935,7 @@ Requests to other workstreams: (1) WS-REST should set `actingPerson` / `actingSe
 | io.github.sqamentor:sangam-core | Apache-2.0 | compile |
 | org.operaton.bpm:operaton-engine 2.2.0 (BOM) | Apache-2.0 | compile |
 | com.fasterxml.jackson.core:jackson-databind 2.22.3 (BOM) | Apache-2.0 | compile |
-| org.slf4j:slf4j-api 2.0.17 | MIT | compile |
+| org.slf4j:slf4j-api 2.0.20 | MIT | compile |
 | org.junit.jupiter:junit-jupiter 5.11.4 | EPL-2.0 | test |
 | com.h2database:h2 2.3.232 | MPL-2.0 / EPL-1.0 | test |
 

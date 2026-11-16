@@ -81,5 +81,5 @@ as env (`SANGAM_JOB_*`) with SCALE 3 defaults.
 |---|---|
 | io.github.sqamentor:sangam-core (internal) | Apache-2.0 |
 | org.operaton.bpm:operaton-engine 2.2.0 (optional, only for the plugin) | Apache-2.0 |
-| org.slf4j:slf4j-api 2.0.17 | MIT |
+| org.slf4j:slf4j-api 2.0.20 | MIT |
 JDK HTTP client only; no new third-party library.
