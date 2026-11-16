@@ -16,6 +16,9 @@ import {
   type TextareaHTMLAttributes,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useInRouterContext } from 'react-router-dom';
+import { Breadcrumbs, PageDescription } from './Breadcrumbs';
+import { toneOf } from './status';
 import { ApiError, type Page } from '../api/client';
 import type { ConsequencePreview } from '../api/types';
 import { traceUrl } from '../lib/trace';
@@ -23,14 +26,20 @@ import { fmtNumber } from '../i18n';
 
 // ------------------------------------------------------------------ layout bits
 
+/**
+ * Page frame (UX-SPEC 6.1, decision 397): breadcrumb from the menu, the title, a one-line "what this page is" (the
+ * page's own, else its menu entry's description) and the page's actions.
+ */
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
+  const routed = useInRouterContext();
   return (
     <header className="page-header">
       <div>
+        {routed && <Breadcrumbs current={title} />}
         <h1 tabIndex={-1} id="page-title">
           {title}
         </h1>
-        {description && <p className="muted">{description}</p>}
+        {routed ? <PageDescription given={description} /> : description && <p className="muted">{description}</p>}
       </div>
       {actions && <div className="toolbar">{actions}</div>}
     </header>
@@ -66,15 +75,8 @@ export function KeyValues({ items }: { items: [string, ReactNode][] }) {
 
 export function Badge({ value, tone }: { value: string; tone?: 'ok' | 'warn' | 'bad' | 'info' | 'neutral' }) {
   const { t } = useTranslation();
-  const auto =
-    tone ??
-    (/BREACH|FAIL|INCIDENT|REJECT|DENY|DOWN|INFECTED|UNKNOWN|ERROR|CANCEL/.test(value)
-      ? 'bad'
-      : /WARN|PENDING|REVIEW|PAUSED|AWAIT|DEGRADED|SUSPEND|PARKED|CLARIFICATION|RETURNED/.test(value)
-        ? 'warn'
-        : /OK|ACTIVE|COMPLETED|APPROVED|UP|CLEAN|DELIVERED|ALLOW|GRANT|SUCCEEDED|DEPLOYED|PAID|VALID|PASS/.test(value)
-          ? 'ok'
-          : 'neutral');
+  // One colour per state on every screen (status.ts, UX-SPEC 6.5).
+  const auto = tone ?? toneOf(value);
   return <span className={`badge badge-${auto}`}>{t(`enum.${value}`, { defaultValue: value })}</span>;
 }
 

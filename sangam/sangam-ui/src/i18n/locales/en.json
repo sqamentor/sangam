@@ -4983,5 +4983,81 @@
     "none": "No keyboard shortcuts are offered for your role.",
     "keys": "Keys",
     "goesTo": "Opens"
+  },
+  "frame": {
+    "breadcrumb": "Breadcrumb"
+  },
+  "status": {
+    "waiting": "Waiting",
+    "inProgress": "In progress",
+    "overdue": "Overdue",
+    "attention": "Needs attention",
+    "sentBack": "Sent back",
+    "done": "Done",
+    "cancelled": "Cancelled",
+    "draft": "Draft",
+    "checked_one": "Checked ({{count}} item)",
+    "checked_other": "Checked ({{count}} items)",
+    "notChecked": "Not checked"
+  },
+  "checklist": {
+    "hide": "Hide this list",
+    "progress": "{{done}} of {{total}} done",
+    "go": "Go",
+    "goTo": "Go to: {{step}}",
+    "citizen": {
+      "title": "Getting started",
+      "find": "Find a service",
+      "apply": "Apply",
+      "track": "Track your application"
+    },
+    "taskUser": {
+      "title": "Getting started with your tasks",
+      "post": "Confirm the post you act as",
+      "open": "Open My tasks",
+      "pickUp": "Pick up a task from the team list",
+      "complete": "Complete a task",
+      "away": "Set an away hand-over"
+    },
+    "supervisor": {
+      "title": "Getting started as a supervisor",
+      "team": "Open Team workload",
+      "list": "Create a shared task list",
+      "reassign": "Reassign a task"
+    },
+    "designer": {
+      "title": "Getting started with design",
+      "project": "Create a project",
+      "flow": "Draw a flow",
+      "form": "Add a form",
+      "test": "Try it in a test run",
+      "review": "Send it for review"
+    },
+    "admin": {
+      "title": "Set up your organisation",
+      "offices": "Add offices and units",
+      "posts": "Create posts",
+      "people": "Add people or a sign-in provider",
+      "postings": "Post people to posts",
+      "packs": "Install a ready-made service",
+      "timeLimits": "Set time limits",
+      "templates": "Set message templates",
+      "test": "Test with a sample request"
+    },
+    "operator": {
+      "title": "Getting started with monitoring",
+      "health": "Open the health overview",
+      "stuck": "Look at stuck requests",
+      "retry": "Retry one stuck request",
+      "delivery": "Check message delivery",
+      "versions": "Check installed versions"
+    },
+    "auditor": {
+      "title": "Getting started with audit",
+      "audit": "Search the audit trail",
+      "timeline": "Open a request's timeline",
+      "tamper": "Run a tamper check",
+      "export": "Export evidence"
+    }
   }
 }

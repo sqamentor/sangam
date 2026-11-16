@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiError, http } from '../api/client';
 import { useAuth } from '../auth/AuthProvider';
 import { areaItems, visibleNav } from '../app/nav';
+import { Checklist, checklistsFor } from '../components/Checklist';
 import { announce, useAction, useAsync } from '../lib/hooks';
 import { fmtDate } from '../i18n';
 import { Badge, DataTable, Empty, KeyValues, Notice, PageHeader, ProblemAlert, Section, TextArea, TextField } from '../components/ui';
@@ -382,6 +383,8 @@ export function Welcome() {
   return (
     <>
       <PageHeader title={t('mod.op.welcome', { name: me?.displayName ?? '' })} description={t('mod.op.welcomeDesc')} />
+      {/* UX-SPEC 6.4: first-run checklists, one per persona the caller holds */}
+      {me && checklistsFor(me).map((p) => <Checklist key={p.id} user={me.userId} persona={p} />)}
       <ul className="cards">
         {areas.map((a) => (
           <li key={a.id} className="card">

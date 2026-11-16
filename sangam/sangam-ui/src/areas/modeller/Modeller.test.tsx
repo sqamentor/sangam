@@ -137,7 +137,7 @@ describe('package workspace', () => {
     env.lease = { mine: true, fence: 7 };
     api.raw.mockResolvedValueOnce(rawAnswer({ ...draft, revision: 4, resources: { 'grievance.bpmn': '<bpmn/><!-- edited -->', 'fee.dmn': '<dmn/>' } }));
     open();
-    expect(await screen.findByText('Grievance · v3')).toBeTruthy();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Grievance · v3' })).toBeTruthy();
     const save = screen.getByRole('button', { name: T('common.save') }) as HTMLButtonElement;
     expect(save.disabled).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'change the model' }));
@@ -150,7 +150,7 @@ describe('package workspace', () => {
         headers: { 'If-Match': '"e1"', 'X-Sangam-Edit-Fence': '7' },
       }),
     );
-    expect(await screen.findByText('Grievance · v4')).toBeTruthy();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Grievance · v4' })).toBeTruthy();
     expect(screen.queryByText(T('modeller.unsaved'))).toBeNull();
   });
 
