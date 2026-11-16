@@ -882,9 +882,12 @@ paths:
         enrolment that signature was bound to was revoked afterwards (also after a re-approval); the signature evidence stays recorded and the
         person signs again with the currently approved certificate. The required document is the one the document route bound into the step''s
         slot (upload with its documentType on an open task of the case); a variable naming a declared DSC document slot is refused with 422 DOCUMENT_SLOT_VARIABLE
-        and nothing is written, here and on every other caller variable write (owner decision 385). Closing a security incident (task compliance/incident-follow-up
-        of sangam-incident-report, when the follow-up choice is close) needs non-blank rootCause and lessonsLearned in the completion variables
-        (SANGAM.md OJ-06 step 8): otherwise 422 INCIDENT_CLOSURE_INCOMPLETE naming the missing field(s), and nothing is written.'
+        and nothing is written, here and on every other caller variable write (owner decision 385). A gate that signs consumes the slot for its
+        gate instance: a gate reached again (a return and resubmission, another call) needs the document uploaded again (a new document or version),
+        and the prepare task before the call refuses a slot already signed, empty or not bound by the route with 422 DOCUMENT_SLOT_NOT_READY (owner
+        decision 390). Closing a security incident (task compliance/incident-follow-up of sangam-incident-report, when the follow-up choice is
+        close) needs non-blank rootCause and lessonsLearned in the completion variables (SANGAM.md OJ-06 step 8): otherwise 422 INCIDENT_CLOSURE_INCOMPLETE
+        naming the missing field(s), and nothing is written.'
       x-sangam-command-type: task.complete
       x-sangam-idempotent: true
       parameters:

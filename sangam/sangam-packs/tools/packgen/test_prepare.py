@@ -161,6 +161,20 @@ class PrepareTaskTest(unittest.TestCase):
         self.assertEqual(('tp/prepare-note-noting', ['s1*', 's2*']), prepare.form('tp', [
             dict(gates[0], required=None), dict(gates[1], required=None, type='NOTING')]))
 
+    def test_the_prepare_task_refuses_a_consumed_or_unbound_slot_through_the_slot_ready_listener(self):
+        # decisions 387 (9) and 390: the prepare task names each called gate's slot and type to the listener
+        g, c = gate(), caller()
+        apply_([g, c], lambda p: {})
+        ext = ''.join(node(c, 'c_callPrepare')['ext'])
+        self.assertIn('<operaton:taskListener event="complete" class="' + C['SLOT_READY'] + '">'
+                      '<operaton:field name="slots"><operaton:string>docSlot:NOTE</operaton:string></operaton:field>'
+                      '</operaton:taskListener>', ext)
+        self.assertEqual('<operaton:taskListener event="complete" class="' + C['SLOT_READY'] + '">'
+                         '<operaton:field name="slots"><operaton:string>s1:NOTE,s2:NOTING</operaton:string>'
+                         '</operaton:field></operaton:taskListener>',
+                         prepare.slot_ready([{'slot': 's2', 'type': 'NOTING'}, {'slot': 's1', 'type': 'NOTE'},
+                                             {'slot': 's1', 'type': 'NOTE'}]))
+
 
 if __name__ == '__main__':
     unittest.main()

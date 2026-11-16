@@ -1,6 +1,6 @@
 {
   "key": "leave/application",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.leave",
   "title": {
     "en": "Leave application",

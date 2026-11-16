@@ -34,6 +34,7 @@ import universal  # noqa: E402
 import sector  # noqa: E402
 import readme  # noqa: E402
 import compliance  # noqa: E402
+import releases  # noqa: E402
 
 GENERATED_ROOTS = ('packs', os.path.join('META-INF', 'sangam'))
 # packgen owns the BPMN models of the compliance pack (ADR-D-20 single source); the other files of that pack directory
@@ -50,6 +51,7 @@ def generate(resources, readme_path, compliance_dir):
     packs.write_all(resources)  # form titles, labels and options are resolved while writing
     if packs.MISSING:
         sys.exit('missing labels / options / titles: ' + ', '.join(sorted(packs.MISSING)))
+    releases.check_held(os.path.join(resources, 'packs'))  # decision 390 (2): a held version keeps its content
     readme.write(readme_path, packs.ALL)
     print('packs:', len(packs.ALL), 'processes:', sum(len(p.procs) for p in packs.ALL),
           'dmn:', sum(len(p.dmns) for p in packs.ALL) + sum(len(p.overrides) for p in packs.ALL),

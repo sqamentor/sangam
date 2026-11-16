@@ -1,6 +1,6 @@
 {
   "key": "ifms-gpf/prepare-sanction-note",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.ifms.gpf",
   "title": {
     "en": "Prepare the document to sign",

@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Test;
 import org.operaton.bpm.engine.ProcessEngine;
 import org.operaton.bpm.engine.ProcessEngineException;
 import org.operaton.bpm.engine.task.Task;
+import org.sangam.assembly.packs.AuditDocumentSlotBindings;
+import org.sangam.assembly.packs.PackDocumentSlotNames;
 import org.sangam.core.engine.DocumentSlotNames;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.packs.core.DscSignatureGuardListener;
@@ -41,9 +43,7 @@ import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.port.TaskPort;
 import org.sangam.rest.support.DocumentSlots;
 import org.sangam.rest.support.RestProperties;
-import org.sangam.server.bridge.AuditDocumentSlotBindings;
 import org.sangam.server.bridge.OperatonDocumentSlots;
-import org.sangam.server.bridge.PackRegistryDocumentSlots;
 import org.sangam.server.bridge.PortsDocumentBridge;
 import org.sangam.server.config.PacksWiring;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -175,16 +175,22 @@ class DscSlotBindingH2Test {
         PackRuntime.reset();
         // the server's binding check; a signature port that verifies only what this test signed
         PackRuntime.install(PackRuntime.ports()
-                .withSlotBindings(new AuditDocumentSlotBindings(fx.tx))
+                .withSlotBindings(bindings())
                 .withSignatures((tenant, task, doc, who) -> signed.contains(tenant + "|" + task + "|" + doc + "|" + who)));
         PackRegistry registry = PackRegistry.discover();
-        DocumentSlotNames.install(() -> PackRegistryDocumentSlots.slotNames(registry));
+        PackDocumentSlotNames.install(registry);
     }
 
     @AfterEach
     void resetPorts() {
         PackRuntime.reset();
         DocumentSlotNames.reset();
+    }
+
+    /** The server's binding check and consumption, as PacksWiring builds it. */
+    static AuditDocumentSlotBindings bindings() {
+        return new AuditDocumentSlotBindings(fx.tx::withConnection,
+                org.sangam.server.config.PacksWiring::engineCommand, new org.sangam.core.layer.AuditChain(fx.tx.dialect()));
     }
 
     static String startCaller() {
@@ -230,12 +236,86 @@ class DscSlotBindingH2Test {
         Task gate = openTask(child);
         assertEquals(note.id(), fx.engine.getTaskService().getVariableLocal(gate.getId(),
                 DscSignatureGuardListener.REQUIRED_DOCUMENT), "bound on the caller, captured on the gate's instance");
-        assertTrue(new AuditDocumentSlotBindings(fx.tx)
+        assertTrue(bindings()
                 .isBound(T, List.of(child, caller), SLOT, "SANCTION_NOTE", note.id()));
         sign(gate, note.id());
         completeGate(gate);
         assertEquals(0, fx.engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(caller).count(),
                 "the gate and the caller ended");
+    }
+
+    @Test
+    void decision390ASignedGateConsumesTheBindingOnTheCallersChainInItsCompletion() {
+        String caller = startCaller();
+        DocumentPort.Document note = upload(openTask(caller));
+        fx.engine.getTaskService().complete(openTask(caller).getId());
+        String child = childOf(caller);
+        Task gate = openTask(child);
+        sign(gate, note.id());
+        completeGate(gate);
+        List<String> consumed = fx.tx.withConnection(c -> Jdbc.query(c, "SELECT p.payload FROM AUDIT_EVENT e"
+                + " JOIN AUDIT_PAYLOAD p ON p.event_id = e.event_id WHERE e.tenant_id = ? AND e.chain_id = ?"
+                + " AND e.event_type = ?", rs -> rs.getString(1), T, caller, AuditDocumentSlotBindings.CONSUMED));
+        assertEquals(1, consumed.size(), "one consumption, on the chain where the route bound the slot");
+        Map<?, ?> p = readJson(consumed.get(0));
+        assertEquals(SLOT, p.get("slot"));
+        assertEquals(note.id(), p.get("document_id"));
+        assertEquals("SANCTION_NOTE", p.get("document_type"));
+        assertEquals(child, p.get("gate_instance"));
+        assertEquals(gate.getId(), p.get("task_id"));
+        assertFalse(bindings().isBound(T, List.of("another-gate", caller), SLOT, "SANCTION_NOTE", note.id()),
+                "another gate instance finds the slot consumed");
+        assertTrue(bindings().isBound(T, List.of(child, caller), SLOT, "SANCTION_NOTE", note.id()),
+                "the gate instance that signed it still finds it bound (its other levels)");
+    }
+
+    @Test
+    void decision390ABindingOlderThanAnotherGateInstancesConsumptionIsNotBoundUntilTheRouteBindsAgain() {
+        String caller = startCaller();
+        Task prepare = openTask(caller);
+        DocumentPort.Document note = upload(prepare);
+        AuditDocumentSlotBindings b = bindings();
+        assertThrows(IllegalStateException.class, () -> b.consume(T, List.of("gate-a", caller), SLOT, "NOTING",
+                note.id(), "task-a"), "a binding of another type cannot be consumed");
+        b.consume(T, List.of("gate-a", caller), SLOT, "SANCTION_NOTE", note.id(), "task-a");
+        assertTrue(b.isBound(T, List.of("gate-a", caller), SLOT, "SANCTION_NOTE", note.id()), "own gate instance");
+        assertFalse(b.isBound(T, List.of("gate-b", caller), SLOT, "SANCTION_NOTE", note.id()), "another gate instance");
+        assertFalse(b.isBound(T, List.of(caller), SLOT, "SANCTION_NOTE", note.id()), "the prepare task of the caller");
+        assertThrows(IllegalStateException.class, () -> b.consume(T, List.of("gate-b", caller), SLOT, "SANCTION_NOTE",
+                note.id(), "task-b"), "a consumed binding cannot be consumed by another gate instance");
+        // a new version through the route is a newer binding of the same document
+        slots.newVersion(OFFICER_CTX, documents, note.id(), null, new DocumentPort.UploadRequest("note-v2.pdf",
+                "application/pdf", PDF, prepare.getId(), null, null, Map.of()), "SANCTION_NOTE", false);
+        assertTrue(b.isBound(T, List.of("gate-b", caller), SLOT, "SANCTION_NOTE", note.id()), "bound again");
+        b.consume(T, List.of("gate-b", caller), SLOT, "SANCTION_NOTE", note.id(), "task-b");
+        assertFalse(b.isBound(T, List.of("gate-a", caller), SLOT, "SANCTION_NOTE", note.id()),
+                "gate a's binding ended with gate b's consumption");
+        // a replacing upload is a newer binding of another document
+        DocumentPort.Document fresh = slots.upload(OFFICER_CTX, documents, new DocumentPort.UploadRequest("note3.pdf",
+                "application/pdf", PDF, prepare.getId(), null, null, Map.of()), "SANCTION_NOTE", true);
+        assertTrue(b.isBound(T, List.of("gate-c", caller), SLOT, "SANCTION_NOTE", fresh.id()));
+        assertFalse(b.isBound(T, List.of("gate-c", caller), SLOT, "SANCTION_NOTE", note.id()));
+    }
+
+    @Test
+    void decision390AnErasedConsumptionIsNotBoundFailClosed() {
+        String caller = startCaller();
+        DocumentPort.Document note = upload(openTask(caller));
+        AuditDocumentSlotBindings b = bindings();
+        b.consume(T, List.of("gate-a", caller), SLOT, "SANCTION_NOTE", note.id(), "task-a");
+        fx.tx.withConnection(c -> Jdbc.update(c, "UPDATE AUDIT_PAYLOAD SET erased_at = CURRENT_TIMESTAMP WHERE event_id IN"
+                + " (SELECT event_id FROM AUDIT_EVENT WHERE chain_id = ? AND event_type = ?)", caller,
+                AuditDocumentSlotBindings.CONSUMED));
+        assertFalse(b.isBound(T, List.of("gate-a", caller), SLOT, "SANCTION_NOTE", note.id()),
+                "an erased consumption cannot show whose it was");
+    }
+
+    static Map<?, ?> readJson(String json) {
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, Map.class);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Test
@@ -274,7 +354,7 @@ class DscSlotBindingH2Test {
         DocumentPort.Document first = upload(prepare);
         DocumentPort.Document second = slots.upload(OFFICER_CTX, documents, new DocumentPort.UploadRequest("note2.pdf",
                 "application/pdf", PDF, prepare.getId(), null, null, Map.of()), "SANCTION_NOTE", true);
-        AuditDocumentSlotBindings b = new AuditDocumentSlotBindings(fx.tx);
+        AuditDocumentSlotBindings b = bindings();
         assertTrue(b.isBound(T, List.of(caller), SLOT, "SANCTION_NOTE", second.id()));
         assertFalse(b.isBound(T, List.of(caller), SLOT, "SANCTION_NOTE", first.id()), "the latest binding decides");
     }
@@ -283,7 +363,7 @@ class DscSlotBindingH2Test {
     void anotherTypeTenantOrSlotOrAnErasedPayloadIsNotBound() {
         String caller = startCaller();
         DocumentPort.Document note = upload(openTask(caller));
-        AuditDocumentSlotBindings b = new AuditDocumentSlotBindings(fx.tx);
+        AuditDocumentSlotBindings b = bindings();
         assertTrue(b.isBound(T, List.of(caller), SLOT, "SANCTION_NOTE", note.id()));
         assertFalse(b.isBound(T, List.of(caller), SLOT, "NOTING", note.id()), "another type");
         assertFalse(b.isBound("t2", List.of(caller), SLOT, "SANCTION_NOTE", note.id()), "another tenant");

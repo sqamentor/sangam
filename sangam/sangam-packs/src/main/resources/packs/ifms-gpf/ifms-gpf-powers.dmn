@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_gpf_powers" name="Delegated powers by role" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- Delegated powers for GPF (SL-31). UNVERIFIED: the GPF (CS) Rules 1960 sanctioning authority is not read (corpus IFC-171 [U: department order]); confirm and deploy it as a tenant DMN override -->
-  <decision id="ifms-gpf-powers" name="Delegated powers by role" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="ifms-gpf-powers" name="Delegated powers by role" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="ifms-gpf-powers_t" hitPolicy="FIRST">
       <input id="ifms-gpf-powers_i0" label="Seat role"><inputExpression id="ifms-gpf-powers_ie0" typeRef="string"><text>seatRole</text></inputExpression></input>
       <input id="ifms-gpf-powers_i1" label="Case type"><inputExpression id="ifms-gpf-powers_ie1" typeRef="string"><text>caseType</text></inputExpression></input>

@@ -1,6 +1,6 @@
 {
   "key": "contract-management/prepare-sanction-note",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.contract-management",
   "title": {
     "en": "Prepare the document to sign",

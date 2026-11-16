@@ -1,6 +1,6 @@
 {
   "id": "gov.dbt.batch",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "DBT batch with partial failure",
     "hi": "आंशिक विफलता सहित डीबीटी बैच"

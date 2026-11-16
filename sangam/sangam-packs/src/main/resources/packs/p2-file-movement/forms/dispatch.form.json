@@ -1,6 +1,6 @@
 {
   "key": "p2-file-movement/dispatch",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.p2.file-movement",
   "title": {
     "en": "Issue the approved letter",

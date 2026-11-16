@@ -1,6 +1,6 @@
 {
   "key": "sec-scm-procure-to-pay/requisition",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.scm.procure-to-pay",
   "title": {
     "en": "Purchase requisition",

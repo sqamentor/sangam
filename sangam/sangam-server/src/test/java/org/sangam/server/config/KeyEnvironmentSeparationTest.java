@@ -247,4 +247,121 @@ class KeyEnvironmentSeparationTest {
         assertEquals("production", new KeyPurposeSeparationWiring()
                 .sangamKeyPurposeSeparation(prod.env, bf.getBeanProvider(SecretResolver.class)).environment());
     }
+
+
+    /** Decisions 387 (4) and 390 (4): the key custodian's key pair. */
+    private static final KeyPair CUSTODIAN = custodianPair();
+
+    private static KeyPair custodianPair() {
+        try {
+            return KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /** Every key of {@code e} with its purpose, by its first fingerprint, as a custodian attests them. */
+    private static List<KeyAttestation.Key> keysOf(Env e) {
+        List<KeyAttestation.Key> out = new java.util.ArrayList<>();
+        for (KeyPurposeSeparation.Entry x : e.entries()) {
+            x.fingerprints().stream().sorted().findFirst()
+                    .ifPresent(f -> out.add(new KeyAttestation.Key(f, x.purpose())));
+        }
+        return out;
+    }
+
+    private Env attested(Env e, String environment, List<KeyAttestation.Key> keys, java.security.PrivateKey by)
+            throws Exception {
+        Path file = Files.writeString(dir.resolve("attestation-" + RANDOM.nextInt(1_000_000) + ".json"),
+                KeyAttestation.sign(environment, "2026-11-16T00:00:00Z", keys, by));
+        e.env.setProperty(KeyEnvironmentSeparation.ATTESTATION, file.toString());
+        e.env.setProperty(KeyEnvironmentSeparation.CUSTODIAN,
+                Base64.getEncoder().encodeToString(CUSTODIAN.getPublic().getEncoded()));
+        return e;
+    }
+
+    @Test
+    void decision390AProductionStartsOverTheCustodiansAttestationInPlaceOfAList() throws Exception {
+        Env prod = new Env("production");
+        attested(prod, "production", keysOf(prod), CUSTODIAN.getPrivate());
+        KeyEnvironmentSeparation.Result r = prod.check(true);
+        assertEquals(keysOf(prod).size(), r.attested(), "every own key setting attested");
+        assertTrue(r.attested() >= 4, String.valueOf(r.attested()));
+        assertEquals(0, r.foreign());
+        assertFalse(r.bootstrap());
+    }
+
+    @Test
+    void decision390AKeyNotAttestedOrAttestedForAnotherPurposeIsRefusedByName() throws Exception {
+        Env prod = new Env("production");
+        List<KeyAttestation.Key> keys = new java.util.ArrayList<>(keysOf(prod));
+        KeyAttestation.Key kek = keys.stream().filter(k -> k.purpose().equals("key-encryption key")).findFirst()
+                .orElseThrow();
+        keys.remove(kek);
+        attested(prod, "production", keys, CUSTODIAN.getPrivate());
+        String m = prod.refused(true);
+        assertTrue(m.startsWith(KeyAttestation.INVALID) && m.contains("sangam.security.kek.keys.k1"), m);
+        assertFalse(m.contains(kek.fingerprint()), "a refusal never prints a fingerprint");
+        keys.add(new KeyAttestation.Key(kek.fingerprint(), "audit checkpoint signing"));
+        attested(prod, "production", keys, CUSTODIAN.getPrivate());
+        assertTrue(prod.refused(true).contains("sangam.security.kek.keys.k1"), "the purpose is part of the attestation");
+        // outside production an attestation that is set is checked too
+        assertTrue(prod.refused(false).startsWith(KeyAttestation.INVALID));
+    }
+
+    @Test
+    void decision390AnAttestationNotSignedByTheCustodianOrForAnotherEnvironmentIsRefused() throws Exception {
+        Env prod = new Env("production");
+        KeyPair other = custodianPair();
+        attested(prod, "production", keysOf(prod), other.getPrivate());
+        assertTrue(prod.refused(true).contains("does not verify"), "signed by another key");
+        attested(prod, "staging", keysOf(prod), CUSTODIAN.getPrivate());
+        assertTrue(prod.refused(true).contains("is for environment staging"));
+        // a statement changed after signing
+        attested(prod, "production", keysOf(prod), CUSTODIAN.getPrivate());
+        Path file = Path.of(prod.env.getProperty(KeyEnvironmentSeparation.ATTESTATION));
+        com.fasterxml.jackson.databind.node.ObjectNode doc = (com.fasterxml.jackson.databind.node.ObjectNode)
+                new com.fasterxml.jackson.databind.ObjectMapper().readTree(Files.readString(file));
+        String statement = new String(Base64.getDecoder().decode(doc.get("statement").asText()), StandardCharsets.UTF_8);
+        doc.put("statement", Base64.getEncoder().encodeToString(statement.replace("production", "productioN")
+                .getBytes(StandardCharsets.UTF_8)));
+        Files.writeString(file, doc.toString());
+        assertTrue(prod.refused(true).contains("does not verify"));
+        Files.writeString(file, "{\"format\": \"other/1\"}");
+        assertTrue(prod.refused(true).contains("is not a " + KeyAttestation.FORMAT));
+        Files.delete(file);
+        assertTrue(prod.refused(true).contains("cannot be read"));
+    }
+
+    @Test
+    void decision390AnAttestationNeedsAValidCustodianKey() throws Exception {
+        Env prod = new Env("production");
+        attested(prod, "production", keysOf(prod), CUSTODIAN.getPrivate());
+        prod.env.setProperty(KeyEnvironmentSeparation.CUSTODIAN, "");
+        assertTrue(prod.refused(true).contains("needs " + KeyEnvironmentSeparation.CUSTODIAN));
+        prod.env.setProperty(KeyEnvironmentSeparation.CUSTODIAN, random(32));
+        assertTrue(prod.refused(true).contains("is not a base64 X.509 Ed25519 public key"));
+    }
+
+    @Test
+    void decision390TheOneTimeBootstrapStartsTheFirstProductionEnvironmentOnly() throws Exception {
+        Env first = new Env("production");
+        first.env.setProperty(KeyEnvironmentSeparation.BOOTSTRAP, "true");
+        assertTrue(first.check(true).bootstrap(), "recorded once the database is ready");
+        // refused once a list or an attestation exists
+        Env listed = new Env("production").list(new Env("staging").export(dir.resolve("staging.txt")));
+        listed.env.setProperty(KeyEnvironmentSeparation.BOOTSTRAP, "true");
+        assertTrue(listed.refused(true).contains("is refused once " + KeyEnvironmentSeparation.FOREIGN));
+        Env att = attested(new Env("production"), "production", List.of(), CUSTODIAN.getPrivate());
+        att.env.setProperty(KeyEnvironmentSeparation.BOOTSTRAP, "true");
+        assertTrue(att.refused(true).contains("is refused once " + KeyEnvironmentSeparation.ATTESTATION));
+        // a value that is not a boolean, or no name
+        first.env.setProperty(KeyEnvironmentSeparation.BOOTSTRAP, "yes");
+        assertTrue(first.refused(true).contains("must be true or false"));
+        first.env.setProperty(KeyEnvironmentSeparation.BOOTSTRAP, "true");
+        first.env.setProperty(KeyEnvironmentSeparation.ENVIRONMENT, "");
+        assertTrue(first.refused(true).startsWith(KeyEnvironmentSeparation.LIST_REQUIRED));
+        // without the bootstrap, production still needs a list or an attestation
+        assertTrue(new Env("production").refused(true).contains(KeyEnvironmentSeparation.ATTESTATION));
+    }
 }

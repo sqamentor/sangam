@@ -1,0 +1,594 @@
+{
+ "gov.assets": {
+  "sha256": "4f1a17b5ff26caf2c5da2e6d40c8dbe555f24d089c4e2ceda8e8470019d83b2d",
+  "version": "1.0.1"
+ },
+ "gov.audit-para": {
+  "sha256": "2ab0c529c148a0efe5a94114dac1816e55a3f5b8d3dd3124867c95cd6955265b",
+  "version": "1.0.1"
+ },
+ "gov.consultancy": {
+  "sha256": "cc5a887fbfa726da7f495b20d02105ab1f8a01665cd0c50d13161b467af528e3",
+  "version": "1.0.1"
+ },
+ "gov.contract-management": {
+  "sha256": "78ab16d4cc4201944e72fa6bf10c583bb021427e01a735d284291a853a14d376",
+  "version": "1.0.1"
+ },
+ "gov.court-case": {
+  "sha256": "cb4225493f1d83c254a8f935749fa714558486cf839fa2ebb12f9726e2d9704e",
+  "version": "1.0.1"
+ },
+ "gov.dbt.batch": {
+  "sha256": "12775315d29aa689116dc973b35a7cefcade99b4e6a26e04bbf1200b0b3d503d",
+  "version": "1.0.1"
+ },
+ "gov.gem-purchase": {
+  "sha256": "b74d0ddda0a62373ed0b39d43958c2e512069ea4166dfbfa75eeee9ed7b90eea",
+  "version": "1.0.1"
+ },
+ "gov.grievance": {
+  "sha256": "feb64adba9c0c5df2579688131d9a9cfe46c784c9eac8ee3f6850fe04a448d58",
+  "version": "1.0.1"
+ },
+ "gov.ifms.audit-para-settlement": {
+  "sha256": "a91e9e0438e3e57b040e58045a6b8a2aedb83602feb4e734e3cd38278e20a934",
+  "version": "1.0.1"
+ },
+ "gov.ifms.bill": {
+  "sha256": "5135ddee5ab413ce1dd3ec78896f0c794ff97960555a70c0dc2e9c36e1de968c",
+  "version": "1.0.1"
+ },
+ "gov.ifms.budget-allocation": {
+  "sha256": "428b0f6fe27c07c9a6e51846a286cdfde5825bb4a75beca331ed9a381a177423",
+  "version": "1.0.1"
+ },
+ "gov.ifms.budget-formulation": {
+  "sha256": "d82cc142516d36b26807c2e58d656ce3bd6d49863562c568f82eb5b2f5a1757a",
+  "version": "1.0.1"
+ },
+ "gov.ifms.budget-reappropriation": {
+  "sha256": "2be8497b977e0f5bcaa03122e85573ed16e8428dcac2e1de9936d8b98df5dc4a",
+  "version": "1.0.1"
+ },
+ "gov.ifms.challan-reconciliation": {
+  "sha256": "8d7abf37b4eafbb977a091b57f5dcfec789847bffc19175587adc4de58d993bb",
+  "version": "1.0.1"
+ },
+ "gov.ifms.gia-uc": {
+  "sha256": "644b0a761c0d4619886a3bafbfb8a05a4344e528971705cf001882b8543c1c5e",
+  "version": "1.0.1"
+ },
+ "gov.ifms.gpf": {
+  "sha256": "e3069b86118fe899a0a5ccf1a4f6df1f82a5d921ff9016b08557c5df2e0a2f6d",
+  "version": "1.0.1"
+ },
+ "gov.ifms.loans-advances": {
+  "sha256": "25cb12a4f038f21333c8954d71318374b95fe9d8e1804456095db84a16fa7049",
+  "version": "1.0.1"
+ },
+ "gov.ifms.monthly-accounts": {
+  "sha256": "822cd2b12092035ddf893dc0751ef1b2fc827b61c36cf465924c25fe932b06af",
+  "version": "1.0.1"
+ },
+ "gov.ifms.pao-chain": {
+  "sha256": "6433220bf91b0bc5fabae76ae76ec755aa24fc20a892fba62e4289c29c921ad7",
+  "version": "1.0.1"
+ },
+ "gov.ifms.reappropriation": {
+  "sha256": "bc6cf003abf47f0b32dc3da6ed67786aafb6b505de1744c8f6c8dcced2466cb3",
+  "version": "1.0.1"
+ },
+ "gov.ifms.receipts": {
+  "sha256": "b39f9bc9cd349d5bcebb9ba1fa95a8a679669d5b35a01869a7e04273aa8487f0",
+  "version": "1.0.1"
+ },
+ "gov.ifms.salary-monthly": {
+  "sha256": "6e72948aaf7bcf6c5fc8f81a64463f79421ff54bc5776d241fa3b5c57cd6795f",
+  "version": "1.0.0"
+ },
+ "gov.ifms.scheme-appraisal": {
+  "sha256": "de0b75aa9781402bf4999c7df95201466dd307ae5447dd45f3e464694e2531e3",
+  "version": "1.0.1"
+ },
+ "gov.ifms.sna-sparsh": {
+  "sha256": "3c67b3b0c2d3784db9050ec007a565d3808d211dae312df41408c9bc79fff51f",
+  "version": "1.0.1"
+ },
+ "gov.ifms.supplementary": {
+  "sha256": "a63eda5d09cdd92470cf285aae1ad7b6e748df08b1d2952eb0704dd6fc9f2542",
+  "version": "1.0.1"
+ },
+ "gov.ifms.surrender-lapse": {
+  "sha256": "4ae4eea9f092e791d31cf1fb62731cc3276b8c85cbcfa4709025bbda9e6348c0",
+  "version": "1.0.1"
+ },
+ "gov.ifms.year-end-closing": {
+  "sha256": "eef99177aa517ae9cdd05ff305462d9506e8ba7311bde0bffbcd3848c92b1105",
+  "version": "1.0.1"
+ },
+ "gov.inspection": {
+  "sha256": "288e281d7c0c15f85dbc799013a57fac676a00426d66d51acd2175e52c738ee4",
+  "version": "1.0.1"
+ },
+ "gov.intl.pfm-breach-case": {
+  "sha256": "15f001d92d12b53fbbb8c0075befba68a67f463413463e950dda5077e6d3175a",
+  "version": "1.0.0"
+ },
+ "gov.intl.pfm-budget-accounting-reconciliation": {
+  "sha256": "3d64d1b865e323f4c73f8309726b8421906d97127df596fcd4a9bdf687097ded",
+  "version": "1.0.0"
+ },
+ "gov.intl.pfm-budget-preparation": {
+  "sha256": "d5e9697cc994d2a4adbd94a31748e8891273856bd68c44697485a19e34a1cf24",
+  "version": "1.0.0"
+ },
+ "gov.intl.pfm-cash-plan": {
+  "sha256": "f0c81594823a987cad2a264b20e79b8c1bdc3cfce9cbe353261321bc1c528a4b",
+  "version": "1.0.0"
+ },
+ "gov.intl.pfm-debt-operation": {
+  "sha256": "54731604edebf31d9ec09a3e95606933a361ba7c84433727ea3b2b5ced43d9aa",
+  "version": "1.0.0"
+ },
+ "gov.intl.pfm-do-not-pay": {
+  "sha256": "97bcf7fdef0c2206eb0c73a4e5c03608de630520e1f8b6c0e6d0920a0d8dd0a1",
+  "version": "1.0.0"
+ },
+ "gov.intl.pfm-execution": {
+  "sha256": "1f29c7f6a75e6bb6be9a08fac91c8ae9ef5c90fc0a8dbdd067f6929d9d06912b",
+  "version": "1.0.0"
+ },
+ "gov.intl.pfm-fiscal-transparency": {
+  "sha256": "9e074d9d9d41c8dd93e7842ad8096f3417e352ebf475a264e68ed2f9c0114fcf",
+  "version": "1.0.0"
+ },
+ "gov.intl.pfm-pefa-evidence": {
+  "sha256": "0c1594ae04016cd83ad5214a459cf1e13a5d99e7051d62d6745219e7cf996fda",
+  "version": "1.0.0"
+ },
+ "gov.intl.pfm-procurement-complaint": {
+  "sha256": "47f6dcf3f87b6e9bd7420f2814cdaa84249906448863538f161e12e114b2a67a",
+  "version": "1.0.0"
+ },
+ "gov.intl.pfm-replenishment": {
+  "sha256": "6a743934c846bfb75e5b7966dc2c19fde075b7c8261bd9d2579fa02221c4f2ce",
+  "version": "1.0.0"
+ },
+ "gov.intl.pfm-standard-reports": {
+  "sha256": "8cf014405e0a69fea26a56d579e9e4d70cf33a34e0890cebfb7b85c817b09157",
+  "version": "1.0.0"
+ },
+ "gov.intl.pfm-suspense-ageing": {
+  "sha256": "d0c090d4a6f54c3a2ecbe3e8a126d3d8a7f8fd5c4767fbd72914df3f100aa212",
+  "version": "1.0.0"
+ },
+ "gov.intl.pfm-transfer-deadline": {
+  "sha256": "f8c6b07c8b22dc8743dbff46da8744eca3d5a4f0af555b8705a906201ac66e1f",
+  "version": "1.0.0"
+ },
+ "gov.land-acquisition": {
+  "sha256": "c4f5249b88b30872bb849555b2e2fe7d125f451dc0862516181567af775ebf37",
+  "version": "1.0.1"
+ },
+ "gov.leave": {
+  "sha256": "96961c278e0b4ff2600643efccb3756e928e042aae6158df0f782f5bca0cb5ae",
+  "version": "1.0.1"
+ },
+ "gov.p1.bill-payment": {
+  "sha256": "5159c7fa3819eb540f34a22e6ececd0b938c9eb3b13fa41c726221c25ca228e3",
+  "version": "1.0.1"
+ },
+ "gov.p2.file-movement": {
+  "sha256": "9b9b5a98f6c9e4dafaab108a93ebc13812f1fe5a3d847ea528aedf42934262fa",
+  "version": "1.0.1"
+ },
+ "gov.p3.grant-sanction": {
+  "sha256": "e03a76359f182813abef908081f75b96f4062243a4db5318755695ffe039bb45",
+  "version": "1.0.1"
+ },
+ "gov.p4.licence": {
+  "sha256": "d0bab8c7c9c7a383b53291ff2e0d89b28a3e4a85d762c29f0ae3d07d9f498e11",
+  "version": "1.0.1"
+ },
+ "gov.pension": {
+  "sha256": "d2c072a7774a9a1eb18c068b452f7953cf3a3556036104e1d0e3897b3c14de7a",
+  "version": "1.0.1"
+ },
+ "gov.records": {
+  "sha256": "289ac62f894bf9fee22ac6271ae56918d238a2e9e09b4f437d03f138ca3867c4",
+  "version": "1.0.1"
+ },
+ "gov.recruitment": {
+  "sha256": "7f6bbd45c09f0098a3ff9f9af2bffc8f719f6b683bc89227235f3e19ec98231a",
+  "version": "1.0.1"
+ },
+ "gov.rti": {
+  "sha256": "b6125e4a0a4d027683b3fa89be4fa472005e9a6181b9e50164996b65219dc209",
+  "version": "1.0.1"
+ },
+ "gov.rtps": {
+  "sha256": "314d745438c43f029c9b15ee0b33c056aa24533775b35bfad5280861853d8ef3",
+  "version": "1.0.1"
+ },
+ "gov.security-instrument": {
+  "sha256": "523c4c9c509b9dce980074c54a0a7b5713712a49189de0333f7a1b2def7266a6",
+  "version": "1.0.1"
+ },
+ "gov.stores": {
+  "sha256": "76b4026bc17ba7071c03f37647b590a4c1c96af585b81cd28f2025aa61939175",
+  "version": "1.0.1"
+ },
+ "gov.tender": {
+  "sha256": "9d4fb07e076a2035f5a4175f8b4a9b744ad75e180791486646d4b12abafef25e",
+  "version": "1.0.1"
+ },
+ "gov.work-order": {
+  "sha256": "b3746cf06669b81bb91d0cd6df43a136971daf17627f43ac160c89820c327db8",
+  "version": "1.0.1"
+ },
+ "gov.works": {
+  "sha256": "1dd156e42c9e386c18e05e49909ba0da0ac9a7e6f00e99cfddd38cd0ba0c52d1",
+  "version": "1.0.1"
+ },
+ "sangam.core": {
+  "sha256": "8b52875b4e9a0a5ad30209de8f82cb5628ba96d956a66b69c9192ec60d223244",
+  "version": "1.0.1"
+ },
+ "sec.bank.account-opening": {
+  "sha256": "e3a1b0fcec4a16e9028e9818a663927f163e5ffd67f3b65c81833db1ddae024b",
+  "version": "1.0.1"
+ },
+ "sec.bank.aml-str": {
+  "sha256": "3007f5ab891abc2e957d04425ce0bd08ad445970afde55cff43ab025f9d929fe",
+  "version": "1.0.1"
+ },
+ "sec.bank.cheque-return": {
+  "sha256": "eddde18ee8de4f8d90e3afb881aacc5f6374109d4a671ca5917ab7a60483ca2f",
+  "version": "1.0.1"
+ },
+ "sec.bank.collections": {
+  "sha256": "f5b790b6c6dbc93ef41c09cc3e1ed2d03a5309943e1456ef0d2e20c08433c586",
+  "version": "1.0.1"
+ },
+ "sec.bank.emandate": {
+  "sha256": "49626b3959b4c706ec420667d7084eac57bc6df28bcbd5391905c5dd07895c04",
+  "version": "1.0.1"
+ },
+ "sec.bank.inoperative-deposits": {
+  "sha256": "485cb5a1a5cf46afe2cc406effd189c59facfb5b5dac166b7acd3adf09f3e885",
+  "version": "1.0.1"
+ },
+ "sec.bank.loan-closure": {
+  "sha256": "887fbebafffe9bf8d653f28bbaa3761263532cf7bd237e2e1999970152c509eb",
+  "version": "1.0.1"
+ },
+ "sec.bank.loan-origination": {
+  "sha256": "be14892b144a7fa40547f5404f5a7323e8bbc12a9691772ff99fb6d28cf0f2ed",
+  "version": "1.0.1"
+ },
+ "sec.bank.payment-dual-auth": {
+  "sha256": "cd4bcfd05aa5d0c024665451f5060e59ba1f8670017574f3507423da3eaf3c71",
+  "version": "1.0.1"
+ },
+ "sec.bank.rekyc": {
+  "sha256": "f942d01a8d61c9df8626101fe73b7e2deee5611767766fe2a3877cba2d48fe92",
+  "version": "1.0.1"
+ },
+ "sec.bank.txn-dispute": {
+  "sha256": "3bb48bbacd9d7bc4f898ff73fe953eadb12f39868f447f7042e2271fa345e0b0",
+  "version": "1.0.1"
+ },
+ "sec.cap.corporate-action": {
+  "sha256": "d2995da4551176bec2081a1a991a78507ddb1235682477d20b51be6ad230b93f",
+  "version": "1.0.1"
+ },
+ "sec.cap.investor-onboarding": {
+  "sha256": "148bb9329e83b61a830f8d69f197c3cf078e239e34a91d8fc473afec677fbd57",
+  "version": "1.0.1"
+ },
+ "sec.cap.ipo-allotment": {
+  "sha256": "52a06536f7870e6726f7923209ad675193c5718c432ad6cde3d28cc594e32a21",
+  "version": "1.0.1"
+ },
+ "sec.cap.surveillance-alert": {
+  "sha256": "64c9cdcbd24910c58906dfe2ef9e5f697faa8f733e0d2905304feaebf058aa76",
+  "version": "1.0.1"
+ },
+ "sec.ecom.gst-tcs": {
+  "sha256": "d75b8a5e30161bb2d87b0d210041d6811f4369f0991cde4e52f5481f1675f535",
+  "version": "1.0.1"
+ },
+ "sec.ecom.order-to-cash": {
+  "sha256": "1cbdd3e7a9550e8da116ed98e065b882f6a5eb9bb4c8ca75eb4a2f0f0ad6bcc2",
+  "version": "1.0.1"
+ },
+ "sec.ecom.return-refund": {
+  "sha256": "3e0a6e97c2394306790a2982a73e151c5d8c9ead0c8b0c6e6ca335b6267e4fa7",
+  "version": "1.0.1"
+ },
+ "sec.ecom.seller-onboarding": {
+  "sha256": "6ceb44f76b9ab02b18b92d43db6d6b205035538a292d956ee1e9483403c47d69",
+  "version": "1.0.1"
+ },
+ "sec.edu.admission": {
+  "sha256": "a0253b844d5d3d0f1c70ad0a8f680b34392ca61b10af15d7d2971e58ce7efa59",
+  "version": "1.0.1"
+ },
+ "sec.edu.examination": {
+  "sha256": "cafcdbe0bb2a4251253678308d92e72e5b0f74acf41c14047fd58f6cbda234af",
+  "version": "1.0.1"
+ },
+ "sec.edu.scholarship": {
+  "sha256": "e2ffff0d161bbbcad6bd27ee67500f8d4fd272837fcc5ad2becbb10038a6679d",
+  "version": "1.0.1"
+ },
+ "sec.eu.gdpr-dsr": {
+  "sha256": "bb823a6859d926baaec0c5cf337c9308d81c58785c741c6865c64e3d20ddf2fa",
+  "version": "1.0.0"
+ },
+ "sec.fin.complaint": {
+  "sha256": "c37045c5916ec00b9e5b51f29ec3458bfb2fd8e22317718258f74d3692e61027",
+  "version": "1.0.1"
+ },
+ "sec.fin.cyber-incident": {
+  "sha256": "71ee60c240395131dfb8f0b745d2ff55a24b61cbd61d86fe5c28bcbd0f06f8e1",
+  "version": "1.0.1"
+ },
+ "sec.health.abdm-consent": {
+  "sha256": "b9beff5ef8c8d83588bcd70ea58d7e34059c89a031743313bb7fd352741b123d",
+  "version": "1.0.1"
+ },
+ "sec.health.admission-discharge": {
+  "sha256": "962ebbaff9c341722960d0aa9b16b6b4417f1ce24290fcd79e427b9fb7ff8e70",
+  "version": "1.0.1"
+ },
+ "sec.health.blood-bank": {
+  "sha256": "bc80f420f75f7299b92c1cbdfb13a3fba059247cbafb31e6e65fb11309c27850",
+  "version": "1.0.1"
+ },
+ "sec.health.lab-order": {
+  "sha256": "24302689d95c331d098519e106c0066d89db514019138708329aecf2dd4b58bc",
+  "version": "1.0.1"
+ },
+ "sec.health.ot-scheduling": {
+  "sha256": "32d546ec84af6129245b7a50eb1eefdad3c7a168327f016e4a24533c731d7efb",
+  "version": "1.0.1"
+ },
+ "sec.health.pharmacy-dispense": {
+  "sha256": "150e179abe458d1ee438c55ae62573e85d53c99b26ad600916e8469b493e52d4",
+  "version": "1.0.1"
+ },
+ "sec.hr.appraisal": {
+  "sha256": "524eea3e45dcc2c04530e013e21b84de59349e2bc8165fb2622f66acfa25cc78",
+  "version": "1.0.1"
+ },
+ "sec.hr.employee-exit": {
+  "sha256": "05b3d6713ebea0c3f21d4cea9c4fccda6d2cfe8767e33501072e31a37b756e42",
+  "version": "1.0.1"
+ },
+ "sec.hr.payroll": {
+  "sha256": "ddb5306457a79dfbc02da3d21efe103a2be209e7a39be4bdcd4f609cfbe3d991",
+  "version": "1.0.1"
+ },
+ "sec.hr.posh-complaint": {
+  "sha256": "8b8abca5a891f955c3ba89d73bd039abd1e30bc3d0f9fba6d4040bfd0a656afa",
+  "version": "1.0.1"
+ },
+ "sec.ins.death-claim": {
+  "sha256": "62de212f204115a2704d918a9d40e92f64e29d8d0bb8647f7a8cb1449a977d3b",
+  "version": "1.0.1"
+ },
+ "sec.ins.health-claim": {
+  "sha256": "89221392637117a3bcc6f058ab1404abc9468671afcbdacf7c5f9d408c405cc7",
+  "version": "1.0.1"
+ },
+ "sec.ins.intermediary-licensing": {
+  "sha256": "2ae6f701f109e9b3c2beebec5d54c12d31bf28e89960b442f052f8ec1cf2d2f1",
+  "version": "1.0.1"
+ },
+ "sec.ins.motor-claim": {
+  "sha256": "eb99b39902905e8a0109a7880105df8ae5a109561ca630702d1f82f2abf526bd",
+  "version": "1.0.1"
+ },
+ "sec.ins.proposal-underwriting": {
+  "sha256": "faf97f1cfc606887100361d146ebfd984bb82f1a3c9df90a33ad551f56634b9b",
+  "version": "1.0.1"
+ },
+ "sec.ins.reinsurance": {
+  "sha256": "ba421267c439476275716e2f4e353e7f21ef4ba2b22fabfa5fd1a26e7b77c912",
+  "version": "1.0.1"
+ },
+ "sec.legal.dpdp-rights": {
+  "sha256": "dd84884bfd5d984ed41a42e30359cbf07cc3f38af0c71289ee56d807f0475633",
+  "version": "1.0.1"
+ },
+ "sec.legal.litigation": {
+  "sha256": "b1c6b3e20f0e551f7ce0fea4d21b72723fdbeb2adc0ca42d269de7c09df4e05c",
+  "version": "1.0.1"
+ },
+ "sec.mfg.batch-release": {
+  "sha256": "62b3dbb3c75701abd6dbce9ef27df0ef473864588a34597fe1825cef0bf10903",
+  "version": "1.0.1"
+ },
+ "sec.mfg.mrp-planning": {
+  "sha256": "7baa46e2bb5fcbb29ea8d2a8bdcdcb6af908e80ef65a23b44738767a58b6229c",
+  "version": "1.0.1"
+ },
+ "sec.nbfc.digital-lending": {
+  "sha256": "8c5ff412bdefcc774f752a22d9d9e1b7a0ad56756a995bf43398d80ed076df53",
+  "version": "1.0.1"
+ },
+ "sec.nbfc.dlg-arrangement": {
+  "sha256": "c94f2dd7ec22e5c45dab37dfb92f1803f802992ebbbc39880be51041cd15248b",
+  "version": "1.0.1"
+ },
+ "sec.scm.eway-bill": {
+  "sha256": "b42de384641c9ae8921eb08245781a6773edbd8234b79db1224890a12ded042b",
+  "version": "1.0.1"
+ },
+ "sec.scm.procure-to-pay": {
+  "sha256": "db134d3e2c742ee03f107126ade9eec9fbca4a029814409583aa6607a87efd88",
+  "version": "1.0.1"
+ },
+ "sec.tel.mnp-port-in": {
+  "sha256": "b9d83ad528556be654e6f4c6993d783e2035f7066043171da9d099c69d4079a8",
+  "version": "1.0.1"
+ },
+ "sec.tel.sim-swap": {
+  "sha256": "f864c393c92b3a83c8c991bbb1ea6c3f617e1df9ef9bdb6b0461b109de29355a",
+  "version": "1.0.1"
+ },
+ "sec.tel.tcccpr": {
+  "sha256": "7b97911b65d1b3a674e4661ff4ab975fef511071ab78a50d57435cc030975b51",
+  "version": "1.0.1"
+ },
+ "sec.ushealth.access-request": {
+  "sha256": "bfff6bbcfe5b671067bdb315b873ab4050bcc3b04959f4e32ea69810e0745e68",
+  "version": "1.0.1"
+ },
+ "sec.ushealth.baa": {
+  "sha256": "9d621ad7ac86203996b2e8083bc5dd86e724e43513192db06ac536e72f619b7c",
+  "version": "1.0.1"
+ },
+ "sec.ushealth.breach": {
+  "sha256": "e8908682897d1a7eea874eeaa3f9955191be55355cd3d1c15aab5386ddeb2964",
+  "version": "1.0.1"
+ },
+ "sec.ushealth.claim": {
+  "sha256": "a4a9047fd06ec42df1472cff333d21fe76d9801f24522cea68b72a09f118bb59",
+  "version": "1.0.1"
+ },
+ "sec.ushealth.discharge": {
+  "sha256": "b210ec2606c04e3cf5679873ab4ef144fc46b7632b80539635272e73f772a4c1",
+  "version": "1.0.1"
+ },
+ "sec.ushealth.eligibility": {
+  "sha256": "9eaf44cfe355dd748e6618ddaf866efc884a94c39fe18ed8c1673c1190b79ef8",
+  "version": "1.0.1"
+ },
+ "sec.ushealth.gfe-ppdr": {
+  "sha256": "818642c2b1468cde001a23ca3294689a52972338addfbeff4086d55e1f944956",
+  "version": "1.0.1"
+ },
+ "sec.ushealth.patient-access": {
+  "sha256": "1aa3d3bd5c68049f0a62cfdac551e738bc512b47260f5e12c9e6e8e9f86135da",
+  "version": "1.0.0"
+ },
+ "sec.ushealth.payer-to-payer": {
+  "sha256": "dca5e7db71d097278df6554493e077a7e537082228a5dbc053cc005c300ef032",
+  "version": "1.0.0"
+ },
+ "sec.ushealth.prior-auth": {
+  "sha256": "5b5a65067871397ba1904581cdd6c7d98797add2ad8867451d504eb0bdfc919a",
+  "version": "1.0.1"
+ },
+ "sec.ushealth.provider-access": {
+  "sha256": "3fb6d790fa9180373ca9816226bc5ae9f2e168d94b9f3581a744ab696fc9ef53",
+  "version": "1.0.0"
+ },
+ "sec.util.disconnection": {
+  "sha256": "0db532ec6bae520a038ed4af7a47798d72b16fc1c241262ed929d0687f99fdb1",
+  "version": "1.0.1"
+ },
+ "sec.util.meter-to-cash": {
+  "sha256": "7d5f5fa83162d777754d22240cd752cebd41d0b1c28e77527b09912a6c431102",
+  "version": "1.0.1"
+ },
+ "sec.util.new-connection": {
+  "sha256": "4141ea5427b04453972e87266fad87ef0eacac924885759ac9c1959db0fa5f25",
+  "version": "1.0.1"
+ },
+ "universal.billing-cycle": {
+  "sha256": "00650b2674e8e3de9ee6feabf7aabdd402ff043f370cb4c75a648adc892f7cfb",
+  "version": "1.0.1"
+ },
+ "universal.up01-stp-order": {
+  "sha256": "fea15879efd05cf543fa1e1e3e6aac2df72400574a10383e4462091bbca48aff",
+  "version": "1.0.1"
+ },
+ "universal.up02-saga": {
+  "sha256": "87b611f27f4a8a902ebdbf3636d6d9f0dd561e8bbce78a11f84c7ea1c4921b04",
+  "version": "1.0.1"
+ },
+ "universal.up03-event-correlation": {
+  "sha256": "c242b5f519afeb5fe198181d23799c718d6df7d772b41d67f30da73ef53bf877",
+  "version": "1.0.1"
+ },
+ "universal.up04-skills-routing": {
+  "sha256": "a21ce7dafe5719cce3caa55c266d99e19ed00debc9a0767e51c40765a7a03671",
+  "version": "1.0.1"
+ },
+ "universal.up05-four-eyes": {
+  "sha256": "5a4a10b97041979f8746c7a53e02ca82c0eab0b3f11e9665fa1e2de6e0eab3aa",
+  "version": "1.0.1"
+ },
+ "universal.up06-hitl-ai-review": {
+  "sha256": "d4e0b05ff91dcb18e465b1c500ce98f2802cae43f61fae8f38f4eb0203a279fb",
+  "version": "1.0.1"
+ },
+ "universal.up07-improvement-loop": {
+  "sha256": "7a52e5d831da17a342259b8044b5b3a309003d837db48b9f76d1cd734b0c502c",
+  "version": "1.0.1"
+ },
+ "universal.up08-entity-lifecycle": {
+  "sha256": "1f7b23916be63a8ff126b15d26948dd32726f3d422bd5b22783670c7404168e0",
+  "version": "1.0.1"
+ },
+ "universal.up09-dynamic-case": {
+  "sha256": "cb2f6c61ea3adfc4c8fa48dd4ffd94fab3ee315e61c739454479e9a46af9167d",
+  "version": "1.0.1"
+ },
+ "universal.up10-incident-swarming": {
+  "sha256": "58507f97e0a16eda12c90f3237aaa11a28d0b84429ad0ee63afd8322846c56b6",
+  "version": "1.0.1"
+ },
+ "universal.up11-change-window": {
+  "sha256": "eac6a8143eb9366b8a9e15998d91a2983fdf74418809d8cfc508cbc57366b417",
+  "version": "1.0.1"
+ },
+ "universal.up12-order-decomposition": {
+  "sha256": "828c8bd03155db36cae7c7f667957d46ead8b1e12ddacb6303cf6ef334c7e7ff",
+  "version": "1.0.1"
+ },
+ "universal.up13-returns-refunds": {
+  "sha256": "d5a7af73ba64d444497e0170777b1aaf7f86afc69fcf1f3b6f29d6664454fab2",
+  "version": "1.0.1"
+ },
+ "universal.up14-three-way-match": {
+  "sha256": "97b9f33a847d60fbd95bbc144d38a49af071cb177d5fbe932956e79e2472aa2d",
+  "version": "1.0.1"
+ },
+ "universal.up15-recertification": {
+  "sha256": "69385a3e9fed818307e7f94dfb9dc1a10941ce0e248fe29d02fc63cd0f853d0b",
+  "version": "1.0.1"
+ },
+ "universal.up16-provisioning": {
+  "sha256": "5a8053bf1eb2b4d1799019a28979aa8953253df8f91a68567617dbd826dc18ed",
+  "version": "1.0.1"
+ },
+ "universal.up17-prior-authorisation": {
+  "sha256": "2d90db2943441e5eb32ef070a40586889832ff367e303a706355633e544a28bc",
+  "version": "1.0.1"
+ },
+ "universal.up18-capa": {
+  "sha256": "8a05166d1932c008b379cffc778248a0fa1d909420b0d109081fba482574dbba",
+  "version": "1.0.1"
+ },
+ "universal.up19-contract-lifecycle": {
+  "sha256": "a1be0bb56a997585dbb6a0c81231fe5102df3c87dca3860ff635b4bb3a03e0d9",
+  "version": "1.0.1"
+ },
+ "universal.up20-rpa": {
+  "sha256": "5736d9d05588188f12794da75557a0ea4d715cd7731f3635e7573827810b4867",
+  "version": "1.0.1"
+ },
+ "universal.up21-iot-storm-control": {
+  "sha256": "a3b5e6e8a5e263356d64db8eee2a7971b1b4dbc5c72ad68d4d94fd819e9f5d48",
+  "version": "1.0.1"
+ },
+ "universal.up22-external-collaboration": {
+  "sha256": "03b56b8b53ee69436a62e5dbdb17740828c54827692373cb3f0e929c5dc3012a",
+  "version": "1.0.1"
+ }
+}

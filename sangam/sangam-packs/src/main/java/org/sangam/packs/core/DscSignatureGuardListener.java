@@ -30,6 +30,10 @@ import org.sangam.packs.port.SignatureVerifications;
  * check included, refuses with {@code 422 DSC_SIGNATURE_NOT_VERIFIED} (fail closed); a signing outcome in a variable
  * never counts.
  *
+ * <p>Owner decisions 387 (9) and 390: on success the listener consumes the slot's binding for this gate instance
+ * ({@link org.sangam.packs.port.DocumentSlotBindings#consume}), so a gate instance reached later (a return loop, a new
+ * call) finds the slot unbound until a document is bound again; the levels of this gate instance still find it bound.
+ *
  * <p>On success the verified evidence is written to the case ({@value #EVIDENCE_TASK}, {@value #EVIDENCE_DOCUMENT},
  * {@value #EVIDENCE_TYPE}, {@value #EVIDENCE_SIGNER}); {@link SignatureDelegate} records it instead of calling
  * {@code dsc.sign} (decision 238).
@@ -127,6 +131,9 @@ public class DscSignatureGuardListener implements TaskListener {
                     ? ". Sign the required document again with your currently approved DSC at this task, then complete it."
                     : ". Sign the required document with your enrolled DSC at this task, then complete it."));
         }
+        // decision 390: the binding served this gate instance; a later gate instance needs a document bound after now.
+        // A failure to record it propagates: the completion rolls back (fail closed)
+        PackRuntime.slotBindings().consume(tenant, callChain(t), slot, type, documentId, t.getId());
         t.getExecution().setVariable(EVIDENCE_TASK, t.getId());
         t.getExecution().setVariable(EVIDENCE_DOCUMENT, documentId);
         t.getExecution().setVariable(EVIDENCE_TYPE, type);

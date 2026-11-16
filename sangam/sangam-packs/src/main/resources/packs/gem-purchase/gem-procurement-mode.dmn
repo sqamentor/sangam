@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_gem_procurement_mode" name="GeM route and auto-approval (synthetic auto-approval threshold)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="gem-procurement-mode" name="GeM route and auto-approval (synthetic auto-approval threshold)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="gem-procurement-mode" name="GeM route and auto-approval (synthetic auto-approval threshold)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="gem-procurement-mode_t" hitPolicy="FIRST">
       <input id="gem-procurement-mode_i0" label="Value"><inputExpression id="gem-procurement-mode_ie0" typeRef="number"><text>amount</text></inputExpression></input>
       <input id="gem-procurement-mode_i1" label="Available on GeM"><inputExpression id="gem-procurement-mode_ie1" typeRef="boolean"><text>gemAvailable</text></inputExpression></input>

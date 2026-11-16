@@ -199,8 +199,8 @@ public class PacksWiring {
             // decision 385 (2), layer 1: the gate binds a slot only to a document the document route bound to the case
             ports = withDocumentRoute(ports, engines.getIfAvailable(), tx);
             // decision 385 (2), layer 2: every caller write path refuses the slot names the installed packs declare
-            org.sangam.core.engine.DocumentSlotNames.install(
-                    () -> org.sangam.server.bridge.PackRegistryDocumentSlots.slotNames(registry));
+            // (decision 387 (2): the installer is plain Java in sangam-assembly, for any host)
+            org.sangam.assembly.packs.PackDocumentSlotNames.install(registry);
             // decision 292: in production every pack rule row not permitted for PRODUCTION refuses
             ports = withProductionMode(ports, env);
             PackRuntime.install(ports);
@@ -229,12 +229,20 @@ public class PacksWiring {
     /**
      * Owner decision 385 (2), layer 1: the DSC completion gate asks whether the document route
      * ({@link org.sangam.server.bridge.OperatonDocumentSlots}) bound the slot's document to this case, read from the
-     * route's own audit events ({@link org.sangam.server.bridge.AuditDocumentSlotBindings}). Without an engine there is
+     * route's own audit events ({@link org.sangam.assembly.packs.AuditDocumentSlotBindings}, plain Java in
+     * sangam-assembly, decision 387 (2)); a gate that signs consumes the binding on the same audit chain (decision 390). Without an engine there is
      * no route, so nothing is bound and every slot is empty (fail closed).
      */
+    /** The connection of the Operaton command on this thread, the seam {@code AuditDocumentSlotBindings} writes on. */
+    public static java.util.Optional<java.sql.Connection> engineCommand() {
+        return org.sangam.ports.support.EngineTx.inCommand()
+                ? java.util.Optional.of(org.sangam.ports.support.EngineTx.connection()) : java.util.Optional.empty();
+    }
+
     static PackRuntime.Ports withDocumentRoute(PackRuntime.Ports ports, ProcessEngine engine, TxSupport tx) {
         return ports.withSlotBindings(engine == null ? org.sangam.packs.port.DocumentSlotBindings.NONE
-                : new org.sangam.server.bridge.AuditDocumentSlotBindings(tx));
+                : new org.sangam.assembly.packs.AuditDocumentSlotBindings(tx::withConnection,
+                        PacksWiring::engineCommand, new AuditChain(tx.dialect())));
     }
 
     /**

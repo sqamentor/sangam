@@ -1,6 +1,6 @@
 {
   "key": "p2-file-movement/close",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.p2.file-movement",
   "title": {
     "en": "Close file: retention category",

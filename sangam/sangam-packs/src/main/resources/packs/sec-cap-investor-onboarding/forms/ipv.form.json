@@ -1,6 +1,6 @@
 {
   "key": "sec-cap-investor-onboarding/ipv",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.cap.investor-onboarding",
   "title": {
     "en": "In-person / video verification (IPV / VIPV)",

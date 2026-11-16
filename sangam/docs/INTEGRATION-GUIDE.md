@@ -270,6 +270,7 @@ Worker credentials are a service-principal API token, or the Keycloak client `sa
 - Only the document route fills a slot, on an open user task of the case (decisions 267, 268 and 385 (2)).
 - So a gate process is started by a call from a pack process, with `in variables="all"`. Where no user task of the caller comes before the call, packgen puts a prepare task there; its form requires the slot (`sangam-packs/tools/packgen/prepare.py`).
 - A gate process started directly, with no caller, has no user task before its gate. Its slot stays empty, and the signature is refused with `422 DSC_SIGNATURE_NOT_VERIFIED`. Start the pack process that calls it instead.
+- A gate that signs consumes its slot for its gate instance (decision 390): the audit event `DOCUMENT_SLOT_CONSUMED` goes on the chain where the route bound the slot. The other levels of the same gate instance still sign that document. A gate reached again (a return and resubmission, or another call) needs the document uploaded again, as a new document or a new version. The prepare task refuses a slot that was already signed, is empty, or was not bound by the route, with `422 DOCUMENT_SLOT_NOT_READY`.
 
 **Deployment**
 - `PackDeployer.deployAll(tenantId)` makes one engine deployment per pack (`pack:<id>@<version>`).
@@ -310,7 +311,7 @@ Worker credentials are a service-principal API token, or the Keycloak client `sa
   - the compliance principal key, when compliance is on (`deploy/README.md:218-233`).
 - The OIDC issuer, and the platform issuer for platform administrators.
 - Per-connector credentials and webhook secrets, as `secret://` references.
-- The audit checkpoint signing key (`secret://audit/checkpoint-<env>`, `application.yaml:245-251`). Keys per purpose and per environment are decision 37: the start refuses one key for two purposes (`KEY_SHARED_ACROSS_PURPOSES`) and a key on the list of another environment's key fingerprints (`KEY_SHARED_ACROSS_ENVIRONMENTS`, decision 385 (3)); production needs `sangam.keys.environment` and `sangam.keys.foreign-fingerprints` (deploy/README.md section 1, register DEC-37).
+- The audit checkpoint signing key (`secret://audit/checkpoint-<env>`, `application.yaml:245-251`). Keys per purpose and per environment are decision 37: the start refuses one key for two purposes (`KEY_SHARED_ACROSS_PURPOSES`) and a key on the list of another environment's key fingerprints (`KEY_SHARED_ACROSS_ENVIRONMENTS`, decision 385 (3)); production needs `sangam.keys.environment` and either `sangam.keys.foreign-fingerprints` or the key custodian's signed attestation (`sangam.keys.attestation`, `sangam.keys.custodian-public-key`, decisions 387 (4) and 390); the first environment may start once with `sangam.keys.bootstrap` (deploy/README.md section 1, register DEC-37).
 
 ## 13. Open points that affect integrators (from the register)
 

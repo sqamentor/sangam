@@ -232,6 +232,17 @@ class NoElectionRefusal(unittest.TestCase):
         ch = check([comp(purl, expr="EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0")])
         self.assertEqual([], ch.errors, ch.errors)
 
+    def test_the_register_offers_jersey_media_json_jackson_only_under_the_licences_of_its_texts(self):
+        # decision 390 (3): the E16 inventory row was corrected to the licences its jar texts name (decision 385 (4)),
+        # and decision-register.json is regenerated from it (register_export.py, never hand-edited); "OR Apache-2.0"
+        # read a third-party notice line
+        purl = "pkg:maven/org.glassfish.jersey.media/jersey-media-json-jackson@4.0.3"
+        row = cl.load_json(os.path.join(HERE, "decision-register.json"))["components"][purl]
+        self.assertEqual("EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0", row["spdx"], row)
+        elected = [e["elected"] for e in POLICY["elections"] if purl in e.get("purls", [])]
+        self.assertEqual(["EPL-2.0"], elected)
+        self.assertIn(elected[0], row["spdx"].split(" OR "), "the register offers the elected licence")
+
     def test_annotate_records_a_class_election(self):
         import tempfile as tf
         with tf.TemporaryDirectory() as d:

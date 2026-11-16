@@ -241,7 +241,10 @@ def write(path, packs):
       'fills, on an open user task of the case. A pack calls the gate process with `in variables="all"`; where no user '
       'task of the caller comes before the call, packgen puts the prepare task there, whose form requires the slot. A '
       'gate process started directly, with no caller, has no user task before its gate, so its slot is empty and the '
-      'signature is refused (`422 DSC_SIGNATURE_NOT_VERIFIED`): start the pack process that calls it.')
+      'signature is refused (`422 DSC_SIGNATURE_NOT_VERIFIED`): start the pack process that calls it. A gate that '
+      'signs consumes the slot for its gate instance (decision 390): the levels of that instance still sign it, but a '
+      'gate reached again (a return to the initiator and a resubmission, or another call) needs the document uploaded '
+      'again, and the prepare task refuses a slot that was already signed (`422 DOCUMENT_SLOT_NOT_READY`).')
     w('')
     w('## 4. Process variable and message contract (for WS-REST, WS-UI, WS-INTEGRATION)')
     w('')

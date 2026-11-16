@@ -17,6 +17,10 @@ Adding a pack here is how a future content change to a released pack version is 
 change the content of a version an environment holds.
 """
 
+import hashlib
+import json
+import os
+
 BASELINE = '15e4135'
 RELEASED = '1.0.0'  # the version of every pack at BASELINE
 NEXT = '1.0.1'  # the version every pack in BUMPED ships as
@@ -154,8 +158,92 @@ BUMPED = frozenset({
 })
 
 
+# Owner decision 390 (2): the content environments may hold, as one digest per pack (releases-held.json, {pack id:
+# {version, sha256}}), taken at HELD_AT, the commit before decision 385 (1). generate() refuses a pack that ships a held
+# version with other content (check_held), so a content change cannot ship without a new version. SHIPS bumps the packs
+# whose content changed after HELD_AT (decisions 385 (1), 387 (8) and 390 (1): the prepare task, its form and its slot
+# check): pack id -> (version at HELD_AT, version it ships as). When an environment takes a new build, the ledger moves:
+# regenerate releases-held.json at that commit and empty SHIPS.
+HELD_AT = '93498ab2'
+HELD_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'releases-held.json')
+SHIPS = {pid: ('1.0.1', '1.0.2') for pid in (
+    'gov.contract-management',
+    'gov.dbt.batch',
+    'gov.gem-purchase',
+    'gov.ifms.budget-allocation',
+    'gov.ifms.budget-reappropriation',
+    'gov.ifms.gpf',
+    'gov.ifms.loans-advances',
+    'gov.leave',
+    'gov.p1.bill-payment',
+    'gov.p2.file-movement',
+    'gov.p4.licence',
+    'gov.recruitment',
+    'gov.tender',
+    'gov.works',
+    'sec.bank.account-opening',
+    'sec.bank.payment-dual-auth',
+    'sec.cap.investor-onboarding',
+    'sec.nbfc.digital-lending',
+    'sec.nbfc.dlg-arrangement',
+    'sec.scm.procure-to-pay',
+    'universal.up05-four-eyes',
+)}
+SHIPS['gov.intl.pfm-execution'] = ('1.0.0', '1.0.1')
+
+
 def version_of(pack_id, declared):
-    """The version a pack ships as: NEXT for a BUMPED pack still declaring the RELEASED version, else as declared."""
-    if pack_id in BUMPED and declared == RELEASED:
-        return NEXT
-    return declared
+    """The version a pack ships as: NEXT for a BUMPED pack still declaring the RELEASED version, then the SHIPS bump of
+    a pack still at its HELD_AT version; else as declared."""
+    v = declared
+    if pack_id in BUMPED and v == RELEASED:
+        v = NEXT
+    held, ships = SHIPS.get(pack_id, (None, None))
+    if v == held:
+        v = ships
+    return v
+
+
+def digest(pack_dir):
+    """SHA-256 over the pack directory's files (path relative to it, then the SHA-256 of the LF-normalised bytes), in
+    path order: the form releases-held.json records."""
+    files = []
+    for d, _, fs in os.walk(pack_dir):
+        for f in fs:
+            files.append(os.path.relpath(os.path.join(d, f), pack_dir).replace(os.sep, '/'))
+    h = hashlib.sha256()
+    for f in sorted(files):
+        with open(os.path.join(pack_dir, f), 'rb') as fh:
+            data = fh.read().replace(b'\r\n', b'\n')
+        h.update(f.encode('utf-8') + b'\0' + hashlib.sha256(data).hexdigest().encode('ascii') + b'\n')
+    return h.hexdigest()
+
+
+def held(path=HELD_FILE):
+    with open(path, encoding='utf-8') as fh:
+        return json.load(fh)
+
+
+def stale(packs_root, held_packs):
+    """The packs under packs_root (one directory per pack, with pack.json) that ship a held version with content other
+    than the held one: [(pack id, version)]."""
+    out = []
+    for name in sorted(os.listdir(packs_root)):
+        d = os.path.join(packs_root, name)
+        manifest = os.path.join(d, 'pack.json')
+        if not os.path.isfile(manifest):
+            continue
+        with open(manifest, encoding='utf-8') as fh:
+            m = json.load(fh)
+        h = held_packs.get(m['id'])
+        if h is not None and h['version'] == m['version'] and h['sha256'] != digest(d):
+            out.append((m['id'], m['version']))
+    return out
+
+
+def check_held(packs_root, held_packs=None):
+    """Stops generation naming every pack that ships a held version with other content (decision 390 (2))."""
+    bad = stale(packs_root, held() if held_packs is None else held_packs)
+    if bad:
+        raise SystemExit('decision 390 (2): a pack version environments hold changed content; ship it under a new '
+                         'version (releases.SHIPS): ' + ', '.join(f'{p}@{v}' for p, v in bad))

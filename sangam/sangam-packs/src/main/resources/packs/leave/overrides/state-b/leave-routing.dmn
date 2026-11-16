@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_leave_routing" name="Leave routing (State B override)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="leave-routing" name="Leave routing (State B override)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="leave-routing" name="Leave routing (State B override)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="leave-routing_t" hitPolicy="FIRST">
       <input id="leave-routing_i0" label="Leave type"><inputExpression id="leave-routing_ie0" typeRef="string"><text>leaveType</text></inputExpression></input>
       <input id="leave-routing_i1" label="Days"><inputExpression id="leave-routing_ie1" typeRef="integer"><text>leaveDays</text></inputExpression></input>
