@@ -31,6 +31,10 @@ import java.util.Map;
  *       chains still verify. Compliance per-principal chains ({@code cmp:p:}, {@code cmp:d:}) are not instance chains
  *       and hold references and purpose codes, not personal data, so they are kept</td><td>envelope, hashes</td></tr>
  *   <tr><td>Document store</td><td>objects (port {@link LifecyclePorts.DocumentEraser})</td><td>—</td></tr>
+ *   <tr><td>History archive (RM-52)</td><td>a new archive without the tree's {@code ACT_HI_VARINST},
+ *       {@code ACT_HI_DETAIL} and {@code ACT_HI_COMMENT} rows and their byte arrays replaces every earlier one (port
+ *       {@link LifecyclePorts.ErasureFollower}); the earlier ones leave the store after the commit</td><td>the other
+ *       history rows, both digests on the audit chain</td></tr>
  *   <tr><td>{@code RECONCILIATION_ITEM}, {@code OPERATION_LEDGER}</td><td><b>nothing</b>: an open reconciliation item is never deleted</td><td>all</td></tr>
  * </table>
  * Refused while a {@link LegalHoldStore legal hold} is active on the root (R61), and requires {@code ERASE_DATA}.
@@ -61,6 +65,7 @@ public final class ErasureService {
     private final LifecyclePorts.DocumentEraser documents;
     private final LifecyclePorts.RelatedAuditChains relatedChains;
     private final LifecyclePorts.Authorizer authorizer;
+    private final List<LifecyclePorts.ErasureFollower> followers;
 
     public ErasureService(Dialect dialect, Transactions engineTx, AuditChain audit, LegalHoldStore holds,
                           ConnectorCallJournal journal, DeadLetterStore deadLetters, LifecyclePorts.EngineInstancePort engine,
@@ -77,6 +82,7 @@ public final class ErasureService {
         this.documents = documents == null ? LifecyclePorts.DocumentEraser.NONE : documents;
         this.authorizer = authorizer;
         this.relatedChains = LifecyclePorts.RelatedAuditChains.NONE;
+        this.followers = List.of();
     }
 
     /**
@@ -98,6 +104,30 @@ public final class ErasureService {
         this.documents = documents == null ? LifecyclePorts.DocumentEraser.NONE : documents;
         this.authorizer = authorizer;
         this.relatedChains = relatedChains == null ? LifecyclePorts.RelatedAuditChains.NONE : relatedChains;
+        this.followers = List.of();
+    }
+
+    /**
+     * As above, plus the copies the erasure follows (RM-52: the tree's history archive, which is replaced by an archive
+     * without the erased data).
+     */
+    public ErasureService(Dialect dialect, Transactions engineTx, AuditChain audit, LegalHoldStore holds,
+                          ConnectorCallJournal journal, DeadLetterStore deadLetters, LifecyclePorts.EngineInstancePort engine,
+                          LifecyclePorts.EngineDataEraser engineData, LifecyclePorts.DocumentEraser documents,
+                          LifecyclePorts.Authorizer authorizer, LifecyclePorts.RelatedAuditChains relatedChains,
+                          List<LifecyclePorts.ErasureFollower> followers) {
+        this.dialect = dialect;
+        this.engineTx = engineTx;
+        this.audit = audit;
+        this.holds = holds;
+        this.journal = journal;
+        this.deadLetters = deadLetters;
+        this.engine = engine;
+        this.engineData = engineData;
+        this.documents = documents == null ? LifecyclePorts.DocumentEraser.NONE : documents;
+        this.authorizer = authorizer;
+        this.relatedChains = relatedChains == null ? LifecyclePorts.RelatedAuditChains.NONE : relatedChains;
+        this.followers = followers == null ? List.of() : List.copyOf(followers);
     }
 
     /** The audit chains erased for {@code tree}: each instance's chain, followed by its related chains (SL-132). */
@@ -123,11 +153,20 @@ public final class ErasureService {
         if (reason == null || reason.isBlank()) {
             throw new IllegalArgumentException("a reason is required (R23)");
         }
+        List<LifecyclePorts.ErasureFollower.FollowUp> followUps = new ArrayList<>();
         Result r = engineTx.inTransaction(c -> {
             authorizer.require(c, tenantId, actor, ERASE_DATA, rootId);
             List<LegalHoldStore.Hold> active = holds.active(c, tenantId, rootId);
             if (!active.isEmpty()) {
                 throw new LegalHoldException(rootId, active);
+            }
+            // RM-52: the followed copies (the history archive) are read while the audit payloads still are
+            followUps.clear();
+            for (LifecyclePorts.ErasureFollower f : followers) {
+                LifecyclePorts.ErasureFollower.FollowUp u = f.before(c, tenantId, rootId);
+                if (u != null) {
+                    followUps.add(u);
+                }
             }
             List<String> tree = new ArrayList<>(engine.instanceTree(c, rootId));
             if (!tree.contains(rootId)) {
@@ -167,7 +206,14 @@ public final class ErasureService {
             p.put("reason", reason);
             p.put("instances", tree.size());
             p.put("scrubbed", new LinkedHashMap<>(n));
-            audit.append(c, tenantId, rootId, "DATA_ERASED", p);
+            String erasedEvent = audit.append(c, tenantId, rootId, "DATA_ERASED", p).eventId();
+            if (!followers.isEmpty()) {
+                int replaced = 0;
+                for (LifecyclePorts.ErasureFollower.FollowUp u : followUps) {
+                    replaced += u.erased(c, erasedEvent, reason);
+                }
+                n.put("historyArchives", replaced);
+            }
             return new Result(rootId, n);
         });
         // object store last: not transactional; a failure leaves the DB erased and is retried by the operator
@@ -175,6 +221,13 @@ public final class ErasureService {
         int docs = documents.erase(tenantId, tree.isEmpty() ? List.of(rootId) : tree, reason);
         Map<String, Integer> all = new LinkedHashMap<>(r.scrubbed());
         all.put("documents", docs);
+        if (!followers.isEmpty()) {
+            int removed = 0;
+            for (LifecyclePorts.ErasureFollower.FollowUp u : followUps) {
+                removed += u.committed();
+            }
+            all.put("historyArchivesRemoved", removed);
+        }
         return new Result(rootId, all);
     }
 

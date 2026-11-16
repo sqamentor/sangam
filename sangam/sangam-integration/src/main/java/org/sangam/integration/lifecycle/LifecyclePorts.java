@@ -66,6 +66,34 @@ public final class LifecyclePorts {
         RelatedAuditChains NONE = (tenant, chain) -> List.of();
     }
 
+    /**
+     * RM-52: a copy of a tree's data that the erasure does not own but must follow: the history archive of the tree.
+     * {@link #before} and {@link FollowUp#erased} run in the erasure's transaction (a failure rolls the whole erasure
+     * back); {@link FollowUp#committed} runs after the commit, with the document store.
+     */
+    @FunctionalInterface
+    public interface ErasureFollower {
+        /**
+         * Before any payload of the tree is erased: what the follower needs of the tree as it was (the audit payloads
+         * are still readable); {@code null} when it holds no copy of the tree.
+         */
+        FollowUp before(Connection c, String tenantId, String rootId);
+
+        /** The follow-up of one erasure. */
+        interface FollowUp {
+            /**
+             * Once the tree is erased and {@code DATA_ERASED} is on the root's chain: the follower's copy is replaced by
+             * one without the erased data.
+             *
+             * @return the number of copies replaced
+             */
+            int erased(Connection c, String dataErasedEventId, String reason);
+
+            /** After the commit: the superseded copies are removed; returns how many. */
+            int committed();
+        }
+    }
+
     /** Permission check per operation: {@code CANCEL_INSTANCE}, {@code DELETE_INSTANCE}, {@code ERASE_DATA} (R23). */
     @FunctionalInterface
     public interface Authorizer {

@@ -1,17 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-
+import org.sangam.assembly.history.HistoryArchiveAssembly;
 import org.sangam.core.history.HistoryArchiveGate;
 import org.sangam.core.layer.AuditChain;
-import org.sangam.core.layer.AuditCheckpoints;
 import org.sangam.integration.connector.SecretResolver;
 import org.sangam.ops.archive.HistoryArchives;
-import org.sangam.ports.content.FileSystemDocumentStore;
 import org.sangam.rest.support.TxSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,48 +53,9 @@ public class HistoryArchiveWiring {
                 new AuditChain(tx.getObject().dialect()));
     }
 
+    /** The archives of this server: read and checked once for every host by sangam-assembly (decision 276). */
     static HistoryArchives archives(Environment env, SecretResolver secrets, AuditChain audit) {
-        String root = env.getProperty(PREFIX + "store-root");
-        if (root == null || root.isBlank()) {
-            throw new IllegalStateException(PREFIX + "store-root is required with " + PREFIX + "enabled=true");
-        }
-        Integer days = env.getProperty(PREFIX + "retention-days", Integer.class);
-        if (days == null) {
-            throw new IllegalStateException(PREFIX + "retention-days is required with " + PREFIX + "enabled=true");
-        }
-        HistoryArchives.Settings settings = new HistoryArchives.Settings(
-                env.getProperty(PREFIX + "retention-class", "RECORDS_HISTORY"), days, version(),
-                env.getProperty("operaton.bpm.database.table-prefix", ""));
-        HistoryArchives.requireLongerThanEngine(settings, OpsWiring.longestRetentionDays(env));
-        String privateKey = resolve(secrets, "signing.private-key-ref", env.getProperty(PREFIX + "signing.private-key-ref"));
-        String publicKey = resolve(secrets, "signing.public-key-ref", env.getProperty(PREFIX + "signing.public-key-ref"));
-        AuditCheckpoints.Signer signer = AuditCheckpoints.ed25519(privateKey, publicKey);
-        List<String> trusted = new ArrayList<>(List.of(publicKey));
-        for (String ref : env.getProperty(PREFIX + "signing.trusted-public-key-refs", "").split(",")) {
-            if (!ref.isBlank()) {
-                trusted.add(resolve(secrets, "signing.trusted-public-key-refs", ref.trim()));
-            }
-        }
-        FileSystemDocumentStore store;
-        try {
-            store = new FileSystemDocumentStore(Path.of(root));
-        } catch (IOException e) {
-            throw new IllegalStateException("RM-52: cannot open the history archive store at " + root, e);
-        }
-        LOG.info("RM-52 history archive: store {}, class {} ({} days), key {}, {} trusted key(s)", root,
-                settings.retentionClass(), settings.retentionDays(), signer.keyId(), trusted.size());
-        return new HistoryArchives(store, audit, signer, AuditCheckpoints.ed25519Keys(trusted), settings);
-    }
-
-    /** The value behind a key reference; refuses a missing reference or a literal (keys are never configuration). */
-    static String resolve(SecretResolver secrets, String property, String ref) {
-        if (ref == null || ref.isBlank()) {
-            throw new IllegalStateException(PREFIX + property + " is required with " + PREFIX + "enabled=true");
-        }
-        if (!ref.startsWith("secret://")) {
-            throw new IllegalStateException(PREFIX + property + " must be a secret reference (secret://...), never the key");
-        }
-        return secrets.require(ref);
+        return HistoryArchiveAssembly.archives(EngineWiring.properties(env), secrets, audit, version());
     }
 
     private static String version() {

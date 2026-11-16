@@ -401,12 +401,18 @@ public class IntegrationWiring {
     public ErasureService sangamErasureService(TxSupport tx, ObjectProvider<EngineAdapter> adapter,
             AuditChain sangamIntegrationAuditChain, ConnectorCallJournal journal, DeadLetterStore deadLetters,
             OperatonLifecyclePorts ports, ObjectProvider<LifecyclePorts.DocumentEraser> documents,
-            LifecyclePorts.Authorizer authorizer, Environment env) {
+            LifecyclePorts.Authorizer authorizer, Environment env,
+            ObjectProvider<org.sangam.core.history.HistoryArchiveGate> historyArchives) {
         Dialect d = tx.dialect();
+        // RM-52: the history archive (when configured) follows every erasure of its tree
+        List<LifecyclePorts.ErasureFollower> followers = new ArrayList<>();
+        if (historyArchives.getIfAvailable() instanceof LifecyclePorts.ErasureFollower archive) {
+            followers.add(archive);
+        }
         // decisions 143, 152: never the no-op document eraser outside a development environment (start refused)
         return new ErasureService(d, engineTx(adapter, tx), sangamIntegrationAuditChain, new LegalHoldStore(d), journal,
                 deadLetters, ports, ports, DocumentEraserRequirement.require(documents.getIfAvailable(), env), authorizer,
-                denialChains());
+                denialChains(), followers);
     }
 
     /**
