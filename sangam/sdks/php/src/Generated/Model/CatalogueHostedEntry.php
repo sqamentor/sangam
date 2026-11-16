@@ -14,10 +14,10 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read string|null $id (required)
  * @property-read string|null $version (required)
- * @property-read string|null $kind (required)  One of: package.
+ * @property-read string|null $kind (required)  One of: package, connector-template.
  * @property-read string|null $publisher (required) tenant/principal of the submitter
  * @property-read string|null $licence (required)
- * @property-read string|null $sha256 (required) Hex SHA-256 of the exact bundle bytes served at artifactPath
+ * @property-read string|null $sha256 (required) Hex SHA-256 of the exact artefact bytes served at artifactPath
  * @property-read string|null $minPlatform (required)
  * @property-read string|null $artifactPath (required) Relative to the hosted index: artifacts/<id>/<version>
  * @property-read string|null $state (required)  One of: SUBMITTED, APPROVED, REJECTED.

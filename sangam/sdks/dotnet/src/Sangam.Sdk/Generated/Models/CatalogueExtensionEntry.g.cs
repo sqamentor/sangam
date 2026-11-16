@@ -22,7 +22,7 @@ public sealed record CatalogueExtensionEntry
     public string? Version { get; init; }
 
     /// <summary>
-    /// package is installable (a signed package bundle); every other kind is code and is listed only Required.
+    /// package (a signed package bundle, POST.../install) and connector-template (connector element templates, data only, POST.../install-templates) are installable; every other kind is code and is listed only (decision 380 P2) Required.
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("kind")]
     public string? Kind { get; init; }

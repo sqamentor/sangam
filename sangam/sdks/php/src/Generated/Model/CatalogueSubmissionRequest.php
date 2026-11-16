@@ -8,15 +8,17 @@ namespace Sangam\Sdk\Generated\Model;
 use Sangam\Sdk\Generated\Support;
 
 /**
- * A signed package bundle submitted to the platform-wide catalogue, with its catalogue fields.
+ * An entry submitted to the platform-wide catalogue, with its catalogue fields and the artefact of its kind: bundle (a signed package bundle) for kind package, templates (connector element templates) for kind connector-template; exactly the one of the kind.
  *
  * Schema CatalogueSubmissionRequest of sangam-api.yaml 0.1.0.
  *
  * @property-read string|null $id (required) 1 to 100 of a-z 0-9. _ - (a path segment of the hosted artefact URL)
  * @property-read string|null $version (required) 1 to 100 of a-z 0-9. _ - (a path segment of the hosted artefact URL)
  * @property-read string|null $licence (required)
- * @property-read string|null $minPlatform (required) The oldest Sangam version the package runs on
- * @property-read PackageBundle|null $bundle (required)
+ * @property-read string|null $minPlatform (required) The oldest Sangam version the entry runs on
+ * @property-read string|null $kind Default package (decision 380 P2) One of: package, connector-template.
+ * @property-read PackageBundle|null $bundle Kind package: the signed package bundle
+ * @property-read array<string, mixed>|null $templates Kind connector-template: {templates: [{id, name, description, appliesTo, fields}]}, ids in the entry's namespace (the entry id, or the entry id and a dot)
  * @property-read string|null $reason
  */
 final class CatalogueSubmissionRequest implements \JsonSerializable
@@ -26,7 +28,9 @@ final class CatalogueSubmissionRequest implements \JsonSerializable
      * @param string|null $version
      * @param string|null $licence
      * @param string|null $minPlatform
+     * @param string|null $kind
      * @param PackageBundle|null $bundle
+     * @param array<string, mixed>|null $templates
      * @param string|null $reason
      */
     public function __construct(
@@ -34,7 +38,9 @@ final class CatalogueSubmissionRequest implements \JsonSerializable
         public readonly ?string $version = null,
         public readonly ?string $licence = null,
         public readonly ?string $minPlatform = null,
+        public readonly ?string $kind = null,
         public readonly ?PackageBundle $bundle = null,
+        public readonly ?array $templates = null,
         public readonly ?string $reason = null,
     ) {
     }
@@ -47,7 +53,9 @@ final class CatalogueSubmissionRequest implements \JsonSerializable
             Support::str($data['version'] ?? null),
             Support::str($data['licence'] ?? null),
             Support::str($data['minPlatform'] ?? null),
+            Support::str($data['kind'] ?? null),
             Support::model($data['bundle'] ?? null, PackageBundle::class),
+            Support::arr($data['templates'] ?? null),
             Support::str($data['reason'] ?? null),
         );
     }
@@ -67,8 +75,14 @@ final class CatalogueSubmissionRequest implements \JsonSerializable
         if ($this->minPlatform !== null) {
             $out['minPlatform'] = $this->minPlatform;
         }
+        if ($this->kind !== null) {
+            $out['kind'] = $this->kind;
+        }
         if ($this->bundle !== null) {
             $out['bundle'] = $this->bundle;
+        }
+        if ($this->templates !== null) {
+            $out['templates'] = $this->templates;
         }
         if ($this->reason !== null) {
             $out['reason'] = $this->reason;

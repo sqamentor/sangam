@@ -10,10 +10,10 @@ package org.sangam.sdk.generated.model;
  *
  * @param id wire field {@code id} (required)
  * @param version wire field {@code version} (required)
- * @param kind wire field {@code kind} (required).  One of: package.
+ * @param kind wire field {@code kind} (required).  One of: package, connector-template.
  * @param publisher wire field {@code publisher} (required). tenant/principal of the submitter
  * @param licence wire field {@code licence} (required)
- * @param sha256 wire field {@code sha256} (required). Hex SHA-256 of the exact bundle bytes served at artifactPath
+ * @param sha256 wire field {@code sha256} (required). Hex SHA-256 of the exact artefact bytes served at artifactPath
  * @param minPlatform wire field {@code minPlatform} (required)
  * @param artifactPath wire field {@code artifactPath} (required). Relative to the hosted index: artifacts/&lt;id&gt;/&lt;version&gt;
  * @param state wire field {@code state} (required).  One of: SUBMITTED, APPROVED, REJECTED.

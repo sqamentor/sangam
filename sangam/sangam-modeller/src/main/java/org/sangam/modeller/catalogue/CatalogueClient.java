@@ -40,13 +40,27 @@ public final class CatalogueClient {
         return ExtensionCatalogue.read(source.index(), source.signature(), trusted);
     }
 
-    /** The entry {@code id}@{@code version} with its artefact, for an install of kind {@code package} only. */
+    /** The entry {@code id}@{@code version} with its artefact, for an install of kind {@code package}. */
     public Verified forInstall(String id, String version) {
+        return forInstall(id, version, ExtensionCatalogue.KIND_PACKAGE);
+    }
+
+    /**
+     * The entry {@code id}@{@code version} with its artefact, for an install of {@code kind} (one of
+     * {@link ExtensionCatalogue#INSTALLABLE_KINDS}). A code kind is refused with {@code CATALOGUE_KIND_NOT_INSTALLABLE};
+     * an installable entry of another kind than the install asks for with {@code CATALOGUE_KIND_MISMATCH}, so a package
+     * is never read as templates nor templates as a package.
+     */
+    public Verified forInstall(String id, String version, String kind) {
         Entry e = entries().stream().filter(x -> x.id().equals(id) && x.version().equals(version)).findFirst()
                 .orElseThrow(() -> new CatalogueException("CATALOGUE_ENTRY_NOT_FOUND", id + "@" + version));
-        if (!ExtensionCatalogue.KIND_PACKAGE.equals(e.kind())) {
-            throw new CatalogueException("CATALOGUE_KIND_NOT_INSTALLABLE",
-                    "kind " + e.kind() + " is code and is never installed from the catalogue; only kind package is");
+        if (!ExtensionCatalogue.INSTALLABLE_KINDS.contains(e.kind())) {
+            throw new CatalogueException("CATALOGUE_KIND_NOT_INSTALLABLE", "kind " + e.kind()
+                    + " is code and is never installed from the catalogue; installable kinds are " + new java.util.TreeSet<>(ExtensionCatalogue.INSTALLABLE_KINDS));
+        }
+        if (!e.kind().equals(kind)) {
+            throw new CatalogueException("CATALOGUE_KIND_MISMATCH", id + "@" + version + " is of kind " + e.kind()
+                    + ", not " + kind);
         }
         byte[] artifact = source.artifact(e.artifactPath());
         List<String> refusals = ExtensionCatalogue.check(e, artifact, allowedLicences, platformVersion);

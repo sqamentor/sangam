@@ -13,6 +13,7 @@ import org.sangam.sdk.generated.model.CatalogueHostedEntry;
 import org.sangam.sdk.generated.model.CatalogueInstallRequest;
 import org.sangam.sdk.generated.model.CatalogueReviewRequest;
 import org.sangam.sdk.generated.model.CatalogueSubmissionRequest;
+import org.sangam.sdk.generated.model.CatalogueTemplatesInstalled;
 import org.sangam.sdk.generated.model.ElementTemplateApply;
 import org.sangam.sdk.generated.model.ElementTemplatePublish;
 import org.sangam.sdk.generated.model.ModelDiffReport;
@@ -32,7 +33,7 @@ import org.sangam.sdk.generated.model.TestBundleExport;
 import org.sangam.sdk.generated.model.TestBundleVerify;
 
 /**
- * Typed operations of {@code Modeller} (36 operations), generated from
+ * Typed operations of {@code Modeller} (37 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -42,6 +43,7 @@ public final class ModellerApi {
 
     private static final TypeReference<java.util.List<CatalogueExtensionEntry>> R_getExtensionCatalogue = new TypeReference<>() { };
     private static final TypeReference<Package> R_installCatalogueEntry = new TypeReference<>() { };
+    private static final TypeReference<CatalogueTemplatesInstalled> R_installCatalogueTemplates = new TypeReference<>() { };
     private static final TypeReference<CatalogueHostedEntry> R_submitCatalogueEntry = new TypeReference<>() { };
     private static final TypeReference<java.util.List<CatalogueHostedEntry>> R_listCatalogueEntries = new TypeReference<>() { };
     private static final TypeReference<CatalogueHostedEntry> R_approveCatalogueEntry = new TypeReference<>() { };
@@ -110,9 +112,27 @@ public final class ModellerApi {
     }
 
     /**
+     * Install the connector templates of a catalogue entry
+     *
+     * <p>Decision 380 P2 (b): publishes the connector element templates of a kind connector-template entry in the caller's tenant after the same catalogue checks as a package install (index signature, licence allow-list, platform version, artefact SHA-256). The artefact is data only ({templates: [{id, name, description, appliesTo, fields}]}, the format of the built-in connector templates); every template id is the entry id or starts with it and a dot, so an entry never replaces a built-in or another entry's template, and no field may be named like a credential. Only changed templates get a new version, with one CATALOGUE_TEMPLATES_INSTALLED audit event in the same transaction; a repeated install writes nothing. 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds), CATALOGUE_KIND_MISMATCH (a package entry), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_EGRESS_DENIED; 501 when the modeller template store is not installed.
+     *
+     * <p>{@code POST /catalogue/{id}/{version}/install-templates} (operationId {@code installCatalogueTemplates}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}. catalogue entry id
+     * @param version path parameter {@code version}. catalogue entry version
+     * @param body request body, or null
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public CatalogueTemplatesInstalled installCatalogueTemplates(String id, String version, CatalogueInstallRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/catalogue/" + HttpTransport.seg(String.valueOf(id)) + "/" + HttpTransport.seg(String.valueOf(version)) + "/install-templates");
+        req.body(body);
+        return call.json(req, options, R_installCatalogueTemplates);
+    }
+
+    /**
      * Submit a catalogue entry
      *
-     * <p>Submits a signed package bundle to the platform-wide catalogue (decision 380 P4 (i)); kind package only, code jars are never staged. The bundle must pass this environment's package verification (hash recomputes, artefacts match, valid signatures), else 422 CATALOGUE_BUNDLE_UNVERIFIED; the entry's SHA-256 is taken over the stored bundle bytes. 422 CATALOGUE_ENTRY_ID_INVALID; 409 CATALOGUE_ENTRY_EXISTS (a version is never replaced). The entry is SUBMITTED until another person approves it. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+     * <p>Submits an entry to the platform-wide catalogue (decision 380 P4 (i)): kind package, a signed package bundle that must pass this environment's package verification (hash recomputes, artefacts match, valid signatures), else 422 CATALOGUE_BUNDLE_UNVERIFIED; or kind connector-template, data-only connector element templates in the entry's namespace, else 422 CATALOGUE_ARTIFACT_INVALID (P2 (b)). Code jars are never staged (422 CATALOGUE_KIND_NOT_INSTALLABLE). The entry's SHA-256 is taken over the stored artefact bytes. 400 CATALOGUE_BUNDLE_REQUIRED or CATALOGUE_TEMPLATES_REQUIRED; 422 CATALOGUE_ENTRY_ID_INVALID; 409 CATALOGUE_ENTRY_EXISTS (a version is never replaced). The entry is SUBMITTED until another person approves it. Audited CATALOGUE_ENTRY_SUBMITTED in the same transaction. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
      *
      * <p>{@code POST /catalogue/entries} (operationId {@code submitCatalogueEntry}); permission {@code platform.catalogue.publish}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -144,7 +164,7 @@ public final class ModellerApi {
     /**
      * Approve a catalogue entry
      *
-     * <p>Adds a SUBMITTED entry to the signed hosted index. The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+     * <p>Adds a SUBMITTED entry to the signed hosted index; audited CATALOGUE_ENTRY_APPROVED in the same transaction. The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
      *
      * <p>{@code POST /catalogue/entries/{id}/{version}/approve} (operationId {@code approveCatalogueEntry}); permission {@code platform.catalogue.review}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}. catalogue entry id
@@ -162,7 +182,7 @@ public final class ModellerApi {
     /**
      * Reject a catalogue entry
      *
-     * <p>Rejects a SUBMITTED entry; reason is required (400 REASON_REQUIRED). The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+     * <p>Rejects a SUBMITTED entry; reason is required (400 REASON_REQUIRED); audited CATALOGUE_ENTRY_REJECTED in the same transaction. The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
      *
      * <p>{@code POST /catalogue/entries/{id}/{version}/reject} (operationId {@code rejectCatalogueEntry}); permission {@code platform.catalogue.review}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}. catalogue entry id
@@ -208,7 +228,7 @@ public final class ModellerApi {
     /**
      * Hosted catalogue artefact
      *
-     * <p>The exact bundle bytes of an approved entry (404 for any other state). Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+     * <p>The exact artefact bytes of an approved entry (404 for any other state). Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
      *
      * <p>{@code GET /catalogue/hosted/artifacts/{id}/{version}} (operationId {@code getHostedCatalogueArtifact}).
      * @param id path parameter {@code id}. catalogue entry id

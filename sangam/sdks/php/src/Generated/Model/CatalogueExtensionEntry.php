@@ -14,7 +14,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read string|null $id (required)
  * @property-read string|null $version (required)
- * @property-read string|null $kind (required) package is installable (a signed package bundle); every other kind is code and is listed only
+ * @property-read string|null $kind (required) package (a signed package bundle, POST.../install) and connector-template (connector element templates, data only, POST.../install-templates) are installable; every other kind is code and is listed only (decision 380 P2)
  * @property-read string|null $publisher (required)
  * @property-read string|null $licence (required)
  * @property-read string|null $sha256 (required) Hex SHA-256 of the artefact bytes

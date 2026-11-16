@@ -4,15 +4,17 @@
 package org.sangam.sdk.generated.model;
 
 /**
- * A signed package bundle submitted to the platform-wide catalogue, with its catalogue fields.
+ * An entry submitted to the platform-wide catalogue, with its catalogue fields and the artefact of its kind: bundle (a signed package bundle) for kind package, templates (connector element templates) for kind connector-template; exactly the one of the kind.
  *
  * <p>Schema {@code CatalogueSubmissionRequest} of sangam-api.yaml 0.1.0.
  *
  * @param id wire field {@code id} (required). 1 to 100 of a-z 0-9. _ - (a path segment of the hosted artefact URL)
  * @param version wire field {@code version} (required). 1 to 100 of a-z 0-9. _ - (a path segment of the hosted artefact URL)
  * @param licence wire field {@code licence} (required)
- * @param minPlatform wire field {@code minPlatform} (required). The oldest Sangam version the package runs on
- * @param bundle wire field {@code bundle} (required)
+ * @param minPlatform wire field {@code minPlatform} (required). The oldest Sangam version the entry runs on
+ * @param kind wire field {@code kind}. Default package (decision 380 P2) One of: package, connector-template.
+ * @param bundle wire field {@code bundle}. Kind package: the signed package bundle
+ * @param templates wire field {@code templates}. Kind connector-template: {templates: [{id, name, description, appliesTo, fields}]}, ids in the entry's namespace (the entry id, or the entry id and a dot)
  * @param reason wire field {@code reason}
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
@@ -21,6 +23,8 @@ public record CatalogueSubmissionRequest(
         @com.fasterxml.jackson.annotation.JsonProperty("version") String version,
         @com.fasterxml.jackson.annotation.JsonProperty("licence") String licence,
         @com.fasterxml.jackson.annotation.JsonProperty("minPlatform") String minPlatform,
+        @com.fasterxml.jackson.annotation.JsonProperty("kind") String kind,
         @com.fasterxml.jackson.annotation.JsonProperty("bundle") PackageBundle bundle,
+        @com.fasterxml.jackson.annotation.JsonProperty("templates") java.util.Map<String, Object> templates,
         @com.fasterxml.jackson.annotation.JsonProperty("reason") String reason) {
 }

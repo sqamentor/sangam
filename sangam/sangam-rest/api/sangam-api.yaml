@@ -27214,17 +27214,90 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
+  /catalogue/{id}/{version}/install-templates:
+    post:
+      operationId: installCatalogueTemplates
+      tags:
+      - Modeller
+      summary: Install the connector templates of a catalogue entry
+      description: 'Decision 380 P2 (b): publishes the connector element templates of a kind connector-template entry in the caller''s tenant
+        after the same catalogue checks as a package install (index signature, licence allow-list, platform version, artefact SHA-256). The artefact
+        is data only ({templates: [{id, name, description, appliesTo, fields}]}, the format of the built-in connector templates); every template
+        id is the entry id or starts with it and a dot, so an entry never replaces a built-in or another entry''s template, and no field may be
+        named like a credential. Only changed templates get a new version, with one CATALOGUE_TEMPLATES_INSTALLED audit event in the same transaction;
+        a repeated install writes nothing. 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds), CATALOGUE_KIND_MISMATCH
+        (a package entry), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_EGRESS_DENIED; 501 when the modeller template store is
+        not installed.'
+      x-sangam-command-type: modeller.catalogue.install-templates
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry id
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry version
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: package.author
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogueInstallRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogueTemplatesInstalled'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /catalogue/entries:
     post:
       operationId: submitCatalogueEntry
       tags:
       - Modeller
       summary: Submit a catalogue entry
-      description: Submits a signed package bundle to the platform-wide catalogue (decision 380 P4 (i)); kind package only, code jars are never
-        staged. The bundle must pass this environment's package verification (hash recomputes, artefacts match, valid signatures), else 422 CATALOGUE_BUNDLE_UNVERIFIED;
-        the entry's SHA-256 is taken over the stored bundle bytes. 422 CATALOGUE_ENTRY_ID_INVALID; 409 CATALOGUE_ENTRY_EXISTS (a version is never
-        replaced). The entry is SUBMITTED until another person approves it. Platform-only permission (the server maps it to platform-issuer identities;
-        no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+      description: 'Submits an entry to the platform-wide catalogue (decision 380 P4 (i)): kind package, a signed package bundle that must pass
+        this environment''s package verification (hash recomputes, artefacts match, valid signatures), else 422 CATALOGUE_BUNDLE_UNVERIFIED; or
+        kind connector-template, data-only connector element templates in the entry''s namespace, else 422 CATALOGUE_ARTIFACT_INVALID (P2 (b)).
+        Code jars are never staged (422 CATALOGUE_KIND_NOT_INSTALLABLE). The entry''s SHA-256 is taken over the stored artefact bytes. 400 CATALOGUE_BUNDLE_REQUIRED
+        or CATALOGUE_TEMPLATES_REQUIRED; 422 CATALOGUE_ENTRY_ID_INVALID; 409 CATALOGUE_ENTRY_EXISTS (a version is never replaced). The entry is
+        SUBMITTED until another person approves it. Audited CATALOGUE_ENTRY_SUBMITTED in the same transaction. Platform-only permission (the server
+        maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).'
       x-sangam-command-type: modeller.catalogue.submit
       x-sangam-idempotent: true
       parameters:
@@ -27318,9 +27391,9 @@ paths:
       tags:
       - Modeller
       summary: Approve a catalogue entry
-      description: Adds a SUBMITTED entry to the signed hosted index. The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES);
-        409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer
-        identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+      description: Adds a SUBMITTED entry to the signed hosted index; audited CATALOGUE_ENTRY_APPROVED in the same transaction. The reviewer must
+        differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only
+        permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
       x-sangam-command-type: modeller.catalogue.approve
       x-sangam-idempotent: true
       parameters:
@@ -27384,9 +27457,10 @@ paths:
       tags:
       - Modeller
       summary: Reject a catalogue entry
-      description: Rejects a SUBMITTED entry; reason is required (400 REASON_REQUIRED). The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES);
-        409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer
-        identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+      description: Rejects a SUBMITTED entry; reason is required (400 REASON_REQUIRED); audited CATALOGUE_ENTRY_REJECTED in the same transaction.
+        The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer
+        SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting
+        is off (sangam.modeller.catalogue.host.enabled).
       x-sangam-command-type: modeller.catalogue.reject
       x-sangam-idempotent: true
       parameters:
@@ -27500,7 +27574,7 @@ paths:
       tags:
       - Modeller
       summary: Hosted catalogue artefact
-      description: 'The exact bundle bytes of an approved entry (404 for any other state). Public (no credentials): a consumer''s sangam.modeller.catalogue.url
+      description: 'The exact artefact bytes of an approved entry (404 for any other state). Public (no credentials): a consumer''s sangam.modeller.catalogue.url
         names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.'
       parameters:
       - name: id
@@ -68593,7 +68667,8 @@ components:
           type: string
         kind:
           type: string
-          description: package is installable (a signed package bundle); every other kind is code and is listed only
+          description: package (a signed package bundle, POST .../install) and connector-template (connector element templates, data only, POST
+            .../install-templates) are installable; every other kind is code and is listed only (decision 380 P2)
         publisher:
           type: string
         licence:
@@ -68622,9 +68697,46 @@ components:
       properties:
         reason:
           type: string
+    CatalogueInstalledTemplate:
+      type: object
+      description: One connector element template published by a catalogue install.
+      properties:
+        id:
+          type: string
+        version:
+          type: integer
+          format: int32
+          description: The new version of the template in the caller's tenant
+      required:
+      - id
+      - version
+    CatalogueTemplatesInstalled:
+      type: object
+      description: What a connector-template install did.
+      properties:
+        id:
+          type: string
+        version:
+          type: string
+        published:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogueInstalledTemplate'
+          description: Templates whose latest version in the tenant differed, each published as a new version
+        unchanged:
+          type: array
+          items:
+            type: string
+          description: Template ids already current in the tenant (nothing written)
+      required:
+      - id
+      - version
+      - published
+      - unchanged
     CatalogueSubmissionRequest:
       type: object
-      description: A signed package bundle submitted to the platform-wide catalogue, with its catalogue fields.
+      description: 'An entry submitted to the platform-wide catalogue, with its catalogue fields and the artefact of its kind: bundle (a signed
+        package bundle) for kind package, templates (connector element templates) for kind connector-template; exactly the one of the kind.'
       properties:
         id:
           type: string
@@ -68636,9 +68748,22 @@ components:
           type: string
         minPlatform:
           type: string
-          description: The oldest Sangam version the package runs on
+          description: The oldest Sangam version the entry runs on
+        kind:
+          type: string
+          enum:
+          - package
+          - connector-template
+          description: Default package (decision 380 P2)
         bundle:
-          $ref: '#/components/schemas/PackageBundle'
+          allOf:
+          - $ref: '#/components/schemas/PackageBundle'
+          description: 'Kind package: the signed package bundle'
+        templates:
+          type: object
+          additionalProperties: true
+          description: 'Kind connector-template: {templates: [{id, name, description, appliesTo, fields}]}, ids in the entry''s namespace (the
+            entry id, or the entry id and a dot)'
         reason:
           type: string
       required:
@@ -68646,7 +68771,6 @@ components:
       - version
       - licence
       - minPlatform
-      - bundle
     CatalogueReviewRequest:
       type: object
       description: Why a catalogue entry is approved or rejected (required to reject).
@@ -68665,6 +68789,7 @@ components:
           type: string
           enum:
           - package
+          - connector-template
         publisher:
           type: string
           description: tenant/principal of the submitter
@@ -68672,7 +68797,7 @@ components:
           type: string
         sha256:
           type: string
-          description: Hex SHA-256 of the exact bundle bytes served at artifactPath
+          description: Hex SHA-256 of the exact artefact bytes served at artifactPath
         minPlatform:
           type: string
         artifactPath:

@@ -1743,7 +1743,7 @@ export interface CatalogueEntry {
 export interface CatalogueExtensionEntry {
   id: string;
   version: string;
-  /** package is installable (a signed package bundle); every other kind is code and is listed only */
+  /** package (a signed package bundle, POST.../install) and connector-template (connector element templates, data only, POST.../install-templates) are installable; every other kind is code and is listed only (decision 380 P2) */
   kind: string;
   publisher: string;
   licence: string;
@@ -1763,12 +1763,12 @@ export interface CatalogueExtensionEntry {
 export interface CatalogueHostedEntry {
   id: string;
   version: string;
-  /**  One of: package. */
-  kind: 'package';
+  /**  One of: package, connector-template. */
+  kind: 'package' | 'connector-template';
   /** tenant/principal of the submitter */
   publisher: string;
   licence: string;
-  /** Hex SHA-256 of the exact bundle bytes served at artifactPath */
+  /** Hex SHA-256 of the exact artefact bytes served at artifactPath */
   sha256: string;
   minPlatform: string;
   /** Relative to the hosted index: artifacts/<id>/<version> */
@@ -1793,6 +1793,17 @@ export interface CatalogueInstallRequest {
 }
 
 /**
+ * One connector element template published by a catalogue install.
+ *
+ * Schema `CatalogueInstalledTemplate`.
+ */
+export interface CatalogueInstalledTemplate {
+  id: string;
+  /** The new version of the template in the caller's tenant */
+  version: number;
+}
+
+/**
  * Why a catalogue entry is approved or rejected (required to reject).
  *
  * Schema `CatalogueReviewRequest`.
@@ -1802,7 +1813,7 @@ export interface CatalogueReviewRequest {
 }
 
 /**
- * A signed package bundle submitted to the platform-wide catalogue, with its catalogue fields.
+ * An entry submitted to the platform-wide catalogue, with its catalogue fields and the artefact of its kind: bundle (a signed package bundle) for kind package, templates (connector element templates) for kind connector-template; exactly the one of the kind.
  *
  * Schema `CatalogueSubmissionRequest`.
  */
@@ -1812,10 +1823,29 @@ export interface CatalogueSubmissionRequest {
   /** 1 to 100 of a-z 0-9. _ - (a path segment of the hosted artefact URL) */
   version: string;
   licence: string;
-  /** The oldest Sangam version the package runs on */
+  /** The oldest Sangam version the entry runs on */
   minPlatform: string;
-  bundle: PackageBundle;
+  /** Default package (decision 380 P2) One of: package, connector-template. */
+  kind?: 'package' | 'connector-template';
+  /** Kind package: the signed package bundle */
+  bundle?: PackageBundle;
+  /** Kind connector-template: {templates: [{id, name, description, appliesTo, fields}]}, ids in the entry's namespace (the entry id, or the entry id and a dot) */
+  templates?: Record<string, unknown>;
   reason?: string;
+}
+
+/**
+ * What a connector-template install did.
+ *
+ * Schema `CatalogueTemplatesInstalled`.
+ */
+export interface CatalogueTemplatesInstalled {
+  id: string;
+  version: string;
+  /** Templates whose latest version in the tenant differed, each published as a new version */
+  published: Array<CatalogueInstalledTemplate>;
+  /** Template ids already current in the tenant (nothing written) */
+  unchanged: Array<string>;
 }
 
 /**

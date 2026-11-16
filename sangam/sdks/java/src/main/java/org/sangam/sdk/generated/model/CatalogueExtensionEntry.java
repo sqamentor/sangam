@@ -10,7 +10,7 @@ package org.sangam.sdk.generated.model;
  *
  * @param id wire field {@code id} (required)
  * @param version wire field {@code version} (required)
- * @param kind wire field {@code kind} (required). package is installable (a signed package bundle); every other kind is code and is listed only
+ * @param kind wire field {@code kind} (required). package (a signed package bundle, POST.../install) and connector-template (connector element templates, data only, POST.../install-templates) are installable; every other kind is code and is listed only (decision 380 P2)
  * @param publisher wire field {@code publisher} (required)
  * @param licence wire field {@code licence} (required)
  * @param sha256 wire field {@code sha256} (required). Hex SHA-256 of the artefact bytes
