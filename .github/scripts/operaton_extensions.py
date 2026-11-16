@@ -1,0 +1,183 @@
+# SPDX-License-Identifier: Apache-2.0
+"""Inventory of the Operaton extensions the shipped models use (RM-52, Operaton exit readiness).
+
+Scans every BPMN, DMN and CMMN model file under the source root (default: sangam/), leaving out test sources
+(src/test) and build output (target*, node_modules), and lists each `operaton:` extension element and attribute:
+which model language, which model elements carry it, how often and in how many files, then the use per module.
+Any other engine's namespace (Camunda, Flowable, Activiti) is listed too, because each one is a second migration
+target. The inventory is what an engine exit has to map, so it is generated, never written by hand.
+
+  python -I .github/scripts/operaton_extensions.py --write   regenerate sangam/docs/records/OPERATON-EXTENSION-INVENTORY.md
+  python -I .github/scripts/operaton_extensions.py --check   fail (exit 1) when the committed inventory is not current
+
+Exit codes: 0 current or written, 1 stale, 2 unreadable model or input (BLOCKED). Standard library only.
+"""
+import argparse
+import os
+import sys
+import xml.etree.ElementTree as ET
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.normpath(os.path.join(HERE, "..", ".."))
+DEFAULT_ROOT = os.path.join(REPO, "sangam")
+DEFAULT_OUT = os.path.join(REPO, "sangam", "docs", "records", "OPERATON-EXTENSION-INVENTORY.md")
+SUFFIXES = {".bpmn": "bpmn", ".dmn": "dmn", ".cmmn": "cmmn"}
+SKIP_DIRS = {"node_modules", ".git"}
+OPERATON = "http://operaton.org/schema/"
+OTHER_ENGINES = ("http://camunda.org/schema/", "http://flowable.org/", "http://activiti.org/")
+
+
+class Blocked(Exception):
+    pass
+
+
+def model_files(root):
+    """Sorted (relative path, model kind) of every model file under root, tests and build output left out."""
+    out = []
+    for d, dirs, files in os.walk(root):
+        rel = os.path.relpath(d, root).replace(os.sep, "/")
+        parts = [] if rel == "." else rel.split("/")
+        dirs[:] = sorted(x for x in dirs if x not in SKIP_DIRS and not x.startswith("target"))
+        if any(parts[i] == "src" and i + 1 < len(parts) and parts[i + 1] == "test" for i in range(len(parts))):
+            continue
+        for f in files:
+            kind = SUFFIXES.get(os.path.splitext(f)[1].lower())
+            if kind:
+                out.append(("/".join(parts + [f]), kind))
+    return sorted(out)
+
+
+def split(name):
+    """('{uri}local') -> (uri, local); a name without a namespace -> ('', name)."""
+    if name.startswith("{"):
+        uri, local = name[1:].split("}", 1)
+        return uri, local
+    return "", name
+
+
+def scan(path):
+    """Yields (namespace uri, extension name, 'element' or 'attribute', the model element it is on)."""
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+        if b"<!DOCTYPE" in data or b"<!ENTITY" in data:
+            raise Blocked(f"{path} declares a DTD or an entity; a model file never needs one")
+        root = ET.fromstring(data)
+    except (ET.ParseError, OSError) as e:
+        raise Blocked(f"cannot read {path}: {e}") from e
+
+    def attributes(el):
+        _, on = split(el.tag)
+        for a in el.attrib:
+            uri, local = split(a)
+            if uri:
+                yield uri, local, "attribute", on
+
+    yield from attributes(root)
+    for parent in root.iter():
+        _, on = split(parent.tag)
+        for child in parent:
+            if not isinstance(child.tag, str):
+                continue
+            uri, local = split(child.tag)
+            if uri.startswith(OPERATON) or uri.startswith(OTHER_ENGINES):
+                yield uri, local, "element", on
+            yield from attributes(child)
+
+
+def inventory(root):
+    files = model_files(root)
+    ext, modules, other = {}, {}, {}
+    with_ext = 0
+    for rel, kind in files:
+        seen = False
+        module = rel.split("/", 1)[0] if "/" in rel else "."
+        for uri, local, what, on in scan(os.path.join(root, rel)):
+            if uri.startswith(OPERATON):
+                seen = True
+                lang = uri[len(OPERATON):].rstrip("/").rsplit("/", 1)[-1] or kind
+                e = ext.setdefault((f"operaton:{local}", what, lang), {"on": set(), "uses": 0, "files": set()})
+                e["on"].add(on)
+                e["uses"] += 1
+                e["files"].add(rel)
+                m = modules.setdefault(module, {"files": set(), "uses": 0})
+                m["files"].add(rel)
+                m["uses"] += 1
+            elif uri.startswith(OTHER_ENGINES):
+                o = other.setdefault((uri, rel), 0)
+                other[(uri, rel)] = o + 1
+        with_ext += seen
+    return files, with_ext, ext, modules, other
+
+
+def render(root):
+    files, with_ext, ext, modules, other = inventory(root)
+    kinds = {k: sum(1 for _, x in files if x == k) for k in ("bpmn", "dmn", "cmmn")}
+    lines = [
+        "<!-- SPDX-License-Identifier: Apache-2.0 -->",
+        "<!-- GENERATED by .github/scripts/operaton_extensions.py: do not edit. "
+        "Regenerate with: python -I .github/scripts/operaton_extensions.py --write -->",
+        "# Operaton extension inventory (RM-52)",
+        "",
+        "Every `operaton:` extension element and attribute in the model files under `sangam/` (BPMN, DMN and CMMN; test",
+        "sources and build output are left out). An engine exit has to map each row. The governance unit tests fail",
+        "when this file is not current.",
+        "",
+        f"Model files scanned: {len(files)} (BPMN {kinds['bpmn']}, DMN {kinds['dmn']}, CMMN {kinds['cmmn']}). "
+        f"Files with an Operaton extension: {with_ext}.",
+        "",
+        "## Extensions",
+        "",
+        "| Extension | Kind | Model | Used on | Uses | Files |",
+        "|---|---|---|---|---|---|",
+    ]
+    for (name, what, lang), e in sorted(ext.items(), key=lambda kv: (-kv[1]["uses"], kv[0])):
+        lines.append(f"| `{name}` | {what} | {lang} | {', '.join(sorted(e['on']))} | {e['uses']} | {len(e['files'])} |")
+    lines += ["", "## By module", "", "| Module | Files | Extension uses |", "|---|---|---|"]
+    for module, m in sorted(modules.items()):
+        lines.append(f"| {module} | {len(m['files'])} | {m['uses']} |")
+    lines += ["", "## Other engine namespaces", ""]
+    if other:
+        lines += ["| Namespace | File | Uses |", "|---|---|---|"]
+        for (uri, rel), n in sorted(other.items()):
+            lines.append(f"| {uri} | {rel} | {n} |")
+    else:
+        lines.append("None.")
+    return "\n".join(lines) + "\n"
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    mode = ap.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--write", action="store_true")
+    mode.add_argument("--check", action="store_true")
+    ap.add_argument("--root", default=DEFAULT_ROOT)
+    ap.add_argument("--out", default=DEFAULT_OUT)
+    a = ap.parse_args(argv)
+    try:
+        if not os.path.isdir(a.root):
+            raise Blocked(f"{a.root} is not a directory")
+        text = render(a.root)
+    except Blocked as e:
+        print(f"::error title=operaton extensions BLOCKED::{e}")
+        return 2
+    if a.write:
+        os.makedirs(os.path.dirname(a.out), exist_ok=True)
+        with open(a.out, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+        print(f"wrote {a.out}")
+        return 0
+    try:
+        with open(a.out, encoding="utf-8") as f:
+            current = f.read().replace("\r\n", "\n")
+    except OSError:
+        current = None
+    if current != text:
+        print(f"::error title=operaton extensions::{a.out} is not current; run {os.path.basename(__file__)} --write")
+        return 1
+    print("operaton extension inventory: current")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
