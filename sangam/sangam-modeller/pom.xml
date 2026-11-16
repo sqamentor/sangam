@@ -21,6 +21,15 @@
       <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-integration</artifactId>
     </dependency>
+    <!-- M-136 (decision 151): the Operaton-backed replay capture and driver (org.sangam.modeller.replay.operaton) run
+         on an isolated Sangam engine. Provided, as sangam-integration and sangam-rest-core take it: the host that runs a
+         replay supplies the engine; a host without it (the CLI) never loads those classes. No cycle: sangam-engine does
+         not depend on this module. -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-engine</artifactId>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
