@@ -35,7 +35,7 @@ x-backup-console-client: &backup-console-client
 services:
   # One-shot: the shared history directory, owned by the server user (uid 10001, gid 0), mode 0770.
   backup-console-init:
-    image: postgres:17
+    image: postgres:17@sha256:846a7ddaa67a4b354ae1d21087b683901aa6113a4ed626d3787cfbf6c85e3e07
     user: "0:0"
     restart: "no"
     entrypoint: ["sh", "-c", "mkdir -p /backup/console-history && chown 10001:0 /backup/console-history && chmod 0770 /backup/console-history"]

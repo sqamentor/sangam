@@ -43,6 +43,11 @@ jobs:
       fail-fast: false
       matrix:
         java: ["25", "21", "27"]   # R5: 25 LTS baseline, 21 supported minimum, 27 current (SG-06; deploy/SUPPORT-MATRIX.md)
+        # RM-56: each line runs one exact patch version (the job names and the matrix.java conditions keep the line)
+        include:
+          - { java: "25", java-exact: "25.0.1" }
+          - { java: "21", java-exact: "21.0.8" }
+          - { java: "27", java-exact: "27.0.0" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Generated packs match their generator (no hand edits that a regeneration would undo)
@@ -99,7 +104,7 @@ jobs:
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
-          java-version: ${{ matrix.java }}
+          java-version: ${{ matrix.java-exact }}
           cache: maven
           cache-dependency-path: sangam/**/pom.xml
       - name: Provenance (start, SG-16)

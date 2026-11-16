@@ -818,7 +818,7 @@ backup:
     requests: { cpu: 100m, memory: 256Mi }
     limits: { memory: 1Gi }
   postgres:
-    image: postgres:17
+    image: postgres:17@sha256:846a7ddaa67a4b354ae1d21087b683901aa6113a4ed626d3787cfbf6c85e3e07
     fullSchedule: "15 1 * * *"          # daily base backup (pg_basebackup, tar + gzip, WAL streamed)
     logicalSchedule: "45 2 * * 0"       # weekly pg_dump -Fc (portable, for restore tests)
     # Continuous WAL archive with pg_receivewal (a Deployment, not a CronJob): RPO = seconds.

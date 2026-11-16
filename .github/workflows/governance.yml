@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: "3.13"
+          python-version: "3.13.7"
       - name: Governance script unit tests
         run: python -I -m unittest discover -s .github/scripts -v
       - name: Requirements without a proving test
@@ -81,10 +81,14 @@ jobs:
         run: python -I $L/results_ledger.py run --check workflow-npx --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check npx .github/workflows sangam/deploy
       - name: Install scripts off for npm (decision 130, CR-14)
         run: python -I $L/results_ledger.py run --check workflow-npm-scripts --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check npm-scripts .github/workflows sangam/deploy
+      - name: Exact CI runtime versions (RM-56, CR-18)
+        run: python -I $L/results_ledger.py run --check workflow-runtimes --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check runtimes .github/workflows
       - name: Lockfile for every package manager (CR-18, report-only on pull requests)
         run: python -I $L/results_ledger.py run --check workflow-lockfiles $REPORT_ONLY --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check lockfiles --lock-root sangam/sdks --lock-root sangam/sangam-ui --lock-root $L/tools
       - name: Images pinned by digest (CR-10, report-only on pull requests)
         run: python -I $L/results_ledger.py run --check image-pins $REPORT_ONLY --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check images sangam/deploy/airgap/images.txt sangam/deploy/docker sangam/deploy/operator/Dockerfile
+      - name: Compose, Helm and integration-test images pinned by digest (RM-33, CR-10, report-only on pull requests)
+        run: python -I $L/results_ledger.py run --check image-pins-deploy $REPORT_ONLY --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check deploy-images sangam/deploy/compose sangam/deploy/helm/sangam/values.yaml .github/workflows/db-matrix.yml
       - name: Results-ledger gate (pull request)
         if: always()
         run: python -I $L/results_ledger.py gate --required $L/release-checks.json --mode pr --set pr-governance --ledger-dir "$LEDGER"
@@ -106,7 +110,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: "3.13"
+          python-version: "3.13.7"
       - name: Every pull-request commit is signed off by its author
         env:
           BASE: ${{ github.event.pull_request.base.sha }}

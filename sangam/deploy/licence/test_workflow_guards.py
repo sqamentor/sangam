@@ -24,6 +24,10 @@ with open(os.path.join(HERE, "ci-tool-pins.json"), encoding="utf-8") as f:
 SHA = "11d5960a326750d5838078e36cf38b85af677262"
 
 
+def deploy(path, lines, cfg):
+    return wg.CHECKS["deploy-images"](path, lines, cfg)
+
+
 def scan(check, text):
     return wg.CHECKS[check]("w.yml", text.splitlines(), PINS)
 
@@ -129,6 +133,113 @@ class Images(unittest.TestCase):
         self.assertEqual([n for _, n, _ in bad], [1, 2, 3, 4])
         # only Dockerfiles: a FROM in another scanned file (a shell heredoc, a workflow) is not judged here
         self.assertEqual(wg.check_images("notes.sh", ["FROM node:22"], PINS), [])
+
+    D = "@sha256:" + "c" * 64
+
+    def test_rm33_compose_image_lines(self):
+        ok = [f"    image: postgres:17{self.D}", "    image: ${SANGAM_REGISTRY:-sangam}/sangam-server:${SANGAM_VERSION:-dev}",
+              f"    image: ${{SANGAM_SIDECAR_INIT_IMAGE:-eclipse-temurin:25.0.1_8-jre-noble{self.D}}}",
+              "    image: ${OPERATOR_IMAGE}", "    # image: postgres:17"]
+        self.assertEqual(deploy("deploy/compose/docker-compose.yml", ok, PINS), [])
+        bad = deploy("deploy/compose/docker-compose.cells.yml",
+                              ["    image: postgres:17", "    image: ${SANGAM_SIDECAR_INIT_IMAGE:-eclipse-temurin:25.0.1_8-jre-noble}",
+                               '    image: "mcr.microsoft.com/mssql/server:2022-latest"'], PINS)
+        self.assertEqual([n for _, n, _ in bad], [1, 2, 3])
+        # an image: line in another YAML (not a compose file) is not judged by the compose rule
+        self.assertEqual(deploy("deploy/k8s/job.yml", ["    image: postgres:17"], PINS), [])
+
+    def test_rm33_helm_values(self):
+        block = ["  image:", "    registry: docker.io", "    repository: clamav/clamav", "    # pinned in Phase C",
+                 '    tag: "1.4.3"', '    digest: ""', "  service:", "    port: 3310"]
+        self.assertEqual([n for _, n, _ in deploy("helm/values.yaml", block, PINS)], [3])
+        pinned = block[:5] + ['    digest: "sha256:' + "d" * 64 + '"'] + block[6:]
+        self.assertEqual(deploy("helm/values.yaml", pinned, PINS), [])
+        first = ["  image:", "    repository: sqamentor/sangam-server", '    tag: ""', '    digest: ""']
+        self.assertEqual(deploy("helm/values.yaml", first, PINS), [], "first-party: the release records the digest")
+        inline = ['    image: { registry: ghcr.io, repository: sqamentor/sangam-gateway, tag: "", digest: "" }',
+                  '    image: { registry: docker.io, repository: library/redis, tag: "7", digest: "" }']
+        self.assertEqual([n for _, n, _ in deploy("helm/values.yaml", inline, PINS)], [2])
+        plain = ["    image: postgres:17", '    image: ""', f"    image: mysql:8.4{self.D}"]
+        self.assertEqual([n for _, n, _ in deploy("helm/values.yaml", plain, PINS)], [1],
+                         'an empty image ("" = the operator supplies it, decision 129) is not judged')
+
+    def test_rm33_integration_test_images_of_a_workflow(self):
+        lines = [f"      SANGAM_IT_IMAGE_POSTGRES: postgres:17{self.D}", '      SANGAM_IT_IMAGE_YUGABYTEDB: ""',
+                 "      SANGAM_IT_IMAGE_MARIADB: mariadb:11.4", "      SANGAM_IT_DB: ${{ matrix.db }}"]
+        self.assertEqual([n for _, n, _ in deploy(".github/workflows/db-matrix.yml", lines, PINS)], [3])
+
+    # RM-33 ratchet: the third-party images still without a digest. Each needs a registry lookup (Phase C, decision
+    # 96: no download now); the list may only shrink, and a new unpinned image fails here.
+    UNPINNED = {
+        ("sangam/deploy/compose/docker-compose.cells.yml", "curlimages/curl:8.15.0"),
+        ("sangam/deploy/compose/docker-compose.yml", "clamav/clamav:1.4.3"),
+        ("sangam/deploy/compose/docker-compose.yml", "grafana/grafana-oss:12.1.1"),
+        ("sangam/deploy/helm/sangam/values.yaml", "clamav/clamav:1.4.3"),
+        (".github/workflows/db-matrix.yml", "mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04"),
+        (".github/workflows/db-matrix.yml", "mariadb:11.4"),
+        (".github/workflows/db-matrix.yml", "icr.io/db2_community/db2:12.1.2.0"),
+    }
+
+    def test_rm33_the_repository_has_only_the_listed_unpinned_images(self):
+        paths = [os.path.join(REPO, p) for p in ("sangam/deploy/airgap/images.txt", "sangam/deploy/docker",
+                                                  "sangam/deploy/operator/Dockerfile", "sangam/deploy/compose",
+                                                  "sangam/deploy/helm/sangam/values.yaml", ".github/workflows/db-matrix.yml")]
+        found = set()
+        for path in wg.files(paths):
+            rel = os.path.relpath(path, REPO).replace(os.sep, "/")
+            for _, _, msg in deploy(rel, wg.read_lines(path), PINS) + wg.check_images(rel, wg.read_lines(path), PINS):
+                found.add((rel, msg.split(": ", 1)[1].split(" (digest", 1)[0]))
+        self.assertEqual(self.UNPINNED, found)
+
+    def test_rm33_db_matrix_pins_name_the_images_the_integration_tests_ask_for(self):
+        # db-matrix pulls a pin by its digest and tags it <name>:<tag>; that tag must be the image AcceptanceDatabase
+        # asks Testcontainers for, or the pinned bytes are never the ones that run
+        with open(os.path.join(WORKFLOWS, "db-matrix.yml"), encoding="utf-8") as f:
+            wf = f.read()
+        with open(os.path.join(REPO, "sangam", "sangam-server", "src", "test", "java", "org", "sangam", "server",
+                               "acceptance", "AcceptanceDatabase.java"), encoding="utf-8") as f:
+            java = f.read()
+        pins = re.findall(r"SANGAM_IT_IMAGE_(\w+): (\S+)@sha256:[0-9a-f]{64}", wf)
+        self.assertGreaterEqual(len(pins), 4)
+        for db, name in pins:
+            self.assertIn(f'"{name}"', java, f"{db}: {name} is not an image AcceptanceDatabase uses")
+        self.assertIn('docker tag "$ref" "${ref%@sha256:*}"', wf)
+
+
+class Runtimes(unittest.TestCase):
+    def test_exact_patch_versions_pass(self):
+        ok = ('      - uses: actions/setup-java@x\n        with: { distribution: temurin, java-version: "25.0.1" }\n'
+              '        with: { node-version: "22.18.0", cache: npm }\n          python-version: "3.13.7"\n'
+              "        with: { dotnet-version: 8.0.404 }\n          java-version: '27.0.0+35'\n")
+        self.assertEqual(scan("runtimes", ok), [])
+
+    def test_lines_and_wildcards_fail(self):
+        bad = ('        with: { java-version: "21" }\n          python-version: "3.13"\n'
+               '        with: { dotnet-version: "8.0.x" }\n        with: { node-version: "22" }\n          go-version: 1.24\n')
+        self.assertEqual([n for _, n, _ in scan("runtimes", bad)], [1, 2, 3, 4, 5])
+
+    def test_matrix_values_are_each_judged(self):
+        text = ('    strategy:\n      matrix:\n        java: ["25.0.1", "21"]   # comment\n'
+                "    steps:\n          java-version: ${{ matrix.java }}\n"
+                '        with: { python-version: "${{ matrix.python }}" }\n')
+        found = scan("runtimes", text)
+        self.assertEqual([(n, "'21'" in m) for _, n, m in found if "21" in m], [(5, True)])
+        self.assertTrue(any(n == 6 and "not in this file" in m for _, n, m in found), found)
+
+    def test_include_entries_are_judged(self):
+        text = ('      matrix:\n        java: ["25", "21"]\n        include:\n'
+                '          - { java: "25", java-exact: "25.0.1" }\n          - { java: "21", java-exact: "21" }\n'
+                "          - java: 27\n            java-exact: 27.0.0\n"
+                "    steps:\n          java-version: ${{ matrix.java-exact }}\n")
+        found = scan("runtimes", text)
+        self.assertEqual([(n, "'21'" in m) for _, n, m in found], [(9, True)])
+        self.assertEqual(wg.matrix_values(text.splitlines(), "java-exact"), ["25.0.1", "21", "27.0.0"])
+
+    def test_the_repository_workflows_pass(self):
+        out = []
+        for path in wg.files([WORKFLOWS]):
+            out += wg.check_runtimes(path, wg.read_lines(path), PINS)
+        self.assertEqual(out, [])
 
 
 class Silent(unittest.TestCase):

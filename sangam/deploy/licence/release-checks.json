@@ -11,8 +11,10 @@
   "workflow-curl",
   "workflow-npx",
   "workflow-npm-scripts",
+  "workflow-runtimes",
   "workflow-lockfiles",
   "image-pins",
+  "image-pins-deploy",
   "bpmn-watermark",
   "ui-e2e",
   "helm-lint",
@@ -140,8 +142,10 @@
   "workflow-curl",
   "workflow-npx",
   "workflow-npm-scripts",
+  "workflow-runtimes",
   "workflow-lockfiles",
-  "image-pins"
+  "image-pins",
+  "image-pins-deploy"
  ],
  "pr-ui": [
   "ui-install",
