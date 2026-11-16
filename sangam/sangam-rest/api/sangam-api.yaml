@@ -19795,7 +19795,8 @@ paths:
             application/json:
               schema:
                 type: array
-                items: {}
+                items:
+                  $ref: '#/components/schemas/AiKbHit'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -19804,6 +19805,230 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ai/knowledge-bases/{kb}/versions/{version}/ocr:
+    post:
+      operationId: aiKbOcr
+      tags:
+      - AI
+      summary: Submit an image for OCR
+      description: 'M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW;
+        nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED)
+        and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer
+        is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422
+        OCR_REJECTED. Neither records a transcript.'
+      x-sangam-command-type: ai.kb.ocr
+      x-sangam-idempotent: true
+      parameters:
+      - name: kb
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.admin
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - file
+              - documentId
+              - languages
+              properties:
+                file:
+                  type: string
+                  contentMediaType: application/octet-stream
+                  description: The image; its part content type is one of image/png, image/jpeg, image/tiff
+                documentId:
+                  type: string
+                docVersion:
+                  type: string
+                languages:
+                  type: string
+                  description: Comma-separated engine language codes in priority order, for example eng,hin
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiOcrTranscript'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ai/ocr-transcripts:
+    get:
+      operationId: aiListOcrTranscripts
+      tags:
+      - AI
+      summary: OCR review queue
+      description: Transcripts of the tenant, newest first, without their texts; state and kb filter, limit 1..500 (default 100).
+      parameters:
+      - name: state
+        in: query
+        schema:
+          type: string
+          enum:
+          - PENDING_REVIEW
+          - APPROVED
+          - REJECTED
+      - name: kb
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AiOcrTranscriptSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ai/ocr-transcripts/{id}:
+    get:
+      operationId: aiGetOcrTranscript
+      tags:
+      - AI
+      summary: Get an OCR transcript
+      description: The transcript with the engine text and any correction.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiOcrTranscript'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ai/ocr-transcripts/{id}/decide:
+    post:
+      operationId: aiDecideOcrTranscript
+      tags:
+      - AI
+      summary: Approve or reject an OCR transcript
+      description: Only a PENDING_REVIEW transcript (409 OCR_TRANSCRIPT_NOT_PENDING) and only by a person other than the submitter (409 SELF_REVIEW_FORBIDDEN).
+        Approval ingests correctedText, when not blank, else the engine text into the transcript's version, which must still be BUILDING (409
+        KB_VERSION_NOT_BUILDING); every chunk records the transcript id, shown as ocrTranscriptId on search hits. A blank approved text is 422
+        OCR_TRANSCRIPT_EMPTY. The decision and the chunks commit together; a rejection ingests nothing.
+      x-sangam-command-type: ai.ocr.decide
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiOcrDecide'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiOcrTranscript'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
   /ai/drafts:
@@ -26879,6 +27104,432 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
+  /catalogue:
+    get:
+      operationId: getExtensionCatalogue
+      tags:
+      - Modeller
+      summary: Extension catalogue
+      description: The entries of the platform-wide signed index, from the mirrored files (sangam.modeller.catalogue.index, the air-gapped form)
+        or the hosted https URL (sangam.modeller.catalogue.url) fetched through the catalogue's egress allow-list (owner decision 380). The index
+        signature must verify with one of the trusted keys (secret references). 404 when no catalogue is configured; 422 CATALOGUE_SIGNATURE_INVALID,
+        CATALOGUE_FORMAT_INVALID or CATALOGUE_EGRESS_DENIED (no allow-list entry); 503 CATALOGUE_UNREACHABLE.
+      x-sangam-permission: package.read
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogueExtensionEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /catalogue/{id}/{version}/install:
+    post:
+      operationId: installCatalogueEntry
+      tags:
+      - Modeller
+      summary: Install a catalogue entry
+      description: 'Installs a kind package entry into the caller''s tenant: the catalogue checks first (index signature, licence allow-list,
+        platform version, artefact SHA-256), then the package import (T70: the bundle''s own hash and signatures; the package lands APPROVED,
+        activation still needs a deployer and the ENV_BINDING values). 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code
+        kinds are never installed), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_ARTIFACT_PATH_INVALID, CATALOGUE_EGRESS_DENIED,
+        or a package import refusal (PACKAGE_HASH_MISMATCH, signatures); 409 PACKAGE_EXISTS.'
+      x-sangam-command-type: modeller.catalogue.install
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry id
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry version
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: package.deploy
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogueInstallRequest'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Package'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /catalogue/entries:
+    post:
+      operationId: submitCatalogueEntry
+      tags:
+      - Modeller
+      summary: Submit a catalogue entry
+      description: Submits a signed package bundle to the platform-wide catalogue (decision 380 P4 (i)); kind package only, code jars are never
+        staged. The bundle must pass this environment's package verification (hash recomputes, artefacts match, valid signatures), else 422 CATALOGUE_BUNDLE_UNVERIFIED;
+        the entry's SHA-256 is taken over the stored bundle bytes. 422 CATALOGUE_ENTRY_ID_INVALID; 409 CATALOGUE_ENTRY_EXISTS (a version is never
+        replaced). The entry is SUBMITTED until another person approves it. Platform-only permission (the server maps it to platform-issuer identities;
+        no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+      x-sangam-command-type: modeller.catalogue.submit
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: platform.catalogue.publish
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogueSubmissionRequest'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogueHostedEntry'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+    get:
+      operationId: listCatalogueEntries
+      tags:
+      - Modeller
+      summary: Hosted catalogue entries
+      description: Every hosted entry with its review state, oldest first; needs platform.catalogue.publish or platform.catalogue.review. Platform-only
+        permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+      parameters:
+      - name: state
+        in: query
+        schema:
+          type: string
+          enum:
+          - SUBMITTED
+          - APPROVED
+          - REJECTED
+      x-sangam-permission: platform.catalogue.review
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogueHostedEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /catalogue/entries/{id}/{version}/approve:
+    post:
+      operationId: approveCatalogueEntry
+      tags:
+      - Modeller
+      summary: Approve a catalogue entry
+      description: Adds a SUBMITTED entry to the signed hosted index. The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES);
+        409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer
+        identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+      x-sangam-command-type: modeller.catalogue.approve
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry id
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry version
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: platform.catalogue.review
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogueReviewRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogueHostedEntry'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /catalogue/entries/{id}/{version}/reject:
+    post:
+      operationId: rejectCatalogueEntry
+      tags:
+      - Modeller
+      summary: Reject a catalogue entry
+      description: Rejects a SUBMITTED entry; reason is required (400 REASON_REQUIRED). The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES);
+        409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer
+        identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+      x-sangam-command-type: modeller.catalogue.reject
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry id
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry version
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: platform.catalogue.review
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogueReviewRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogueHostedEntry'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /catalogue/hosted/index.json:
+    get:
+      operationId: getHostedCatalogueIndex
+      tags:
+      - Modeller
+      summary: Hosted catalogue index
+      description: 'The index of the approved entries, ordered by id then version; the exact bytes the signature covers. Public (no credentials):
+        a consumer''s sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.'
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+      security: []
+  /catalogue/hosted/index.json.sig:
+    get:
+      operationId: getHostedCatalogueIndexSignature
+      tags:
+      - Modeller
+      summary: Hosted catalogue index signature
+      description: 'Base64 detached Ed25519 signature over the index bytes, by the host''s own catalogue key (secret references sangam.modeller.catalogue.host.signing-key-ref
+        and .host.public-key-ref; decision 37). Public (no credentials): a consumer''s sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json.
+        404 when hosting is off.'
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+      security: []
+  /catalogue/hosted/artifacts/{id}/{version}:
+    get:
+      operationId: getHostedCatalogueArtifact
+      tags:
+      - Modeller
+      summary: Hosted catalogue artefact
+      description: 'The exact bundle bytes of an approved entry (404 for any other state). Public (no credentials): a consumer''s sangam.modeller.catalogue.url
+        names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry id
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry version
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+      security: []
   /channels/conversations:
     post:
       operationId: createConversation
@@ -36365,36 +37016,6 @@ paths:
           $ref: '#/components/responses/Unprocessable'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-        '421':
-          $ref: '#/components/responses/MisdirectedRequest'
-  /catalogue:
-    get:
-      operationId: getExtensionCatalogue
-      tags:
-      - Modeller
-      summary: Extension catalogue
-      description: Signed index read from a mirrored local file.
-      x-sangam-permission: package.read
-      x-sangam-requirements:
-      - R43
-      - R80
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/VariableMap'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
   /templates/{key}:
@@ -65650,6 +66271,159 @@ components:
         correct:
           type: integer
           format: int64
+    AiKbHit:
+      type: object
+      description: 'Hit: one ranked chunk the caller may read.'
+      properties:
+        documentId:
+          type: string
+        docVersion:
+          type: string
+        seq:
+          type: integer
+          format: int32
+        text:
+          type: string
+        score:
+          type: number
+          format: double
+        ocrTranscriptId:
+          type: string
+          description: The approved OCR transcript the chunk was ingested from (GET /ai/ocr-transcripts/{id}); null for a document ingested as
+            text
+    AiOcrTranscript:
+      type: object
+      description: 'Transcript: OCR text of one image, reviewed before it is ingested.'
+      properties:
+        id:
+          type: string
+        kb:
+          type: string
+        kbVersion:
+          type: integer
+          format: int32
+        documentId:
+          type: string
+        docVersion:
+          type: string
+        imageSha256:
+          type: string
+          description: SHA-256 of the image bytes, lower-case hex; the image itself is not stored
+        mediaType:
+          type: string
+        engine:
+          type: string
+        languages:
+          type: array
+          items:
+            type: string
+        text:
+          type: string
+          description: The engine's text, unverified machine output (empty when the engine found none)
+        state:
+          type: string
+          enum:
+          - PENDING_REVIEW
+          - APPROVED
+          - REJECTED
+        correctedText:
+          type: string
+          description: The reviewer's text, ingested instead of text; null when text was approved as read
+        chunks:
+          type: integer
+          format: int32
+          description: Chunks ingested on approval; null until approved
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        reviewedBy:
+          type: string
+        reviewedAt:
+          type: string
+          format: date-time
+        reviewNote:
+          type: string
+          description: The reviewer's note or reason
+      required:
+      - id
+      - kb
+      - kbVersion
+      - documentId
+      - imageSha256
+      - mediaType
+      - languages
+      - text
+      - state
+      - createdBy
+      - createdAt
+    AiOcrTranscriptSummary:
+      type: object
+      description: 'Summary: a transcript without its texts, for the review queue.'
+      properties:
+        id:
+          type: string
+        kb:
+          type: string
+        kbVersion:
+          type: integer
+          format: int32
+        documentId:
+          type: string
+        docVersion:
+          type: string
+        mediaType:
+          type: string
+        engine:
+          type: string
+        languages:
+          type: array
+          items:
+            type: string
+        state:
+          type: string
+          enum:
+          - PENDING_REVIEW
+          - APPROVED
+          - REJECTED
+        chunks:
+          type: integer
+          format: int32
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        reviewedBy:
+          type: string
+        reviewedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - kb
+      - kbVersion
+      - documentId
+      - mediaType
+      - languages
+      - state
+      - createdBy
+      - createdAt
+    AiOcrDecide:
+      type: object
+      description: OcrDecideRequest.
+      properties:
+        approve:
+          type: boolean
+        correctedText:
+          type: string
+          description: On approval, replaces the engine's text; blank keeps it
+        note:
+          type: string
+          description: Review note; the reason of a rejection
+      required:
+      - approve
     AiUiDecisionRequest:
       type: object
       description: Request record AiUiDecisionRequest (sangam-rest/src/main/java/org/sangam/rest/modules/ai/AiUiController.java), typed from its
@@ -67807,6 +68581,132 @@ components:
       properties:
         reason:
           type: string
+    CatalogueExtensionEntry:
+      type: object
+      description: One entry of the signed platform-wide extension catalogue index.
+      properties:
+        id:
+          type: string
+        version:
+          type: string
+        kind:
+          type: string
+          description: package is installable (a signed package bundle); every other kind is code and is listed only
+        publisher:
+          type: string
+        licence:
+          type: string
+        sha256:
+          type: string
+          description: Hex SHA-256 of the artefact bytes
+        minPlatform:
+          type: string
+          description: The oldest Sangam version the entry runs on
+        artifactPath:
+          type: string
+          description: The artefact, relative to the index (a file of the mirror, or a URL of the hosted catalogue)
+      required:
+      - id
+      - version
+      - kind
+      - publisher
+      - licence
+      - sha256
+      - minPlatform
+      - artifactPath
+    CatalogueInstallRequest:
+      type: object
+      description: Why the catalogue entry is installed; kept in the PACKAGE_IMPORTED audit note.
+      properties:
+        reason:
+          type: string
+    CatalogueSubmissionRequest:
+      type: object
+      description: A signed package bundle submitted to the platform-wide catalogue, with its catalogue fields.
+      properties:
+        id:
+          type: string
+          description: 1 to 100 of a-z 0-9 . _ - (a path segment of the hosted artefact URL)
+        version:
+          type: string
+          description: 1 to 100 of a-z 0-9 . _ - (a path segment of the hosted artefact URL)
+        licence:
+          type: string
+        minPlatform:
+          type: string
+          description: The oldest Sangam version the package runs on
+        bundle:
+          $ref: '#/components/schemas/PackageBundle'
+        reason:
+          type: string
+      required:
+      - id
+      - version
+      - licence
+      - minPlatform
+      - bundle
+    CatalogueReviewRequest:
+      type: object
+      description: Why a catalogue entry is approved or rejected (required to reject).
+      properties:
+        reason:
+          type: string
+    CatalogueHostedEntry:
+      type: object
+      description: A hosted catalogue entry and its review state.
+      properties:
+        id:
+          type: string
+        version:
+          type: string
+        kind:
+          type: string
+          enum:
+          - package
+        publisher:
+          type: string
+          description: tenant/principal of the submitter
+        licence:
+          type: string
+        sha256:
+          type: string
+          description: Hex SHA-256 of the exact bundle bytes served at artifactPath
+        minPlatform:
+          type: string
+        artifactPath:
+          type: string
+          description: 'Relative to the hosted index: artifacts/<id>/<version>'
+        state:
+          type: string
+          enum:
+          - SUBMITTED
+          - APPROVED
+          - REJECTED
+        submittedBy:
+          type: string
+        reviewedBy:
+          type: string
+        reason:
+          type: string
+        reviewReason:
+          type: string
+        submittedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - version
+      - kind
+      - publisher
+      - licence
+      - sha256
+      - minPlatform
+      - artifactPath
+      - state
+      - submittedBy
     ChannelAttachment:
       type: object
       description: A stored conversation attachment.

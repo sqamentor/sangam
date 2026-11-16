@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of AI (34 operations). */
+/** Typed operations of AI (38 operations). */
 final class AIApi
 {
     public function __construct(private readonly Calls $calls)
@@ -170,7 +170,7 @@ final class AIApi
      *
      * POST /ai/knowledge-bases/{kb}/search (operationId aiKbSearch); permission ai.use.
      * @param Model\AiKbSearch|array $body request body
-     * @return list<mixed>
+     * @return list<Model\AiKbHit>
      */
     public function aiKbSearch(string $kb, Model\AiKbSearch|array $body, ?RequestOptions $options = null): array
     {
@@ -178,7 +178,75 @@ final class AIApi
         if ($body !== null) {
             $req->body($body);
         }
-        return Support::arr($this->calls->json($req, $options)) ?? [];
+        return $this->calls->models($req, $options, Model\AiKbHit::class);
+    }
+
+    /**
+     * Submit an image for OCR
+     *
+     * M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.
+     *
+     * POST /ai/knowledge-bases/{kb}/versions/{version}/ocr (operationId aiKbOcr); permission ai.admin; result stored atomically with the state change.
+     * @param array<string, mixed> $body request body (parts by name; values that are files: ['file' => bytes])
+     * @return Model\AiOcrTranscript|null
+     */
+    public function aiKbOcr(string $kb, string $version, array $body, ?RequestOptions $options = null): ?Model\AiOcrTranscript
+    {
+        $req = ApiRequest::post('/ai/knowledge-bases/' . HttpTransport::seg((string) $kb) . '/versions/' . HttpTransport::seg((string) $version) . '/ocr');
+        Support::multipart($req, $body);
+        return $this->calls->model($req, $options, Model\AiOcrTranscript::class);
+    }
+
+    /**
+     * OCR review queue
+     *
+     * Transcripts of the tenant, newest first, without their texts; state and kb filter, limit 1..500 (default 100).
+     *
+     * GET /ai/ocr-transcripts (operationId aiListOcrTranscripts); permission ai.review.
+     * @param string|null $state query state
+     * @param string|null $kb query kb
+     * @param int|null $limit query limit
+     * @return list<Model\AiOcrTranscriptSummary>
+     */
+    public function aiListOcrTranscripts(?string $state = null, ?string $kb = null, ?int $limit = null, ?RequestOptions $options = null): array
+    {
+        $req = ApiRequest::get('/ai/ocr-transcripts');
+        $req->query('state', $state);
+        $req->query('kb', $kb);
+        $req->query('limit', $limit);
+        return $this->calls->models($req, $options, Model\AiOcrTranscriptSummary::class);
+    }
+
+    /**
+     * Get an OCR transcript
+     *
+     * The transcript with the engine text and any correction.
+     *
+     * GET /ai/ocr-transcripts/{id} (operationId aiGetOcrTranscript); permission ai.review.
+     * @return Model\AiOcrTranscript|null
+     */
+    public function aiGetOcrTranscript(string $id, ?RequestOptions $options = null): ?Model\AiOcrTranscript
+    {
+        $req = ApiRequest::get('/ai/ocr-transcripts/' . HttpTransport::seg((string) $id));
+        return $this->calls->model($req, $options, Model\AiOcrTranscript::class);
+    }
+
+    /**
+     * Approve or reject an OCR transcript
+     *
+     * Only a PENDING_REVIEW transcript (409 OCR_TRANSCRIPT_NOT_PENDING) and only by a person other than the submitter (409 SELF_REVIEW_FORBIDDEN). Approval ingests correctedText, when not blank, else the engine text into the transcript's version, which must still be BUILDING (409 KB_VERSION_NOT_BUILDING); every chunk records the transcript id, shown as ocrTranscriptId on search hits. A blank approved text is 422 OCR_TRANSCRIPT_EMPTY. The decision and the chunks commit together; a rejection ingests nothing.
+     *
+     * POST /ai/ocr-transcripts/{id}/decide (operationId aiDecideOcrTranscript); permission ai.review; result stored atomically with the state change.
+     * @param Model\AiOcrDecide|array $body request body
+     * @return Model\AiOcrTranscript|null
+     */
+    public function aiDecideOcrTranscript(string $id, Model\AiOcrDecide|array $body, ?RequestOptions $options = null): ?Model\AiOcrTranscript
+    {
+        $req = ApiRequest::post('/ai/ocr-transcripts/' . HttpTransport::seg((string) $id) . '/decide');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\AiOcrTranscript::class);
     }
 
     /**

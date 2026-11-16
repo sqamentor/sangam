@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of AI (34 operations).
+/// Typed operations of AI (38 operations).
 /// </summary>
 public sealed class AIApi
 {
@@ -124,11 +124,60 @@ public sealed class AIApi
     /// Results are filtered by what the caller may read.
     /// POST /ai/knowledge-bases/{kb}/search (operationId aiKbSearch); permission ai.use.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<object>?> AiKbSearchAsync(string kb, M.AiKbSearch body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.AiKbHit>?> AiKbSearchAsync(string kb, M.AiKbSearch body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Post($"/ai/knowledge-bases/{HttpTransport.Seg(GeneratedCalls.Str(kb)!)}/search");
         if (body is not null) req.WithBody(body);
-        return await _calls.JsonAsync<global::System.Collections.Generic.List<object>?>(req, options, cancellationToken).ConfigureAwait(false);
+        return await _calls.JsonAsync<global::System.Collections.Generic.List<M.AiKbHit>?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Submit an image for OCR
+    /// M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.
+    /// POST /ai/knowledge-bases/{kb}/versions/{version}/ocr (operationId aiKbOcr); permission ai.admin; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.AiOcrTranscript?> AiKbOcrAsync(string kb, string version, global::System.Collections.Generic.IReadOnlyDictionary<string, object?> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/ai/knowledge-bases/{HttpTransport.Seg(GeneratedCalls.Str(kb)!)}/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/ocr");
+        if (body is not null) req.WithContent(GeneratedCalls.Multipart(body));
+        return await _calls.JsonAsync<M.AiOcrTranscript?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// OCR review queue
+    /// Transcripts of the tenant, newest first, without their texts; state and kb filter, limit 1..500 (default 100).
+    /// GET /ai/ocr-transcripts (operationId aiListOcrTranscripts); permission ai.review.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.AiOcrTranscriptSummary>?> AiListOcrTranscriptsAsync(string? state = null, string? kb = null, int? limit = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/ai/ocr-transcripts");
+        req.WithQuery("state", GeneratedCalls.Q(state));
+        req.WithQuery("kb", GeneratedCalls.Q(kb));
+        req.WithQuery("limit", GeneratedCalls.Q(limit));
+        return await _calls.JsonAsync<global::System.Collections.Generic.List<M.AiOcrTranscriptSummary>?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Get an OCR transcript
+    /// The transcript with the engine text and any correction.
+    /// GET /ai/ocr-transcripts/{id} (operationId aiGetOcrTranscript); permission ai.review.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.AiOcrTranscript?> AiGetOcrTranscriptAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/ai/ocr-transcripts/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        return await _calls.JsonAsync<M.AiOcrTranscript?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Approve or reject an OCR transcript
+    /// Only a PENDING_REVIEW transcript (409 OCR_TRANSCRIPT_NOT_PENDING) and only by a person other than the submitter (409 SELF_REVIEW_FORBIDDEN). Approval ingests correctedText, when not blank, else the engine text into the transcript's version, which must still be BUILDING (409 KB_VERSION_NOT_BUILDING); every chunk records the transcript id, shown as ocrTranscriptId on search hits. A blank approved text is 422 OCR_TRANSCRIPT_EMPTY. The decision and the chunks commit together; a rejection ingests nothing.
+    /// POST /ai/ocr-transcripts/{id}/decide (operationId aiDecideOcrTranscript); permission ai.review; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.AiOcrTranscript?> AiDecideOcrTranscriptAsync(string id, M.AiOcrDecide body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/ai/ocr-transcripts/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/decide");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.AiOcrTranscript?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

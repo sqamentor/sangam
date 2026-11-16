@@ -8,6 +8,11 @@ import org.sangam.sdk.http.ApiRequest;
 import org.sangam.sdk.http.HttpTransport;
 import org.sangam.sdk.generated.model.ActionModelInvoke;
 import org.sangam.sdk.generated.model.ActionModelPublish;
+import org.sangam.sdk.generated.model.CatalogueExtensionEntry;
+import org.sangam.sdk.generated.model.CatalogueHostedEntry;
+import org.sangam.sdk.generated.model.CatalogueInstallRequest;
+import org.sangam.sdk.generated.model.CatalogueReviewRequest;
+import org.sangam.sdk.generated.model.CatalogueSubmissionRequest;
 import org.sangam.sdk.generated.model.ElementTemplateApply;
 import org.sangam.sdk.generated.model.ElementTemplatePublish;
 import org.sangam.sdk.generated.model.ModelDiffReport;
@@ -20,13 +25,14 @@ import org.sangam.sdk.generated.model.ModelTakeoverRequest;
 import org.sangam.sdk.generated.model.ModelTokenWalkRequest;
 import org.sangam.sdk.generated.model.ModellerFenceRequest;
 import org.sangam.sdk.generated.model.ModellerRunActionRequest;
+import org.sangam.sdk.generated.model.Package;
 import org.sangam.sdk.generated.model.ServiceMocksCreateMock;
 import org.sangam.sdk.generated.model.ServiceMocksToggle;
 import org.sangam.sdk.generated.model.TestBundleExport;
 import org.sangam.sdk.generated.model.TestBundleVerify;
 
 /**
- * Typed operations of {@code Modeller} (28 operations), generated from
+ * Typed operations of {@code Modeller} (36 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -34,6 +40,14 @@ import org.sangam.sdk.generated.model.TestBundleVerify;
 @SuppressWarnings("unused")
 public final class ModellerApi {
 
+    private static final TypeReference<java.util.List<CatalogueExtensionEntry>> R_getExtensionCatalogue = new TypeReference<>() { };
+    private static final TypeReference<Package> R_installCatalogueEntry = new TypeReference<>() { };
+    private static final TypeReference<CatalogueHostedEntry> R_submitCatalogueEntry = new TypeReference<>() { };
+    private static final TypeReference<java.util.List<CatalogueHostedEntry>> R_listCatalogueEntries = new TypeReference<>() { };
+    private static final TypeReference<CatalogueHostedEntry> R_approveCatalogueEntry = new TypeReference<>() { };
+    private static final TypeReference<CatalogueHostedEntry> R_rejectCatalogueEntry = new TypeReference<>() { };
+    private static final TypeReference<String> R_getHostedCatalogueIndex = new TypeReference<>() { };
+    private static final TypeReference<String> R_getHostedCatalogueArtifact = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_getProcessLandscape = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_walkModelToken = new TypeReference<>() { };
     private static final TypeReference<ModelDiffReport> R_diffModels = new TypeReference<>() { };
@@ -49,7 +63,6 @@ public final class ModellerApi {
     private static final TypeReference<java.util.List<java.util.Map<String, Object>>> R_listPackageTestReports = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_exportPackageTests = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_verifyPackageTestBundle = new TypeReference<>() { };
-    private static final TypeReference<java.util.List<java.util.Map<String, Object>>> R_getExtensionCatalogue = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_getElementTemplate = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_acquireModelLeaseUi = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_runActionModel = new TypeReference<>() { };
@@ -62,6 +75,150 @@ public final class ModellerApi {
 
     public ModellerApi(HttpTransport http) {
         this.call = new GeneratedCalls(http);
+    }
+
+    /**
+     * Extension catalogue
+     *
+     * <p>The entries of the platform-wide signed index, from the mirrored files (sangam.modeller.catalogue.index, the air-gapped form) or the hosted https URL (sangam.modeller.catalogue.url) fetched through the catalogue's egress allow-list (owner decision 380). The index signature must verify with one of the trusted keys (secret references). 404 when no catalogue is configured; 422 CATALOGUE_SIGNATURE_INVALID, CATALOGUE_FORMAT_INVALID or CATALOGUE_EGRESS_DENIED (no allow-list entry); 503 CATALOGUE_UNREACHABLE.
+     *
+     * <p>{@code GET /catalogue} (operationId {@code getExtensionCatalogue}); permission {@code package.read}.
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public java.util.List<CatalogueExtensionEntry> getExtensionCatalogue(RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/catalogue");
+        return call.json(req, options, R_getExtensionCatalogue);
+    }
+
+    /**
+     * Install a catalogue entry
+     *
+     * <p>Installs a kind package entry into the caller's tenant: the catalogue checks first (index signature, licence allow-list, platform version, artefact SHA-256), then the package import (T70: the bundle's own hash and signatures; the package lands APPROVED, activation still needs a deployer and the ENV_BINDING values). 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds are never installed), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_ARTIFACT_PATH_INVALID, CATALOGUE_EGRESS_DENIED, or a package import refusal (PACKAGE_HASH_MISMATCH, signatures); 409 PACKAGE_EXISTS.
+     *
+     * <p>{@code POST /catalogue/{id}/{version}/install} (operationId {@code installCatalogueEntry}); permission {@code package.deploy}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}. catalogue entry id
+     * @param version path parameter {@code version}. catalogue entry version
+     * @param body request body, or null
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 201 response
+     */
+    public Package installCatalogueEntry(String id, String version, CatalogueInstallRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/catalogue/" + HttpTransport.seg(String.valueOf(id)) + "/" + HttpTransport.seg(String.valueOf(version)) + "/install");
+        req.body(body);
+        return call.json(req, options, R_installCatalogueEntry);
+    }
+
+    /**
+     * Submit a catalogue entry
+     *
+     * <p>Submits a signed package bundle to the platform-wide catalogue (decision 380 P4 (i)); kind package only, code jars are never staged. The bundle must pass this environment's package verification (hash recomputes, artefacts match, valid signatures), else 422 CATALOGUE_BUNDLE_UNVERIFIED; the entry's SHA-256 is taken over the stored bundle bytes. 422 CATALOGUE_ENTRY_ID_INVALID; 409 CATALOGUE_ENTRY_EXISTS (a version is never replaced). The entry is SUBMITTED until another person approves it. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+     *
+     * <p>{@code POST /catalogue/entries} (operationId {@code submitCatalogueEntry}); permission {@code platform.catalogue.publish}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 201 response
+     */
+    public CatalogueHostedEntry submitCatalogueEntry(CatalogueSubmissionRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/catalogue/entries");
+        req.body(body);
+        return call.json(req, options, R_submitCatalogueEntry);
+    }
+
+    /**
+     * Hosted catalogue entries
+     *
+     * <p>Every hosted entry with its review state, oldest first; needs platform.catalogue.publish or platform.catalogue.review. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+     *
+     * <p>{@code GET /catalogue/entries} (operationId {@code listCatalogueEntries}); permission {@code platform.catalogue.review}.
+     * @param state query parameter {@code state}, or null.  One of: SUBMITTED, APPROVED, REJECTED.
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public java.util.List<CatalogueHostedEntry> listCatalogueEntries(String state, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/catalogue/entries");
+        req.query("state", state);
+        return call.json(req, options, R_listCatalogueEntries);
+    }
+
+    /**
+     * Approve a catalogue entry
+     *
+     * <p>Adds a SUBMITTED entry to the signed hosted index. The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+     *
+     * <p>{@code POST /catalogue/entries/{id}/{version}/approve} (operationId {@code approveCatalogueEntry}); permission {@code platform.catalogue.review}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}. catalogue entry id
+     * @param version path parameter {@code version}. catalogue entry version
+     * @param body request body, or null
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public CatalogueHostedEntry approveCatalogueEntry(String id, String version, CatalogueReviewRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/catalogue/entries/" + HttpTransport.seg(String.valueOf(id)) + "/" + HttpTransport.seg(String.valueOf(version)) + "/approve");
+        req.body(body);
+        return call.json(req, options, R_approveCatalogueEntry);
+    }
+
+    /**
+     * Reject a catalogue entry
+     *
+     * <p>Rejects a SUBMITTED entry; reason is required (400 REASON_REQUIRED). The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+     *
+     * <p>{@code POST /catalogue/entries/{id}/{version}/reject} (operationId {@code rejectCatalogueEntry}); permission {@code platform.catalogue.review}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}. catalogue entry id
+     * @param version path parameter {@code version}. catalogue entry version
+     * @param body request body, or null
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public CatalogueHostedEntry rejectCatalogueEntry(String id, String version, CatalogueReviewRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/catalogue/entries/" + HttpTransport.seg(String.valueOf(id)) + "/" + HttpTransport.seg(String.valueOf(version)) + "/reject");
+        req.body(body);
+        return call.json(req, options, R_rejectCatalogueEntry);
+    }
+
+    /**
+     * Hosted catalogue index
+     *
+     * <p>The index of the approved entries, ordered by id then version; the exact bytes the signature covers. Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+     *
+     * <p>{@code GET /catalogue/hosted/index.json} (operationId {@code getHostedCatalogueIndex}).
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public String getHostedCatalogueIndex(RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/catalogue/hosted/index.json");
+        return call.json(req, options, R_getHostedCatalogueIndex);
+    }
+
+    /**
+     * Hosted catalogue index signature
+     *
+     * <p>Base64 detached Ed25519 signature over the index bytes, by the host's own catalogue key (secret references sangam.modeller.catalogue.host.signing-key-ref and.host.public-key-ref; decision 37). Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+     *
+     * <p>{@code GET /catalogue/hosted/index.json.sig} (operationId {@code getHostedCatalogueIndexSignature}).
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public byte[] getHostedCatalogueIndexSignature(RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/catalogue/hosted/index.json.sig");
+        return call.bytes(req, options, "text/plain");
+    }
+
+    /**
+     * Hosted catalogue artefact
+     *
+     * <p>The exact bundle bytes of an approved entry (404 for any other state). Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+     *
+     * <p>{@code GET /catalogue/hosted/artifacts/{id}/{version}} (operationId {@code getHostedCatalogueArtifact}).
+     * @param id path parameter {@code id}. catalogue entry id
+     * @param version path parameter {@code version}. catalogue entry version
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public String getHostedCatalogueArtifact(String id, String version, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/catalogue/hosted/artifacts/" + HttpTransport.seg(String.valueOf(id)) + "/" + HttpTransport.seg(String.valueOf(version)));
+        return call.json(req, options, R_getHostedCatalogueArtifact);
     }
 
     /**
@@ -368,20 +525,6 @@ public final class ModellerApi {
         ApiRequest req = ApiRequest.post("/packages/tests/verify-bundle");
         req.body(body);
         return call.json(req, options, R_verifyPackageTestBundle);
-    }
-
-    /**
-     * Extension catalogue
-     *
-     * <p>Signed index read from a mirrored local file.
-     *
-     * <p>{@code GET /catalogue} (operationId {@code getExtensionCatalogue}); permission {@code package.read}.
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public java.util.List<java.util.Map<String, Object>> getExtensionCatalogue(RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/catalogue");
-        return call.json(req, options, R_getExtensionCatalogue);
     }
 
     /**

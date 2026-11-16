@@ -19,9 +19,13 @@ import org.sangam.sdk.generated.model.AiEvaluate;
 import org.sangam.sdk.generated.model.AiEvaluation;
 import org.sangam.sdk.generated.model.AiIngest;
 import org.sangam.sdk.generated.model.AiIngestResult;
+import org.sangam.sdk.generated.model.AiKbHit;
 import org.sangam.sdk.generated.model.AiKbSearch;
 import org.sangam.sdk.generated.model.AiKbVersion;
 import org.sangam.sdk.generated.model.AiMcpBody;
+import org.sangam.sdk.generated.model.AiOcrDecide;
+import org.sangam.sdk.generated.model.AiOcrTranscript;
+import org.sangam.sdk.generated.model.AiOcrTranscriptSummary;
 import org.sangam.sdk.generated.model.AiProposal;
 import org.sangam.sdk.generated.model.AiPropose;
 import org.sangam.sdk.generated.model.AiReason;
@@ -32,7 +36,7 @@ import org.sangam.sdk.generated.model.AiUiPublishKbRequest;
 import org.sangam.sdk.generated.model.AiUiReviewRequest;
 
 /**
- * Typed operations of {@code AI} (34 operations), generated from
+ * Typed operations of {@code AI} (38 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -48,7 +52,11 @@ public final class AIApi {
     private static final TypeReference<AiApproval> R_aiDecideApproval = new TypeReference<>() { };
     private static final TypeReference<AiKbVersion> R_aiKbNewVersion = new TypeReference<>() { };
     private static final TypeReference<AiIngestResult> R_aiKbIngest = new TypeReference<>() { };
-    private static final TypeReference<java.util.List<Object>> R_aiKbSearch = new TypeReference<>() { };
+    private static final TypeReference<java.util.List<AiKbHit>> R_aiKbSearch = new TypeReference<>() { };
+    private static final TypeReference<AiOcrTranscript> R_aiKbOcr = new TypeReference<>() { };
+    private static final TypeReference<java.util.List<AiOcrTranscriptSummary>> R_aiListOcrTranscripts = new TypeReference<>() { };
+    private static final TypeReference<AiOcrTranscript> R_aiGetOcrTranscript = new TypeReference<>() { };
+    private static final TypeReference<AiOcrTranscript> R_aiDecideOcrTranscript = new TypeReference<>() { };
     private static final TypeReference<AiDraft> R_aiGenerateDraft = new TypeReference<>() { };
     private static final TypeReference<Object> R_aiUiListDrafts = new TypeReference<>() { };
     private static final TypeReference<AiDraft> R_aiGetDraft = new TypeReference<>() { };
@@ -232,10 +240,80 @@ public final class AIApi {
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.List<Object> aiKbSearch(String kb, AiKbSearch body, RequestOptions options) {
+    public java.util.List<AiKbHit> aiKbSearch(String kb, AiKbSearch body, RequestOptions options) {
         ApiRequest req = ApiRequest.post("/ai/knowledge-bases/" + HttpTransport.seg(String.valueOf(kb)) + "/search");
         req.body(body);
         return call.json(req, options, R_aiKbSearch);
+    }
+
+    /**
+     * Submit an image for OCR
+     *
+     * <p>M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.
+     *
+     * <p>{@code POST /ai/knowledge-bases/{kb}/versions/{version}/ocr} (operationId {@code aiKbOcr}); permission {@code ai.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param kb path parameter {@code kb}
+     * @param version path parameter {@code version}
+     * @param body request body (multipart parts by name: FilePart or byte[] values are files, a list repeats the part)
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 201 response
+     */
+    public AiOcrTranscript aiKbOcr(String kb, String version, java.util.Map<String, Object> body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ai/knowledge-bases/" + HttpTransport.seg(String.valueOf(kb)) + "/versions/" + HttpTransport.seg(String.valueOf(version)) + "/ocr");
+        GeneratedCalls.multipart(req, body, options);
+        return call.json(req, options, R_aiKbOcr);
+    }
+
+    /**
+     * OCR review queue
+     *
+     * <p>Transcripts of the tenant, newest first, without their texts; state and kb filter, limit 1..500 (default 100).
+     *
+     * <p>{@code GET /ai/ocr-transcripts} (operationId {@code aiListOcrTranscripts}); permission {@code ai.review}.
+     * @param state query parameter {@code state}, or null.  One of: PENDING_REVIEW, APPROVED, REJECTED.
+     * @param kb query parameter {@code kb}, or null
+     * @param limit query parameter {@code limit}, or null
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public java.util.List<AiOcrTranscriptSummary> aiListOcrTranscripts(String state, String kb, Integer limit, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/ai/ocr-transcripts");
+        req.query("state", state);
+        req.query("kb", kb);
+        req.query("limit", limit);
+        return call.json(req, options, R_aiListOcrTranscripts);
+    }
+
+    /**
+     * Get an OCR transcript
+     *
+     * <p>The transcript with the engine text and any correction.
+     *
+     * <p>{@code GET /ai/ocr-transcripts/{id}} (operationId {@code aiGetOcrTranscript}); permission {@code ai.review}.
+     * @param id path parameter {@code id}
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public AiOcrTranscript aiGetOcrTranscript(String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/ai/ocr-transcripts/" + HttpTransport.seg(String.valueOf(id)));
+        return call.json(req, options, R_aiGetOcrTranscript);
+    }
+
+    /**
+     * Approve or reject an OCR transcript
+     *
+     * <p>Only a PENDING_REVIEW transcript (409 OCR_TRANSCRIPT_NOT_PENDING) and only by a person other than the submitter (409 SELF_REVIEW_FORBIDDEN). Approval ingests correctedText, when not blank, else the engine text into the transcript's version, which must still be BUILDING (409 KB_VERSION_NOT_BUILDING); every chunk records the transcript id, shown as ocrTranscriptId on search hits. A blank approved text is 422 OCR_TRANSCRIPT_EMPTY. The decision and the chunks commit together; a rejection ingests nothing.
+     *
+     * <p>{@code POST /ai/ocr-transcripts/{id}/decide} (operationId {@code aiDecideOcrTranscript}); permission {@code ai.review}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public AiOcrTranscript aiDecideOcrTranscript(String id, AiOcrDecide body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ai/ocr-transcripts/" + HttpTransport.seg(String.valueOf(id)) + "/decide");
+        req.body(body);
+        return call.json(req, options, R_aiDecideOcrTranscript);
     }
 
     /**

@@ -16,6 +16,7 @@ import org.sangam.ai.draft.DraftService;
 import org.sangam.ai.expr.ExpressionPlayground;
 import org.sangam.ai.mcp.McpServer;
 import org.sangam.ai.rag.KnowledgeBaseService;
+import org.sangam.ai.rag.OcrIngestion;
 import org.sangam.core.layer.AuthorizationPolicy;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.PackagePort;
@@ -33,7 +34,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Agent runs and approvals, knowledge base admin, drafts, expression help, classification review, MCP and A2A. Every
@@ -102,6 +105,10 @@ public class AiController {
     }
 
     public record KbSearchRequest(String query, Integer k) {
+    }
+
+    /** M-103: the reviewer's decision on an OCR transcript; {@code correctedText} replaces the engine's text on approval. */
+    public record OcrDecideRequest(boolean approve, String correctedText, String note) {
     }
 
     public record GenerateDraftRequest(String packageId, String kind, String prompt, String current, Map<String, Object> context) {
@@ -205,6 +212,49 @@ public class AiController {
         permissions.require(ctx, USE);
         int k = b.k() == null ? 5 : Math.min(Math.max(b.k(), 1), 50);
         return Lists.ok(api.knowledge().retrieve(org.sangam.rest.modules.cases.CaseIdentity.identity(ctx), kb, b.query(), k));
+    }
+
+    /**
+     * M-103 (owner decision 378(3), option A): runs the image through the OCR engine and records the text for review;
+     * nothing is ingested until an approval. 503 OCR_UNAVAILABLE without a ready engine, 422 OCR_REJECTED when the engine
+     * refuses the image; neither records a transcript.
+     */
+    @PostMapping(value = "/ai/knowledge-bases/{kb}/versions/{version}/ocr", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<OcrIngestion.Transcript> ocr(RequestContext ctx, @PathVariable String kb, @PathVariable int version,
+            @RequestPart("file") MultipartFile file, @RequestParam String documentId, @RequestParam(required = false) String docVersion,
+            @RequestParam String languages) throws java.io.IOException {
+        permissions.require(ctx, ADMIN);
+        List<String> langs = java.util.Arrays.stream(languages.split(",")).map(String::trim).toList();
+        OcrIngestion.Transcript t = api.ocr().submit(ctx.tenantId(), kb, version, documentId, docVersion, file.getBytes(),
+                file.getContentType(), langs, ctx.principalId());
+        return Lists.created("/api/v1/ai/ocr-transcripts/" + t.id(), "ai-ocr-transcript:" + t.id(), t);
+    }
+
+    @GetMapping("/ai/ocr-transcripts")
+    public ResponseEntity<List<OcrIngestion.Summary>> ocrTranscripts(RequestContext ctx, @RequestParam(required = false) String state,
+            @RequestParam(required = false) String kb, @RequestParam(required = false) Integer limit) {
+        permissions.require(ctx, REVIEW);
+        OcrIngestion.State s;
+        try {
+            s = state == null ? null : OcrIngestion.State.valueOf(state);
+        } catch (IllegalArgumentException e) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "state must be one of PENDING_REVIEW, APPROVED, REJECTED");
+        }
+        return Lists.ok(api.ocr().list(ctx.tenantId(), s, kb, limit == null ? 100 : limit));
+    }
+
+    @GetMapping("/ai/ocr-transcripts/{id}")
+    public OcrIngestion.Transcript ocrTranscript(RequestContext ctx, @PathVariable String id) {
+        permissions.require(ctx, REVIEW);
+        return api.ocr().find(ctx.tenantId(), id).orElseThrow(() -> ApiProblem.notFound("OCR transcript", id));
+    }
+
+    /** Approval ingests the transcript (or the corrected text) into its BUILDING version; the submitter cannot decide. */
+    @PostMapping("/ai/ocr-transcripts/{id}/decide")
+    public OcrIngestion.Transcript decideOcr(RequestContext ctx, @PathVariable String id, @RequestBody OcrDecideRequest b) {
+        permissions.require(ctx, REVIEW);
+        api.ocr().find(ctx.tenantId(), id).orElseThrow(() -> ApiProblem.notFound("OCR transcript", id));
+        return api.ocr().decide(ctx.tenantId(), id, b.approve(), b.correctedText(), b.note(), ctx.principalId());
     }
 
     @PostMapping("/ai/drafts")

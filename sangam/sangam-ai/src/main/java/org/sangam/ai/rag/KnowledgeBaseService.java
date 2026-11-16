@@ -24,7 +24,15 @@ import java.util.List;
  */
 public final class KnowledgeBaseService {
 
-    public record Hit(String documentId, String docVersion, int seq, String text, double score) {
+    /**
+     * One ranked chunk. {@code ocrTranscriptId} is the provenance of a chunk ingested from an approved OCR transcript
+     * ({@link OcrIngestion}, AI_OCR_TRANSCRIPT); null for a chunk ingested as text.
+     */
+    public record Hit(String documentId, String docVersion, int seq, String text, double score, String ocrTranscriptId) {
+
+        public Hit(String documentId, String docVersion, int seq, String text, double score) {
+            this(documentId, docVersion, seq, text, score, null);
+        }
     }
 
     private final Dialect dialect;
@@ -103,6 +111,17 @@ public final class KnowledgeBaseService {
 
     /** Embeds outside the transaction, then stores the chunks. Re-ingesting the same document version replaces its chunks. */
     public int ingest(String tenantId, String kb, int version, String documentId, String docVersion, String text) {
+        return ingest(tenantId, kb, version, documentId, docVersion, text, null, (c, n) -> {
+        });
+    }
+
+    /**
+     * As {@link #ingest(String, String, int, String, String, String)}, recording {@code ocrTranscriptId} on every chunk and
+     * running {@code first} (with the chunk count) in the same transaction before the version check, so a caller's state
+     * change (an OCR transcript approval) and the chunks commit or roll back together. {@code first} may throw to refuse.
+     */
+    int ingest(String tenantId, String kb, int version, String documentId, String docVersion, String text, String ocrTranscriptId,
+               java.util.function.ObjIntConsumer<Connection> first) {
         List<String> chunks = chunk(text, chunkChars, overlapChars);
         List<float[]> embeddings = new ArrayList<>(chunks.size());
         List<byte[]> vectors = new ArrayList<>(chunks.size());
@@ -112,6 +131,7 @@ public final class KnowledgeBaseService {
             vectors.add(encode(e));
         }
         return tx.inTransaction(c -> {
+            first.accept(c, chunks.size());
             String state = Jdbc.one(c, "SELECT state FROM AI_KB_VERSION WHERE tenant_id=? AND kb_key=? AND version=?", rs -> rs.getString(1), tenantId, kb, version)
                     .orElseThrow(() -> new IllegalArgumentException("no knowledge base version " + kb + " v" + version));
             if (!"BUILDING".equals(state)) {
@@ -119,8 +139,9 @@ public final class KnowledgeBaseService {
             }
             Jdbc.update(c, "DELETE FROM AI_KB_CHUNK WHERE tenant_id=? AND kb_key=? AND version=? AND document_id=?", tenantId, kb, version, documentId);
             for (int i = 0; i < chunks.size(); i++) {
-                Jdbc.update(c, "INSERT INTO AI_KB_CHUNK(tenant_id,kb_key,version,id,document_id,doc_version,seq,text_value,embedding) VALUES (?,?,?,?,?,?,?,?,?)",
-                        tenantId, kb, version, documentId + "#" + i, documentId, docVersion, i, chunks.get(i), vectors.get(i));
+                Jdbc.update(c, "INSERT INTO AI_KB_CHUNK(tenant_id,kb_key,version,id,document_id,doc_version,seq,text_value,embedding,ocr_transcript_id)"
+                                + " VALUES (?,?,?,?,?,?,?,?,?,?)",
+                        tenantId, kb, version, documentId + "#" + i, documentId, docVersion, i, chunks.get(i), vectors.get(i), ocrTranscriptId);
                 index.stored(c, tenantId, kb, version, documentId + "#" + i, embeddings.get(i));
             }
             return chunks.size();

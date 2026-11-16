@@ -132,7 +132,7 @@ class _Calls:
 
 
 class AIApi:
-    """``AI`` (34 operations)."""
+    """``AI`` (38 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -231,7 +231,7 @@ class AIApi:
         req = ApiRequest("POST", f"/ai/knowledge-bases/{seg(str(kb))}/versions/{seg(str(version))}/activate")
         self._c.none(req, options)
 
-    def ai_kb_search(self, kb: str, body: M.AiKbSearch, *, options: Optional[RequestOptions] = None) -> list[Any]:
+    def ai_kb_search(self, kb: str, body: M.AiKbSearch, *, options: Optional[RequestOptions] = None) -> list[M.AiKbHit]:
         """Search a knowledge base
 
         Results are filtered by what the caller may read.
@@ -240,7 +240,49 @@ class AIApi:
         """
         req = ApiRequest("POST", f"/ai/knowledge-bases/{seg(str(kb))}/search")
         req.body = body
-        return cast("list[Any]", self._c.json(req, options))
+        return cast("list[M.AiKbHit]", self._c.json(req, options))
+
+    def ai_kb_ocr(self, kb: str, version: str, body: Mapping[str, Any], *, options: Optional[RequestOptions] = None) -> M.AiOcrTranscript:
+        """Submit an image for OCR
+
+        M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.
+
+        ``POST /ai/knowledge-bases/{kb}/versions/{version}/ocr`` (operationId ``aiKbOcr``); permission ``ai.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ai/knowledge-bases/{seg(str(kb))}/versions/{seg(str(version))}/ocr")
+        _multipart(req, body)
+        return cast("M.AiOcrTranscript", self._c.json(req, options))
+
+    def ai_list_ocr_transcripts(self, *, state: Optional[Literal["PENDING_REVIEW", "APPROVED", "REJECTED"]] = None, kb: Optional[str] = None, limit: Optional[int] = None, options: Optional[RequestOptions] = None) -> list[M.AiOcrTranscriptSummary]:
+        """OCR review queue
+
+        Transcripts of the tenant, newest first, without their texts; state and kb filter, limit 1..500 (default 100).
+
+        ``GET /ai/ocr-transcripts`` (operationId ``aiListOcrTranscripts``); permission ``ai.review``.
+        """
+        req = ApiRequest("GET", f"/ai/ocr-transcripts", query={"state": state, "kb": kb, "limit": limit})
+        return cast("list[M.AiOcrTranscriptSummary]", self._c.json(req, options))
+
+    def ai_get_ocr_transcript(self, id: str, *, options: Optional[RequestOptions] = None) -> M.AiOcrTranscript:
+        """Get an OCR transcript
+
+        The transcript with the engine text and any correction.
+
+        ``GET /ai/ocr-transcripts/{id}`` (operationId ``aiGetOcrTranscript``); permission ``ai.review``.
+        """
+        req = ApiRequest("GET", f"/ai/ocr-transcripts/{seg(str(id))}")
+        return cast("M.AiOcrTranscript", self._c.json(req, options))
+
+    def ai_decide_ocr_transcript(self, id: str, body: M.AiOcrDecide, *, options: Optional[RequestOptions] = None) -> M.AiOcrTranscript:
+        """Approve or reject an OCR transcript
+
+        Only a PENDING_REVIEW transcript (409 OCR_TRANSCRIPT_NOT_PENDING) and only by a person other than the submitter (409 SELF_REVIEW_FORBIDDEN). Approval ingests correctedText, when not blank, else the engine text into the transcript's version, which must still be BUILDING (409 KB_VERSION_NOT_BUILDING); every chunk records the transcript id, shown as ocrTranscriptId on search hits. A blank approved text is 422 OCR_TRANSCRIPT_EMPTY. The decision and the chunks commit together; a rejection ingests nothing.
+
+        ``POST /ai/ocr-transcripts/{id}/decide`` (operationId ``aiDecideOcrTranscript``); permission ``ai.review``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ai/ocr-transcripts/{seg(str(id))}/decide")
+        req.body = body
+        return cast("M.AiOcrTranscript", self._c.json(req, options))
 
     def ai_generate_draft(self, body: M.AiDraftGenerate, *, options: Optional[RequestOptions] = None) -> M.AiDraft:
         """Generate a draft
@@ -5899,10 +5941,104 @@ class MeApi:
         return cast("M.Assignment", self._c.json(req, options))
 
 class ModellerApi:
-    """``Modeller`` (28 operations)."""
+    """``Modeller`` (36 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
+
+    def get_extension_catalogue(self, *, options: Optional[RequestOptions] = None) -> list[M.CatalogueExtensionEntry]:
+        """Extension catalogue
+
+        The entries of the platform-wide signed index, from the mirrored files (sangam.modeller.catalogue.index, the air-gapped form) or the hosted https URL (sangam.modeller.catalogue.url) fetched through the catalogue's egress allow-list (owner decision 380). The index signature must verify with one of the trusted keys (secret references). 404 when no catalogue is configured; 422 CATALOGUE_SIGNATURE_INVALID, CATALOGUE_FORMAT_INVALID or CATALOGUE_EGRESS_DENIED (no allow-list entry); 503 CATALOGUE_UNREACHABLE.
+
+        ``GET /catalogue`` (operationId ``getExtensionCatalogue``); permission ``package.read``.
+        """
+        req = ApiRequest("GET", f"/catalogue")
+        return cast("list[M.CatalogueExtensionEntry]", self._c.json(req, options))
+
+    def install_catalogue_entry(self, id: str, version: str, body: Optional[M.CatalogueInstallRequest] = None, *, options: Optional[RequestOptions] = None) -> M.Package:
+        """Install a catalogue entry
+
+        Installs a kind package entry into the caller's tenant: the catalogue checks first (index signature, licence allow-list, platform version, artefact SHA-256), then the package import (T70: the bundle's own hash and signatures; the package lands APPROVED, activation still needs a deployer and the ENV_BINDING values). 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds are never installed), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_ARTIFACT_PATH_INVALID, CATALOGUE_EGRESS_DENIED, or a package import refusal (PACKAGE_HASH_MISMATCH, signatures); 409 PACKAGE_EXISTS.
+
+        ``POST /catalogue/{id}/{version}/install`` (operationId ``installCatalogueEntry``); permission ``package.deploy``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/catalogue/{seg(str(id))}/{seg(str(version))}/install")
+        req.body = body
+        return cast("M.Package", self._c.json(req, options))
+
+    def submit_catalogue_entry(self, body: M.CatalogueSubmissionRequest, *, options: Optional[RequestOptions] = None) -> M.CatalogueHostedEntry:
+        """Submit a catalogue entry
+
+        Submits a signed package bundle to the platform-wide catalogue (decision 380 P4 (i)); kind package only, code jars are never staged. The bundle must pass this environment's package verification (hash recomputes, artefacts match, valid signatures), else 422 CATALOGUE_BUNDLE_UNVERIFIED; the entry's SHA-256 is taken over the stored bundle bytes. 422 CATALOGUE_ENTRY_ID_INVALID; 409 CATALOGUE_ENTRY_EXISTS (a version is never replaced). The entry is SUBMITTED until another person approves it. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+
+        ``POST /catalogue/entries`` (operationId ``submitCatalogueEntry``); permission ``platform.catalogue.publish``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/catalogue/entries")
+        req.body = body
+        return cast("M.CatalogueHostedEntry", self._c.json(req, options))
+
+    def list_catalogue_entries(self, *, state: Optional[Literal["SUBMITTED", "APPROVED", "REJECTED"]] = None, options: Optional[RequestOptions] = None) -> list[M.CatalogueHostedEntry]:
+        """Hosted catalogue entries
+
+        Every hosted entry with its review state, oldest first; needs platform.catalogue.publish or platform.catalogue.review. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+
+        ``GET /catalogue/entries`` (operationId ``listCatalogueEntries``); permission ``platform.catalogue.review``.
+        """
+        req = ApiRequest("GET", f"/catalogue/entries", query={"state": state})
+        return cast("list[M.CatalogueHostedEntry]", self._c.json(req, options))
+
+    def approve_catalogue_entry(self, id: str, version: str, body: Optional[M.CatalogueReviewRequest] = None, *, options: Optional[RequestOptions] = None) -> M.CatalogueHostedEntry:
+        """Approve a catalogue entry
+
+        Adds a SUBMITTED entry to the signed hosted index. The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+
+        ``POST /catalogue/entries/{id}/{version}/approve`` (operationId ``approveCatalogueEntry``); permission ``platform.catalogue.review``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/catalogue/entries/{seg(str(id))}/{seg(str(version))}/approve")
+        req.body = body
+        return cast("M.CatalogueHostedEntry", self._c.json(req, options))
+
+    def reject_catalogue_entry(self, id: str, version: str, body: Optional[M.CatalogueReviewRequest] = None, *, options: Optional[RequestOptions] = None) -> M.CatalogueHostedEntry:
+        """Reject a catalogue entry
+
+        Rejects a SUBMITTED entry; reason is required (400 REASON_REQUIRED). The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+
+        ``POST /catalogue/entries/{id}/{version}/reject`` (operationId ``rejectCatalogueEntry``); permission ``platform.catalogue.review``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/catalogue/entries/{seg(str(id))}/{seg(str(version))}/reject")
+        req.body = body
+        return cast("M.CatalogueHostedEntry", self._c.json(req, options))
+
+    def get_hosted_catalogue_index(self, *, options: Optional[RequestOptions] = None) -> str:
+        """Hosted catalogue index
+
+        The index of the approved entries, ordered by id then version; the exact bytes the signature covers. Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+
+        ``GET /catalogue/hosted/index.json`` (operationId ``getHostedCatalogueIndex``).
+        """
+        req = ApiRequest("GET", f"/catalogue/hosted/index.json")
+        return cast("str", self._c.json(req, options))
+
+    def get_hosted_catalogue_index_signature(self, *, options: Optional[RequestOptions] = None) -> bytes:
+        """Hosted catalogue index signature
+
+        Base64 detached Ed25519 signature over the index bytes, by the host's own catalogue key (secret references sangam.modeller.catalogue.host.signing-key-ref and.host.public-key-ref; decision 37). Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+
+        ``GET /catalogue/hosted/index.json.sig`` (operationId ``getHostedCatalogueIndexSignature``).
+        """
+        req = ApiRequest("GET", f"/catalogue/hosted/index.json.sig")
+        return self._c.raw(req, options, "text/plain")
+
+    def get_hosted_catalogue_artifact(self, id: str, version: str, *, options: Optional[RequestOptions] = None) -> str:
+        """Hosted catalogue artefact
+
+        The exact bundle bytes of an approved entry (404 for any other state). Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+
+        ``GET /catalogue/hosted/artifacts/{id}/{version}`` (operationId ``getHostedCatalogueArtifact``).
+        """
+        req = ApiRequest("GET", f"/catalogue/hosted/artifacts/{seg(str(id))}/{seg(str(version))}")
+        return cast("str", self._c.json(req, options))
 
     def get_process_landscape(self, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Process landscape
@@ -6104,16 +6240,6 @@ class ModellerApi:
         req = ApiRequest("POST", f"/packages/tests/verify-bundle")
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
-
-    def get_extension_catalogue(self, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
-        """Extension catalogue
-
-        Signed index read from a mirrored local file.
-
-        ``GET /catalogue`` (operationId ``getExtensionCatalogue``); permission ``package.read``.
-        """
-        req = ApiRequest("GET", f"/catalogue")
-        return cast("list[dict[str, Any]]", self._c.json(req, options))
 
     def get_element_template(self, key: str, *, version: Optional[int] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Get a template
@@ -12822,7 +12948,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1160 operations on 976 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1172 operations on 987 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)

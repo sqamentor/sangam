@@ -14,11 +14,15 @@ import org.sangam.ai.draft.DraftService;
 import org.sangam.ai.expr.ExpressionPlayground;
 import org.sangam.ai.mcp.McpServer;
 import org.sangam.ai.rag.KnowledgeBaseService;
+import org.sangam.ai.rag.OcrIngestion;
 
-/** The sangam-ai services bound by sangam-server. Its presence activates {@link AiRestConfiguration}. */
+/**
+ * The sangam-ai services bound by sangam-server. Its presence activates {@link AiRestConfiguration}. {@code ocr} is the M-103
+ * OCR review queue (owner decision 378(3)); it fails closed (503 OCR_UNAVAILABLE) when no OCR engine is configured.
+ */
 public record AiApi(AgentRuntime runtime, KnowledgeBaseService knowledge, DraftService drafts, DocumentClassifier classifier,
                     ExpressionPlayground playground, Function<String, Optional<AgentDefinition>> agents, RunLister runs, McpServer mcp,
-                    BiFunction<String, String, Optional<A2a.Server>> a2a) {
+                    BiFunction<String, String, Optional<A2a.Server>> a2a, OcrIngestion ocr) {
 
     public interface RunLister {
         List<AgentRuntime.Run> list(String tenantId, String principalOrNull, int limit);

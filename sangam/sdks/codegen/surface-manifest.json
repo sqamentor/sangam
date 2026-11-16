@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 976,
- "operations": 1160,
- "schemas": 883,
+ "paths": 987,
+ "operations": 1172,
+ "schemas": 892,
  "tags": [
   "AI",
   "Admin",
@@ -65,8 +65,8 @@
    "class": "AIApi",
    "tag": "AI",
    "pathPrefix": "",
-   "operations": 34,
-   "maxLines": 656
+   "operations": 38,
+   "maxLines": 734
   },
   {
    "class": "AdminApi",
@@ -359,8 +359,8 @@
    "class": "ModellerApi",
    "tag": "Modeller",
    "pathPrefix": "",
-   "operations": 28,
-   "maxLines": 520
+   "operations": 36,
+   "maxLines": 663
   },
   {
    "class": "OnboardingApi",
@@ -678,10 +678,14 @@
   "AiEvaluation",
   "AiIngest",
   "AiIngestResult",
+  "AiKbHit",
   "AiKbSearch",
   "AiKbVersion",
   "AiMcpBody",
   "AiMcpBodyParams",
+  "AiOcrDecide",
+  "AiOcrTranscript",
+  "AiOcrTranscriptSummary",
   "AiProposal",
   "AiPropose",
   "AiReason",
@@ -758,6 +762,11 @@
   "CaseInstanceCommand",
   "CaseVersion",
   "CatalogueEntry",
+  "CatalogueExtensionEntry",
+  "CatalogueHostedEntry",
+  "CatalogueInstallRequest",
+  "CatalogueReviewRequest",
+  "CatalogueSubmissionRequest",
   "CellActivateRequest",
   "CellDrainStatus",
   "CellExportHandle",
@@ -6390,6 +6399,54 @@
    "php": "AIApi#aiKbSearch"
   },
   {
+   "operationId": "aiKbOcr",
+   "method": "POST",
+   "path": "/ai/knowledge-bases/{kb}/versions/{version}/ocr",
+   "tag": "AI",
+   "apiClass": "AIApi",
+   "java": "AIApi#aiKbOcr",
+   "typescript": "ai.aiKbOcr",
+   "python": "ai.ai_kb_ocr",
+   "dotnet": "AIApi#AiKbOcrAsync",
+   "php": "AIApi#aiKbOcr"
+  },
+  {
+   "operationId": "aiListOcrTranscripts",
+   "method": "GET",
+   "path": "/ai/ocr-transcripts",
+   "tag": "AI",
+   "apiClass": "AIApi",
+   "java": "AIApi#aiListOcrTranscripts",
+   "typescript": "ai.aiListOcrTranscripts",
+   "python": "ai.ai_list_ocr_transcripts",
+   "dotnet": "AIApi#AiListOcrTranscriptsAsync",
+   "php": "AIApi#aiListOcrTranscripts"
+  },
+  {
+   "operationId": "aiGetOcrTranscript",
+   "method": "GET",
+   "path": "/ai/ocr-transcripts/{id}",
+   "tag": "AI",
+   "apiClass": "AIApi",
+   "java": "AIApi#aiGetOcrTranscript",
+   "typescript": "ai.aiGetOcrTranscript",
+   "python": "ai.ai_get_ocr_transcript",
+   "dotnet": "AIApi#AiGetOcrTranscriptAsync",
+   "php": "AIApi#aiGetOcrTranscript"
+  },
+  {
+   "operationId": "aiDecideOcrTranscript",
+   "method": "POST",
+   "path": "/ai/ocr-transcripts/{id}/decide",
+   "tag": "AI",
+   "apiClass": "AIApi",
+   "java": "AIApi#aiDecideOcrTranscript",
+   "typescript": "ai.aiDecideOcrTranscript",
+   "python": "ai.ai_decide_ocr_transcript",
+   "dotnet": "AIApi#AiDecideOcrTranscriptAsync",
+   "php": "AIApi#aiDecideOcrTranscript"
+  },
+  {
    "operationId": "aiGenerateDraft",
    "method": "POST",
    "path": "/ai/drafts",
@@ -7984,6 +8041,114 @@
    "python": "case_files3.case_reference_close",
    "dotnet": "CaseFiles3Api#CaseReferenceCloseAsync",
    "php": "CaseFiles3Api#caseReferenceClose"
+  },
+  {
+   "operationId": "getExtensionCatalogue",
+   "method": "GET",
+   "path": "/catalogue",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#getExtensionCatalogue",
+   "typescript": "modeller.getExtensionCatalogue",
+   "python": "modeller.get_extension_catalogue",
+   "dotnet": "ModellerApi#GetExtensionCatalogueAsync",
+   "php": "ModellerApi#getExtensionCatalogue"
+  },
+  {
+   "operationId": "installCatalogueEntry",
+   "method": "POST",
+   "path": "/catalogue/{id}/{version}/install",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#installCatalogueEntry",
+   "typescript": "modeller.installCatalogueEntry",
+   "python": "modeller.install_catalogue_entry",
+   "dotnet": "ModellerApi#InstallCatalogueEntryAsync",
+   "php": "ModellerApi#installCatalogueEntry"
+  },
+  {
+   "operationId": "submitCatalogueEntry",
+   "method": "POST",
+   "path": "/catalogue/entries",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#submitCatalogueEntry",
+   "typescript": "modeller.submitCatalogueEntry",
+   "python": "modeller.submit_catalogue_entry",
+   "dotnet": "ModellerApi#SubmitCatalogueEntryAsync",
+   "php": "ModellerApi#submitCatalogueEntry"
+  },
+  {
+   "operationId": "listCatalogueEntries",
+   "method": "GET",
+   "path": "/catalogue/entries",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#listCatalogueEntries",
+   "typescript": "modeller.listCatalogueEntries",
+   "python": "modeller.list_catalogue_entries",
+   "dotnet": "ModellerApi#ListCatalogueEntriesAsync",
+   "php": "ModellerApi#listCatalogueEntries"
+  },
+  {
+   "operationId": "approveCatalogueEntry",
+   "method": "POST",
+   "path": "/catalogue/entries/{id}/{version}/approve",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#approveCatalogueEntry",
+   "typescript": "modeller.approveCatalogueEntry",
+   "python": "modeller.approve_catalogue_entry",
+   "dotnet": "ModellerApi#ApproveCatalogueEntryAsync",
+   "php": "ModellerApi#approveCatalogueEntry"
+  },
+  {
+   "operationId": "rejectCatalogueEntry",
+   "method": "POST",
+   "path": "/catalogue/entries/{id}/{version}/reject",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#rejectCatalogueEntry",
+   "typescript": "modeller.rejectCatalogueEntry",
+   "python": "modeller.reject_catalogue_entry",
+   "dotnet": "ModellerApi#RejectCatalogueEntryAsync",
+   "php": "ModellerApi#rejectCatalogueEntry"
+  },
+  {
+   "operationId": "getHostedCatalogueIndex",
+   "method": "GET",
+   "path": "/catalogue/hosted/index.json",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#getHostedCatalogueIndex",
+   "typescript": "modeller.getHostedCatalogueIndex",
+   "python": "modeller.get_hosted_catalogue_index",
+   "dotnet": "ModellerApi#GetHostedCatalogueIndexAsync",
+   "php": "ModellerApi#getHostedCatalogueIndex"
+  },
+  {
+   "operationId": "getHostedCatalogueIndexSignature",
+   "method": "GET",
+   "path": "/catalogue/hosted/index.json.sig",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#getHostedCatalogueIndexSignature",
+   "typescript": "modeller.getHostedCatalogueIndexSignature",
+   "python": "modeller.get_hosted_catalogue_index_signature",
+   "dotnet": "ModellerApi#GetHostedCatalogueIndexSignatureAsync",
+   "php": "ModellerApi#getHostedCatalogueIndexSignature"
+  },
+  {
+   "operationId": "getHostedCatalogueArtifact",
+   "method": "GET",
+   "path": "/catalogue/hosted/artifacts/{id}/{version}",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#getHostedCatalogueArtifact",
+   "typescript": "modeller.getHostedCatalogueArtifact",
+   "python": "modeller.get_hosted_catalogue_artifact",
+   "dotnet": "ModellerApi#GetHostedCatalogueArtifactAsync",
+   "php": "ModellerApi#getHostedCatalogueArtifact"
   },
   {
    "operationId": "createConversation",
@@ -10168,18 +10333,6 @@
    "python": "modeller.verify_package_test_bundle",
    "dotnet": "ModellerApi#VerifyPackageTestBundleAsync",
    "php": "ModellerApi#verifyPackageTestBundle"
-  },
-  {
-   "operationId": "getExtensionCatalogue",
-   "method": "GET",
-   "path": "/catalogue",
-   "tag": "Modeller",
-   "apiClass": "ModellerApi",
-   "java": "ModellerApi#getExtensionCatalogue",
-   "typescript": "modeller.getExtensionCatalogue",
-   "python": "modeller.get_extension_catalogue",
-   "dotnet": "ModellerApi#GetExtensionCatalogueAsync",
-   "php": "ModellerApi#getExtensionCatalogue"
   },
   {
    "operationId": "getElementTemplate",

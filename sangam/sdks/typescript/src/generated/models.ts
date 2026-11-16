@@ -429,6 +429,21 @@ export interface AiIngestResult {
 }
 
 /**
+ * Hit: one ranked chunk the caller may read.
+ *
+ * Schema `AiKbHit`.
+ */
+export interface AiKbHit {
+  documentId?: string;
+  docVersion?: string;
+  seq?: number;
+  text?: string;
+  score?: number;
+  /** The approved OCR transcript the chunk was ingested from (GET /ai/ocr-transcripts/{id}); null for a document ingested as text */
+  ocrTranscriptId?: string;
+}
+
+/**
  * KbSearchRequest.
  *
  * Schema `AiKbSearch`.
@@ -472,6 +487,74 @@ export interface AiMcpBodyParams {
   protocolVersion?: string;
   /** Members not named in the schema (additionalProperties). */
   [key: string]: unknown;
+}
+
+/**
+ * OcrDecideRequest.
+ *
+ * Schema `AiOcrDecide`.
+ */
+export interface AiOcrDecide {
+  approve: boolean;
+  /** On approval, replaces the engine's text; blank keeps it */
+  correctedText?: string;
+  /** Review note; the reason of a rejection */
+  note?: string;
+}
+
+/**
+ * Transcript: OCR text of one image, reviewed before it is ingested.
+ *
+ * Schema `AiOcrTranscript`.
+ */
+export interface AiOcrTranscript {
+  id: string;
+  kb: string;
+  kbVersion: number;
+  documentId: string;
+  docVersion?: string;
+  /** SHA-256 of the image bytes, lower-case hex; the image itself is not stored */
+  imageSha256: string;
+  mediaType: string;
+  engine?: string;
+  languages: Array<string>;
+  /** The engine's text, unverified machine output (empty when the engine found none) */
+  text: string;
+  /**  One of: PENDING_REVIEW, APPROVED, REJECTED. */
+  state: 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
+  /** The reviewer's text, ingested instead of text; null when text was approved as read */
+  correctedText?: string;
+  /** Chunks ingested on approval; null until approved */
+  chunks?: number;
+  createdBy: string;
+  createdAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  /** The reviewer's note or reason */
+  reviewNote?: string;
+}
+
+/**
+ * Summary: a transcript without its texts, for the review queue.
+ *
+ * Schema `AiOcrTranscriptSummary`.
+ */
+export interface AiOcrTranscriptSummary {
+  id: string;
+  kb: string;
+  kbVersion: number;
+  documentId: string;
+  docVersion?: string;
+  mediaType: string;
+  engine?: string;
+  languages: Array<string>;
+  /**  One of: PENDING_REVIEW, APPROVED, REJECTED. */
+  state: 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
+  chunks?: number;
+  createdBy: string;
+  createdAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
 }
 
 /**
@@ -1650,6 +1733,89 @@ export interface CatalogueEntry {
   kind?: 'PROCESS' | 'CASE';
   formKey?: string;
   description?: string;
+}
+
+/**
+ * One entry of the signed platform-wide extension catalogue index.
+ *
+ * Schema `CatalogueExtensionEntry`.
+ */
+export interface CatalogueExtensionEntry {
+  id: string;
+  version: string;
+  /** package is installable (a signed package bundle); every other kind is code and is listed only */
+  kind: string;
+  publisher: string;
+  licence: string;
+  /** Hex SHA-256 of the artefact bytes */
+  sha256: string;
+  /** The oldest Sangam version the entry runs on */
+  minPlatform: string;
+  /** The artefact, relative to the index (a file of the mirror, or a URL of the hosted catalogue) */
+  artifactPath: string;
+}
+
+/**
+ * A hosted catalogue entry and its review state.
+ *
+ * Schema `CatalogueHostedEntry`.
+ */
+export interface CatalogueHostedEntry {
+  id: string;
+  version: string;
+  /**  One of: package. */
+  kind: 'package';
+  /** tenant/principal of the submitter */
+  publisher: string;
+  licence: string;
+  /** Hex SHA-256 of the exact bundle bytes served at artifactPath */
+  sha256: string;
+  minPlatform: string;
+  /** Relative to the hosted index: artifacts/<id>/<version> */
+  artifactPath: string;
+  /**  One of: SUBMITTED, APPROVED, REJECTED. */
+  state: 'SUBMITTED' | 'APPROVED' | 'REJECTED';
+  submittedBy: string;
+  reviewedBy?: string;
+  reason?: string;
+  reviewReason?: string;
+  submittedAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Why the catalogue entry is installed; kept in the PACKAGE_IMPORTED audit note.
+ *
+ * Schema `CatalogueInstallRequest`.
+ */
+export interface CatalogueInstallRequest {
+  reason?: string;
+}
+
+/**
+ * Why a catalogue entry is approved or rejected (required to reject).
+ *
+ * Schema `CatalogueReviewRequest`.
+ */
+export interface CatalogueReviewRequest {
+  reason?: string;
+}
+
+/**
+ * A signed package bundle submitted to the platform-wide catalogue, with its catalogue fields.
+ *
+ * Schema `CatalogueSubmissionRequest`.
+ */
+export interface CatalogueSubmissionRequest {
+  /** 1 to 100 of a-z 0-9. _ - (a path segment of the hosted artefact URL) */
+  id: string;
+  /** 1 to 100 of a-z 0-9. _ - (a path segment of the hosted artefact URL) */
+  version: string;
+  licence: string;
+  /** The oldest Sangam version the package runs on */
+  minPlatform: string;
+  bundle: PackageBundle;
+  reason?: string;
 }
 
 /**

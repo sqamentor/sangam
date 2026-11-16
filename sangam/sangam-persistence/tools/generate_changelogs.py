@@ -1388,6 +1388,18 @@ TABLES = [
         ("attempts", "{int}", "NOT NULL"), ("issued_at", "{ts}", "NOT NULL"), ("expires_at", "{ts}", "NOT NULL"),
         ("locked_until", "{ts}", ""), ("verified_at", "{ts}", ""), ("consumed_at", "{ts}", ""),
     ], ["tenant_id", "challenge_id"], [("CMP_OTP_IDENTIFIER", False, ["tenant_id", "identifier_hash", "status"])]),
+    # M-103, owner decision 378(3) option A (sangam-ai OcrIngestion, AiSchema.java): the OCR text of one image waits in
+    # PENDING_REVIEW; only an approval by another person ingests it (corrected_text when given). The image is not
+    # stored, only its SHA-256.
+    ("0045-23", "M-103 OCR transcripts reviewed before knowledge-base ingest (decision 378)", "AI_OCR_TRANSCRIPT", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("transcript_id", "{str64}", "NOT NULL"), ("kb_key", "{str}", "NOT NULL"),
+        ("kb_version", "{int}", "NOT NULL"), ("document_id", "{str}", "NOT NULL"), ("doc_version", "{str64}", ""),
+        ("image_sha256", "{str64}", "NOT NULL"), ("media_type", "{str64}", "NOT NULL"), ("engine", "{str}", ""),
+        ("language_codes", "{str}", "NOT NULL"), ("ocr_text", "{text}", ""), ("state", "{str64}", "NOT NULL"),
+        ("corrected_text", "{text}", ""), ("chunks", "{int}", ""), ("created_by", "{str}", "NOT NULL"),
+        ("created_at", "{ts}", "NOT NULL"), ("reviewed_by", "{str}", ""), ("reviewed_at", "{ts}", ""),
+        ("review_note", "{text}", ""),
+    ], ["tenant_id", "transcript_id"], [("AI_OCR_TRANSCRIPT_STATE", False, ["tenant_id", "state", "created_at"])]),
 ]
 
 # Column additions to tables created above, each its own changeset (applied changesets are never edited).
@@ -1503,6 +1515,10 @@ ALTERS = [
     # (never the address) is stored with the challenge, counted by tenant, hash and issue time.
     ("0045-22", "decision 369 OTP issue limit per client address: keyed client-address hash", "CMP_OTP_CHALLENGE",
      [("client_hash", "{str64}", "")], [("CMP_OTP_CLIENT", False, ["tenant_id", "client_hash", "issued_at"])]),
+    # M-103, owner decision 378(3): a chunk ingested from an approved OCR transcript names it (search hits show it as
+    # ocrTranscriptId). Nullable, no backfill: chunks ingested as text keep NULL.
+    ("0045-24", "M-103 knowledge-base chunk provenance: the approved OCR transcript (decision 378)", "AI_KB_CHUNK",
+     [("ocr_transcript_id", "{str64}", "")], []),
 ]
 
 # Data changesets, applied after every table and alter changeset:

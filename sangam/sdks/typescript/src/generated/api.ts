@@ -80,7 +80,7 @@ export class GeneratedCalls {
   }
 }
 
-/** Typed operations of `AI` (34 operations). */
+/** Typed operations of `AI` (38 operations). */
 export class AIApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -203,10 +203,60 @@ export class AIApi {
    *
    * `POST /ai/knowledge-bases/{kb}/search` (operationId `aiKbSearch`); permission `ai.use`.
    */
-  async aiKbSearch(kb: string, body: M.AiKbSearch, options?: RequestOptions): Promise<Array<unknown>> {
+  async aiKbSearch(kb: string, body: M.AiKbSearch, options?: RequestOptions): Promise<Array<M.AiKbHit>> {
     const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/search` };
     if (body !== undefined) req.body = body;
-    return this.calls.json<Array<unknown>>(req, options);
+    return this.calls.json<Array<M.AiKbHit>>(req, options);
+  }
+
+  /**
+   * Submit an image for OCR
+   *
+   * M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.
+   *
+   * `POST /ai/knowledge-bases/{kb}/versions/{version}/ocr` (operationId `aiKbOcr`); permission `ai.admin`; result stored atomically with the state change.
+   */
+  async aiKbOcr(kb: string, version: string, body: FormData, options?: RequestOptions): Promise<M.AiOcrTranscript> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/versions/${seg(String(version))}/ocr` };
+    if (body !== undefined) req.rawBody = body;
+    return this.calls.json<M.AiOcrTranscript>(req, options);
+  }
+
+  /**
+   * OCR review queue
+   *
+   * Transcripts of the tenant, newest first, without their texts; state and kb filter, limit 1..500 (default 100).
+   *
+   * `GET /ai/ocr-transcripts` (operationId `aiListOcrTranscripts`); permission `ai.review`.
+   */
+  async aiListOcrTranscripts(params?: { state?: 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED'; kb?: string; limit?: number }, options?: RequestOptions): Promise<Array<M.AiOcrTranscriptSummary>> {
+    const req: ApiRequest = { method: 'GET', path: `/ai/ocr-transcripts`, query: { state: params?.state, kb: params?.kb, limit: params?.limit } };
+    return this.calls.json<Array<M.AiOcrTranscriptSummary>>(req, options);
+  }
+
+  /**
+   * Get an OCR transcript
+   *
+   * The transcript with the engine text and any correction.
+   *
+   * `GET /ai/ocr-transcripts/{id}` (operationId `aiGetOcrTranscript`); permission `ai.review`.
+   */
+  async aiGetOcrTranscript(id: string, options?: RequestOptions): Promise<M.AiOcrTranscript> {
+    const req: ApiRequest = { method: 'GET', path: `/ai/ocr-transcripts/${seg(String(id))}` };
+    return this.calls.json<M.AiOcrTranscript>(req, options);
+  }
+
+  /**
+   * Approve or reject an OCR transcript
+   *
+   * Only a PENDING_REVIEW transcript (409 OCR_TRANSCRIPT_NOT_PENDING) and only by a person other than the submitter (409 SELF_REVIEW_FORBIDDEN). Approval ingests correctedText, when not blank, else the engine text into the transcript's version, which must still be BUILDING (409 KB_VERSION_NOT_BUILDING); every chunk records the transcript id, shown as ocrTranscriptId on search hits. A blank approved text is 422 OCR_TRANSCRIPT_EMPTY. The decision and the chunks commit together; a rejection ingests nothing.
+   *
+   * `POST /ai/ocr-transcripts/{id}/decide` (operationId `aiDecideOcrTranscript`); permission `ai.review`; result stored atomically with the state change.
+   */
+  async aiDecideOcrTranscript(id: string, body: M.AiOcrDecide, options?: RequestOptions): Promise<M.AiOcrTranscript> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/ocr-transcripts/${seg(String(id))}/decide` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.AiOcrTranscript>(req, options);
   }
 
   /**
@@ -6853,9 +6903,121 @@ export class MeApi {
   }
 }
 
-/** Typed operations of `Modeller` (28 operations). */
+/** Typed operations of `Modeller` (36 operations). */
 export class ModellerApi {
   constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Extension catalogue
+   *
+   * The entries of the platform-wide signed index, from the mirrored files (sangam.modeller.catalogue.index, the air-gapped form) or the hosted https URL (sangam.modeller.catalogue.url) fetched through the catalogue's egress allow-list (owner decision 380). The index signature must verify with one of the trusted keys (secret references). 404 when no catalogue is configured; 422 CATALOGUE_SIGNATURE_INVALID, CATALOGUE_FORMAT_INVALID or CATALOGUE_EGRESS_DENIED (no allow-list entry); 503 CATALOGUE_UNREACHABLE.
+   *
+   * `GET /catalogue` (operationId `getExtensionCatalogue`); permission `package.read`.
+   */
+  async getExtensionCatalogue(options?: RequestOptions): Promise<Array<M.CatalogueExtensionEntry>> {
+    const req: ApiRequest = { method: 'GET', path: `/catalogue` };
+    return this.calls.json<Array<M.CatalogueExtensionEntry>>(req, options);
+  }
+
+  /**
+   * Install a catalogue entry
+   *
+   * Installs a kind package entry into the caller's tenant: the catalogue checks first (index signature, licence allow-list, platform version, artefact SHA-256), then the package import (T70: the bundle's own hash and signatures; the package lands APPROVED, activation still needs a deployer and the ENV_BINDING values). 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds are never installed), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_ARTIFACT_PATH_INVALID, CATALOGUE_EGRESS_DENIED, or a package import refusal (PACKAGE_HASH_MISMATCH, signatures); 409 PACKAGE_EXISTS.
+   *
+   * `POST /catalogue/{id}/{version}/install` (operationId `installCatalogueEntry`); permission `package.deploy`; result stored atomically with the state change.
+   */
+  async installCatalogueEntry(id: string, version: string, body?: M.CatalogueInstallRequest, options?: RequestOptions): Promise<M.Package> {
+    const req: ApiRequest = { method: 'POST', path: `/catalogue/${seg(String(id))}/${seg(String(version))}/install` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.Package>(req, options);
+  }
+
+  /**
+   * Submit a catalogue entry
+   *
+   * Submits a signed package bundle to the platform-wide catalogue (decision 380 P4 (i)); kind package only, code jars are never staged. The bundle must pass this environment's package verification (hash recomputes, artefacts match, valid signatures), else 422 CATALOGUE_BUNDLE_UNVERIFIED; the entry's SHA-256 is taken over the stored bundle bytes. 422 CATALOGUE_ENTRY_ID_INVALID; 409 CATALOGUE_ENTRY_EXISTS (a version is never replaced). The entry is SUBMITTED until another person approves it. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+   *
+   * `POST /catalogue/entries` (operationId `submitCatalogueEntry`); permission `platform.catalogue.publish`; result stored atomically with the state change.
+   */
+  async submitCatalogueEntry(body: M.CatalogueSubmissionRequest, options?: RequestOptions): Promise<M.CatalogueHostedEntry> {
+    const req: ApiRequest = { method: 'POST', path: `/catalogue/entries` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.CatalogueHostedEntry>(req, options);
+  }
+
+  /**
+   * Hosted catalogue entries
+   *
+   * Every hosted entry with its review state, oldest first; needs platform.catalogue.publish or platform.catalogue.review. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+   *
+   * `GET /catalogue/entries` (operationId `listCatalogueEntries`); permission `platform.catalogue.review`.
+   */
+  async listCatalogueEntries(params?: { state?: 'SUBMITTED' | 'APPROVED' | 'REJECTED' }, options?: RequestOptions): Promise<Array<M.CatalogueHostedEntry>> {
+    const req: ApiRequest = { method: 'GET', path: `/catalogue/entries`, query: { state: params?.state } };
+    return this.calls.json<Array<M.CatalogueHostedEntry>>(req, options);
+  }
+
+  /**
+   * Approve a catalogue entry
+   *
+   * Adds a SUBMITTED entry to the signed hosted index. The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+   *
+   * `POST /catalogue/entries/{id}/{version}/approve` (operationId `approveCatalogueEntry`); permission `platform.catalogue.review`; result stored atomically with the state change.
+   */
+  async approveCatalogueEntry(id: string, version: string, body?: M.CatalogueReviewRequest, options?: RequestOptions): Promise<M.CatalogueHostedEntry> {
+    const req: ApiRequest = { method: 'POST', path: `/catalogue/entries/${seg(String(id))}/${seg(String(version))}/approve` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.CatalogueHostedEntry>(req, options);
+  }
+
+  /**
+   * Reject a catalogue entry
+   *
+   * Rejects a SUBMITTED entry; reason is required (400 REASON_REQUIRED). The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+   *
+   * `POST /catalogue/entries/{id}/{version}/reject` (operationId `rejectCatalogueEntry`); permission `platform.catalogue.review`; result stored atomically with the state change.
+   */
+  async rejectCatalogueEntry(id: string, version: string, body?: M.CatalogueReviewRequest, options?: RequestOptions): Promise<M.CatalogueHostedEntry> {
+    const req: ApiRequest = { method: 'POST', path: `/catalogue/entries/${seg(String(id))}/${seg(String(version))}/reject` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.CatalogueHostedEntry>(req, options);
+  }
+
+  /**
+   * Hosted catalogue index
+   *
+   * The index of the approved entries, ordered by id then version; the exact bytes the signature covers. Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+   *
+   * `GET /catalogue/hosted/index.json` (operationId `getHostedCatalogueIndex`).
+   */
+  async getHostedCatalogueIndex(options?: RequestOptions): Promise<string> {
+    const req: ApiRequest = { method: 'GET', path: `/catalogue/hosted/index.json` };
+    return this.calls.json<string>(req, options);
+  }
+
+  /**
+   * Hosted catalogue index signature
+   *
+   * Base64 detached Ed25519 signature over the index bytes, by the host's own catalogue key (secret references sangam.modeller.catalogue.host.signing-key-ref and.host.public-key-ref; decision 37). Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+   *
+   * `GET /catalogue/hosted/index.json.sig` (operationId `getHostedCatalogueIndexSignature`).
+   */
+  async getHostedCatalogueIndexSignature(options?: RequestOptions): Promise<string> {
+    const req: ApiRequest = { method: 'GET', path: `/catalogue/hosted/index.json.sig` };
+    return this.calls.text(req, options, 'text/plain');
+  }
+
+  /**
+   * Hosted catalogue artefact
+   *
+   * The exact bundle bytes of an approved entry (404 for any other state). Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+   *
+   * `GET /catalogue/hosted/artifacts/{id}/{version}` (operationId `getHostedCatalogueArtifact`).
+   */
+  async getHostedCatalogueArtifact(id: string, version: string, options?: RequestOptions): Promise<string> {
+    const req: ApiRequest = { method: 'GET', path: `/catalogue/hosted/artifacts/${seg(String(id))}/${seg(String(version))}` };
+    return this.calls.json<string>(req, options);
+  }
 
   /**
    * Process landscape
@@ -7094,18 +7256,6 @@ export class ModellerApi {
     const req: ApiRequest = { method: 'POST', path: `/packages/tests/verify-bundle` };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
-  }
-
-  /**
-   * Extension catalogue
-   *
-   * Signed index read from a mirrored local file.
-   *
-   * `GET /catalogue` (operationId `getExtensionCatalogue`); permission `package.read`.
-   */
-  async getExtensionCatalogue(options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/catalogue` };
-    return this.calls.json<Array<Record<string, unknown>>>(req, options);
   }
 
   /**
@@ -15006,7 +15156,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1160 operations on 976 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1172 operations on 987 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;
