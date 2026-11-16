@@ -246,6 +246,12 @@ public class PortsWiring {
                 List.of(new org.sangam.integration.publish.cloud.CloudChannels(java.time.Clock.systemUTC())));
     }
 
+    /** RM-30: the host-neutral inbox port (the same adapter on every host), in the engine's transaction. */
+    @Bean
+    public org.sangam.rest.port.InboxPort sangamInboxPort(ProcessEngine engine, PortsSettings settings, RestProperties props) {
+        return new org.sangam.rest.adapter.jdbc.InboxPortAdapter(settings.getDialect(), EngineTx.transactions(engine), props.getNode());
+    }
+
     @Bean
     public InboundEventProcessor sangamInboundEventProcessor(EventRegistry registry, EventLog log, ProcessEngine engine,
                                                              PortsSettings settings, RestProperties props, Environment env,
