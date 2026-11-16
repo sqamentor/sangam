@@ -129,6 +129,8 @@ class ProductionStartupFailFastTest {
         m.put("sangam.keys.foreign-fingerprints", FOREIGN.toString());
         // decision 126 part 2 (W4-A): the ledger module is on by default and needs its GL export connector id
         m.put("sangam.ledger.gl-connector", "gl-test");
+        // decision 371 (1) (DEC-371-1): production refuses to start without the trusted proxies (UI and ingress)
+        m.put("sangam.http.trusted-proxies", "10.0.0.0/8");
         // the h2 profile's development conveniences, which production refuses or must not use
         m.put("sangam.security.bootstrap.enabled", "false");
         m.put("sangam.security.dev-token.enabled", "false");
@@ -178,6 +180,11 @@ class ProductionStartupFailFastTest {
     @Test
     void missingDatabasePasswordIsRefused() {
         assertRefused("sg38-password", m -> m.remove("SANGAM_DB_PASSWORD"), "SANGAM_DB_PASSWORD is unset");
+    }
+
+    @Test
+    void missingTrustedProxiesIsRefused() {
+        assertRefused("sg38-proxies", m -> m.remove("sangam.http.trusted-proxies"), "TRUSTED_PROXIES_REQUIRED");
     }
 
     @Test
