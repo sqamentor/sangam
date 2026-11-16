@@ -118,6 +118,15 @@ jobs:
           done
           $RL run --check build-tools-not-shipped --ledger-dir "$LEDGER" --expect-glob 'target/dist-*.cdx.json=6' "${expect[@]}" -- \
             python3 -I ../.github/scripts/build_tools_not_shipped.py "${args[@]}"
+      - name: One crypto provider and one Commons Logging implementation per fat jar (RM-31)
+        run: |
+          V=$($RD pom-version); args=(); expect=()
+          for id in server control-plane gateway rollup; do
+            j="$($RD field "$id" module)/target/$($RD field "$id" jar --version "$V")"
+            args+=(--jar "$j"); expect+=(--expect "$j")
+          done
+          $RL run --check duplicate-classes --ledger-dir "$LEDGER" "${expect[@]}" -- \
+            python3 -I ../.github/scripts/duplicate_classes.py "${args[@]}" --package org.bouncycastle --package org.apache.commons.logging
       - name: Results-ledger gate (pull request)
         if: always()
         run: $RL gate --required deploy/licence/release-checks.json --mode pr --set pr-licence-check --ledger-dir "$LEDGER"
