@@ -521,3 +521,16 @@ Decision 386 was taken on 2026-11-16 under the owner's words "I Approved Go Ahea
   - (1) RM-54: Eclipse Paho mqttv3 1.2.5 stays the MQTT client for 0.1.0 (the evaluation is in docs/records/RM-54-MQTT-CLIENT-EVALUATION.md); the HiveMQ MQTT client is evaluated against it in the test phase, and a change of client is a later decision with that evidence.
   - (2) RM-30: the host-neutral inbox, job-lease and audit ports and a plain-Java host assembly that starts without Spring are scheduled as a design item and built before the host-conformance harness scenarios that need them; the harness scenarios are then written against those ports.
   - (3) RM-52 history archive export (docs/records/RM-52-HISTORY-ARCHIVE-EXPORT-SPEC.md): archives live in the document store under a longer retention class; every purge first finds a verified archive of each process-instance tree it removes, and refuses (fail closed) otherwise; a history partition may be dropped only when every tree in it is archived and verified.
+
+Decision 387 was taken on 2026-11-16 under the owner's words "I Approved Go Ahead End to End also approved recommended option" and "sare kam complete karo end to end" for the points round 6 lane r6-v1 left open after decision 385; the recommended option of each is recorded.
+
+- **387 (follow-ups of decision 385; owner chat 2026-11-16)**:
+  - (1) The caller-variable write-path guard of 385(2) layer 2 is extended to every module that writes engine variables (among them sangam-flowable-ports, onboarding and control-plane), by the same table test, so a new unguarded path fails the build.
+  - (2) The Quarkus host wires the audit document binding port and the slot names like the Spring host, so DSC steps work there instead of being refused.
+  - (3) A DSC gate process started directly, with no caller, keeps refusing an empty slot; the pack and developer documentation states that a gate is reached through a call.
+  - (4) The first environment of an installation: option (c), a custodian-signed attestation of (fingerprint, environment, purpose) accepted in place of another environment's list, with option (a), a one-time bootstrap setting that is audited, refused once any list exists, and never accepted on a second start, as the stopgap until the custodian process is in place.
+  - (5) Other parties' keys (trust lists, catalogue and plugin keys) are not fingerprinted; recorded, no change.
+  - (6) The eSign key and the attestation of decision 37 stay open until the owner's ESP sandbox confirmation (M-080).
+  - (7) The generated decision-register entry for the Jersey jars is regenerated from the corrected licence policy, never edited by hand.
+  - (8) The packgen prepare task gets one shared core form (document upload for the gate's slots) instead of no form.
+  - (9) A follow-up test covers repeated gate calls in revise and return loops, so a slot left from an earlier round is never accepted for a later one.
