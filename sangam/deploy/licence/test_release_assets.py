@@ -7,6 +7,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import tempfile
 import unittest
 import zipfile
@@ -253,6 +254,54 @@ class Notices(unittest.TestCase):
                      "This product includes software developed by Quartz\n(http://www.quartz-scheduler.org/).",
                      "THIRD-PARTY-LICENSES-<version>.txt"):
             self.assertIn(line, notice)
+
+    def write_texts(self, *ids):
+        for i in ids:
+            with open(os.path.join(self.texts, f"{i}.txt"), "w", encoding="utf-8") as f:
+                f.write(f"{i} text")
+
+    def test_rm16_a_weak_copyleft_component_without_a_source_location_fails(self):
+        self.write_texts("EPL-2.0", "MIT")
+        epl = lib("org.e", "e", "1.0", "EPL-2.0")
+        sources = {"licences": {"EPL-2.0", "MPL-2.0", "CDDL-1.1"}, "components": {}}
+        missing = nb.build(bom(A, epl), POLICY, "server", self.root, self.texts, self.out, sources=sources)
+        self.assertEqual(["source location of pkg:maven/org.e/e@1.0"], missing)
+        self.assertFalse(os.path.exists(self.out), "nothing is written when a source location is missing")
+        sources["components"]["pkg:maven/org.e/e@1.0"] = "https://repo1.maven.org/maven2/org/e/e/1.0/e-1.0-sources.jar"
+        self.assertEqual([], nb.build(bom(A, epl), POLICY, "server", self.root, self.texts, self.out, sources=sources))
+        with open(os.path.join(self.out, "THIRD-PARTY.txt"), encoding="utf-8") as f:
+            third = f.read()
+        self.assertIn("pkg:maven/org.e/e@1.0\tdeclared: EPL-2.0\tused: EPL-2.0\tsource: "
+                      "https://repo1.maven.org/maven2/org/e/e/1.0/e-1.0-sources.jar", third)
+        self.assertNotIn("source:", [ln for ln in third.splitlines() if ln.startswith("pkg:maven/org.a/")][0])
+
+    def test_rm16_the_main_entry_reads_the_committed_source_locations(self):
+        self.write_texts("EPL-2.0", "MIT")
+        sp = os.path.join(self.tmp.name, "s.cdx.json")
+        with open(sp, "w", encoding="utf-8") as f:
+            json.dump(bom(A, lib("org.e", "e", "1.0", "EPL-2.0")), f)
+        args = [sp, "--distribution", "server", "--root", self.root, "--texts", self.texts, "--out", self.out]
+        self.assertEqual(1, nb.main(args), "a weak-copyleft component missing from source-locations.json fails")
+        self.assertEqual(2, nb.main(args + ["--sources", os.path.join(self.tmp.name, "none.json")]))
+
+    def test_rm16_every_shipped_weak_copyleft_component_has_a_source_location(self):
+        # the committed register lists every shipped component version; the elected (or declared) licence decides
+        sources = nb.load_sources(os.path.join(HERE, "source-locations.json"))
+        register = nb.load_json(os.path.join(HERE, "decision-register.json"))["components"]
+        checker = nb.Checker(POLICY, True)
+        need = []
+        for purl, entry in register.items():
+            election = checker.election_for(purl)
+            used = {election["elected"]} if election else set(re.findall(r"[A-Za-z0-9.+-]+", entry.get("spdx", "")))
+            if used & sources["licences"]:
+                need.append(purl)
+        self.assertGreaterEqual(len(need), 28)
+        self.assertEqual([], sorted(p for p in need if p not in sources["components"]))
+        for purl, url in sources["components"].items():
+            ns, rest = purl[len("pkg:maven/"):].rsplit("/", 1)
+            name, version = rest.split("@")
+            self.assertEqual(f"https://repo1.maven.org/maven2/{ns.replace('.', '/')}/{name}/{version}/{name}-{version}-sources.jar",
+                             url, purl)
 
     def test_with_expression_needs_both_texts_and_election_wins(self):
         c = lib("org.c", "c", "1", expr="EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0")
