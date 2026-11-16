@@ -120,10 +120,6 @@
   ],
   "documentSlots": [
     {
-      "documentType": "NOTING",
-      "slot": "notingDocumentId"
-    },
-    {
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }

@@ -36,6 +36,8 @@
     <serviceTask id="io_bo" name="Open BO account at the depository" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>depository.openBo</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>open</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>pan,customerName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>bo</operaton:string></operaton:field><operaton:field name="step"><operaton:string>bo</operaton:string></operaton:field></extensionElements></serviceTask>
     <callActivity id="io_close" name="Account opening kit and closure (core)" calledElement="sangam-core-closure" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <endEvent id="io_end" name="Account active"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="io_checkPrepareGw" name="Document to sign?" default="sec_cap_investor_onboard_f40"></exclusiveGateway>
+    <userTask id="io_checkPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <sequenceFlow id="sec_cap_investor_onboard_f1" sourceRef="io_kra_clear" targetRef="io_kra"/>
     <sequenceFlow id="sec_cap_investor_onboard_f2" sourceRef="io_pan_clear" targetRef="io_pan"/>
     <sequenceFlow id="sec_cap_investor_onboard_f3" sourceRef="io_start" targetRef="io_defaults"/>
@@ -59,7 +61,7 @@
     <sequenceFlow id="sec_cap_investor_onboard_f21" sourceRef="io_optout" targetRef="io_nomMerge"/>
     <sequenceFlow id="sec_cap_investor_onboard_f22" sourceRef="io_kycJoin" targetRef="io_nomGw"/>
     <sequenceFlow id="sec_cap_investor_onboard_f23" sourceRef="io_nomMerge" targetRef="io_segments"/>
-    <sequenceFlow id="sec_cap_investor_onboard_f24" sourceRef="io_segments" targetRef="io_check"/>
+    <sequenceFlow id="sec_cap_investor_onboard_f24" sourceRef="io_segments" targetRef="io_checkPrepareGw"/>
     <sequenceFlow id="sec_cap_investor_onboard_f25" sourceRef="io_rj_reject" targetRef="io_rj_endRejected"/>
     <sequenceFlow id="sec_cap_investor_onboard_f26" name="SANCTIONED" sourceRef="io_sanGw" targetRef="io_kraUpload"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_cap_investor_onboard_f27" name="otherwise" sourceRef="io_sanGw" targetRef="io_rj_reject"/>
@@ -68,6 +70,9 @@
     <sequenceFlow id="sec_cap_investor_onboard_f30" sourceRef="io_ucc" targetRef="io_bo"/>
     <sequenceFlow id="sec_cap_investor_onboard_f31" sourceRef="io_bo" targetRef="io_close"/>
     <sequenceFlow id="sec_cap_investor_onboard_f32" sourceRef="io_close" targetRef="io_end"/>
+    <sequenceFlow id="sec_cap_investor_onboard_f39" name="DSC signature needed" sourceRef="io_checkPrepareGw" targetRef="io_checkPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_cap_investor_onboard_f40" name="no DSC signature" sourceRef="io_checkPrepareGw" targetRef="io_check"/>
+    <sequenceFlow id="sec_cap_investor_onboard_f41" sourceRef="io_checkPrepare" targetRef="io_check"/>
     <subProcess id="io_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
       <startEvent id="io_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
       <serviceTask id="io_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -110,15 +115,17 @@
       <bpmndi:BPMNShape id="io_nomGw_di" bpmnElement="io_nomGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="io_nomMerge_di" bpmnElement="io_nomMerge"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="io_segments_di" bpmnElement="io_segments"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="io_check_di" bpmnElement="io_check"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="io_kraUpload_di" bpmnElement="io_kraUpload"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="io_rj_reject_di" bpmnElement="io_rj_reject"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="io_rj_endRejected_di" bpmnElement="io_rj_endRejected"><dc:Bounds x="3022" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="io_sanGw_di" bpmnElement="io_sanGw"><dc:Bounds x="2685" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="io_ucc_di" bpmnElement="io_ucc"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="io_bo_di" bpmnElement="io_bo"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="io_close_di" bpmnElement="io_close"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="io_end_di" bpmnElement="io_end"><dc:Bounds x="3517" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="io_check_di" bpmnElement="io_check"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="io_kraUpload_di" bpmnElement="io_kraUpload"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="io_rj_reject_di" bpmnElement="io_rj_reject"><dc:Bounds x="3155" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="io_rj_endRejected_di" bpmnElement="io_rj_endRejected"><dc:Bounds x="3352" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="io_sanGw_di" bpmnElement="io_sanGw"><dc:Bounds x="3015" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="io_ucc_di" bpmnElement="io_ucc"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="io_bo_di" bpmnElement="io_bo"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="io_close_di" bpmnElement="io_close"><dc:Bounds x="3650" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="io_end_di" bpmnElement="io_end"><dc:Bounds x="3847" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="io_checkPrepareGw_di" bpmnElement="io_checkPrepareGw"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="io_checkPrepare_di" bpmnElement="io_checkPrepare"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="io_withdraw_di" bpmnElement="io_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="io_withdrawStart_di" bpmnElement="io_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="io_withdrawKind_di" bpmnElement="io_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
@@ -152,15 +159,18 @@
       <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f21_di" bpmnElement="sec_cap_investor_onboard_f21"><di:waypoint x="2100" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f22_di" bpmnElement="sec_cap_investor_onboard_f22"><di:waypoint x="1745" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f23_di" bpmnElement="sec_cap_investor_onboard_f23"><di:waypoint x="2240" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f24_di" bpmnElement="sec_cap_investor_onboard_f24"><di:waypoint x="2430" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f25_di" bpmnElement="sec_cap_investor_onboard_f25"><di:waypoint x="2925" y="70"/><di:waypoint x="3022" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f26_di" bpmnElement="sec_cap_investor_onboard_f26"><di:waypoint x="2735" y="70"/><di:waypoint x="2780" y="70"/><di:waypoint x="2780" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f27_di" bpmnElement="sec_cap_investor_onboard_f27"><di:waypoint x="2735" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f28_di" bpmnElement="sec_cap_investor_onboard_f28"><di:waypoint x="2595" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f29_di" bpmnElement="sec_cap_investor_onboard_f29"><di:waypoint x="2925" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f30_di" bpmnElement="sec_cap_investor_onboard_f30"><di:waypoint x="3090" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f31_di" bpmnElement="sec_cap_investor_onboard_f31"><di:waypoint x="3255" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f32_di" bpmnElement="sec_cap_investor_onboard_f32"><di:waypoint x="3420" y="195"/><di:waypoint x="3517" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f24_di" bpmnElement="sec_cap_investor_onboard_f24"><di:waypoint x="2430" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f25_di" bpmnElement="sec_cap_investor_onboard_f25"><di:waypoint x="3255" y="70"/><di:waypoint x="3352" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f26_di" bpmnElement="sec_cap_investor_onboard_f26"><di:waypoint x="3065" y="70"/><di:waypoint x="3110" y="70"/><di:waypoint x="3110" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f27_di" bpmnElement="sec_cap_investor_onboard_f27"><di:waypoint x="3065" y="70"/><di:waypoint x="3155" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f28_di" bpmnElement="sec_cap_investor_onboard_f28"><di:waypoint x="2925" y="70"/><di:waypoint x="3015" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f29_di" bpmnElement="sec_cap_investor_onboard_f29"><di:waypoint x="3255" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f30_di" bpmnElement="sec_cap_investor_onboard_f30"><di:waypoint x="3420" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f31_di" bpmnElement="sec_cap_investor_onboard_f31"><di:waypoint x="3585" y="195"/><di:waypoint x="3650" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f32_di" bpmnElement="sec_cap_investor_onboard_f32"><di:waypoint x="3750" y="195"/><di:waypoint x="3847" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f39_di" bpmnElement="sec_cap_investor_onboard_f39"><di:waypoint x="2570" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f40_di" bpmnElement="sec_cap_investor_onboard_f40"><di:waypoint x="2570" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f41_di" bpmnElement="sec_cap_investor_onboard_f41"><di:waypoint x="2760" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f33_di" bpmnElement="sec_cap_investor_onboard_f33"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f34_di" bpmnElement="sec_cap_investor_onboard_f34"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_cap_investor_onboard_f35_di" bpmnElement="sec_cap_investor_onboard_f35"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>

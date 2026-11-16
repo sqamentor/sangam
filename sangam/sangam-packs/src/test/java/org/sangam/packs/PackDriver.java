@@ -64,37 +64,55 @@ final class PackDriver {
 
     /**
      * The scenario's officers sign with DSC through the loopback agent at every task they complete, and this stands in
-     * for the server (decisions 140, 165, 236, 237): where a step names a document slot that was empty when the task
-     * was created, it plays the server attaching the step's document to that slot; it then answers true only for the
-     * tenant, task, document and person the driver signed, so the pack's DscSignatureGuardListener still checks the
-     * exact task, document and signer. Decision 385 (2): the gate captures only a document the document route bound
-     * into the slot, so the driver also answers the binding check, true only for the tenant, slot and document it
-     * attached. Demo evidence only. Each port is installed only over its fail-closed default, never over a port a test
-     * installed.
+     * for the server (decisions 140, 165, 236, 237). Decisions 267, 382 and 385: as the document route does, at every
+     * user task the driver completes it uploads a document into each declared slot that is still empty on that task's
+     * instance ({@link #upload}), and answers the gate's binding check true only for the tenant, slot and document it
+     * uploaded; it never writes a slot or the gate's task-local capture at the DSC task itself, so a gate reached
+     * without a user task of the caller before it finds its slot empty and refuses, as in the server. The signature
+     * check answers true only for the tenant, task, document and person the driver signed, so the pack's
+     * DscSignatureGuardListener still checks the exact task, document and signer. Demo evidence only. Each port is
+     * installed only over its fail-closed default, never over a port a test installed.
      */
     static final class SimulatedDscSignatures implements org.sangam.packs.port.SignatureVerifications,
             org.sangam.packs.port.DocumentSlotBindings {
         private final java.util.Set<String> signed = java.util.concurrent.ConcurrentHashMap.newKeySet();
         private final java.util.Set<String> bound = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
-        String sign(ProcessEngine engine, Task t, String person) {
+        /** Every slot any pack declares (decision 269), the slots the document route fills. */
+        private static final List<String> SLOTS = org.sangam.packs.spi.PackRegistry.discover().all().stream()
+                .flatMap(p -> p.descriptor().documentSlots().stream()).map(d -> d.slot()).distinct().sorted().toList();
+
+        private void install() {
             if (org.sangam.packs.port.PackRuntime.signatures() == org.sangam.packs.port.SignatureVerifications.DENY) {
                 org.sangam.packs.port.PackRuntime.install(org.sangam.packs.port.PackRuntime.ports().withSignatures(this));
             }
             if (org.sangam.packs.port.PackRuntime.slotBindings() == org.sangam.packs.port.DocumentSlotBindings.NONE) {
                 org.sangam.packs.port.PackRuntime.install(org.sangam.packs.port.PackRuntime.ports().withSlotBindings(this));
             }
-            var tasks = engine.getTaskService();
-            Object slot = tasks.getVariableLocal(t.getId(), org.sangam.packs.core.DscSignatureGuardListener.SLOT);
-            Object required = tasks.getVariableLocal(t.getId(),
-                    org.sangam.packs.core.DscSignatureGuardListener.REQUIRED_DOCUMENT);
-            String documentId = required != null ? required.toString() : "sim-dsc-" + t.getId();
-            if (slot != null && required == null) {
-                bound.add(t.getTenantId() + "|" + slot + "|" + documentId);
-                engine.getRuntimeService().setVariable(t.getExecutionId(), slot.toString(), documentId);
-                tasks.setVariableLocal(t.getId(), org.sangam.packs.core.DscSignatureGuardListener.REQUIRED_DOCUMENT,
-                        documentId);
+        }
+
+        /**
+         * The officer at user task {@code t} uploads the document of every declared slot still empty on its instance,
+         * through the (simulated) document route: the slot is set on the instance and the route's binding recorded.
+         */
+        void upload(ProcessEngine engine, Task t) {
+            install();
+            var runtime = engine.getRuntimeService();
+            for (String slot : SLOTS) {
+                if (runtime.getVariable(t.getProcessInstanceId(), slot) == null) {
+                    String documentId = "sim-doc-" + slot + "-" + t.getId();
+                    bound.add(t.getTenantId() + "|" + slot + "|" + documentId);
+                    runtime.setVariable(t.getProcessInstanceId(), slot, documentId);
+                }
             }
+        }
+
+        String sign(ProcessEngine engine, Task t, String person) {
+            install();
+            Object required = engine.getTaskService().getVariableLocal(t.getId(),
+                    org.sangam.packs.core.DscSignatureGuardListener.REQUIRED_DOCUMENT);
+            // the gate's captured document; at a step that signs nothing, a document of the task itself
+            String documentId = required != null ? required.toString() : "sim-dsc-" + t.getId();
             signed.add(t.getTenantId() + "|" + t.getId() + "|" + documentId + "|" + person);
             return documentId;
         }
@@ -158,6 +176,8 @@ final class PackDriver {
             if (a == null) {
                 break;
             }
+            // the officer uploads the step's documents through the document route before completing (decision 267)
+            SIMULATED_DSC.upload(engine, t);
             Map<String, Object> local = new HashMap<>();
             local.put("actingPerson", a.person());
             local.put("actingSeat", a.seat());

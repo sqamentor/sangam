@@ -79,6 +79,14 @@
     <serviceTask id="wk_invokeSecurity" name="Invoke security for defects" operaton:class="org.sangam.packs.core.CorrelationDelegate"><extensionElements><operaton:field name="messageName"><operaton:string>sangam.contractDefault</operaton:string></operaton:field><operaton:field name="optional"><operaton:string>true</operaton:string></operaton:field><operaton:field name="targetBusinessKey"><operaton:expression>${execution.processBusinessKey}/WO/performance-security-1</operaton:expression></operaton:field></extensionElements></serviceTask>
     <callActivity id="wk_close" name="Completion and closure (core)" calledElement="sangam-core-closure" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <endEvent id="wk_end" name="Work completed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="wk_tsPrepareGw" name="Document to sign?" default="works_project_f105"></exclusiveGateway>
+    <userTask id="wk_tsPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="wk_aaPrepareGw" name="Document to sign?" default="works_project_f108"></exclusiveGateway>
+    <userTask id="wk_aaPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="wk_aaFirstPrepareGw" name="Document to sign?" default="works_project_f111"></exclusiveGateway>
+    <userTask id="wk_aaFirstPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="wk_tsSecondPrepareGw" name="Document to sign?" default="works_project_f114"></exclusiveGateway>
+    <userTask id="wk_tsSecondPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <boundaryEvent id="wk_checkMeasure_warn" name="SLA warning (75%)" attachedToRef="wk_checkMeasure" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${wk_checkMeasureWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
     <boundaryEvent id="wk_checkMeasure_breach" name="SLA breached" attachedToRef="wk_checkMeasure" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${wk_checkMeasureDueAt}</timeDate></timerEventDefinition></boundaryEvent>
     <sequenceFlow id="works_project_f1" sourceRef="wk_start" targetRef="wk_defaults"/>
@@ -92,24 +100,24 @@
     <sequenceFlow id="works_project_f9" name="AA_FIRST" sourceRef="wk_orderGw" targetRef="wk_aaFirstCfg"><conditionExpression xsi:type="tFormalExpression">${worksSanctionOrder == 'AA_FIRST'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="works_project_f10" name="otherwise" sourceRef="wk_orderGw" targetRef="wk_tsCfg"/>
     <sequenceFlow id="works_project_f11" sourceRef="wk_config" targetRef="wk_orderGw"/>
-    <sequenceFlow id="works_project_f12" sourceRef="wk_tsCfg" targetRef="wk_ts"/>
+    <sequenceFlow id="works_project_f12" sourceRef="wk_tsCfg" targetRef="wk_tsPrepareGw"/>
     <sequenceFlow id="works_project_f13" name="SANCTIONED" sourceRef="wk_tsGw" targetRef="wk_aaCfg"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="works_project_f14" name="RETURNED" sourceRef="wk_tsGw" targetRef="wk_estimate"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="works_project_f15" name="otherwise" sourceRef="wk_tsGw" targetRef="wk_rj_reject"/>
     <sequenceFlow id="works_project_f16" sourceRef="wk_ts" targetRef="wk_tsGw"/>
-    <sequenceFlow id="works_project_f17" sourceRef="wk_aaCfg" targetRef="wk_aa"/>
+    <sequenceFlow id="works_project_f17" sourceRef="wk_aaCfg" targetRef="wk_aaPrepareGw"/>
     <sequenceFlow id="works_project_f18" name="SANCTIONED" sourceRef="wk_aaGw" targetRef="wk_aaRef"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="works_project_f19" name="RETURNED" sourceRef="wk_aaGw" targetRef="wk_estimate"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="works_project_f20" name="otherwise" sourceRef="wk_aaGw" targetRef="wk_rj_reject"/>
     <sequenceFlow id="works_project_f21" sourceRef="wk_aa" targetRef="wk_aaGw"/>
     <sequenceFlow id="works_project_f22" sourceRef="wk_aaRef" targetRef="wk_encumber"/>
-    <sequenceFlow id="works_project_f23" sourceRef="wk_aaFirstCfg" targetRef="wk_aaFirst"/>
+    <sequenceFlow id="works_project_f23" sourceRef="wk_aaFirstCfg" targetRef="wk_aaFirstPrepareGw"/>
     <sequenceFlow id="works_project_f24" name="SANCTIONED" sourceRef="wk_aaFirstGw" targetRef="wk_aaFirstRef"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="works_project_f25" name="RETURNED" sourceRef="wk_aaFirstGw" targetRef="wk_estimate"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="works_project_f26" name="otherwise" sourceRef="wk_aaFirstGw" targetRef="wk_rj_reject"/>
     <sequenceFlow id="works_project_f27" sourceRef="wk_aaFirst" targetRef="wk_aaFirstGw"/>
     <sequenceFlow id="works_project_f28" sourceRef="wk_aaFirstRef" targetRef="wk_tsSecondCfg"/>
-    <sequenceFlow id="works_project_f29" sourceRef="wk_tsSecondCfg" targetRef="wk_tsSecond"/>
+    <sequenceFlow id="works_project_f29" sourceRef="wk_tsSecondCfg" targetRef="wk_tsSecondPrepareGw"/>
     <sequenceFlow id="works_project_f30" name="SANCTIONED" sourceRef="wk_tsSecondGw" targetRef="wk_tsSecondAmount"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="works_project_f31" name="RETURNED" sourceRef="wk_tsSecondGw" targetRef="wk_estimate"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="works_project_f32" name="otherwise" sourceRef="wk_tsSecondGw" targetRef="wk_rj_reject"/>
@@ -169,6 +177,18 @@
     <sequenceFlow id="works_project_f86" sourceRef="wk_releaseSecurity" targetRef="wk_close"/>
     <sequenceFlow id="works_project_f87" sourceRef="wk_invokeSecurity" targetRef="wk_close"/>
     <sequenceFlow id="works_project_f88" sourceRef="wk_close" targetRef="wk_end"/>
+    <sequenceFlow id="works_project_f104" name="DSC signature needed" sourceRef="wk_tsPrepareGw" targetRef="wk_tsPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f105" name="no DSC signature" sourceRef="wk_tsPrepareGw" targetRef="wk_ts"/>
+    <sequenceFlow id="works_project_f106" sourceRef="wk_tsPrepare" targetRef="wk_ts"/>
+    <sequenceFlow id="works_project_f107" name="DSC signature needed" sourceRef="wk_aaPrepareGw" targetRef="wk_aaPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f108" name="no DSC signature" sourceRef="wk_aaPrepareGw" targetRef="wk_aa"/>
+    <sequenceFlow id="works_project_f109" sourceRef="wk_aaPrepare" targetRef="wk_aa"/>
+    <sequenceFlow id="works_project_f110" name="DSC signature needed" sourceRef="wk_aaFirstPrepareGw" targetRef="wk_aaFirstPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f111" name="no DSC signature" sourceRef="wk_aaFirstPrepareGw" targetRef="wk_aaFirst"/>
+    <sequenceFlow id="works_project_f112" sourceRef="wk_aaFirstPrepare" targetRef="wk_aaFirst"/>
+    <sequenceFlow id="works_project_f113" name="DSC signature needed" sourceRef="wk_tsSecondPrepareGw" targetRef="wk_tsSecondPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f114" name="no DSC signature" sourceRef="wk_tsSecondPrepareGw" targetRef="wk_tsSecond"/>
+    <sequenceFlow id="works_project_f115" sourceRef="wk_tsSecondPrepare" targetRef="wk_tsSecond"/>
     <subProcess id="wk_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
       <startEvent id="wk_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
       <serviceTask id="wk_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -215,75 +235,83 @@
       <bpmndi:BPMNShape id="wk_start_di" bpmnElement="wk_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="wk_defaults_di" bpmnElement="wk_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="wk_estimate_di" bpmnElement="wk_estimate"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_rj_reject_di" bpmnElement="wk_rj_reject"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_rj_endRejected_di" bpmnElement="wk_rj_endRejected"><dc:Bounds x="2362" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_rj_reject_di" bpmnElement="wk_rj_reject"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_rj_endRejected_di" bpmnElement="wk_rj_endRejected"><dc:Bounds x="3022" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="wk_config_di" bpmnElement="wk_config"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="wk_scrGw_di" bpmnElement="wk_scrGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="wk_scrGw_lapsedReason_di" bpmnElement="wk_scrGw_lapsedReason"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="wk_tsCfg_di" bpmnElement="wk_tsCfg"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="wk_aaFirstCfg_di" bpmnElement="wk_aaFirstCfg"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="wk_orderGw_di" bpmnElement="wk_orderGw"><dc:Bounds x="870" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_encumber_di" bpmnElement="wk_encumber"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_ts_di" bpmnElement="wk_ts"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_aaCfg_di" bpmnElement="wk_aaCfg"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_tsGw_di" bpmnElement="wk_tsGw"><dc:Bounds x="1365" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_aa_di" bpmnElement="wk_aa"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_aaRef_di" bpmnElement="wk_aaRef"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_aaGw_di" bpmnElement="wk_aaGw"><dc:Bounds x="1860" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_aaFirst_di" bpmnElement="wk_aaFirst"><dc:Bounds x="1175" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_aaFirstRef_di" bpmnElement="wk_aaFirstRef"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_aaFirstGw_di" bpmnElement="wk_aaFirstGw"><dc:Bounds x="1365" y="295" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_tsSecondCfg_di" bpmnElement="wk_tsSecondCfg"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_tsSecond_di" bpmnElement="wk_tsSecond"><dc:Bounds x="1835" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_tsSecondAmount_di" bpmnElement="wk_tsSecondAmount"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_tsSecondGw_di" bpmnElement="wk_tsSecondGw"><dc:Bounds x="2025" y="295" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_aaAmount_di" bpmnElement="wk_aaAmount"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_nit_di" bpmnElement="wk_nit"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_tender_di" bpmnElement="wk_tender"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_workOrder_di" bpmnElement="wk_workOrder"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_tenderFailed_di" bpmnElement="wk_tenderFailed"><dc:Bounds x="3650" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_contractDates_di" bpmnElement="wk_contractDates"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_tenderGw_di" bpmnElement="wk_tenderGw"><dc:Bounds x="3015" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_tfGw_di" bpmnElement="wk_tfGw"><dc:Bounds x="3840" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_drop_kind_di" bpmnElement="wk_drop_kind"><dc:Bounds x="3980" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_drop_call_di" bpmnElement="wk_drop_call"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_drop_end_di" bpmnElement="wk_drop_end"><dc:Bounds x="4342" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_cycle_di" bpmnElement="wk_cycle"><dc:Bounds x="3675" y="295" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_woGw_di" bpmnElement="wk_woGw"><dc:Bounds x="3510" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_month_di" bpmnElement="wk_month"><dc:Bounds x="3847" y="427" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_completionDue_di" bpmnElement="wk_completionDue"><dc:Bounds x="3847" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_delay_di" bpmnElement="wk_delay"><dc:Bounds x="3980" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_requestLd_di" bpmnElement="wk_requestLd"><dc:Bounds x="4145" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_rearm_di" bpmnElement="wk_rearm"><dc:Bounds x="4310" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_mb_di" bpmnElement="wk_mb"><dc:Bounds x="3980" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_checkMeasure_slaPlan_di" bpmnElement="wk_checkMeasure_slaPlan"><dc:Bounds x="4145" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_checkMeasure_di" bpmnElement="wk_checkMeasure"><dc:Bounds x="4310" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_checkMeasure_warnNotify_di" bpmnElement="wk_checkMeasure_warnNotify"><dc:Bounds x="4475" y="530" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_checkMeasure_warnEnd_di" bpmnElement="wk_checkMeasure_warnEnd"><dc:Bounds x="4672" y="552" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_checkMeasure_breachAct_di" bpmnElement="wk_checkMeasure_breachAct"><dc:Bounds x="4475" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_checkMeasure_breachGw_di" bpmnElement="wk_checkMeasure_breachGw"><dc:Bounds x="4665" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_checkMeasure_done_di" bpmnElement="wk_checkMeasure_done"><dc:Bounds x="4830" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_cmGw_di" bpmnElement="wk_cmGw"><dc:Bounds x="4995" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_cumulative_di" bpmnElement="wk_cumulative"><dc:Bounds x="5135" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_thrGw_di" bpmnElement="wk_thrGw"><dc:Bounds x="5325" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_raaCfg_di" bpmnElement="wk_raaCfg"><dc:Bounds x="5465" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_raa_di" bpmnElement="wk_raa"><dc:Bounds x="5630" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_raaOk_di" bpmnElement="wk_raaOk"><dc:Bounds x="5795" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_billNo_di" bpmnElement="wk_billNo"><dc:Bounds x="5960" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_net_di" bpmnElement="wk_net"><dc:Bounds x="6125" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_raBill_di" bpmnElement="wk_raBill"><dc:Bounds x="6290" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_ldCleared_di" bpmnElement="wk_ldCleared"><dc:Bounds x="6455" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_finalGw_di" bpmnElement="wk_finalGw"><dc:Bounds x="6645" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_completion_di" bpmnElement="wk_completion"><dc:Bounds x="6785" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_dlp_di" bpmnElement="wk_dlp"><dc:Bounds x="6982" y="427" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_dlpCheck_di" bpmnElement="wk_dlpCheck"><dc:Bounds x="7115" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_dlpGw_di" bpmnElement="wk_dlpGw"><dc:Bounds x="7305" y="420" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_releaseSecurity_di" bpmnElement="wk_releaseSecurity"><dc:Bounds x="7445" y="530" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_invokeSecurity_di" bpmnElement="wk_invokeSecurity"><dc:Bounds x="7445" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_close_di" bpmnElement="wk_close"><dc:Bounds x="7610" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_end_di" bpmnElement="wk_end"><dc:Bounds x="7807" y="427" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_checkMeasure_warn_di" bpmnElement="wk_checkMeasure_warn"><dc:Bounds x="4318" y="467" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="wk_checkMeasure_breach_di" bpmnElement="wk_checkMeasure_breach"><dc:Bounds x="4348" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_encumber_di" bpmnElement="wk_encumber"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_ts_di" bpmnElement="wk_ts"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaCfg_di" bpmnElement="wk_aaCfg"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsGw_di" bpmnElement="wk_tsGw"><dc:Bounds x="1695" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aa_di" bpmnElement="wk_aa"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaRef_di" bpmnElement="wk_aaRef"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaGw_di" bpmnElement="wk_aaGw"><dc:Bounds x="2520" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaFirst_di" bpmnElement="wk_aaFirst"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaFirstRef_di" bpmnElement="wk_aaFirstRef"><dc:Bounds x="1835" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaFirstGw_di" bpmnElement="wk_aaFirstGw"><dc:Bounds x="1695" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsSecondCfg_di" bpmnElement="wk_tsSecondCfg"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsSecond_di" bpmnElement="wk_tsSecond"><dc:Bounds x="2495" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsSecondAmount_di" bpmnElement="wk_tsSecondAmount"><dc:Bounds x="2825" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsSecondGw_di" bpmnElement="wk_tsSecondGw"><dc:Bounds x="2685" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaAmount_di" bpmnElement="wk_aaAmount"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_nit_di" bpmnElement="wk_nit"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tender_di" bpmnElement="wk_tender"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_workOrder_di" bpmnElement="wk_workOrder"><dc:Bounds x="3980" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tenderFailed_di" bpmnElement="wk_tenderFailed"><dc:Bounds x="4310" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_contractDates_di" bpmnElement="wk_contractDates"><dc:Bounds x="3815" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tenderGw_di" bpmnElement="wk_tenderGw"><dc:Bounds x="3675" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tfGw_di" bpmnElement="wk_tfGw"><dc:Bounds x="4500" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_drop_kind_di" bpmnElement="wk_drop_kind"><dc:Bounds x="4640" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_drop_call_di" bpmnElement="wk_drop_call"><dc:Bounds x="4805" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_drop_end_di" bpmnElement="wk_drop_end"><dc:Bounds x="5002" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_cycle_di" bpmnElement="wk_cycle"><dc:Bounds x="4335" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_woGw_di" bpmnElement="wk_woGw"><dc:Bounds x="4170" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_month_di" bpmnElement="wk_month"><dc:Bounds x="4507" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_completionDue_di" bpmnElement="wk_completionDue"><dc:Bounds x="4507" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_delay_di" bpmnElement="wk_delay"><dc:Bounds x="4640" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_requestLd_di" bpmnElement="wk_requestLd"><dc:Bounds x="4805" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_rearm_di" bpmnElement="wk_rearm"><dc:Bounds x="4970" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_mb_di" bpmnElement="wk_mb"><dc:Bounds x="4640" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_slaPlan_di" bpmnElement="wk_checkMeasure_slaPlan"><dc:Bounds x="4805" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_di" bpmnElement="wk_checkMeasure"><dc:Bounds x="4970" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_warnNotify_di" bpmnElement="wk_checkMeasure_warnNotify"><dc:Bounds x="5135" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_warnEnd_di" bpmnElement="wk_checkMeasure_warnEnd"><dc:Bounds x="5332" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_breachAct_di" bpmnElement="wk_checkMeasure_breachAct"><dc:Bounds x="5135" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_breachGw_di" bpmnElement="wk_checkMeasure_breachGw"><dc:Bounds x="5325" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_done_di" bpmnElement="wk_checkMeasure_done"><dc:Bounds x="5490" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_cmGw_di" bpmnElement="wk_cmGw"><dc:Bounds x="5655" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_cumulative_di" bpmnElement="wk_cumulative"><dc:Bounds x="5795" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_thrGw_di" bpmnElement="wk_thrGw"><dc:Bounds x="5985" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_raaCfg_di" bpmnElement="wk_raaCfg"><dc:Bounds x="6125" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_raa_di" bpmnElement="wk_raa"><dc:Bounds x="6290" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_raaOk_di" bpmnElement="wk_raaOk"><dc:Bounds x="6455" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_billNo_di" bpmnElement="wk_billNo"><dc:Bounds x="6620" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_net_di" bpmnElement="wk_net"><dc:Bounds x="6785" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_raBill_di" bpmnElement="wk_raBill"><dc:Bounds x="6950" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_ldCleared_di" bpmnElement="wk_ldCleared"><dc:Bounds x="7115" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_finalGw_di" bpmnElement="wk_finalGw"><dc:Bounds x="7305" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_completion_di" bpmnElement="wk_completion"><dc:Bounds x="7445" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_dlp_di" bpmnElement="wk_dlp"><dc:Bounds x="7642" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_dlpCheck_di" bpmnElement="wk_dlpCheck"><dc:Bounds x="7775" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_dlpGw_di" bpmnElement="wk_dlpGw"><dc:Bounds x="7965" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_releaseSecurity_di" bpmnElement="wk_releaseSecurity"><dc:Bounds x="8105" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_invokeSecurity_di" bpmnElement="wk_invokeSecurity"><dc:Bounds x="8105" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_close_di" bpmnElement="wk_close"><dc:Bounds x="8270" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_end_di" bpmnElement="wk_end"><dc:Bounds x="8467" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsPrepareGw_di" bpmnElement="wk_tsPrepareGw"><dc:Bounds x="1200" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsPrepare_di" bpmnElement="wk_tsPrepare"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaPrepareGw_di" bpmnElement="wk_aaPrepareGw"><dc:Bounds x="2025" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaPrepare_di" bpmnElement="wk_aaPrepare"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaFirstPrepareGw_di" bpmnElement="wk_aaFirstPrepareGw"><dc:Bounds x="1200" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaFirstPrepare_di" bpmnElement="wk_aaFirstPrepare"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsSecondPrepareGw_di" bpmnElement="wk_tsSecondPrepareGw"><dc:Bounds x="2190" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsSecondPrepare_di" bpmnElement="wk_tsSecondPrepare"><dc:Bounds x="2330" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_warn_di" bpmnElement="wk_checkMeasure_warn"><dc:Bounds x="4978" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_breach_di" bpmnElement="wk_checkMeasure_breach"><dc:Bounds x="5008" y="467" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="wk_withdraw_di" bpmnElement="wk_withdraw" isExpanded="true"><dc:Bounds x="30" y="660" width="623" height="150"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="wk_withdrawStart_di" bpmnElement="wk_withdrawStart"><dc:Bounds x="92" y="722" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="wk_withdrawKind_di" bpmnElement="wk_withdrawKind"><dc:Bounds x="225" y="700" width="100" height="80"/></bpmndi:BPMNShape>
@@ -307,92 +335,104 @@
       <bpmndi:BPMNShape id="wk_amApEnd_di" bpmnElement="wk_amApEnd"><dc:Bounds x="587" y="1292" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="works_project_f1_di" bpmnElement="works_project_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="works_project_f2_di" bpmnElement="works_project_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f3_di" bpmnElement="works_project_f3"><di:waypoint x="2265" y="70"/><di:waypoint x="2362" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f3_di" bpmnElement="works_project_f3"><di:waypoint x="2925" y="70"/><di:waypoint x="3022" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="works_project_f4_di" bpmnElement="works_project_f4"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="works_project_f5_di" bpmnElement="works_project_f5"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f6_di" bpmnElement="works_project_f6"><di:waypoint x="780" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f7_di" bpmnElement="works_project_f7"><di:waypoint x="590" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f6_di" bpmnElement="works_project_f6"><di:waypoint x="780" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f7_di" bpmnElement="works_project_f7"><di:waypoint x="590" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="works_project_f8_di" bpmnElement="works_project_f8"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="works_project_f9_di" bpmnElement="works_project_f9"><di:waypoint x="920" y="195"/><di:waypoint x="965" y="195"/><di:waypoint x="965" y="320"/><di:waypoint x="1010" y="320"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="works_project_f10_di" bpmnElement="works_project_f10"><di:waypoint x="920" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="works_project_f11_di" bpmnElement="works_project_f11"><di:waypoint x="780" y="195"/><di:waypoint x="870" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f12_di" bpmnElement="works_project_f12"><di:waypoint x="1110" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f13_di" bpmnElement="works_project_f13"><di:waypoint x="1415" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f14_di" bpmnElement="works_project_f14"><di:waypoint x="1390" y="220"/><di:waypoint x="1390" y="245"/><di:waypoint x="400" y="245"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f15_di" bpmnElement="works_project_f15"><di:waypoint x="1415" y="195"/><di:waypoint x="1790" y="195"/><di:waypoint x="1790" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f16_di" bpmnElement="works_project_f16"><di:waypoint x="1275" y="195"/><di:waypoint x="1365" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f17_di" bpmnElement="works_project_f17"><di:waypoint x="1605" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f18_di" bpmnElement="works_project_f18"><di:waypoint x="1910" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f19_di" bpmnElement="works_project_f19"><di:waypoint x="1885" y="220"/><di:waypoint x="1885" y="252"/><di:waypoint x="400" y="252"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f20_di" bpmnElement="works_project_f20"><di:waypoint x="1910" y="195"/><di:waypoint x="2037" y="195"/><di:waypoint x="2037" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f21_di" bpmnElement="works_project_f21"><di:waypoint x="1770" y="195"/><di:waypoint x="1860" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f22_di" bpmnElement="works_project_f22"><di:waypoint x="2100" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f23_di" bpmnElement="works_project_f23"><di:waypoint x="1110" y="320"/><di:waypoint x="1175" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f24_di" bpmnElement="works_project_f24"><di:waypoint x="1415" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f25_di" bpmnElement="works_project_f25"><di:waypoint x="1390" y="345"/><di:waypoint x="1390" y="363"/><di:waypoint x="400" y="363"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f26_di" bpmnElement="works_project_f26"><di:waypoint x="1415" y="320"/><di:waypoint x="1790" y="320"/><di:waypoint x="1790" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f27_di" bpmnElement="works_project_f27"><di:waypoint x="1275" y="320"/><di:waypoint x="1365" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f28_di" bpmnElement="works_project_f28"><di:waypoint x="1605" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f29_di" bpmnElement="works_project_f29"><di:waypoint x="1770" y="320"/><di:waypoint x="1835" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f30_di" bpmnElement="works_project_f30"><di:waypoint x="2075" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f31_di" bpmnElement="works_project_f31"><di:waypoint x="2050" y="345"/><di:waypoint x="2050" y="377"/><di:waypoint x="400" y="377"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f32_di" bpmnElement="works_project_f32"><di:waypoint x="2075" y="320"/><di:waypoint x="2120" y="320"/><di:waypoint x="2120" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f33_di" bpmnElement="works_project_f33"><di:waypoint x="1935" y="320"/><di:waypoint x="2025" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f34_di" bpmnElement="works_project_f34"><di:waypoint x="2265" y="320"/><di:waypoint x="2297" y="320"/><di:waypoint x="2297" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f35_di" bpmnElement="works_project_f35"><di:waypoint x="2430" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f36_di" bpmnElement="works_project_f36"><di:waypoint x="2595" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f37_di" bpmnElement="works_project_f37"><di:waypoint x="2760" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f38_di" bpmnElement="works_project_f38"><di:waypoint x="3255" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f39_di" bpmnElement="works_project_f39"><di:waypoint x="3065" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f40_di" bpmnElement="works_project_f40"><di:waypoint x="3065" y="195"/><di:waypoint x="3650" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f41_di" bpmnElement="works_project_f41"><di:waypoint x="2925" y="195"/><di:waypoint x="3015" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f42_di" bpmnElement="works_project_f42"><di:waypoint x="3750" y="195"/><di:waypoint x="3840" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f43_di" bpmnElement="works_project_f43"><di:waypoint x="3865" y="220"/><di:waypoint x="3865" y="267"/><di:waypoint x="2710" y="267"/><di:waypoint x="2710" y="235"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f44_di" bpmnElement="works_project_f44"><di:waypoint x="4080" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f45_di" bpmnElement="works_project_f45"><di:waypoint x="4245" y="195"/><di:waypoint x="4342" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f46_di" bpmnElement="works_project_f46"><di:waypoint x="3890" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f47_di" bpmnElement="works_project_f47"><di:waypoint x="3560" y="195"/><di:waypoint x="3617" y="195"/><di:waypoint x="3617" y="320"/><di:waypoint x="3675" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f48_di" bpmnElement="works_project_f48"><di:waypoint x="3560" y="195"/><di:waypoint x="3650" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f49_di" bpmnElement="works_project_f49"><di:waypoint x="3420" y="195"/><di:waypoint x="3510" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f50_di" bpmnElement="works_project_f50"><di:waypoint x="3725" y="320"/><di:waypoint x="3786" y="320"/><di:waypoint x="3786" y="445"/><di:waypoint x="3847" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f51_di" bpmnElement="works_project_f51"><di:waypoint x="3725" y="320"/><di:waypoint x="3847" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f52_di" bpmnElement="works_project_f52"><di:waypoint x="3883" y="320"/><di:waypoint x="3980" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f53_di" bpmnElement="works_project_f53"><di:waypoint x="4080" y="320"/><di:waypoint x="4145" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f54_di" bpmnElement="works_project_f54"><di:waypoint x="4245" y="320"/><di:waypoint x="4310" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f55_di" bpmnElement="works_project_f55"><di:waypoint x="4360" y="360"/><di:waypoint x="4360" y="392"/><di:waypoint x="3700" y="392"/><di:waypoint x="3700" y="345"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f56_di" bpmnElement="works_project_f56"><di:waypoint x="4336" y="503"/><di:waypoint x="4336" y="570"/><di:waypoint x="4475" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f57_di" bpmnElement="works_project_f57"><di:waypoint x="4575" y="570"/><di:waypoint x="4672" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f58_di" bpmnElement="works_project_f58"><di:waypoint x="4366" y="503"/><di:waypoint x="4366" y="445"/><di:waypoint x="4475" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f59_di" bpmnElement="works_project_f59"><di:waypoint x="4575" y="445"/><di:waypoint x="4665" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f60_di" bpmnElement="works_project_f60"><di:waypoint x="4715" y="445"/><di:waypoint x="4830" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f61_di" bpmnElement="works_project_f61"><di:waypoint x="4690" y="470"/><di:waypoint x="4690" y="503"/><di:waypoint x="4195" y="503"/><di:waypoint x="4195" y="485"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f62_di" bpmnElement="works_project_f62"><di:waypoint x="4245" y="445"/><di:waypoint x="4310" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f63_di" bpmnElement="works_project_f63"><di:waypoint x="4410" y="445"/><di:waypoint x="4830" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f64_di" bpmnElement="works_project_f64"><di:waypoint x="3883" y="445"/><di:waypoint x="3980" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f65_di" bpmnElement="works_project_f65"><di:waypoint x="4080" y="445"/><di:waypoint x="4145" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f66_di" bpmnElement="works_project_f66"><di:waypoint x="4880" y="445"/><di:waypoint x="4995" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f67_di" bpmnElement="works_project_f67"><di:waypoint x="5020" y="470"/><di:waypoint x="5020" y="517"/><di:waypoint x="4030" y="517"/><di:waypoint x="4030" y="485"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f68_di" bpmnElement="works_project_f68"><di:waypoint x="5045" y="445"/><di:waypoint x="5135" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f69_di" bpmnElement="works_project_f69"><di:waypoint x="5235" y="445"/><di:waypoint x="5325" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f70_di" bpmnElement="works_project_f70"><di:waypoint x="5375" y="445"/><di:waypoint x="5465" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f71_di" bpmnElement="works_project_f71"><di:waypoint x="5565" y="445"/><di:waypoint x="5630" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f72_di" bpmnElement="works_project_f72"><di:waypoint x="5730" y="445"/><di:waypoint x="5795" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f73_di" bpmnElement="works_project_f73"><di:waypoint x="5375" y="445"/><di:waypoint x="5960" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f74_di" bpmnElement="works_project_f74"><di:waypoint x="5895" y="445"/><di:waypoint x="5960" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f75_di" bpmnElement="works_project_f75"><di:waypoint x="6060" y="445"/><di:waypoint x="6125" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f76_di" bpmnElement="works_project_f76"><di:waypoint x="6225" y="445"/><di:waypoint x="6290" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f77_di" bpmnElement="works_project_f77"><di:waypoint x="6390" y="445"/><di:waypoint x="6455" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f78_di" bpmnElement="works_project_f78"><di:waypoint x="6555" y="445"/><di:waypoint x="6645" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f79_di" bpmnElement="works_project_f79"><di:waypoint x="6670" y="470"/><di:waypoint x="6670" y="502"/><di:waypoint x="3700" y="502"/><di:waypoint x="3700" y="345"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f80_di" bpmnElement="works_project_f80"><di:waypoint x="6695" y="445"/><di:waypoint x="6785" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f81_di" bpmnElement="works_project_f81"><di:waypoint x="6885" y="445"/><di:waypoint x="6982" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f82_di" bpmnElement="works_project_f82"><di:waypoint x="7018" y="445"/><di:waypoint x="7115" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f83_di" bpmnElement="works_project_f83"><di:waypoint x="7215" y="445"/><di:waypoint x="7305" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f84_di" bpmnElement="works_project_f84"><di:waypoint x="7355" y="445"/><di:waypoint x="7400" y="445"/><di:waypoint x="7400" y="570"/><di:waypoint x="7445" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f85_di" bpmnElement="works_project_f85"><di:waypoint x="7355" y="445"/><di:waypoint x="7445" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f86_di" bpmnElement="works_project_f86"><di:waypoint x="7545" y="570"/><di:waypoint x="7577" y="570"/><di:waypoint x="7577" y="445"/><di:waypoint x="7610" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f87_di" bpmnElement="works_project_f87"><di:waypoint x="7545" y="445"/><di:waypoint x="7610" y="445"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="works_project_f88_di" bpmnElement="works_project_f88"><di:waypoint x="7710" y="445"/><di:waypoint x="7807" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f12_di" bpmnElement="works_project_f12"><di:waypoint x="1110" y="195"/><di:waypoint x="1200" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f13_di" bpmnElement="works_project_f13"><di:waypoint x="1745" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f14_di" bpmnElement="works_project_f14"><di:waypoint x="1720" y="220"/><di:waypoint x="1720" y="245"/><di:waypoint x="400" y="245"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f15_di" bpmnElement="works_project_f15"><di:waypoint x="1745" y="195"/><di:waypoint x="2285" y="195"/><di:waypoint x="2285" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f16_di" bpmnElement="works_project_f16"><di:waypoint x="1605" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f17_di" bpmnElement="works_project_f17"><di:waypoint x="1935" y="195"/><di:waypoint x="2025" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f18_di" bpmnElement="works_project_f18"><di:waypoint x="2570" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f19_di" bpmnElement="works_project_f19"><di:waypoint x="2545" y="220"/><di:waypoint x="2545" y="252"/><di:waypoint x="400" y="252"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f20_di" bpmnElement="works_project_f20"><di:waypoint x="2570" y="195"/><di:waypoint x="2697" y="195"/><di:waypoint x="2697" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f21_di" bpmnElement="works_project_f21"><di:waypoint x="2430" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f22_di" bpmnElement="works_project_f22"><di:waypoint x="2760" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f23_di" bpmnElement="works_project_f23"><di:waypoint x="1110" y="320"/><di:waypoint x="1200" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f24_di" bpmnElement="works_project_f24"><di:waypoint x="1745" y="320"/><di:waypoint x="1835" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f25_di" bpmnElement="works_project_f25"><di:waypoint x="1720" y="345"/><di:waypoint x="1720" y="363"/><di:waypoint x="400" y="363"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f26_di" bpmnElement="works_project_f26"><di:waypoint x="1745" y="320"/><di:waypoint x="2285" y="320"/><di:waypoint x="2285" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f27_di" bpmnElement="works_project_f27"><di:waypoint x="1605" y="320"/><di:waypoint x="1695" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f28_di" bpmnElement="works_project_f28"><di:waypoint x="1935" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f29_di" bpmnElement="works_project_f29"><di:waypoint x="2100" y="320"/><di:waypoint x="2190" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f30_di" bpmnElement="works_project_f30"><di:waypoint x="2735" y="320"/><di:waypoint x="2825" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f31_di" bpmnElement="works_project_f31"><di:waypoint x="2710" y="345"/><di:waypoint x="2710" y="377"/><di:waypoint x="400" y="377"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f32_di" bpmnElement="works_project_f32"><di:waypoint x="2735" y="320"/><di:waypoint x="2780" y="320"/><di:waypoint x="2780" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f33_di" bpmnElement="works_project_f33"><di:waypoint x="2595" y="320"/><di:waypoint x="2685" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f34_di" bpmnElement="works_project_f34"><di:waypoint x="2925" y="320"/><di:waypoint x="2957" y="320"/><di:waypoint x="2957" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f35_di" bpmnElement="works_project_f35"><di:waypoint x="3090" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f36_di" bpmnElement="works_project_f36"><di:waypoint x="3255" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f37_di" bpmnElement="works_project_f37"><di:waypoint x="3420" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f38_di" bpmnElement="works_project_f38"><di:waypoint x="3915" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f39_di" bpmnElement="works_project_f39"><di:waypoint x="3725" y="195"/><di:waypoint x="3815" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f40_di" bpmnElement="works_project_f40"><di:waypoint x="3725" y="195"/><di:waypoint x="4310" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f41_di" bpmnElement="works_project_f41"><di:waypoint x="3585" y="195"/><di:waypoint x="3675" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f42_di" bpmnElement="works_project_f42"><di:waypoint x="4410" y="195"/><di:waypoint x="4500" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f43_di" bpmnElement="works_project_f43"><di:waypoint x="4525" y="220"/><di:waypoint x="4525" y="267"/><di:waypoint x="3370" y="267"/><di:waypoint x="3370" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f44_di" bpmnElement="works_project_f44"><di:waypoint x="4740" y="195"/><di:waypoint x="4805" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f45_di" bpmnElement="works_project_f45"><di:waypoint x="4905" y="195"/><di:waypoint x="5002" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f46_di" bpmnElement="works_project_f46"><di:waypoint x="4550" y="195"/><di:waypoint x="4640" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f47_di" bpmnElement="works_project_f47"><di:waypoint x="4220" y="195"/><di:waypoint x="4277" y="195"/><di:waypoint x="4277" y="320"/><di:waypoint x="4335" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f48_di" bpmnElement="works_project_f48"><di:waypoint x="4220" y="195"/><di:waypoint x="4310" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f49_di" bpmnElement="works_project_f49"><di:waypoint x="4080" y="195"/><di:waypoint x="4170" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f50_di" bpmnElement="works_project_f50"><di:waypoint x="4385" y="320"/><di:waypoint x="4446" y="320"/><di:waypoint x="4446" y="445"/><di:waypoint x="4507" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f51_di" bpmnElement="works_project_f51"><di:waypoint x="4385" y="320"/><di:waypoint x="4507" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f52_di" bpmnElement="works_project_f52"><di:waypoint x="4543" y="320"/><di:waypoint x="4640" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f53_di" bpmnElement="works_project_f53"><di:waypoint x="4740" y="320"/><di:waypoint x="4805" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f54_di" bpmnElement="works_project_f54"><di:waypoint x="4905" y="320"/><di:waypoint x="4970" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f55_di" bpmnElement="works_project_f55"><di:waypoint x="5020" y="360"/><di:waypoint x="5020" y="392"/><di:waypoint x="4360" y="392"/><di:waypoint x="4360" y="345"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f56_di" bpmnElement="works_project_f56"><di:waypoint x="4996" y="503"/><di:waypoint x="4996" y="570"/><di:waypoint x="5135" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f57_di" bpmnElement="works_project_f57"><di:waypoint x="5235" y="570"/><di:waypoint x="5332" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f58_di" bpmnElement="works_project_f58"><di:waypoint x="5026" y="503"/><di:waypoint x="5026" y="445"/><di:waypoint x="5135" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f59_di" bpmnElement="works_project_f59"><di:waypoint x="5235" y="445"/><di:waypoint x="5325" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f60_di" bpmnElement="works_project_f60"><di:waypoint x="5375" y="445"/><di:waypoint x="5490" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f61_di" bpmnElement="works_project_f61"><di:waypoint x="5350" y="470"/><di:waypoint x="5350" y="503"/><di:waypoint x="4855" y="503"/><di:waypoint x="4855" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f62_di" bpmnElement="works_project_f62"><di:waypoint x="4905" y="445"/><di:waypoint x="4970" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f63_di" bpmnElement="works_project_f63"><di:waypoint x="5070" y="445"/><di:waypoint x="5490" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f64_di" bpmnElement="works_project_f64"><di:waypoint x="4543" y="445"/><di:waypoint x="4640" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f65_di" bpmnElement="works_project_f65"><di:waypoint x="4740" y="445"/><di:waypoint x="4805" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f66_di" bpmnElement="works_project_f66"><di:waypoint x="5540" y="445"/><di:waypoint x="5655" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f67_di" bpmnElement="works_project_f67"><di:waypoint x="5680" y="470"/><di:waypoint x="5680" y="517"/><di:waypoint x="4690" y="517"/><di:waypoint x="4690" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f68_di" bpmnElement="works_project_f68"><di:waypoint x="5705" y="445"/><di:waypoint x="5795" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f69_di" bpmnElement="works_project_f69"><di:waypoint x="5895" y="445"/><di:waypoint x="5985" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f70_di" bpmnElement="works_project_f70"><di:waypoint x="6035" y="445"/><di:waypoint x="6125" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f71_di" bpmnElement="works_project_f71"><di:waypoint x="6225" y="445"/><di:waypoint x="6290" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f72_di" bpmnElement="works_project_f72"><di:waypoint x="6390" y="445"/><di:waypoint x="6455" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f73_di" bpmnElement="works_project_f73"><di:waypoint x="6035" y="445"/><di:waypoint x="6620" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f74_di" bpmnElement="works_project_f74"><di:waypoint x="6555" y="445"/><di:waypoint x="6620" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f75_di" bpmnElement="works_project_f75"><di:waypoint x="6720" y="445"/><di:waypoint x="6785" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f76_di" bpmnElement="works_project_f76"><di:waypoint x="6885" y="445"/><di:waypoint x="6950" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f77_di" bpmnElement="works_project_f77"><di:waypoint x="7050" y="445"/><di:waypoint x="7115" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f78_di" bpmnElement="works_project_f78"><di:waypoint x="7215" y="445"/><di:waypoint x="7305" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f79_di" bpmnElement="works_project_f79"><di:waypoint x="7330" y="470"/><di:waypoint x="7330" y="502"/><di:waypoint x="4360" y="502"/><di:waypoint x="4360" y="345"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f80_di" bpmnElement="works_project_f80"><di:waypoint x="7355" y="445"/><di:waypoint x="7445" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f81_di" bpmnElement="works_project_f81"><di:waypoint x="7545" y="445"/><di:waypoint x="7642" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f82_di" bpmnElement="works_project_f82"><di:waypoint x="7678" y="445"/><di:waypoint x="7775" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f83_di" bpmnElement="works_project_f83"><di:waypoint x="7875" y="445"/><di:waypoint x="7965" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f84_di" bpmnElement="works_project_f84"><di:waypoint x="8015" y="445"/><di:waypoint x="8060" y="445"/><di:waypoint x="8060" y="570"/><di:waypoint x="8105" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f85_di" bpmnElement="works_project_f85"><di:waypoint x="8015" y="445"/><di:waypoint x="8105" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f86_di" bpmnElement="works_project_f86"><di:waypoint x="8205" y="570"/><di:waypoint x="8237" y="570"/><di:waypoint x="8237" y="445"/><di:waypoint x="8270" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f87_di" bpmnElement="works_project_f87"><di:waypoint x="8205" y="445"/><di:waypoint x="8270" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f88_di" bpmnElement="works_project_f88"><di:waypoint x="8370" y="445"/><di:waypoint x="8467" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f104_di" bpmnElement="works_project_f104"><di:waypoint x="1250" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f105_di" bpmnElement="works_project_f105"><di:waypoint x="1250" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f106_di" bpmnElement="works_project_f106"><di:waypoint x="1440" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f107_di" bpmnElement="works_project_f107"><di:waypoint x="2075" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f108_di" bpmnElement="works_project_f108"><di:waypoint x="2075" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f109_di" bpmnElement="works_project_f109"><di:waypoint x="2265" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f110_di" bpmnElement="works_project_f110"><di:waypoint x="1250" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f111_di" bpmnElement="works_project_f111"><di:waypoint x="1250" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f112_di" bpmnElement="works_project_f112"><di:waypoint x="1440" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f113_di" bpmnElement="works_project_f113"><di:waypoint x="2240" y="320"/><di:waypoint x="2330" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f114_di" bpmnElement="works_project_f114"><di:waypoint x="2240" y="320"/><di:waypoint x="2495" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f115_di" bpmnElement="works_project_f115"><di:waypoint x="2430" y="320"/><di:waypoint x="2495" y="320"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="works_project_f89_di" bpmnElement="works_project_f89"><di:waypoint x="128" y="740"/><di:waypoint x="225" y="740"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="works_project_f90_di" bpmnElement="works_project_f90"><di:waypoint x="325" y="740"/><di:waypoint x="390" y="740"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="works_project_f91_di" bpmnElement="works_project_f91"><di:waypoint x="490" y="740"/><di:waypoint x="587" y="740"/></bpmndi:BPMNEdge>

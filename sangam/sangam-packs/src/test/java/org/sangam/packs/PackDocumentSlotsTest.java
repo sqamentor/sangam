@@ -25,6 +25,7 @@ import org.operaton.bpm.model.bpmn.BpmnModelInstance;
 import org.operaton.bpm.model.bpmn.instance.CallActivity;
 import org.operaton.bpm.model.bpmn.instance.Process;
 import org.operaton.bpm.model.bpmn.instance.operaton.OperatonField;
+import org.operaton.bpm.model.bpmn.instance.operaton.OperatonIn;
 import org.operaton.bpm.model.bpmn.instance.operaton.OperatonTaskListener;
 
 import org.sangam.packs.core.DscSignatureGuardListener;
@@ -38,7 +39,8 @@ import org.sangam.packs.spi.SangamPack;
  * Decision 269: each pack declares its DSC documentType-to-slot pairs in its manifest ({@code documentSlots}); the server
  * reads them, there is no server table. The core pack publishes NOTING = notingDocumentId and SANCTION_NOTE =
  * sanctionDocumentId, and every pack's manifest pairs are exactly those of its own DSC gates and (decision 382) of every
- * DSC gate its processes reach through call activities, so the slot is filled on the calling instance.
+ * DSC gate its processes reach through call activities that pass {@code in variables="all"} (decision 385 (1): only those
+ * copy the slot), so the slot is filled on the calling instance.
  */
 class PackDocumentSlotsTest {
 
@@ -68,7 +70,10 @@ class PackDocumentSlotsTest {
                         own.put(proc.getId(), gatesOf(m));
                         Set<String> called = new TreeSet<>();
                         for (CallActivity c : m.getModelElementsByType(CallActivity.class)) {
-                            called.add(c.getCalledElement());
+                            // decision 385 (1): only a call that passes in variables="all" carries the slot
+                            if (passesAll(c)) {
+                                called.add(c.getCalledElement());
+                            }
                         }
                         calls.put(proc.getId(), called);
                     }
@@ -112,6 +117,38 @@ class PackDocumentSlotsTest {
         for (String c : calls.get(pid)) {
             reach(c, own, calls, seen, out);
         }
+    }
+
+    static boolean passesAll(CallActivity c) {
+        return c.getExtensionElements() != null && c.getExtensionElements().getElementsQuery()
+                .filterByType(OperatonIn.class).list().stream().anyMatch(i -> "all".equals(i.getOperatonVariables()));
+    }
+
+    @Test
+    void everyCallIntoADscGateProcessPassesAllVariables() throws Exception {
+        // decision 385 (1): a call into a process that holds a DSC gate copies the slot filled on the caller
+        Set<String> gated = new TreeSet<>();
+        List<CallActivity> calls = new ArrayList<>();
+        for (SangamPack p : PackRegistry.discover().all()) {
+            for (PackDescriptor.PackResource r : p.descriptor().resources(PackDescriptor.PackResource.Kind.BPMN)) {
+                try (InputStream in = p.open(r.path())) {
+                    BpmnModelInstance m = Bpmn.readModelFromStream(in);
+                    if (!gatesOf(m).isEmpty()) {
+                        m.getModelElementsByType(Process.class).forEach(x -> gated.add(x.getId()));
+                    }
+                    calls.addAll(m.getModelElementsByType(CallActivity.class));
+                }
+            }
+        }
+        int intoGates = 0;
+        for (CallActivity c : calls) {
+            if (gated.contains(c.getCalledElement())) {
+                intoGates++;
+                assertTrue(passesAll(c), c.getId() + " calls the DSC gate process " + c.getCalledElement()
+                        + " without in variables=\"all\"");
+            }
+        }
+        assertTrue(intoGates >= 50, "the packs call the core DSC gates: " + intoGates);
     }
 
     private static Set<DocumentSlot> gatesOf(BpmnModelInstance m) {

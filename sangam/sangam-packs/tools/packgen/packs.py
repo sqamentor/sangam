@@ -7,6 +7,7 @@ import re
 import check_results
 import money
 import powers
+import prepare
 import reason_codes
 import releases
 from lib import Proc, dmn as dmn_xml
@@ -57,6 +58,8 @@ class Pack:
         self.seed = None
         self.identifier_types = None
         self.placeholders = []
+        # decision 385 (1): call activity id -> seat expression of its prepare task (default ${initiatorSeat})
+        self.prepare_seats = {}
         ALL.append(self)
 
     def proc(self, pid, name, doc='', start=None, ttl=3650):
@@ -227,9 +230,20 @@ def gate_pairs(xml, where):
     return pairs
 
 
+def in_all_calls(xml):
+    """The processes a generated process calls with in variables="all", the calls that carry its document slots."""
+    import xml.etree.ElementTree as ET
+    out = set()
+    for c in ET.fromstring(xml.encode('utf-8')).iter('{%s}callActivity' % _BPMN_NS['b']):
+        if any(i.get('variables') == 'all' for i in c.iter('{%s}in' % _BPMN_NS['o'])):
+            out.add(c.get('calledElement'))
+    return out
+
+
 def reached_gate_pairs(pid, own, calls, seen=None):
-    """Decision 382: the pairs of the DSC gates process pid holds itself and of every gate it reaches through its call
-    activities, transitively (a called process that is not generated here stops generation)."""
+    """Decisions 382 and 385 (1): the pairs of the DSC gates process pid holds itself and of every gate it reaches
+    through call activities that pass in variables="all", transitively (only those carry the slot it fills; a callee
+    reached otherwise fills its own slots, prepare.py). A called process that is not generated here stops generation."""
     seen = set() if seen is None else seen
     if pid in seen:
         return []
@@ -266,6 +280,9 @@ def write_all(root):
     # decision 382: every process is generated first, so a pack's manifest can name the DSC gates of the processes
     # it calls, whichever pack holds them
     xmls_of, resources_of, own_gates, calls_of = {}, {}, {}, {}
+    # decisions 382 and 385 (1): a call into a DSC gate process gets its prepare task, then precedence is checked
+    pack_of = {p.pid: pk for pk in ALL for p in pk.procs}
+    prepare.apply([p for pk in ALL for p in pk.procs], lambda p: pack_of[p.pid].prepare_seats)
     for pk in ALL:
         base = os.path.join(root, 'packs', pk.dir)
         os.makedirs(os.path.join(base, 'forms'), exist_ok=True)
@@ -288,7 +305,7 @@ def write_all(root):
             resources.append({'kind': 'BPMN', 'path': path})
             xmls[p.pid] = xml
             own_gates[p.pid] = gate_pairs(xml, path)
-            calls_of[p.pid] = set(p.calls)
+            calls_of[p.pid] = in_all_calls(xml)
     for pk in ALL:
         base = os.path.join(root, 'packs', pk.dir)
         resources = resources_of[pk.id]
