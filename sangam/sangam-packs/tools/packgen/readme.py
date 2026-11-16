@@ -235,6 +235,14 @@ def write(path, packs):
       'behalf of the seat). Approval tasks carry, in order, the SoD guard, the power guard, the payload binding and the '
       'actor recorder.')
     w('')
+    w('DSC gates are reached through a call (decisions 382, 385 and 387 (3)): the signing levels of '
+      '`sangam-core-recommendation` (slot `notingDocumentId`, type NOTING) and the approval of `sangam-core-sanction` '
+      '(slot `sanctionDocumentId`, type SANCTION_NOTE) sign the document in their slot, which only the document route '
+      'fills, on an open user task of the case. A pack calls the gate process with `in variables="all"`; where no user '
+      'task of the caller comes before the call, packgen puts the prepare task there, whose form requires the slot. A '
+      'gate process started directly, with no caller, has no user task before its gate, so its slot is empty and the '
+      'signature is refused (`422 DSC_SIGNATURE_NOT_VERIFIED`): start the pack process that calls it.')
+    w('')
     w('## 4. Process variable and message contract (for WS-REST, WS-UI, WS-INTEGRATION)')
     w('')
     w('| Variable / message | Set by | Meaning |')
