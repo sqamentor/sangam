@@ -20,6 +20,8 @@ export interface NavItem {
   only?: Role[];
   /** Replaces the group's roles for this entry: role or endpoint permission (M-028, access.ts). */
   access?: Access;
+  /** Module id (GET /me/capabilities): the entry is hidden when the installation has not wired that module (Q3). */
+  module?: string;
 }
 export interface NavSection {
   /** i18n key of the small heading; absent for the group's first, unnamed section. */
@@ -46,7 +48,28 @@ const e = (group: string, entry: string, to: string, extra: Partial<NavItem> = {
   ...extra,
 });
 const sec = (group: string, id: string) => `menu.${group}.section.${id}`;
-const mod = (group: string, entry: string, to: string) => e(group, entry, to, { access: ROUTE_ACCESS[to] });
+/**
+ * Decision 399 Q3: the module behind each module screen, as GET /me/capabilities names it (InstalledModulesController).
+ * When a module is off its routes are not mapped at all, so its screen could only fail.
+ */
+export const MODULE_OF: Readonly<Record<string, string>> = {
+  '/m/ai': 'ai',
+  '/m/channels': 'channels',
+  '/m/case-files': 'case',
+  '/m/committees': 'case',
+  '/m/references': 'case',
+  '/m/registry': 'registry',
+  '/m/ledger': 'ledger',
+  '/m/billing': 'billing',
+  '/m/resources': 'resources',
+  '/m/queues': 'resources',
+  '/m/rosters': 'resources',
+  '/m/programmes': 'programme',
+  '/m/field': 'field',
+  '/m/geo': 'geo',
+  '/m/compliance': 'compliance',
+};
+const mod = (group: string, entry: string, to: string) => e(group, entry, to, { access: ROUTE_ACCESS[to], module: MODULE_OF[to] });
 
 export const NAV: NavArea[] = [
   {
@@ -214,7 +237,7 @@ export const NAV: NavArea[] = [
           e('setup', 'templates', '/admin/templates'),
           e('setup', 'channels', '/admin/channels'),
           // channels.read is a module read held by every staff role; the status page is an administrator's job.
-          e('setup', 'channelStatus', '/m/channels', { access: ROUTE_ACCESS['/m/channels'], only: ['ADMIN', 'PLATFORM_ADMIN'] }),
+          e('setup', 'channelStatus', '/m/channels', { access: ROUTE_ACCESS['/m/channels'], module: MODULE_OF['/m/channels'], only: ['ADMIN', 'PLATFORM_ADMIN'] }),
           e('setup', 'agents', '/admin/agents'),
           mod('setup', 'customFields', '/admin/custom-fields'),
         ],
@@ -280,16 +303,18 @@ const hasAny = (me: Pick<Me, 'roles'>, roles: Role[]) => roles.length === 0 || r
  * M-028: an entry with its own access (role or endpoint permission) is shown on that alone; otherwise on the group's
  * roles and its `only`. A group is shown when one of its entries is.
  */
-export function navVisible(me: Pick<Me, 'roles' | 'permissions'> | null | undefined, a: NavArea, i: NavItem): boolean {
+export function navVisible(me: Pick<Me, 'roles' | 'permissions'> | null | undefined, a: NavArea, i: NavItem, installed?: ReadonlySet<string> | null): boolean {
   if (!me) return false;
+  // Q3: unknown (null/undefined: the read failed or has not answered) shows the entry; the server stays the judge.
+  if (i.module && installed && !installed.has(i.module)) return false;
   // `only` with `access`: the entry belongs to the group's job, though the screen itself opens to more callers.
   if (i.access) return canAccess(me, i.access) && (!i.only || hasAny(me, i.only));
   return hasAny(me, a.roles) && (!i.only || hasAny(me, i.only));
 }
 
 /** The menu as one caller sees it: groups and sections with no visible entry are left out. */
-export function visibleNav(me: Pick<Me, 'roles' | 'permissions'> | null | undefined): NavArea[] {
-  return NAV.map((a) => ({ ...a, sections: a.sections.map((s) => ({ ...s, items: s.items.filter((i) => navVisible(me, a, i)) })).filter((s) => s.items.length > 0) })).filter(
+export function visibleNav(me: Pick<Me, 'roles' | 'permissions'> | null | undefined, installed?: ReadonlySet<string> | null): NavArea[] {
+  return NAV.map((a) => ({ ...a, sections: a.sections.map((s) => ({ ...s, items: s.items.filter((i) => navVisible(me, a, i, installed)) })).filter((s) => s.items.length > 0) })).filter(
     (a) => a.sections.length > 0,
   );
 }

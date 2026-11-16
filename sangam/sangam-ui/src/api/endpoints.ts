@@ -113,6 +113,8 @@ export type IncidentVerb = 'retry' | 'resolve' | 'skip' | 'cancel';
 export const api = {
   me: {
     get: async () => A.normMe(await http.get<Record<string, unknown>>('/me')),
+    /** Decision 399 Q3: ids of the modules this installation has wired (GET /me/capabilities). */
+    capabilities: () => http.get<{ modules: string[] }>('/me/capabilities'),
     notifications: (q: ListQuery = {}) => http.page<T.Notification>('/me/notifications', q),
     markRead: (id: string) => http.post<void>(`/me/notifications/${enc(id)}/read`),
     delegations: () => http.get<T.Assignment[]>('/me/delegations'),

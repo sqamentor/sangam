@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import app from './App.tsx?raw';
 import type { Role } from '../api/types';
 import en from '../i18n/locales/en.json';
-import { NAV, NAV_ITEMS, navEnd, navLocate, visibleNav } from './nav';
+import { MODULE_OF, NAV, NAV_ITEMS, navEnd, navLocate, visibleNav } from './nav';
 
 const flat = (o: object, p = '', out: Record<string, string> = {}): Record<string, string> => {
   for (const [k, v] of Object.entries(o)) {
@@ -131,5 +131,29 @@ describe('routes and redirects (decision 397, WP-3)', () => {
   });
   it('the new addresses are real routes', () => {
     for (const p of ['/team', '/design/test', '/help/glossary', '/help/shortcuts']) expect(app).toContain(`<Route path="${p}" element=`);
+  });
+});
+
+describe('modules that are not installed (decision 399 Q3)', () => {
+  const admin = me(['ADMIN', 'PLATFORM_ADMIN', 'TASK_USER', 'AUDITOR', 'OPERATOR']);
+  const routes = (installed?: ReadonlySet<string> | null) => visibleNav(admin, installed).flatMap((a) => a.sections.flatMap((s) => s.items.map((i) => i.to)));
+  it('every module screen in the menu names its module', () => {
+    for (const i of NAV_ITEMS.filter((x) => x.to.startsWith('/m/'))) expect(i.module, i.to).toBe(MODULE_OF[i.to]);
+    expect(Object.keys(MODULE_OF).sort()).toEqual(NAV_ITEMS.filter((x) => x.to.startsWith('/m/')).map((x) => x.to).sort());
+  });
+  it('hides the entries of a module that is off, and only those', () => {
+    const all = routes(null);
+    const some = routes(new Set(['ledger', 'case']));
+    expect(some).toContain('/m/ledger');
+    expect(some).toEqual(expect.arrayContaining(['/m/case-files', '/m/committees', '/m/references']));
+    for (const off of ['/m/billing', '/m/geo', '/m/compliance', '/m/channels', '/m/queues']) expect(some).not.toContain(off);
+    expect(all.filter((r) => !r.startsWith('/m/'))).toEqual(some.filter((r) => !r.startsWith('/m/')));
+  });
+  it('hides nothing while the list is unknown', () => {
+    expect(routes(null)).toEqual(routes(undefined));
+    expect(routes(null)).toEqual(expect.arrayContaining(Object.keys(MODULE_OF)));
+  });
+  it('drops a group left empty', () => {
+    expect(visibleNav(me([], ['compliance.read']), new Set()).map((a) => a.id)).toEqual(['help']);
   });
 });
