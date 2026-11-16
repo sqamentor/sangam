@@ -87,6 +87,75 @@ class PartitionResizeH2Test {
         return count(ds, "SELECT coordinator_epoch FROM EXEC_MAP WHERE cluster_id = 'c1'");
     }
 
+    /**
+     * ci22: with a zero settle time the drain and the handover can fall in the same database millisecond, and a measured
+     * pause of 0 ms was dropped (only {@code pause > 0} was written), leaving handover_pause_ms NULL. The database
+     * clock is frozen here, so every moving slot settles with a pause of exactly 0 ms, on every run.
+     */
+    @Test
+    void aHandoverPauseMeasuredAsZeroIsRecordedAsZeroNotLeftNull() throws Exception {
+        javax.sql.DataSource frozen = frozenClock(h2());
+        PartitionResize r = new PartitionResize(frozen, Dialect.POSTGRESQL, "c1", SLOTS, sink, "system", 7);
+        PartitionLeaseManager a = new PartitionLeaseManager(frozen, Dialect.POSTGRESQL, new PartitionLeaseManager.Config(
+                "c1", "a", UUID.randomUUID().toString(), 8, SLOTS, Duration.ofSeconds(15), Duration.ofSeconds(3),
+                Duration.ofSeconds(30), 5, 3), Instant::now, nanos::get, null, null, r);
+        a.bootstrap();
+        a.heartbeat();
+        assertTrue(a.holdCoordinator());
+        long epoch;
+        try (Connection c = frozen.getConnection()) {
+            epoch = Jdbc.one(c, "SELECT coordinator_epoch FROM EXEC_MAP WHERE cluster_id = 'c1'", rs -> rs.getLong(1))
+                    .orElseThrow();
+        }
+        r.request("r1", "ops", "scale out", 12, 1L);
+
+        assertEquals(Optional.of(PartitionResize.State.COMPLETED), step(r, a, epoch, Duration.ofHours(1)));
+        PartitionResize.Resize done = r.get("r1").orElseThrow();
+        assertTrue(done.movedSlotCount() > 0, "slots moved, so a pause was measured");
+        assertEquals(0L, done.handoverPauseMs(), "a pause measured as 0 ms is recorded as 0, not NULL");
+        assertEquals(0L, ((Number) payloads.get(payloads.size() - 1).get("handoverPauseMs")).longValue());
+    }
+
+    /** Every SQL text sent through this source reads one fixed instant for CURRENT_TIMESTAMP. */
+    private static javax.sql.DataSource frozenClock(JdbcDataSource ds) {
+        String fixed = "TIMESTAMP WITH TIME ZONE '2026-11-16 00:00:00+00'";
+        java.util.function.UnaryOperator<String> sql = q -> q.replace("CURRENT_TIMESTAMP", fixed);
+        java.util.function.Function<Object, Object> wrapStatement = st -> java.lang.reflect.Proxy.newProxyInstance(
+                PartitionResizeH2Test.class.getClassLoader(), new Class<?>[] {java.sql.Statement.class},
+                (proxy, m, args) -> {
+                    if (args != null && args.length > 0 && args[0] instanceof String q) {
+                        args[0] = sql.apply(q);
+                    }
+                    return invoke(st, m, args);
+                });
+        return (javax.sql.DataSource) java.lang.reflect.Proxy.newProxyInstance(
+                PartitionResizeH2Test.class.getClassLoader(), new Class<?>[] {javax.sql.DataSource.class},
+                (dsProxy, dm, dargs) -> {
+                    Object out = invoke(ds, dm, dargs);
+                    if (!(out instanceof Connection conn)) {
+                        return out;
+                    }
+                    return java.lang.reflect.Proxy.newProxyInstance(PartitionResizeH2Test.class.getClassLoader(),
+                            new Class<?>[] {Connection.class}, (cp, cm, cargs) -> {
+                                String n = cm.getName();
+                                if ((n.equals("prepareStatement") || n.equals("prepareCall") || n.equals("nativeSQL"))
+                                        && cargs[0] instanceof String q) {
+                                    cargs[0] = sql.apply(q);
+                                }
+                                Object r = invoke(conn, cm, cargs);
+                                return n.equals("createStatement") ? wrapStatement.apply(r) : r;
+                            });
+                });
+    }
+
+    private static Object invoke(Object target, java.lang.reflect.Method m, Object[] args) throws Throwable {
+        try {
+            return m.invoke(target, args);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            throw e.getCause();
+        }
+    }
+
     private static Optional<PartitionResize.State> step(PartitionResize r, PartitionLeaseManager n, long epoch,
                                                           Duration drain) {
         return r.advance(n.coordinatorName(), epoch, drain, Duration.ZERO, Instant::now);
