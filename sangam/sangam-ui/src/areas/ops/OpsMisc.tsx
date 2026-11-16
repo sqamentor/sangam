@@ -450,7 +450,15 @@ export function EventRegistry() {
     <>
       <PageHeader title={t('events.title')} description={t('events.description')} />
       <Tabs label={t('events.title')} active={tab} onChange={setTab} tabs={[{ id: 'channels', label: t('events.channels') }, { id: 'defs', label: t('events.definitions') }]} />
-      <ProblemAlert error={channels.error ?? defs.error ?? act.error} />
+      {/* M-047: the refused reads with a retry of each that failed, the refused action on its own */}
+      <ProblemAlert
+        error={channels.error ?? defs.error}
+        onRetry={() => {
+          if (channels.error) channels.reload();
+          if (defs.error) defs.reload();
+        }}
+      />
+      <ProblemAlert error={act.error} />
       <TabPanel id="channels" active={tab}>
         <button type="button" className="primary" onClick={() => setCh({ key: '', kind: 'KAFKA', direction: 'INBOUND', destination: '', active: true, _new: true })}>
           {t('common.new')}
@@ -850,7 +858,9 @@ export function Debugger() {
   return (
     <>
       <PageHeader title={t('debug.title')} description={t('debug.description')} />
-      <ProblemAlert error={status.error ?? act.error} />
+      {/* M-047: the refused status read with its retry, the refused action on its own */}
+      <ProblemAlert error={status.error} onRetry={status.reload} />
+      <ProblemAlert error={act.error} />
       {status.data && !enabled && <Notice tone="bad">{t('debug.disabled', { profile: status.data.profile })}</Notice>}
       {enabled && (
         <>

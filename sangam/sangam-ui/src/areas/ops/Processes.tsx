@@ -158,7 +158,15 @@ export function DefinitionDetail() {
           )
         }
       />
-      <ProblemAlert error={def.error ?? xml.error ?? stats.error} />
+      {/* M-047: a refused read is retried (each read that failed is asked again), never left without a way back */}
+      <ProblemAlert
+        error={def.error ?? xml.error ?? stats.error}
+        onRetry={() => {
+          if (def.error) def.reload();
+          if (xml.error) xml.reload();
+          if (stats.error) stats.reload();
+        }}
+      />
       <Tabs
         label={t('diagram.mode')}
         active={mode}

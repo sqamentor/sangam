@@ -222,7 +222,9 @@ export function Migration() {
     <>
       <PageHeader title={t('mig.title')} description={t('mig.description')} />
       {ids?.length ? <Notice>{t('mig.selectedInstances', { n: ids.length })}</Notice> : null}
-      <ProblemAlert error={defs.error ?? act.error} />
+      {/* M-047: the refused read with its retry, the refused action on its own */}
+      <ProblemAlert error={defs.error} onRetry={defs.reload} />
+      <ProblemAlert error={act.error} />
       <div className="filters">
         <SelectField
           label={t('mig.source')}
