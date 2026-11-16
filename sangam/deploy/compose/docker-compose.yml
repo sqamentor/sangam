@@ -135,6 +135,12 @@ x-server-common: &server-common
     SANGAM_KEYS_ENVIRONMENT: ${SANGAM_KEYS_ENVIRONMENT:-}
     SANGAM_KEYS_FOREIGN_FINGERPRINTS: ${SANGAM_KEYS_FOREIGN_FINGERPRINTS:-}
     SANGAM_KEYS_FINGERPRINT_EXPORT: ${SANGAM_KEYS_FINGERPRINT_EXPORT:-}
+    # Owner decisions 387 (4) and 390: in place of the list, the key custodian's signed attestation (a file under
+    # ./config/server) and the custodian's Ed25519 public key; or, for the first environment only, a one-time bootstrap
+    # start (recorded as KEY_ENVIRONMENT_BOOTSTRAPPED, refused on any later start).
+    SANGAM_KEYS_ATTESTATION: ${SANGAM_KEYS_ATTESTATION:-}
+    SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY: ${SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY:-}
+    SANGAM_KEYS_BOOTSTRAP: ${SANGAM_KEYS_BOOTSTRAP:-false}
     SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY: ${SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY:-}
     # In-process simulators of sangam-integration (SimulatorProfile); the sim-* containers are the standalone variant.
     SANGAM_INTEGRATION_SIMULATORS_ENABLED: ${SANGAM_SIMULATORS_ENABLED:-false}

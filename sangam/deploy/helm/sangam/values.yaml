@@ -189,10 +189,19 @@ server:
   # public key or HMAC-SHA256 under a fixed label of a secret, never the value. The start is refused
   # (KEY_SHARED_ACROSS_ENVIRONMENTS) when one of this environment's keys is on the list; with server.production: true it
   # is refused (KEY_ENVIRONMENT_LIST_REQUIRED) without a name or without a list holding a fingerprint of another
-  # environment. See deploy/README.md section 1.
+  # environment. Owner decisions 387 (4) and 390: in place of the list, attestation is the content of the key
+  # custodian's Ed25519-signed attestation (SANGAM_KEYS_ATTESTATION, mounted at /opt/sangam/config/key-attestation.json;
+  # format sangam-key-attestation/1, see deploy/README.md section 1) and custodianPublicKey the custodian's public key,
+  # base64 X.509 (SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY); every key of this environment must be attested with its purpose
+  # (KEY_ATTESTATION_INVALID otherwise). bootstrap: true (SANGAM_KEYS_BOOTSTRAP) lets the first environment of an
+  # installation start once in production with neither; that start is recorded as the audit event
+  # KEY_ENVIRONMENT_BOOTSTRAPPED and every later start with it on is refused, as is bootstrap with a list or attestation.
   keyEnvironment:
     name: ""
     foreignFingerprints: ""
+    attestation: ""
+    custodianPublicKey: ""
+    bootstrap: false
   # Decision 247 (170, 207): SANGAM_AI_KB_VECTOR_INDEX (sangam.ai.kb.vector-index), the knowledge-base ranking index.
   # portable (default, every database) | pgvector (PostgreSQL with the pgvector column) | oracle (Oracle AI Database 23ai
   # or later: the server applies the separate changelog db/changelog/sangam-oracle-vector.xml, context oracle-vector, and

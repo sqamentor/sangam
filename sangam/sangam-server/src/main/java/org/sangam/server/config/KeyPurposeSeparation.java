@@ -114,6 +114,8 @@ public final class KeyPurposeSeparation {
             new Setting("onboarding bundle signing", "sangam.onboarding.bundle.private-key", Source.LITERAL, Role.SECRET),
             new Setting("onboarding bundle signing", "sangam.onboarding.bundle.trusted-keys", Source.LITERAL_MAP, Role.TRUST),
             new Setting("extension catalogue trust", "sangam.modeller.catalogue.public-key", Source.LITERAL, Role.TRUST),
+            // decision 390 (4): the key custodian's public key, which signs the key-environment attestation
+            new Setting("key custodian trust", "sangam.keys.custodian-public-key", Source.LITERAL, Role.TRUST),
             // PluginWiring: default <sangam.plugins.folder>/trusted-keys
             new Setting("plugin signing trust", "sangam.plugins.trusted-keys", Source.KEY_DIRECTORY, Role.TRUST,
                     "${sangam.plugins.folder:lib-ext/plugins}/trusted-keys"));

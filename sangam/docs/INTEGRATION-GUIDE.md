@@ -311,7 +311,7 @@ Worker credentials are a service-principal API token, or the Keycloak client `sa
   - the compliance principal key, when compliance is on (`deploy/README.md:218-233`).
 - The OIDC issuer, and the platform issuer for platform administrators.
 - Per-connector credentials and webhook secrets, as `secret://` references.
-- The audit checkpoint signing key (`secret://audit/checkpoint-<env>`, `application.yaml:245-251`). Keys per purpose and per environment are decision 37: the start refuses one key for two purposes (`KEY_SHARED_ACROSS_PURPOSES`) and a key on the list of another environment's key fingerprints (`KEY_SHARED_ACROSS_ENVIRONMENTS`, decision 385 (3)); production needs `sangam.keys.environment` and `sangam.keys.foreign-fingerprints` (deploy/README.md section 1, register DEC-37).
+- The audit checkpoint signing key (`secret://audit/checkpoint-<env>`, `application.yaml:245-251`). Keys per purpose and per environment are decision 37: the start refuses one key for two purposes (`KEY_SHARED_ACROSS_PURPOSES`) and a key on the list of another environment's key fingerprints (`KEY_SHARED_ACROSS_ENVIRONMENTS`, decision 385 (3)); production needs `sangam.keys.environment` and either `sangam.keys.foreign-fingerprints` or the key custodian's signed attestation (`sangam.keys.attestation`, `sangam.keys.custodian-public-key`, decisions 387 (4) and 390); the first environment may start once with `sangam.keys.bootstrap` (deploy/README.md section 1, register DEC-37).
 
 ## 13. Open points that affect integrators (from the register)
 

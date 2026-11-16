@@ -32,7 +32,15 @@ import org.springframework.core.env.Environment;
  *       name at least one fingerprint of another environment; a configured list that cannot be read or has a line of
  *       another form refuses the start in every environment (fail closed);</li>
  *   <li>{@value #EXPORT}: optional path where the start writes this environment's own list in the same form, for the
- *       other environments.</li>
+ *       other environments;</li>
+ *   <li>{@value #ATTESTATION} and {@value #CUSTODIAN} (owner decisions 387 (4) and 390 (4), option c): the path of the
+ *       key custodian's Ed25519-signed attestation ({@link KeyAttestation}) and the custodian's public key. In
+ *       production it stands in for {@value #FOREIGN}; wherever it is set, every key of this environment must be attested
+ *       for this environment and its purpose, else the start is refused with {@link KeyAttestation#INVALID};</li>
+ *   <li>{@value #BOOTSTRAP} (decision 387 (4), option a, the stopgap): {@code true} lets the first environment of an
+ *       installation start once in production without a list or attestation. The start is recorded as the system audit
+ *       event {@link KeyEnvironmentBootstrap#EVENT} once the database is ready, and refused on any later start of this
+ *       environment with the setting still on; it is refused at once when a list or an attestation is set.</li>
  * </ul>
  * Trusted keys (trust lists of public keys of others, {@link KeyPurposeSeparation.Role#TRUST}) have no fingerprint and
  * are neither published nor compared. A refusal names the setting, its purpose and the other environment; never a key,
@@ -43,6 +51,12 @@ public final class KeyEnvironmentSeparation {
     public static final String ENVIRONMENT = "sangam.keys.environment";
     public static final String FOREIGN = "sangam.keys.foreign-fingerprints";
     public static final String EXPORT = "sangam.keys.fingerprint-export";
+    /** Decisions 387 (4) and 390 (4): the path of the key custodian's signed attestation ({@link KeyAttestation}). */
+    public static final String ATTESTATION = "sangam.keys.attestation";
+    /** The custodian's Ed25519 public key, base64 X.509: a trusted key of someone else. */
+    public static final String CUSTODIAN = "sangam.keys.custodian-public-key";
+    /** Decision 387 (4) (a): the one-time start of the first environment, before any list or attestation exists. */
+    public static final String BOOTSTRAP = "sangam.keys.bootstrap";
 
     /** A key of this environment is a key of another environment too. */
     public static final String SHARED = "KEY_SHARED_ACROSS_ENVIRONMENTS";
@@ -55,24 +69,37 @@ public final class KeyEnvironmentSeparation {
     private KeyEnvironmentSeparation() {
     }
 
-    /** The outcome: the fingerprints of this environment and the number of foreign fingerprints compared. */
-    public record Result(String environment, int own, int foreign) {
+    /**
+     * The outcome: the fingerprints of this environment, the number of foreign fingerprints compared, the number of key
+     * settings the custodian's attestation covers, and whether this start is the one-time bootstrap (recorded once the
+     * database is ready, {@link KeyEnvironmentBootstrap}).
+     */
+    public record Result(String environment, int own, int foreign, int attested, boolean bootstrap) {
     }
 
     /**
-     * Refuses (IllegalStateException, {@link #SHARED} or {@link #LIST_REQUIRED}) as described above; writes the export
-     * when one is configured.
+     * Refuses (IllegalStateException, {@link #SHARED}, {@link #LIST_REQUIRED} or {@link KeyAttestation#INVALID}) as
+     * described above; writes the export when one is configured.
      */
     public static Result check(Environment env, List<KeyPurposeSeparation.Entry> entries, boolean production) {
         String name = trimmed(env.getProperty(ENVIRONMENT));
         String list = trimmed(env.getProperty(FOREIGN));
         String export = trimmed(env.getProperty(EXPORT));
-        if (production && (name == null || list == null)) {
-            throw refusal(LIST_REQUIRED, "production refuses to start without " + ENVIRONMENT + " and " + FOREIGN
-                    + " (the fingerprints of the other environments' keys)");
+        String attestation = trimmed(env.getProperty(ATTESTATION));
+        boolean bootstrap = bootstrap(env);
+        if (bootstrap && (list != null || attestation != null)) {
+            throw refusal(LIST_REQUIRED, BOOTSTRAP + " is refused once " + (list != null ? FOREIGN : ATTESTATION)
+                    + " is set: the bootstrap is only for the first environment, before any list or attestation exists;"
+                    + " remove " + BOOTSTRAP);
         }
-        if (name == null && (list != null || export != null)) {
-            throw refusal(LIST_REQUIRED, (list != null ? FOREIGN : EXPORT) + " needs " + ENVIRONMENT);
+        if (production && (name == null || (list == null && attestation == null && !bootstrap))) {
+            throw refusal(LIST_REQUIRED, "production refuses to start without " + ENVIRONMENT + " and either " + FOREIGN
+                    + " (the fingerprints of the other environments' keys) or " + ATTESTATION + " (the key custodian's"
+                    + " signed attestation); the first environment of an installation may start once with " + BOOTSTRAP);
+        }
+        if (name == null && (list != null || export != null || attestation != null || bootstrap)) {
+            throw refusal(LIST_REQUIRED, (list != null ? FOREIGN : export != null ? EXPORT
+                    : attestation != null ? ATTESTATION : BOOTSTRAP) + " needs " + ENVIRONMENT);
         }
         if (name != null && !NAME.matcher(name).matches()) {
             throw refusal(LIST_REQUIRED, ENVIRONMENT + " must match " + NAME.pattern());
@@ -95,10 +122,53 @@ public final class KeyEnvironmentSeparation {
                 }
             }
         }
+        int attested = attestation == null ? 0 : attest(env, entries, name, Path.of(attestation));
         if (export != null) {
             write(Path.of(export), name, own);
         }
-        return new Result(name, own.values().stream().mapToInt(Set::size).sum(), foreign);
+        return new Result(name, own.values().stream().mapToInt(Set::size).sum(), foreign, attested, bootstrap);
+    }
+
+    /**
+     * Owner decisions 387 (4) and 390 (4): every key of this environment (each setting with a fingerprint) must be
+     * attested by the custodian for this environment and the setting's purpose, by one of its fingerprints; returns the
+     * number of settings attested.
+     */
+    static int attest(Environment env, List<KeyPurposeSeparation.Entry> entries, String name, Path file) {
+        String custodian = trimmed(env.getProperty(CUSTODIAN));
+        if (custodian == null) {
+            throw KeyAttestation.refusal(ATTESTATION + " needs " + CUSTODIAN + " (the custodian's Ed25519 public key)");
+        }
+        KeyAttestation.Statement s = KeyAttestation.verify(file, KeyAttestation.custodian(custodian));
+        if (!s.environment().equals(name)) {
+            throw KeyAttestation.refusal("the attestation is for environment " + s.environment() + ", not " + name);
+        }
+        int n = 0;
+        for (KeyPurposeSeparation.Entry e : entries) {
+            if (e.fingerprints().isEmpty()) {
+                continue; // a trusted key of someone else, or a reference that does not resolve here
+            }
+            boolean ok = e.fingerprints().stream()
+                    .anyMatch(f -> s.keys().contains(new KeyAttestation.Key(f, e.purpose())));
+            if (!ok) {
+                throw KeyAttestation.refusal(e.setting() + " (" + e.purpose() + ") is not attested for environment "
+                        + name + " and that purpose; the custodian attests each key with its purpose");
+            }
+            n++;
+        }
+        return n;
+    }
+
+    /** {@value #BOOTSTRAP}: true or false; any other value refuses (fail closed). */
+    static boolean bootstrap(Environment env) {
+        String v = trimmed(env.getProperty(BOOTSTRAP));
+        if (v == null || "false".equalsIgnoreCase(v)) {
+            return false;
+        }
+        if ("true".equalsIgnoreCase(v)) {
+            return true;
+        }
+        throw refusal(LIST_REQUIRED, BOOTSTRAP + " must be true or false");
     }
 
     /** fingerprint -> settings of this environment that hold it, sorted. */

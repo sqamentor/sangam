@@ -84,7 +84,10 @@
           "additionalProperties": false,
           "properties": {
             "name": { "type": "string", "pattern": "^$|^[a-z0-9][a-z0-9._-]{0,47}$", "$comment": "Decision 385 (3): SANGAM_KEYS_ENVIRONMENT; required by the server in production." },
-            "foreignFingerprints": { "type": "string", "$comment": "Decision 385 (3): the key fingerprints of the other environments, one '<environment> <sha256 hex> [<setting>]' per line." }
+            "foreignFingerprints": { "type": "string", "$comment": "Decision 385 (3): the key fingerprints of the other environments, one '<environment> <sha256 hex> [<setting>]' per line." },
+            "attestation": { "type": "string", "$comment": "Decisions 387 (4) and 390: the key custodian's signed attestation (sangam-key-attestation/1 JSON), mounted as SANGAM_KEYS_ATTESTATION." },
+            "custodianPublicKey": { "type": "string", "pattern": "^$|^[A-Za-z0-9+/]+=*$", "$comment": "Decisions 387 (4) and 390: SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY, the custodian's Ed25519 public key, base64 X.509." },
+            "bootstrap": { "type": "boolean", "$comment": "Decision 387 (4) (a): SANGAM_KEYS_BOOTSTRAP, the one-time start of the first environment (recorded; refused on a later start)." }
           }
         },
         "systemAuditScope": { "type": "string", "pattern": "^system:[a-z0-9][a-z0-9._-]{0,47}$", "$comment": "Decision 144: SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE, the same grammar as SystemAuditScope (sangam-core); the server refuses to start on any other value." },

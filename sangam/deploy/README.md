@@ -246,8 +246,26 @@ Chart behaviour worth knowing:
   in every mode. **Required in production**: without a name, without a list, or with a list that holds no fingerprint
   of another environment the start is refused with `KEY_ENVIRONMENT_LIST_REQUIRED`; a list or export without a name,
   and an unreadable or malformed list (by line number), are refused everywhere. Trusted keys (trust lists, catalogue
-  and plugin keys) are someone else's keys and are not fingerprinted. A custodian-signed attestation (decision 385
-  (3) option c) follows later.
+  and plugin keys) are someone else's keys and are not fingerprinted.
+- **The key custodian's attestation, and the first environment (owner decisions 387 (4) and 390).** In place of the
+  list, production may start over the key custodian's signed attestation: `sangam.keys.attestation` (env
+  `SANGAM_KEYS_ATTESTATION`; the chart mounts `server.keyEnvironment.attestation` at
+  `/opt/sangam/config/key-attestation.json`) and the custodian's Ed25519 public key, base64 X.509,
+  `sangam.keys.custodian-public-key` (env `SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY`, chart
+  `server.keyEnvironment.custodianPublicKey`). The file is JSON, `{"format": "sangam-key-attestation/1", "statement":
+  "<base64>", "signature": "<base64>"}`; the statement is the UTF-8 JSON `{"environment": "<name>", "issued_at":
+  "<ISO-8601>", "keys": [{"fingerprint": "<sha256 hex>", "purpose": "<purpose>"}, ...]}` and the signature is the
+  custodian's Ed25519 signature over exactly those statement bytes (for example `openssl pkeyutl -sign -rawin -inkey
+  custodian.pem -in statement.json`). The custodian takes the fingerprints from this environment's export and the
+  purposes from the key purpose table (`config/KeyPurposeSeparation`). Wherever an attestation is set, every key of the
+  environment must be attested for this environment and its purpose; a missing or other-purpose key, a signature that
+  does not verify, another environment, another format, or no custodian key refuses the start with
+  `KEY_ATTESTATION_INVALID`, naming the setting, never a key or a fingerprint. The first environment of an
+  installation has neither a list nor an attestation: `sangam.keys.bootstrap=true` (env `SANGAM_KEYS_BOOTSTRAP`, chart
+  `server.keyEnvironment.bootstrap`) lets it start once. That start is recorded, once the database is ready, as the
+  audit event `KEY_ENVIRONMENT_BOOTSTRAPPED` (no tenant, chain `keys:bootstrap`); any later start of that environment
+  with the setting still on is refused with `KEY_ENVIRONMENT_LIST_REQUIRED`, and so is the setting together with a list
+  or an attestation. Remove it once the next environment's list or the attestation exists.
 - **Explicit production switch (decisions 143 and 198).** The chart always renders `SANGAM_SECURITY_PRODUCTION` from
   `server.production` (default `true`, boolean in the schema); a missing or invalid value stops the server. With
   `true` a dev profile in `server.springProfiles` is ignored with a warning; `false` together with a production

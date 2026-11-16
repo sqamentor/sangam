@@ -25,6 +25,17 @@ data:
   {{- if $ke.foreignFingerprints }}
   SANGAM_KEYS_FOREIGN_FINGERPRINTS: /opt/sangam/config/key-fingerprints.txt
   {{- end }}
+  {{- if $ke.attestation }}
+  # Decisions 387 (4) and 390: the key custodian's signed attestation of this environment's keys
+  SANGAM_KEYS_ATTESTATION: /opt/sangam/config/key-attestation.json
+  {{- end }}
+  {{- with $ke.custodianPublicKey }}
+  SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY: {{ . | quote }}
+  {{- end }}
+  {{- if $ke.bootstrap }}
+  # Decision 387 (4) (a): the one-time start of the first environment (recorded; refused on a later start)
+  SANGAM_KEYS_BOOTSTRAP: "true"
+  {{- end }}
   # Decision 247: knowledge-base ranking index (portable, pgvector, oracle); also set on the migrate Job
   SANGAM_AI_KB_VECTOR_INDEX: {{ .Values.server.aiKbVectorIndex | quote }}
   # Decision 259: maximum age of an OCSP answer's thisUpdate (DSC add-on only)
@@ -232,5 +243,10 @@ data:
   {{- with (.Values.server.keyEnvironment | default dict).foreignFingerprints }}
   # Decision 385 (3): the key fingerprints of the other environments (no key, no secret)
   key-fingerprints.txt: |
+    {{- . | nindent 4 }}
+  {{- end }}
+  {{- with (.Values.server.keyEnvironment | default dict).attestation }}
+  # Decisions 387 (4) and 390: the key custodian's signed attestation (public; no key, no secret)
+  key-attestation.json: |
     {{- . | nindent 4 }}
   {{- end }}
