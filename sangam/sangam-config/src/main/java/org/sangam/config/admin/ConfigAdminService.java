@@ -140,7 +140,7 @@ public final class ConfigAdminService {
                     .collect(java.util.stream.Collectors.joining(",")));
             throw new ConfigException("ACTIVATION_REFUSED", "dependent chains have errors", errors);
         }
-        record(s.document(), "ACTIVATED", actor, null);
+        changed(List.of(record(s.document(), "ACTIVATED", actor, null)));
         return all;
     }
 
@@ -148,16 +148,20 @@ public final class ConfigAdminService {
         ProfileRepository.Stored s = require(id, version, Status.ACTIVE);
         repo.setStatus(id, version, Status.RETIRED);
         resolver.invalidate();
-        record(s.document(), "RETIRED", actor, reason);
+        changed(List.of(record(s.document(), "RETIRED", actor, reason)));
     }
 
     /** Loads shipped reference data (already approved at release time) as ACTIVE, recorded in the register. */
     public void importActive(List<ProfileDocument> docs, String actor) {
+        List<ChangeRecord> imported = new ArrayList<>();
         for (ProfileDocument d : docs) {
             repo.save(d, Status.ACTIVE);
-            record(d, "IMPORTED", actor, d.source());
+            imported.add(record(d, "IMPORTED", actor, d.source()));
         }
         resolver.invalidate();
+        if (!imported.isEmpty()) {
+            changed(imported);
+        }
     }
 
     public List<ChangeRecord> history(String id) {
@@ -175,7 +179,40 @@ public final class ConfigAdminService {
         throw new ConfigException("STATE_INVALID", id + "@" + version + " is " + s.status());
     }
 
-    private void record(ProfileDocument d, String action, String actor, String reason) {
-        log.append(new ChangeRecord(d.id(), d.version(), action, actor, clock.instant(), d.contentHash(), reason));
+    private ChangeRecord record(ProfileDocument d, String action, String actor, String reason) {
+        ChangeRecord r = new ChangeRecord(d.id(), d.version(), action, actor, clock.instant(), d.contentHash(), reason);
+        log.append(r);
+        return r;
+    }
+
+    /**
+     * Told after a change to the profiles in force ({@code ACTIVATED}, {@code RETIRED}, {@code IMPORTED}) is stored and
+     * the resolver's cache dropped, so a listener resolves the new chain (DEC-225-4: the tenants' own delegation
+     * tables are re-deployed from it).
+     */
+    @FunctionalInterface
+    public interface ActiveChangeListener {
+        void changed(List<ChangeRecord> changes);
+    }
+
+    private final List<ActiveChangeListener> listeners = new CopyOnWriteArrayList<>();
+
+    public void onActiveChange(ActiveChangeListener listener) {
+        listeners.add(java.util.Objects.requireNonNull(listener, "listener"));
+    }
+
+    /**
+     * Each listener in turn. The change is already in force and recorded, so a listener that fails cannot undo it: its
+     * failure is logged and the other listeners still run; a listener reports its own refusals (DEC-225-4 audits them).
+     */
+    private void changed(List<ChangeRecord> changes) {
+        for (ActiveChangeListener l : listeners) {
+            try {
+                l.changed(List.copyOf(changes));
+            } catch (RuntimeException e) {
+                System.getLogger(ConfigAdminService.class.getName()).log(System.Logger.Level.ERROR,
+                        "profile change listener failed after " + changes.size() + " change(s): " + e);
+            }
+        }
     }
 }
