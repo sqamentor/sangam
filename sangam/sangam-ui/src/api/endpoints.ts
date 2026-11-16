@@ -632,10 +632,12 @@ export const api = {
     /** Person / seat delegations (contract /admin/delegations). */
     delegations: (q: ListQuery & { personId?: string; seatId?: string }) => http.page<T.Assignment>('/admin/delegations', q),
     revokeDelegation: (id: string, reason: string) => http.post<void>(`/admin/delegations/${enc(id)}/revoke`, { reason }),
-    policies: (q: ListQuery & { effect?: string; resourceType?: string }) => http.page<T.Policy>('/admin/policies', q),
+    policies: (q: ListQuery) => http.page<T.Policy>('/admin/policies', q),
     /** create; an edit is create-new + delete-old in the contract (no PUT), so the version history stays intact. */
     savePolicy: async (p: Partial<T.Policy>) => {
-      const created = await http.post<T.Policy>('/admin/policies', { ...p, id: undefined });
+      // the request fields of components.schemas.Policy; id, version and audit fields are server-assigned
+      const body = { effect: p.effect, principalType: p.principalType, principalId: p.principalId, resourceType: p.resourceType, resourceId: p.resourceId, actions: p.actions, conditionId: p.conditionId };
+      const created = await http.post<T.Policy>('/admin/policies', body);
       if (p.id) await http.del<void>(`/admin/policies/${enc(p.id)}`, { reason: `replaced by ${created.id}` });
       return created;
     },

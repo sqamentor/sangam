@@ -693,13 +693,19 @@ export function DelegationTableEditor() {
 
 // ------------------------------------------------------------------ A08 policies
 
-const PERMS = ['READ', 'READ_TASK', 'READ_HISTORY', 'READ_VARIABLE', 'READ_SENSITIVE', 'COMPLETE', 'CLAIM', 'START', 'CANCEL_INSTANCE', 'DELETE_INSTANCE', 'MODIFY', 'MIGRATE', 'RETRY', 'RESOLVE_RECON', 'REPAIR_OUTBOX', 'DEPLOY', 'ERASE_DATA', 'ADMIN'];
+/**
+ * The actions a policy can name: exactly the server's sangam-security Permission enum, in its order (Admin.test.tsx
+ * reads Permission.java and fails on drift). Names outside it are refused with 400 by POST /admin/policies.
+ */
+export const POLICY_ACTIONS = ['READ', 'READ_TASK', 'READ_HISTORY', 'READ_VARIABLE', 'CLAIM', 'COMPLETE', 'APPROVE', 'CANCEL', 'MODIFY', 'CHANGE_GRANT', 'READ_AUDIT', 'READ_SENSITIVE', 'START', 'DELETE_INSTANCE', 'ERASE_DATA', 'MIGRATE', 'BULK', 'EXPORT', 'DEPLOY', 'ADMIN', 'APPROVE_SOD_EXCEPTION', 'WORK', 'ASSIGN', 'REVIEW_PACKAGE', 'ACCEPT_UNVERIFIED', 'RESOLVE_UNVERIFIED'];
+/** components.schemas.Policy enums. */
+const POLICY_EFFECTS: Policy['effect'][] = ['GRANT', 'DENY'];
+const POLICY_PRINCIPAL_TYPES: Policy['principalType'][] = ['USER', 'GROUP', 'SEAT'];
 
 export function Policies() {
   const { t } = useTranslation();
-  const [effect, setEffect] = useState('');
-  const [rt, setRt] = useState('');
-  const list = usePaged((p) => api.admin.policies({ ...p, effect: effect || undefined, resourceType: rt || undefined }), [effect, rt]);
+  const [q, setQ] = useState('');
+  const list = usePaged((p) => api.admin.policies({ ...p, q: q || undefined }), [q]);
   const [edit, setEdit] = useState<Partial<Policy> | null>(null);
   const [del, setDel] = useState<Policy | null>(null);
   const [ex, setEx] = useState({ principalId: '', action: 'READ', resourceType: 'PROCESS_INSTANCE', resourceId: '*' });
@@ -711,15 +717,14 @@ export function Policies() {
         title={t('admin.policiesTitle')}
         description={t('admin.policiesDesc')}
         actions={
-          <button type="button" className="primary" onClick={() => setEdit({ effect: 'ALLOW', principalType: 'GROUP', resourceId: '*', permissions: ['READ'] })}>
+          <button type="button" className="primary" onClick={() => setEdit({ effect: 'GRANT', principalType: 'GROUP', resourceId: '*', actions: ['READ'] })}>
             {t('common.new')}
           </button>
         }
       />
       <Notice>{t('admin.denyWins')}</Notice>
       <div className="filters">
-        <SelectField label={t('admin.effect')} value={effect} onChange={setEffect} placeholder={t('common.all')} options={['ALLOW', 'DENY'].map((v) => ({ value: v, label: t(`enum.${v}`) }))} />
-        <TextField label={t('admin.resourceType')} value={rt} onChange={setRt} />
+        <TextField label={t('common.search')} value={q} onChange={setQ} />
       </div>
       <ProblemAlert error={list.error ?? act.error} onRetry={list.reload} />
       {list.data && (
@@ -727,14 +732,14 @@ export function Policies() {
           caption={t('admin.policiesTitle')}
           captionHidden
           rows={list.data.items}
-          rowKey={(r) => r.id}
+          // one row per (definition, principal): a definition with several principals repeats its id
+          rowKey={(r) => `${r.id}|${r.principalType}|${r.principalId}`}
           columns={[
             { key: 'effect', header: t('admin.effect'), render: (r) => <Badge value={r.effect} /> },
             { key: 'principal', header: t('admin.principal'), render: (r) => `${r.principalType}:${r.principalId}` },
             { key: 'resource', header: t('admin.resource'), render: (r) => `${r.resourceType}/${r.resourceId}` },
-            { key: 'perms', header: t('admin.permissions'), render: (r) => r.permissions.join(', ') },
-            { key: 'condition', header: t('admin.condition'), render: (r) => (r.condition ? <code>{r.condition}</code> : '—') },
-            { key: 'validTo', header: t('admin.validTo'), render: (r) => fmtDate(r.validTo, false) },
+            { key: 'perms', header: t('admin.permissions'), render: (r) => (r.actions ?? []).join(', ') },
+            { key: 'condition', header: t('admin.condition'), render: (r) => (r.conditionId ? <code>{r.conditionId}</code> : '—') },
             { key: 'v', header: t('admin.policyVersion'), render: (r) => String(r.policyVersion ?? '—') },
             {
               key: 'a',
@@ -758,7 +763,7 @@ export function Policies() {
         <p className="hint">{t('admin.explainHint')}</p>
         <div className="filters">
           <TextField label={t('admin.principal')} value={ex.principalId} onChange={(v) => setEx({ ...ex, principalId: v })} />
-          <SelectField label={t('admin.action')} value={ex.action} onChange={(v) => setEx({ ...ex, action: v })} options={PERMS.map((p) => ({ value: p, label: p }))} />
+          <SelectField label={t('admin.action')} value={ex.action} onChange={(v) => setEx({ ...ex, action: v })} options={POLICY_ACTIONS.map((p) => ({ value: p, label: p }))} />
           <TextField label={t('admin.resourceType')} value={ex.resourceType} onChange={(v) => setEx({ ...ex, resourceType: v })} />
           <TextField label={t('admin.resourceId')} value={ex.resourceId} onChange={(v) => setEx({ ...ex, resourceId: v })} />
           <button type="button" disabled={!ex.principalId} onClick={() => void act.run(() => api.admin.explain(ex)).then((r) => r && setExRes(r))}>
@@ -803,12 +808,12 @@ export function Policies() {
       >
         {edit && (
           <>
-            <SelectField label={t('admin.effect')} value={edit.effect ?? 'ALLOW'} onChange={(v) => setEdit({ ...edit, effect: v as Policy['effect'] })} options={['ALLOW', 'DENY'].map((v) => ({ value: v, label: t(`enum.${v}`) }))} />
+            <SelectField label={t('admin.effect')} value={edit.effect ?? 'GRANT'} onChange={(v) => setEdit({ ...edit, effect: v as Policy['effect'] })} options={POLICY_EFFECTS.map((v) => ({ value: v, label: t(`enum.${v}`) }))} />
             <SelectField
               label={t('admin.principalType')}
               value={edit.principalType ?? 'GROUP'}
               onChange={(v) => setEdit({ ...edit, principalType: v as Policy['principalType'] })}
-              options={['USER', 'GROUP', 'ROLE', 'SEAT', 'SERVICE'].map((v) => ({ value: v, label: t(`enum.${v}`) }))}
+              options={POLICY_PRINCIPAL_TYPES.map((v) => ({ value: v, label: t(`enum.${v}`) }))}
             />
             <TextField label={t('admin.principal')} required value={edit.principalId ?? ''} onChange={(v) => setEdit({ ...edit, principalId: v })} />
             <TextField label={t('admin.resourceType')} required value={edit.resourceType ?? ''} onChange={(v) => setEdit({ ...edit, resourceType: v })} />
@@ -816,19 +821,21 @@ export function Policies() {
             <fieldset className="field">
               <legend>{t('admin.permissions')}</legend>
               <div className="choices cols">
-                {PERMS.map((p) => (
+                {POLICY_ACTIONS.map((p) => (
                   <Checkbox
                     key={p}
                     label={p}
-                    checked={edit.permissions?.includes(p) ?? false}
-                    onChange={(v) => setEdit({ ...edit, permissions: v ? [...(edit.permissions ?? []), p] : (edit.permissions ?? []).filter((x) => x !== p) })}
+                    checked={edit.actions?.includes(p) ?? false}
+                    onChange={(v) => setEdit({ ...edit, actions: v ? [...(edit.actions ?? []), p] : (edit.actions ?? []).filter((x) => x !== p) })}
                   />
                 ))}
               </div>
             </fieldset>
-            <TextField label={t('admin.condition')} hint={t('admin.conditionHint')} value={edit.condition ?? ''} onChange={(v) => setEdit({ ...edit, condition: v || undefined })} />
-            <TextField label={t('admin.validTo')} type="date" value={(edit.validTo ?? '').slice(0, 10)} onChange={(v) => setEdit({ ...edit, validTo: v || undefined })} />
-            <TextArea label={t('admin.note')} value={edit.note ?? ''} onChange={(v) => setEdit({ ...edit, note: v })} />
+            {edit.conditionId && (
+              <Notice tone="warn">
+                {t('admin.condition')}: <code>{edit.conditionId}</code>. {t('admin.policyConditionNotEditable')}
+              </Notice>
+            )}
           </>
         )}
         <ProblemAlert error={act.error} />

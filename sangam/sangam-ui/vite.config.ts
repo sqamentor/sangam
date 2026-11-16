@@ -27,8 +27,11 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       // M-047: under Vitest only (mode 'test'), the jsdom screen tests may read the REST contract (sangam-rest/api), to check every
       // call they see against it (src/test/screens.tsx contractOperations). The dev server keeps Vite's default
-      // (this package only); nothing else outside the package is opened.
-      ...(mode === 'test' ? { fs: { allow: [root, resolve(root, '../sangam-rest/api')] } } : {}),
+      // (this package only); nothing else outside the package is opened. UI-DEMO sweep S7: the policy editor's action list is
+      // checked against the server's Permission enum, so that enum's source folder is readable under Vitest too.
+      ...(mode === 'test'
+        ? { fs: { allow: [root, resolve(root, '../sangam-rest/api'), resolve(root, '../sangam-security/src/main/java/org/sangam/security/policy')] } }
+        : {}),
       proxy: {
         '/api': { target: backend, changeOrigin: true },
         '/engine-rest': { target: backend, changeOrigin: true },

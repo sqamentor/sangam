@@ -946,19 +946,20 @@ export interface DelegationCheckResult {
   tests: { id: string; passed: boolean; actual?: Record<string, unknown> }[];
 }
 
+/** components.schemas.Policy: one (definition, principal) row; several rows can share a definition id. */
 export interface Policy {
   id: Id;
-  effect: 'ALLOW' | 'DENY';
-  principalType: 'USER' | 'GROUP' | 'ROLE' | 'SEAT' | 'SERVICE';
+  tenantId?: Id;
+  effect: 'GRANT' | 'DENY';
+  principalType: 'USER' | 'GROUP' | 'SEAT';
   principalId: Id;
   resourceType: string;
   resourceId: string;
-  permissions: string[];
-  condition?: string;
-  scope?: string;
-  validTo?: Iso;
+  actions: string[];
+  conditionId?: string;
   policyVersion?: number;
-  note?: string;
+  createdBy?: Id;
+  createdAt?: Iso;
 }
 
 export interface SodException {
