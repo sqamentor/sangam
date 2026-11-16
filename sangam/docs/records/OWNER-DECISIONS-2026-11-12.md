@@ -586,3 +586,8 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - Assigned to R7-ui: problem 6, the dead ends UI-DEMO-1, UI-DEMO-2, UI-DEMO-7 and R7UI-S2, plus hiding modules that answer 501.
   - Also assigned to R7-ui: the misleading statuses UI-DEMO-3, UI-DEMO-4 and UI-DEMO-5 (the data or logic fixes) under problem 7.
   - Any fix below 98% confidence comes back to the owner as a question before it is built.
+
+- **399 (UX Q1-Q12 confirmed again, with the conditional parts settled; owner chat 2026-11-17)**: The owner re-sent the 12 questions with "also recommend all answer that having confidence atleast 98%". This confirms decision 397 as written.
+  - Q3: if no existing capability or extension read can tell the UI which modules are installed, a small read-only endpoint for that is approved. It reads only, and is announced in the contract register and to IFMS.
+  - Q4: the team.read permission is approved, mapped to a new group.
+  - Q12: phase 2 is split into lanes that do not share files.
