@@ -77,7 +77,7 @@ set equals the server's (`sangam-spring-boot-starter/README.md:87-92`).
 **Settings every installation decides** (`deploy/README.md:88-101,204-253`)
 - **Production switch:** `SANGAM_SECURITY_PRODUCTION`, always explicit. Compose defaults it to true; Helm uses `server.production: true`. One predicate decides production: `sangam.security.production=true` or an active profile containing `prod` (`sangam-server/.../config/ProductionEnvironment.java:48`).
 - **Database:** `SANGAM_DB_URL`, `SANGAM_DB_USER`, `SANGAM_DB_PASSWORD`. Production refuses an unset value or the shipped default password.
-- **Trusted proxies:** Spring property `sangam.http.trusted-proxies` (env `SANGAM_TRUSTED_PROXIES`, `application.yaml:92`), Helm value `server.trustedProxies`. It must list the UI and the ingress, because the per-address one-time-code limit counts the address the server resolves (decision 371 (1)). Refusing to start in production while it is empty is still open (register DEC-371-1).
+- **Trusted proxies:** Spring property `sangam.http.trusted-proxies` (env `SANGAM_TRUSTED_PROXIES`, `application.yaml:92`), Helm value `server.trustedProxies`. It must list the UI and the ingress, because the per-address one-time-code limit counts the address the server resolves (decision 371 (1)). In production the server refuses to start while it is empty (`TRUSTED_PROXIES_REQUIRED`, register DEC-371-1).
 - **System audit scope:** `sangam.engine.system-audit-scope`, default `system:platform` (decision 144).
 - **Key material outside development:**
   - KEK `sangam.security.kek.*`;
@@ -308,7 +308,6 @@ Worker credentials are a service-principal API token, or the Keycloak client `sa
 
 ## 13. Open points that affect integrators (from the register)
 
-- **DEC-371-1:** the server does not yet refuse to start in production with empty trusted proxies.
 - **AC-08:** the cross-language CI run is not green yet.
 - **DEC-145:** there is no migration inventory for instances that relied on the old tenant-variable fallback.
 - **SL-170:** Event Grid and Service Bus have not been run against the live Azure services.

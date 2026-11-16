@@ -22,7 +22,10 @@ import java.util.TreeSet;
 /**
  * Generic hosting rules (SL-18): the server owns no browser-facing host name, trusts forwarding headers only from
  * configured proxies, and on a production profile refuses to start with a loopback default in any externally used URL
- * or with database credentials that were not injected (SL-103, {@link ProductionDatabaseCredentials}).
+ * or with database credentials that were not injected (SL-103, {@link ProductionDatabaseCredentials}), or (owner
+ * decision 371 (1), DEC-371-1) with no trusted proxy: the per-address one-time-code limit counts the address the
+ * server resolves, and with {@code sangam.http.trusted-proxies} empty every request arriving through the UI or the
+ * ingress has the proxy's address, so every citizen would share one address and one limit.
  */
 @Configuration(proxyBeanMethods = false)
 public class HostingWiring {
@@ -56,6 +59,7 @@ public class HostingWiring {
         return bf -> {
             List<String> bad = loopbackViolations(env);
             List<String> credentials = ProductionDatabaseCredentials.violations(env);
+            List<String> proxies = trustedProxyViolations(env);
             List<String> parts = new ArrayList<>();
             if (!bad.isEmpty()) {
                 parts.add("these externally used URLs are unset defaults or point at a loopback host (configure them "
@@ -64,10 +68,32 @@ public class HostingWiring {
             if (!credentials.isEmpty()) {
                 parts.add("the database credentials are not injected (SL-103): " + credentials);
             }
+            if (!proxies.isEmpty()) {
+                parts.add(String.join("; ", proxies));
+            }
             if (!parts.isEmpty()) {
                 throw new IllegalStateException("sangam.security.production=true but " + String.join("; and ", parts));
             }
         };
+    }
+
+    /** Name of the refusal of a production start without a trusted proxy (decision 371 (1)). */
+    static final String TRUSTED_PROXIES_REQUIRED = "TRUSTED_PROXIES_REQUIRED";
+
+    /**
+     * DEC-371-1: in production {@code sangam.http.trusted-proxies} (env {@code SANGAM_TRUSTED_PROXIES}, Helm
+     * {@code server.trustedProxies}) must name at least one proxy (the UI and the ingress); empty when not production.
+     */
+    static List<String> trustedProxyViolations(Environment env) {
+        if (!ProductionEnvironment.isProduction(env)) {
+            return List.of();
+        }
+        if (!list(env.getProperty("sangam.http.trusted-proxies", "")).isEmpty()) {
+            return List.of();
+        }
+        return List.of(TRUSTED_PROXIES_REQUIRED + ": sangam.http.trusted-proxies (SANGAM_TRUSTED_PROXIES, Helm "
+                + "server.trustedProxies) is empty; list the UI and the ingress or edge proxies (CIDR), or every client "
+                + "shares the proxy's address and its one-time-code limit (owner decision 371 (1))");
     }
 
     /** Violations of the production URL rule; empty when not production. */
