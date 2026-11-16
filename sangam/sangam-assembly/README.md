@@ -30,6 +30,15 @@ never claim one. `CapabilitySet` resolves needed against supplied once, using th
 A missing required capability refuses start-up, or the affected operation, with `CapabilityMissingException`
 (`CAPABILITY_MISSING`). A missing convenience is reported only.
 
+## History archive (RM-52, decision 386)
+
+`org.sangam.assembly.history.HistoryArchiveAssembly` reads the `sangam.history.archive.*` settings once for every
+host. With `enabled=false` (the default) it returns the gate that refuses every purge, so no engine history leaves
+the database. With `enabled=true` it builds `HistoryArchives` over the file-system document store wrapped in a
+`RetentionClassStore` (the archive's retention class is enforced on every store and delete). A missing, short or
+literal setting fails the start-up. sangam-ops and sangam-flowable-ports are optional dependencies here: the Spring
+host brings both. The Quarkus host does not wire the archive yet and stays fail-closed (every purge refused).
+
 ## Rules for a host
 
 - A host is a thin adapter.

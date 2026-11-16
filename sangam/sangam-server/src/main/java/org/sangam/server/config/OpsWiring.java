@@ -208,18 +208,9 @@ public class OpsWiring {
         return new UsageMetrics(d, t, null);
     }
 
-    /** RM-52: the longest configured hierarchy retention, in whole days rounded up (0 when none). */
-    static int longestRetentionDays(Environment env) {
-        long seconds = retention(env).values().stream().mapToLong(Duration::getSeconds).max().orElse(0);
-        return (int) Math.min(Integer.MAX_VALUE, (seconds + 86_399) / 86_400);
-    }
-
+    /** The hierarchy retention of {@code sangam.ops.retention-json}, read once for every host (sangam-assembly). */
     private static Map<String, Duration> retention(Environment env) {
-        Map<String, String> raw = parse(env.getProperty("sangam.ops.retention-json"), new TypeReference<Map<String, String>>() {
-        }, Map.of());
-        Map<String, Duration> out = new LinkedHashMap<>();
-        raw.forEach((k, v) -> out.put(k, Duration.parse(v)));
-        return out;
+        return org.sangam.assembly.history.HistoryArchiveAssembly.retention(EngineWiring.properties(env));
     }
 
     private static <T> T parse(String json, TypeReference<T> type, T fallback) {

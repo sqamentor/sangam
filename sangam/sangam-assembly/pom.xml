@@ -36,6 +36,26 @@
       <artifactId>sangam-integration</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- RM-52 (decision 386): the history archive is assembled here for every host (HistoryArchiveAssembly) over
+         sangam-ops' archive and the file-system document store of sangam-flowable-ports; neither names a host framework
+         nor depends on this one. Optional: a host that enables the archive brings both (the Spring host does); a host
+         without them (the Quarkus host today) keeps the gate that refuses every purge, and its closure is unchanged. -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-ops</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-flowable-ports</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
