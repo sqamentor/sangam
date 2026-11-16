@@ -124,6 +124,9 @@ export function TraceRef({ id }: { id: string }) {
   );
 }
 
+/** Stable refusal codes with a title of their own (i18n error.code.<CODE>); M-103 OCR review (decision 378(3)). */
+const CODE_TITLES = new Set(['KB_VERSION_NOT_BUILDING', 'OCR_REJECTED', 'OCR_UNAVAILABLE', 'OCR_TRANSCRIPT_NOT_PENDING', 'OCR_TRANSCRIPT_EMPTY', 'SELF_REVIEW_FORBIDDEN']);
+
 /**
  * The i18n key of the title a refusal is shown under: by its stable code first, then by its status. A 501 is a module
  * this installation does not have (CAPABILITY_NOT_INSTALLED), named as such rather than "something went wrong".
@@ -131,6 +134,7 @@ export function TraceRef({ id }: { id: string }) {
 export function problemTitleKey(error: Error): string {
   if (!(error instanceof ApiError)) return 'error.generic';
   const p = error.problem;
+  if (p.code && CODE_TITLES.has(p.code)) return `error.code.${p.code}`;
   if (error.isNotAvailable) return 'error.notAvailable';
   if (p.status === 0) return 'error.network';
   if (p.code === 'stale-lease' || p.code === 'FORM_VERSION_STALE') return 'error.stale';
