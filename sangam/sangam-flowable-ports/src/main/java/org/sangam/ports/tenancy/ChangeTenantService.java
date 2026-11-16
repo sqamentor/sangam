@@ -99,6 +99,17 @@ public class ChangeTenantService {
 
     /** Cuts one running instance over to {@code targetTenant}; returns the new process instance id. */
     public String moveInstance(String processInstanceId, String targetTenant, String user) {
+        return moveInstance(processInstanceId, targetTenant, user, null);
+    }
+
+    /**
+     * As {@link #moveInstance(String, String, String)}, and runs {@code inCutOver} last inside the cut-over transaction
+     * (after the link and the registered rewriters, with the engine connection, the old and new ids and both tenants).
+     * An exception from it rolls the whole cut-over back: the old instance keeps running and no new instance, link or
+     * product row remains. A caller whose record of the move must exist exactly when the move does (the repair audit
+     * event) writes it here, never after this method has returned.
+     */
+    public String moveInstance(String processInstanceId, String targetTenant, String user, ProductRowRewriter inCutOver) {
         ProcessInstance pi = engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(processInstanceId).singleResult();
         if (pi == null) {
             throw new ProcessEngineException("process instance " + processInstanceId + " not found");
@@ -123,6 +134,9 @@ public class ChangeTenantService {
             links.link(c, targetTenant, "change-tenant", null, "process", processInstanceId, "process", newId, user);
             for (ProductRowRewriter r : rewriters) {
                 r.rewrite(c, processInstanceId, newId, pi.getTenantId(), targetTenant);
+            }
+            if (inCutOver != null) {
+                inCutOver.rewrite(c, processInstanceId, newId, pi.getTenantId(), targetTenant);
             }
             return newId;
         });
