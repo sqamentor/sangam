@@ -23,6 +23,7 @@ import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.Permissions;
 import org.sangam.rest.web.Lists;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
@@ -68,6 +69,7 @@ public class ExtensionCatalogueController {
     private final PermissionPort permissions;
     private final CatalogueClient client;
 
+    @Autowired
     public ExtensionCatalogueController(PackagePort packages, PermissionPort permissions, Environment env,
                                         ObjectProvider<SecretResolver> secrets) {
         this(packages, permissions, client(env, secrets.getIfAvailable(SecretResolver::fromEnvironment)));

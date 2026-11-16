@@ -276,6 +276,7 @@ public final class PartitionResize {
                         rs -> new Object[]{rs.getInt(1), rs.getInt(2), Jdbc.instant(rs, "move_started_at")});
                 int n = 0;
                 long pause = 0;
+                boolean measured = false; // a pause of 0 ms is a measurement too, never left NULL
                 for (Object[] m : moving) {
                     int slot = (Integer) m[0];
                     cursor[0] = Math.max(cursor[0], slot);
@@ -309,10 +310,11 @@ public final class PartitionResize {
                         n++;
                         if (started != null) {
                             pause = Math.max(pause, Duration.between(started, dbNow).toMillis());
+                            measured = true;
                         }
                     }
                 }
-                if (pause > 0) {
+                if (measured) {
                     Jdbc.update(c, "UPDATE EXEC_RESIZE SET handover_pause_ms = CASE WHEN handover_pause_ms IS NULL"
                             + " OR handover_pause_ms < ? THEN ? ELSE handover_pause_ms END WHERE resize_id = ?",
                             pause, pause, r.id());

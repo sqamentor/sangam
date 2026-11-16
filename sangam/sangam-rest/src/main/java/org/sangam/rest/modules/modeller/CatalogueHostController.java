@@ -22,6 +22,7 @@ import org.sangam.rest.port.PackagePort;
 import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.DocumentStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
@@ -79,6 +80,7 @@ public class CatalogueHostController {
     private final DocumentStore store;
     private final AuditCheckpoints.Signer signer;
 
+    @Autowired
     public CatalogueHostController(PackagePort packages, PermissionPort permissions, Environment env,
                                    ObjectProvider<DocumentStore> store, ObjectProvider<SecretResolver> secrets) {
         this(packages, permissions, store.getIfAvailable(), signer(env, secrets.getIfAvailable(SecretResolver::fromEnvironment)));
