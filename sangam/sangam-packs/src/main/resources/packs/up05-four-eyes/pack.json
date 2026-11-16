@@ -24,6 +24,10 @@
       "path": "packs/up05-four-eyes/forms/change.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/up05-four-eyes/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "OTHER",
       "path": "packs/up05-four-eyes/pack.json"
     }

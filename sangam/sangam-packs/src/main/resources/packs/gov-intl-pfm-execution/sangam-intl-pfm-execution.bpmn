@@ -42,7 +42,7 @@
     <endEvent id="pe_endFailed" name="Payment failed"></endEvent>
     <endEvent id="pe_end" name="Paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <exclusiveGateway id="pe_commitPrepareGw" name="Document to sign?" default="intl_pfm_execution_f47"></exclusiveGateway>
-    <userTask id="pe_commitPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="pe_commitPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:gov-intl-pfm-execution/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <sequenceFlow id="intl_pfm_execution_f1" sourceRef="pe_available_clear" targetRef="pe_available"/>
     <sequenceFlow id="intl_pfm_execution_f2" sourceRef="pe_start" targetRef="pe_defaults"/>
     <sequenceFlow id="intl_pfm_execution_f3" sourceRef="pe_defaults" targetRef="pe_available_clear"/>

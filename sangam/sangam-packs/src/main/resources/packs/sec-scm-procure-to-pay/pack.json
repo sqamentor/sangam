@@ -52,6 +52,10 @@
       "path": "packs/sec-scm-procure-to-pay/forms/release.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/sec-scm-procure-to-pay/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/sec-scm-procure-to-pay/seed.json"
     },

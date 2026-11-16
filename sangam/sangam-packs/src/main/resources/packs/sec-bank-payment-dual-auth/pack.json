@@ -44,6 +44,10 @@
       "path": "packs/sec-bank-payment-dual-auth/forms/screening.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/sec-bank-payment-dual-auth/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/sec-bank-payment-dual-auth/seed.json"
     },

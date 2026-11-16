@@ -1,0 +1,28 @@
+{
+  "key": "sec-cap-investor-onboarding/prepare-sanction-note",
+  "version": "1.0.1",
+  "pack": "sec.cap.investor-onboarding",
+  "title": {
+    "en": "Prepare the document to sign",
+    "hi": "हस्ताक्षर हेतु दस्तावेज़ तैयार करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "sanctionDocumentId",
+      "type": "readonly",
+      "required": true,
+      "label": {
+        "en": "Sanction note to sign (upload it on this task)",
+        "hi": "हस्ताक्षर हेतु स्वीकृति टिप्पणी (इस कार्य पर अपलोड करें)"
+      }
+    }
+  ],
+  "help": "Upload the SANCTION_NOTE the next step signs with DSC (decisions 267, 382 and 385)."
+}

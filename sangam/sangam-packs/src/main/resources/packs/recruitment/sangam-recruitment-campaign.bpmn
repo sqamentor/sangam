@@ -53,7 +53,7 @@
     <serviceTask id="rc2_carry" name="Close the panel (carry-forward recorded in roster)" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>recruitment-closure</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="rc2_end" name="Campaign closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <exclusiveGateway id="rc2_approvePrepareGw" name="Document to sign?" default="recruitment_campaign_f56"></exclusiveGateway>
-    <userTask id="rc2_approvePrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="rc2_approvePrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:recruitment/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <sequenceFlow id="recruitment_campaign_f1" sourceRef="rc2_start" targetRef="rc2_defaults"/>
     <sequenceFlow id="recruitment_campaign_f2" sourceRef="rc2_defaults" targetRef="rc2_batchId"/>
     <sequenceFlow id="recruitment_campaign_f3" sourceRef="rc2_batchId" targetRef="rc2_approvePrepareGw"/>

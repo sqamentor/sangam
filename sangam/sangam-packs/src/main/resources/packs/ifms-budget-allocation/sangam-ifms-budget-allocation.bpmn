@@ -23,7 +23,7 @@
     <serviceTask id="ba_exGw_failedReason" name="Reason: EXECUTION_FAILED" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=EXECUTION_FAILED;rejectionRemarks=@opReasonCode</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="ba_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <exclusiveGateway id="ba_sanctionPrepareGw" name="Document to sign?" default="ifms_budget_allocation_f27"></exclusiveGateway>
-    <userTask id="ba_sanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="ba_sanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:ifms-budget-allocation/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <sequenceFlow id="ifms_budget_allocation_f1" sourceRef="ba_rj_reject" targetRef="ba_rj_endRejected"/>
     <sequenceFlow id="ifms_budget_allocation_f2" sourceRef="ba_start" targetRef="ba_defaults"/>
     <sequenceFlow id="ifms_budget_allocation_f3" sourceRef="ba_defaults" targetRef="ba_scrutiny"/>
