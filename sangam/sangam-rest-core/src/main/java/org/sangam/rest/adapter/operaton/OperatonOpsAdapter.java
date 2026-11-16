@@ -435,10 +435,8 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
     static final String TYPE_PREFIX = "REST:";
     private static final String BATCH_COLS = "id, tenant_id, batch_type, state, total_items, done_items, failed_items,"
             + " config, created_by, created_at, updated_at";
-    private static final ObjectMapper CONFIG_JSON = new ObjectMapper()
-            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
-            .disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-            .disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    // decision 381(4): stored batch parameters reach TypedVariables, so fractions are read exactly
+    private static final ObjectMapper CONFIG_JSON = org.sangam.rest.support.ExactJson.documents();
 
     /**
      * One batch as stored in {@code PORT_BATCH}; {@code config} holds filter, params, reason, approvedBy,

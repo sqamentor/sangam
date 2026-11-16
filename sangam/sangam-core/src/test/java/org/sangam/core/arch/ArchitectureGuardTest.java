@@ -81,7 +81,7 @@ class ArchitectureGuardTest {
     static final Map<String, Integer> CLASS_SIZE_ALLOWED = new TreeMap<>();
 
     static {
-        CLASS_SIZE_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/operaton/OperatonOpsAdapter.java", 1360);
+        CLASS_SIZE_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/operaton/OperatonOpsAdapter.java", 1358);
         CLASS_SIZE_ALLOWED.put("sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java", 1341);
         CLASS_SIZE_ALLOWED.put("sangam-engine/src/main/java/org/sangam/engine/OperatonEngineAdapter.java", 1141);
         CLASS_SIZE_ALLOWED.put("sangam-resources/src/main/java/org/sangam/resources/roster/RosterService.java", 1146);
