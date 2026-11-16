@@ -48,6 +48,10 @@
       "path": "packs/sec-bank-account-opening/forms/edd.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/sec-bank-account-opening/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/sec-bank-account-opening/seed.json"
     },

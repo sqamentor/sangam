@@ -50,9 +50,9 @@
     <exclusiveGateway id="py_exGw" name="executionOutcome?" default="sec_bank_payment_f46"></exclusiveGateway>
     <endEvent id="py_end" name="Paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <exclusiveGateway id="py_checkerPrepareGw" name="Document to sign?" default="sec_bank_payment_f60"></exclusiveGateway>
-    <userTask id="py_checkerPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="py_checkerPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:sec-bank-payment-dual-auth/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <exclusiveGateway id="py_authoriserPrepareGw" name="Document to sign?" default="sec_bank_payment_f63"></exclusiveGateway>
-    <userTask id="py_authoriserPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="py_authoriserPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:sec-bank-payment-dual-auth/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <boundaryEvent id="py_inv" name="Changed after approval" attachedToRef="py_pay" cancelActivity="true"><errorEventDefinition errorRef="err_APPROVAL_INVALIDATED"/></boundaryEvent>
     <sequenceFlow id="sec_bank_payment_f1" sourceRef="py_bene_clear" targetRef="py_bene"/>
     <sequenceFlow id="sec_bank_payment_f2" sourceRef="py_start" targetRef="py_defaults"/>

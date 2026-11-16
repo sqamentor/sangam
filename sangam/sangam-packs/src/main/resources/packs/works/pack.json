@@ -64,6 +64,10 @@
       "path": "packs/works/forms/dlp.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/works/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/works/seed.json"
     },

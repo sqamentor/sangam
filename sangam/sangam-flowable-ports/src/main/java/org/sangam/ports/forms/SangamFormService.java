@@ -116,10 +116,12 @@ public class SangamFormService {
         if (outcome != null) {
             processVars.put(form.key() + OUTCOME_VARIABLE_SUFFIX, outcome);
         }
+        // decision 387 (1): a form field may not name a DSC document slot (only the document route sets one)
+        org.sangam.core.engine.DocumentSlotNames.refuse(localVars.keySet());
         if (!localVars.isEmpty()) {
             engine.getTaskService().setVariablesLocal(taskId, localVars);
         }
-        engine.getTaskService().complete(taskId, processVars);
+        engine.getTaskService().complete(taskId, org.sangam.core.engine.DocumentSlotNames.checked(processVars));
         return r;
     }
 
@@ -153,7 +155,8 @@ public class SangamFormService {
         }
         Map<String, Object> vars = new HashMap<>();
         r.values().forEach((k, v) -> vars.put(form.definition().field(k).variableName(), v));
-        String id = engine.getRuntimeService().startProcessInstanceById(processDefinitionId, businessKey, vars).getId();
+        String id = engine.getRuntimeService().startProcessInstanceById(processDefinitionId, businessKey,
+                org.sangam.core.engine.DocumentSlotNames.checked(vars)).getId();
         return Map.entry(r, id);
     }
 

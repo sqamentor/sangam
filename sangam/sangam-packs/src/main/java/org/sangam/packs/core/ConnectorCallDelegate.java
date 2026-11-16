@@ -90,9 +90,9 @@ public class ConnectorCallDelegate implements JavaDelegate {
         r.data().forEach((k, v) -> {
             String name = prefix + Character.toUpperCase(k.charAt(0)) + k.substring(1);
             if (!docs.contains(k)) {
-                ex.setVariable(name, Vars.engineValue(v));
+                Vars.setDynamic(ex, name, Vars.engineValue(v));
             } else if (v instanceof CharSequence text) {
-                ex.setVariable(name, org.operaton.bpm.engine.variable.Variables.byteArrayValue(
+                Vars.setDynamic(ex, name, org.operaton.bpm.engine.variable.Variables.byteArrayValue(
                         text.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8)));
             } else {
                 Vars.setJsonDocument(ex, name, v);

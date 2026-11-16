@@ -52,6 +52,14 @@
       "path": "packs/p2-file-movement/forms/physical-receipt.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/p2-file-movement/forms/prepare-noting.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p2-file-movement/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/p2-file-movement/seed.json"
     },

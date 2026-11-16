@@ -31,6 +31,11 @@ L = {
     'dscDocumentId': ('Document signed with DSC', 'डीएससी से हस्ताक्षरित दस्तावेज़', 'hidden'),
     'espId': ('eSign service provider', 'ई-साइन सेवा प्रदाता', 'string'),
     'documents': ('Documents', 'दस्तावेज़', 'attachments'),
+    # decision 387 (8): the DSC slots, shown on the prepare form; only the document route sets them (decision 267)
+    'notingDocumentId': ('Noting to sign (upload it on this task)', 'हस्ताक्षर हेतु टिप्पणी (इस कार्य पर अपलोड करें)',
+                         'readonly'),
+    'sanctionDocumentId': ('Sanction note to sign (upload it on this task)',
+                           'हस्ताक्षर हेतु स्वीकृति टिप्पणी (इस कार्य पर अपलोड करें)', 'readonly'),
     'applicantName': ('Applicant name', 'आवेदक का नाम', 'string'),
     'applicantRef': ('Applicant mobile / e-mail reference', 'आवेदक मोबाइल / ई-मेल संदर्भ', 'string'),
     'officeId': ('Office', 'कार्यालय', 'office'),

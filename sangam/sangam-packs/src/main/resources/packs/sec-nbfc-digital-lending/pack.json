@@ -36,6 +36,10 @@
       "path": "packs/sec-nbfc-digital-lending/forms/accept.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/sec-nbfc-digital-lending/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/sec-nbfc-digital-lending/seed.json"
     },

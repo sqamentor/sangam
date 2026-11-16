@@ -32,6 +32,10 @@
       "path": "packs/contract-management/forms/proposal.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/contract-management/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/contract-management/seed.json"
     },

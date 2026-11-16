@@ -48,6 +48,10 @@
       "path": "packs/tender/forms/reissue.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/tender/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/tender/seed.json"
     },

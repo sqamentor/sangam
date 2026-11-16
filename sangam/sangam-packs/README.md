@@ -3,7 +3,7 @@
 
 Owner: WS-PACKS. Base package `org.sangam.packs`. Binding rules: `../ARCHITECTURE.md`. Requirements: `../../SANGAM.md` IX.3-IX.5, IX.8, X.4, GOV-1..12; patterns: `../../spike/GOV-PATTERNS.md` (GP-01..GP-55) and `../../spike/results/PREMIUM-AND-UNIVERSAL-SCOPE.md` (UP-01..UP-22); sector packs: `../../spike/results/SECTOR-WORKFLOWS.md` (SEC-<SECTOR>-nnn).
 
-**Contents:** 148 packs, 205 BPMN processes, 192 DMN decisions, 4 CMMN cases, 579 bilingual (English / Hindi) forms, seed seats and roles per pack, 65 Java source files (SPI, ports, simulator, delegates, workers). All models deploy on Operaton 2.2.0 with XSD validation and history-TTL enforcement on, every call activity resolves, every startable process reaches its first wait state, and the four pilot packs run end to end on the simulator (see "Tests").
+**Contents:** 148 packs, 205 BPMN processes, 192 DMN decisions, 4 CMMN cases, 603 bilingual (English / Hindi) forms, seed seats and roles per pack, 65 Java source files (SPI, ports, simulator, delegates, workers). All models deploy on Operaton 2.2.0 with XSD validation and history-TTL enforcement on, every call activity resolves, every startable process reaches its first wait state, and the four pilot packs run end to end on the simulator (see "Tests").
 
 ## 1. Layout
 
@@ -64,6 +64,8 @@ Every pack composes these call activities (`in variables="all"`, business key pa
 | `sangam-core-referral / -inbound` | - | referToTenant, referralQuestion, referralSla | referralDecision, referralReply | GP-32, AC-09, J-P2-E09 |
 
 Side exits in every pack: interrupting event sub-processes on `sangam.withdrawCase` (initiator) and `sangam.cancelCase` (authorised) call `sangam-core-cancellation`. SLA-guarded tasks carry a 75 % warning timer and a breach timer (escalate up the reporting seats, or deemed approval / refusal by the system principal on behalf of the seat). Approval tasks carry, in order, the SoD guard, the power guard, the payload binding and the actor recorder.
+
+DSC gates are reached through a call (decisions 382, 385 and 387 (3)): the signing levels of `sangam-core-recommendation` (slot `notingDocumentId`, type NOTING) and the approval of `sangam-core-sanction` (slot `sanctionDocumentId`, type SANCTION_NOTE) sign the document in their slot, which only the document route fills, on an open user task of the case. A pack calls the gate process with `in variables="all"`; where no user task of the caller comes before the call, packgen puts the prepare task there, whose form requires the slot. A gate process started directly, with no caller, has no user task before its gate, so its slot is empty and the signature is refused (`422 DSC_SIGNATURE_NOT_VERIFIED`): start the pack process that calls it.
 
 ## 4. Process variable and message contract (for WS-REST, WS-UI, WS-INTEGRATION)
 

@@ -44,7 +44,7 @@ public class EmbeddedWorkerRunner {
                 String opId = Vars.operationId(t.getTenantId(), bk, t.getActivityId() + ":" + w.topic(), 1);
                 try {
                     Map<String, Object> out = w.handle(t.getTenantId(), bk, opId, vars);
-                    ets.complete(t.getId(), workerId, out);
+                    ets.complete(t.getId(), workerId, org.sangam.core.engine.DocumentSlotNames.checked(out));
                 } catch (PackWorker.WorkerBpmnError e) {
                     ets.handleBpmnError(t.getId(), workerId, e.code(), e.getMessage());
                 } catch (RuntimeException e) {

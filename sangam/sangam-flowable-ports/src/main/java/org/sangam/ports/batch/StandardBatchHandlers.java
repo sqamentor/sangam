@@ -48,12 +48,13 @@ public final class StandardBatchHandlers {
             if (expected != null && !expected.equals(t.getAssignee())) {
                 throw new IllegalStateException("task " + ref + " is assigned to " + t.getAssignee() + ", not " + expected);
             }
-            engine.getTaskService().complete(ref, (Map<String, Object>) cfg.getOrDefault("variables", Map.of()));
+            engine.getTaskService().complete(ref, org.sangam.core.engine.DocumentSlotNames.checked((Map<String, Object>) cfg.getOrDefault("variables",
+                    Map.of())));
             return "completed";
         });
         batches.register("message-correlate", (tenant, ref, cfg) -> {
             String message = String.valueOf(cfg.get("messageName"));
-            Map<String, Object> vars = (Map<String, Object>) cfg.getOrDefault("variables", Map.of());
+            Map<String, Object> vars = org.sangam.core.engine.DocumentSlotNames.checked((Map<String, Object>) cfg.getOrDefault("variables", Map.of()));
             boolean start = Boolean.TRUE.equals(cfg.get("start"));
             String engineTenant = org.sangam.core.layer.TenantKey.toEngine(tenant);
             if (start && uniqueStartOrNull == null) {

@@ -32,6 +32,10 @@
       "path": "packs/ifms-loans-advances/forms/application.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/ifms-loans-advances/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/ifms-loans-advances/seed.json"
     },

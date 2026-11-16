@@ -44,6 +44,10 @@
       "path": "packs/gem-purchase/forms/crac.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/gem-purchase/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/gem-purchase/seed.json"
     },

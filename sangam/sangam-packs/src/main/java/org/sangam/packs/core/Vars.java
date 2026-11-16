@@ -239,7 +239,17 @@ public final class Vars {
      * Stores a JSON document that grows with the case (the actor log) as UTF-8 bytes: an engine string variable is
      * limited to 4000 characters (ACT_RU_VARIABLE.TEXT_), which a long case exceeds. {@link #jsonList} reads both.
      */
+    /**
+     * Decision 387 (1): sets a variable whose name the delegate does not fix (a connector response key, a decision
+     * output, a step name read from the case), refusing a declared DSC document slot: only the document route sets one.
+     */
+    public static void setDynamic(VariableScope s, String name, Object value) {
+        org.sangam.core.engine.DocumentSlotNames.refuse(List.of(name));
+        s.setVariable(name, value);
+    }
+
     public static void setJsonDocument(VariableScope s, String name, Object value) {
+        org.sangam.core.engine.DocumentSlotNames.refuse(List.of(name));
         s.setVariable(name, org.operaton.bpm.engine.variable.Variables.byteArrayValue(
                 toJson(value).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
     }

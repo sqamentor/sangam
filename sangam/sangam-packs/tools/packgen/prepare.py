@@ -17,6 +17,12 @@ gate's process, whose first task is the gate itself, so the slot must be filled 
 * afterwards every path to every such call passes a user task of the caller, or generation stops naming the process
   and the call (no allow-list).
 
+Decision 387 (8): every prepare task has the one prepare form defined here (form()): its fields are the called gates'
+slots, required and read-only, so the task cannot be completed (422 REQUIRED_FIELDS_MISSING, TaskFormRequirements)
+until the officer has uploaded the document of each slot through the document route; the form never writes a slot.
+A Sangam form is read from the deployment of the task's process (TaskFormRequirements), so the form is written into
+each calling pack, under that pack's form key prefix like every pack form, from this single definition.
+
 A call activity whose callee reaches a gated process only through calls of its own (gem-purchase gm_bid into the
 tender, for example) needs nothing from its caller: the callee's own calls into the gate follow the same rule, so the
 slot is filled on the callee's instance. Pairs a pack declares for the document route therefore follow in-all calls
@@ -117,9 +123,27 @@ def unpreceded(scope):
     return {u for u in seen if nodes.get(u, {}).get('tag') != 'userTask'}
 
 
-def apply(all_procs, prepare_seats_of):
+def form(form_dir, gates):
+    """Decision 387 (8): the shared prepare form of a call into a gated process: (form key, fields). The fields are the
+    gates' slots, required (the gateway before the task sends the case there only when the gate will sign) and
+    read-only (only the document route sets a slot). Gates with different required variables would need different
+    slots under different conditions, which one form cannot say, so generation stops naming them."""
+    conditions = {g['required'] for g in gates}
+    if len(conditions) > 1:
+        raise SystemExit(f'decision 387 (8): the DSC gates {sorted(g["task"] for g in gates)} need their slots under '
+                         f'different variables {sorted(str(c) for c in conditions)}; one prepare form cannot say which '
+                         f'slot is required')
+    slots = sorted({g['slot'] for g in gates})
+    if not all(slots):
+        raise SystemExit(f'decision 387 (8): a DSC gate of {sorted(g["task"] for g in gates)} names no document slot')
+    name = 'prepare-' + '-'.join(sorted({g['type'].lower().replace('_', '-') for g in gates}))
+    return form_dir + '/' + name, [s + '*' for s in slots]
+
+
+def apply(all_procs, prepare_seats_of, form_dir_of):
     """Inserts the prepare tasks, refuses a gate call without in-all, then checks precedence; returns the inserted
-    prepare task ids by process id. prepare_seats_of(proc) -> {call activity id: seat expression}."""
+    prepare task ids by process id. prepare_seats_of(proc) -> {call activity id: seat expression}; form_dir_of(proc)
+    -> the form key prefix of the proc's pack (decision 387 (8))."""
     by_id = {p.pid: p for p in all_procs}
     gated = {pid: gate_specs(p) for pid, p in by_id.items()}
     gated = {pid: g for pid, g in gated.items() if g}
@@ -142,7 +166,8 @@ def apply(all_procs, prepare_seats_of):
                 callee = by_id[n['attrs']['calledElement']]
                 when = required_condition(gated[callee.pid], defaults_of(callee))
                 seat = overrides.get(n['id'], DEFAULT_SEAT)
-                inserted.setdefault(p.pid, []).append(_insert(s, n['id'], seat, when, gated[callee.pid]))
+                inserted.setdefault(p.pid, []).append(_insert(s, n['id'], seat, when, gated[callee.pid],
+                                                              form_dir_of(p)))
         stray = set(overrides) - {n['id'] for s in scopes(p.root) for n in s.nodes
                                   if n['tag'] == 'callActivity' and n['attrs'].get('calledElement') in gated}
         if stray:
@@ -152,7 +177,7 @@ def apply(all_procs, prepare_seats_of):
     return inserted
 
 
-def _insert(scope, call_id, seat, when, gates):
+def _insert(scope, call_id, seat, when, gates, form_dir):
     """[gateway -> (when) ] prepare user task -> call [; gateway -> (otherwise) call]. The incoming flows of the call
     now end at the gateway (or at the task, for a gate that always signs)."""
     gw_id = call_id + PREPARE_GW_SUFFIX
@@ -164,7 +189,8 @@ def _insert(scope, call_id, seat, when, gates):
             f['tgt'] = entry
     if when:
         scope.xgw(gw_id, 'Document to sign?')
-    task = scope.user(task_id, PREPARE_NAME, seat,
+    key, fields = form(form_dir, gates)
+    task = scope.user(task_id, PREPARE_NAME, seat, form=key, fields=fields,
                       doc=f'Upload the {types} the next step signs with DSC (decisions 267, 382 and 385).')
     if when:
         scope.flow(gw_id, task, when, 'DSC signature needed')

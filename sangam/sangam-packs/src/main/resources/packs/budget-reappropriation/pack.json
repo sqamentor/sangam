@@ -24,6 +24,10 @@
       "path": "packs/budget-reappropriation/forms/proposal.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/budget-reappropriation/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/budget-reappropriation/seed.json"
     },

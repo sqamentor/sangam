@@ -40,6 +40,10 @@
       "path": "packs/sec-cap-investor-onboarding/forms/optout.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/sec-cap-investor-onboarding/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/sec-cap-investor-onboarding/seed.json"
     },

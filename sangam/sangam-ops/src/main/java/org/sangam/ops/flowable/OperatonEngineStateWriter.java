@@ -165,7 +165,7 @@ public final class OperatonEngineStateWriter implements OperatonStateWriter, Ope
         }
         vars.put(PROVENANCE_VARIABLE, provenance);
         ProcessInstantiationBuilder b = rs.createProcessInstanceById(plan.targetDefinitionId()).businessKey(plan.businessKey())
-                .setVariables(vars);
+                .setVariables(org.sangam.core.engine.DocumentSlotNames.checked(vars));
         for (String act : plan.startActivities()) {
             b.startBeforeActivity(act);
         }
@@ -263,7 +263,7 @@ public final class OperatonEngineStateWriter implements OperatonStateWriter, Ope
         if (!t.localVariables().isEmpty()) {
             Map<String, Object> locals = new LinkedHashMap<>();
             t.localVariables().forEach(v -> locals.put(v.name(), v.value()));
-            ts.setVariablesLocal(id, locals);
+            ts.setVariablesLocal(id, org.sangam.core.engine.DocumentSlotNames.checked(locals));
         }
     }
 

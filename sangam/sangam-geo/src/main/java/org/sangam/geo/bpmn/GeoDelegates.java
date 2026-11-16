@@ -57,6 +57,20 @@ public final class GeoDelegates {
         return v != null ? v : e.getVariable(b);
     }
 
+    /**
+     * The result variable a delegate writes, from the process variable {@code geoResultVar}: decision 387 (1), neither it
+     * nor a name the delegate derives from it may be a DSC document slot (only the document route sets one).
+     */
+    static String resultVar(DelegateExecution e, String fallback, String... suffixes) {
+        String out = str(e, "geoResultVar", fallback);
+        List<String> names = new ArrayList<>(List.of(out));
+        for (String s : suffixes) {
+            names.add(out + s);
+        }
+        org.sangam.core.engine.DocumentSlotNames.refuse(names);
+        return out;
+    }
+
     static String str(DelegateExecution e, String name, String fallback) {
         Object v = e.getVariable(name);
         return v == null || v.toString().isBlank() ? fallback : v.toString();
@@ -88,7 +102,7 @@ public final class GeoDelegates {
                 throw new BpmnError("NO_LAYER", "geoLayer not set");
             }
             String level = str(e, "geoLevel", null);
-            String out = str(e, "geoResultVar", "jurisdiction");
+            String out = resultVar(e, "jurisdiction", "OrgUnit", "Path");
             String tenant = tenant(e, defaultTenant);
             GeoPoint p = point(e);
             GeoFeature f = (level == null ? geo.resolve(tenant, layer, p) : geo.resolve(tenant, layer, level, p)).orElse(null);
@@ -122,7 +136,7 @@ public final class GeoDelegates {
                 throw new BpmnError("NO_FENCE", "geoFenceId not set");
             }
             Object acc = e.getVariable("geoAccuracyM");
-            String out = str(e, "geoResultVar", "geofence");
+            String out = resultVar(e, "geofence", "Inside", "DistanceM", "Reason");
             GeofenceResult r;
             try {
                 r = geo.checkFence(tenant(e, defaultTenant), fenceId, point(e), acc == null ? null : Geometries.num(acc));
@@ -158,7 +172,7 @@ public final class GeoDelegates {
             GeoPoint p = point(e);
             int n = (int) Geometries.num(str(e, "geoN", "1"));
             double maxM = Geometries.num(str(e, "geoMaxKm", "0")) * 1000;
-            String out = str(e, "geoResultVar", "nearest");
+            String out = resultVar(e, "nearest", "First");
             List<Map<String, Object>> result = new ArrayList<>();
             String objectType = str(e, "geoObjectType", null);
             if (objectType != null) {

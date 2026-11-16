@@ -53,6 +53,10 @@
     },
     {
       "kind": "FORM",
+      "path": "packs/p4-licence/forms/prepare-sanction-note.form.json"
+    },
+    {
+      "kind": "FORM",
       "path": "packs/p4-licence/forms/case-overdue.form.json"
     },
     {

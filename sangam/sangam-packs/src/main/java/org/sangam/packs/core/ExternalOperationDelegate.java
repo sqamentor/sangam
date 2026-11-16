@@ -119,8 +119,8 @@ public class ExternalOperationDelegate implements JavaDelegate {
         if ("FAILED".equals(last) || "CANCELLED".equals(last)) {
             attempt++;
         }
-        ex.setVariable(s + "Attempt", attempt);
-        ex.setVariable(s + "LastStatus", "NEW");
+        Vars.setDynamic(ex, s + "Attempt", attempt);
+        Vars.setDynamic(ex, s + "LastStatus", "NEW");
         String c = conn(ex);
         String id = Vars.operationId(Vars.tenant(ex), bk(ex), s, attempt);
         ex.setVariable(Vars.OPERATION_ID, id);
@@ -163,9 +163,9 @@ public class ExternalOperationDelegate implements JavaDelegate {
         if (r.externalRef() != null) {
             ex.setVariable("opExternalRef", r.externalRef());
         }
-        r.data().forEach((k, v) -> ex.setVariable("op_" + k, Vars.engineValue(v)));
+        r.data().forEach((k, v) -> Vars.setDynamic(ex, "op_" + k, Vars.engineValue(v)));
         String s = Vars.str(ex, "opStep", "execute");
-        ex.setVariable(s + "LastStatus", r.status().name());
+        Vars.setDynamic(ex, s + "LastStatus", r.status().name());
         switch (r.status()) {
             case COMPLETED -> Vars.audit(ex, "EXT_OP_ACKNOWLEDGED", Vars.map("connector", Vars.str(ex, "opConnector"),
                     "externalRef", r.externalRef()));
@@ -234,12 +234,12 @@ public class ExternalOperationDelegate implements JavaDelegate {
                 }
                 ex.setVariable(Vars.OP_STATUS, "COMPLETED");
                 ex.setVariable("reconStatus", "MATCHED");
-                ex.setVariable(Vars.str(ex, "opStep", "execute") + "LastStatus", "COMPLETED");
+                Vars.setDynamic(ex, Vars.str(ex, "opStep", "execute") + "LastStatus", "COMPLETED");
             }
             case "CONFIRMED_FAILURE" -> {
                 ex.setVariable(Vars.OP_STATUS, "FAILED");
                 ex.setVariable("opReasonCode", Vars.str(ex, "resolutionReasonCode", "CONFIRMED_FAILURE"));
-                ex.setVariable(Vars.str(ex, "opStep", "execute") + "LastStatus", "FAILED");
+                Vars.setDynamic(ex, Vars.str(ex, "opStep", "execute") + "LastStatus", "FAILED");
             }
             case "RETRY_SAME_OPERATION" -> {
                 if (PackRuntime.gateway().capabilityOf(Vars.str(ex, "opConnector")) == CapabilityClass.C_NEITHER) {
@@ -283,7 +283,7 @@ public class ExternalOperationDelegate implements JavaDelegate {
         ConnectorResult r = PackRuntime.gateway().cancel(Vars.tenant(ex), c, id, Vars.str(ex, "cancelReason"));
         ex.setVariable("cancelStatus", r.status().name());
         if (r.status() == OperationStatus.CANCELLED) {
-            ex.setVariable(Vars.str(ex, "opStep", "execute") + "LastStatus", "CANCELLED");
+            Vars.setDynamic(ex, Vars.str(ex, "opStep", "execute") + "LastStatus", "CANCELLED");
             Vars.audit(ex, "CANCEL_ACKED", Vars.map("connector", c));
         } else if (r.status() == OperationStatus.COMPLETED) {
             Vars.audit(ex, "LATE_RESULT_AFTER_DELETE", Vars.map("connector", c, "note",

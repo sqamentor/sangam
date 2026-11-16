@@ -39,6 +39,11 @@ def caller(pid='t-caller', first='service', all_in=True):
     return p
 
 
+def apply_(procs, seats):
+    """prepare.apply with every test process in a pack whose form key prefix is 'tp'."""
+    return prepare.apply(procs, seats, lambda p: 'tp')
+
+
 def node(p, id_):
     for s in prepare.scopes(p.root):
         n = s.node(id_)
@@ -55,7 +60,7 @@ class PrepareTaskTest(unittest.TestCase):
 
     def test_a_call_into_a_gate_with_no_user_task_before_it_gets_a_conditional_prepare_task(self):
         g, c = gate(), caller()
-        inserted = prepare.apply([g, c], lambda p: {})
+        inserted = apply_([g, c], lambda p: {})
         self.assertEqual({'t-caller': ['c_callPrepare']}, inserted)
         task = node(c, 'c_callPrepare')
         self.assertEqual('userTask', task['tag'])
@@ -72,30 +77,30 @@ class PrepareTaskTest(unittest.TestCase):
 
     def test_a_gate_whose_default_requires_a_signature_is_prepared_unless_the_caller_says_false(self):
         g, c = gate(default_required='true'), caller()
-        prepare.apply([g, c], lambda p: {})
+        apply_([g, c], lambda p: {})
         self.assertEqual(["${execution.getVariable('signNeeded') != false}"],
                          [f['cond'] for f in flows_to(c, 'c_callPrepare')])
 
     def test_a_user_task_of_the_caller_before_the_call_needs_no_prepare_task(self):
         g, c = gate(), caller(first='user')
-        self.assertEqual({}, prepare.apply([g, c], lambda p: {}))
+        self.assertEqual({}, apply_([g, c], lambda p: {}))
         self.assertIsNone(node(c, 'c_callPrepare'))
 
     def test_a_pack_names_another_seat_in_its_data(self):
         g, c = gate(), caller()
-        prepare.apply([g, c], lambda p: {'c_call': '${clerkSeat}'} if p.pid == 't-caller' else {})
+        apply_([g, c], lambda p: {'c_call': '${clerkSeat}'} if p.pid == 't-caller' else {})
         self.assertEqual('${clerkSeat}', node(c, 'c_callPrepare')['attrs']['operaton:candidateGroups'])
 
     def test_a_seat_for_a_call_that_is_not_a_gate_call_stops_generation(self):
         g, c = gate(), caller()
         with self.assertRaises(SystemExit) as e:
-            prepare.apply([g, c], lambda p: {'c_nothing': '${clerkSeat}'} if p.pid == 't-caller' else {})
+            apply_([g, c], lambda p: {'c_nothing': '${clerkSeat}'} if p.pid == 't-caller' else {})
         self.assertIn('c_nothing', str(e.exception))
 
     def test_a_gate_call_without_in_all_is_refused_by_name(self):
         g, c = gate(), caller(all_in=False)
         with self.assertRaises(SystemExit) as e:
-            prepare.apply([g, c], lambda p: {})
+            apply_([g, c], lambda p: {})
         self.assertIn('t-caller c_call', str(e.exception))
         self.assertIn('in variables="all"', str(e.exception))
 
@@ -112,7 +117,7 @@ class PrepareTaskTest(unittest.TestCase):
         bd = s.boundary('b_timer', 'b_wait', 'Late', timer_duration='P1D')
         s.seq(bd, c, s.end('b_end2'))
         # the boundary sits on a service task reached after a user task: preceded, no prepare task
-        self.assertEqual({}, prepare.apply([g, p], lambda q: {}))
+        self.assertEqual({}, apply_([g, p], lambda q: {}))
         # the same boundary on a service task reached with no user task before it needs one
         p2 = Proc('t-boundary2', 'Boundary 2')
         s2 = p2.root
@@ -122,7 +127,7 @@ class PrepareTaskTest(unittest.TestCase):
         c2 = s2.call('b2_call', 'Call the gate', 't-gate')
         bd2 = s2.boundary('b2_timer', 'b2_wait', 'Late', timer_duration='P1D')
         s2.seq(bd2, c2, s2.end('b2_end2'))
-        self.assertEqual({'t-boundary2': ['b2_callPrepare']}, prepare.apply([gate(), p2], lambda q: {}))
+        self.assertEqual({'t-boundary2': ['b2_callPrepare']}, apply_([gate(), p2], lambda q: {}))
 
     def test_the_precedence_check_names_an_unpreceded_gate_call(self):
         g, c = gate(), caller()
@@ -130,13 +135,31 @@ class PrepareTaskTest(unittest.TestCase):
         with self.assertRaises(SystemExit) as e:
             prepare.check([g, c], gated)
         self.assertIn('t-caller c_call', str(e.exception))
-        prepare.apply([g, c], lambda p: {})
+        apply_([g, c], lambda p: {})
         prepare.check([g, c], gated)  # after the prepare task: passes
 
     def test_the_gate_specs_are_read_from_the_dsc_listener(self):
         self.assertEqual([{'task': 'g_sign', 'slot': 'docSlot', 'type': 'NOTE', 'required': 'signNeeded'}],
                          prepare.gate_specs(gate()))
         self.assertIn(C['DSC'], ''.join(node(gate(), 'g_sign')['ext']))
+
+    def test_the_prepare_task_has_the_shared_form_requiring_the_gates_slot_read_only(self):
+        # decision 387 (8): the form names the slot as a required field, so the task waits for the upload
+        g, c = gate(), caller()
+        apply_([g, c], lambda p: {})
+        task = node(c, 'c_callPrepare')
+        self.assertEqual('sangam:tp/prepare-note', task['attrs']['operaton:formKey'])
+        self.assertEqual([{'key': 'tp/prepare-note', 'name': prepare.PREPARE_NAME, 'decision': None,
+                           'fields': ['docSlot*'], 'doc': c.forms[0]['doc']}], c.forms)
+
+    def test_one_form_for_gates_needing_their_slots_under_different_variables_stops_generation(self):
+        gates = [{'task': 'a', 'slot': 's1', 'type': 'NOTE', 'required': 'x'},
+                 {'task': 'b', 'slot': 's2', 'type': 'NOTE', 'required': 'y'}]
+        with self.assertRaises(SystemExit) as e:
+            prepare.form('tp', gates)
+        self.assertIn('decision 387 (8)', str(e.exception))
+        self.assertEqual(('tp/prepare-note-noting', ['s1*', 's2*']), prepare.form('tp', [
+            dict(gates[0], required=None), dict(gates[1], required=None, type='NOTING')]))
 
 
 if __name__ == '__main__':
