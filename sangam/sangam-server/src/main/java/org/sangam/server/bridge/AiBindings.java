@@ -29,6 +29,7 @@ import org.sangam.ai.agent.AgentRuntime;
 import org.sangam.ai.mcp.McpServer;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.core.layer.Transactions;
+import org.sangam.core.engine.DocumentSlotNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -132,6 +133,7 @@ public final class AiBindings {
                 List<String> groups = identity.createGroupQuery().groupMember(sp).list().stream().map(Group::getId).toList();
                 identity.setAuthentication(sp, groups, List.of(tenant));
                 try {
+                    DocumentSlotNames.refuse(vars == null ? null : vars.keySet()); // decision 385 (2)
                     return engine.getRuntimeService().createProcessInstanceByKey(key).processDefinitionTenantId(tenant)
                             .businessKey(businessKey).setVariables(vars).execute().getId();
                 } finally {

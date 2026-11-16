@@ -122,7 +122,8 @@ public class PacksWiring {
             ObjectProvider<org.sangam.core.engine.SangamClock> sangamClock,
             ObjectProvider<org.sangam.core.time.BusinessClock> businessClocks,
             ObjectProvider<org.sangam.config.profile.ProfileResolver> profiles,
-            ObjectProvider<org.sangam.integration.dsc.DscSigningFlow> dscFlows) {
+            ObjectProvider<org.sangam.integration.dsc.DscSigningFlow> dscFlows,
+            ObjectProvider<ProcessEngine> engines, PackRegistry registry) {
         return () -> {
             Dialect dialect = tx.dialect();
             // Seat validity days are business dates in each tenant's profile zone; sangam.packs.zone, if set,
@@ -164,10 +165,17 @@ public class PacksWiring {
             // decisions 236 and 237: the DSC completion gate asks the server's DSC flow; refuse-all without it
             org.sangam.integration.dsc.DscSigningFlow dsc = dscFlows.getIfAvailable();
             ports = ports.withSignatures(signatures(dsc));
+            // decision 385 (2), layer 1: the gate binds a slot only to a document the document route bound to the case
+            ports = withDocumentRoute(ports, engines.getIfAvailable(), tx);
+            // decision 385 (2), layer 2: every caller write path refuses the slot names the installed packs declare
+            org.sangam.core.engine.DocumentSlotNames.install(
+                    () -> org.sangam.server.bridge.PackRegistryDocumentSlots.slotNames(registry));
             // decision 292: in production every pack rule row not permitted for PRODUCTION refuses
             ports = withProductionMode(ports, env);
             PackRuntime.install(ports);
             LOG.info("PackRuntime DSC signature check: {}", dsc != null ? "server DSC flow" : "refuse all (DSC off)");
+            LOG.info("PackRuntime DSC slot binding: {}", ports.slotBindings() != org.sangam.packs.port.DocumentSlotBindings.NONE
+                    ? "document route audit" : "none (every slot is empty)");
             LOG.info("PackRuntime production mode: {}", ports.production()
                     ? "on (rule rows not permitted for PRODUCTION refuse)" : "off (demonstration rows usable)");
             LOG.info("PackRuntime installed: audit chain, seats={}, ledgers={}, calendar={}",
@@ -185,6 +193,17 @@ public class PacksWiring {
      */
     static PackRuntime.Ports withProductionMode(PackRuntime.Ports ports, Environment env) {
         return ports.withProduction(ProductionEnvironment.isProduction(env));
+    }
+
+    /**
+     * Owner decision 385 (2), layer 1: the DSC completion gate asks whether the document route
+     * ({@link org.sangam.server.bridge.OperatonDocumentSlots}) bound the slot's document to this case, read from the
+     * route's own audit events ({@link org.sangam.server.bridge.AuditDocumentSlotBindings}). Without an engine there is
+     * no route, so nothing is bound and every slot is empty (fail closed).
+     */
+    static PackRuntime.Ports withDocumentRoute(PackRuntime.Ports ports, ProcessEngine engine, TxSupport tx) {
+        return ports.withSlotBindings(engine == null ? org.sangam.packs.port.DocumentSlotBindings.NONE
+                : new org.sangam.server.bridge.AuditDocumentSlotBindings(tx));
     }
 
     /**

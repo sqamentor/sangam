@@ -21,6 +21,7 @@ import org.sangam.rest.port.InstanceHandlerPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.TxSupport;
 import org.sangam.rest.support.TypedVariables;
+import org.sangam.rest.support.SlotVariableGuard;
 
 /**
  * M-059 on the Operaton runtime API: the handler is looked up in the instance's own definition
@@ -134,6 +135,8 @@ public class OperatonInstanceHandlerAdapter implements InstanceHandlerPort {
             } catch (InstanceHandlerException e) {
                 throw problem(e);
             }
+            // decision 385 (2): an update handler never writes a DSC document slot, whatever its arguments
+            SlotVariableGuard.refuse(changes.keySet());
             long next = current + 1;
             Map<String, Object> set = new HashMap<>(changes);
             set.put(OperatonTaskAdapter.CASE_VERSION, next);

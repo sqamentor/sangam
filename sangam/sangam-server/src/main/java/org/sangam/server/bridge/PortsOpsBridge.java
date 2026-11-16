@@ -31,6 +31,7 @@ import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.DocumentStore;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TypedVariables;
+import org.sangam.rest.support.SlotVariableGuard;
 
 /**
  * {@link OpsPort} with the batch part on sangam-flowable-ports' {@link ProductBatchService} (R64, FLOWABLE-INTO-OPERATON D-34): pause, resume,
@@ -298,6 +299,7 @@ public final class PortsOpsBridge implements OpsPort, AutoCloseable {
                 if (!(vars instanceof Map<?, ?> vm)) {
                     throw new IllegalArgumentException("params.variables is required");
                 }
+                SlotVariableGuard.refuse(((Map<String, Object>) vm).keySet()); // decision 385 (2)
                 runtime.setVariables(root, (Map<String, Object>) vm);
                 return "set " + vm.size();
             }

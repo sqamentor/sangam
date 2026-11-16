@@ -6,6 +6,7 @@ import org.operaton.bpm.engine.runtime.MessageCorrelationBuilder;
 import org.operaton.bpm.engine.runtime.MessageCorrelationResult;
 import org.sangam.integration.connector.Json;
 import org.sangam.integration.inbox.InboxHandler;
+import org.sangam.core.engine.DocumentSlotNames;
 
 import java.sql.Connection;
 import java.util.LinkedHashMap;
@@ -30,6 +31,7 @@ public final class PackMessageInboxHandler implements InboxHandler {
     public Disposition handle(Connection c, Envelope m) {
         Map<String, Object> vars = new LinkedHashMap<>(Json.readMap(m.dataJson()));
         vars.remove("_processInstanceId");
+        DocumentSlotNames.refuse(vars.keySet()); // decision 385 (2): a connector reply never writes a DSC document slot
         List<String> keys = PackMessages.CORRELATION_VARIABLES.getOrDefault(m.eventType(), List.of("operationId"));
         // the gateway stores a pack call without tenant as "default"; such instances have no engine tenant
         List<String> tenants = "default".equals(m.tenantId()) ? java.util.Arrays.asList("default", null)

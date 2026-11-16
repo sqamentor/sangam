@@ -25,6 +25,7 @@ import org.operaton.bpm.engine.task.Task;
 
 import org.sangam.packs.PackTestEngines;
 import org.sangam.packs.PackTestTenant;
+import org.sangam.packs.port.DocumentSlotBindings;
 import org.sangam.packs.port.PackAuditEvent;
 import org.sangam.packs.port.PackRuntime;
 import org.sangam.packs.port.SignatureVerifications;
@@ -45,6 +46,9 @@ class DscSignatureGuardListenerTest {
     static ProcessEngine engine;
     final List<PackAuditEvent> audit = new ArrayList<>();
     final List<String> asked = new ArrayList<>();
+    final List<String> bindingsAsked = new ArrayList<>();
+    /** Decision 385 (2): the documents the (simulated) document route bound into the slot, by document id. */
+    static final java.util.Set<String> ROUTE_BOUND = java.util.Set.of("doc-1", "doc-2");
 
     static final String FIELDS = """
             <operaton:field name="documentSlot"><operaton:string>sanctionDocumentId</operaton:string></operaton:field>
@@ -99,7 +103,16 @@ class DscSignatureGuardListenerTest {
     @BeforeEach
     void ports() {
         PackRuntime.reset();
-        PackRuntime.install(PackRuntime.ports().withAudit(audit::add));
+        PackRuntime.install(PackRuntime.ports().withAudit(audit::add).withSlotBindings(routeBound()));
+    }
+
+    /** Decision 385 (2): the route bound {@link #ROUTE_BOUND} into this slot, with this type, in this tenant. */
+    DocumentSlotBindings routeBound() {
+        return (tenant, processInstance, slot, type, document) -> {
+            bindingsAsked.add(tenant + "|" + processInstance + "|" + slot + "|" + type + "|" + document);
+            return TENANT.equals(tenant) && SLOT.equals(slot) && "SANCTION_NOTE".equals(type)
+                    && ROUTE_BOUND.contains(document);
+        };
     }
 
     @AfterEach
@@ -333,5 +346,86 @@ class DscSignatureGuardListenerTest {
         engine.getRuntimeService().setVariable(task.getProcessInstanceId(), DscSignatureGuardListener.EVIDENCE_TASK,
                 task.getId());
         assertRefused(task, "approve", "doc-1");
+    }
+
+    // ---------------------------------------------------------------- decision 385 (2), layer 1
+
+    @Test
+    void decision385TheCreateListenerAsksWhetherTheRouteBoundTheSlotsDocument() {
+        Task task = start(true, "dsc", "doc-1");
+        assertEquals(List.of(TENANT + "|" + List.of(task.getProcessInstanceId()) + "|" + SLOT + "|SANCTION_NOTE|doc-1"),
+                bindingsAsked, "the engine tenant, this instance, the slot, the step's type and the slot's document");
+        assertEquals("doc-1", engine.getTaskService().getVariableLocal(task.getId(),
+                DscSignatureGuardListener.REQUIRED_DOCUMENT));
+        assertNull(engine.getTaskService().getVariableLocal(task.getId(), DscSignatureGuardListener.UNBOUND));
+    }
+
+    @Test
+    void decision385ASlotValueTheRouteDidNotBindIsAnEmptySlotEvenWithAVerifiedSignature() {
+        // the bypass: a caller wrote the slot (process start, task completion, variable set, message) and signed it
+        Task task = start(true, "dsc", "doc-forged");
+        assertNull(engine.getTaskService().getVariableLocal(task.getId(), DscSignatureGuardListener.REQUIRED_DOCUMENT),
+                "not captured");
+        assertEquals(Boolean.TRUE, engine.getTaskService().getVariableLocal(task.getId(),
+                DscSignatureGuardListener.UNBOUND));
+        verifiedOnly(task.getId(), "doc-forged", SIGNER);
+        ProcessEngineException ex = assertThrows(ProcessEngineException.class,
+                () -> complete(task, "approve", "doc-forged"));
+        assertTrue(ex.getMessage().contains(DscSignatureGuardListener.REFUSAL), ex.getMessage());
+        assertTrue(ex.getMessage().contains("not uploaded through the document route"), ex.getMessage());
+        assertTrue(open(task));
+        assertTrue(asked.isEmpty(), "the signature port is not asked about an unbound document");
+    }
+
+    @Test
+    void decision385WithoutABindingPortNothingIsBound() {
+        PackRuntime.reset();
+        PackRuntime.install(PackRuntime.ports().withAudit(audit::add));
+        assertSame(DocumentSlotBindings.NONE, PackRuntime.slotBindings(), "the default binds nothing");
+        Task task = start(true, "dsc", "doc-1");
+        verifiedOnly(task.getId(), "doc-1", SIGNER);
+        assertNull(engine.getTaskService().getVariableLocal(task.getId(), DscSignatureGuardListener.REQUIRED_DOCUMENT));
+        assertRefused(task, "approve", "doc-1");
+    }
+
+    @Test
+    void decision385AFailingBindingCheckIsAnEmptySlot() {
+        PackRuntime.install(PackRuntime.ports().withSlotBindings((tenant, pi, slot, type, doc) -> {
+            throw new IllegalStateException("audit store down");
+        }));
+        Task task = start(true, "dsc", "doc-1");
+        verifiedOnly(task.getId(), "doc-1", SIGNER);
+        assertNull(engine.getTaskService().getVariableLocal(task.getId(), DscSignatureGuardListener.REQUIRED_DOCUMENT));
+        assertRefused(task, "approve", "doc-1");
+    }
+
+    @Test
+    void decision385ACaptureWrittenToTheTaskAfterCreateIsAskedAgainAtCompletion() {
+        // the slot was empty at create; slot and capture are then written past the route, and the forgery is signed
+        Task task = start(true, "dsc", null);
+        engine.getRuntimeService().setVariable(task.getProcessInstanceId(), SLOT, "doc-forged");
+        engine.getTaskService().setVariableLocal(task.getId(), DscSignatureGuardListener.REQUIRED_DOCUMENT, "doc-forged");
+        verifiedOnly(task.getId(), "doc-forged", SIGNER);
+        ProcessEngineException ex = assertThrows(ProcessEngineException.class,
+                () -> complete(task, "approve", "doc-forged"));
+        assertTrue(ex.getMessage().contains("not uploaded through the document route"), ex.getMessage());
+        assertTrue(open(task));
+        assertTrue(asked.isEmpty(), "the signature port is not asked about an unbound document");
+    }
+
+    @Test
+    void decision385ABoundDocumentIsAskedAtCreateAndAtCompletion() {
+        Task task = start(true, "dsc", "doc-1");
+        verifiedOnly(task.getId(), "doc-1", SIGNER);
+        complete(task, "approve", "doc-1");
+        assertFalse(open(task));
+        assertEquals(2, bindingsAsked.size(), () -> "create and complete: " + bindingsAsked);
+    }
+
+    @Test
+    void decision385AStepThatNeedsNoSignatureStillCompletesWithAnUnboundSlot() {
+        Task task = start(false, "dsc", "doc-forged");
+        complete(task, "approve", null);
+        assertFalse(open(task), "only a DSC signing step is refused");
     }
 }

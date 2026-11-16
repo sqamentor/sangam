@@ -13,7 +13,7 @@ import org.sangam.rest.port.PortalPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.Permissions;
 import org.sangam.rest.support.TxSupport;
-import org.sangam.rest.support.TypedVariables;
+import org.sangam.rest.support.SlotVariableGuard;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -132,7 +132,7 @@ public class PortalController {
             throw ApiProblem.badRequest("VALIDATION_FAILED", "a draft carries no consent; consent is given on submission");
         }
         PortalPort.ApplyRequest request = new PortalPort.ApplyRequest(body.serviceKey(),
-                TypedVariables.fromJson(body.variables()), body.submit(), null);
+                SlotVariableGuard.callerVariables(body.variables()), body.submit(), null);
         PortalPort.Application a;
         String noticeKey = body.submit() ? requireService(ctx, body.serviceKey()).noticeKey() : null;
         if (noticeKey == null) {

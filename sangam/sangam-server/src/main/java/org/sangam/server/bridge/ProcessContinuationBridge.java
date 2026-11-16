@@ -11,7 +11,7 @@ import org.sangam.engine.continuation.ProcessContinuations;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.ProcessContinuationPort;
 import org.sangam.rest.port.RequestContext;
-import org.sangam.rest.support.TypedVariables;
+import org.sangam.rest.support.SlotVariableGuard;
 
 /**
  * Decision 149: {@link ProcessContinuationPort} over the engine's {@link ProcessContinuations}. The bridge only maps
@@ -58,7 +58,7 @@ public final class ProcessContinuationBridge implements ProcessContinuationPort 
     public ContinueAsNewResult continueAsNew(RequestContext ctx, String processInstanceId, ContinueAsNewRequest r) {
         ProcessContinuations.Request request = new ProcessContinuations.Request(r.continuationRequestId(), r.reason(),
                 r.processDefinitionId(), r.carryVariables(),
-                r.variables() == null ? null : TypedVariables.fromJson(r.variables()));
+                r.variables() == null ? null : SlotVariableGuard.callerVariables(r.variables()));
         ProcessContinuations.Result res;
         try {
             res = engine.continueAsNew(SecurityIdentities.of(ctx), processInstanceId, request);

@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.operaton.bpm.engine.RuntimeService;
 import org.operaton.bpm.engine.runtime.MessageCorrelationResult;
 import org.sangam.integration.inbox.InboxHandler;
+import org.sangam.core.engine.DocumentSlotNames;
 
 /**
  * Inbox handler for {@value CellCrossCellInboxFilter#EVENT_TYPE} (IR-3): the stored payload
@@ -48,6 +49,7 @@ public final class CellCrossCellInboxHandler implements InboxHandler {
         }
         vars.put("sangamXcellSource", m.source());
         vars.put("sangamXcellOperationId", data.get("operationId") == null ? m.messageId() : data.get("operationId").toString());
+        DocumentSlotNames.refuse(vars.keySet()); // decision 385 (2): another cell never writes a DSC document slot
         var correlation = runtime.createMessageCorrelation(data.get("messageName").toString()).setVariables(vars);
         if (m.tenantId() != null) {
             correlation.tenantId(m.tenantId());

@@ -67,15 +67,22 @@ final class PackDriver {
      * for the server (decisions 140, 165, 236, 237): where a step names a document slot that was empty when the task
      * was created, it plays the server attaching the step's document to that slot; it then answers true only for the
      * tenant, task, document and person the driver signed, so the pack's DscSignatureGuardListener still checks the
-     * exact task, document and signer. Demo evidence only. It is installed only over the fail-closed default, never
-     * over a port a test installed.
+     * exact task, document and signer. Decision 385 (2): the gate captures only a document the document route bound
+     * into the slot, so the driver also answers the binding check, true only for the tenant, slot and document it
+     * attached. Demo evidence only. Each port is installed only over its fail-closed default, never over a port a test
+     * installed.
      */
-    static final class SimulatedDscSignatures implements org.sangam.packs.port.SignatureVerifications {
+    static final class SimulatedDscSignatures implements org.sangam.packs.port.SignatureVerifications,
+            org.sangam.packs.port.DocumentSlotBindings {
         private final java.util.Set<String> signed = java.util.concurrent.ConcurrentHashMap.newKeySet();
+        private final java.util.Set<String> bound = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
         String sign(ProcessEngine engine, Task t, String person) {
             if (org.sangam.packs.port.PackRuntime.signatures() == org.sangam.packs.port.SignatureVerifications.DENY) {
                 org.sangam.packs.port.PackRuntime.install(org.sangam.packs.port.PackRuntime.ports().withSignatures(this));
+            }
+            if (org.sangam.packs.port.PackRuntime.slotBindings() == org.sangam.packs.port.DocumentSlotBindings.NONE) {
+                org.sangam.packs.port.PackRuntime.install(org.sangam.packs.port.PackRuntime.ports().withSlotBindings(this));
             }
             var tasks = engine.getTaskService();
             Object slot = tasks.getVariableLocal(t.getId(), org.sangam.packs.core.DscSignatureGuardListener.SLOT);
@@ -83,6 +90,7 @@ final class PackDriver {
                     org.sangam.packs.core.DscSignatureGuardListener.REQUIRED_DOCUMENT);
             String documentId = required != null ? required.toString() : "sim-dsc-" + t.getId();
             if (slot != null && required == null) {
+                bound.add(t.getTenantId() + "|" + slot + "|" + documentId);
                 engine.getRuntimeService().setVariable(t.getExecutionId(), slot.toString(), documentId);
                 tasks.setVariableLocal(t.getId(), org.sangam.packs.core.DscSignatureGuardListener.REQUIRED_DOCUMENT,
                         documentId);
@@ -94,6 +102,12 @@ final class PackDriver {
         @Override
         public boolean hasVerifiedSignature(String tenantId, String taskId, String documentId, String principal) {
             return signed.contains(tenantId + "|" + taskId + "|" + documentId + "|" + principal);
+        }
+
+        @Override
+        public boolean isBound(String tenantId, List<String> processInstances, String slot, String documentType,
+                               String documentId) {
+            return bound.contains(tenantId + "|" + slot + "|" + documentId);
         }
     }
 
