@@ -93,9 +93,6 @@ SAFE	/ai/classifications/{id}/review	id	DocumentClassifier.java:77 UUID.randomUU
 SAFE	/ai/drafts/{id}	id	DraftService.java:87 UUID.randomUUID()
 SAFE	/ai/drafts/{id}/approve	id	DraftService.java:87 UUID.randomUUID()
 SAFE	/ai/drafts/{id}/reject	id	DraftService.java:87 UUID.randomUUID()
-PENDING	/ai/knowledge-bases/{kb}/versions/{version}/activate	version	module batch (R8-393-modules)
-PENDING	/ai/knowledge-bases/{kb}/versions/{version}/documents	version	module batch (R8-393-modules)
-PENDING	/ai/knowledge-bases/{kb}/versions/{version}/ocr	version	module batch (R8-393-modules)
 SAFE	/ai/ocr-transcripts/{id}	id	OcrIngestion.java:106 Hashes.uuidV7()
 SAFE	/ai/ocr-transcripts/{id}/decide	id	OcrIngestion.java:106 Hashes.uuidV7()
 SAFE	/ai/runs/{id}	id	AgentRuntime.java:109 UUID.randomUUID()
@@ -267,8 +264,6 @@ SAFE	/hooks/channels/{tenant}/slack	tenant	ChannelHooksController.java:262 [A-Za
 SAFE	/hooks/channels/{tenant}/teams	tenant	ChannelHooksController.java:262; JdbcAdminAdapter.java:554
 SAFE	/hooks/channels/{tenant}/wechat	tenant	ChannelHooksController.java:262; JdbcAdminAdapter.java:554
 SAFE	/hooks/channels/{tenant}/whatsapp	tenant	ChannelHooksController.java:262; JdbcAdminAdapter.java:554
-PENDING	/hooks/eventgrid/{tenant}/{channel}	tenant	module batch (R8-393-modules)
-PENDING	/hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports	tenant	module batch (R8-393-modules)
 PENDING	/ledger/accounts/{accountId}	accountId	module batch (R8-393-modules)
 PENDING	/ledger/{ledger}/accounts	ledger	module batch (R8-393-modules)
 PENDING	/ledger/{ledger}/freeze-orders	ledger	module batch (R8-393-modules)
