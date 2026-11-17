@@ -77,7 +77,9 @@ class ExternalWorkAnnouncerH2Test {
             announcer.close();
         }
         if (engine != null) {
+            String url = engine.getProcessEngineConfiguration().getJdbcUrl();
             engine.close();
+            org.sangam.ports.H2Mem.drop(url);   // DB_CLOSE_DELAY=-1 keeps the database until SHUTDOWN (R8-heap)
         }
     }
 

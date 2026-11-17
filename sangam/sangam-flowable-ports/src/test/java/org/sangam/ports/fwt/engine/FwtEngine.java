@@ -129,7 +129,11 @@ final class FwtEngine implements AutoCloseable {
 
     @Override
     public void close() {
-        engine.close();
+        try {
+            engine.close();
+        } finally {
+            org.sangam.ports.H2Mem.drop(url);   // DB_CLOSE_DELAY=-1 keeps the database until SHUTDOWN (R8-heap)
+        }
     }
 
     static String defs(String body) {

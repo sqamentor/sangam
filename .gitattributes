@@ -81,3 +81,7 @@ sangam/deploy/fonts/*.txt text eol=lf
 sangam/deploy/fonts/README.md text eol=lf
 # Licence texts are recorded with their SHA-256 (test_release_assets.py CommittedTexts): LF in every checkout.
 sangam/deploy/licence/texts/*.txt text eol=lf
+# R8-fixture: the M-136 replay fixture records each model's SHA-256 over the model's bytes as captured (LF). With
+# core.autocrlf=true a Windows checkout, and route_build's `git archive` for AWS (it applies autocrlf), turned the BPMN
+# and DMN into CRLF, so the fresh capture's sha256 differed and OperatonReplayH2Test failed (AWS c2339381). LF everywhere.
+sangam/sangam-modeller/src/test/resources/org/sangam/modeller/replay/** text eol=lf

@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.monthly-accounts",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Monthly accounts compilation and rendition",
     "hi": "मासिक लेखा संकलन और प्रस्तुति"
@@ -89,6 +89,8 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-execution"
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection"
   ]
 }

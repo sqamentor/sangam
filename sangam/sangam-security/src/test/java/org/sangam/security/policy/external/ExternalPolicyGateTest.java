@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
+import org.sangam.core.engine.IllegalRemoteCallInLockScope;
 import org.sangam.engine.tx.LockScope;
 
 /**
@@ -125,7 +126,7 @@ class ExternalPolicyGateTest {
         ExternalPolicyGate gate = new ExternalPolicyGate(counting, commands(List.of("*"), List.of()), null);
         LockScope.enter();
         try {
-            assertThrows(LockScope.IllegalRemoteCallInLockScope.class, () -> gate.evaluate(request("task.complete")));
+            assertThrows(IllegalRemoteCallInLockScope.class, () -> gate.evaluate(request("task.complete")));
         } finally {
             LockScope.exit();
         }
@@ -138,10 +139,10 @@ class ExternalPolicyGateTest {
     @Test
     void aLockScopeViolationInsideTheCheckIsNotTurnedIntoAnAnswer() {
         ExternalPolicyCheck violating = r -> {
-            throw new LockScope.IllegalRemoteCallInLockScope("HTTP POST");
+            throw new IllegalRemoteCallInLockScope("HTTP POST");
         };
         ExternalPolicyGate gate = new ExternalPolicyGate(violating, commands(List.of(), List.of("*")), null);
-        assertThrows(LockScope.IllegalRemoteCallInLockScope.class, () -> gate.evaluate(request("task.complete")));
+        assertThrows(IllegalRemoteCallInLockScope.class, () -> gate.evaluate(request("task.complete")));
     }
 
     @Test
