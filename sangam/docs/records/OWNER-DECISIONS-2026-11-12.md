@@ -653,3 +653,10 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
     2. Idempotent.
     3. Fail-closed per tenant.
     4. Pending multi-subject four-eyes changes are marked SUPERSEDED, with a test proving that they cannot restore a grant.
+
+- **410 (integrator, under decision 407; the decision 393 pattern by lane R7-ui, confidence 98-99%)**: The rules are in `sangam-handoff/2026-11-17/d393-PATTERN.md`.
+  - A path parameter stays only when the code proves it can never hold '/' or ':'. Everything else moves to the literal `by-<x>` plus a required query parameter of the same name.
+  - The old routes are removed (0.1.0 is unreleased), with a correction entry in `sangam-api-deprecations.yaml`.
+  - Exempt: plugin UI asset `{*path}` and the Matrix `{txnId}`.
+  - FHIR, SMS-DLT and Event Grid callbacks move. The joint ledger shows no IFMS-configured callback URL for them.
+  - Guard: `PathParameterGuardTest` with the ledger `sangam-rest/api/path-parameters.tsv`. Its PENDING count can only go down, and the release gate is zero PENDING.
