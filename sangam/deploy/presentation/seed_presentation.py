@@ -105,7 +105,7 @@ class Keycloak:
 
 
 def user_rep(entry, tenant, office):
-    uname, first, last, _roles, seats = entry
+    uname, first, last, _roles, seats = entry[:5]
     attrs = {"tenant": [tenant], "seat": list(seats)}
     if seats:
         attrs["office"] = [office]
@@ -158,7 +158,7 @@ def seed_sangam(base, tok, g, tenant, office, today):
         seed = json.load(f)
     unit = next(o for o in seed["offices"] if o["id"] == office)
     create_if_absent(f"org unit {office}", "POST", f"{base}/admin/org-units", tok,
-                     {"id": office, "code": office, "name": "Pay and Accounts Office", "level": "OFFICE",
+                     {"id": office, "code": office, "name": "Jaipur", "level": "OFFICE",
                       "parentId": unit.get("parent") or None}, idem(tenant, "unit", office))
     for r in seed["roles"]:
         http("PUT", f"{base}/admin/roles/{urllib.parse.quote(r['code'])}", tok, {"id": r["code"], "name": r["name"]["en"]},
