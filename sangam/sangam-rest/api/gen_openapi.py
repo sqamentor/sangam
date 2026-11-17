@@ -1234,24 +1234,28 @@ AQ = [q("q", desc="Free-text search"), q("parentId"), q("orgUnitId"), q("seatId"
       q("includeInactive", "bool")]
 
 
-def crud(base, sch, name, plural, cmdbase, perm_r, perm_w, reqs, update=True, delete=True, get=True):
+def crud(base, sch, name, plural, cmdbase, perm_r, perm_w, reqs, update=True, delete=True, get=True, by_id=False):
+    """by_id (decision 393): the id is client-chosen and may hold '/' or ':', so one item is addressed on the literal
+    base/by-id route with the id as a required query parameter, never as a path segment."""
     tag = "Admin"
+    item, idp = (base + "/by-id", q("id", desc="The item id (client-chosen; may carry '/' or ':')", required=True))         if by_id else (base + "/{id}", ID)
     op("get", base, "list" + plural, tag, "List " + name.lower() + "s", "Tenant-scoped admin list.", reqs, list_=True, params=AQ,
        resp=(200, "array:" + sch), perm=perm_r, errors=STD_R)
     op("post", base, "create" + name, tag, "Create " + name.lower(), "Creates and audits on the tenant security chain.", reqs + ["R41", "R42"],
        body=sch, resp=(201, sch), cmd=cmdbase + ".create", perm=perm_w, created=True)
     if get:
-        op("get", base + "/{id}", "get" + name, tag, "Get " + name.lower(), "One item.", reqs, params=[ID], resp=(200, sch), perm=perm_r, errors=GET_E)
+        op("get", item, "get" + name, tag, "Get " + name.lower(), "One item.", reqs, params=[idp], resp=(200, sch), perm=perm_r, errors=GET_E)
     if update:
-        op("put", base + "/{id}", "update" + name, tag, "Update " + name.lower(), "Updates and audits.", reqs + ["R41", "R42"], params=[ID],
+        op("put", item, "update" + name, tag, "Update " + name.lower(), "Updates and audits.", reqs + ["R41", "R42"], params=[idp],
            body=sch, resp=(200, sch), cmd=cmdbase + ".update", perm=perm_w)
     if delete:
-        op("delete", base + "/{id}", "delete" + name, tag, "Delete " + name.lower(), "Deletes (reason audited).", reqs + ["R41", "R42"],
-           params=[ID, P("reason")], resp=(204, None), cmd=cmdbase + ".delete", perm=perm_w)
+        op("delete", item, "delete" + name, tag, "Delete " + name.lower(), "Deletes (reason audited).", reqs + ["R41", "R42"],
+           params=[idp, P("reason")], resp=(204, None), cmd=cmdbase + ".delete", perm=perm_w)
 
 
-crud("/admin/org-units", "OrgUnit", "OrgUnit", "OrgUnits", "admin.orgunit", "admin.read", "admin.write", ["IX.5", "R19"])
-crud("/admin/seats", "Seat", "Seat", "Seats", "admin.seat", "admin.read", "admin.write", ["IX.5", "R19"])
+crud("/admin/org-units", "OrgUnit", "OrgUnit", "OrgUnits", "admin.orgunit", "admin.read", "admin.write", ["IX.5", "R19"],
+     by_id=True)
+crud("/admin/seats", "Seat", "Seat", "Seats", "admin.seat", "admin.read", "admin.write", ["IX.5", "R19"], by_id=True)
 crud("/admin/assignments", "Assignment", "Assignment", "Assignments", "admin.assignment", "admin.read", "admin.write", ["IX.5"],
      update=False, delete=False)
 op("post", "/admin/assignments/{id}/end", "endAssignment", "Admin", "End an assignment", "Ends an effective-dated holding (SEAT_HOLDER_CHANGED).",
@@ -1261,7 +1265,7 @@ crud("/admin/delegations", "Delegation", "Delegation", "Delegations", "admin.del
 op("post", "/admin/delegations/{id}/revoke", "revokeDelegation", "Admin", "Revoke a delegation", "Revokes (DELEGATION_EXPIRED).",
    ["IX.5", "R41", "R42"], params=[ID], body="ReasonRequest", resp=(200, "Delegation"), cmd="admin.delegation.revoke", perm="admin.write")
 crud("/admin/policies", "Policy", "Policy", "Policies", "admin.policy", "policy.admin", "policy.admin", ["VI.4", "A-13", "R19"],
-     update=False, get=False)
+     update=False, get=False, by_id=True)
 op("get", "/admin/policies/version", "getPolicyVersion", "Admin", "Policy version", "Current policy_version of the tenant (VI.4 rule 5).",
    ["VI.4"], resp=(200, "PolicyVersion"), perm="policy.admin", errors=STD_R)
 crud("/admin/tenants", "Tenant", "Tenant", "Tenants", "admin.tenant", "tenant.admin", "tenant.admin", ["EC-17", "R19"], delete=False)

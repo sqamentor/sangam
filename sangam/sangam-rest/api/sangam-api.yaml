@@ -4808,7 +4808,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /admin/org-units/{id}:
+  /admin/org-units/by-id:
     get:
       operationId: getOrgUnit
       tags:
@@ -4817,10 +4817,11 @@ paths:
       description: One item.
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: The item id (client-chosen; may carry '/' or ':')
+        required: true
       x-sangam-permission: admin.read
       x-sangam-requirements:
       - IX.5
@@ -4850,10 +4851,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: The item id (client-chosen; may carry '/' or ':')
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -4907,10 +4909,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: The item id (client-chosen; may carry '/' or ':')
+        required: true
       - $ref: '#/components/parameters/reason'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
@@ -5069,7 +5072,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /admin/seats/{id}:
+  /admin/seats/by-id:
     get:
       operationId: getSeat
       tags:
@@ -5078,10 +5081,11 @@ paths:
       description: One item.
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: The item id (client-chosen; may carry '/' or ':')
+        required: true
       x-sangam-permission: admin.read
       x-sangam-requirements:
       - IX.5
@@ -5111,10 +5115,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: The item id (client-chosen; may carry '/' or ':')
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -5168,10 +5173,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: The item id (client-chosen; may carry '/' or ':')
+        required: true
       - $ref: '#/components/parameters/reason'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
@@ -5752,7 +5758,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /admin/policies/{id}:
+  /admin/policies/by-id:
     delete:
       operationId: deletePolicy
       tags:
@@ -5763,10 +5769,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: The item id (client-chosen; may carry '/' or ':')
+        required: true
       - $ref: '#/components/parameters/reason'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
@@ -38349,7 +38356,7 @@ paths:
           $ref: '#/components/responses/MisdirectedRequest'
       x-sangam-groups:
       - sangam-admin
-  /admin/plugins/{id}/enable:
+  /admin/plugins/by-id/enable:
     post:
       operationId: enablePlugin
       tags:
@@ -38360,10 +38367,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Plugin id as the jar declares it; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -38402,7 +38410,7 @@ paths:
           $ref: '#/components/responses/MisdirectedRequest'
       x-sangam-groups:
       - sangam-admin
-  /admin/plugins/{id}/disable:
+  /admin/plugins/by-id/disable:
     post:
       operationId: disablePlugin
       tags:
@@ -38413,10 +38421,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Plugin id as the jar declares it; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -70540,6 +70549,8 @@ components:
           - decimal
           - object
           - array
+          - any
+          description: The model's sangam:argument type; any accepts every JSON value
         required:
           type: boolean
         description:

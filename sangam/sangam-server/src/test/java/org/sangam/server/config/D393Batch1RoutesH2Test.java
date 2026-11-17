@@ -32,7 +32,7 @@ import org.springframework.test.context.DynamicPropertySource;
 /**
  * Decision 393 batch 1 on the real server (h2, the whole connector and filter chain): a process or decision definition
  * id (key:version:uuid), a user id (an IdP principal id), a group id (an IdP group path such as /staff/clerks), a role
- * id (pack:clerk) and an ops-admin secret reference travel as required query parameters on literal by-&lt;name&gt; routes,
+ * id (pack:clerk), an ops-admin secret reference, client-chosen org unit, seat and policy ids and a plugin id travel as required query parameters on literal by-&lt;name&gt; routes,
  * so a value with '/' or ':' reaches the application and is answered in JSON or problem+json. Before the change the
  * value was a path segment, and the servlet connector refuses an encoded '/' (%2F) with an HTML 400 before any
  * application code runs.
@@ -103,6 +103,16 @@ class D393Batch1RoutesH2Test {
                     {"POST", "/admin/groups/by-id/members/by-user-id" + q("id", v, "userId", v), null},
                     {"DELETE", "/admin/groups/by-id/members/by-user-id" + q("id", v, "userId", v), null},
                     {"PUT", "/admin/roles/by-role-id" + q("roleId", v), "{\"roleId\":\"" + v + "\",\"grants\":[]}"},
+                    // batch 1b: client-chosen org unit, seat and policy ids; a plugin id as the jar declares it
+                    {"GET", "/admin/org-units/by-id" + q("id", v), null},
+                    {"PUT", "/admin/org-units/by-id" + q("id", v), "{\"name\":\"D393\"}"},
+                    {"DELETE", "/admin/org-units/by-id" + q("id", v, "reason", "d393"), null},
+                    {"GET", "/admin/seats/by-id" + q("id", v), null},
+                    {"PUT", "/admin/seats/by-id" + q("id", v), "{\"name\":\"D393\"}"},
+                    {"DELETE", "/admin/seats/by-id" + q("id", v, "reason", "d393"), null},
+                    {"DELETE", "/admin/policies/by-id" + q("id", v, "reason", "d393"), null},
+                    {"POST", "/admin/plugins/by-id/enable" + q("id", v), null},
+                    {"POST", "/admin/plugins/by-id/disable" + q("id", v), null},
             };
             for (String[] c : calls) {
                 HttpResponse<String> r = send(c[0], c[1], c[2], c.length > 3 ? c[3] : "application/json");

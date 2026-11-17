@@ -53,7 +53,7 @@ lib-ext/plugins/plugin-connector-example-1.0.0.jar.sig
 lib-ext/plugins/trusted-keys/vendor.pub
 ```
 
-Restart, then check `GET /api/v1/admin/plugins`. `POST /api/v1/admin/plugins/{id}/disable` and `/enable` take effect at the next restart; `GET /api/v1/admin/plugins/audit` is the hash-chained trail. Unsigned jars load only on the `h2` and `dev` profiles. A jar whose signature does not verify is refused everywhere.
+Restart, then check `GET /api/v1/admin/plugins`. `POST /api/v1/admin/plugins/by-id/disable?id=<plugin id>` and `/by-id/enable?id=` take effect at the next restart; `GET /api/v1/admin/plugins/audit` is the hash-chained trail. Unsigned jars load only on the `h2` and `dev` profiles. A jar whose signature does not verify is refused everywhere.
 
 ## Use it
 

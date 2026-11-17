@@ -5497,7 +5497,7 @@ class HandlerParameter(TypedDict, total=False):
 
 Schema ``HandlerParameter``."""
     name: str
-    type: Literal["string", "number", "integer", "boolean", "date", "date-time", "decimal", "object", "array"]
+    type: Literal["string", "number", "integer", "boolean", "date", "date-time", "decimal", "object", "array", "any"]
     required: bool
     description: str
 

@@ -4358,7 +4358,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /admin/org-units/{id}:
+  /admin/org-units/by-id:
     get:
       operationId: getOrgUnit
       tags:
@@ -4367,7 +4367,7 @@ paths:
       description: One item.
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -4398,7 +4398,7 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -4451,7 +4451,7 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -4603,7 +4603,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /admin/seats/{id}:
+  /admin/seats/by-id:
     get:
       operationId: getSeat
       tags:
@@ -4612,7 +4612,7 @@ paths:
       description: One item.
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -4643,7 +4643,7 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -4696,7 +4696,7 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -5246,7 +5246,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /admin/policies/{id}:
+  /admin/policies/by-id:
     delete:
       operationId: deletePolicy
       tags:
@@ -5257,7 +5257,7 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -30506,7 +30506,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /admin/plugins/{id}/enable:
+  /admin/plugins/by-id/enable:
     post:
       operationId: enablePlugin
       tags:
@@ -30517,7 +30517,7 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -30553,7 +30553,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /admin/plugins/{id}/disable:
+  /admin/plugins/by-id/disable:
     post:
       operationId: disablePlugin
       tags:
@@ -30564,7 +30564,7 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string

@@ -598,10 +598,10 @@ export class AdminApi {
    *
    * One item.
    *
-   * `GET /admin/seats/{id}` (operationId `getSeat`); permission `admin.read`.
+   * `GET /admin/seats/by-id` (operationId `getSeat`); permission `admin.read`.
    */
-  async getSeat(id: string, options?: RequestOptions): Promise<M.Seat> {
-    const req: ApiRequest = { method: 'GET', path: `/admin/seats/${seg(String(id))}` };
+  async getSeat(params: { id: string /* The item id (client-chosen; may carry '/' or ':') */ }, options?: RequestOptions): Promise<M.Seat> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/seats/by-id`, query: { id: params?.id } };
     return this.calls.json<M.Seat>(req, options);
   }
 
@@ -610,10 +610,10 @@ export class AdminApi {
    *
    * Updates and audits.
    *
-   * `PUT /admin/seats/{id}` (operationId `updateSeat`); permission `admin.write`; result stored atomically with the state change.
+   * `PUT /admin/seats/by-id` (operationId `updateSeat`); permission `admin.write`; result stored atomically with the state change.
    */
-  async updateSeat(id: string, body: M.Seat, options?: RequestOptions): Promise<M.Seat> {
-    const req: ApiRequest = { method: 'PUT', path: `/admin/seats/${seg(String(id))}` };
+  async updateSeat(body: M.Seat, params: { id: string /* The item id (client-chosen; may carry '/' or ':') */ }, options?: RequestOptions): Promise<M.Seat> {
+    const req: ApiRequest = { method: 'PUT', path: `/admin/seats/by-id`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Seat>(req, options);
   }
@@ -623,10 +623,10 @@ export class AdminApi {
    *
    * Deletes (reason audited).
    *
-   * `DELETE /admin/seats/{id}` (operationId `deleteSeat`); permission `admin.write`; result stored atomically with the state change.
+   * `DELETE /admin/seats/by-id` (operationId `deleteSeat`); permission `admin.write`; result stored atomically with the state change.
    */
-  async deleteSeat(id: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/admin/seats/${seg(String(id))}`, query: { reason: params?.reason } };
+  async deleteSeat(params: { id: string /* The item id (client-chosen; may carry '/' or ':') */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/admin/seats/by-id`, query: { id: params?.id, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 
@@ -710,10 +710,10 @@ export class AdminApi {
    *
    * Deletes (reason audited).
    *
-   * `DELETE /admin/policies/{id}` (operationId `deletePolicy`); permission `policy.admin`; result stored atomically with the state change.
+   * `DELETE /admin/policies/by-id` (operationId `deletePolicy`); permission `policy.admin`; result stored atomically with the state change.
    */
-  async deletePolicy(id: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/admin/policies/${seg(String(id))}`, query: { reason: params?.reason } };
+  async deletePolicy(params: { id: string /* The item id (client-chosen; may carry '/' or ':') */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/admin/policies/by-id`, query: { id: params?.id, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 
@@ -1177,10 +1177,10 @@ export class AdminOrgUnitsApi {
    *
    * One item.
    *
-   * `GET /admin/org-units/{id}` (operationId `getOrgUnit`); permission `admin.read`.
+   * `GET /admin/org-units/by-id` (operationId `getOrgUnit`); permission `admin.read`.
    */
-  async getOrgUnit(id: string, options?: RequestOptions): Promise<M.OrgUnit> {
-    const req: ApiRequest = { method: 'GET', path: `/admin/org-units/${seg(String(id))}` };
+  async getOrgUnit(params: { id: string /* The item id (client-chosen; may carry '/' or ':') */ }, options?: RequestOptions): Promise<M.OrgUnit> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/org-units/by-id`, query: { id: params?.id } };
     return this.calls.json<M.OrgUnit>(req, options);
   }
 
@@ -1189,10 +1189,10 @@ export class AdminOrgUnitsApi {
    *
    * Updates and audits.
    *
-   * `PUT /admin/org-units/{id}` (operationId `updateOrgUnit`); permission `admin.write`; result stored atomically with the state change.
+   * `PUT /admin/org-units/by-id` (operationId `updateOrgUnit`); permission `admin.write`; result stored atomically with the state change.
    */
-  async updateOrgUnit(id: string, body: M.OrgUnit, options?: RequestOptions): Promise<M.OrgUnit> {
-    const req: ApiRequest = { method: 'PUT', path: `/admin/org-units/${seg(String(id))}` };
+  async updateOrgUnit(body: M.OrgUnit, params: { id: string /* The item id (client-chosen; may carry '/' or ':') */ }, options?: RequestOptions): Promise<M.OrgUnit> {
+    const req: ApiRequest = { method: 'PUT', path: `/admin/org-units/by-id`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.OrgUnit>(req, options);
   }
@@ -1202,10 +1202,10 @@ export class AdminOrgUnitsApi {
    *
    * Deletes (reason audited).
    *
-   * `DELETE /admin/org-units/{id}` (operationId `deleteOrgUnit`); permission `admin.write`; result stored atomically with the state change.
+   * `DELETE /admin/org-units/by-id` (operationId `deleteOrgUnit`); permission `admin.write`; result stored atomically with the state change.
    */
-  async deleteOrgUnit(id: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/admin/org-units/${seg(String(id))}`, query: { reason: params?.reason } };
+  async deleteOrgUnit(params: { id: string /* The item id (client-chosen; may carry '/' or ':') */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/admin/org-units/by-id`, query: { id: params?.id, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 
@@ -8573,10 +8573,10 @@ export class PluginsApi {
    *
    * Effective at the next restart.
    *
-   * `POST /admin/plugins/{id}/enable` (operationId `enablePlugin`); permission `tenant.admin`; result stored atomically with the state change.
+   * `POST /admin/plugins/by-id/enable` (operationId `enablePlugin`); permission `tenant.admin`; result stored atomically with the state change.
    */
-  async enablePlugin(id: string, options?: RequestOptions): Promise<M.PluginInfo> {
-    const req: ApiRequest = { method: 'POST', path: `/admin/plugins/${seg(String(id))}/enable` };
+  async enablePlugin(params: { id: string /* Plugin id as the jar declares it; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.PluginInfo> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/plugins/by-id/enable`, query: { id: params?.id } };
     return this.calls.json<M.PluginInfo>(req, options);
   }
 
@@ -8585,10 +8585,10 @@ export class PluginsApi {
    *
    * Effective at the next restart.
    *
-   * `POST /admin/plugins/{id}/disable` (operationId `disablePlugin`); permission `tenant.admin`; result stored atomically with the state change.
+   * `POST /admin/plugins/by-id/disable` (operationId `disablePlugin`); permission `tenant.admin`; result stored atomically with the state change.
    */
-  async disablePlugin(id: string, options?: RequestOptions): Promise<M.PluginInfo> {
-    const req: ApiRequest = { method: 'POST', path: `/admin/plugins/${seg(String(id))}/disable` };
+  async disablePlugin(params: { id: string /* Plugin id as the jar declares it; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.PluginInfo> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/plugins/by-id/disable`, query: { id: params?.id } };
     return this.calls.json<M.PluginInfo>(req, options);
   }
 

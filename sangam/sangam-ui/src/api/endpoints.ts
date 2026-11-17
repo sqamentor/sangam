@@ -112,9 +112,10 @@ export type IncidentVerb = 'retry' | 'resolve' | 'skip' | 'cancel';
 
 /**
  * Decision 393: collections whose entry id may carry '/' or ':' (user ids are IdP principal ids, group ids IdP group
- * paths) address an entry on the literal by-id route with the id as a query parameter, not as a path segment.
+ * paths; org unit, seat and policy ids are chosen by the client) address an entry on the literal by-id route with the
+ * id as a query parameter, not as a path segment.
  */
-const BY_ID_PATHS = new Set(['/admin/users', '/admin/groups']);
+const BY_ID_PATHS = new Set(['/admin/users', '/admin/groups', '/admin/org-units', '/admin/seats', '/admin/policies']);
 const itemUrl = (path: string, id: string, action?: string) =>
   BY_ID_PATHS.has(path) ? `${path}/by-id${action ? `/${action}` : ''}?id=${enc(id)}` : `${path}/${enc(id)}${action ? `/${action}` : ''}`;
 
@@ -625,9 +626,9 @@ export const api = {
     tenants: (q: ListQuery) => http.page<T.Tenant>('/admin/tenants', q),
     saveTenant: (t: Partial<T.Tenant>) => (t.id ? http.put<T.Tenant>(`/admin/tenants/${enc(t.id)}`, t) : http.post<T.Tenant>('/admin/tenants', t)),
     orgTree: async (asOf?: string) => A.toTree((await http.page<T.OrgUnit>('/admin/org-units', { activeOn: asOf, includeInactive: true, size: 500 })).items),
-    saveOrgUnit: (u: Partial<T.OrgUnit>) => (u.id ? http.put<T.OrgUnit>(`/admin/org-units/${enc(u.id)}`, u) : http.post<T.OrgUnit>('/admin/org-units', u)),
+    saveOrgUnit: (u: Partial<T.OrgUnit>) => (u.id ? http.put<T.OrgUnit>(itemUrl('/admin/org-units', u.id), u) : http.post<T.OrgUnit>('/admin/org-units', u)),
     moveOrgUnit: (id: string, parentId: string, effectiveFrom: string, reason: string) =>
-      http.put<T.OrgUnit>(`/admin/org-units/${enc(id)}?reason=${enc(reason)}`, { parentId, validFrom: effectiveFrom }), // PUT with new parent, // effective-dated
+      http.put<T.OrgUnit>(`${itemUrl('/admin/org-units', id)}&reason=${enc(reason)}`, { parentId, validFrom: effectiveFrom }), // PUT with new parent, // effective-dated
     importOrg: (file: File) => {
       const f = new FormData();
       f.append('file', file, file.name);
@@ -657,10 +658,10 @@ export const api = {
       // the request fields of components.schemas.Policy; id, version and audit fields are server-assigned
       const body = { effect: p.effect, principalType: p.principalType, principalId: p.principalId, resourceType: p.resourceType, resourceId: p.resourceId, actions: p.actions, conditionId: p.conditionId };
       const created = await http.post<T.Policy>('/admin/policies', body);
-      if (p.id) await http.del<void>(`/admin/policies/${enc(p.id)}`, { reason: `replaced by ${created.id}` });
+      if (p.id) await http.del<void>('/admin/policies/by-id', { id: p.id, reason: `replaced by ${created.id}` });
       return created;
     },
-    deletePolicy: (id: string, reason: string) => http.del<void>(`/admin/policies/${enc(id)}`, { reason }),
+    deletePolicy: (id: string, reason: string) => http.del<void>('/admin/policies/by-id', { id, reason }),
     policyVersion: () => http.get<{ version?: number; policyVersion?: number }>('/admin/policies/version'),
     explain: (body: { principalId: string; action: string; resourceType: string; resourceId: string }) =>
       http.post<{ allowed: boolean; matched: { policyId: string; effect: 'ALLOW' | 'DENY'; scope: string }[]; policyVersion: number }>('/admin/policies/explain', body),

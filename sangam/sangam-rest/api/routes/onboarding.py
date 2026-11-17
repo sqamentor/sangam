@@ -106,10 +106,12 @@ op("get", "/admin/plugins", "listPlugins", "Plugins", "List plugins", "Every jar
 op("get", "/admin/plugins/audit", "getPluginAudit", "Plugins", "Plugin audit trail",
    "Hash-chained JSON lines, oldest first.", ONB, resp=(200, {"application/json": {"schema": {
        "type": "array", "items": {"type": "string"}}}}), perm="tenant.admin")
-op("post", "/admin/plugins/{id}/enable", "enablePlugin", "Plugins", "Enable a plugin", "Effective at the next restart.",
-   ONB, params=[pp("id")], resp=(200, "PluginInfo"), cmd="plugin.enable", perm="tenant.admin")
-op("post", "/admin/plugins/{id}/disable", "disablePlugin", "Plugins", "Disable a plugin", "Effective at the next restart.",
-   ONB, params=[pp("id")], resp=(200, "PluginInfo"), cmd="plugin.disable", perm="tenant.admin")
+# decision 393: a plugin id is the jar's own declared id and may hold '/' or ':', so it is the id query parameter
+_PLUGIN_ID = q("id", desc="Plugin id as the jar declares it; may carry '/' or ':'", required=True)
+op("post", "/admin/plugins/by-id/enable", "enablePlugin", "Plugins", "Enable a plugin", "Effective at the next restart.",
+   ONB, params=[_PLUGIN_ID], resp=(200, "PluginInfo"), cmd="plugin.enable", perm="tenant.admin")
+op("post", "/admin/plugins/by-id/disable", "disablePlugin", "Plugins", "Disable a plugin", "Effective at the next restart.",
+   ONB, params=[_PLUGIN_ID], resp=(200, "PluginInfo"), cmd="plugin.disable", perm="tenant.admin")
 
 schema("UiPluginManifest", "A UI plugin: its entry module, styles and shell contributions.",
        "id version name vendor entry styles:list:s contributes:list:obj requires:obj", ["id", "version", "entry"])

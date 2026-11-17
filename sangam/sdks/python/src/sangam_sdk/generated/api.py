@@ -567,35 +567,35 @@ class AdminApi:
         req.body = body
         return cast("M.Seat", self._c.json(req, options))
 
-    def get_seat(self, id: str, *, options: Optional[RequestOptions] = None) -> M.Seat:
+    def get_seat(self, *, id: str, options: Optional[RequestOptions] = None) -> M.Seat:
         """Get seat
 
         One item.
 
-        ``GET /admin/seats/{id}`` (operationId ``getSeat``); permission ``admin.read``.
+        ``GET /admin/seats/by-id`` (operationId ``getSeat``); permission ``admin.read``.
         """
-        req = ApiRequest("GET", f"/admin/seats/{seg(str(id))}")
+        req = ApiRequest("GET", f"/admin/seats/by-id", query={"id": id})
         return cast("M.Seat", self._c.json(req, options))
 
-    def update_seat(self, id: str, body: M.Seat, *, options: Optional[RequestOptions] = None) -> M.Seat:
+    def update_seat(self, body: M.Seat, *, id: str, options: Optional[RequestOptions] = None) -> M.Seat:
         """Update seat
 
         Updates and audits.
 
-        ``PUT /admin/seats/{id}`` (operationId ``updateSeat``); permission ``admin.write``; result stored atomically with the state change.
+        ``PUT /admin/seats/by-id`` (operationId ``updateSeat``); permission ``admin.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("PUT", f"/admin/seats/{seg(str(id))}")
+        req = ApiRequest("PUT", f"/admin/seats/by-id", query={"id": id})
         req.body = body
         return cast("M.Seat", self._c.json(req, options))
 
-    def delete_seat(self, id: str, *, reason: Optional[str] = None, options: Optional[RequestOptions] = None) -> None:
+    def delete_seat(self, *, id: str, reason: Optional[str] = None, options: Optional[RequestOptions] = None) -> None:
         """Delete seat
 
         Deletes (reason audited).
 
-        ``DELETE /admin/seats/{id}`` (operationId ``deleteSeat``); permission ``admin.write``; result stored atomically with the state change.
+        ``DELETE /admin/seats/by-id`` (operationId ``deleteSeat``); permission ``admin.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("DELETE", f"/admin/seats/{seg(str(id))}", query={"reason": reason})
+        req = ApiRequest("DELETE", f"/admin/seats/by-id", query={"id": id, "reason": reason})
         self._c.none(req, options)
 
     def list_delegations(self, *, q: Optional[str] = None, parent_id: Optional[str] = None, org_unit_id: Optional[str] = None, seat_id: Optional[str] = None, person_id: Optional[str] = None, kind: Optional[str] = None, active_on: Optional[str] = None, include_inactive: Optional[bool] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Delegation]:
@@ -661,14 +661,14 @@ class AdminApi:
         req.body = body
         return cast("M.Policy", self._c.json(req, options))
 
-    def delete_policy(self, id: str, *, reason: Optional[str] = None, options: Optional[RequestOptions] = None) -> None:
+    def delete_policy(self, *, id: str, reason: Optional[str] = None, options: Optional[RequestOptions] = None) -> None:
         """Delete policy
 
         Deletes (reason audited).
 
-        ``DELETE /admin/policies/{id}`` (operationId ``deletePolicy``); permission ``policy.admin``; result stored atomically with the state change.
+        ``DELETE /admin/policies/by-id`` (operationId ``deletePolicy``); permission ``policy.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("DELETE", f"/admin/policies/{seg(str(id))}", query={"reason": reason})
+        req = ApiRequest("DELETE", f"/admin/policies/by-id", query={"id": id, "reason": reason})
         self._c.none(req, options)
 
     def get_policy_version(self, *, options: Optional[RequestOptions] = None) -> M.PolicyVersion:
@@ -1059,35 +1059,35 @@ class AdminOrgUnitsApi:
         req.body = body
         return cast("M.OrgUnit", self._c.json(req, options))
 
-    def get_org_unit(self, id: str, *, options: Optional[RequestOptions] = None) -> M.OrgUnit:
+    def get_org_unit(self, *, id: str, options: Optional[RequestOptions] = None) -> M.OrgUnit:
         """Get orgunit
 
         One item.
 
-        ``GET /admin/org-units/{id}`` (operationId ``getOrgUnit``); permission ``admin.read``.
+        ``GET /admin/org-units/by-id`` (operationId ``getOrgUnit``); permission ``admin.read``.
         """
-        req = ApiRequest("GET", f"/admin/org-units/{seg(str(id))}")
+        req = ApiRequest("GET", f"/admin/org-units/by-id", query={"id": id})
         return cast("M.OrgUnit", self._c.json(req, options))
 
-    def update_org_unit(self, id: str, body: M.OrgUnit, *, options: Optional[RequestOptions] = None) -> M.OrgUnit:
+    def update_org_unit(self, body: M.OrgUnit, *, id: str, options: Optional[RequestOptions] = None) -> M.OrgUnit:
         """Update orgunit
 
         Updates and audits.
 
-        ``PUT /admin/org-units/{id}`` (operationId ``updateOrgUnit``); permission ``admin.write``; result stored atomically with the state change.
+        ``PUT /admin/org-units/by-id`` (operationId ``updateOrgUnit``); permission ``admin.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("PUT", f"/admin/org-units/{seg(str(id))}")
+        req = ApiRequest("PUT", f"/admin/org-units/by-id", query={"id": id})
         req.body = body
         return cast("M.OrgUnit", self._c.json(req, options))
 
-    def delete_org_unit(self, id: str, *, reason: Optional[str] = None, options: Optional[RequestOptions] = None) -> None:
+    def delete_org_unit(self, *, id: str, reason: Optional[str] = None, options: Optional[RequestOptions] = None) -> None:
         """Delete orgunit
 
         Deletes (reason audited).
 
-        ``DELETE /admin/org-units/{id}`` (operationId ``deleteOrgUnit``); permission ``admin.write``; result stored atomically with the state change.
+        ``DELETE /admin/org-units/by-id`` (operationId ``deleteOrgUnit``); permission ``admin.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("DELETE", f"/admin/org-units/{seg(str(id))}", query={"reason": reason})
+        req = ApiRequest("DELETE", f"/admin/org-units/by-id", query={"id": id, "reason": reason})
         self._c.none(req, options)
 
     def import_org_units(self, body: Mapping[str, Any], *, options: Optional[RequestOptions] = None) -> M.OrgUnitImportResult:
@@ -7358,24 +7358,24 @@ class PluginsApi:
         req = ApiRequest("GET", f"/admin/plugins/audit")
         return cast("list[str]", self._c.json(req, options))
 
-    def enable_plugin(self, id: str, *, options: Optional[RequestOptions] = None) -> M.PluginInfo:
+    def enable_plugin(self, *, id: str, options: Optional[RequestOptions] = None) -> M.PluginInfo:
         """Enable a plugin
 
         Effective at the next restart.
 
-        ``POST /admin/plugins/{id}/enable`` (operationId ``enablePlugin``); permission ``tenant.admin``; result stored atomically with the state change.
+        ``POST /admin/plugins/by-id/enable`` (operationId ``enablePlugin``); permission ``tenant.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/admin/plugins/{seg(str(id))}/enable")
+        req = ApiRequest("POST", f"/admin/plugins/by-id/enable", query={"id": id})
         return cast("M.PluginInfo", self._c.json(req, options))
 
-    def disable_plugin(self, id: str, *, options: Optional[RequestOptions] = None) -> M.PluginInfo:
+    def disable_plugin(self, *, id: str, options: Optional[RequestOptions] = None) -> M.PluginInfo:
         """Disable a plugin
 
         Effective at the next restart.
 
-        ``POST /admin/plugins/{id}/disable`` (operationId ``disablePlugin``); permission ``tenant.admin``; result stored atomically with the state change.
+        ``POST /admin/plugins/by-id/disable`` (operationId ``disablePlugin``); permission ``tenant.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/admin/plugins/{seg(str(id))}/disable")
+        req = ApiRequest("POST", f"/admin/plugins/by-id/disable", query={"id": id})
         return cast("M.PluginInfo", self._c.json(req, options))
 
     def list_ui_plugins(self, *, options: Optional[RequestOptions] = None) -> list[M.UiPluginManifest]:

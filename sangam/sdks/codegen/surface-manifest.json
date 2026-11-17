@@ -73,7 +73,7 @@
    "tag": "Admin",
    "pathPrefix": "",
    "operations": 32,
-   "maxLines": 641
+   "maxLines": 645
   },
   {
    "class": "AdminAssignmentsApi",
@@ -94,7 +94,7 @@
    "tag": "Admin",
    "pathPrefix": "org-units",
    "operations": 6,
-   "maxLines": 145
+   "maxLines": 148
   },
   {
    "class": "AdminPowerTablesApi",
@@ -423,7 +423,7 @@
    "tag": "Plugins",
    "pathPrefix": "",
    "operations": 6,
-   "maxLines": 120
+   "maxLines": 122
   },
   {
    "class": "PortalApi",
@@ -2614,7 +2614,7 @@
   {
    "operationId": "getOrgUnit",
    "method": "GET",
-   "path": "/admin/org-units/{id}",
+   "path": "/admin/org-units/by-id",
    "tag": "Admin",
    "apiClass": "AdminOrgUnitsApi",
    "java": "AdminOrgUnitsApi#getOrgUnit",
@@ -2626,7 +2626,7 @@
   {
    "operationId": "updateOrgUnit",
    "method": "PUT",
-   "path": "/admin/org-units/{id}",
+   "path": "/admin/org-units/by-id",
    "tag": "Admin",
    "apiClass": "AdminOrgUnitsApi",
    "java": "AdminOrgUnitsApi#updateOrgUnit",
@@ -2638,7 +2638,7 @@
   {
    "operationId": "deleteOrgUnit",
    "method": "DELETE",
-   "path": "/admin/org-units/{id}",
+   "path": "/admin/org-units/by-id",
    "tag": "Admin",
    "apiClass": "AdminOrgUnitsApi",
    "java": "AdminOrgUnitsApi#deleteOrgUnit",
@@ -2674,7 +2674,7 @@
   {
    "operationId": "getSeat",
    "method": "GET",
-   "path": "/admin/seats/{id}",
+   "path": "/admin/seats/by-id",
    "tag": "Admin",
    "apiClass": "AdminApi",
    "java": "AdminApi#getSeat",
@@ -2686,7 +2686,7 @@
   {
    "operationId": "updateSeat",
    "method": "PUT",
-   "path": "/admin/seats/{id}",
+   "path": "/admin/seats/by-id",
    "tag": "Admin",
    "apiClass": "AdminApi",
    "java": "AdminApi#updateSeat",
@@ -2698,7 +2698,7 @@
   {
    "operationId": "deleteSeat",
    "method": "DELETE",
-   "path": "/admin/seats/{id}",
+   "path": "/admin/seats/by-id",
    "tag": "Admin",
    "apiClass": "AdminApi",
    "java": "AdminApi#deleteSeat",
@@ -2830,7 +2830,7 @@
   {
    "operationId": "deletePolicy",
    "method": "DELETE",
-   "path": "/admin/policies/{id}",
+   "path": "/admin/policies/by-id",
    "tag": "Admin",
    "apiClass": "AdminApi",
    "java": "AdminApi#deletePolicy",
@@ -10666,7 +10666,7 @@
   {
    "operationId": "enablePlugin",
    "method": "POST",
-   "path": "/admin/plugins/{id}/enable",
+   "path": "/admin/plugins/by-id/enable",
    "tag": "Plugins",
    "apiClass": "PluginsApi",
    "java": "PluginsApi#enablePlugin",
@@ -10678,7 +10678,7 @@
   {
    "operationId": "disablePlugin",
    "method": "POST",
-   "path": "/admin/plugins/{id}/disable",
+   "path": "/admin/plugins/by-id/disable",
    "tag": "Plugins",
    "apiClass": "PluginsApi",
    "java": "PluginsApi#disablePlugin",

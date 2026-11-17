@@ -28,6 +28,25 @@ public interface InstanceHandlerPort {
                         String payloadHash, String auditEventId) {
     }
 
+    /** A declared handler argument (contract schema {@code HandlerParameter}). */
+    record Parameter(String name, String type, boolean required, String description) {
+    }
+
+    /**
+     * A handler the deployed model declares (contract schema {@code InstanceHandler}): kind {@code QUERY} or
+     * {@code UPDATE}; {@code changes} lists the variables an update may change (empty for a query).
+     */
+    record Handler(String name, String kind, String description, List<Parameter> parameters, String permission,
+                   String resultType, List<String> changes) {
+    }
+
+    /**
+     * {@code GET /process-definitions/by-id/handlers}: the queries then the updates of the definition, each sorted by
+     * name; 404 for an unknown definition or one of another tenant, 422 when the declaration no longer passes the
+     * deploy rules.
+     */
+    List<Handler> list(RequestContext ctx, String processDefinitionId);
+
     /** Read-only; 404 for an unknown instance or handler, 422 VALIDATION_FAILED for bad arguments. */
     QueryResult query(RequestContext ctx, String processInstanceId, String name, QueryRequest request);
 

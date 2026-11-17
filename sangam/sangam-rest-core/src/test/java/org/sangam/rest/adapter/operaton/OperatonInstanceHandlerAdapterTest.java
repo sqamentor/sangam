@@ -48,7 +48,7 @@ class OperatonInstanceHandlerAdapterTest {
 
     @Test
     void anUpdateWithoutAReasonIsRefusedBeforeAnyEngineCall() {
-        OperatonInstanceHandlerAdapter a = new OperatonInstanceHandlerAdapter(null, null, null, null, null);
+        OperatonInstanceHandlerAdapter a = new OperatonInstanceHandlerAdapter(null, null, null, null, null, null);
         ApiProblem p = assertThrows(ApiProblem.class, () -> a.update(CTX, "pi", "u",
                 new InstanceHandlerPort.UpdateRequest(Map.of(), " ", null, null, null)));
         assertEquals(400, p.status());

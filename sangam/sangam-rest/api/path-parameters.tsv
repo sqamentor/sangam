@@ -43,10 +43,6 @@ SAFE	/admin/history/process-instances/{id}/migrate	id	Operaton instance id: Stro
 SAFE	/admin/identity-providers/{id}	id	JdbcIdentityAdminAdapter.java:518 new IdentityProvider(JdbcSupport.newId(), ...)
 SAFE	/admin/identity-providers/{id}/sync	id	JdbcIdentityAdminAdapter.java:518 new IdentityProvider(JdbcSupport.newId(), ...)
 SAFE	/admin/identity-providers/{id}/test	id	JdbcIdentityAdminAdapter.java:518 new IdentityProvider(JdbcSupport.newId(), ...)
-PENDING	/admin/org-units/{id}	id	batch 1 (R7-ui)
-PENDING	/admin/plugins/{id}/disable	id	batch 1 (R7-ui)
-PENDING	/admin/plugins/{id}/enable	id	batch 1 (R7-ui)
-PENDING	/admin/policies/{id}	id	batch 1 (R7-ui)
 SAFE	/admin/power-tables/{id}	id	JdbcPowerTableAdapter.java:112 id = key@version; key checked [A-Za-z0-9._-]{1,64} (:279): no / or :
 SAFE	/admin/power-tables/{id}/approve	id	JdbcPowerTableAdapter.java:112 id = key@version; key checked [A-Za-z0-9._-]{1,64} (:279): no / or :
 SAFE	/admin/power-tables/{id}/check	id	JdbcPowerTableAdapter.java:112 id = key@version; key checked [A-Za-z0-9._-]{1,64} (:279): no / or :
@@ -56,7 +52,6 @@ SAFE	/admin/retention-classes/{id}	id	JdbcRegistryAdapter.java:81 String id = Jd
 SAFE	/admin/retention-classes/{id}/{action}	id	JdbcRegistryAdapter.java:81 String id = JdbcSupport.newId() (uuidV7); id is a SERVER_FIELD (:35)
 SAFE	/admin/routing-strategies/{id}	id	JdbcRegistryAdapter.java:81 String id = JdbcSupport.newId() (uuidV7); id is a SERVER_FIELD (:35)
 SAFE	/admin/routing-strategies/{id}/{action}	id	JdbcRegistryAdapter.java:81 String id = JdbcSupport.newId() (uuidV7); id is a SERVER_FIELD (:35)
-PENDING	/admin/seats/{id}	id	batch 1 (R7-ui)
 SAFE	/admin/security/break-glass/grants/{grantId}/approve	grantId	sangam-security BreakGlassService.java:188 String id = Sql.newId()
 SAFE	/admin/security/break-glass/grants/{grantId}/reject	grantId	sangam-security BreakGlassService.java:188 String id = Sql.newId()
 SAFE	/admin/security/break-glass/grants/{grantId}/review	grantId	sangam-security BreakGlassService.java:188 String id = Sql.newId()

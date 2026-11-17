@@ -119,13 +119,14 @@ public final class AdminApi {
      *
      * <p>One item.
      *
-     * <p>{@code GET /admin/seats/{id}} (operationId {@code getSeat}); permission {@code admin.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /admin/seats/by-id} (operationId {@code getSeat}); permission {@code admin.read}.
+     * @param id query parameter {@code id}. The item id (client-chosen; may carry '/' or ':')
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public Seat getSeat(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/admin/seats/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.get("/admin/seats/by-id");
+        req.query("id", id);
         return call.json(req, options, R_getSeat);
     }
 
@@ -134,15 +135,16 @@ public final class AdminApi {
      *
      * <p>Updates and audits.
      *
-     * <p>{@code PUT /admin/seats/{id}} (operationId {@code updateSeat}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code PUT /admin/seats/by-id} (operationId {@code updateSeat}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. The item id (client-chosen; may carry '/' or ':')
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public Seat updateSeat(String id, Seat body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/admin/seats/" + HttpTransport.seg(String.valueOf(id)));
+    public Seat updateSeat(Seat body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/admin/seats/by-id");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_updateSeat);
     }
 
@@ -151,13 +153,14 @@ public final class AdminApi {
      *
      * <p>Deletes (reason audited).
      *
-     * <p>{@code DELETE /admin/seats/{id}} (operationId {@code deleteSeat}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code DELETE /admin/seats/by-id} (operationId {@code deleteSeat}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. The item id (client-chosen; may carry '/' or ':')
      * @param reason query parameter {@code reason}, or null. Mandatory reason (audited, R42)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void deleteSeat(String id, String reason, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/admin/seats/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.delete("/admin/seats/by-id");
+        req.query("id", id);
         req.query("reason", reason);
         call.none(req, options);
     }
@@ -299,13 +302,14 @@ public final class AdminApi {
      *
      * <p>Deletes (reason audited).
      *
-     * <p>{@code DELETE /admin/policies/{id}} (operationId {@code deletePolicy}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code DELETE /admin/policies/by-id} (operationId {@code deletePolicy}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. The item id (client-chosen; may carry '/' or ':')
      * @param reason query parameter {@code reason}, or null. Mandatory reason (audited, R42)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void deletePolicy(String id, String reason, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/admin/policies/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.delete("/admin/policies/by-id");
+        req.query("id", id);
         req.query("reason", reason);
         call.none(req, options);
     }

@@ -53,12 +53,14 @@ final class PluginsApi
      *
      * Effective at the next restart.
      *
-     * POST /admin/plugins/{id}/enable (operationId enablePlugin); permission tenant.admin; result stored atomically with the state change.
+     * POST /admin/plugins/by-id/enable (operationId enablePlugin); permission tenant.admin; result stored atomically with the state change.
+     * @param string $id query id
      * @return Model\PluginInfo|null
      */
     public function enablePlugin(string $id, ?RequestOptions $options = null): ?Model\PluginInfo
     {
-        $req = ApiRequest::post('/admin/plugins/' . HttpTransport::seg((string) $id) . '/enable');
+        $req = ApiRequest::post('/admin/plugins/by-id/enable');
+        $req->query('id', $id);
         return $this->calls->model($req, $options, Model\PluginInfo::class);
     }
 
@@ -67,12 +69,14 @@ final class PluginsApi
      *
      * Effective at the next restart.
      *
-     * POST /admin/plugins/{id}/disable (operationId disablePlugin); permission tenant.admin; result stored atomically with the state change.
+     * POST /admin/plugins/by-id/disable (operationId disablePlugin); permission tenant.admin; result stored atomically with the state change.
+     * @param string $id query id
      * @return Model\PluginInfo|null
      */
     public function disablePlugin(string $id, ?RequestOptions $options = null): ?Model\PluginInfo
     {
-        $req = ApiRequest::post('/admin/plugins/' . HttpTransport::seg((string) $id) . '/disable');
+        $req = ApiRequest::post('/admin/plugins/by-id/disable');
+        $req->query('id', $id);
         return $this->calls->model($req, $options, Model\PluginInfo::class);
     }
 

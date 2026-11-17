@@ -67,8 +67,25 @@ describe('decision 393 batch 1: engine and admin ids travel in the query', () =>
   });
 
   it('a collection that keeps safe ids in the path still does', async () => {
-    await api.resource.save('/admin/seats', { id: 's1', name: 'Clerk' }, false);
-    expect(pathOf(calls[0].url)).toBe('/api/v1/admin/seats/s1');
+    await api.resource.save('/admin/tenants', { id: 't1', name: 'Ajmer' }, false);
+    expect(pathOf(calls[0].url)).toBe('/api/v1/admin/tenants/t1');
+  });
+
+  it('batch 1b: org units, seats and policies are addressed by id in the query', async () => {
+    const OU = 'raj/ajmer:north';
+    await api.admin.saveOrgUnit({ id: OU, name: 'Ajmer north' });
+    await api.admin.moveOrgUnit(OU, 'raj', '2026-12-01', 'Reorganised');
+    await api.resource.save('/admin/seats', { id: 'raj/clerk:1', name: 'Clerk' }, false);
+    await api.resource.remove('/admin/seats', 'raj/clerk:1', 'Post abolished');
+    await api.admin.deletePolicy('pack:leave/p1', 'Superseded');
+    expect(calls.map((c) => [c.method, pathOf(c.url), queryOf(c.url)])).toEqual([
+      ['PUT', '/api/v1/admin/org-units/by-id', { id: OU }],
+      ['PUT', '/api/v1/admin/org-units/by-id', { id: OU, reason: 'Reorganised' }],
+      ['PUT', '/api/v1/admin/seats/by-id', { id: 'raj/clerk:1' }],
+      ['DELETE', '/api/v1/admin/seats/by-id', { id: 'raj/clerk:1', reason: 'Post abolished' }],
+      ['DELETE', '/api/v1/admin/policies/by-id', { id: 'pack:leave/p1', reason: 'Superseded' }],
+    ]);
+    for (const c of calls) expect(new URL(c.url, 'http://x').pathname).not.toMatch(/%2F|%3A/i);
   });
 
   it('the contract has the by-id routes and none of the old path routes', () => {
@@ -85,10 +102,15 @@ describe('decision 393 batch 1: engine and admin ids travel in the query', () =>
       '/admin/groups/by-id/members/by-user-id',
       '/admin/roles/by-role-id',
       '/ops-admin/secrets/by-ref',
+      '/admin/org-units/by-id',
+      '/admin/seats/by-id',
+      '/admin/policies/by-id',
+      '/admin/plugins/by-id/enable',
+      '/admin/plugins/by-id/disable',
     ])
       expect(contractPaths, p).toContain(p);
     const old = contractPaths.filter((p) =>
-      /^\/(process-definitions|decision-definitions)\/\{id\}|^\/admin\/(users|groups)\/\{id\}|^\/admin\/roles\/\{|^\/ops-admin\/secrets\/\{/.test(p),
+      /^\/(process-definitions|decision-definitions)\/\{id\}|^\/admin\/(users|groups|org-units|seats|policies|plugins)\/\{id\}|^\/admin\/roles\/\{|^\/ops-admin\/secrets\/\{/.test(p),
     );
     expect(old).toEqual([]);
   });

@@ -299,8 +299,8 @@ const plugins: ScreenDef = {
   columns: [c('id'), c('version'), c('kind'), c('status')],
   rowKey: ['id'],
   actions: [
-    { id: 'enable', label: 'act.activate', path: '/admin/plugins/{id}/enable', reason: 'body' },
-    { id: 'disable', label: 'act.deactivate', path: '/admin/plugins/{id}/disable', reason: 'body', danger: true },
+    { id: 'enable', label: 'act.activate', path: '/admin/plugins/by-id/enable?id={id}', reason: 'body' },
+    { id: 'disable', label: 'act.deactivate', path: '/admin/plugins/by-id/disable?id={id}', reason: 'body', danger: true },
   ],
 };
 

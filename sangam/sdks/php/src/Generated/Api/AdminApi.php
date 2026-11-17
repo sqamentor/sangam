@@ -77,12 +77,14 @@ final class AdminApi
      *
      * One item.
      *
-     * GET /admin/seats/{id} (operationId getSeat); permission admin.read.
+     * GET /admin/seats/by-id (operationId getSeat); permission admin.read.
+     * @param string $id query id
      * @return Model\Seat|null
      */
     public function getSeat(string $id, ?RequestOptions $options = null): ?Model\Seat
     {
-        $req = ApiRequest::get('/admin/seats/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::get('/admin/seats/by-id');
+        $req->query('id', $id);
         return $this->calls->model($req, $options, Model\Seat::class);
     }
 
@@ -91,13 +93,15 @@ final class AdminApi
      *
      * Updates and audits.
      *
-     * PUT /admin/seats/{id} (operationId updateSeat); permission admin.write; result stored atomically with the state change.
+     * PUT /admin/seats/by-id (operationId updateSeat); permission admin.write; result stored atomically with the state change.
      * @param Model\Seat|array $body request body
+     * @param string $id query id
      * @return Model\Seat|null
      */
-    public function updateSeat(string $id, Model\Seat|array $body, ?RequestOptions $options = null): ?Model\Seat
+    public function updateSeat(Model\Seat|array $body, string $id, ?RequestOptions $options = null): ?Model\Seat
     {
-        $req = ApiRequest::put('/admin/seats/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::put('/admin/seats/by-id');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -109,12 +113,14 @@ final class AdminApi
      *
      * Deletes (reason audited).
      *
-     * DELETE /admin/seats/{id} (operationId deleteSeat); permission admin.write; result stored atomically with the state change.
+     * DELETE /admin/seats/by-id (operationId deleteSeat); permission admin.write; result stored atomically with the state change.
+     * @param string $id query id
      * @param string|null $reason query reason
      */
     public function deleteSeat(string $id, ?string $reason = null, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/admin/seats/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::delete('/admin/seats/by-id');
+        $req->query('id', $id);
         $req->query('reason', $reason);
         $this->calls->none($req, $options);
     }
@@ -260,12 +266,14 @@ final class AdminApi
      *
      * Deletes (reason audited).
      *
-     * DELETE /admin/policies/{id} (operationId deletePolicy); permission policy.admin; result stored atomically with the state change.
+     * DELETE /admin/policies/by-id (operationId deletePolicy); permission policy.admin; result stored atomically with the state change.
+     * @param string $id query id
      * @param string|null $reason query reason
      */
     public function deletePolicy(string $id, ?string $reason = null, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/admin/policies/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::delete('/admin/policies/by-id');
+        $req->query('id', $id);
         $req->query('reason', $reason);
         $this->calls->none($req, $options);
     }

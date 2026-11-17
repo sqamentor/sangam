@@ -51,22 +51,24 @@ public sealed class AdminApi
     /// <summary>
     /// Get seat
     /// One item.
-    /// GET /admin/seats/{id} (operationId getSeat); permission admin.read.
+    /// GET /admin/seats/by-id (operationId getSeat); permission admin.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.Seat?> GetSeatAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/admin/seats/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Get($"/admin/seats/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<M.Seat?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Update seat
     /// Updates and audits.
-    /// PUT /admin/seats/{id} (operationId updateSeat); permission admin.write; result stored atomically with the state change.
+    /// PUT /admin/seats/by-id (operationId updateSeat); permission admin.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.Seat?> UpdateSeatAsync(string id, M.Seat body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.Seat?> UpdateSeatAsync(M.Seat body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/admin/seats/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Put($"/admin/seats/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.Seat?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -74,11 +76,12 @@ public sealed class AdminApi
     /// <summary>
     /// Delete seat
     /// Deletes (reason audited).
-    /// DELETE /admin/seats/{id} (operationId deleteSeat); permission admin.write; result stored atomically with the state change.
+    /// DELETE /admin/seats/by-id (operationId deleteSeat); permission admin.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task DeleteSeatAsync(string id, string? reason = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/admin/seats/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Delete($"/admin/seats/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         req.WithQuery("reason", GeneratedCalls.Q(reason));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -175,11 +178,12 @@ public sealed class AdminApi
     /// <summary>
     /// Delete policy
     /// Deletes (reason audited).
-    /// DELETE /admin/policies/{id} (operationId deletePolicy); permission policy.admin; result stored atomically with the state change.
+    /// DELETE /admin/policies/by-id (operationId deletePolicy); permission policy.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task DeletePolicyAsync(string id, string? reason = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/admin/policies/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Delete($"/admin/policies/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         req.WithQuery("reason", GeneratedCalls.Q(reason));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }

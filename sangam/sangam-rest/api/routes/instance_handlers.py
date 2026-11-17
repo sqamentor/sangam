@@ -9,7 +9,8 @@
 # cannot slip past an approval.
 
 schema("HandlerParameter", "A declared handler argument.", "name type required:bool description",
-       enums={"type": ["string", "number", "integer", "boolean", "date", "date-time", "decimal", "object", "array"]})
+       enums={"type": ["string", "number", "integer", "boolean", "date", "date-time", "decimal", "object", "array", "any"]},
+       descs={"type": "The model's sangam:argument type; any accepts every JSON value"})
 schema("InstanceHandler", "A query or update handler declared by the process model (sangam:query / sangam:update).",
        "name kind description parameters:list:HandlerParameter permission resultType changes:list:s",
        enums={"kind": ["QUERY", "UPDATE"]},
