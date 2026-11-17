@@ -36,18 +36,21 @@
   "connectors": [
     {
       "id": "paygov.fee",
+      "moneyMovement": "IN",
       "capabilityClass": "b",
       "govTag": "G-PG",
       "purpose": "RTI fee"
     },
     {
       "id": "referral.send",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "s.6(3) transfer"
     },
     {
       "id": "notify.sms",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-DLT",
       "purpose": "Applicant and third-party notices",

@@ -44,6 +44,7 @@
   "connectors": [
     {
       "id": "tsa.credit",
+      "moneyMovement": "IN",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Credit in the treasury single account"

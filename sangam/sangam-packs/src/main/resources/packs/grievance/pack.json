@@ -48,6 +48,7 @@
   "connectors": [
     {
       "id": "notify.sms",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-DLT",
       "purpose": "Citizen updates",

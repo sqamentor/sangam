@@ -40,12 +40,14 @@
   "connectors": [
     {
       "id": "archive.nai",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-REC",
       "purpose": "Transfer to the National Archives"
     },
     {
       "id": "archive.destroyCopies",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-REC",
       "purpose": "Destruction of digital copies"

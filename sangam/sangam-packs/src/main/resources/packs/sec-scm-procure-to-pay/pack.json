@@ -68,30 +68,35 @@
   "connectors": [
     {
       "id": "erp.budgetCheck",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Budget"
     },
     {
       "id": "erp.createPo",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Purchase order"
     },
     {
       "id": "supplier.sendPo",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "PO to supplier"
     },
     {
       "id": "supplier.debitNote",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Rejection / debit note"
     },
     {
       "id": "bank.transfer",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Supplier payment"

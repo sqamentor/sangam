@@ -56,18 +56,21 @@
   "connectors": [
     {
       "id": "lis.accession",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "LIS accession"
     },
     {
       "id": "lis.report",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Report release"
     },
     {
       "id": "abdm.linkCareContext",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Link to ABHA"

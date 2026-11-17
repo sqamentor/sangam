@@ -64,30 +64,35 @@
   "connectors": [
     {
       "id": "cppp.publish",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "NIT / corrigendum on CPPP / GePNIC"
     },
     {
       "id": "eproc.bidsReceived",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Bids received at closing"
     },
     {
       "id": "eproc.evaluate",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Financial comparison, L1"
     },
     {
       "id": "emd.refund",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "G-PG",
       "purpose": "EMD refund to bidders"
     },
     {
       "id": "config.profile",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Profile values of the tenant (sangam-config)"

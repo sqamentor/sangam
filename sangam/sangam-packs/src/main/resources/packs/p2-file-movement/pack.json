@@ -72,12 +72,14 @@
   "connectors": [
     {
       "id": "dsc.sign",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-SIGN",
       "purpose": "DSC signer agent for noting"
     },
     {
       "id": "esign.sign",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-SIGN",
       "purpose": "eSign fallback",
@@ -88,12 +90,14 @@
     },
     {
       "id": "dak.dispatch",
+      "moneyMovement": "NONE",
       "capabilityClass": "c",
       "govTag": "G-MAIL",
       "purpose": "Dispatch: gov.in e-mail, dak register"
     },
     {
       "id": "referral.send",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Referral to another department"

@@ -40,18 +40,21 @@
   "connectors": [
     {
       "id": "re.cede",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Cession register"
     },
     {
       "id": "re.placeFac",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Facultative placement"
     },
     {
       "id": "re.recovery",
+      "moneyMovement": "IN",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Recovery claim"

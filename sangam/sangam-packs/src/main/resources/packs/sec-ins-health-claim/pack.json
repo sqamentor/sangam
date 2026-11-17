@@ -52,24 +52,28 @@
   "connectors": [
     {
       "id": "policy.coverCheck",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Cover"
     },
     {
       "id": "hcx.eligibility",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "NHCX coverage eligibility"
     },
     {
       "id": "hcx.preauthReply",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Pre-authorisation reply to the hospital"
     },
     {
       "id": "hcx.settle",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Claim settlement"

@@ -52,42 +52,49 @@
   "connectors": [
     {
       "id": "aa.fetch",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Account Aggregator data (consent artefact)"
     },
     {
       "id": "bureau.pull",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "CIC"
     },
     {
       "id": "docs.kfs",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "KFS"
     },
     {
       "id": "bank.transfer",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Disbursal to the borrower account"
     },
     {
       "id": "lms.book",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Book loan"
     },
     {
       "id": "lms.foreclose",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Cooling-off exit"
     },
     {
       "id": "cic.report",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Credit information reporting"

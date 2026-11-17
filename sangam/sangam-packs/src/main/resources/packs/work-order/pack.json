@@ -36,12 +36,14 @@
   "connectors": [
     {
       "id": "emd.forfeit",
+      "moneyMovement": "IN",
       "capabilityClass": "c",
       "govTag": "G-PG",
       "purpose": "EMD forfeiture"
     },
     {
       "id": "esign.sign",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-SIGN",
       "purpose": "Agreement",

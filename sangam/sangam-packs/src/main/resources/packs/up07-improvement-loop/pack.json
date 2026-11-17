@@ -40,24 +40,28 @@
   "connectors": [
     {
       "id": "analytics.discover",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Discovery / conformance"
     },
     {
       "id": "analytics.compare",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Version comparison"
     },
     {
       "id": "deploy.package",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Publish new package version"
     },
     {
       "id": "deploy.rollback",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Roll back"

@@ -40,18 +40,21 @@
   "connectors": [
     {
       "id": "irdai.agencyPortal",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "IRDAI agency portal"
     },
     {
       "id": "exam.book",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Examination booking"
     },
     {
       "id": "irdai.brokerApply",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Broker application"

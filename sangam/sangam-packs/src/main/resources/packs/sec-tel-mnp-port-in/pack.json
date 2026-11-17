@@ -36,18 +36,21 @@
   "connectors": [
     {
       "id": "dot.kyc",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Subscriber e-KYC"
     },
     {
       "id": "mnpsp.port",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "MNP service provider"
     },
     {
       "id": "hlr.activate",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Network activation"

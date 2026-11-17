@@ -64,18 +64,21 @@
   "connectors": [
     {
       "id": "notify.mail",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Individual notices"
     },
     {
       "id": "hhs.breachPortal",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "HHS OCR breach portal"
     },
     {
       "id": "media.release",
+      "moneyMovement": "NONE",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Media notice"

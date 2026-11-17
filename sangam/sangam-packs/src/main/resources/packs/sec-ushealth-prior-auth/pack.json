@@ -60,24 +60,28 @@
   "connectors": [
     {
       "id": "cdshooks.crd",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "CRD order-sign"
     },
     {
       "id": "davinci.dtr",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "DTR questionnaire package"
     },
     {
       "id": "davinci.pas",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "PAS Claim/$submit"
     },
     {
       "id": "payer.appeal",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Appeal / reconsideration"

@@ -44,12 +44,14 @@
   "connectors": [
     {
       "id": "ppdr.sdr",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Selected dispute-resolution entity (via HHS portal)"
     },
     {
       "id": "notify.mail",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Patient notice"

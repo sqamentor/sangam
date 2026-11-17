@@ -44,12 +44,14 @@
   "connectors": [
     {
       "id": "npci.mandate",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Mandate register / modify / revoke"
     },
     {
       "id": "npci.debit",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Debit"
