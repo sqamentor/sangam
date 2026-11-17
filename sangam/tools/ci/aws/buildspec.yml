@@ -50,8 +50,9 @@ phases:
         exit $rc
   post_build:
     commands:
-      - mkdir -p reports/build
-      - find sangam -path '*/target/surefire-reports/*' -name 'TEST-*.xml' -exec cp {} reports/build/ \;
+      # The build phase did `cd sangam` and CodeBuild 0.2 keeps that directory, so use absolute paths here.
+      - mkdir -p "$CODEBUILD_SRC_DIR/reports/build"
+      - find "$CODEBUILD_SRC_DIR/sangam" -path '*/target/surefire-reports/*' -name 'TEST-*.xml' -exec cp {} "$CODEBUILD_SRC_DIR/reports/build/" \;
 
 artifacts:
   base-directory: reports
