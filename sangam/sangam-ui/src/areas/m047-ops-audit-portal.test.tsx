@@ -292,10 +292,16 @@ describe('M-047 batch approval', () => {
 
   it('reject is a CANCEL with the reviewer reason', async () => {
     routes['/ops/batches/b1'] = { id: 'b1', type: 'MIGRATE', status: 'AWAITING_APPROVAL', total: 10 };
+    // controlBatch answers with the whole Batch (OpsPort.Batch, state always set); the screen shows that reply. A bare
+    // {} here rendered a Batch without a status and crashed Badge (R8-uibadge).
+    api.post.mockResolvedValue({ id: 'b1', type: 'MIGRATE', state: 'CANCELLED', total: 10 });
     open();
     fireEvent.click(await screen.findByRole('button', { name: T('batch.reject') }));
     reasonAndConfirm('Wrong target version');
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/ops/batches/b1/control', { action: 'CANCEL', reason: 'Wrong target version' }));
+    // The server's CANCELLED is the UI's CANCELED, shown as the status badge once the reply is applied.
+    expect(await screen.findByText(T('enum.CANCELED', { defaultValue: 'CANCELED' }))).toBeTruthy();
+    expect(screen.queryByRole('button', { name: T('batch.reject') })).toBeNull();
   });
 
   it('a refused control is shown in the dialog', async () => {

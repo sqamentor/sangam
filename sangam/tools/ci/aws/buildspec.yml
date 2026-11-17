@@ -10,6 +10,9 @@ env:
   shell: bash
   variables:
     TZ: UTC
+    # Forked test JVMs set no -Xmx and default to 25% of the container's memory; sangam-flowable-ports ran out of heap
+    # on CodeBuild (build 675bc11d, 1497 tests passed, then "Java heap space"). Give each JVM up to half.
+    JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=50
     MAVEN_ARGS: -B -ntp
     TESTCONTAINERS_RYUK_DISABLED: "false"
     JDK_URL: https://api.adoptium.net/v3/binary/version/jdk-25.0.1%2B8/linux/x64/jdk/hotspot/normal/eclipse
