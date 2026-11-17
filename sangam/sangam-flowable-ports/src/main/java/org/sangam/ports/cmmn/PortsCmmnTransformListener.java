@@ -92,6 +92,7 @@ public class PortsCmmnTransformListener implements CmmnTransformListener {
     @Override
     public void transformTask(PlanItem planItem, Task task, CmmnActivity activity) {
         repetition(planItem, activity);
+        externalTask(task, activity);
         common(activity);
     }
 
@@ -159,6 +160,29 @@ public class PortsCmmnTransformListener implements CmmnTransformListener {
         }
         CaseControlRule base = (CaseControlRule) activity.getProperty(ItemHandler.PROPERTY_REPETITION_RULE);
         activity.setProperty(ItemHandler.PROPERTY_REPETITION_RULE, new MaxCountRepetitionRule(base, n));
+    }
+
+    /** P-5: a plain {@code task} with {@code sangam:topic} becomes a case external task (row lifecycle listener). */
+    static void externalTask(Task task, CmmnActivity activity) {
+        String topic = task.getAttributeValueNs(SANGAM_CMMN_NS, "topic");
+        if (topic == null || topic.isBlank()) {
+            return;
+        }
+        activity.setProperty(CaseExternalTaskService.PROPERTY_TOPIC, topic.trim());
+        String prio = task.getAttributeValueNs(SANGAM_CMMN_NS, "priority");
+        int p = 0;
+        if (prio != null && !prio.isBlank()) {
+            try {
+                p = Integer.parseInt(prio.trim());
+            } catch (NumberFormatException e) {
+                throw new ProcessEngineException("sangam:priority of task '" + activity.getId() + "' is not an integer: " + prio, e);
+            }
+        }
+        activity.setProperty(CaseExternalTaskService.PROPERTY_PRIORITY, p);
+        for (String ev : List.of(CaseExecutionListener.START, CaseExecutionListener.COMPLETE, CaseExecutionListener.TERMINATE,
+                CaseExecutionListener.EXIT, CaseExecutionListener.PARENT_TERMINATE)) {
+            activity.addBuiltInListener(ev, CaseExternalTaskService.LIFECYCLE);
+        }
     }
 
     private void common(CmmnActivity activity) {
