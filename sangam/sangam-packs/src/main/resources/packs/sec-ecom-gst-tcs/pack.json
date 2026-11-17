@@ -40,18 +40,21 @@
   "connectors": [
     {
       "id": "erp.netSupplies",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Net taxable supplies by seller"
     },
     {
       "id": "gstn.payment",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Tax deposit"
     },
     {
       "id": "gstn.gstr8",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "GSTR-8 filing"

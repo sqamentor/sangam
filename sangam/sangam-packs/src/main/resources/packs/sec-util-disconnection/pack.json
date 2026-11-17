@@ -40,18 +40,21 @@
   "connectors": [
     {
       "id": "docs.notice",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Disconnection notice"
     },
     {
       "id": "field.disconnect",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Disconnect"
     },
     {
       "id": "field.reconnect",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Reconnect"

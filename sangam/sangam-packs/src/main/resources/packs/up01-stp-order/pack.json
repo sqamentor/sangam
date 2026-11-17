@@ -24,24 +24,28 @@
   "connectors": [
     {
       "id": "order.validate",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Validation"
     },
     {
       "id": "inventory.reserve",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Reservation"
     },
     {
       "id": "saga.charge",
+      "moneyMovement": "IN",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Payment capture"
     },
     {
       "id": "shipping.create",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Shipment"

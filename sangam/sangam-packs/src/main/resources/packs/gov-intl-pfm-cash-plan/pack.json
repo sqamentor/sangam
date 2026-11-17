@@ -44,6 +44,7 @@
   "connectors": [
     {
       "id": "ledger.cashForecast",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Cash forecast from releases and commitments"

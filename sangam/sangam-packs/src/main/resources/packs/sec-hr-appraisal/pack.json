@@ -44,12 +44,14 @@
   "connectors": [
     {
       "id": "hris.employees",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Employees in scope"
     },
     {
       "id": "hris.rating",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Record rating"

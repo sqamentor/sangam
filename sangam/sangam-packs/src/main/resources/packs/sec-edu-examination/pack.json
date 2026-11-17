@@ -48,24 +48,28 @@
   "connectors": [
     {
       "id": "exam.hallTickets",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Hall tickets"
     },
     {
       "id": "exam.publish",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Publish results"
     },
     {
       "id": "nad.upload",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "DigiLocker / NAD upload"
     },
     {
       "id": "pg.collect",
+      "moneyMovement": "IN",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Revaluation fee"

@@ -32,24 +32,28 @@
   "connectors": [
     {
       "id": "ewb.generate",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Generate"
     },
     {
       "id": "ewb.updateVehicle",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Part B update"
     },
     {
       "id": "ewb.extend",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Extend"
     },
     {
       "id": "ewb.cancel",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Cancel"

@@ -60,30 +60,35 @@
   "connectors": [
     {
       "id": "abdm.abhaVerify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "ABHA verification"
     },
     {
       "id": "tpa.preauthRequest",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Pre-authorisation"
     },
     {
       "id": "pmjay.bis",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "PM-JAY beneficiary identification"
     },
     {
       "id": "abdm.linkCareContext",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Link care context (HIP)"
     },
     {
       "id": "crs.report",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Death report (CRS)"

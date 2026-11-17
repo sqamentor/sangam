@@ -56,36 +56,42 @@
   "connectors": [
     {
       "id": "kra.fetch",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "KRA download"
     },
     {
       "id": "kra.upload",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "KRA upload"
     },
     {
       "id": "pan.verify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "PAN status and Aadhaar link"
     },
     {
       "id": "uidai.ekyc",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "e-KYC"
     },
     {
       "id": "exchange.ucc",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "UCC registration"
     },
     {
       "id": "depository.openBo",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "BO account"

@@ -40,18 +40,21 @@
   "connectors": [
     {
       "id": "abdm.consentRequest",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Consent request (HIU to CM)"
     },
     {
       "id": "abdm.hiRequest",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Health information request"
     },
     {
       "id": "records.purge",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Purge fetched data"

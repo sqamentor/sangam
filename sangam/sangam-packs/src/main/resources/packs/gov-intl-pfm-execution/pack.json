@@ -56,30 +56,35 @@
   "connectors": [
     {
       "id": "ledger.available",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Available released authority"
     },
     {
       "id": "ledger.encumber",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Record the commitment"
     },
     {
       "id": "payee.integrity",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Payee checks (exclusion / deceased / duplicate)"
     },
     {
       "id": "treasury.pay",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Payment rail"
     },
     {
       "id": "bank.statement",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Bank / TSA statement"

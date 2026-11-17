@@ -160,66 +160,77 @@
   "connectors": [
     {
       "id": "config.profile",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Profile values of the tenant (sangam-config)"
     },
     {
       "id": "config.documentType",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
     },
     {
       "id": "config.classification",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Classification validation (head of account)"
     },
     {
       "id": "config.series",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Number series (token, voucher)"
     },
     {
       "id": "ledger.available",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-LEDGER",
       "purpose": "Funds available at the control dimension (sangam-ledger, idempotent by operationId)"
     },
     {
       "id": "ledger.encumber",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-LEDGER",
       "purpose": "Encumber the bill (from the sanction commitment) (sangam-ledger, idempotent by operationId)"
     },
     {
       "id": "ledger.consume",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-LEDGER",
       "purpose": "Post the payment (sangam-ledger, idempotent by operationId)"
     },
     {
       "id": "ledger.release",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-LEDGER",
       "purpose": "Release the encumbrance on rejection / cancel (sangam-ledger, idempotent by operationId)"
     },
     {
       "id": "ifms.duplicateBill",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Duplicate / similar claim check"
     },
     {
       "id": "registry.party",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-REGISTRY",
       "purpose": "Payee golden record (sangam-registry party registry, GA-12)"
     },
     {
       "id": "pfms.payment",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
       "purpose": "Payment file (PFMS)",
@@ -230,36 +241,42 @@
     },
     {
       "id": "rail.ekuber",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-RBI",
       "purpose": "RBI e-Kuber payment"
     },
     {
       "id": "rail.agencyBank",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-BANK",
       "purpose": "Agency-bank payment"
     },
     {
       "id": "rail.stateBank",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-BANK",
       "purpose": "State-owned bank (cheque / draft)"
     },
     {
       "id": "rail.cheque",
+      "moneyMovement": "OUT",
       "capabilityClass": "b",
       "govTag": "G-TREASURY",
       "purpose": "Treasury cheque"
     },
     {
       "id": "rail.loc",
+      "moneyMovement": "OUT",
       "capabilityClass": "b",
       "govTag": "G-TREASURY",
       "purpose": "Letter of credit / CCL-DCL"
     },
     {
       "id": "rail.fcy",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-BANK",
       "purpose": "Foreign-currency advice"

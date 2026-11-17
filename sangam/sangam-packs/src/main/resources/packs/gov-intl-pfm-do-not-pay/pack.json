@@ -40,6 +40,7 @@
   "connectors": [
     {
       "id": "payee.exclusion",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Exclusion lists (do-not-pay sources)"

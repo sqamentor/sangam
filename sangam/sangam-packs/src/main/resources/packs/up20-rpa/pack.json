@@ -36,6 +36,7 @@
   "connectors": [
     {
       "id": "rpa.bot",
+      "moneyMovement": "NONE",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Bot run"

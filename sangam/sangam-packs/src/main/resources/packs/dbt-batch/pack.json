@@ -52,12 +52,14 @@
   "connectors": [
     {
       "id": "dbt.beneficiaryList",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Sanctioned list for the period"
     },
     {
       "id": "pfms.dbt",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
       "purpose": "DBT record",
@@ -68,6 +70,7 @@
     },
     {
       "id": "bank.statement",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-PFMS",
       "purpose": "Credit confirmation"

@@ -52,30 +52,35 @@
   "connectors": [
     {
       "id": "switch.status",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Switch / NPCI transaction status"
     },
     {
       "id": "cbs.reversal",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Reversal"
     },
     {
       "id": "cbs.compensation",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Compensation credit"
     },
     {
       "id": "cards.block",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Block the instrument"
     },
     {
       "id": "card.chargeback",
+      "moneyMovement": "OUT",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Chargeback to the network"
