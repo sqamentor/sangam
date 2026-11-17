@@ -40,18 +40,21 @@
   "connectors": [
     {
       "id": "ledger.available",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-LEDGER",
       "purpose": "Savings available in the source line (sangam-ledger)"
     },
     {
       "id": "ledger.transfer",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-LEDGER",
       "purpose": "Post the re-appropriation as a ledger TRANSFER"
     },
     {
       "id": "referral.send",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Finance concurrence"

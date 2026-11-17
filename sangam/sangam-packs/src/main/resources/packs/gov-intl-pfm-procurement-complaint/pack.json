@@ -48,6 +48,7 @@
   "connectors": [
     {
       "id": "procurement.suspend",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Suspension of the award (e-procurement)"

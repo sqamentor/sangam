@@ -44,18 +44,21 @@
   "connectors": [
     {
       "id": "cts.returnMemo",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Return memo"
     },
     {
       "id": "cts.present",
+      "moneyMovement": "IN",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Re-presentation"
     },
     {
       "id": "docs.notice",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Legal notice"

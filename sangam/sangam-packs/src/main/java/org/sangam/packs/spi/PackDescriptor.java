@@ -169,16 +169,26 @@ public record PackDescriptor(String id, String version, Map<String, String> name
      * @param capabilityClass a, b or c (A-2)
      * @param govTag          X.4.0.2 tag (G-PFMS, G-PG, G-SIGN, G-DL, G-DLT, G-MAIL ...) or empty
      * @param purpose         what for
+     * @param moneyMovement   OUT, IN or NONE (owner decision A1); required in a manifest
      * @param simulatorBinding the integration connector (and operation) that serves this pack connector by default,
      *                        for example the site's simulator; null when the pack declares none. Pack data (SL-104):
      *                        a site's {@code sangam.packs.bindings.*} configuration overrides it.
      */
     public record ConnectorUse(String id, String capabilityClass, String govTag, String purpose,
-                               SimulatorBinding simulatorBinding) {
+                               SimulatorBinding simulatorBinding, MoneyMovement moneyMovement) {
 
-        /** A connector use without a default binding. */
+        /**
+         * Without a declared direction (code-built descriptors and tests): enforcement treats it as
+         * {@link MoneyMovement#OUT}, and {@link ConnectorMoneyMovements#registerDeclared} refuses it.
+         */
+        public ConnectorUse(String id, String capabilityClass, String govTag, String purpose,
+                            SimulatorBinding simulatorBinding) {
+            this(id, capabilityClass, govTag, purpose, simulatorBinding, null);
+        }
+
+        /** A connector use without a default binding or declared direction. */
         public ConnectorUse(String id, String capabilityClass, String govTag, String purpose) {
-            this(id, capabilityClass, govTag, purpose, null);
+            this(id, capabilityClass, govTag, purpose, null, null);
         }
     }
 

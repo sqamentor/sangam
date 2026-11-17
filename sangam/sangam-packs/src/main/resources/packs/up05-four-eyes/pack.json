@@ -36,6 +36,7 @@
   "connectors": [
     {
       "id": "masterdata.apply",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Apply the change"

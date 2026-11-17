@@ -68,30 +68,35 @@
   "connectors": [
     {
       "id": "hris.inputs",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Attendance and inputs"
     },
     {
       "id": "bank.transfer",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Salary payment file"
     },
     {
       "id": "epfo.ecr",
+      "moneyMovement": "OUT",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "PF ECR"
     },
     {
       "id": "esic.contribution",
+      "moneyMovement": "OUT",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "ESI contribution"
     },
     {
       "id": "docs.payslip",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Payslips"

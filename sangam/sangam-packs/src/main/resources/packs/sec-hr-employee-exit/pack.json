@@ -52,24 +52,28 @@
   "connectors": [
     {
       "id": "iam.revokeAll",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Revoke access"
     },
     {
       "id": "bank.transfer",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Settlement payment"
     },
     {
       "id": "epfo.exit",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "PF exit"
     },
     {
       "id": "docs.letter",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Relieving letter"

@@ -52,12 +52,14 @@
   "connectors": [
     {
       "id": "dlg.register",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "DLG register"
     },
     {
       "id": "dlg.invoke",
+      "moneyMovement": "NONE",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Invoke guarantee"

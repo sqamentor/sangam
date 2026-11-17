@@ -36,12 +36,14 @@
   "connectors": [
     {
       "id": "mes.batchRecord",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Batch record"
     },
     {
       "id": "wms.release",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Release to warehouse"

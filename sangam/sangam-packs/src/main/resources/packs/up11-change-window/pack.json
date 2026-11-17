@@ -44,12 +44,14 @@
   "connectors": [
     {
       "id": "change.freezeCheck",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Freeze calendar"
     },
     {
       "id": "change.rollback",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Rollback"

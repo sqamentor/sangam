@@ -56,12 +56,14 @@
   "connectors": [
     {
       "id": "court.ecourts",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "e-Courts case status"
     },
     {
       "id": "docs.reply",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Reply / pleading"

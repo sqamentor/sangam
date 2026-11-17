@@ -56,12 +56,14 @@
   "connectors": [
     {
       "id": "fhir.transition",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Transition-of-care document (FHIR)"
     },
     {
       "id": "fhir.adt",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "ADT event notification"

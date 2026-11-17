@@ -44,18 +44,21 @@
   "connectors": [
     {
       "id": "payer.attribution",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Provider attribution (treatment relationship)"
     },
     {
       "id": "payer.memberRecord",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Member record and opt-out of this payer (FHIR)"
     },
     {
       "id": "payer.providerAccess",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Provider Access answer (FHIR Bulk Data)"

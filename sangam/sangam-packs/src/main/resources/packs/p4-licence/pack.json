@@ -72,18 +72,21 @@
   "connectors": [
     {
       "id": "paygov.fee",
+      "moneyMovement": "IN",
       "capabilityClass": "b",
       "govTag": "G-PG",
       "purpose": "Fee with merchant reference = operationId, status query"
     },
     {
       "id": "paygov.refund",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "G-PG",
       "purpose": "Refund of an excess or withdrawn fee"
     },
     {
       "id": "esign.sign",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-SIGN",
       "purpose": "Certificate signature",
@@ -94,6 +97,7 @@
     },
     {
       "id": "digilocker.push",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-DL",
       "purpose": "Issuer push of the certificate",
@@ -104,6 +108,7 @@
     },
     {
       "id": "notify.sms",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-DLT",
       "purpose": "Applicant SMS with whitelisted URL",

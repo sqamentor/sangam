@@ -60,18 +60,21 @@
   "connectors": [
     {
       "id": "hr.chargeArrangement",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Additional charge for the leave period (WS-SECURITY)"
     },
     {
       "id": "hr.chargeRevert",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "End of the additional charge"
     },
     {
       "id": "hrms.employees",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Employees for the annual credit"

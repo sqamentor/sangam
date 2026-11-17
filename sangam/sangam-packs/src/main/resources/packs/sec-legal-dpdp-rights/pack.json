@@ -44,30 +44,35 @@
   "connectors": [
     {
       "id": "idv.verify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Identity verification"
     },
     {
       "id": "records.summary",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Personal data summary"
     },
     {
       "id": "records.erase",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Erasure"
     },
     {
       "id": "processors.erase",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Erasure at processors"
     },
     {
       "id": "consent.withdraw",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Consent manager"

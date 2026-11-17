@@ -32,18 +32,21 @@
   "connectors": [
     {
       "id": "treasury.challansExpected",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PG",
       "purpose": "Challans booked (GRAS / e-Challan)"
     },
     {
       "id": "treasury.scroll",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Bank scroll for the date"
     },
     {
       "id": "treasury.adjust",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Adjustment entry"

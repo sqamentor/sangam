@@ -20,6 +20,7 @@
   "connectors": [
     {
       "id": "hrms.salaryBills",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Salary bill per DDO for the period"

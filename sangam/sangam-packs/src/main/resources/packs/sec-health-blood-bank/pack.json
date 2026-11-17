@@ -60,12 +60,14 @@
   "connectors": [
     {
       "id": "bbms.inventory",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Blood inventory (e-RaktKosh)"
     },
     {
       "id": "hvpi.report",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Haemovigilance report"

@@ -40,12 +40,14 @@
   "connectors": [
     {
       "id": "ledger.outturn",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Budget outturn of the period (budget basis)"
     },
     {
       "id": "accounts.statement",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Expense of the period (accounting basis)"

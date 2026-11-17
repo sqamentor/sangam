@@ -48,30 +48,35 @@
   "connectors": [
     {
       "id": "cbs.dormancyDue",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Accounts by inactivity"
     },
     {
       "id": "cbs.markInoperative",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Flag"
     },
     {
       "id": "rbi.deaTransfer",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Transfer to DEA Fund"
     },
     {
       "id": "rbi.deaClaim",
+      "moneyMovement": "IN",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Claim from DEA Fund"
     },
     {
       "id": "cbs.credit",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Credit the claimant"

@@ -68,24 +68,28 @@
   "connectors": [
     {
       "id": "ag.pensionCase",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-PFMS",
       "purpose": "AG / PAO authorisation (e.g. Bhavishya / COMPACT)"
     },
     {
       "id": "pension.rollAdd",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Enter pensioner in the roll"
     },
     {
       "id": "pension.roll",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Monthly roll"
     },
     {
       "id": "pfms.payment",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
       "purpose": "Monthly pension payment",
