@@ -69,7 +69,7 @@ class IfmsProbeTmpTest {
                         .forEach(t -> open.add(t.getTaskDefinitionKey()));
                 List<String> subs = new ArrayList<>();
                 engine.getRuntimeService().createEventSubscriptionQuery().list().stream()
-                        .filter(s -> engine.getRuntimeService().createProcessInstanceQuery()
+                        .filter(s -> s.getProcessInstanceId() != null && engine.getRuntimeService().createProcessInstanceQuery()
                                 .processInstanceId(s.getProcessInstanceId()).processInstanceBusinessKey(bk).count() > 0)
                         .forEach(s -> subs.add(s.getEventName() + "@" + s.getActivityId()));
                 List<String> conns = new ArrayList<>();
@@ -81,7 +81,7 @@ class IfmsProbeTmpTest {
                 line = k + " | ended=" + driver.ended(bk) + " state=" + driver.var(bk, "caseState") + " done=" + done
                         + " open=" + open + " subs=" + subs + " audit=" + types + " conns=" + conns + " inc=" + inc;
             } catch (RuntimeException e) {
-                line = k + " | EXC " + e;
+                java.io.StringWriter sw = new java.io.StringWriter(); e.printStackTrace(new java.io.PrintWriter(sw)); line = k + " | EXC " + sw.toString().lines().limit(6).toList();
             }
             out.append("[PROBE] ").append(line).append('\n');
         }
