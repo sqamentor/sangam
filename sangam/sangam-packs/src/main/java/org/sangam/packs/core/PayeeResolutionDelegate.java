@@ -71,7 +71,7 @@ public class PayeeResolutionDelegate implements JavaDelegate {
                 ex.setVariable("accountNo", v.accountNo());
                 ex.setVariable("payeeIfsc", v.ifsc());
                 ex.setVariable("paymentAmount", major(ex.getVariable("amount"),
-                        Vars.field(currency, ex, "INR")).toPlainString());
+                        requiredCurrency(ex)).toPlainString());
                 ex.setVariable("executionPayloadFields", PAYLOAD_FIELDS);
                 Vars.audit(ex, "PAYEE_VERSION_RECORDED", Vars.map("payeeVersionId", v.payeeVersionId(),
                         "employeeId", employeeId, "payeeId", payeeId, "asOf", asOf.toString()));
@@ -84,6 +84,15 @@ public class PayeeResolutionDelegate implements JavaDelegate {
                         "employeeId", employeeId, "payeeId", payeeId, "asOf", asOf.toString()));
             }
         }
+    }
+
+    private String requiredCurrency(DelegateExecution ex) {
+        String c = Vars.field(currency, ex);
+        if (c == null || c.isBlank()) {
+            throw new IllegalStateException("PayeeResolutionDelegate needs field 'currency' (ISO 4217, the pack's "
+                    + "currency)");
+        }
+        return c;
     }
 
     private static BigDecimal major(Object amount, String currency) {
