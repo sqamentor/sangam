@@ -40,7 +40,9 @@ public final class PayeeConnector implements SangamConnector {
                     : directory.resolve(r.tenantId(), r.input());
             Map<String, Object> out = new LinkedHashMap<>();
             out.put("partyId", res.partyId());
-            out.put("status", res.status());
+            // the party's status, never "status": the call step writes <prefix>Status as the call's own outcome and the
+            // bill packs' payee check reads payeeStatus == 'COMPLETED' (ACTIVE there rejected every resolved payee)
+            out.put("partyStatus", res.status());
             out.put("verified", res.verified());
             out.put("multiple", res.multipleBeneficiaries());
             out.put("matchCount", res.matches().size());
