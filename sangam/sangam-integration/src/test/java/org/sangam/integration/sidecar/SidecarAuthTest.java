@@ -97,6 +97,19 @@ class SidecarAuthTest {
         assertTrue(auth.authenticate("Bearer " + next));
     }
 
+    /** CodeQL java/sensitive-log (alerts 790, 791): the not-ready reason is logged, so it never names the secret file. */
+    @Test
+    void theNotReadyReasonNeverNamesTheTokenFile() throws IOException {
+        Path file = dir.resolve("secret-tokens-file");
+        SidecarAuthenticator auth = SidecarAuthenticator.tokenFile(file);
+        assertFalse(auth.notReadyReason().contains("secret-tokens-file"), auth.notReadyReason()); // missing
+        write(file, "short-secret-value");
+        assertFalse(auth.notReadyReason().contains("secret-tokens-file"), auth.notReadyReason()); // bad line
+        write(file, "# only a comment");
+        assertFalse(auth.notReadyReason().contains("secret-tokens-file"), auth.notReadyReason()); // empty
+        Files.write(file, new byte[(int) SidecarTokens.MAX_FILE_BYTES + 1]);
+        assertFalse(auth.notReadyReason().contains("secret-tokens-file"), auth.notReadyReason()); // too large
+    }
     @Test
     void anUnusableTokenFileMeansNotReadyWithoutAFallbackAndWithoutTheContent() throws IOException {
         String good = token();

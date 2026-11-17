@@ -62,7 +62,10 @@ public final class SidecarTokens {
     }
 
     /**
-     * Reads the non-blank, non-comment ({@code #}) lines of {@code file}. Any invalid line makes the whole file
+     * The problem text of a snapshot is logged as the sidecar's not-ready reason, so it never names the token file
+     * (CodeQL java/sensitive-log): the operator knows the file from the {@code *_TOKEN_FILE} setting.
+     *
+     * <p>Reads the non-blank, non-comment ({@code #}) lines of {@code file}. Any invalid line makes the whole file
      * unusable (fail closed: a half-valid file is an operator error, not a smaller token set).
      */
     static Snapshot read(Path file) {
@@ -70,7 +73,7 @@ public final class SidecarTokens {
             FileTime modified = Files.getLastModifiedTime(file);
             long size = Files.size(file);
             if (size > MAX_FILE_BYTES) {
-                return new Snapshot(modified, size, List.of(), "the token file " + file + " is larger than "
+                return new Snapshot(modified, size, List.of(), "the token file is larger than "
                         + MAX_FILE_BYTES + " bytes");
             }
             List<String> tokens = new ArrayList<>();
@@ -83,17 +86,16 @@ public final class SidecarTokens {
                 }
                 String p = problem(t);
                 if (p != null) {
-                    return new Snapshot(modified, size, List.of(), "line " + n + " of the token file " + file
-                            + " is not a usable token (" + p + ")");
+                    return new Snapshot(modified, size, List.of(), "line " + n + " of the token file is not a usable token (" + p + ")");
                 }
                 tokens.add(t);
             }
             if (tokens.isEmpty()) {
-                return new Snapshot(modified, size, List.of(), "the token file " + file + " holds no token");
+                return new Snapshot(modified, size, List.of(), "the token file holds no token");
             }
             return new Snapshot(modified, size, List.copyOf(tokens), null);
         } catch (IOException | RuntimeException e) {
-            return new Snapshot(null, -1, List.of(), "the token file " + file + " cannot be read ("
+            return new Snapshot(null, -1, List.of(), "the token file cannot be read ("
                     + e.getClass().getSimpleName() + ")");
         }
     }
