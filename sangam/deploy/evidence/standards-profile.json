@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "inputs": {
     "compatibility": "sangam-ui/src/modeller/compatibility.json",
-    "compatibilityGeneratedAt": "2026-11-04T22:29:11.468Z",
+    "compatibilityGeneratedAt": "2026-11-17T17:53:02.203Z",
     "feelPolicy": "SANGAM.md X.0g (ADR-D-26)"
   },
   "notations": [
@@ -13,10 +13,10 @@
       "counts": {
         "SUPPORTED": 25,
         "SUPPORTED_WITH_RULES": 7,
-        "PORTED": 1,
+        "PORTED": 2,
         "NOT_EXECUTABLE": 4,
         "REJECTED": 1,
-        "UNSUPPORTED": 3
+        "UNSUPPORTED": 2
       }
     },
     {
@@ -441,6 +441,18 @@
     },
     {
       "notation": "BPMN",
+      "construct": "StandardLoopCharacteristics",
+      "status": "PORTED",
+      "modeller": "PROPERTIES",
+      "engineParses": false,
+      "note": "Loop body around the activity: loopCondition (do-while, or while with testBefore), loopMaximum; a loop with neither is refused; a non-boolean condition fails the step (R10-bpmn).",
+      "source": "sangam-flowable-ports P-6 StandardLoopActivityBehavior",
+      "xml": [
+        "standardLoopCharacteristics"
+      ]
+    },
+    {
+      "notation": "BPMN",
       "construct": "DataObjectReference",
       "status": "NOT_EXECUTABLE",
       "modeller": "PALETTE",
@@ -457,8 +469,8 @@
       "status": "NOT_EXECUTABLE",
       "modeller": "PALETTE",
       "engineParses": false,
-      "note": "Documentation only; data stores are not executed (D-52).",
-      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "note": "Documentation only; accepted with a DOC-ONLY warning, not executed (D-52; refused before R10-bpmn).",
+      "source": "sangam-flowable-ports SangamModelValidator",
       "xml": [
         "dataStoreReference"
       ]
@@ -521,18 +533,6 @@
       "source": "FLOWABLE-INTO-OPERATON D-52",
       "xml": [
         "multipleEventDefinition"
-      ]
-    },
-    {
-      "notation": "BPMN",
-      "construct": "StandardLoopCharacteristics",
-      "status": "UNSUPPORTED",
-      "modeller": "PROPERTIES",
-      "engineParses": false,
-      "note": "Standard loop is not executed (D-52); use multi-instance or a gateway loop.",
-      "source": "FLOWABLE-INTO-OPERATON D-52",
-      "xml": [
-        "standardLoopCharacteristics"
       ]
     },
     {
