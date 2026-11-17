@@ -998,7 +998,7 @@ def gpf_advances():
                         fields=['gpfAccount*', 'gpfPurpose*', 'amount*', 'gpfBalance', 'qualifyingService', 'documents'], doc=None))
     d = s.setv('gp_defaults', 'Configuration', defaults='amount=0;gpfBalance=0;qualifyingService=0;gpfPurpose=OTHER;'
                'billType=GPF_WITHDRAWAL;caseType=GPF;routingDecisionKey=ifms-gpf-authority;powersDecisionKey=ifms-gpf-powers;scrutinySeat=DDO-1;'
-               'sanctionSla=15D;appealAllowed=false;outputTemplate=gpf-sanction;gpfReturnSeat=DDO-1;gpfRejectLevels=*')
+               'sanctionSla=15D;appealAllowed=false;outputTemplate=gpf-sanction')
     r = s.rule('gp_rules', 'GPF eligibility (DMN)', 'gpf-withdrawal')
     s.seq(st, d, r)
     g = s.xgw('gp_okGw')
@@ -1012,9 +1012,11 @@ def gpf_advances():
     # p.15, verified for final payment, inferred for advance and withdrawal; Rajasthan open as IFMS OQ-276): a return is
     # not a rejection. It goes back to the preparer (pack setting gpfReturnSeat, default the DDO maker DDO-1) for
     # rework, with a mandatory reason, and the resubmitted application is checked and sanctioned again (the
-    # budget-allocation rework pattern). A rejection stays terminal, by the levels in gpfRejectLevels (default *, every
-    # level); a rejection by another level is a return.
+    # budget-allocation rework pattern). A rejection stays terminal. Which levels may reject is not a pack setting
+    # yet: refusing a rejection at the sanction task needs a guard in the core sanction block (open, integrator).
+    rt = s.rule('gp_returnTarget', 'Return target by returning level (DMN)', 'ifms-gpf-return-target')
     rg = s.xgw('gp_retGw', 'Reason given?')
+    s.flow(rt, rg)
     rw, rwx = task(s, 'gp_rework', 'Rework and resubmit | संशोधन कर पुनः प्रस्तुत करें', 'gpfReturnSeat', 'ifms-gpf/rework',
                    ('reworkDecision', ['resubmit']), ['returnReason', 'amount', 'gpfPurpose', 'remarks*'], '5WD')
     ver = s.svc('gp_version', 'New application version (same case, GP-50)', C['CASE'], {'op': 'RESUBMIT'})
@@ -1022,12 +1024,7 @@ def gpf_advances():
            'reason given')
     s.flow(rg, san, None, 'no reason: the authority is asked again', default=True)
     s.seq(rwx, ver, r)
-    rjg = s.xgw('gp_rjLevelGw', 'Level may reject?')
-    s.flow(rjg, rej, "gpfRejectLevels == '*' || ','.concat(gpfRejectLevels).concat(',')"
-                     ".contains(','.concat(execution.getVariable('competentRole') == null ? '' : "
-                     "execution.getVariable('competentRole')).concat(','))", 'reject')
-    s.flow(rjg, rg, None, 'not a rejecting level: return', default=True)
-    outcome(s, 'gp_sanGw', 'sanctionOutcome', {'SANCTIONED': b, 'RETURNED': rg, 'REJECTED': rjg}, rej)
+    outcome(s, 'gp_sanGw', 'sanctionOutcome', {'SANCTIONED': b, 'RETURNED': rt}, rej)
     s.flow(san, 'gp_sanGw')
     s.flow(b, end_ok(p, s, 'gp_end'))
     s.side_exits('gp')
@@ -1038,6 +1035,16 @@ def gpf_advances():
            [(['-', '-', '<= 0', '-'], ['false', q('no balance')], ''),
             (['-', '> gpfBalance', '-', '-'], ['false', q('GPF (CS) Rules 1960: not above the balance')], ''),
             (['-', '-', '-', '-'], ['true', q('GPF (CS) Rules 1960 [U: purpose-wise limits to load]')], 'placeholder limits')])
+    # IFT-4 follow-up (IFMS answer, Odisha FD revised procedure 19582 of 11-07-2023 p.15): the return target depends on
+    # the level that returns; the Head of Office returns to the Operator (DDO-1), the external authoriser (A.G.) to the
+    # HoO approver (DDO-2), verified; DDO-1 for any other internal level is INFERRED. A tenant overrides this DMN
+    # (Rajasthan seats open, IFMS OQ-276).
+    pk.dmn('ifms-gpf-return-target', 'GPF return target by returning level', 'FIRST',
+           [('Returning level', 'competentRole', 'string')],
+           [('gpfReturnSeat', 'Return to seat', 'string'), ('ruleRef', 'Rule', 'string')],
+           [([q('HOO')], [q('DDO-1'), q('Odisha FD 19582 (11-07-2023) p.15: HoO returns to the Operator')], ''),
+            ([q('AG')], [q('DDO-2'), q('Odisha FD 19582 (11-07-2023) p.15: A.G. returns to the HoO approver')], ''),
+            (['-'], [q('DDO-1'), q('[INFERRED] other internal levels return to the Operator')], 'inferred')])
     authority(pk, 'ifms-gpf-authority', [('-', 'HOO', 'Head of Office sanctions GPF withdrawals [U: department order]')], '')
     ifms_powers(pk, 'ifms-gpf-powers', 'GPF',
                 [('HOO', None, 'Head of Office sanctions GPF advances / withdrawals within gpf-withdrawal (pack default)')],

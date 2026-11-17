@@ -240,10 +240,27 @@ class IfmsPackScenariosTest {
         String r = report(bk, done);
         inOrder(done, List.of("sn_sanction", "gp_rework", "sn_sanction"), r);
         assertEquals("2", String.valueOf(driver.var(bk, "caseVersion")), r + ": resubmission is a new version");
+        assertEquals("DDO-1", String.valueOf(driver.var(bk, "gpfReturnSeat")), r + ": the Head of Office returns to the Operator");
         assertTrue(driver.ended(bk), r);
         assertEquals("REJECTED", String.valueOf(driver.var(bk, "caseState")), r + ": rejection is terminal");
         assertEquals(0, count(calls(bk), "ledger."), r + ": nothing encumbered or paid");
         noIncidents(bk);
+    }
+
+    static String returnTarget(String level) {
+        Map<String, Object> v = new HashMap<>();
+        v.put("competentRole", level);
+        return String.valueOf(engine.getDecisionService().evaluateDecisionTableByKey("ifms-gpf-return-target")
+                .decisionDefinitionTenantId(PackTestTenant.ID).variables(v).evaluate().getSingleResult()
+                .getEntry("gpfReturnSeat"));
+    }
+
+    /** IFT-4 follow-up: the return target by returning level (Odisha FD 19582 p.15; the fallback is inferred). */
+    @Test
+    void gpfReturnTargetFollowsTheReturningLevel() {
+        assertEquals("DDO-1", returnTarget("HOO"), "Head of Office returns to the Operator");
+        assertEquals("DDO-2", returnTarget("AG"), "the A.G. returns to the HoO approver");
+        assertEquals("DDO-1", returnTarget("FA"), "any other internal level returns to the Operator (inferred)");
     }
 
     /** A return without a reason is not taken: the sanctioning authority is asked again. */

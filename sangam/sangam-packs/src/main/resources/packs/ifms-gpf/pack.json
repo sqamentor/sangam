@@ -21,6 +21,10 @@
     },
     {
       "kind": "DMN",
+      "path": "packs/ifms-gpf/ifms-gpf-return-target.dmn"
+    },
+    {
+      "kind": "DMN",
       "path": "packs/ifms-gpf/ifms-gpf-authority.dmn"
     },
     {
