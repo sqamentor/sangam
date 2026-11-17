@@ -417,7 +417,20 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
                     f.put(k, v);
                 }
             });
+            Object conn = f.get("opConnector");
+            String bound = "";
+            if (conn != null) {
+                // which implementation the tenant binds for the failed operation (descriptor only, nothing invoked)
+                try {
+                    var d = connectors.require(TENANT, String.valueOf(conn)).descriptor();
+                    bound = " connector=" + d.id() + "/" + d.type() + " ops=" + d.operations();
+                } catch (RuntimeException e) {
+                    bound = " connector=" + e;
+                }
+            }
             out.add(sub.getProcessDefinitionId() + " active=" + engine.getRuntimeService().getActiveActivityIds(sub.getId())
+                    + bound + " materialFields=" + engine.getRuntimeService().getVariable(sub.getId(), "materialFields")
+                    + " vars=" + new java.util.TreeSet<>(engine.getRuntimeService().getVariables(sub.getId()).keySet())
                     + " " + f);
         }
         return out;
