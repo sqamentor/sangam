@@ -96,5 +96,11 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-rejection"
+  ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
   ]
 }

@@ -78,5 +78,11 @@
     "variables": [
       "sumInsured"
     ]
-  }
+  },
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ]
 }
