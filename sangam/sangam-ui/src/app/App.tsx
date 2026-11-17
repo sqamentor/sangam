@@ -7,7 +7,7 @@ import type { Role } from '../api/types';
 import { config } from '../config';
 import { Layout } from './Layout';
 import { NAV } from './nav';
-import { ROUTE_ACCESS, canAccess, type Access } from './access';
+import { ROUTE_ACCESS, TEAM_READ, canAccess, type Access } from './access';
 import { AuthCallback, SignIn } from '../areas/auth/SignIn';
 import { IdleSession } from '../auth/IdleSession';
 import { Loading, Notice, PageHeader } from '../components/ui';
@@ -82,7 +82,7 @@ const DrdPage = named(mOp2, 'DrdPage');
 const PluginsPage = named(mOp2, 'PluginsPage');
 const pl = () => import('../plugins/host');
 const PluginPage = named(pl, 'PluginPage');
-const TaskDashboard = named(mOp, 'TaskDashboard');
+const TeamWorkload = named(() => import('../areas/tasklist/TeamWorkload'), 'TeamWorkload');
 
 const TaskInbox = named(tl, 'TaskInbox');
 const TaskDetail = named(td, 'TaskDetail');
@@ -219,7 +219,8 @@ function AuthedRoutes() {
           <Route path="/account" element={<Account />} />
           <Route path="/ops/engine" element={g(['PLATFORM_OPERATOR'], <OperatonOpsPage />)} />
           {/* decision 397: route words match the menu labels; the old addresses redirect */}
-          <Route path="/team" element={g(['PLATFORM_OPERATOR'], <TaskDashboard />)} />
+          {/* decision 401: the team report is a Sangam read limited to the caller's organisation (team.read) */}
+          <Route path="/team" element={<Guard access={TEAM_READ}>{<TeamWorkload />}</Guard>} />
           <Route path="/ops/task-dashboard" element={<Navigate to="/team" replace />} />
           <Route path="/admin/engine" element={g(['PLATFORM_ADMIN'], <EngineAdminPage />)} />
           <Route path="/admin/config" element={g(ADMIN, <ConfigPage />)} />
