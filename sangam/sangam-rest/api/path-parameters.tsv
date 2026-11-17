@@ -606,3 +606,4 @@ SAFE	/registry/types/by-type-key/versions/{version}/retire	version	sangam-rest/s
 SAFE	/resources/history/{entityType}/by-entity-id	entityType	sangam-resources/src/main/java/org/sangam/resources/ResourcesContext.java:251 only server constants written (BOOKING, ROSTER_PERIOD, ...) (lane R8-393m M3-M5)
 SAFE	/rosters/periods/{periodId}/demand/by-demand-id	periodId	sangam-resources/src/main/java/org/sangam/resources/roster/RosterService.java:176 Sql.newId (UUID) (lane R8-393m M3-M5)
 SAFE	/rosters/periods/{periodId}/members/by-person-id	periodId	sangam-resources/src/main/java/org/sangam/resources/roster/RosterService.java:176 Sql.newId (UUID) (lane R8-393m M3-M5)
+SAFE	/team/task-filters/{id}	id	server-generated UUID: JdbcTaskFilterAdapter.java:61 (lane R8-ux, decision 404)
