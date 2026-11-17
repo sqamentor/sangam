@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.sangam.engine.deploy.OperationRefPinning;
 import org.sangam.ports.app.AppBundle;
 import org.sangam.ports.app.AppDeploymentService;
 import org.sangam.ports.events.model.ChannelDefinition;
@@ -52,19 +53,31 @@ public final class PortsDeploymentBridge implements DeploymentPort {
 
     /**
      * M-068: a package's own deploy. A plain package goes to the base adapter's package deploy (with the engine proof);
-     * a package with event or channel models is deployed as an app bundle, as before, which carries no proof, so its
-     * contract operations are refused by the engine.
+     * a package with event or channel models is deployed as an app bundle whose engine deployment carries the package
+     * deploy identity ({@code pkg:<key>:<hash>}, source {@code sangam-package}) and runs with the engine proof for exactly
+     * this tenant, key and hash bound (SL-179), so its contract operations are pinned like a plain package's.
      */
     @Override
     public Deployment deployPackage(RequestContext ctx, String packageKey, String packageHash, Map<String, byte[]> resources) {
         if (resources == null || !isAppBundle(resources)) {
             return base.deployPackage(ctx, packageKey, packageHash, resources);
         }
-        return deployApp(ctx, new DeployRequest(PACKAGE_NAME_PREFIX + packageKey + ":" + packageHash, PACKAGE_SOURCE,
-                false, resources));
+        OperationRefPinning.PackageDeploy proof;
+        try {
+            proof = new OperationRefPinning.PackageDeploy(ctx.tenantId(), packageKey, packageHash);
+        } catch (IllegalArgumentException e) {
+            throw ApiProblem.unprocessable("MODEL_INVALID", "package deploy: " + e.getMessage());
+        }
+        DeployRequest request = new DeployRequest(proof.deploymentName(), PACKAGE_SOURCE, false, resources);
+        return OperationRefPinning.asPackageDeploy(proof, () -> deployApp(ctx, request, proof.deploymentName(), PACKAGE_SOURCE));
     }
 
     private Deployment deployApp(RequestContext ctx, DeployRequest request) {
+        return deployApp(ctx, request, null, null);
+    }
+
+    /** {@code engineName} and {@code engineSource}: the engine deployment's identity, or null for the app defaults. */
+    private Deployment deployApp(RequestContext ctx, DeployRequest request, String engineName, String engineSource) {
         Map<String, byte[]> files = new LinkedHashMap<>(request.resources());
         if (files.keySet().stream().noneMatch(PortsDeploymentBridge::isManifest)) {
             String key = (request.name() == null ? "app" : request.name()).replaceAll("[^A-Za-z0-9_.-]", "_");
@@ -75,7 +88,8 @@ public final class PortsDeploymentBridge implements DeploymentPort {
         }
         requireChannelClients(files, AddonGuardWiring.natsPresent(PortsDeploymentBridge.class.getClassLoader()));
         AppBundle bundle = PortsErrors.call(() -> AppBundle.of(files));
-        AppDeploymentService.AppDeployment d = PortsErrors.call(() -> apps.deploy(ctx.tenantId(), bundle, ctx.principalId()));
+        AppDeploymentService.AppDeployment d = PortsErrors.call(() -> apps.deploy(ctx.tenantId(), bundle, ctx.principalId(),
+                engineName, engineSource));
         Map<String, Object> p = new LinkedHashMap<>();
         p.put("app_deployment_id", d.id());
         p.put("app_key", d.appKey());

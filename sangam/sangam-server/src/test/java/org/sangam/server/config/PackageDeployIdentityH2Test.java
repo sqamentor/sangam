@@ -143,6 +143,86 @@ class PackageDeployIdentityH2Test {
                 new DeploymentPort.DeployRequest("raw-plain", null, false, resources(null))).name());
     }
 
+    /**
+     * SL-179: the app-bundle engine deploy with the real engine's pinning rule. The event and channel parts of an app
+     * deployment need the ports plugin, which this engine does not carry; the engine resources are deployed exactly as
+     * AppDeploymentService does it (name, source and tenant as given), so the test proves what the bridge hands over and
+     * which proof is bound on the deploying thread.
+     */
+    private final class EngineOnlyApps extends org.sangam.ports.app.AppDeploymentService {
+        final List<String> identities = new ArrayList<>();
+
+        EngineOnlyApps() {
+            super(null, null, null, null, null, null, null);
+        }
+
+        @Override
+        public AppDeployment deploy(String tenant, org.sangam.ports.app.AppBundle bundle, String requestedBy, String name, String source) {
+            String n = name == null ? bundle.manifest().key() : name;
+            String src = source == null ? "sangam-app" : source;
+            identities.add(n + "|" + src);
+            var b = engine.processEngine().getRepositoryService().createDeployment().name(n).source(src).tenantId(tenant);
+            bundle.resources().forEach((k, v) -> {
+                if (k.endsWith(".bpmn")) {
+                    b.addInputStream(k, new java.io.ByteArrayInputStream(v));
+                }
+            });
+            String id = b.deploy().getId();
+            return new AppDeployment(UUID.randomUUID().toString(), tenant, bundle.manifest().key(), 1, bundle.bundleSha256(), id, "ACTIVE",
+                    requestedBy, null, bundle.manifest());
+        }
+    }
+
+    private static Map<String, byte[]> appResources(String ref) {
+        return Map.of("order.bpmn", model(ref).getBytes(StandardCharsets.UTF_8),
+                "orderPlaced.event", "{\"key\":\"orderPlaced\",\"payload\":[{\"name\":\"amount\",\"type\":\"long\"}]}"
+                        .getBytes(StandardCharsets.UTF_8));
+    }
+
+    private AuditPort noAudit() {
+        return (AuditPort) Proxy.newProxyInstance(AuditPort.class.getClassLoader(), new Class<?>[]{AuditPort.class},
+                (proxy, m, args) -> m.getName().equals("record") ? "audit-1" : null);
+    }
+
+    /** SL-179: a package with event models deploys as an app bundle under the package identity, and its refs are pinned. */
+    @Test
+    void aPackageWithEventModelsDeploysAsAnAppBundleAndPinsItsRefs() {
+        EngineOnlyApps apps = new EngineOnlyApps();
+        PortsDeploymentBridge bridge = new PortsDeploymentBridge(deployments, apps, noAudit());
+        DeploymentPort.Deployment d = bridge.deployPackage(CTX, "orders", HASH, appResources("orderApi#createOrder"));
+        assertEquals(List.of("pkg:orders:" + HASH + "|sangam-package"), apps.identities);
+        assertEquals("pkg:orders:" + HASH, d.name());
+        assertEquals("sangam-package", d.source());
+        String stored = new String(deployments.resource(CTX, d.id(), "order.bpmn"), StandardCharsets.UTF_8);
+        assertTrue(stored.contains("s:operationRef=\"orderApi@2#createOrder\""), stored);
+    }
+
+    /** SL-179: outside a package's own deploy an app bundle still cannot bind contract operations or claim the identity. */
+    @Test
+    void anAppBundleOutsideAPackageDeployStillCannotBindOperationsOrClaimTheIdentity() {
+        EngineOnlyApps apps = new EngineOnlyApps();
+        PortsDeploymentBridge bridge = new PortsDeploymentBridge(deployments, apps, noAudit());
+        assertModelInvalid(assertThrows(ApiProblem.class, () -> bridge.deploy(CTX,
+                new DeploymentPort.DeployRequest("orders-app", null, false, appResources("orderApi#createOrder")))),
+                "only a package's own deploy");
+        assertModelInvalid(assertThrows(ApiProblem.class, () -> bridge.deploy(CTX,
+                new DeploymentPort.DeployRequest("pkg:orders:" + HASH, null, false, appResources(null)))), "reserved");
+        // a proof for one package does not cover another package's identity
+        ProcessEngineException e = assertThrows(ProcessEngineException.class, () -> OperationRefPinning.asPackageDeploy(
+                new OperationRefPinning.PackageDeploy("t1", "other", HASH),
+                () -> apps.deploy("t1", org.sangam.ports.app.AppBundle.of(withManifest(appResources(null))), "kim",
+                        "pkg:orders:" + HASH, "sangam-package")));
+        assertTrue(e.getMessage().contains("422 MODEL_INVALID"), e.getMessage());
+        // an app bundle without refs or the identity still deploys under its own name
+        assertEquals("orders-app", bridge.deploy(CTX, new DeploymentPort.DeployRequest("orders-app", null, false, appResources(null))).name());
+    }
+
+    private static Map<String, byte[]> withManifest(Map<String, byte[]> files) {
+        Map<String, byte[]> m = new java.util.LinkedHashMap<>(files);
+        m.put("sangam-app.json", "{\"key\":\"orders\",\"name\":\"orders\"}".getBytes(StandardCharsets.UTF_8));
+        return m;
+    }
+
     @Test
     void theEngineRefusesTheIdentityOnAPathThatBypassesThePort() {
         var repo = engine.processEngine().getRepositoryService();
