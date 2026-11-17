@@ -446,7 +446,7 @@ public final class SecurityIdentityAdminBridge implements IdentityAdminPort {
 
     private <T> T run(Function<Connection, T> work) {
         try {
-            return tx.withReadConnection(work);
+            return tx.withConnection(work);
         } catch (SangamSecurityException e) {
             throw new ApiProblem(e.httpStatus(), e.code(), e.getMessage());
         }
