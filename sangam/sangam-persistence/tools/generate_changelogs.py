@@ -1408,6 +1408,17 @@ TABLES = [
         ("owner_id", "{str}", ""), ("query_json", "{text}", "NOT NULL"), ("properties_json", "{text}", ""),
         ("row_version", "{int}", "NOT NULL"), ("created_by", "{str}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"),
     ], ["tenant_id", "filter_id"], [("TEAM_TASK_FILTER_NAME", False, ["tenant_id", "name"])]),
+    # PATCHES.md P-5 (R10-cmmn, owner ruling 2026-11-17): native CMMN case external tasks, one row per ACTIVE case
+    # execution of a task with sangam:topic (sangam-flowable-ports CaseExternalTaskService; shape = PortsSchema).
+    ("0048-01", "P-5 case external tasks keyed to the case execution", "PORT_CASE_EXT_TASK", [
+        ("id_", "{str64}", "NOT NULL"), ("tenant_id", "{str64}", "NOT NULL"), ("case_inst_id", "{str64}", "NOT NULL"),
+        ("case_exec_id", "{str64}", "NOT NULL"), ("case_def_id", "{str64}", "NOT NULL"), ("activity_id", "{str}", "NOT NULL"),
+        ("topic", "{str}", "NOT NULL"), ("worker_id", "{str}", ""), ("lock_exp_time", "{ts}", ""), ("retries", "{int}", ""),
+        ("error_msg", "{str}", ""), ("priority", "{int}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"),
+        ("version_", "{long}", "NOT NULL"),
+    ], ["id_"], [("PORT_CASE_EXT_TASK_EXEC", True, ["case_exec_id"]),
+                 ("PORT_CASE_EXT_TASK_FETCH", False, ["topic", "lock_exp_time"]),
+                 ("PORT_CASE_EXT_TASK_CASE", False, ["tenant_id", "case_inst_id"])]),
 ]
 
 # Column additions to tables created above, each its own changeset (applied changesets are never edited).
