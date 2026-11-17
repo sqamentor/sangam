@@ -33,6 +33,7 @@ it waits on. "NOT_RUN" means a test is written but has not run on that database.
 | Contract deltas announcement | **pending (E3)** |
 | GA-55 bill-type contract | **pending (E4, joint JL-S-06, IFMS side)** |
 | Routing incident v1 + keys, service-token headers, version immutability, isolation | **available now** (E5, DONE-VERIFIED) |
+| Plain-Operaton host swap (PNP-1), host bean approval by configuration (PNP-2), typed routing-incident read (PNP-3) | **coded, H2 only, not merged** (lane R8-pnp, branch feat/round8-pnp; section 2.1) |
 | DSC gate through a call, slot consumption | **available now** (decisions 382, 385, 387, 390 (1); merged eb779e1a) |
 | Exact decimals end to end (TypedVariables, ExactJson) | **available now** in code; DB evidence NOT_RUN |
 | SD-505 confidence score | 0.00% as scored by IFMS on 2026-11-16 (joint ledger) |
@@ -79,6 +80,26 @@ it waits on. "NOT_RUN" means a test is written but has not run on that database.
 
 - Tenancy: one engine tenant per government scope. The tenant always comes from the token (decision 145).
 - Domain logic lives only in the `gov.ifms.*` packs and the India profiles. The adapter on the IFMS side owns the mapping to IFMS screens.
+
+### 2.1 Embedded swap behind the IFMS workflow port (IFMS report SANGAM-PNP-H2, lane R8-pnp)
+
+IFMS's H2 trial (E-65) found three gaps. Here is how each one is closed in code, on branch feat/round8-pnp. These changes are H2 and unit evidence only, and they are not pushed.
+
+| Finding | Before | Now |
+|---|---|---|
+| PNP-1: the engine was chosen by which adapter was built | The host built the engine through `SangamEngineConfigurer` (IFMS C-1, C-3: about 100 lines) | The host keeps its plain Operaton adapter and adds one process engine plugin, `org.sangam.engine.SangamEnginePlugin`, with its settings as `sangam.engine.*` properties (`SangamEngineSettingsBinder`, the same names as the Spring binding; an unknown key refuses the start). The host keeps its engine name, history level, job-executor choice and schema mode. The plugin must come first in the list. Test: `DropInHostH2Test` |
+| PNP-2: SL-160 refused `${recorder.record()}` | Approving the bean was already possible (`deploy-allowed-beans`), but the setting was not documented for hosts, and an entry with a pattern such as `recorder.*` was accepted and silently approved nothing | Approval is by configuration only: `sangam.engine.deploy-allowed-beans.*=recorder.record` (or a tenant id instead of `*`). It stays fail-closed: no host bean is approved unless it is listed, and this includes beans passed to `setBeans`. Each entry must be one exact name (`bean` or `bean.member`; one class name for `deploy-allowed-classes`). A wildcard, a pattern, an engine context object (`execution`, `task`, ...) or a reflective member refuses the start with `SL160-ALLOW-ENTRY`. Every approval in force is logged at start as `SL160-HOST-APPROVAL`. Tests: `HostApprovalEntriesTest`, `DropInHostH2Test` |
+| PNP-3: SG-35 cost about 235 lines of mapping (IFMS C-5) | The host wrote its own incident query, the walk over called children and the message parsing | `org.sangam.engine.incident.RoutingIncidents.collect(engine, caseInstanceId)` returns typed `Found` rows: incident id, instance, root, gateway, `RouteDecision.Outcome`, the raw code, the message and a stable `dedupKey()`. A code it does not know is returned with outcome `null`, never guessed. The host keeps only its own reason mapping (two cases) and its audit write. Test: `DropInHostH2Test` |
+
+The IFMS host code for the swap is then:
+
+```java
+cfg.getProcessEnginePlugins().add(0, new org.sangam.engine.SangamEnginePlugin()); // or name the class in the host's plugin list
+// -Dsangam.engine.system-audit-scope=system:ifms -Dsangam.engine.timer-zone=Asia/Kolkata
+// -Dsangam.engine.deploy-allowed-beans.*=recorder.record
+```
+
+Still on the IFMS side: the two adapter modules cannot share one classpath (E-65 item 2). That is IFMS packaging, not a Sangam gap. If the IFMS adapter reads its plugin class names from configuration, the swap needs no code change at all. The Sangam-only behaviours stay on purpose: the strict exclusive gateway raises an incident instead of `ENGINE-02004` (ADR-D-25), and compensation is reverse and sequential (SG-08). Whether to add an Operaton-compatible "throw" mode for SG-35 is an open owner question (R8-pnp report).
 
 ## 3. Pinning a Sangam version
 
