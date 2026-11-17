@@ -597,3 +597,5 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - (2) F7-2: when the profile binding is missing, the case waits on a visible hold task, "Profile binding missing", until the binding is fixed, instead of raising an incident.
   - (3) UI-DEMO-1: serving pack start forms (server endpoint plus start screen) is a new 0.1.0 item.
   - All three are assigned to R7-ui.
+
+- **401 (UX Q4 team workload; owner chat 2026-11-17, "New scoped reads (Recommended)")**: Add read-only endpoints, limited to the caller's own organisation, for the team task-group report and the shared saved filters, behind the team.read permission mapped to a new group. These are additive, read-only API changes and are announced in the contract register and to IFMS. Assigned to R8-ux-build.
