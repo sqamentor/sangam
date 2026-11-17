@@ -116,13 +116,13 @@ paths = [
 ]
 regexes = ['''^MC4CAQAwBQYDK2VwBCIEI$''']
 
-# 8. A message string in a null check: the generic-api-key rule reads `key, "the ASP signing key"` (requireNonNull of
-#    a PrivateKey parameter) as an assignment. The line holds no key material; the match must be exactly that call, so
+# 8. A constructor signature: the generic-api-key rule reads `key, X509Certificate` (parameter list
+#    "PrivateKey key, X509Certificate certificate") as an assignment. No key material; the match must be exactly that line, so
 #    a value pasted into the same file is still reported. (Round 9, code-scanning alert 778.)
 [[allowlists]]
-description = "requireNonNull message naming the ASP signing key (no key material)"
+description = "EsignRequestSigner constructor signature (parameter names, no key material)"
 targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^sangam/sangam-integration/src/main/java/org/sangam/integration/connector/gov/EsignRequestSigner\.java$''']
-regexes = ['''^\s*this\.key = Objects\.requireNonNull\(key, "the ASP signing key"\);\s*$''']
+regexes = ['''^\s*public EsignRequestSigner\(PrivateKey key, X509Certificate certificate, Profile profile\) \{\s*$''']
