@@ -4,7 +4,6 @@ package org.sangam.rest.adapter.operaton;
 import java.time.Instant;
 import java.util.Date;
 
-import org.operaton.bpm.engine.impl.util.ClockUtil;
 import org.operaton.bpm.engine.task.TaskQuery;
 import org.sangam.rest.port.TaskPort;
 
@@ -28,10 +27,10 @@ final class TaskPriorityDueFilter {
         if (f.maxPriority() != null) {
             q.taskMaxPriority(f.maxPriority());
         }
-        // One upper bound: the earlier of dueBefore and (overdue) the engine's now; the query keeps one dueBefore.
+        // One upper bound: the earlier of dueBefore and (overdue) the server's now; the query keeps one dueBefore.
         Instant before = f.dueBefore();
         if (Boolean.TRUE.equals(f.overdue())) {
-            Instant now = ClockUtil.getCurrentTime().toInstant();
+            Instant now = Instant.now();
             before = before == null || now.isBefore(before) ? now : before;
         }
         if (before != null) {

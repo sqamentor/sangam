@@ -24,7 +24,7 @@ public interface TaskPort {
      * @param maxPriority   only tasks of at most this priority
      * @param dueBefore     only tasks due strictly before this instant (tasks without a due date never match)
      * @param dueAfter      only tasks due strictly after this instant (tasks without a due date never match)
-     * @param overdue       true: only tasks due strictly before the engine's current time; false or null: no condition
+     * @param overdue       true: only tasks due strictly before the server's current time; false or null: no condition
      */
     record TaskFilter(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId,
                       String processInstanceId, String caseInstanceId, String businessKey, String processDefinitionKey,
