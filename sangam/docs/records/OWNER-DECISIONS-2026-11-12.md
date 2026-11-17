@@ -634,3 +634,9 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
 - **406 (owner chat 2026-11-17, supersedes 405)**: The owner answered the release-scope question with "I need release with all today any how any way at any cost". So 0.1.0 includes decision 392, the full decision 393 change and decision 402(2); none is deferred to 0.1.1.
   - Maximum parallel lanes are put on them.
   - The owner's 98% confidence floor (decision 403) and the shared heavy-lock rules still apply. A piece that cannot reach 98% is reported to the owner, not shipped.
+
+- **407 (owner chat 2026-11-17, standing authorisation)**:
+  - For every open or future question or doubt, choose the recommended answer, provided research and R&D bring confidence in it to at least 98%. Record each such choice as a decision with its evidence.
+  - Below 98%, keep researching until 98% is reached. If it cannot be reached, report the question.
+  - Goal: clear everything and take Sangam and IFMS live as fast as possible.
+  - This does not replace what only the owner can do: the owner-signed push gate and release tag, break-glass, and outward actions that need the owner in person (Rule 4).
