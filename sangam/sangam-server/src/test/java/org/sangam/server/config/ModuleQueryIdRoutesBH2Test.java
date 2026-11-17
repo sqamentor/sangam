@@ -143,7 +143,7 @@ class ModuleQueryIdRoutesBH2Test {
         assertEquals(V, Json.tree(lease.body()).path("fileId").asText(), "the lease of that very file: " + lease.body());
         String channel = "ns:d393-" + UUID.randomUUID().toString().substring(0, 8);
         HttpResponse<String> made = send("POST", "/events/channels", "{\"key\":\"" + channel
-                + "\",\"name\":\"d393\",\"direction\":\"INBOUND\",\"transport\":\"WEBHOOK\",\"active\":true}");
+                + "\",\"name\":\"d393\",\"direction\":\"INBOUND\",\"transport\":\"WEBHOOK\",\"active\":true,\"config\":{\"secretRef\":\"env:D393_HOOK\"}}");
         assertEquals(201, made.statusCode(), made.body());
         HttpResponse<String> read = send("GET", "/events/channels/by-key" + q("key", channel), null);
         assertEquals(200, read.statusCode(), read.body());
@@ -153,7 +153,7 @@ class ModuleQueryIdRoutesBH2Test {
                 {"POST", "/models/by-file/lease/release" + q("file", V), "{\"fence\":0}"},
                 {"POST", "/models/by-file/lease/request-takeover" + q("file", V), "{}"},
                 {"PUT", "/events/channels/by-key" + q("key", channel), "{\"key\":\"" + channel
-                        + "\",\"name\":\"d393\",\"direction\":\"INBOUND\",\"transport\":\"WEBHOOK\",\"active\":true}"},
+                        + "\",\"name\":\"d393\",\"direction\":\"INBOUND\",\"transport\":\"WEBHOOK\",\"active\":true,\"config\":{\"secretRef\":\"env:D393_HOOK\"}}"},
                 {"POST", "/events/channels/by-key/retire" + q("key", V), "{\"reason\":\"decision 393 test\"}"},
                 {"GET", "/events/definitions/by-key" + q("key", V), null},
                 {"POST", "/events/definitions/by-key/retire" + q("key", V), "{\"reason\":\"decision 393 test\"}"},

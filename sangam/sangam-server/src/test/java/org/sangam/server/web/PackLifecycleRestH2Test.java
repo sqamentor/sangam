@@ -60,7 +60,7 @@ class PackLifecycleRestH2Test {
     @Test
     void uninstallAndRollbackOfAPackTheTenantDoesNotHaveAre404() throws Exception {
         for (String op : new String[]{"uninstall", "rollback"}) {
-            HttpResponse<String> r = send("POST", "/api/v1/packs/no.such.pack/" + op, DEV,
+            HttpResponse<String> r = send("POST", "/api/v1/packs/by-id/" + op + "?id=no.such.pack", DEV,
                     "{\"tenant\":\"dev\",\"reason\":\"SL-41 contract\"}");
             assertEquals(404, r.statusCode(), op + ": " + r.body());
             JsonNode p = JSON.readTree(r.body());
