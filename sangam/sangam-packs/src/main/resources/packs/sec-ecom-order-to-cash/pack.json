@@ -44,36 +44,42 @@
   "connectors": [
     {
       "id": "fraud.score",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Risk screen"
     },
     {
       "id": "pg.authorise",
+      "moneyMovement": "IN",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Payment authorisation"
     },
     {
       "id": "pg.refund",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Refund to source"
     },
     {
       "id": "logistics.ship",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Shipment"
     },
     {
       "id": "logistics.codRemit",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "COD remittance"
     },
     {
       "id": "nodal.settle",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Seller settlement"

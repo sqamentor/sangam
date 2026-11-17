@@ -40,24 +40,28 @@
   "connectors": [
     {
       "id": "lms.closureCheck",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Dues outstanding"
     },
     {
       "id": "cersai.satisfy",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Satisfaction of charge"
     },
     {
       "id": "docs.noc",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "No-dues certificate"
     },
     {
       "id": "bank.credit",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Compensation credit"

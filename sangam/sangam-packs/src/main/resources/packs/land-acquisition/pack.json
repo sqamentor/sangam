@@ -60,18 +60,21 @@
   "connectors": [
     {
       "id": "gazette.publish",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Gazette / newspaper notification"
     },
     {
       "id": "land.awardees",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Awardees and amounts"
     },
     {
       "id": "pfms.payment",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
       "purpose": "Compensation",

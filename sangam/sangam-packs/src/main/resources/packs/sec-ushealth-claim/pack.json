@@ -84,30 +84,35 @@
   "connectors": [
     {
       "id": "x12.claim",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "837 submission"
     },
     {
       "id": "x12.claimStatus",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "276/277 status"
     },
     {
       "id": "x12.remit",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "835 decode"
     },
     {
       "id": "payer.appeal",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Appeal / redetermination"
     },
     {
       "id": "ledger.post",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Payment posting"

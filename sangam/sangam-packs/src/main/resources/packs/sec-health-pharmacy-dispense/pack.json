@@ -40,18 +40,21 @@
   "connectors": [
     {
       "id": "nmr.verify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "National Medical Register"
     },
     {
       "id": "inventory.issue",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Stock issue (FEFO)"
     },
     {
       "id": "docs.register",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "H1 / X register entry"

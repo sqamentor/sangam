@@ -72,18 +72,21 @@
   "connectors": [
     {
       "id": "digilocker.pull",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-DL",
       "purpose": "Requester: applicant certificates"
     },
     {
       "id": "registry.beneficiary",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Beneficiary registry / duplicate check"
     },
     {
       "id": "pfms.dbt",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
       "purpose": "DBT record per instalment",
@@ -94,12 +97,14 @@
     },
     {
       "id": "bank.statement",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-PFMS",
       "purpose": "Credit confirmation"
     },
     {
       "id": "esign.sign",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-SIGN",
       "purpose": "Sanction order signature",

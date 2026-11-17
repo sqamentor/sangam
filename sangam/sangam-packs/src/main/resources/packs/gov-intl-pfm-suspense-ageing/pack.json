@@ -44,6 +44,7 @@
   "connectors": [
     {
       "id": "ledger.reclassify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Reclassify the item from suspense to the correct head"

@@ -44,12 +44,14 @@
   "connectors": [
     {
       "id": "cppp.publish",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "EOI / RFP publication"
     },
     {
       "id": "eproc.qcbs",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Combined score ranking"

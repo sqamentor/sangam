@@ -52,12 +52,14 @@
   "connectors": [
     {
       "id": "nsp.application",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "NSP application"
     },
     {
       "id": "pfms.dbt",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "DBT payment",

@@ -36,30 +36,35 @@
   "connectors": [
     {
       "id": "rta.reconcile",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Bid reconciliation"
     },
     {
       "id": "exchange.basis",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Basis of allotment"
     },
     {
       "id": "depository.credit",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Credit of shares"
     },
     {
       "id": "sponsorbank.unblock",
+      "moneyMovement": "NONE",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Unblock ASBA / UPI"
     },
     {
       "id": "exchange.listing",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Listing application"

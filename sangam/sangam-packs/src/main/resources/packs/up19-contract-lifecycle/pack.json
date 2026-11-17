@@ -60,6 +60,7 @@
   "connectors": [
     {
       "id": "esign.sign",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-SIGN",
       "purpose": "Signature",

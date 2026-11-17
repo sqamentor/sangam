@@ -36,24 +36,28 @@
   "connectors": [
     {
       "id": "exchange.intimate",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Exchange intimation"
     },
     {
       "id": "depository.benpos",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Beneficiary positions"
     },
     {
       "id": "bank.transfer",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Dividend payment"
     },
     {
       "id": "bank.unpaidDividend",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Unpaid dividend account"

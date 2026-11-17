@@ -24,24 +24,28 @@
   "connectors": [
     {
       "id": "inventory.reserve",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Reserve"
     },
     {
       "id": "inventory.release",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Release (compensation)"
     },
     {
       "id": "saga.charge",
+      "moneyMovement": "IN",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Charge"
     },
     {
       "id": "payment.refund",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Refund (compensation)",
@@ -52,12 +56,14 @@
     },
     {
       "id": "shipping.create",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Book"
     },
     {
       "id": "shipping.cancel",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Cancel (compensation)"

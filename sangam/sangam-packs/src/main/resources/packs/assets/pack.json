@@ -48,18 +48,21 @@
   "connectors": [
     {
       "id": "assets.register",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Asset register"
     },
     {
       "id": "eauction.list",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "e-Auction listing"
     },
     {
       "id": "assets.remove",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Removal from register"

@@ -80,12 +80,14 @@
   "connectors": [
     {
       "id": "ifms.encumber",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Encumbrance against the AA"
     },
     {
       "id": "ifms.release",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Release on cancel"

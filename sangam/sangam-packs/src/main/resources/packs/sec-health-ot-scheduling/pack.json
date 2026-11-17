@@ -56,12 +56,14 @@
   "connectors": [
     {
       "id": "ot.book",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "OT slot booking"
     },
     {
       "id": "lis.specimen",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Specimen to the laboratory"
