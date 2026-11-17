@@ -662,3 +662,9 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - Guard: `PathParameterGuardTest` with the ledger `sangam-rest/api/path-parameters.tsv`. Its PENDING count can only go down, and the release gate is zero PENDING.
 
 - **411 (owner chat 2026-11-17, "Yes, ci/ branches (Recommended)")**: Lanes may push test-only branches to `sqamentor/sangam` under the `ci/` prefix, so that GitHub Actions runs the long builds and the per-database tests in parallel. `main` and release tags stay behind the owner-signed push gate. This approval is for Sangam only; IFMS follows its own push rules.
+
+- **412 (owner chat 2026-11-17, "GitHub and AWS both, set it up now")**: Set up the three-level build strategy now.
+  - Level 1: the local heavy lock, for quick runs.
+  - Level 2: GitHub Actions on `ci/*` branches (decision 411), with a matrix job per database for long runs or when the local wait exceeds 30 minutes.
+  - Level 3: AWS CodeBuild, used when GitHub is backed up or its minutes are used up.
+  - The main push and the tags stay owner-signed.
