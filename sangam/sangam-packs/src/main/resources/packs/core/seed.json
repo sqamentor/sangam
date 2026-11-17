@@ -51,13 +51,13 @@
   "holdings": [
     {
       "seat": "appellate-authority",
-      "person": "aa.demo",
+      "person": "aa.office",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     },
     {
       "seat": "reconciliation-desk",
-      "person": "recon.demo",
+      "person": "recon.office",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }
