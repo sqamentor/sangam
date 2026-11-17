@@ -77,7 +77,7 @@ public class ProcessController {
      */
     private void requireStartableInTasklist(RequestContext ctx, String key, Integer version) {
         var defs = processes.definitions(ctx, new ProcessPort.DefinitionFilter(key, version == null, null),
-                new org.sangam.rest.port.Page.PageRequest(0, org.sangam.rest.port.Page.MAX_SIZE)).items();
+                new org.sangam.rest.port.Page.PageRequest(0, org.sangam.rest.port.Page.PageRequest.MAX_SIZE)).items();
         ProcessPort.ProcessDefinition own = null;
         ProcessPort.ProcessDefinition shared = null;
         for (ProcessPort.ProcessDefinition d : defs) {
