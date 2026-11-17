@@ -37,7 +37,7 @@ test('claim, then complete through the decision dialog', async ({ signedIn: page
   await page.getByRole('group', { name: t('task.decisions') }).getByRole('button', { name: t('task.action.COMPLETE') }).click();
   const dialog = page.locator('dialog[open]');
   await dialog.getByRole('button', { name: t('common.confirm') }).click();
-  await expect(page.getByText(t('task.doneTitle'))).toBeVisible();
+  await expect(page.getByRole('heading', { name: t('task.doneTitle') })).toBeVisible();
 
   await expect
     .poll(async () => {

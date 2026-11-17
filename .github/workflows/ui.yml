@@ -235,10 +235,6 @@ jobs:
           if rc != 0 or failed or skipped or ran == 0:
               sys.exit("::error title=ui-e2e::end-to-end run failed, skipped tests or ran none (a skip is not a pass)")
           PY'
-      - name: DIAG error contexts
-        if: failure()
-        working-directory: sangam/sangam-ui
-        run: for f in $(find test-results -name error-context.md | sort); do echo "=== $f"; grep -v "^s*- /url:" "$f" | head -c 30000; echo; done
       - name: Server log on failure
         if: failure()
         run: docker logs sangam-server
