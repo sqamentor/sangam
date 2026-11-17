@@ -14,6 +14,7 @@ import org.operaton.bpm.engine.ProcessEngine;
 import org.operaton.bpm.engine.impl.cfg.StandaloneInMemProcessEngineConfiguration;
 import org.sangam.packs.port.PackRuntime;
 import org.sangam.packs.sim.LoggingAuditSink;
+import org.sangam.packs.spi.PackDeployer;
 import org.sangam.packs.spi.PackRegistry;
 
 /** TEMPORARY probe (not committed). */
