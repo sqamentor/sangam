@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.sangam.engine.tx.LockScope;
+import org.sangam.core.engine.RemoteCalls;
 
 /**
  * {@link ExternalPolicyCheck} over HTTP with the JDK client (owner decision 166: a remote check, no in-process policy
@@ -123,7 +123,7 @@ public final class HttpExternalPolicyCheck implements ExternalPolicyCheck {
 
     @Override
     public ExternalPolicyDecision check(ExternalPolicyRequest request) throws ExternalPolicyUnavailable {
-        LockScope.assertNoLockHeld("HTTP POST " + settings.origin() + " (external policy)");
+        RemoteCalls.assertNoLockHeld("HTTP POST " + settings.origin() + " (external policy)");
         HttpRequest.Builder b = HttpRequest.newBuilder(settings.endpoint())
                 .timeout(settings.timeout())
                 .header("Content-Type", "application/json")
