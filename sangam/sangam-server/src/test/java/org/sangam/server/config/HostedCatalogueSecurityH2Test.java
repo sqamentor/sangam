@@ -138,7 +138,7 @@ class HostedCatalogueSecurityH2Test {
                 {"POST", "/api/v1/catalogue/entries/x/1.0.0/approve", "{}"},
                 {"POST", "/api/v1/catalogue/entries/x/1.0.0/reject", "{\"reason\":\"r\"}"},
                 {"GET", "/api/v1/catalogue", null},
-                {"POST", "/api/v1/catalogue/x/1.0.0/install", "{}"},
+                {"POST", "/api/v1/catalogue/by-id/by-version/install?id=x&version=1.0.0", "{}"},
                 // only GET is public, and only the three exact shapes
                 {"POST", "/api/v1/catalogue/hosted/index.json", "{}"},
                 {"GET", "/api/v1/catalogue/hosted/other", null},

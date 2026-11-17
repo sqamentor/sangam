@@ -3,6 +3,7 @@ package org.sangam.security.scim;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -86,12 +87,13 @@ class ScimServiceH2Test {
                 + " last_used_at TIMESTAMP WITH TIME ZONE, revoked_at TIMESTAMP WITH TIME ZONE, created_by VARCHAR(255))");
         // SEC_SCIM_RESOURCE as requested from the W4-G generator (decision 154)
         Jdbc.update(c, "CREATE TABLE SEC_SCIM_RESOURCE (tenant_id VARCHAR(64) NOT NULL, resource_type VARCHAR(16) NOT NULL"
-                + " CHECK (resource_type IN ('USER', 'GROUP')), resource_id VARCHAR(255) NOT NULL, user_name VARCHAR(255),"
+                + " CHECK (resource_type IN ('USER', 'GROUP')), resource_id VARCHAR(255) NOT NULL, person_id VARCHAR(64), user_name VARCHAR(255),"
                 + " display_name VARCHAR(255), name_key VARCHAR(255) NOT NULL, external_id VARCHAR(255), external_key VARCHAR(255) NOT NULL,"
                 + " attributes TEXT, version BIGINT NOT NULL, created_at TIMESTAMP WITH TIME ZONE NOT NULL,"
                 + " updated_at TIMESTAMP WITH TIME ZONE NOT NULL, PRIMARY KEY (tenant_id, resource_type, resource_id))");
         Jdbc.update(c, "CREATE UNIQUE INDEX SEC_SCIM_NAME ON SEC_SCIM_RESOURCE (tenant_id, resource_type, name_key)");
         Jdbc.update(c, "CREATE UNIQUE INDEX SEC_SCIM_EXT ON SEC_SCIM_RESOURCE (tenant_id, resource_type, external_key)");
+        Jdbc.update(c, "CREATE UNIQUE INDEX SEC_SCIM_PERSON ON SEC_SCIM_RESOURCE (tenant_id, resource_type, person_id)");
         Jdbc.update(c, "INSERT INTO AUTH_POLICY_VERSION(tenant_id, policy_version) VALUES (?, 1)", T);
         // what scim.provision must grant: USER and GROUP ADMIN and READ, API_TOKEN ADMIN (revocation on disable)
         long perms = Permission.ADMIN.bit() | Permission.READ.bit();
@@ -163,6 +165,12 @@ class ScimServiceH2Test {
                 + " WHERE e.tenant_id=? AND e.event_type=? ORDER BY e.seq", rs -> rs.getString(1), T, type);
     }
 
+    /** The person behind a SCIM user id (decision 393 (a): they differ). */
+    private String pid(String scimId) throws Exception {
+        return Jdbc.one(c, "SELECT person_id FROM SEC_SCIM_RESOURCE WHERE tenant_id=? AND resource_type='USER' AND resource_id=?",
+                rs -> rs.getString(1), T, scimId).orElseThrow();
+    }
+
     private void seat(String personId, String kind) {
         postings.add(new SecurityPorts.SeatHolder("seat-1", personId, "po-1", kind, false,
                 Instant.parse("2026-04-01T00:00:00Z"), null, null));
@@ -176,13 +184,88 @@ class ScimServiceH2Test {
         assertTrue(u.get("active").asBoolean());
         assertEquals("W/\"1\"", u.get("meta").get("version").asText());
         assertEquals("/scim/v2/Users/" + id, u.get("meta").get("location").asText());
-        assertEquals(id, u.get(EXT).get("personId").asText());
+        String pid = u.get(EXT).get("personId").asText();
+        assertEquals(pid(id), pid);
         assertEquals(0, u.get(EXT).get("postings").size());
         assertEquals("sub-a", Jdbc.one(c, "SELECT external_subject FROM SEC_PERSON WHERE tenant_id=? AND person_id=?",
-                rs -> rs.getString(1), T, id).orElseThrow());
-        assertEquals("alice@x.org", Jdbc.one(c, "SELECT email FROM SEC_PERSON WHERE person_id=?", rs -> rs.getString(1), id).orElseThrow());
+                rs -> rs.getString(1), T, pid).orElseThrow());
+        assertEquals("alice@x.org", Jdbc.one(c, "SELECT email FROM SEC_PERSON WHERE person_id=?", rs -> rs.getString(1), pid).orElseThrow());
         assertEquals(1, events("USER_PROVISIONED").size());
         assertEquals(u, scim.getUser(c, idp, id), "GET returns what create returned");
+    }
+
+    @Test
+    void anAdoptedPersonWhoseIdHoldsSlashesGetsAnOpaqueScimIdAndIsReachable() throws Exception {
+        // decision 393 (a): LDAP sync and bootstrap may create person ids with '/' or ':'; Tomcat refuses %2F in a path
+        Jdbc.update(c, "INSERT INTO SEC_PERSON(tenant_id, person_id, display_name, external_subject, status) VALUES (?,?,?,?,'ACTIVE')",
+                T, "ldap/a/b", "Directory", "sub-l");
+        ObjectNode u = scim.createUser(c, idp, user("lena", "sub-l"));
+        String id = u.get("id").asText();
+        assertNotEquals("ldap/a/b", id, "the SCIM id is server-assigned, not the person id");
+        assertTrue(id.matches("[A-Za-z0-9._~-]+"), "the SCIM id is one path segment without encoding: " + id);
+        assertEquals("/scim/v2/Users/" + id, u.get("meta").get("location").asText());
+        assertEquals("ldap/a/b", u.get(EXT).get("personId").asText());
+        assertEquals(u, scim.getUser(c, idp, id));
+        assertEquals(id, scim.listUsers(c, idp, "id eq \"" + id + "\"", null, null).get("Resources").get(0).get("id").asText());
+        assertEquals(0, scim.listUsers(c, idp, "id eq \"ldap/a/b\"", null, null).get("totalResults").asInt(),
+                "the person id is not a SCIM id");
+        assertEquals(404, assertThrows(ScimException.class, () -> scim.getUser(c, idp, "ldap/a/b")).status());
+        ObjectNode r = scim.patchUser(c, idp, id, patch("[{\"op\":\"replace\",\"path\":\"displayName\",\"value\":\"Lena R\"}]"), "W/\"1\"");
+        assertEquals("Lena R", r.get("displayName").asText());
+        scim.deleteUser(c, idp, id, null);
+        assertEquals("DISABLED", Jdbc.one(c, "SELECT status FROM SEC_PERSON WHERE person_id='ldap/a/b'", rs -> rs.getString(1)).orElseThrow());
+        assertEquals(404, assertThrows(ScimException.class, () -> scim.getUser(c, idp, id)).status());
+    }
+
+    @Test
+    void aReSyncReKeysAUserProvisionedBeforeWhoseScimIdWasAnUnreachablePersonId() throws Exception {
+        Instant then = Instant.parse("2026-01-01T00:00:00Z");
+        for (String pid : List.of("ldap/x:y", "p-legacy")) {
+            Jdbc.update(c, "INSERT INTO SEC_PERSON(tenant_id, person_id, display_name, external_subject, status) VALUES (?,?,?,?,'ACTIVE')",
+                    T, pid, "Legacy", "sub-" + pid);
+            // as changeset 0046-03 leaves a row provisioned before decision 393 (a): SCIM id = person id
+            Jdbc.update(c, "INSERT INTO SEC_SCIM_RESOURCE(tenant_id, resource_type, resource_id, person_id, user_name, name_key,"
+                    + " external_id, external_key, version, created_at, updated_at) VALUES (?, 'USER', ?, ?, ?, ?, ?, ?, 1, ?, ?)",
+                    T, pid, pid, "u-" + pid, "u-" + pid, "sub-" + pid, "x:sub-" + pid, then, then);
+        }
+        ObjectNode u = scim.createUser(c, idp, user("u-ldap/x:y", "sub-ldap/x:y"));
+        String id = u.get("id").asText();
+        assertTrue(ScimResources.isPathSegment(id), id);
+        assertEquals("ldap/x:y", u.get(EXT).get("personId").asText());
+        assertEquals(1, count("SELECT COUNT(*) FROM SEC_SCIM_RESOURCE WHERE tenant_id=? AND person_id='ldap/x:y'", T));
+        assertEquals(404, assertThrows(ScimException.class, () -> scim.getUser(c, idp, "ldap/x:y")).status());
+        assertEquals(2, count("SELECT COUNT(*) FROM SEC_PERSON WHERE tenant_id=?", T), "no person is duplicated");
+        assertEquals("uniqueness", assertThrows(ScimException.class,
+                () -> scim.createUser(c, idp, user("u-p-legacy", "sub-p-legacy"))).scimType(),
+                "a reachable legacy id is kept: POST stays 409");
+        assertEquals("p-legacy", scim.getUser(c, idp, "p-legacy").get("id").asText());
+    }
+
+    @Test
+    void aGroupWhoseMembersHaveSlashedPersonIdsRoundTripsInScimIds() throws Exception {
+        Jdbc.update(c, "INSERT INTO SEC_PERSON(tenant_id, person_id, display_name, external_subject, status) VALUES (?,?,?,?,'ACTIVE')",
+                T, "ldap/a/b", "Directory A", "sub-la");
+        Jdbc.update(c, "INSERT INTO SEC_PERSON(tenant_id, person_id, display_name, external_subject, status) VALUES (?,?,?,?,'ACTIVE')",
+                T, "ldap/c:d", "Directory C", "sub-lc");
+        String a = scim.createUser(c, idp, user("lata", "sub-la")).get("id").asText();
+        String b = scim.createUser(c, idp, user("lalit", "sub-lc")).get("id").asText();
+        ObjectNode g = scim.createGroup(c, idp, group("Directory clerks", a));
+        String gid = g.get("id").asText();
+        assertEquals(a, g.get("members").get(0).get("value").asText(), "a member value is the SCIM id");
+        assertEquals("/scim/v2/Users/" + a, g.get("members").get(0).get("$ref").asText());
+        assertEquals(1, count("SELECT COUNT(*) FROM SEC_GROUP_MEMBER WHERE group_id=? AND person_id='ldap/a/b'", gid),
+                "the membership is stored for the person");
+        assertEquals(gid, scim.getUser(c, idp, a).get("groups").get(0).get("value").asText());
+        ObjectNode same = scim.replaceGroup(c, idp, gid, scim.getGroup(c, idp, gid), null);
+        assertEquals(a, same.get("members").get(0).get("value").asText(), "PUT of what GET returned changes no membership");
+        assertEquals(1, count("SELECT COUNT(*) FROM SEC_GROUP_MEMBER WHERE group_id=?", gid));
+        ObjectNode r = scim.patchGroup(c, idp, gid, patch("[{\"op\":\"add\",\"path\":\"members\",\"value\":[{\"value\":\"" + b + "\"}]},"
+                + "{\"op\":\"remove\",\"path\":\"members[value eq \\\"" + a + "\\\"]\"}]"), null);
+        assertEquals(1, r.get("members").size());
+        assertEquals(b, r.get("members").get(0).get("value").asText());
+        assertEquals(1, count("SELECT COUNT(*) FROM SEC_GROUP_MEMBER WHERE group_id=? AND person_id='ldap/c:d'", gid));
+        assertEquals("invalidValue", assertThrows(ScimException.class, () -> scim.createGroup(c, idp, group("X", "ldap/a/b"))).scimType(),
+                "a person id is not a member value");
     }
 
     @Test
@@ -190,7 +273,8 @@ class ScimServiceH2Test {
         Jdbc.update(c, "INSERT INTO SEC_PERSON(tenant_id, person_id, display_name, external_subject, status) VALUES (?,?,?,?,'ACTIVE')",
                 T, "p-old", "Old", "sub-o");
         ObjectNode u = scim.createUser(c, idp, user("olga", "sub-o"));
-        assertEquals("p-old", u.get("id").asText());
+        assertNotEquals("p-old", u.get("id").asText(), "decision 393 (a): the SCIM id is server-assigned");
+        assertEquals("p-old", u.get(EXT).get("personId").asText());
         assertEquals(1, count("SELECT COUNT(*) FROM SEC_PERSON WHERE tenant_id=?", T));
         assertEquals("olga D", Jdbc.one(c, "SELECT display_name FROM SEC_PERSON WHERE person_id='p-old'", rs -> rs.getString(1)).orElseThrow());
         ScimException again = assertThrows(ScimException.class, () -> scim.createUser(c, idp, user("olga2", "sub-o")));
@@ -229,7 +313,7 @@ class ScimServiceH2Test {
     @Test
     void anUnchangedEchoOfPostingsIsAcceptedAndAChangeIsMutability() throws Exception {
         String id = scim.createUser(c, idp, user("dev", "sub-d")).get("id").asText();
-        seat(id, "REGULAR");
+        seat(pid(id), "REGULAR");
         ObjectNode current = scim.getUser(c, idp, id);
         assertEquals("SUBSTANTIVE", current.get(EXT).get("postings").get(0).get("kind").asText());
         assertEquals("2026-04-01", current.get(EXT).get("postings").get(0).get("validFrom").asText());
@@ -256,12 +340,12 @@ class ScimServiceH2Test {
     void activeFalseDisablesThePersonAndRevokesItsApiTokens() throws Exception {
         String id = scim.createUser(c, idp, user("erin", "sub-e")).get("id").asText();
         Jdbc.update(c, "INSERT INTO SEC_API_TOKEN(token_id, tenant_id, owner_person_id, name, secret_hash, scopes, created_at,"
-                + " expires_at) VALUES ('tok1', ?, ?, 'ci', 'h', '[]', ?, ?)", T, id, Instant.parse("2026-01-01T00:00:00Z"),
+                + " expires_at) VALUES ('tok1', ?, ?, 'ci', 'h', '[]', ?, ?)", T, pid(id), Instant.parse("2026-01-01T00:00:00Z"),
                 Instant.parse("2099-01-01T00:00:00Z"));
         ObjectNode r = scim.patchUser(c, idp, id, patch("[{\"op\":\"replace\",\"path\":\"active\",\"value\":\"False\"}]"), "W/\"1\"");
         assertFalse(r.get("active").asBoolean());
         assertEquals("W/\"2\"", r.get("meta").get("version").asText());
-        assertEquals("DISABLED", Jdbc.one(c, "SELECT status FROM SEC_PERSON WHERE person_id=?", rs -> rs.getString(1), id).orElseThrow());
+        assertEquals("DISABLED", Jdbc.one(c, "SELECT status FROM SEC_PERSON WHERE person_id=?", rs -> rs.getString(1), pid(id)).orElseThrow());
         assertNotNull(Jdbc.one(c, "SELECT revoked_at FROM SEC_API_TOKEN WHERE token_id='tok1'", rs -> rs.getObject(1)).orElse(null));
         assertEquals(1, events("USER_DISABLED").size());
     }
@@ -269,14 +353,14 @@ class ScimServiceH2Test {
     @Test
     void activeTrueReEnablesThroughThePersonServiceAndTokensStayRevoked() throws Exception {
         String id = scim.createUser(c, idp, user("kiran", "sub-k")).get("id").asText();
-        assertEquals("SCIM", Jdbc.one(c, "SELECT source FROM SEC_PERSON WHERE person_id=?", rs -> rs.getString(1), id).orElseThrow());
+        assertEquals("SCIM", Jdbc.one(c, "SELECT source FROM SEC_PERSON WHERE person_id=?", rs -> rs.getString(1), pid(id)).orElseThrow());
         Jdbc.update(c, "INSERT INTO SEC_API_TOKEN(token_id, tenant_id, owner_person_id, name, secret_hash, scopes, created_at,"
-                + " expires_at) VALUES ('tok2', ?, ?, 'ci', 'h', '[]', ?, ?)", T, id, Instant.parse("2026-01-01T00:00:00Z"),
+                + " expires_at) VALUES ('tok2', ?, ?, 'ci', 'h', '[]', ?, ?)", T, pid(id), Instant.parse("2026-01-01T00:00:00Z"),
                 Instant.parse("2099-01-01T00:00:00Z"));
         scim.patchUser(c, idp, id, patch("[{\"op\":\"replace\",\"path\":\"active\",\"value\":false}]"), null);
         ObjectNode r = scim.patchUser(c, idp, id, patch("[{\"op\":\"replace\",\"path\":\"active\",\"value\":true}]"), null);
         assertTrue(r.get("active").asBoolean());
-        assertEquals("ACTIVE", Jdbc.one(c, "SELECT status FROM SEC_PERSON WHERE person_id=?", rs -> rs.getString(1), id).orElseThrow());
+        assertEquals("ACTIVE", Jdbc.one(c, "SELECT status FROM SEC_PERSON WHERE person_id=?", rs -> rs.getString(1), pid(id)).orElseThrow());
         assertTrue(events("USER_UPDATED").stream().anyMatch(p -> p.contains("ENABLE")), "audited by the person service");
         assertNotNull(Jdbc.one(c, "SELECT revoked_at FROM SEC_API_TOKEN WHERE token_id='tok2'", rs -> rs.getObject(1)).orElse(null),
                 "re-enabling does not bring revoked tokens back");
@@ -314,11 +398,12 @@ class ScimServiceH2Test {
         Jdbc.update(c, "INSERT INTO SEC_GROUP(tenant_id, group_id, name, source, created_at) VALUES (?, 'local', 'L', 'LOCAL', ?)",
                 T, Instant.parse("2026-01-01T00:00:00Z"));
         Jdbc.update(c, "INSERT INTO SEC_GROUP_MEMBER(tenant_id, group_id, person_id, source, added_at) VALUES (?, 'local', ?, 'LOCAL', ?)",
-                T, id, Instant.parse("2026-01-01T00:00:00Z"));
-        seat(id, "REGULAR");
+                T, pid(id), Instant.parse("2026-01-01T00:00:00Z"));
+        String pid = pid(id);
+        seat(pid, "REGULAR");
         scim.deleteUser(c, idp, id, null);
         assertEquals(404, assertThrows(ScimException.class, () -> scim.getUser(c, idp, id)).status());
-        assertEquals("DISABLED", Jdbc.one(c, "SELECT status FROM SEC_PERSON WHERE person_id=?", rs -> rs.getString(1), id).orElseThrow());
+        assertEquals("DISABLED", Jdbc.one(c, "SELECT status FROM SEC_PERSON WHERE person_id=?", rs -> rs.getString(1), pid).orElseThrow());
         assertEquals(0, count("SELECT COUNT(*) FROM SEC_GROUP_MEMBER WHERE group_id=?", gid));
         assertEquals(1, count("SELECT COUNT(*) FROM SEC_GROUP_MEMBER WHERE group_id='local'"), "groups managed elsewhere are kept");
         assertEquals("W/\"2\"", scim.getGroup(c, idp, gid).get("meta").get("version").asText(), "the group's ETag moved");
@@ -361,13 +446,13 @@ class ScimServiceH2Test {
         ObjectNode g = scim.createGroup(c, idp, group("Approvers", a));
         String gid = g.get("id").asText();
         assertEquals("SCIM", Jdbc.one(c, "SELECT source FROM SEC_GROUP WHERE group_id=?", rs -> rs.getString(1), gid).orElseThrow());
-        assertEquals(1, count("SELECT COUNT(*) FROM AUTH_MEMBERSHIP WHERE source_id=?", "grp:" + gid + ":" + a));
+        assertEquals(1, count("SELECT COUNT(*) FROM AUTH_MEMBERSHIP WHERE source_id=?", "grp:" + gid + ":" + pid(a)));
 
         ObjectNode r = scim.patchGroup(c, idp, gid, patch("[{\"op\":\"add\",\"path\":\"members\",\"value\":[{\"value\":\"" + b + "\"}]},"
                 + "{\"op\":\"remove\",\"path\":\"members[value eq \\\"" + a + "\\\"]\"}]"), null);
         assertEquals(1, r.get("members").size());
         assertEquals(b, r.get("members").get(0).get("value").asText());
-        assertEquals(0, count("SELECT COUNT(*) FROM AUTH_MEMBERSHIP WHERE source_id=?", "grp:" + gid + ":" + a));
+        assertEquals(0, count("SELECT COUNT(*) FROM AUTH_MEMBERSHIP WHERE source_id=?", "grp:" + gid + ":" + pid(a)));
         assertEquals(gid, scim.getUser(c, idp, b).get("groups").get(0).get("value").asText());
         assertTrue(events("MEMBERSHIP_CHANGED").size() >= 3);
 

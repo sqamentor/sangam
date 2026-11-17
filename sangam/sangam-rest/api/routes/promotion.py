@@ -12,10 +12,10 @@ schema("PromotionPlan", "What the apply step will do and the hash it must presen
        "sourceTenant sourceEnvironment targetTenant targetEnvironment changes:list:BundleDiffEntry "
        "request:OnboardingRequest dryRun:OnboardingDryRun planHash")
 
-op("get", "/onboarding/promotions/{tenant}/bundle", "exportPromotionBundle", "Onboarding", "Export for promotion",
+op("get", "/onboarding/promotions/by-tenant/bundle", "exportPromotionBundle", "Onboarding", "Export for promotion",
    "The tenant's signed bundle labelled with this environment (sangam.onboarding.environment). 409 "
    "PROMOTION_ENVIRONMENT_NOT_SET without a label.", PROMO,
-   params=[pp("tenant", "tenant id")], resp=(200, "TenantBundle"), perm="tenant.admin", errors=GET_E)
+   params=[q("tenant", desc="Tenant id; may carry '/' or ':'", required=True)], resp=(200, "TenantBundle"), perm="tenant.admin", errors=GET_E)
 op("post", "/onboarding/promotions/plan", "planPromotion", "Onboarding", "Plan a promotion",
    "Verifies the bundle signature, diffs it against the target tenant here and dry-runs it; returns the plan hash. "
    "422 PROMOTION_ENVIRONMENT_MISSING, PROMOTION_SAME_ENVIRONMENT, PROMOTION_TARGET_MISMATCH; 409 "

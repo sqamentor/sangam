@@ -73,7 +73,7 @@ public final class SCIMApi {
      * <p>Filtered, paged list of the tenant's users.
      *
      * <p>{@code GET /scim/v2/Users} (operationId {@code scimListUsers}); permission {@code scim.provision}.
-     * @param filter query parameter {@code filter}, or null. SCIM filter: eq, co, sw on userName / externalId / displayName (others: 400 invalidFilter)
+     * @param filter query parameter {@code filter}, or null. SCIM filter: eq, co, sw on id / userName / externalId / displayName (others: 400 invalidFilter)
      * @param startIndex query parameter {@code startIndex}, or null. 1-based
      * @param count query parameter {@code count}, or null. Page size, at most 200
      * @param attributes query parameter {@code attributes}, or null
@@ -180,7 +180,7 @@ public final class SCIMApi {
      * <p>Filtered, paged list of the tenant's groups.
      *
      * <p>{@code GET /scim/v2/Groups} (operationId {@code scimListGroups}); permission {@code scim.provision}.
-     * @param filter query parameter {@code filter}, or null. SCIM filter: eq, co, sw on userName / externalId / displayName (others: 400 invalidFilter)
+     * @param filter query parameter {@code filter}, or null. SCIM filter: eq, co, sw on id / userName / externalId / displayName (others: 400 invalidFilter)
      * @param startIndex query parameter {@code startIndex}, or null. 1-based
      * @param count query parameter {@code count}, or null. Page size, at most 200
      * @param attributes query parameter {@code attributes}, or null

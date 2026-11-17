@@ -211,7 +211,7 @@ class PlugAndPlayAcceptanceTest {
     void at7ExportImportDiff() throws Exception {
         JsonNode s = scenario("AT-7");
         String source = s.at("/source").asText();
-        JsonNode exported = call(maker(), "GET", "/onboarding/tenants/" + source + "/bundle", null);
+        JsonNode exported = call(maker(), "GET", "/onboarding/tenants/by-tenant/bundle?tenant=" + source, null);
         assertFalse(exported.path("signature").isMissingNode(), "the bundle must be signed");
         Map<String, Object> imp = JSON.convertValue(s.path("import"), Map.class);
         imp.put("bundle", exported);
@@ -228,7 +228,7 @@ class PlugAndPlayAcceptanceTest {
         imp.put("dryRun", true);
         call(maker(), "POST", "/onboarding/bundles/import", imp, 422);
 
-        JsonNode target = call(maker(), "GET", "/onboarding/tenants/" + s.at("/import/targetTenant").asText() + "/bundle", null);
+        JsonNode target = call(maker(), "GET", "/onboarding/tenants/by-tenant/bundle?tenant=" + s.at("/import/targetTenant").asText(), null);
         JsonNode diff = call(maker(), "POST", "/onboarding/bundles/diff", Map.of("left", exported, "right", target));
         for (JsonNode e : diff) {
             String path = e.path("path").asText();

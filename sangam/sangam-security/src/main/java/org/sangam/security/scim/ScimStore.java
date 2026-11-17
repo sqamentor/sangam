@@ -33,10 +33,10 @@ public final class ScimStore {
     /** The external key holds {@code x:} plus externalId within the 255-character column. */
     public static final int MAX_EXTERNAL_ID = 253;
 
-    private static final String COLUMNS = "resource_type, resource_id, user_name, display_name, external_id, attributes,"
+    private static final String COLUMNS = "resource_type, resource_id, person_id, user_name, display_name, external_id, attributes,"
             + " version, created_at, updated_at";
 
-    public record Row(String type, String id, String userName, String displayName, String externalId, String attributes,
+    public record Row(String type, String id, String personId, String userName, String displayName, String externalId, String attributes,
                       long version, Instant created, Instant updated) {
     }
 
@@ -62,6 +62,12 @@ public final class ScimStore {
                 ScimStore::row, tenant, type, id);
     }
 
+    /** The SCIM resource of this type that stands for the Sangam person or group {@code personId}. */
+    public Optional<Row> findByPerson(Connection c, String tenant, String type, String personId) {
+        return Jdbc.one(c, "SELECT " + COLUMNS + " FROM SEC_SCIM_RESOURCE WHERE tenant_id=? AND resource_type=? AND person_id=?",
+                ScimStore::row, tenant, type, personId);
+    }
+
     /** The resource of this type that already holds the userName or externalId, other than {@code exceptId}. */
     public Optional<String> holderOf(Connection c, String tenant, String type, String exceptId, String userName, String externalId) {
         if (userName != null && USER.equals(type)) {
@@ -82,12 +88,12 @@ public final class ScimStore {
     }
 
     /** Inserts version 1; false when the id, the userName or the externalId is taken (a concurrent insert included). */
-    public boolean insert(Connection c, String tenant, String type, String id, String userName, String displayName,
+    public boolean insert(Connection c, String tenant, String type, String id, String personId, String userName, String displayName,
                           String externalId, String attributes, Instant now) {
-        return Sql.insertIfAbsent(c, dialect, "INSERT INTO SEC_SCIM_RESOURCE(tenant_id, resource_type, resource_id, user_name,"
+        return Sql.insertIfAbsent(c, dialect, "INSERT INTO SEC_SCIM_RESOURCE(tenant_id, resource_type, resource_id, person_id, user_name,"
                         + " display_name, name_key, external_id, external_key, attributes, version, created_at, updated_at)"
-                        + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-                tenant, type, id, userName, displayName, nameKey(type, id, userName), externalId, externalKey(id, externalId),
+                        + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                tenant, type, id, personId, userName, displayName, nameKey(type, id, userName), externalId, externalKey(id, externalId),
                 attributes, 1L, now, now);
     }
 
@@ -150,6 +156,7 @@ public final class ScimStore {
                 column = "name_key";     // lower-case userName
                 value = value.toLowerCase(Locale.ROOT);
             }
+            case ID -> column = "resource_id";           // the opaque SCIM id, case-exact (decision 393 (a))
             case EXTERNAL_ID -> column = "external_id";   // case-exact
             case DISPLAY_NAME -> {
                 column = "LOWER(display_name)";          // case-insensitive
@@ -167,7 +174,7 @@ public final class ScimStore {
     }
 
     private static Row row(ResultSet rs) throws SQLException {
-        return new Row(rs.getString("resource_type"), rs.getString("resource_id"), rs.getString("user_name"),
+        return new Row(rs.getString("resource_type"), rs.getString("resource_id"), rs.getString("person_id"), rs.getString("user_name"),
                 rs.getString("display_name"), rs.getString("external_id"), rs.getString("attributes"),
                 rs.getLong("version"), Jdbc.instant(rs, "created_at"), Jdbc.instant(rs, "updated_at"));
     }

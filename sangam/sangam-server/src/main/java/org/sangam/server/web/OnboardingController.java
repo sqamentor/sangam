@@ -157,8 +157,8 @@ public class OnboardingController {
                 body.tenant() == null ? Map.of() : packs.installed(body.tenant()), Boolean.TRUE.equals(body.allowUpgrade()));
     }
 
-    @GetMapping("/tenants/{tenant}/bundle")
-    public Map<String, Object> export(RequestContext ctx, @PathVariable String tenant) {
+    @GetMapping("/tenants/by-tenant/bundle")
+    public Map<String, Object> export(RequestContext ctx, @RequestParam("tenant") String tenant) {
         OnboardingService s = svc(ctx);
         OnboardingRun run = s.latest(tenant).orElseThrow(() -> ApiProblem.notFound("onboarding run of tenant", tenant));
         return call(() -> bundles.getObject().export(run.request(), ports.getObject().packs().installed(tenant)));

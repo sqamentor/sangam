@@ -22,14 +22,14 @@ op("get", "/catalogue", "getExtensionCatalogue", "Modeller", "Extension catalogu
    "CATALOGUE_EGRESS_DENIED (no allow-list entry); 503 CATALOGUE_UNREACHABLE.", _CAT,
    resp=(200, "array:CatalogueExtensionEntry"), perm="package.read",
    errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "Unprocessable", "ServiceUnavailable"))
-op("post", "/catalogue/{id}/{version}/install", "installCatalogueEntry", "Modeller", "Install a catalogue entry",
+op("post", "/catalogue/by-id/by-version/install", "installCatalogueEntry", "Modeller", "Install a catalogue entry",
    "Installs a kind package entry into the caller's tenant: the catalogue checks first (index signature, licence "
    "allow-list, platform version, artefact SHA-256), then the package import (T70: the bundle's own hash and "
    "signatures; the package lands APPROVED, activation still needs a deployer and the ENV_BINDING values). 404 "
    "CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds are never installed), "
    "CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_ARTIFACT_PATH_INVALID, CATALOGUE_EGRESS_DENIED, or a "
    "package import refusal (PACKAGE_HASH_MISMATCH, signatures); 409 PACKAGE_EXISTS.", _CAT,
-   params=[pp("id", "catalogue entry id"), pp("version", "catalogue entry version")], body="CatalogueInstallRequest",
+   params=[q("id", desc="Catalogue entry id from the remote index; may carry '/' or ':'", required=True), q("version", desc="Catalogue entry version from the remote index; may carry '/' or ':'", required=True)], body="CatalogueInstallRequest",
    body_required=False, resp=(201, "Package"), cmd="modeller.catalogue.install", perm="package.deploy", created=True)
 
 # ---- decision 380 P2 (b): connector templates from the catalogue
@@ -39,7 +39,7 @@ schema("CatalogueTemplatesInstalled", "What a connector-template install did.",
        "id version published:list:CatalogueInstalledTemplate unchanged:list:s", ["id", "version", "published", "unchanged"],
        descs={"published": "Templates whose latest version in the tenant differed, each published as a new version",
               "unchanged": "Template ids already current in the tenant (nothing written)"})
-op("post", "/catalogue/{id}/{version}/install-templates", "installCatalogueTemplates", "Modeller",
+op("post", "/catalogue/by-id/by-version/install-templates", "installCatalogueTemplates", "Modeller",
    "Install the connector templates of a catalogue entry",
    "Decision 380 P2 (b): publishes the connector element templates of a kind connector-template entry in the caller's "
    "tenant after the same catalogue checks as a package install (index signature, licence allow-list, platform version, "
@@ -50,7 +50,7 @@ op("post", "/catalogue/{id}/{version}/install-templates", "installCatalogueTempl
    "install writes nothing. 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds), "
    "CATALOGUE_KIND_MISMATCH (a package entry), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, "
    "CATALOGUE_EGRESS_DENIED; 501 when the modeller template store is not installed.", _CAT,
-   params=[pp("id", "catalogue entry id"), pp("version", "catalogue entry version")], body="CatalogueInstallRequest",
+   params=[q("id", desc="Catalogue entry id from the remote index; may carry '/' or ':'", required=True), q("version", desc="Catalogue entry version from the remote index; may carry '/' or ':'", required=True)], body="CatalogueInstallRequest",
    body_required=False, resp=(200, "CatalogueTemplatesInstalled"), cmd="modeller.catalogue.install-templates",
    perm="package.author")
 

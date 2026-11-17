@@ -101,4 +101,11 @@ class ScimResourcesTest {
         assertEquals("400", e.get("status").asText());
         assertEquals("mutability", e.get("scimType").asText());
     }
+
+    @Test
+    void aLocationEncodesTheIdAsOnePathSegment() {
+        assertEquals("/scim/v2/Users/0f8c-ab_1.x~", ScimResources.location("Users", "0f8c-ab_1.x~"));
+        assertEquals("/scim/v2/Users/ldap%2Fou%3Aa%20b", ScimResources.location("Users", "ldap/ou:a b"));
+        assertEquals("/scim/v2/Groups/%C3%A9%25", ScimResources.location("Groups", "é%"));
+    }
 }

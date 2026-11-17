@@ -123,12 +123,14 @@ final class PortalApi
      *
      * Status, stage, clarifications and messages; officers appear only as seat designations (PER-8).
      *
-     * GET /portal/applications/{id} (operationId getMyApplication); permission portal.use.
+     * GET /portal/applications/by-id (operationId getMyApplication); permission portal.use.
+     * @param string $id query id
      * @return Model\Application|null
      */
     public function getMyApplication(string $id, ?RequestOptions $options = null): ?Model\Application
     {
-        $req = ApiRequest::get('/portal/applications/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::get('/portal/applications/by-id');
+        $req->query('id', $id);
         return $this->calls->model($req, $options, Model\Application::class);
     }
 
@@ -137,13 +139,17 @@ final class PortalApi
      *
      * Text plus files (CLARIFICATION_RECEIVED, C04).
      *
-     * POST /portal/applications/{id}/clarifications/{clarificationId}/reply (operationId replyToClarification); permission portal.use; result stored atomically with the state change.
+     * POST /portal/applications/by-id/clarifications/by-clarification-id/reply (operationId replyToClarification); permission portal.use; result stored atomically with the state change.
      * @param array<string, mixed> $body request body (parts by name; values that are files: ['file' => bytes])
+     * @param string $id query id
+     * @param string $clarificationId query clarificationId
      * @return Model\Application|null
      */
-    public function replyToClarification(string $id, string $clarificationId, array $body, ?RequestOptions $options = null): ?Model\Application
+    public function replyToClarification(array $body, string $id, string $clarificationId, ?RequestOptions $options = null): ?Model\Application
     {
-        $req = ApiRequest::post('/portal/applications/' . HttpTransport::seg((string) $id) . '/clarifications/' . HttpTransport::seg((string) $clarificationId) . '/reply');
+        $req = ApiRequest::post('/portal/applications/by-id/clarifications/by-clarification-id/reply');
+        $req->query('id', $id);
+        $req->query('clarificationId', $clarificationId);
         Support::multipart($req, $body);
         return $this->calls->model($req, $options, Model\Application::class);
     }
@@ -153,13 +159,15 @@ final class PortalApi
      *
      * CASE_WITHDRAWN.
      *
-     * POST /portal/applications/{id}/withdraw (operationId withdrawApplication); permission portal.use; result stored atomically with the state change.
+     * POST /portal/applications/by-id/withdraw (operationId withdrawApplication); permission portal.use; result stored atomically with the state change.
      * @param Model\WithdrawRequest|array $body request body
+     * @param string $id query id
      * @return Model\Application|null
      */
-    public function withdrawApplication(string $id, Model\WithdrawRequest|array $body, ?RequestOptions $options = null): ?Model\Application
+    public function withdrawApplication(Model\WithdrawRequest|array $body, string $id, ?RequestOptions $options = null): ?Model\Application
     {
-        $req = ApiRequest::post('/portal/applications/' . HttpTransport::seg((string) $id) . '/withdraw');
+        $req = ApiRequest::post('/portal/applications/by-id/withdraw');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -171,13 +179,15 @@ final class PortalApi
      *
      * APPEAL_FILED.
      *
-     * POST /portal/applications/{id}/appeal (operationId appealApplication); permission portal.use; result stored atomically with the state change.
+     * POST /portal/applications/by-id/appeal (operationId appealApplication); permission portal.use; result stored atomically with the state change.
      * @param Model\AppealRequest|array $body request body
+     * @param string $id query id
      * @return Model\Application|null
      */
-    public function appealApplication(string $id, Model\AppealRequest|array $body, ?RequestOptions $options = null): ?Model\Application
+    public function appealApplication(Model\AppealRequest|array $body, string $id, ?RequestOptions $options = null): ?Model\Application
     {
-        $req = ApiRequest::post('/portal/applications/' . HttpTransport::seg((string) $id) . '/appeal');
+        $req = ApiRequest::post('/portal/applications/by-id/appeal');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -189,12 +199,14 @@ final class PortalApi
      *
      * Certificate, sanction or rejection order (C05).
      *
-     * GET /portal/applications/{id}/outcome (operationId downloadOutcome); permission portal.use.
+     * GET /portal/applications/by-id/outcome (operationId downloadOutcome); permission portal.use.
+     * @param string $id query id
      * @return string
      */
     public function downloadOutcome(string $id, ?RequestOptions $options = null): string
     {
-        $req = ApiRequest::get('/portal/applications/' . HttpTransport::seg((string) $id) . '/outcome');
+        $req = ApiRequest::get('/portal/applications/by-id/outcome');
+        $req->query('id', $id);
         return $this->calls->raw($req, $options, 'application/octet-stream');
     }
 

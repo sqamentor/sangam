@@ -1519,6 +1519,12 @@ ALTERS = [
     # ocrTranscriptId). Nullable, no backfill: chunks ingested as text keep NULL.
     ("0045-24", "M-103 knowledge-base chunk provenance: the approved OCR transcript (decision 378)", "AI_KB_CHUNK",
      [("ocr_transcript_id", "{str64}", "")], []),
+    # Decision 393 option (a), owner "Go ahead" 2026-11-17: the SCIM id is opaque and server-assigned (RFC 7643
+    # section 3.1), so a person id holding '/' or ':' (LDAP sync, bootstrap) never reaches a SCIM path. person_id is
+    # the Sangam person (USER) or group (GROUP) id; resource_id stays the key. Nullable here: 0046-03 backfills it and
+    # only then creates the unique index (SQL Server counts NULLs as equal in a unique index).
+    ("0046-02", "decision 393 (a): the Sangam person or group id behind an opaque SCIM id", "SEC_SCIM_RESOURCE",
+     [("person_id", "{str64}", "")], []),
 ]
 
 # Data changesets, applied after every table and alter changeset:
@@ -1550,6 +1556,15 @@ DATA = [
                " VALUES ('ENGINE_WORK', 'OPEN', NULL, 'changelog', SYSDATETIMEOFFSET(), 0);",
       "mysql": "INSERT INTO OPS_UTC_GATE (gate_id, state, run_id, changed_by, changed_at, version)"
                " VALUES ('ENGINE_WORK', 'OPEN', NULL, 'changelog', UTC_TIMESTAMP(6), 0);"}),
+    # Decision 393 (a): rows provisioned before keep their SCIM id (resource_id was the person or group id), so an
+    # identity provider that already synced keeps working; ids holding '/' or ':' need one re-sync (CHANGELOG).
+    ("0046-03", "decision 393 (a): backfill SEC_SCIM_RESOURCE.person_id from resource_id, then unique per tenant and type",
+     "SEC_SCIM_RESOURCE",
+     "UPDATE SEC_SCIM_RESOURCE SET person_id = resource_id WHERE person_id IS NULL;"
+     " CREATE UNIQUE INDEX SEC_SCIM_PERSON ON SEC_SCIM_RESOURCE (tenant_id, resource_type, person_id);",
+     "DROP INDEX SEC_SCIM_PERSON;",
+     {"mysql": "DROP INDEX SEC_SCIM_PERSON ON SEC_SCIM_RESOURCE;",
+      "mssql": "DROP INDEX SEC_SCIM_PERSON ON SEC_SCIM_RESOURCE;"}),
 ]
 
 # Columns that become nullable, applied after DATA: (changeset id, comment, table, column, type token).

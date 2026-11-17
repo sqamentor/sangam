@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -27,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
  * {@code /api/v1/onboarding/promotions} with the onboarding gate ({@code tenant.admin} and the platform administrator
  * group, as {@code OnboardingController}).
  * <ol>
- *   <li>{@code GET /promotions/{tenant}/bundle}: the tenant's signed bundle labelled with THIS environment
+ *   <li>{@code GET /promotions/by-tenant/bundle?tenant=}: the tenant's signed bundle labelled with THIS environment
  *       ({@code sangam.onboarding.environment}), to carry to the next environment;</li>
  *   <li>{@code POST /promotions/plan}: dry run and diff of an incoming bundle against the target tenant here, with the
  *       plan hash; changes nothing;</li>
@@ -113,8 +114,8 @@ public class PromotionController {
         return new PromotionService(bundles.getObject(), s::dryRun, s::start);
     }
 
-    @GetMapping("/{tenant}/bundle")
-    public Map<String, Object> export(RequestContext ctx, @PathVariable String tenant) {
+    @GetMapping("/by-tenant/bundle")
+    public Map<String, Object> export(RequestContext ctx, @RequestParam("tenant") String tenant) {
         OnboardingService s = svc(ctx);
         String label = environment();
         OnboardingRun run = s.latest(tenant).orElseThrow(() -> ApiProblem.notFound("onboarding run of tenant", tenant));

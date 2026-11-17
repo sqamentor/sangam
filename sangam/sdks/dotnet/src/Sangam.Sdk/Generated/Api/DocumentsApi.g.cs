@@ -47,22 +47,24 @@ public sealed class DocumentsApi
     /// <summary>
     /// Document metadata
     /// Latest version metadata.
-    /// GET /documents/{id} (operationId getDocument); permission document.read.
+    /// GET /documents/by-id (operationId getDocument); permission document.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.Document?> GetDocumentAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/documents/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Get($"/documents/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<M.Document?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Delete a document
     /// Deletes (subject to retention and legal hold, R29, R61).
-    /// DELETE /documents/{id} (operationId deleteDocument); permission document.write; result stored atomically with the state change.
+    /// DELETE /documents/by-id (operationId deleteDocument); permission document.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task DeleteDocumentAsync(string id, string? reason = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/documents/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Delete($"/documents/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         req.WithQuery("reason", GeneratedCalls.Q(reason));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -70,11 +72,12 @@ public sealed class DocumentsApi
     /// <summary>
     /// Document content
     /// Content of the latest or given version.
-    /// GET /documents/{id}/content (operationId getDocumentContent); permission document.read.
+    /// GET /documents/by-id/content (operationId getDocumentContent); permission document.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<byte[]> GetDocumentContentAsync(string id, int? version = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/documents/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/content");
+        var req = ApiRequest.Get($"/documents/by-id/content");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         req.WithQuery("version", GeneratedCalls.Q(version));
         return await _calls.BytesAsync(req, options, "application/octet-stream", cancellationToken).ConfigureAwait(false);
     }
@@ -82,11 +85,12 @@ public sealed class DocumentsApi
     /// <summary>
     /// New document version
     /// Adds an immutable version (R74). A slot applies when the document belongs to a process instance. DSC document slot (decisions 267 to 269): with a documentType for which the pack of the process instance declares a slot, a PDF fills that slot in the same transaction as the store, audited in DOCUMENT_UPLOADED or DOCUMENT_VERSION_ADDED with slot and document_type. Only the assignee of an open task of that instance with task.write may set or replace a slot (403 DOCUMENT_SLOT_NOT_TASK_HOLDER); a slot holding another document is 409 DOCUMENT_SLOT_OCCUPIED unless replaceSlot is true. Nothing is stored on either refusal. A slot changed after the signing task was created is refused at completion.
-    /// POST /documents/{id}/versions (operationId addDocumentVersion); permission document.write; result stored atomically with the state change.
+    /// POST /documents/by-id/versions (operationId addDocumentVersion); permission document.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.Document?> AddDocumentVersionAsync(string id, global::System.Collections.Generic.IReadOnlyDictionary<string, object?> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.Document?> AddDocumentVersionAsync(global::System.Collections.Generic.IReadOnlyDictionary<string, object?> body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/documents/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/versions");
+        var req = ApiRequest.Post($"/documents/by-id/versions");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithContent(GeneratedCalls.Multipart(body));
         return await _calls.JsonAsync<M.Document?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -94,29 +98,31 @@ public sealed class DocumentsApi
     /// <summary>
     /// Document versions
     /// Every immutable version (R74).
-    /// GET /documents/{id}/versions (operationId listDocumentVersions); permission document.read.
+    /// GET /documents/by-id/versions (operationId listDocumentVersions); permission document.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.Document>?> ListDocumentVersionsAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/documents/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/versions");
+        var req = ApiRequest.Get($"/documents/by-id/versions");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.Document>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Set or release a legal hold
     /// A held document cannot be deleted or disposed of (R61, R29).
-    /// POST /documents/{id}/legal-hold (operationId setDocumentLegalHold); permission document.legal-hold; result stored atomically with the state change.
+    /// POST /documents/by-id/legal-hold (operationId setDocumentLegalHold); permission document.legal-hold; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.Document?> SetDocumentLegalHoldAsync(string id, M.LegalHoldRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.Document?> SetDocumentLegalHoldAsync(M.LegalHoldRequest body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/documents/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/legal-hold");
+        var req = ApiRequest.Post($"/documents/by-id/legal-hold");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.Document?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Document templates
-    /// Output templates (R74, S12); the id 'templates' is reserved for /documents/{id}.
+    /// Output templates (R74, S12); (a literal route next to /documents/by-id).
     /// GET /documents/templates (operationId listDocumentTemplates); permission document.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.DocumentTemplate>?> ListDocumentTemplatesAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

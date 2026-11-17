@@ -32,15 +32,16 @@ public final class DecisionsApi {
      *
      * <p>Evaluates the latest (or given) version; ROUTING/AUTHORITY evaluations with a businessKey are recorded as class-B events (X.2.3.2).
      *
-     * <p>{@code POST /decisions/{key}/evaluate} (operationId {@code evaluateDecision}); permission {@code decision.evaluate}.
-     * @param key path parameter {@code key}
+     * <p>{@code POST /decisions/by-key/evaluate} (operationId {@code evaluateDecision}); permission {@code decision.evaluate}.
      * @param body request body
+     * @param key query parameter {@code key}. DMN decision key from the deployed model; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public DecisionEvaluateResult evaluateDecision(String key, DecisionEvaluateRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/decisions/" + HttpTransport.seg(String.valueOf(key)) + "/evaluate");
+    public DecisionEvaluateResult evaluateDecision(DecisionEvaluateRequest body, String key, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/decisions/by-key/evaluate");
         req.body(body);
+        req.query("key", key);
         return call.json(req, options, R_evaluateDecision);
     }
 

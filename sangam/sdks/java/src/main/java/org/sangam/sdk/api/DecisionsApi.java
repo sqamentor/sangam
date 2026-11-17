@@ -8,7 +8,7 @@ import org.sangam.sdk.model.EvaluateDecisionRequest;
 
 import java.util.Map;
 
-/** DMN 1.6 decisions {@code POST /decisions/{key}/evaluate}. */
+/** DMN 1.6 decisions {@code POST /decisions/by-key/evaluate?key=}. */
 public final class DecisionsApi extends ApiSupport {
 
     public DecisionsApi(HttpTransport http) {
@@ -16,7 +16,7 @@ public final class DecisionsApi extends ApiSupport {
     }
 
     public DecisionResult evaluate(String decisionKey, EvaluateDecisionRequest request) {
-        return call(ApiRequest.post("/decisions/" + seg(decisionKey) + "/evaluate").body(request), DecisionResult.class);
+        return call(ApiRequest.post("/decisions/by-key/evaluate").query("key", decisionKey).body(request), DecisionResult.class);
     }
 
     public DecisionResult evaluate(String decisionKey, Map<String, Object> variables) {

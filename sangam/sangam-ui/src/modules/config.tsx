@@ -249,7 +249,7 @@ const runs: ScreenDef = {
   ],
   toolbar: [
     { id: 'packs', label: 'mod.onboarding.resolvePacks', path: '/onboarding/packs/resolve', fields: [f.json('ids', 'fld.packIds', true)], noJson: true, showResult: true },
-    { id: 'export', label: 'mod.onboarding.exportBundle', method: 'GET', path: '/onboarding/tenants/{tenant}/bundle', fields: [f.text('tenant', undefined, true)], noJson: true, showResult: true },
+    { id: 'export', label: 'mod.onboarding.exportBundle', method: 'GET', path: '/onboarding/tenants/by-tenant/bundle?tenant={tenant}', fields: [f.text('tenant', undefined, true)], noJson: true, showResult: true },
     { id: 'import', label: 'mod.onboarding.importBundle', path: '/onboarding/bundles/import', showResult: true },
     { id: 'diff', label: 'mod.onboarding.diffBundles', path: '/onboarding/bundles/diff', showResult: true },
   ],
@@ -390,7 +390,7 @@ export function promotionProblem(e: unknown, t: (k: string, o?: Record<string, u
 
 /**
  * M-034: promotion between environments (PromotionController, sangam-server; platform administrators only, :68-72).
- * Export the tenant's signed bundle here (GET /onboarding/promotions/{tenant}/bundle, :116); in the target environment,
+ * Export the tenant's signed bundle here (GET /onboarding/promotions/by-tenant/bundle?tenant=, :117); in the target environment,
  * load it and plan (POST /onboarding/promotions/plan, :124), which verifies the signature (BundleService.verified) and
  * diffs it against the target's current configuration; apply the reviewed plan by its hash (POST
  * /onboarding/promotions, :135), which starts an ordinary onboarding run. A different administrator then approves the
@@ -419,7 +419,7 @@ export function Promotions({ onApplied }: { onApplied: () => void }) {
     <>
       <Section title={t('promo.export')}>
         <p className="hint">{t('promo.exportHint')}</p>
-        <form className="filters" onSubmit={(e) => (e.preventDefault(), void exp.run(() => download(`/onboarding/promotions/${encodeURIComponent(source.trim())}/bundle`, undefined, `${source.trim()}-bundle.json`)))}>
+        <form className="filters" onSubmit={(e) => (e.preventDefault(), void exp.run(() => download(`/onboarding/promotions/by-tenant/bundle?tenant=${encodeURIComponent(source.trim())}`, undefined, `${source.trim()}-bundle.json`)))}>
           <TextField label={t('fld.tenant')} required value={source} onChange={setSource} />
           <button type="submit" disabled={!source.trim() || exp.busy}>{t('promo.download')}</button>
         </form>

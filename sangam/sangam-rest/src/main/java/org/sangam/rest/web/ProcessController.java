@@ -204,25 +204,25 @@ public class ProcessController {
         return Lists.ok(documents.list(ctx, new DocumentPort.DocumentFilter(null, id, null, null), Lists.page(page, size)));
     }
 
-    @GetMapping("/process-instances/{id}/ad-hoc/{adHocActivityId}")
+    @GetMapping("/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id")
     public DynamicPort.AdHocState adHocState(RequestContext ctx, @PathVariable String id,
-                                             @PathVariable String adHocActivityId) {
+                                             @RequestParam("adHocActivityId") String adHocActivityId) {
         permissions.require(ctx, Permissions.PROCESS_READ);
         return dynamic.adHocState(ctx, id, adHocActivityId);
     }
 
-    @PostMapping("/process-instances/{id}/ad-hoc/{adHocActivityId}/start")
+    @PostMapping("/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/start")
     public ResponseEntity<DynamicPort.AdHocState> startAdHoc(RequestContext ctx, @PathVariable String id,
-            @PathVariable String adHocActivityId, @RequestBody DynamicPort.StartAdHocActivityRequest body) {
+            @RequestParam("adHocActivityId") String adHocActivityId, @RequestBody DynamicPort.StartAdHocActivityRequest body) {
         permissions.require(ctx, Permissions.PROCESS_WRITE);
         var req = new DynamicPort.StartAdHocActivityRequest(body.activityId(), SlotVariableGuard.callerVariables(body.variables()),
                 body.reason());
         return Lists.okRef(id, dynamic.startAdHocActivity(ctx, id, adHocActivityId, req));
     }
 
-    @PostMapping("/process-instances/{id}/ad-hoc/{adHocActivityId}/complete")
+    @PostMapping("/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/complete")
     public ResponseEntity<DynamicPort.AdHocState> completeAdHoc(RequestContext ctx, @PathVariable String id,
-            @PathVariable String adHocActivityId, @RequestParam(required = false) String reason) {
+            @RequestParam("adHocActivityId") String adHocActivityId, @RequestParam(required = false) String reason) {
         permissions.require(ctx, Permissions.PROCESS_WRITE);
         return Lists.okRef(id, dynamic.completeAdHoc(ctx, id, adHocActivityId, reason));
     }
