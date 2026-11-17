@@ -86,6 +86,7 @@ jobs:
           set -euo pipefail
           mapfile -t args < <(python3 -I tools/ci/ci_plan.py --modules "$IN_MODULES" --dbs "$IN_DBS" \
             --chunks "$IN_CHUNKS" --ui "$IN_UI" --file ../ci-lane.json --print-build-args)
+          [ "${#args[@]}" -gt 0 ] || { echo "ci_plan refused the selection (see its message above); nothing built"; exit 2; }
           echo "mvnw ${args[*]}"
           bash ./mvnw $MAVEN_ARGS "${args[@]}"
       - name: Reports
@@ -156,6 +157,7 @@ jobs:
           set -euo pipefail
           mapfile -t args < <(python3 -I tools/ci/ci_plan.py --modules "$IN_MODULES" --dbs "$IN_DBS" \
             --chunks "$IN_CHUNKS" --ui "$IN_UI" --file ../ci-lane.json --db "${{ matrix.db }}" --print-it-args)
+          [ "${#args[@]}" -gt 0 ] || { echo "ci_plan refused the selection (see its message above); nothing built"; exit 2; }
           echo "mvnw ${args[*]}"
           bash ./mvnw $MAVEN_ARGS "${args[@]}"
       - name: Reports

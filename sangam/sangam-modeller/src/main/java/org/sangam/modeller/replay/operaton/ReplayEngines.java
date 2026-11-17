@@ -12,17 +12,13 @@ import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
-import org.operaton.bpm.dmn.engine.DmnEngineConfiguration;
-import org.operaton.bpm.dmn.engine.impl.DefaultDmnEngineConfiguration;
 import org.operaton.bpm.engine.ProcessEngine;
-import org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.sangam.core.time.EngineTimeZone;
 import org.sangam.engine.OperatonEngineAdapter;
 import org.sangam.engine.SangamEngineFactory;
 import org.sangam.engine.SangamEngineSettings;
 import org.sangam.engine.feel.FeelEngineIdentity;
 import org.sangam.engine.replay.CaptureListener;
-import org.sangam.feel.SangamFeel;
 
 /**
  * M-136 (decision 151): the isolated Sangam engines a capture and a replay run on. One engine per run, built on a scratch
@@ -126,16 +122,11 @@ public final class ReplayEngines {
 
     /** The FEEL evaluator identity a Sangam engine installs (R10 {@link FeelEngineIdentity}). */
     public static String evaluatorVersion() {
-        DefaultDmnEngineConfiguration dmn = (DefaultDmnEngineConfiguration) DmnEngineConfiguration
-                .createDefaultDmnEngineConfiguration();
-        SangamFeel.install(dmn);
-        return FeelEngineIdentity.of(dmn);
+        return FeelEngineIdentity.sangamDefault();
     }
 
     /** The FEEL evaluator identity the started engine actually runs. */
     static String evaluatorOf(OperatonEngineAdapter engine) {
-        ProcessEngineConfigurationImpl cfg = (ProcessEngineConfigurationImpl) engine.processEngine()
-                .getProcessEngineConfiguration();
-        return FeelEngineIdentity.of((DefaultDmnEngineConfiguration) cfg.getDmnEngineConfiguration());
+        return FeelEngineIdentity.of(engine.processEngine());
     }
 }
