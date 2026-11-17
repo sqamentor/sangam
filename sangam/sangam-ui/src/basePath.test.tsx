@@ -6,7 +6,7 @@
  * Each test sets BASE_URL and imports the modules fresh, since they read import.meta.env.BASE_URL.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup } from '@testing-library/react';
 
 vi.mock('./areas/auth/SignIn', () => ({
   SignIn: () => <p>sign-in page</p>,

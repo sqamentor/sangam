@@ -182,7 +182,10 @@ function Guard({ roles, access, children }: { roles?: Role[]; access?: Access; c
 }
 
 function Home() {
-  const { hasRole } = useAuth();
+  const { hasRole, me } = useAuth();
+  // Owner 2026-11-17 (R8-present): a seat holder who can work tasks lands on their own work queue, the inbox of
+  // their seat; everyone else keeps Welcome.
+  if ((me?.seats?.length ?? 0) > 0 && hasRole(...WORK)) return <Navigate to="/tasks" replace />;
   // Help is open to everyone; a caller with no job group at all lands on About.
   const first = NAV.find((a) => a.roles.length > 0 && hasRole(...a.roles));
   return <Navigate to={first ? '/welcome' : '/help/about'} replace />;
