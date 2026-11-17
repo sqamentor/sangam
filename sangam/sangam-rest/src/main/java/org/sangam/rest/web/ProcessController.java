@@ -58,6 +58,7 @@ public class ProcessController {
         if (body.key() == null || body.key().isBlank()) {
             throw ApiProblem.badRequest("VALIDATION_FAILED", "key is required");
         }
+        requireStartableInTasklist(ctx, body.key(), body.version());
         Telemetry.businessKey(body.businessKey());
         var req = new ProcessPort.StartProcessRequest(body.key(), body.businessKey(),
                 SlotVariableGuard.callerVariables(body.variables()), body.version(), body.packageHash(), body.formVersion(),
@@ -65,6 +66,35 @@ public class ProcessController {
         ProcessPort.ProcessInstance pi = processes.start(ctx, req);
         Telemetry.processInstance(pi.id());
         return Lists.created("/api/v1/process-instances/" + pi.id(), pi.id(), pi);
+    }
+
+    /**
+     * Decision 402 (10): a person starts only a process startable in the tasklist. One with
+     * {@code operaton:isStartableInTasklist="false"} is started by a service, a parent or an event that passes the
+     * variables it needs; started here it fails on them (R7UI-F7-5). The definition checked is the one the start would
+     * use: the requested version, else the latest, the caller tenant's own before the shared one. Internal starters
+     * call the port directly and are not affected. An unknown key is left to the start (404).
+     */
+    private void requireStartableInTasklist(RequestContext ctx, String key, Integer version) {
+        var defs = processes.definitions(ctx, new ProcessPort.DefinitionFilter(key, version == null, null),
+                new org.sangam.rest.port.Page.PageRequest(0, org.sangam.rest.port.Page.MAX_SIZE)).items();
+        ProcessPort.ProcessDefinition own = null;
+        ProcessPort.ProcessDefinition shared = null;
+        for (ProcessPort.ProcessDefinition d : defs) {
+            if (!key.equals(d.key()) || (version != null && d.version() != version)) {
+                continue;
+            }
+            if (ctx.tenantId() != null && ctx.tenantId().equals(d.tenantId())) {
+                own = own == null || d.version() > own.version() ? d : own;
+            } else if (d.tenantId() == null) {
+                shared = shared == null || d.version() > shared.version() ? d : shared;
+            }
+        }
+        ProcessPort.ProcessDefinition used = own != null ? own : shared;
+        if (used != null && !used.startableInTasklist()) {
+            throw ApiProblem.unprocessable("PROCESS_NOT_STARTABLE", "process " + key + " version " + used.version()
+                    + " is started by a service, a parent process or an event, not from the tasklist");
+        }
     }
 
     @GetMapping("/process-instances")
