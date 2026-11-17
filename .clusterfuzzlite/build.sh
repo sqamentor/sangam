@@ -5,8 +5,8 @@
 export JAVA_HOME=/opt/jdk25
 export PATH="$JAVA_HOME/bin:$PATH"
 cd "$SRC/sangam-repo/sangam"
-./mvnw -B -ntp -q -pl sangam-packs -am -DskipTests -Dcheckstyle.skip -Dspotbugs.skip install
-./mvnw -B -ntp -q -pl sangam-packs -DskipTests test-compile dependency:build-classpath \
+bash ./mvnw -B -ntp -q -pl sangam-packs -am -DskipTests -Dcheckstyle.skip -Dspotbugs.skip install
+bash ./mvnw -B -ntp -q -pl sangam-packs -DskipTests test-compile dependency:build-classpath \
   -Dmdep.includeScope=test -Dmdep.outputFile="$WORK/cp.txt"
 
 mkdir -p "$OUT/lib"
