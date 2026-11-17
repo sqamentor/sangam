@@ -128,6 +128,7 @@ public final class PackDeployer {
             contents.add(bytes);
             if (r.kind() == PackResource.Kind.BPMN) {
                 violations.addAll(ModelGuard.check(r.path(), bytes));
+                violations.addAll(MoneyPathGuard.check(r.path(), bytes, ConnectorMoneyMovements::enforced, topics(d)));
             }
         }
         if (!violations.isEmpty()) {
@@ -550,5 +551,12 @@ public final class PackDeployer {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    /** The pack's external-task topics and the connector serving each (owner decision A1, MoneyPathGuard). */
+    private static java.util.Map<String, String> topics(PackDescriptor d) {
+        java.util.Map<String, String> m = new java.util.HashMap<>();
+        d.workers().forEach(w -> m.put(w.topic(), w.connector()));
+        return m;
     }
 }

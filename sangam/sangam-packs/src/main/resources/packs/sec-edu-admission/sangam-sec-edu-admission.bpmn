@@ -73,10 +73,17 @@
       <businessRuleTask id="ed_wdRule" name="Refund under the UGC schedule (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-edu-refund</operaton:string></operaton:field></extensionElements></businessRuleTask>
       <serviceTask id="ed_wdCfg" name="Refund settings" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>executionConnector=pg.refund;executionStep=withdrawal-refund;executionPayloadFields=applicantName,refundPct,feeAmount</operaton:string></operaton:field></extensionElements></serviceTask>
       <callActivity id="ed_wdRefund" name="Refund (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="ed_wdRefund_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="ed_wdRefund_sgw" name="Sanctioned?" default="ed_wdRefund_sgw_no"></exclusiveGateway>
+    <endEvent id="ed_wdRefund_notReleased" name="Not released"></endEvent>
+    <sequenceFlow id="ed_wdRefund_sanction_f" sourceRef="ed_wdRefund_sanction" targetRef="ed_wdRefund_sgw"/>
+    <sequenceFlow id="ed_wdRefund_sgw_yes" name="sanctioned" sourceRef="ed_wdRefund_sgw" targetRef="ed_wdRefund"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ed_wdRefund_sgw_no" name="not sanctioned" sourceRef="ed_wdRefund_sgw" targetRef="ed_wdRefund_notReleased"/>
+
       <endEvent id="ed_wdEnd" name="Withdrawn with refund"></endEvent>
       <sequenceFlow id="sec_edu_admission_f32" sourceRef="ed_wdStart" targetRef="ed_wdRule"/>
       <sequenceFlow id="sec_edu_admission_f33" sourceRef="ed_wdRule" targetRef="ed_wdCfg"/>
-      <sequenceFlow id="sec_edu_admission_f34" sourceRef="ed_wdCfg" targetRef="ed_wdRefund"/>
+      <sequenceFlow id="sec_edu_admission_f34" sourceRef="ed_wdCfg" targetRef="ed_wdRefund_sanction"/>
       <sequenceFlow id="sec_edu_admission_f35" sourceRef="ed_wdRefund" targetRef="ed_wdEnd"/>
     </subProcess>
   </process>
@@ -117,7 +124,7 @@
       <bpmndi:BPMNShape id="ed_wdStart_di" bpmnElement="ed_wdStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ed_wdRule_di" bpmnElement="ed_wdRule"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ed_wdCfg_di" bpmnElement="ed_wdCfg"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="ed_wdRefund_di" bpmnElement="ed_wdRefund"><dc:Bounds x="555" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_wdRefund_sanction_di" bpmnElement="ed_wdRefund_sanction"><dc:Bounds x="375" y="320" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="ed_wdRefund_sgw_di" bpmnElement="ed_wdRefund_sgw" isMarkerVisible="true"><dc:Bounds x="505" y="330" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="ed_wdRefund_notReleased_di" bpmnElement="ed_wdRefund_notReleased"><dc:Bounds x="512" y="240" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="ed_wdRefund_sanction_f_di" bpmnElement="ed_wdRefund_sanction_f"><di:waypoint x="475" y="355"/><di:waypoint x="505" y="355"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="ed_wdRefund_sgw_yes_di" bpmnElement="ed_wdRefund_sgw_yes"><di:waypoint x="530" y="380"/><di:waypoint x="530" y="450"/><di:waypoint x="555" y="450"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="ed_wdRefund_sgw_no_di" bpmnElement="ed_wdRefund_sgw_no"><di:waypoint x="530" y="330"/><di:waypoint x="530" y="276"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="ed_wdRefund_di" bpmnElement="ed_wdRefund"><dc:Bounds x="555" y="450" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ed_wdEnd_di" bpmnElement="ed_wdEnd"><dc:Bounds x="752" y="472" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="sec_edu_admission_f1_di" bpmnElement="sec_edu_admission_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_edu_admission_f2_di" bpmnElement="sec_edu_admission_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>

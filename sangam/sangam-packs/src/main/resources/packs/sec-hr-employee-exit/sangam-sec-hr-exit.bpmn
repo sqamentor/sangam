@@ -28,6 +28,13 @@
     <exclusiveGateway id="hx_fnf_breachGw" name="Deemed?" default="sec_hr_exit_f22"></exclusiveGateway>
     <exclusiveGateway id="hx_fnf_done" name=""></exclusiveGateway>
     <callActivity id="hx_pay" name="Pay settlement (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="hx_pay_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="hx_pay_sgw" name="Sanctioned?" default="hx_pay_sgw_no"></exclusiveGateway>
+    <endEvent id="hx_pay_notReleased" name="Not released"></endEvent>
+    <sequenceFlow id="hx_pay_sanction_f" sourceRef="hx_pay_sanction" targetRef="hx_pay_sgw"/>
+    <sequenceFlow id="hx_pay_sgw_yes" name="sanctioned" sourceRef="hx_pay_sgw" targetRef="hx_pay"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="hx_pay_sgw_no" name="not sanctioned" sourceRef="hx_pay_sgw" targetRef="hx_pay_notReleased"/>
+
     <exclusiveGateway id="hx_gratGw" name="Gratuity payable?" default="sec_hr_exit_f39"></exclusiveGateway>
     <serviceTask id="hx_gratuity_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hx_gratuity</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${gratuitySpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
     <userTask id="hx_gratuity" name="Gratuity (30 days)" operaton:candidateGroups="${hrSeat}" operaton:formKey="sangam:sec-hr-employee-exit/gratuity" operaton:dueDate="${hx_gratuityDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
@@ -38,6 +45,13 @@
     <exclusiveGateway id="hx_gratuity_done" name=""></exclusiveGateway>
     <serviceTask id="hx_gratCfg" name="Gratuity payment" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>executionStep=gratuity;executionPayloadFields=employeeId,gratuityAmount</operaton:string></operaton:field></extensionElements></serviceTask>
     <callActivity id="hx_gratPay" name="Pay gratuity (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="hx_gratPay_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="hx_gratPay_sgw" name="Sanctioned?" default="hx_gratPay_sgw_no"></exclusiveGateway>
+    <endEvent id="hx_gratPay_notReleased" name="Not released"></endEvent>
+    <sequenceFlow id="hx_gratPay_sanction_f" sourceRef="hx_gratPay_sanction" targetRef="hx_gratPay_sgw"/>
+    <sequenceFlow id="hx_gratPay_sgw_yes" name="sanctioned" sourceRef="hx_gratPay_sgw" targetRef="hx_gratPay"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="hx_gratPay_sgw_no" name="not sanctioned" sourceRef="hx_gratPay_sgw" targetRef="hx_gratPay_notReleased"/>
+
     <serviceTask id="hx_letter" name="Relieving and experience letters; PF exit" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>docs.letter</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>relieving</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId,employeeName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>letter</operaton:string></operaton:field><operaton:field name="step"><operaton:string>letters</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="hx_end" name="Exited"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <boundaryEvent id="hx_fnf_warn" name="SLA warning (75%)" attachedToRef="hx_fnf" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hx_fnfWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
@@ -69,7 +83,7 @@
     <sequenceFlow id="sec_hr_exit_f23" sourceRef="hx_fnf_slaPlan" targetRef="hx_fnf"/>
     <sequenceFlow id="sec_hr_exit_f24" sourceRef="hx_fnf" targetRef="hx_fnf_done"/>
     <sequenceFlow id="sec_hr_exit_f25" sourceRef="hx_join" targetRef="hx_fnf_slaPlan"/>
-    <sequenceFlow id="sec_hr_exit_f26" sourceRef="hx_fnf_done" targetRef="hx_pay"/>
+    <sequenceFlow id="sec_hr_exit_f26" sourceRef="hx_fnf_done" targetRef="hx_pay_sanction"/>
     <sequenceFlow id="sec_hr_exit_f27" sourceRef="hx_pay" targetRef="hx_gratGw"/>
     <sequenceFlow id="sec_hr_exit_f28" sourceRef="hx_gratuity_warn" targetRef="hx_gratuity_warnNotify"/>
     <sequenceFlow id="sec_hr_exit_f29" sourceRef="hx_gratuity_warnNotify" targetRef="hx_gratuity_warnEnd"/>
@@ -81,7 +95,7 @@
     <sequenceFlow id="sec_hr_exit_f35" sourceRef="hx_gratuity" targetRef="hx_gratuity_done"/>
     <sequenceFlow id="sec_hr_exit_f36" name="yes" sourceRef="hx_gratGw" targetRef="hx_gratuity_slaPlan"><conditionExpression xsi:type="tFormalExpression">${gratuityPayable}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_hr_exit_f37" sourceRef="hx_gratuity_done" targetRef="hx_gratCfg"/>
-    <sequenceFlow id="sec_hr_exit_f38" sourceRef="hx_gratCfg" targetRef="hx_gratPay"/>
+    <sequenceFlow id="sec_hr_exit_f38" sourceRef="hx_gratCfg" targetRef="hx_gratPay_sanction"/>
     <sequenceFlow id="sec_hr_exit_f39" name="no" sourceRef="hx_gratGw" targetRef="hx_letter"/>
     <sequenceFlow id="sec_hr_exit_f40" sourceRef="hx_gratPay" targetRef="hx_letter"/>
     <sequenceFlow id="sec_hr_exit_f41" sourceRef="hx_letter" targetRef="hx_end"/>
@@ -127,7 +141,7 @@
       <bpmndi:BPMNShape id="hx_fnf_breachAct_di" bpmnElement="hx_fnf_breachAct"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_fnf_breachGw_di" bpmnElement="hx_fnf_breachGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_fnf_done_di" bpmnElement="hx_fnf_done"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_pay_di" bpmnElement="hx_pay"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_pay_sanction_di" bpmnElement="hx_pay_sanction"><dc:Bounds x="2480" y="-100" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="hx_pay_sgw_di" bpmnElement="hx_pay_sgw" isMarkerVisible="true"><dc:Bounds x="2610" y="-90" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="hx_pay_notReleased_di" bpmnElement="hx_pay_notReleased"><dc:Bounds x="2617" y="-180" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="hx_pay_sanction_f_di" bpmnElement="hx_pay_sanction_f"><di:waypoint x="2580" y="-65"/><di:waypoint x="2610" y="-65"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="hx_pay_sgw_yes_di" bpmnElement="hx_pay_sgw_yes"><di:waypoint x="2635" y="-40"/><di:waypoint x="2635" y="30"/><di:waypoint x="2660" y="30"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="hx_pay_sgw_no_di" bpmnElement="hx_pay_sgw_no"><di:waypoint x="2635" y="-90"/><di:waypoint x="2635" y="-144"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="hx_pay_di" bpmnElement="hx_pay"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_gratGw_di" bpmnElement="hx_gratGw"><dc:Bounds x="2850" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_gratuity_slaPlan_di" bpmnElement="hx_gratuity_slaPlan"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_gratuity_di" bpmnElement="hx_gratuity"><dc:Bounds x="3155" y="30" width="100" height="80"/></bpmndi:BPMNShape>
@@ -137,7 +151,7 @@
       <bpmndi:BPMNShape id="hx_gratuity_breachGw_di" bpmnElement="hx_gratuity_breachGw"><dc:Bounds x="3510" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_gratuity_done_di" bpmnElement="hx_gratuity_done"><dc:Bounds x="3675" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_gratCfg_di" bpmnElement="hx_gratCfg"><dc:Bounds x="3815" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_gratPay_di" bpmnElement="hx_gratPay"><dc:Bounds x="3980" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratPay_sanction_di" bpmnElement="hx_gratPay_sanction"><dc:Bounds x="3800" y="-100" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="hx_gratPay_sgw_di" bpmnElement="hx_gratPay_sgw" isMarkerVisible="true"><dc:Bounds x="3930" y="-90" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="hx_gratPay_notReleased_di" bpmnElement="hx_gratPay_notReleased"><dc:Bounds x="3937" y="-180" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="hx_gratPay_sanction_f_di" bpmnElement="hx_gratPay_sanction_f"><di:waypoint x="3900" y="-65"/><di:waypoint x="3930" y="-65"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="hx_gratPay_sgw_yes_di" bpmnElement="hx_gratPay_sgw_yes"><di:waypoint x="3955" y="-40"/><di:waypoint x="3955" y="30"/><di:waypoint x="3980" y="30"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="hx_gratPay_sgw_no_di" bpmnElement="hx_gratPay_sgw_no"><di:waypoint x="3955" y="-90"/><di:waypoint x="3955" y="-144"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="hx_gratPay_di" bpmnElement="hx_gratPay"><dc:Bounds x="3980" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_letter_di" bpmnElement="hx_letter"><dc:Bounds x="4145" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_end_di" bpmnElement="hx_end"><dc:Bounds x="4342" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_fnf_warn_di" bpmnElement="hx_fnf_warn"><dc:Bounds x="2008" y="92" width="36" height="36"/></bpmndi:BPMNShape>
