@@ -640,3 +640,8 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - Below 98%, keep researching until 98% is reached. If it cannot be reached, report the question.
   - Goal: clear everything and take Sangam and IFMS live as fast as possible.
   - This does not replace what only the owner can do: the owner-signed push gate and release tag, break-glass, and outward actions that need the owner in person (Rule 4).
+
+- **408 (integrator, under decision 407; confidence 98% or more)**: `sangam.core` stays at 1.0.2 with the decision 391 row (6383c10c); no bump to 1.0.3.
+  - Evidence: the pushed main 209d2765 ships sangam.core 1.0.1, so 1.0.2 has never been released or pushed.
+  - packgen `--check`, the held-content ledger (HELD_AT 93498ab2) and SHIPS all accept it.
+  - Only local development databases built from unpushed integration code can hold an earlier 1.0.2. Those are reset, not upgraded, which the release notes state.
