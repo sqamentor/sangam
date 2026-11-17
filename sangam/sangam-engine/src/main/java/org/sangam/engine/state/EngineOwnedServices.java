@@ -36,7 +36,7 @@ import org.sangam.core.engine.EngineOwnedVariables;
 
 /**
  * Engine-owned variables are refused on every caller-facing write path (owner spec SEQ-PARALLEL point 9, increment
- * I-1, integrator ruling option A; PATCHES I-30 / B-50). The engine's runtime, task, form and external-task services
+ * I-1, integrator ruling option A; PATCHES I-30 / B-49). The engine's runtime, task, form and external-task services
  * are replaced by subclasses of Operaton's own implementations (so {@code ServiceImpl} casts, I-26, and
  * {@code engine-rest}'s casts keep working); every public method that takes caller variables or names a variable to
  * write or remove checks {@link EngineOwnedVariables} first, and the builder factories return builder subclasses that
@@ -439,6 +439,24 @@ public final class EngineOwnedServices {
         public ProcessInstance submitStartForm(String id, String businessKey, Map<String, Object> v) {
             check(v);
             return super.submitStartForm(id, businessKey, v);
+        }
+
+        @Override
+        public ProcessInstance submitStartFormData(String id, Map<String, String> v) {
+            check(v);
+            return super.submitStartFormData(id, v);
+        }
+
+        @Override
+        public ProcessInstance submitStartFormData(String id, String businessKey, Map<String, String> v) {
+            check(v);
+            return super.submitStartFormData(id, businessKey, v);
+        }
+
+        @Override
+        public void submitTaskFormData(String taskId, Map<String, String> v) {
+            check(v);
+            super.submitTaskFormData(taskId, v);
         }
 
         @Override

@@ -41,6 +41,11 @@ public final class OperatonSupport {
         } catch (AuthorizationException e) {
             throw ApiProblem.forbidden("ACTION_NOT_PERMITTED", e.getMessage());
         } catch (BadUserRequestException e) {
+            // a coded refusal (422 ENGINE_OWNED_VARIABLE, SEQ-PARALLEL I-1) keeps its status and code
+            java.util.regex.Matcher coded = CODED.matcher(e.getMessage() == null ? "" : e.getMessage());
+            if (coded.find()) {
+                throw new ApiProblem(Integer.parseInt(coded.group(1)), coded.group(2), coded.group(3).trim());
+            }
             throw ApiProblem.badRequest("BAD_REQUEST", e.getMessage());
         } catch (ProcessEngineException e) {
             String m = e.getMessage() == null ? "" : e.getMessage();

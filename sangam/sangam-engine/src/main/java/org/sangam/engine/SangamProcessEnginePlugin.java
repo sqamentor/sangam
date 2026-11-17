@@ -113,6 +113,10 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         org.sangam.engine.replay.CaptureListener.requireAllowed(s.getCaptureListener(), s.getCaptureProduction(),
                 s.getActiveProfiles());
 
+        // SEQ-PARALLEL I-1 (B-49, I-30): engine-owned variables are refused on every caller-facing service and builder;
+        // set before the configuration initialises its services, so they get the command executor as usual
+        org.sangam.engine.state.EngineOwnedServices.install(cfg);
+
         // engine defaults
         cfg.setIdGenerator(new StrongUuidGenerator());
         cfg.setAuthorizationEnabled(false);
