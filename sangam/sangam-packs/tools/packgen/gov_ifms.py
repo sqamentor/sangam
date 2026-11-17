@@ -165,8 +165,8 @@ def ifms_powers(pk, key, case, rows, unverified=None):
                            unverified)
 
 
-def task(s, id, name, seat, form, decision, fields, spec='5WD', sod=False):
-    return s.sla_task(id, name, seat, form=form, decision=decision, fields=fields, default_spec=spec, sod=sod)
+def task(s, id, name, seat, form, decision, fields, spec='5WD', sod=False, bind=None):
+    return s.sla_task(id, name, seat, form=form, decision=decision, fields=fields, default_spec=spec, sod=sod, bind=bind)
 
 
 # ================================================================================================ PAO chain
@@ -765,7 +765,8 @@ def surrender():
     cp = s.conn('yl_close', 'Close the period in the ledger', 'ledger.closePeriod', 'closePeriod', 'submit', 'ledgerId,fiscalYear',
                 'close', step='close')
     rep = s.svc('yl_report', 'Lapse statement', C['DOC'], {'template': 'lapse-statement'})
-    s.seq(j, dd, cp, rep, s.end('yl_end', 'Closed'))
+    # IFT-3: the lapse run ends in the terminal state CLOSED, as a case that closes does
+    s.seq(j, dd, cp, rep, s.state('yl_closed', 'CLOSED'), s.end('yl_end', 'Closed'))
     authority(pk, 'ifms-surrender-authority', [('-', 'CAA', 'surrender approved by the CAA, sent to MoF (GFR 62)')], '')
     ifms_powers(pk, 'ifms-surrender-powers', 'SURRENDER',
                 [('CAA', None, 'surrender of savings to the Finance Ministry, GFR 2017 r.62(1)-(2) (pack default)')],
@@ -997,7 +998,7 @@ def gpf_advances():
                         fields=['gpfAccount*', 'gpfPurpose*', 'amount*', 'gpfBalance', 'qualifyingService', 'documents'], doc=None))
     d = s.setv('gp_defaults', 'Configuration', defaults='amount=0;gpfBalance=0;qualifyingService=0;gpfPurpose=OTHER;'
                'billType=GPF_WITHDRAWAL;caseType=GPF;routingDecisionKey=ifms-gpf-authority;powersDecisionKey=ifms-gpf-powers;scrutinySeat=DDO-1;'
-               'sanctionSla=15D;appealAllowed=false;outputTemplate=gpf-sanction')
+               'sanctionSla=15D;appealAllowed=false;outputTemplate=gpf-sanction;gpfReturnSeat=DDO-1;gpfRejectLevels=*')
     r = s.rule('gp_rules', 'GPF eligibility (DMN)', 'gpf-withdrawal')
     s.seq(st, d, r)
     g = s.xgw('gp_okGw')
@@ -1007,7 +1008,26 @@ def gpf_advances():
     s.flow(g, san, None, 'eligible', default=True)
     rej = rejection(p, s, 'gp_rj')
     b = s.call('gp_bill', 'GPF bill', 'sangam-ifms-bill')
-    outcome(s, 'gp_sanGw', 'sanctionOutcome', {'SANCTIONED': b}, rej)
+    # IFT-4 (IFMS answer, JOINT-LEDGER-SANGAM-IFMS "[ANSWER] IFT-4"; Odisha FD revised procedure 19582 of 11-07-2023
+    # p.15, verified for final payment, inferred for advance and withdrawal; Rajasthan open as IFMS OQ-276): a return is
+    # not a rejection. It goes back to the preparer (pack setting gpfReturnSeat, default the DDO maker DDO-1) for
+    # rework, with a mandatory reason, and the resubmitted application is checked and sanctioned again (the
+    # budget-allocation rework pattern). A rejection stays terminal, by the levels in gpfRejectLevels (default *, every
+    # level); a rejection by another level is a return.
+    rg = s.xgw('gp_retGw', 'Reason given?')
+    rw, rwx = task(s, 'gp_rework', 'Rework and resubmit | संशोधन कर पुनः प्रस्तुत करें', 'gpfReturnSeat', 'ifms-gpf/rework',
+                   ('reworkDecision', ['resubmit']), ['returnReason', 'amount', 'gpfPurpose', 'remarks*'], '5WD')
+    ver = s.svc('gp_version', 'New application version (same case, GP-50)', C['CASE'], {'op': 'RESUBMIT'})
+    s.flow(rg, rw, "execution.getVariable('returnReason') != null && execution.getVariable('returnReason') != ''",
+           'reason given')
+    s.flow(rg, san, None, 'no reason: the authority is asked again', default=True)
+    s.seq(rwx, ver, r)
+    rjg = s.xgw('gp_rjLevelGw', 'Level may reject?')
+    s.flow(rjg, rej, "gpfRejectLevels == '*' || ','.concat(gpfRejectLevels).concat(',')"
+                     ".contains(','.concat(execution.getVariable('competentRole') == null ? '' : "
+                     "execution.getVariable('competentRole')).concat(','))", 'reject')
+    s.flow(rjg, rg, None, 'not a rejecting level: return', default=True)
+    outcome(s, 'gp_sanGw', 'sanctionOutcome', {'SANCTIONED': b, 'RETURNED': rg, 'REJECTED': rjg}, rej)
     s.flow(san, 'gp_sanGw')
     s.flow(b, end_ok(p, s, 'gp_end'))
     s.side_exits('gp')
@@ -1086,11 +1106,12 @@ def accounts():
     s.flow(t, j)
     s.flow(m, j)
     d = s.setv('ma_defaults', 'Configuration', defaults='accountsMonth=previous;paoSeat=PAO-1;prAoSeat=PRAO-1;dueSpec=8D;'
-               'executionConnector=accounts.render;executionStep=render;reconcileRequired=false')
+               'executionConnector=accounts.render;executionStep=render;reconcileRequired=false;'
+               'outputTemplate=monthly-accounts-rendition;appealAllowed=false')
     e1, x1 = task(s, 'ma_compile', 'Compile and check the monthly account | मासिक लेखा संकलन', 'paoSeat',
                   'ifms-monthly-accounts/compile', ('compileDecision', ['compiled']), ['accountsMonth', 'remarks'], '5WD')
     e2, x2 = task(s, 'ma_consolidate', 'Consolidate and approve | समेकन और अनुमोदन', 'prAoSeat',
-                  'ifms-monthly-accounts/consolidate', ('consDecision', ['approve', 'returnBill']), ['remarks'], '2WD', sod=True)
+                  'ifms-monthly-accounts/consolidate', ('consDecision', ['approve', 'returnBill']), ['remarks'], '2WD', sod=True, bind='approve')
     ex = core(s, 'ma_render', 'Render to CGA / AG (core execution)', 'execution')
     s.seq(j, d, e1)
     s.seq(x1, e2)
@@ -1098,7 +1119,13 @@ def accounts():
     s.flow(x2, g)
     s.flow(g, e1, "consDecision == 'returnBill'", 'returned')
     s.flow(g, ex, None, 'approved', default=True)
-    s.flow(ex, s.end('ma_end', 'Rendered'))
+    # IFT-1 / IFT-2 (R8-ifms-tests): the Pr.AO's approval is bound at ma_consolidate (bind, the core sanction pattern), so
+    # core execution's approval check passes; the rendition's outcome is checked and the case closes (core closure)
+    cl = core(s, 'ma_close', 'Rendition record and closure (core)', 'closure')
+    rej = rejection(p, s, 'ma_rj')
+    outcome(s, 'ma_exGw', 'executionOutcome', {'DONE': cl}, rej)
+    s.flow(ex, 'ma_exGw')
+    s.flow(cl, end_ok(p, s, 'ma_end', 'Rendered'))
     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'ma')
 
     pk2 = Pack('gov.ifms.year-end-closing', 'ifms-year-end-closing', 'Year-end closing and annual accounts',
@@ -1115,12 +1142,13 @@ def accounts():
     p.forms.append(dict(key='ifms-year-end-closing/cut', name='Closing cut | समापन चरण', decision=None,
                         fields=['fiscalYear*', 'closingCut*', 'remarks'], doc=None))
     d = s.setv('yc_defaults', 'Configuration', defaults='closingCut=MARCH_PRELIM;paoSeat=PAO-1;caaSeat=SECY-1;'
-               'executionConnector=accounts.render;executionStep=render;reconcileRequired=false')
+               'executionConnector=accounts.render;executionStep=render;reconcileRequired=false;'
+               'outputTemplate=annual-accounts-rendition;appealAllowed=false')
     e1, x1 = task(s, 'yc_compile', 'Compile the cut | चरण का संकलन', 'paoSeat', 'ifms-year-end-closing/compile',
                   ('compileDecision', ['compiled']), ['closingCut', 'remarks'], '10WD')
     appr = s.svc('yc_appr', 'Appropriation Accounts from the ledger', C['DOC'], {'template': 'appropriation-accounts'})
     e2, x2 = task(s, 'yc_sign', 'Sign Appropriation Accounts (CAA) | विनियोग लेखों पर हस्ताक्षर', 'caaSeat',
-                  'ifms-year-end-closing/sign', ('signDecision', ['signed', 'returnBill']), ['dscSerial', 'remarks'], '10WD')
+                  'ifms-year-end-closing/sign', ('signDecision', ['signed', 'returnBill']), ['dscSerial', 'remarks'], '10WD', bind='signed')
     ex = core(s, 'yc_render', 'Render (core execution)', 'execution')
     s.seq(st, d, e1)
     s.seq(x1, appr, e2)
@@ -1128,7 +1156,12 @@ def accounts():
     s.flow(x2, g)
     s.flow(g, e1, "signDecision == 'returnBill'", 'returned')
     s.flow(g, ex, None, 'signed', default=True)
-    s.flow(ex, s.end('yc_end', 'Closed'))
+    # IFT-1 / IFT-2: the CAA's signature binds the approval (yc_sign), the rendition's outcome is checked, closure
+    cl = core(s, 'yc_close', 'Rendition record and closure (core)', 'closure')
+    rej = rejection(p, s, 'yc_rj')
+    outcome(s, 'yc_exGw', 'executionOutcome', {'DONE': cl}, rej)
+    s.flow(ex, 'yc_exGw')
+    s.flow(cl, end_ok(p, s, 'yc_end'))
     seeds(pk2, 'PAO-OFFICE', PAO_SEATS, 'yc')
 
 
@@ -1213,7 +1246,7 @@ def audit():
     e1, x1 = task(s, 'ap_atn', 'Prepare action taken note | की गई कार्रवाई टिप्पणी', 'ownerSeat', 'ifms-audit-para-settlement/atn',
                   ('atnDecision', ['forwardNext']), ['atnText*', 'documents'], '80WD')
     e2, x2 = task(s, 'ap_fa', 'FA vetting | वित्तीय सलाहकार द्वारा जाँच', 'faSeat', 'ifms-audit-para-settlement/fa',
-                  ('faDecision', ['faConcur', 'faNotConcur']), ['remarks*'], '5WD')
+                  ('faDecision', ['faConcur', 'faNotConcur']), ['remarks*'], '5WD', bind='faConcur')
     ex = core(s, 'ap_submit', 'Submit ATN (core execution)', 'execution')
     res = s.catch_msg('ap_result', 'Audit decision', 'sangam.ifms.paraDecision')
     e3, x3 = task(s, 'ap_close', 'Record audit decision | लेखापरीक्षा निर्णय दर्ज करें', 'ownerSeat',
@@ -1224,7 +1257,11 @@ def audit():
     s.flow(x2, g)
     s.flow(g, e1, "faDecision == 'faNotConcur'", 'revise')
     s.flow(g, ex, None, 'vetted', default=True)
-    s.seq(ex, res, e3)
+    # IFT-1: FA concurrence binds the approval (ap_fa); the ATN goes on to wait for the audit decision only when submitted
+    rej = rejection(p, s, 'ap_rj')
+    outcome(s, 'ap_exGw', 'executionOutcome', {'DONE': res}, rej)
+    s.flow(ex, 'ap_exGw')
+    s.flow(res, e3)
     g2 = s.xgw('ap_decGw')
     s.flow(x3, g2)
     s.flow(g2, e1, "paraDecision == 'furtherAction'", 'further action')

@@ -1,6 +1,6 @@
 {
   "key": "ifms-audit-para-settlement/fa",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.ifms.audit-para-settlement",
   "title": {
     "en": "FA vetting",

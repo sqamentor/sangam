@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.gpf",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "GPF advance, withdrawal and final payment",
     "hi": "जीपीएफ अग्रिम, आहरण और अंतिम भुगतान"
@@ -30,6 +30,10 @@
     {
       "kind": "FORM",
       "path": "packs/ifms-gpf/forms/application.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-gpf/forms/rework.form.json"
     },
     {
       "kind": "FORM",
