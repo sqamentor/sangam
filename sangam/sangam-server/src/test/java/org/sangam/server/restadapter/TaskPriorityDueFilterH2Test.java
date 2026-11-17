@@ -71,6 +71,10 @@ class TaskPriorityDueFilterH2Test {
     @AfterAll
     static void tearDown() {
         fx.close();
+        // TestClassStaticsReleasedTest (R9-statics): a test class stays loaded for the whole run
+        fx = null;
+        controller = null;
+        lists = null;
     }
 
     private static void task(TaskService ts, String id, String tenant, String group, int priority, Instant due) {
