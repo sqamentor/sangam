@@ -406,4 +406,148 @@ class IfmsPackScenariosTest {
         assertTrue(audit(bk).contains("APPROVAL_RECORDED"), r);
         closed(bk, done);
     }
+
+    // ------------------------------------------------------------------ bills and the remaining IFMS packs
+
+    /**
+     * The answers of the government systems a bill consults, as the simulator's directives (one per connector,
+     * SimulatorConnectorGateway): bill type and head valid with a one-signature chain, no duplicate, one payee, funds.
+     */
+    static Map<String, Object> systemsAnswer() {
+        Map<String, Object> v = new HashMap<>();
+        v.put("sim_config_documentType", "valid=true;signatures=1");
+        v.put("sim_config_classification", "valid=true");
+        v.put("sim_ifms_duplicateBill", "duplicate=false");
+        v.put("sim_registry_party", "multiple=false");
+        v.put("sim_ledger_available", "available=100000000");
+        return v;
+    }
+
+    static Map<String, Object> bill() {
+        Map<String, Object> v = systemsAnswer();
+        v.put("billType", "CONTINGENT");
+        v.put("headOfAccount", "2054-00-001-01-00-13");
+        v.put("amount", 1_500_000L);
+        v.put("payee", "A Supplier");
+        v.put("payeeAccount", "XXXX2002");
+        v.put("ifsc", "SBIN0000001");
+        v.put("ddoCode", "DDO-1");
+        return v;
+    }
+
+    @Test
+    void contingentBillIsEncumberedPassedPaidAndClosed() {
+        String bk = start("sangam-ifms-bill", "BL", bill());
+        List<String> done = run(bk, new Script());
+        String r = report(bk, done);
+        List<String> c = calls(bk);
+        assertEquals(1, count(c, "ledger.encumber."), r);
+        assertEquals(1, count(c, "ledger.consume."), r + ": paid once");
+        closed(bk, done);
+    }
+
+    /** G9 on the bill: the PAO returns it, the encumbrance is released, the DDO corrects and resubmits, it is paid once. */
+    @Test
+    void billReturnedByThePaoIsRevisedResubmittedAndPaidOnce() {
+        String bk = start("sangam-ifms-bill", "BL-RET", bill());
+        List<String> done = run(bk, new Script().at("pc_pao", 1, "paoDecision", "returnBill", "remarks", "Sanction copy missing")
+                .at("bl_revise", 1, "reviseDecision", "resubmit", "remarks", "Sanction copy attached"));
+        String r = report(bk, done);
+        inOrder(done, List.of("pc_pao", "bl_revise", "pc_pao"), r);
+        List<String> c = calls(bk);
+        assertEquals(2, count(c, "ledger.encumber."), r + ": encumbered for each version");
+        assertEquals(1, count(c, "ledger.release."), r + ": the returned version's encumbrance is released");
+        assertEquals(1, count(c, "ledger.consume."), r + ": paid once");
+        closed(bk, done);
+    }
+
+    /** G14 on the bill: cancelled at the PAO after encumbrance; the encumbrance is released and nothing is paid. */
+    @Test
+    void billCancelledAtThePaoReleasesItsEncumbranceAndPaysNothing() {
+        String bk = start("sangam-ifms-bill", "BL-CAN", bill());
+        List<String> done = new ArrayList<>(run(bk, new Script().stopAt("pc_pao", 1)));
+        assertEquals(1, count(calls(bk), "ledger.encumber."), report(bk, done));
+        correlate(bk, "sangam.cancelCase", Map.of("cancelReason", "Supply order cancelled"));
+        done.addAll(run(bk, new Script()));
+        String r = report(bk, done);
+        assertTrue(driver.ended(bk), r);
+        assertEquals("CANCELLED", String.valueOf(driver.var(bk, "caseState")), r);
+        assertEquals(1, count(calls(bk), "ledger.release"), r + ": encumbrance released");
+        assertEquals(0, count(calls(bk), "ledger.consume."), r + ": nothing paid");
+        noIncidents(bk);
+    }
+
+    @Test
+    void grantInAidReleaseIsSanctionedPaidAndClosed() {
+        Map<String, Object> v = systemsAnswer();
+        v.putAll(Map.of("grantee", "District Health Society", "granteeType", "INSTITUTION", "amount", 2_000_000L,
+                "headOfAccount", "2210-00-101-01-00-31", "payee", "District Health Society", "payeeAccount", "XXXX3003",
+                "ifsc", "SBIN0000001"));
+        String bk = start("sangam-ifms-gia-release", "GIA", v);
+        List<String> done = run(bk, new Script());
+        String r = report(bk, done);
+        assertEquals(1, count(calls(bk), "ledger.consume."), r);
+        closed(bk, done);
+    }
+
+    @Test
+    void employeeAdvanceIsSanctionedPaidAndClosed() {
+        Map<String, Object> v = systemsAnswer();
+        v.putAll(Map.of("advanceKind", "COMPUTER", "amount", 5_000_000L, "instalments", 10, "basicPay", 5_600_000L,
+                "headOfAccount", "7610-00-202-01-00-55", "payee", "A Subscriber", "payeeAccount", "XXXX1001",
+                "ifsc", "SBIN0000001"));
+        String bk = start("sangam-ifms-advance", "ADV", v);
+        List<String> done = run(bk, new Script());
+        String r = report(bk, done);
+        assertEquals(1, count(calls(bk), "ledger.consume."), r);
+        closed(bk, done);
+    }
+
+    @Test
+    void snaSparshReleaseIsSentToTheRbiAndClosed() {
+        Map<String, Object> v = systemsAnswer();
+        v.putAll(Map.of("slsCode", "SLS-0101", "motherSanctionNo", "MS-2026-17", "amount", 1_000_000L,
+                "centreShare", 600_000L, "stateShare", 400_000L));
+        String bk = start("sangam-ifms-sna-sparsh-release", "SNA", v);
+        List<String> done = run(bk, new Script());
+        String r = report(bk, done);
+        assertEquals(1, count(calls(bk), "rail.ekuber."), r);
+        closed(bk, done);
+    }
+
+    @Test
+    void receiptChallanIsPaidAndAccounted() {
+        String bk = start("sangam-ifms-receipt", "RC", Map.of("receiptHead", "0070-01-800-00", "amount", 250_000L,
+                "payee", "A Depositor"));
+        List<String> done = new ArrayList<>(run(bk, new Script()));
+        correlate(bk, "sangam.ifms.challanPaid", Map.of("bankRef", "BRN-778812"));
+        done.addAll(run(bk, new Script()));
+        String r = report(bk, done);
+        assertTrue(driver.ended(bk), r);
+        noIncidents(bk);
+    }
+
+    @Test
+    void supplementaryDemandIsConcurredByFinanceAndClosed() {
+        Map<String, Object> v = systemsAnswer();
+        v.putAll(Map.of("fiscalYear", "2026-27", "headOfAccount", "2052-00-090-01", "amount", 1_000_000L,
+                "supplementaryKind", "CASH", "justification", "Unforeseen election expenditure"));
+        String bk = start("sangam-ifms-supplementary", "SD", v);
+        List<String> done = new ArrayList<>(run(bk, new Script()));
+        correlate(bk, "sangam.referralReply", Map.of("referralDecision", "faConcur", "remarks", "Concurred"));
+        done.addAll(run(bk, new Script()));
+        String r = report(bk, done);
+        closed(bk, done);
+    }
+
+    @Test
+    void utilisationCertificateIsReceivedAndClosed() {
+        String bk = start("sangam-ifms-uc", "UC", Map.of("grantee", "District Health Society"));
+        List<String> done = new ArrayList<>(run(bk, new Script()));
+        correlate(bk, "sangam.ifms.ucSubmitted", Map.of("ucAmount", 2_000_000L));
+        done.addAll(run(bk, new Script()));
+        String r = report(bk, done);
+        assertTrue(driver.ended(bk), r);
+        noIncidents(bk);
+    }
 }

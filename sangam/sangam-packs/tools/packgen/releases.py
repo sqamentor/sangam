@@ -370,3 +370,6 @@ def check_held(packs_root, held_packs=None):
 for _pid in ('gov.ifms.monthly-accounts', 'gov.ifms.year-end-closing', 'gov.ifms.audit-para-settlement',
              'gov.ifms.surrender-lapse', 'gov.leave', 'gov.ifms.gpf'):
     SHIPS[_pid] = ('1.0.1', '1.0.3')
+# R8-ifms-tests IFT-5: approval bound at the PAO pass before core execution (bill PAO chain, SNA-SPARSH).
+SHIPS['gov.ifms.pao-chain'] = ('1.0.1', '1.0.3')
+SHIPS['gov.ifms.sna-sparsh'] = ('1.0.1', '1.0.3')
