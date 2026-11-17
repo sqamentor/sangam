@@ -645,3 +645,11 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - Evidence: the pushed main 209d2765 ships sangam.core 1.0.1, so 1.0.2 has never been released or pushed.
   - packgen `--check`, the held-content ledger (HELD_AT 93498ab2) and SHIPS all accept it.
   - Only local development databases built from unpushed integration code can hold an earlier 1.0.2. Those are reset, not upgraded, which the release notes state.
+
+- **409 (integrator, under decision 407; lane R8-392, confidence 98% or more)**: decision 392's data migration is a Java start-time step on the decision 370 `sangamPlatformRoleRows` runner precedent, with no SQL changesets.
+  - Evidence: the audit chain appends through `SecurityAuditService.record` (hash-chained, `SecurityAuditService.java:96-112`); `AUTH_EFFECTIVE` rewrites go through `AuthEffectiveMaintainer`; `SEC_POLICY` needs no schema change.
+  - Conditions:
+    1. Cluster-safe, with no double split or double audit when two nodes start together.
+    2. Idempotent.
+    3. Fail-closed per tenant.
+    4. Pending multi-subject four-eyes changes are marked SUPERSEDED, with a test proving that they cannot restore a grant.
