@@ -8,8 +8,12 @@ import { L, problem, show, T } from '../../test/screens';
 
 const taskFilters = vi.fn();
 const createTaskFilter = vi.fn();
+const updateTaskFilter = vi.fn();
+const deleteTaskFilter = vi.fn();
 const auth = vi.hoisted(() => ({ me: { userId: 'u1', roles: [] as string[], permissions: ['team.read', 'team.write'] } }));
-vi.mock('../../api/endpoints', () => ({ api: { team: { taskFilters: () => taskFilters(), createTaskFilter: (b: unknown, k: string) => createTaskFilter(b, k) } } }));
+vi.mock('../../api/endpoints', () => ({ api: { team: { taskFilters: () => taskFilters(), createTaskFilter: (b: unknown, k: string) => createTaskFilter(b, k),
+        updateTaskFilter: (id: string, v: number, b: unknown, k: string) => updateTaskFilter(id, v, b, k),
+        deleteTaskFilter: (id: string, v: number, r: string, k: string) => deleteTaskFilter(id, v, r, k) } } }));
 vi.mock('../../auth/AuthProvider', () => ({ useAuth: () => ({ me: auth.me }) }));
 
 import { TeamTaskLists, parseQuery } from './TeamTaskLists';
@@ -21,6 +25,8 @@ afterEach(() => {
   cleanup();
   taskFilters.mockReset();
   createTaskFilter.mockReset();
+  updateTaskFilter.mockReset();
+  deleteTaskFilter.mockReset();
   auth.me = { userId: 'u1', roles: [], permissions: ['team.read', 'team.write'] };
 });
 
@@ -83,5 +89,47 @@ describe('TeamTaskLists', () => {
     show(<TeamTaskLists />, '/tasks/filters');
     await screen.findByText(T('teamLists.none'));
     expect(screen.queryByRole('button', { name: T('teamLists.createButton') })).toBeNull();
+  });
+});
+
+describe('TeamTaskLists: change and delete (decision 404, team.write)', () => {
+  it('saves a changed list against the version it was read at', async () => {
+    taskFilters.mockResolvedValue([row]);
+    updateTaskFilter.mockResolvedValue({ ...row, name: 'Accounts desk', version: 2 });
+    show(<TeamTaskLists />, '/tasks/filters');
+    fireEvent.click(await screen.findByRole('button', { name: T('teamLists.editNamed').replace('{{name}}', 'Accounts queue') }));
+    const name = screen.getByLabelText(L('teamLists.name')) as HTMLInputElement;
+    expect(name.value).toBe('Accounts queue');
+    fireEvent.change(name, { target: { value: 'Accounts desk' } });
+    fireEvent.click(screen.getByRole('button', { name: T('teamLists.saveButton') }));
+    await waitFor(() => expect(updateTaskFilter).toHaveBeenCalledWith('f1', 1, { name: 'Accounts desk', query: { candidateGroup: 'accounts' } }, expect.any(String)));
+    expect(createTaskFilter).not.toHaveBeenCalled();
+    await waitFor(() => expect(taskFilters).toHaveBeenCalledTimes(2));
+  });
+  it('shows a stale-version refusal and changes nothing locally', async () => {
+    taskFilters.mockResolvedValue([row]);
+    updateTaskFilter.mockRejectedValue(problem(409, 'REVISION_CONFLICT', 'Task list f1 is at version 2'));
+    show(<TeamTaskLists />, '/tasks/filters');
+    fireEvent.click(await screen.findByRole('button', { name: T('teamLists.editNamed').replace('{{name}}', 'Accounts queue') }));
+    fireEvent.click(screen.getByRole('button', { name: T('teamLists.saveButton') }));
+    expect(await screen.findByText('Task list f1 is at version 2')).toBeTruthy();
+  });
+  it('deletes a list with a reason and the version it was read at', async () => {
+    taskFilters.mockResolvedValue([row]);
+    deleteTaskFilter.mockResolvedValue(undefined);
+    show(<TeamTaskLists />, '/tasks/filters');
+    fireEvent.click(await screen.findByRole('button', { name: T('teamLists.deleteNamed').replace('{{name}}', 'Accounts queue') }));
+    fireEvent.change(screen.getByLabelText(L('common.reason')), { target: { value: 'Desk closed for good' } });
+    fireEvent.click(screen.getByRole('button', { name: T('teamLists.deleteButton') }));
+    await waitFor(() => expect(deleteTaskFilter).toHaveBeenCalledWith('f1', 1, 'Desk closed for good', expect.any(String)));
+    await waitFor(() => expect(taskFilters).toHaveBeenCalledTimes(2));
+  });
+  it('offers no change or delete without team.write', async () => {
+    auth.me = { userId: 'u1', roles: [], permissions: ['team.read'] };
+    taskFilters.mockResolvedValue([row]);
+    show(<TeamTaskLists />, '/tasks/filters');
+    await screen.findByText('Accounts queue');
+    expect(screen.queryByRole('button', { name: T('teamLists.editNamed').replace('{{name}}', 'Accounts queue') })).toBeNull();
+    expect(screen.queryByRole('button', { name: T('teamLists.deleteNamed').replace('{{name}}', 'Accounts queue') })).toBeNull();
   });
 });

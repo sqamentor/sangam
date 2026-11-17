@@ -531,6 +531,8 @@
     "allWork": "All my work",
     "deleteFilter": "Delete filter {{name}}",
     "saveFilter": "Save as filter",
+    "teamList": "Shared task list",
+    "teamListHint": "A list your organisation saved. It only narrows the tasks you may already see.",
     "filterStoredHint": "Saved filters are kept in this browser, without the search text. The server applies every criterion, so a filter never shows more than you may see."
   },
   "sod": {
@@ -5090,6 +5092,17 @@
     "nameRequired": "Enter a name.",
     "nameTooLong": "Use at most 255 characters.",
     "queryNotJson": "This is not valid JSON.",
-    "queryNotObject": "Enter a JSON object, in curly brackets."
+    "queryNotObject": "Enter a JSON object, in curly brackets.",
+    "actions": "Actions",
+    "editNamed": "Change {{name}}",
+    "deleteNamed": "Delete {{name}}",
+    "edit": "Change list {{name}}",
+    "saveButton": "Save changes",
+    "cancelEdit": "Stop changing",
+    "updated": "List {{name}} changed",
+    "deleteTitle": "Delete list {{name}}",
+    "deleteBody": "The list is removed for everyone in your organisation. Tasks are not changed.",
+    "deleteButton": "Delete list",
+    "deleted": "List {{name}} deleted"
   }
 }
