@@ -14,6 +14,8 @@ cp -r sangam-packs/target/test-classes "$OUT/lib/test-classes"
 cp -r sangam-packs/target/classes "$OUT/lib/classes"
 tr ':' '\n' < "$WORK/cp.txt" | while read -r jar; do [ -f "$jar" ] && cp "$jar" "$OUT/lib/"; done
 cp -r /opt/jdk25 "$OUT/jdk"
+echo "classpath entries: $(tr ':' '
+' < "$WORK/cp.txt" | wc -l); junit jars:"; ls "$OUT/lib" | grep -i -E "junit|jazzer" || true
 
 RUNTIME_CP='$this_dir/lib/test-classes:$this_dir/lib/classes'
 for jar in "$OUT"/lib/*.jar; do RUNTIME_CP="$RUNTIME_CP:\$this_dir/lib/$(basename "$jar")"; done
