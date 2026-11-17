@@ -11,7 +11,7 @@ import java.util.Objects;
  * Async invoke with a callback (M-067, SANGAM.md §5.1 "sync result or async callback", R27 authenticated callbacks).
  *
  * <p>The connector tells the called function where and how to report its result: the callback {@code url} (an inbound
- * event channel of Sangam, {@code POST /events/{channel}}), the {@code eventType} to use and the {@code correlationKey},
+ * event channel of Sangam, {@code POST /events/by-channel?channel=}), the {@code eventType} to use and the {@code correlationKey},
  * which is the operationId of the call. The function answers by sending a CloudEvent to that url with
  * {@code ce-type = eventType}, {@code ce-sangamcorrelation = correlationKey} and a unique {@code ce-id}, signed with the
  * channel's HMAC ({@code X-Sangam-Signature}). The existing inbound pipeline then authenticates it, de-duplicates it by

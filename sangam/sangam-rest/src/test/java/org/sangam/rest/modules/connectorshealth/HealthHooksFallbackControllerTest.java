@@ -25,7 +25,7 @@ class HealthHooksFallbackControllerTest {
         List<Function<MockHttpServletRequest, ResponseEntity<Map<String, Object>>>> routes = List.of(
                 c::fhirNotification, c::remittance835, c::cdsDiscovery, c::cdsCall);
         for (var route : routes) {
-            MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/v1/hooks/fhir/ch-1");
+            MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/v1/hooks/fhir/by-channel");
             ResponseEntity<Map<String, Object>> r = route.apply(req);
             assertEquals(501, r.getStatusCode().value());
             assertNotNull(r.getBody());

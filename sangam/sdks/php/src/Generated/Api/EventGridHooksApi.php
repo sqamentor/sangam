@@ -25,13 +25,15 @@ final class EventGridHooksApi
      *
      * Public at the Sangam layer; the channel's authentication is checked first: a Microsoft Entra ID delivery token (Authorization: Bearer; issuer, audience and signature validated against the channel's configured tenant and application) or the delivery-property secret header, whichever the channel configures (decision 219). A delivery that satisfies no configured method is 401 WEBHOOK_SIGNATURE_INVALID (fail closed), 404 when the channel is not configured or not enabled. CloudEvents structured single or batch, or the Event Grid schema (an array). A Microsoft.EventGrid.SubscriptionValidationEvent is answered with {validationResponse} and writes nothing; other events are written to the inbox (deduplicated by id) and acknowledged. A content type the channel does not accept is 400.
      *
-     * POST /hooks/eventgrid/{tenant}/{channel} (operationId receiveEventGridDelivery).
+     * POST /hooks/eventgrid/{tenant}/by-channel (operationId receiveEventGridDelivery).
      * @param array $body request body
+     * @param string $channel query channel
      * @return Model\EventGridHookResult|null
      */
-    public function receiveEventGridDelivery(string $tenant, string $channel, array $body, ?RequestOptions $options = null): ?Model\EventGridHookResult
+    public function receiveEventGridDelivery(string $tenant, array $body, string $channel, ?RequestOptions $options = null): ?Model\EventGridHookResult
     {
-        $req = ApiRequest::post('/hooks/eventgrid/' . HttpTransport::seg((string) $tenant) . '/' . HttpTransport::seg((string) $channel));
+        $req = ApiRequest::post('/hooks/eventgrid/' . HttpTransport::seg((string) $tenant) . '/by-channel');
+        $req->query('channel', $channel);
         if ($body !== null) {
             $req->body($body);
         }

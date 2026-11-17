@@ -12,7 +12,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * Schema ComplianceContact of sangam-api.yaml 0.1.0.
  *
- * @property-read string|null $role Taken from the path on POST /compliance/contacts/{role}.
+ * @property-read string|null $role Taken from the query parameter role on POST /compliance/contacts/by-role.
  * @property-read string|null $name (required)
  * @property-read string|null $designation
  * @property-read string|null $organisation

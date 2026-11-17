@@ -141,8 +141,8 @@ public class AiUiController {
         return Lists.created("/api/v1/ai/knowledge-bases/" + b.key(), "ai-kb:" + b.key(), info);
     }
 
-    @PostMapping("/knowledge-bases/{key}/retire")
-    public ResponseEntity<Void> retire(RequestContext ctx, @PathVariable String key, @RequestBody(required = false) DecisionRequest b) {
+    @PostMapping("/knowledge-bases/by-key/retire")
+    public ResponseEntity<Void> retire(RequestContext ctx, @RequestParam("key") String key, @RequestBody(required = false) DecisionRequest b) {
         permissions.require(ctx, AiController.ADMIN);
         String reason = b == null || b.reason() == null || b.reason().isBlank() ? null : b.reason().trim();
         if (reason == null) {

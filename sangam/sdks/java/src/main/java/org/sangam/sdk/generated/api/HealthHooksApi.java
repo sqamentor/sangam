@@ -31,15 +31,16 @@ public final class HealthHooksApi {
      *
      * <p>Public at the Sangam layer: the channel's shared secret header is checked (constant time) and each focus resource is written to the integration inbox (deduplicated, tenant-bound by the channel). ClaimResponse becomes sangam.ushealth.pasUpdate.
      *
-     * <p>{@code POST /hooks/fhir/{channel}} (operationId {@code receiveFhirNotification}).
-     * @param channel path parameter {@code channel}
+     * <p>{@code POST /hooks/fhir/by-channel} (operationId {@code receiveFhirNotification}).
      * @param body request body
+     * @param channel query parameter {@code channel}. Configured FHIR subscription channel; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public HealthHookResult receiveFhirNotification(String channel, java.util.Map<String, Object> body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/hooks/fhir/" + HttpTransport.seg(String.valueOf(channel)));
+    public HealthHookResult receiveFhirNotification(java.util.Map<String, Object> body, String channel, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/hooks/fhir/by-channel");
         req.body(body);
+        req.query("channel", channel);
         return call.json(req, options, R_receiveFhirNotification);
     }
 

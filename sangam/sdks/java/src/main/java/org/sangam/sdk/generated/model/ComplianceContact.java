@@ -8,7 +8,7 @@ package org.sangam.sdk.generated.model;
  *
  * <p>Schema {@code ComplianceContact} of sangam-api.yaml 0.1.0.
  *
- * @param role wire field {@code role}. Taken from the path on POST /compliance/contacts/{role}.
+ * @param role wire field {@code role}. Taken from the query parameter role on POST /compliance/contacts/by-role.
  * @param name wire field {@code name} (required)
  * @param designation wire field {@code designation}
  * @param organisation wire field {@code organisation}

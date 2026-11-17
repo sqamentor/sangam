@@ -154,11 +154,13 @@ public sealed class ConfigApi
     /// <summary>
     /// List master codes
     /// Codes of a scheme segment valid on the date (optionally children of a parent code).
-    /// GET /config/master/{scheme}/{segment} (operationId listConfigMasterCodes); permission config.read.
+    /// GET /config/master/by-scheme/by-segment (operationId listConfigMasterCodes); permission config.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.ConfigMasterCode>> ListConfigMasterCodesAsync(string scheme, string segment, string? scope = null, string? parent = null, global::System.DateOnly? asOf = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/config/master/{HttpTransport.Seg(GeneratedCalls.Str(scheme)!)}/{HttpTransport.Seg(GeneratedCalls.Str(segment)!)}");
+        var req = ApiRequest.Get($"/config/master/by-scheme/by-segment");
+        req.WithQuery("scheme", GeneratedCalls.Q(scheme));
+        req.WithQuery("segment", GeneratedCalls.Q(segment));
         req.WithQuery("scope", GeneratedCalls.Q(scope));
         req.WithQuery("parent", GeneratedCalls.Q(parent));
         req.WithQuery("asOf", GeneratedCalls.Q(asOf));
@@ -224,11 +226,12 @@ public sealed class ConfigApi
     /// <summary>
     /// Check a document
     /// Checks a document against its type (required fields, limits, chain).
-    /// POST /config/document-types/{id}/check (operationId checkConfigDocument); permission config.read.
+    /// POST /config/document-types/by-id/check (operationId checkConfigDocument); permission config.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> CheckConfigDocumentAsync(string id, M.ConfigDocumentCheckRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> CheckConfigDocumentAsync(M.ConfigDocumentCheckRequest body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/config/document-types/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/check");
+        var req = ApiRequest.Post($"/config/document-types/by-id/check");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -236,11 +239,12 @@ public sealed class ConfigApi
     /// <summary>
     /// Map through a crosswalk
     /// Maps a code (and amount) to the target classification (e.g. COFOG) with shares.
-    /// POST /config/crosswalks/{id}/map (operationId mapConfigCrosswalk); permission config.read.
+    /// POST /config/crosswalks/by-id/map (operationId mapConfigCrosswalk); permission config.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> MapConfigCrosswalkAsync(string id, M.ConfigCrosswalkRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> MapConfigCrosswalkAsync(M.ConfigCrosswalkRequest body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/config/crosswalks/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/map");
+        var req = ApiRequest.Post($"/config/crosswalks/by-id/map");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }

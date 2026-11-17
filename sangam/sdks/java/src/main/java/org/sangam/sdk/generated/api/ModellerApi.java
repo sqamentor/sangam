@@ -292,13 +292,14 @@ public final class ModellerApi {
      *
      * <p>The lease on a model file.
      *
-     * <p>{@code GET /models/{file}/lease} (operationId {@code getModelLease}); permission {@code package.read}.
-     * @param file path parameter {@code file}. model file: the package id
+     * <p>{@code GET /models/by-file/lease} (operationId {@code getModelLease}); permission {@code package.read}.
+     * @param file query parameter {@code file}. Model file id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public ModelEditLease getModelLease(String file, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/models/" + HttpTransport.seg(String.valueOf(file)) + "/lease");
+        ApiRequest req = ApiRequest.get("/models/by-file/lease");
+        req.query("file", file);
         return call.json(req, options, R_getModelLease);
     }
 
@@ -307,13 +308,14 @@ public final class ModellerApi {
      *
      * <p>Saves then send the fence in X-Sangam-Edit-Fence.
      *
-     * <p>{@code POST /models/{file}/lease} (operationId {@code acquireModelLease}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param file path parameter {@code file}. model file: the package id
+     * <p>{@code POST /models/by-file/lease} (operationId {@code acquireModelLease}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param file query parameter {@code file}. Model file id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public ModelLeaseOutcome acquireModelLease(String file, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/models/" + HttpTransport.seg(String.valueOf(file)) + "/lease");
+        ApiRequest req = ApiRequest.post("/models/by-file/lease");
+        req.query("file", file);
         return call.json(req, options, R_acquireModelLease);
     }
 
@@ -322,14 +324,15 @@ public final class ModellerApi {
      *
      * <p>Holder only.
      *
-     * <p>{@code POST /models/{file}/lease/heartbeat} (operationId {@code heartbeatModelLease}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param file path parameter {@code file}. model file: the package id
+     * <p>{@code POST /models/by-file/lease/heartbeat} (operationId {@code heartbeatModelLease}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param file query parameter {@code file}. Model file id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void heartbeatModelLease(String file, ModelFenceRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/models/" + HttpTransport.seg(String.valueOf(file)) + "/lease/heartbeat");
+    public void heartbeatModelLease(ModelFenceRequest body, String file, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/models/by-file/lease/heartbeat");
         req.body(body);
+        req.query("file", file);
         call.none(req, options);
     }
 
@@ -338,14 +341,15 @@ public final class ModellerApi {
      *
      * <p>Holder only.
      *
-     * <p>{@code POST /models/{file}/lease/release} (operationId {@code releaseModelLease}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param file path parameter {@code file}. model file: the package id
+     * <p>{@code POST /models/by-file/lease/release} (operationId {@code releaseModelLease}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param file query parameter {@code file}. Model file id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void releaseModelLease(String file, ModelFenceRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/models/" + HttpTransport.seg(String.valueOf(file)) + "/lease/release");
+    public void releaseModelLease(ModelFenceRequest body, String file, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/models/by-file/lease/release");
         req.body(body);
+        req.query("file", file);
         call.none(req, options);
     }
 
@@ -354,12 +358,13 @@ public final class ModellerApi {
      *
      * <p>Tells the holder.
      *
-     * <p>{@code POST /models/{file}/lease/request-takeover} (operationId {@code requestModelLeaseTakeover}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param file path parameter {@code file}. model file: the package id
+     * <p>{@code POST /models/by-file/lease/request-takeover} (operationId {@code requestModelLeaseTakeover}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param file query parameter {@code file}. Model file id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void requestModelLeaseTakeover(String file, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/models/" + HttpTransport.seg(String.valueOf(file)) + "/lease/request-takeover");
+        ApiRequest req = ApiRequest.post("/models/by-file/lease/request-takeover");
+        req.query("file", file);
         call.none(req, options);
     }
 
@@ -368,15 +373,16 @@ public final class ModellerApi {
      *
      * <p>Needs modeller.lease.takeover; audited.
      *
-     * <p>{@code POST /models/{file}/lease/takeover} (operationId {@code takeOverModelLease}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param file path parameter {@code file}. model file: the package id
+     * <p>{@code POST /models/by-file/lease/takeover} (operationId {@code takeOverModelLease}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param file query parameter {@code file}. Model file id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public ModelEditLease takeOverModelLease(String file, ModelTakeoverRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/models/" + HttpTransport.seg(String.valueOf(file)) + "/lease/takeover");
+    public ModelEditLease takeOverModelLease(ModelTakeoverRequest body, String file, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/models/by-file/lease/takeover");
         req.body(body);
+        req.query("file", file);
         return call.json(req, options, R_takeOverModelLease);
     }
 
@@ -385,13 +391,14 @@ public final class ModellerApi {
      *
      * <p>Server-sent events, event name 'presence', data = ModelPresence: one event on connect and one on every join, leave or lease change (M-101). The caller is present while the stream is open; closing it leaves. Live across nodes like the conversation stream (M-040).
      *
-     * <p>{@code GET /models/{file}/presence/stream} (operationId {@code streamModelPresence}); permission {@code package.read}.
-     * @param file path parameter {@code file}. model file: the package id
+     * <p>{@code GET /models/by-file/presence/stream} (operationId {@code streamModelPresence}); permission {@code package.read}.
+     * @param file query parameter {@code file}. Model file id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public byte[] streamModelPresence(String file, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/models/" + HttpTransport.seg(String.valueOf(file)) + "/presence/stream");
+        ApiRequest req = ApiRequest.get("/models/by-file/presence/stream");
+        req.query("file", file);
         return call.bytes(req, options, "text/event-stream");
     }
 
@@ -569,14 +576,15 @@ public final class ModellerApi {
      *
      * <p>Same as POST on the lease.
      *
-     * <p>{@code POST /models/{file}/lease/acquire} (operationId {@code acquireModelLeaseUi}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param file path parameter {@code file}
+     * <p>{@code POST /models/by-file/lease/acquire} (operationId {@code acquireModelLeaseUi}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param file query parameter {@code file}. Model file id; may carry '/' or ':'
      * @param body request body, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> acquireModelLeaseUi(String file, ModellerFenceRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/models/" + HttpTransport.seg(String.valueOf(file)) + "/lease/acquire");
+        ApiRequest req = ApiRequest.post("/models/by-file/lease/acquire");
+        req.query("file", file);
         req.body(body);
         return call.json(req, options, R_acquireModelLeaseUi);
     }
@@ -669,15 +677,16 @@ public final class ModellerApi {
      *
      * <p>Affects every rule of the service.
      *
-     * <p>{@code PATCH /service-mocks/{id}} (operationId {@code toggleServiceMock}); permission {@code ops.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code PATCH /service-mocks/by-id} (operationId {@code toggleServiceMock}); permission {@code ops.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. Mock row id (service.operation); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> toggleServiceMock(String id, ServiceMocksToggle body, RequestOptions options) {
-        ApiRequest req = ApiRequest.patch("/service-mocks/" + HttpTransport.seg(String.valueOf(id)));
+    public java.util.Map<String, Object> toggleServiceMock(ServiceMocksToggle body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.patch("/service-mocks/by-id");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_toggleServiceMock);
     }
 }

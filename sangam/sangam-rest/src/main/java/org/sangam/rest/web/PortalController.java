@@ -73,8 +73,8 @@ public class PortalController {
      * Owner decisions 339, 341, 343: the current published version of the service's consent notice, with one entry per
      * purpose and the jurisdiction pack's age of majority, for the application form to show before submission.
      */
-    @GetMapping("/services/{key}/notice")
-    public PortalCompliancePort.PortalNotice serviceNotice(RequestContext ctx, @PathVariable String key,
+    @GetMapping("/services/by-key/notice")
+    public PortalCompliancePort.PortalNotice serviceNotice(RequestContext ctx, @RequestParam("key") String key,
                                                            @RequestParam(required = false) String lang) {
         permissions.require(ctx, Permissions.PORTAL_USE);
         PortalPort.PortalService service = requireService(ctx, key);
@@ -103,8 +103,8 @@ public class PortalController {
      * custom fields merged into the data schema on the server ({@link FormPort#effective}). Only a service the caller can
      * list is served, so {@code portal.use} never reads an arbitrary form key.
      */
-    @GetMapping("/services/{key}/form")
-    public FormPort.FormVersion serviceForm(RequestContext ctx, @PathVariable String key) {
+    @GetMapping("/services/by-key/form")
+    public FormPort.FormVersion serviceForm(RequestContext ctx, @RequestParam("key") String key) {
         permissions.require(ctx, Permissions.PORTAL_USE);
         PortalPort.PortalService service = requireService(ctx, key);
         if (service.formKey() == null || service.formKey().isBlank()) {

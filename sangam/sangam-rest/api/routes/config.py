@@ -87,9 +87,9 @@ op("get", "/config/profiles/history", "getConfigProfileHistory", "Config", "Prof
 op("post", "/config/validate", "validateConfigProfile", "Config", "Validate a resolved profile",
    "Validates the resolved profile of a scope (required values, placeholders, locks).", CFR,
    body="ConfigValidateRequest", resp=(200, "ConfigFindingsResult"), perm="config.read")
-op("get", "/config/master/{scheme}/{segment}", "listConfigMasterCodes", "Config", "List master codes",
+op("get", "/config/master/by-scheme/by-segment", "listConfigMasterCodes", "Config", "List master codes",
    "Codes of a scheme segment valid on the date (optionally children of a parent code).", CFR,
-   params=[pp("scheme"), pp("segment"), SCOPE, q("parent"), q("asOf", "date")], resp=(200, "array:ConfigMasterCode"),
+   params=[q("scheme", desc="Classification scheme; may carry '/' or ':'", required=True), q("segment", desc="Scheme segment; may carry '/' or ':'", required=True), SCOPE, q("parent"), q("asOf", "date")], resp=(200, "array:ConfigMasterCode"),
    perm="config.read", list_=True)
 op("post", "/config/master/seed", "seedConfigMasterCodes", "Config", "Load master codes",
    "Loads codes from a CSV (header scheme,segment,parent,code,name_en,flags,validFrom,validTo,source,status) or YAML "
@@ -106,9 +106,9 @@ op("get", "/config/document-types", "listConfigDocumentTypes", "Config", "The do
    "Document types of the scope's profile (optionally one family).", CFR,
    params=[SCOPE, q("family"), q("asOf", "date")], resp=(200, {"application/json": {"schema": {
        "type": "array", "items": {"type": "object", "additionalProperties": True}}}}), perm="config.read", list_=True)
-op("post", "/config/document-types/{id}/check", "checkConfigDocument", "Config", "Check a document",
-   "Checks a document against its type (required fields, limits, chain).", CFR, params=[pp("id")],
+op("post", "/config/document-types/by-id/check", "checkConfigDocument", "Config", "Check a document",
+   "Checks a document against its type (required fields, limits, chain).", CFR, params=[q("id", desc="Document type id; may carry '/' or ':'", required=True)],
    body="ConfigDocumentCheckRequest", resp=(200, "object"), perm="config.read")
-op("post", "/config/crosswalks/{id}/map", "mapConfigCrosswalk", "Config", "Map through a crosswalk",
-   "Maps a code (and amount) to the target classification (e.g. COFOG) with shares.", CFR, params=[pp("id")],
+op("post", "/config/crosswalks/by-id/map", "mapConfigCrosswalk", "Config", "Map through a crosswalk",
+   "Maps a code (and amount) to the target classification (e.g. COFOG) with shares.", CFR, params=[q("id", desc="Crosswalk id; may carry '/' or ':'", required=True)],
    body="ConfigCrosswalkRequest", resp=(200, "object"), perm="config.read")

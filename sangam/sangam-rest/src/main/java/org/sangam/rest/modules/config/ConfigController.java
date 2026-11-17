@@ -30,7 +30,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -217,9 +216,9 @@ public class ConfigController {
 
     // ---------------------------------------------------------------- master data and classification
 
-    @GetMapping("/master/{scheme}/{segment}")
-    public ResponseEntity<List<MasterCode>> codes(RequestContext ctx, @PathVariable String scheme,
-            @PathVariable String segment, @RequestParam(required = false) String scope,
+    @GetMapping("/master/by-scheme/by-segment")
+    public ResponseEntity<List<MasterCode>> codes(RequestContext ctx, @RequestParam("scheme") String scheme,
+            @RequestParam("segment") String segment, @RequestParam(required = false) String scope,
             @RequestParam(required = false) String parent,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf) {
         permissions.require(ctx, ConfigPermissions.READ);
@@ -290,8 +289,8 @@ public class ConfigController {
         return Lists.ok(out);
     }
 
-    @PostMapping("/document-types/{id}/check")
-    public Map<String, Object> checkDocument(RequestContext ctx, @PathVariable String id,
+    @PostMapping("/document-types/by-id/check")
+    public Map<String, Object> checkDocument(RequestContext ctx, @RequestParam("id") String id,
                                              @RequestBody DocumentCheckRequest body) {
         permissions.require(ctx, ConfigPermissions.READ);
         Map<String, Object> in = new LinkedHashMap<>();
@@ -303,8 +302,8 @@ public class ConfigController {
                 "documentType.check", in);
     }
 
-    @PostMapping("/crosswalks/{id}/map")
-    public Map<String, Object> mapCrosswalk(RequestContext ctx, @PathVariable String id,
+    @PostMapping("/crosswalks/by-id/map")
+    public Map<String, Object> mapCrosswalk(RequestContext ctx, @RequestParam("id") String id,
                                             @RequestBody CrosswalkRequest body) {
         permissions.require(ctx, ConfigPermissions.READ);
         if (body == null || body.code() == null) {

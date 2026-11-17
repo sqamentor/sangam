@@ -87,7 +87,7 @@ describe('M-030 pack lifecycle', () => {
     fireEvent.click(screen.getByText(T('packs.uninstall')));
     fireEvent.change(within(dialog()).getByLabelText(new RegExp(T('common.reason'))), { target: { value: 'pack replaced by v2' } });
     fireEvent.click(within(dialog()).getByRole('button', { name: T('common.confirm') }));
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/packs/sec.leave/uninstall', { tenant: 'RJ', reason: 'pack replaced by v2' }, expect.any(String)));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/packs/by-id/uninstall?id=sec.leave', { tenant: 'RJ', reason: 'pack replaced by v2' }, expect.any(String)));
   });
 });
 

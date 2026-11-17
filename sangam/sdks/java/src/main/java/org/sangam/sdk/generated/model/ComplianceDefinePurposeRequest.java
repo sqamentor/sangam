@@ -4,7 +4,7 @@
 package org.sangam.sdk.generated.model;
 
 /**
- * A processing purpose to define or version (PUT /compliance/purposes/{code}). standardsAttested, active and every data item's sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version is assigned by the server (previous + 1). Durations are ISO-8601.
+ * A processing purpose to define or version (PUT /compliance/purposes/by-code?code=). standardsAttested, active and every data item's sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version is assigned by the server (previous + 1). Durations are ISO-8601.
  *
  * <p>Schema {@code ComplianceDefinePurposeRequest} of sangam-api.yaml 0.1.0.
  *

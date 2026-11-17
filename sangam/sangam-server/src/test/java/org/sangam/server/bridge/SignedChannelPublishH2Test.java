@@ -87,17 +87,17 @@ class SignedChannelPublishH2Test {
         // the token-authenticated events API: the principal's token and tenant authenticate the event
         String event = "{\"id\":\"e-" + n + "\",\"source\":\"acc-sl76\",\"type\":\"" + def
                 + "\",\"specversion\":\"1.0\",\"data\":{\"amount\":5}}";
-        HttpResponse<String> published = send("/api/v1/events/" + channel, DEV, event);
+        HttpResponse<String> published = send("/api/v1/events/by-channel?channel=" + channel, DEV, event);
         assertEquals(202, published.statusCode(), published.body());
         assertEquals("ACCEPTED", JSON.readTree(published.body()).path("status").asText(), published.body());
-        JsonNode again = JSON.readTree(send("/api/v1/events/" + channel, DEV, event).body());
+        JsonNode again = JSON.readTree(send("/api/v1/events/by-channel?channel=" + channel, DEV, event).body());
         assertEquals("DUPLICATE", again.path("status").asText(), "the inbox still de-duplicates: " + again);
         // a client-supplied signature extension is not a credential on this path (and does not break it)
         String withSig = "{\"id\":\"s-" + n + "\",\"source\":\"acc-sl76\",\"type\":\"" + def
                 + "\",\"specversion\":\"1.0\",\"data\":{\"amount\":6},\"extensions\":{\"signature\":\"sha256=00\"}}";
-        assertEquals(202, send("/api/v1/events/" + channel, DEV, withSig).statusCode());
+        assertEquals(202, send("/api/v1/events/by-channel?channel=" + channel, DEV, withSig).statusCode());
         // no principal, no event
-        assertEquals(401, send("/api/v1/events/" + channel, null, event.replace("e-" + n, "x-" + n)).statusCode());
+        assertEquals(401, send("/api/v1/events/by-channel?channel=" + channel, null, event.replace("e-" + n, "x-" + n)).statusCode());
 
         // the webhook ingress of the same channel, as the server wires it: HMAC over the raw bytes, strictly
         String raw = "{\"specversion\":\"1.0\",\"id\":\"w-" + n + "\",\"source\":\"acc-sl76\",\"type\":\"" + def

@@ -10,7 +10,7 @@ namespace Sangam.Sdk.Generated.Models;
 public sealed record ComplianceContact
 {
     /// <summary>
-    /// Taken from the path on POST /compliance/contacts/{role}.
+    /// Taken from the query parameter role on POST /compliance/contacts/by-role.
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("role")]
     public string? Role { get; init; }

@@ -366,7 +366,7 @@ class Deployment(_Model):
 
 @dataclass
 class CloudEvent:
-    """CloudEvents 1.0 envelope for ``POST /events/{channel}`` (R16). Required: id, source, type, specversion."""
+    """CloudEvents 1.0 envelope for ``POST /events/by-channel?channel=`` (R16). Required: id, source, type, specversion."""
 
     source: str
     type: str

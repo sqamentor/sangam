@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // SPDX-License-Identifier: Apache-2.0
-// M-101 presence UI over GET /models/{file}/presence/stream (streamModelPresence, event 'presence', data ModelPresence):
+// M-101 presence UI over GET /models/by-file/presence/stream?file= (streamModelPresence, event 'presence', data ModelPresence):
 // parsing, who is shown, and the clean degrade (no presence, no error banner) on 404, 501 and an unreachable server.
 // Written for the gate; not run in Wave 4.
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -83,12 +83,12 @@ describe('M-101 ModelPresenceBar against the stream', () => {
     setTokenProvider(async () => null);
   });
 
-  it('opens GET /models/{file}/presence/stream with the bearer token and shows the other viewers', async () => {
+  it('opens GET /models/by-file/presence/stream?file= with the bearer token and shows the other viewers', async () => {
     fetchMock.mockResolvedValueOnce(sse([`event: presence\ndata: ${JSON.stringify(P)}\n\n`])).mockImplementation(() => new Promise(() => undefined));
     render(<ModelPresenceBar file="pkg/1" selfId="me" />);
     await waitFor(() => expect(screen.getByText(/Asha/)).toBeTruthy());
     const [url, init] = fetchMock.mock.calls[0];
-    expect(String(url)).toBe('/api/v1/models/pkg%2F1/presence/stream');
+    expect(String(url)).toBe('/api/v1/models/by-file/presence/stream?file=pkg%2F1');
     expect((init.headers as Headers).get('Authorization')).toBe('Bearer tok-1');
     expect((init.headers as Headers).get('Accept')).toBe('text/event-stream');
   });

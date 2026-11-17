@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
  * Round 6 item 3, M-103 option A (owner decision 378(3)): the OCR review screen (modules/aiOcr.tsx) against
- * POST /ai/knowledge-bases/{kb}/versions/{version}/ocr (aiKbOcr, multipart), GET /ai/ocr-transcripts (aiListOcrTranscripts),
+ * POST /ai/knowledge-bases/by-kb/versions/{version}/ocr?kb= (aiKbOcr, multipart), GET /ai/ocr-transcripts (aiListOcrTranscripts),
  * GET /ai/ocr-transcripts/{id} (aiGetOcrTranscript) and POST /ai/ocr-transcripts/{id}/decide (aiDecideOcrTranscript),
  * and the knowledge-base search hits (aiKbSearch, AiKbHit.ocrTranscriptId). The API client is mocked; each test
  * asserts what is rendered, the exact request and how a refusal is named. Every call is checked against the contract.
@@ -75,7 +75,7 @@ describe('OCR upload', () => {
     fireEvent.click(within(f).getByRole('button', { name: T('mod.ai.ocr.submit') }));
     await waitFor(() => expect(api.upload).toHaveBeenCalledTimes(1));
     const [path, form, key] = api.upload.mock.calls[0] as [string, FormData, string];
-    expect(path).toBe('/ai/knowledge-bases/rti/versions/3/ocr');
+    expect(path).toBe('/ai/knowledge-bases/by-kb/versions/3/ocr?kb=rti');
     expect(key).toEqual(KEY);
     expect((form.get('file') as File).name).toBe('scan.png');
     expect([...form.keys()].sort()).toEqual(['docVersion', 'documentId', 'file', 'languages']);
@@ -232,7 +232,7 @@ describe('knowledge-base search', () => {
     type(s, 'mod.ai.ocr.kb', 'rti');
     type(s, 'mod.ai.ocr.query', 'appeal');
     fireEvent.click(within(s).getByRole('button', { name: T('common.search') }));
-    await waitFor(() => expect(lastPost()).toEqual(['/ai/knowledge-bases/rti/search', { query: 'appeal' }]));
+    await waitFor(() => expect(lastPost()).toEqual(['/ai/knowledge-bases/by-kb/search?kb=rti', { query: 'appeal' }]));
     const scanned = (await within(s).findByText('from the scan')).closest('tr')!;
     expect(within(scanned).getByText('ocr-1')).toBeTruthy();
     const typed = within(s).getByText('typed text').closest('tr')!;

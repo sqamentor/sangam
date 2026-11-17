@@ -62,7 +62,7 @@ final class RepositoryApi extends ApiSupport
     }
 
     /**
-     * POST /events/{channel} with a CloudEvents 1.0 envelope (R16); answered 202.
+     * POST /events/by-channel?channel= with a CloudEvents 1.0 envelope (R16); answered 202.
      *
      * @param CloudEvent|array<string, mixed> $event
      * @return array<string, mixed> PublishResult {eventId, status (ACCEPTED|DUPLICATE|BUFFERED), eventDefinitionKey,
@@ -70,7 +70,7 @@ final class RepositoryApi extends ApiSupport
      */
     public function publishEvent(string $channel, CloudEvent|array $event, ?string $idempotencyKey = null): array
     {
-        return (array) $this->call(ApiRequest::post('/events/' . self::seg($channel))->body($event)
+        return (array) $this->call(ApiRequest::post('/events/by-channel')->query('channel', $channel)->body($event)
             ->idempotencyKey($idempotencyKey));
     }
 
