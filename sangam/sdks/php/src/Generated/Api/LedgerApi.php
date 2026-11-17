@@ -25,7 +25,8 @@ final class LedgerApi
      *
      * Balances of the ledger, filtered by period, line and holder prefixes and stage.
      *
-     * GET /ledger/{ledger}/accounts (operationId listLedgerAccounts); permission ledger.read.
+     * GET /ledger/by-ledger/accounts (operationId listLedgerAccounts); permission ledger.read.
+     * @param string $ledger query ledger
      * @param string|null $period query period
      * @param string|null $line query line
      * @param string|null $holder query holder
@@ -36,7 +37,8 @@ final class LedgerApi
      */
     public function listLedgerAccounts(string $ledger, ?string $period = null, ?string $line = null, ?string $holder = null, ?string $stage = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/ledger/' . HttpTransport::seg((string) $ledger) . '/accounts');
+        $req = ApiRequest::get('/ledger/by-ledger/accounts');
+        $req->query('ledger', $ledger);
         $req->query('period', $period);
         $req->query('line', $line);
         $req->query('holder', $holder);
@@ -67,13 +69,15 @@ final class LedgerApi
      *
      * Posts one operation idempotently by reference; insufficient availability refuses (422) or parks the request (holdIfShort).
      *
-     * POST /ledger/{ledger}/operations (operationId applyLedgerOperation); permission ledger.write; result stored atomically with the state change.
+     * POST /ledger/by-ledger/operations (operationId applyLedgerOperation); permission ledger.write; result stored atomically with the state change.
      * @param Model\LedgerOperationRequest|array $body request body
+     * @param string $ledger query ledger
      * @return Model\LedgerResult|null
      */
-    public function applyLedgerOperation(string $ledger, Model\LedgerOperationRequest|array $body, ?RequestOptions $options = null): ?Model\LedgerResult
+    public function applyLedgerOperation(Model\LedgerOperationRequest|array $body, string $ledger, ?RequestOptions $options = null): ?Model\LedgerResult
     {
-        $req = ApiRequest::post('/ledger/' . HttpTransport::seg((string) $ledger) . '/operations');
+        $req = ApiRequest::post('/ledger/by-ledger/operations');
+        $req->query('ledger', $ledger);
         if ($body !== null) {
             $req->body($body);
         }
@@ -85,13 +89,15 @@ final class LedgerApi
      *
      * Freezes matching accounts until released.
      *
-     * POST /ledger/{ledger}/freeze-orders (operationId createLedgerFreezeOrder); permission ledger.admin; result stored atomically with the state change.
+     * POST /ledger/by-ledger/freeze-orders (operationId createLedgerFreezeOrder); permission ledger.admin; result stored atomically with the state change.
      * @param Model\LedgerFreezeRequest|array $body request body
+     * @param string $ledger query ledger
      * @return Model\LedgerFreezeOrder|null
      */
-    public function createLedgerFreezeOrder(string $ledger, Model\LedgerFreezeRequest|array $body, ?RequestOptions $options = null): ?Model\LedgerFreezeOrder
+    public function createLedgerFreezeOrder(Model\LedgerFreezeRequest|array $body, string $ledger, ?RequestOptions $options = null): ?Model\LedgerFreezeOrder
     {
-        $req = ApiRequest::post('/ledger/' . HttpTransport::seg((string) $ledger) . '/freeze-orders');
+        $req = ApiRequest::post('/ledger/by-ledger/freeze-orders');
+        $req->query('ledger', $ledger);
         if ($body !== null) {
             $req->body($body);
         }
@@ -103,14 +109,16 @@ final class LedgerApi
      *
      * Active freeze orders of the ledger.
      *
-     * GET /ledger/{ledger}/freeze-orders (operationId listLedgerFreezeOrders); permission ledger.read.
+     * GET /ledger/by-ledger/freeze-orders (operationId listLedgerFreezeOrders); permission ledger.read.
+     * @param string $ledger query ledger
      * @param int|null $page query page
      * @param int|null $size query size
      * @return Page<Model\LedgerFreezeOrder>
      */
     public function listLedgerFreezeOrders(string $ledger, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/ledger/' . HttpTransport::seg((string) $ledger) . '/freeze-orders');
+        $req = ApiRequest::get('/ledger/by-ledger/freeze-orders');
+        $req->query('ledger', $ledger);
         $req->query('page', $page);
         $req->query('size', $size);
         return $this->calls->page($req, $options, Model\LedgerFreezeOrder::class, $page, $size);
@@ -121,11 +129,15 @@ final class LedgerApi
      *
      * Releases the order; frozen accounts reopen.
      *
-     * DELETE /ledger/{ledger}/freeze-orders/{id} (operationId releaseLedgerFreezeOrder); permission ledger.admin; result stored atomically with the state change.
+     * DELETE /ledger/by-ledger/freeze-orders/by-id (operationId releaseLedgerFreezeOrder); permission ledger.admin; result stored atomically with the state change.
+     * @param string $ledger query ledger
+     * @param string $id query id
      */
     public function releaseLedgerFreezeOrder(string $ledger, string $id, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/ledger/' . HttpTransport::seg((string) $ledger) . '/freeze-orders/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::delete('/ledger/by-ledger/freeze-orders/by-id');
+        $req->query('ledger', $ledger);
+        $req->query('id', $id);
         $this->calls->none($req, $options);
     }
 
@@ -134,13 +146,15 @@ final class LedgerApi
      *
      * Year-end lapse and carry-forward. The period is a query parameter: a fiscal-year label can carry '/' (2026/2027).
      *
-     * POST /ledger/{ledger}/periods/close (operationId closeLedgerPeriod); permission ledger.admin; result stored atomically with the state change.
+     * POST /ledger/by-ledger/periods/close (operationId closeLedgerPeriod); permission ledger.admin; result stored atomically with the state change.
+     * @param string $ledger query ledger
      * @param string $period query period
      * @return list<Model\LedgerResult>
      */
     public function closeLedgerPeriod(string $ledger, string $period, Model\LedgerCloseRequest|array|null $body = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/ledger/' . HttpTransport::seg((string) $ledger) . '/periods/close');
+        $req = ApiRequest::post('/ledger/by-ledger/periods/close');
+        $req->query('ledger', $ledger);
         $req->query('period', $period);
         if ($body !== null) {
             $req->body($body);
@@ -153,7 +167,8 @@ final class LedgerApi
      *
      * Requests parked for funds on matching accounts.
      *
-     * GET /ledger/{ledger}/holds (operationId listLedgerHolds); permission ledger.read.
+     * GET /ledger/by-ledger/holds (operationId listLedgerHolds); permission ledger.read.
+     * @param string $ledger query ledger
      * @param string|null $period query period
      * @param string|null $line query line
      * @param string|null $holder query holder
@@ -164,7 +179,8 @@ final class LedgerApi
      */
     public function listLedgerHolds(string $ledger, ?string $period = null, ?string $line = null, ?string $holder = null, ?string $stage = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/ledger/' . HttpTransport::seg((string) $ledger) . '/holds');
+        $req = ApiRequest::get('/ledger/by-ledger/holds');
+        $req->query('ledger', $ledger);
         $req->query('period', $period);
         $req->query('line', $line);
         $req->query('holder', $holder);
@@ -179,13 +195,15 @@ final class LedgerApi
      *
      * Mirror versus external balances (SHADOW ledgers).
      *
-     * POST /ledger/{ledger}/reconcile (operationId reconcileLedger); permission ledger.admin; result stored atomically with the state change.
+     * POST /ledger/by-ledger/reconcile (operationId reconcileLedger); permission ledger.admin; result stored atomically with the state change.
      * @param Model\LedgerReconcileRequest|array $body request body
+     * @param string $ledger query ledger
      * @return list<Model\LedgerReconcileRow>
      */
-    public function reconcileLedger(string $ledger, Model\LedgerReconcileRequest|array $body, ?RequestOptions $options = null): array
+    public function reconcileLedger(Model\LedgerReconcileRequest|array $body, string $ledger, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/ledger/' . HttpTransport::seg((string) $ledger) . '/reconcile');
+        $req = ApiRequest::post('/ledger/by-ledger/reconcile');
+        $req->query('ledger', $ledger);
         if ($body !== null) {
             $req->body($body);
         }

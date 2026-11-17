@@ -84,6 +84,9 @@ IFMS_L = {
     'ageNextBirthday': ('Age next birthday', 'अगले जन्मदिन पर आयु', 'integer'),
     'commutationPercent': ('Commutation (%)', 'राशिकरण (%)', 'number'),
     'gpfAccount': ('GPF account number', 'जीपीएफ खाता संख्या', 'string'),
+    'opReasonCode': ('Payment refusal / return reason', 'भुगतान अस्वीकृति / वापसी का कारण', 'readonly'),
+    'payeeNotVerifiedReason': ('Payee not verified: reason', 'आदाता सत्यापित नहीं: कारण', 'readonly'),
+    'payeeVersionId': ('Verified payee version', 'सत्यापित आदाता संस्करण', 'readonly'),
     'gpfPurpose': ('Purpose of advance / withdrawal', 'अग्रिम / आहरण का प्रयोजन', 'select'),
     'gpfBalance': ('GPF balance', 'जीपीएफ शेष', 'money'),
     'advanceKind': ('Advance kind', 'अग्रिम का प्रकार', 'select'),
@@ -385,7 +388,7 @@ def bill():
                  form='ifms-bill/revise', decision=('reviseDecision', ['resubmit', 'withdraw']),
                  fields=['objectionMemo', 'remarks*', 'documents'])
     ex = core(s, 'bl_pay', 'Payment through the rail (core execution)', 'execution')
-    outcome(s, 'bl_chainGw', 'paoOutcome', {'PASSED': ex}, rel)
+    outcome(s, 'bl_chainGw', 'paoOutcome', {'PASSED': 'bl_payeeVerify'}, rel)
     s.flow(chain, 'bl_chainGw')
     s.flow(rel, rev)
     rg = s.xgw('bl_revGw')
@@ -397,12 +400,42 @@ def bill():
     con = s.conn('bl_consume', 'Post payment (consume)', 'ledger.consume', 'consume', 'submit',
                  'ledgerId,headOfAccount,ddoCode,amount,operationId', 'con', step='consume')
     cl = core(s, 'bl_close', 'Payment advice and voucher (core closure)', 'closure')
-    fail = s.notify('bl_payFailed', 'Payment failed: suspense, reissue with a new operation', 'ifms-payment-failed', 'inapp',
-                    'initiatorSeat')
+    # SANGAM-PAYEE-VERIFIED v2 (JOINT-LEDGER-SANGAM-IFMS; E-31 §6, SD-107): bank details are never typed by the DDO.
+    # Right before the payment the verified payee version in force on the payment date is resolved through the
+    # VerifiedPayeeLookup port (IFMS adapter on mdm.payee), keyed on employeeId (GPF, advances) else the party id;
+    # its payeeVersionId is recorded on the case and the rail payload is built from it. Not verified: a person.
+    pv = s.svc('bl_payeeVerify', 'Verified payee version on the payment date', C['PAYEE'],
+               {'currency': s.currency()})
+    pvg = s.xgw('bl_payeeVerifiedGw', 'Payee verified?')
+    s.seq(pv, pvg)
+    s.flow(pvg, ex, 'payeeVerified', 'verified')
+    ph = s.user('bl_payeeHold', 'Payee not verified: complete the payee record, then check again | '
+                'आदाता सत्यापित नहीं', '${initiatorSeat}', form='ifms-bill/payee-hold',
+                decision=('payeeHoldDecision', ['checkAgain', 'cancel']),
+                fields=['payeeNotVerifiedReason', 'remarks*'])
+    s.flow(pvg, ph, None, 'not verified', default=True)
+    phg = s.xgw('bl_payeeHoldGw')
+    s.flow(ph, phg)
+    s.flow(phg, pv, "payeeHoldDecision == 'checkAgain'", 'check again')
+    # SANGAM-PAYMENT-LOOP (E-31 §6): a payment refused or returned (or an unknown outcome the reconciliation confirmed
+    # as failed) is never reissued automatically. It goes to a person, who reissues after correction (a new operation,
+    # attempt n+1, with the payee resolved again) or cancels (the encumbrance is released). While the outcome is
+    # unknown the case waits in core execution for the evidence: no task, no retry, and a cancellation is refused.
+    fail = s.notify('bl_payFailed', 'Payment refused or returned: correct and reissue, or cancel', 'ifms-payment-failed',
+                    'inapp', 'initiatorSeat')
     outcome(s, 'bl_exGw', 'executionOutcome', {'DONE': con}, fail)
     s.flow(ex, 'bl_exGw')
-    reissue = s.setv('bl_reissue', 'Reissue tag', values='reissueTag=true')
-    s.seq(fail, reissue, ex)
+    corr = s.user('bl_payCorrect', 'Payment refused or returned: correct and reissue, or cancel | '
+                  'भुगतान अस्वीकृत / वापस: सुधार कर पुनः जारी करें या रद्द करें', '${initiatorSeat}',
+                  form='ifms-bill/pay-correct', decision=('payCorrectDecision', ['reissue', 'cancel']),
+                  fields=['opReasonCode', 'payeeVersionId', 'remarks*'])
+    s.seq(fail, corr)
+    cg = s.xgw('bl_payCorrectGw')
+    s.flow(corr, cg)
+    s.flow(cg, pv, "payCorrectDecision == 'reissue'", 'reissue after correction')
+    cancel = withdraw(p, s, 'bl_payCancel')
+    s.flow(cg, cancel, None, 'cancel', default=True)
+    s.flow(phg, cancel, None, 'cancel', default=True)
     s.seq(con, cl, end_ok(p, s, 'bl_end'))
     s.side_exits('bl')
     pk.dmn('ifms-rail-connector', 'Payment rail to connector', 'FIRST',
@@ -991,11 +1024,11 @@ def gpf_advances():
               'from the profile.',
               ['IFC-171', 'IFC-026', 'IFC-254', 'IFS-NL-002'] + SIDE, connectors=CONFIG_CONNECTORS,
               depends=['sangam.core', 'gov.ifms.pao-chain', 'gov.ifms.bill'])
-    p = pk.proc('sangam-ifms-gpf', 'GPF advance / withdrawal', '', start={'materialFields': 'gpfAccount,amount,gpfPurpose'})
+    p = pk.proc('sangam-ifms-gpf', 'GPF advance / withdrawal', '', start={'materialFields': 'employeeId,gpfAccount,amount,gpfPurpose'})
     s = p.root
     st = s.start('gp_start', 'Application', form='ifms-gpf/application')
     p.forms.append(dict(key='ifms-gpf/application', name='GPF application | जीपीएफ आवेदन', decision=None,
-                        fields=['gpfAccount*', 'gpfPurpose*', 'amount*', 'gpfBalance', 'qualifyingService', 'documents'], doc=None))
+                        fields=['employeeId*', 'gpfAccount*', 'gpfPurpose*', 'amount*', 'gpfBalance', 'qualifyingService', 'documents'], doc=None))
     d = s.setv('gp_defaults', 'Configuration', defaults='amount=0;gpfBalance=0;qualifyingService=0;gpfPurpose=OTHER;'
                'billType=GPF_WITHDRAWAL;caseType=GPF;routingDecisionKey=ifms-gpf-authority;powersDecisionKey=ifms-gpf-powers;scrutinySeat=DDO-1;'
                'sanctionSla=15D;appealAllowed=false;outputTemplate=gpf-sanction')
@@ -1059,11 +1092,11 @@ def gpf_advances():
                ['IFC-180', 'IFC-107', 'IFC-210', 'IFC-025'] + SIDE,
                connectors=CONFIG_CONNECTORS + [ledger_conn('allocate', 'Raise the recovery demand (RECEIVABLE)')],
                depends=['sangam.core', 'gov.ifms.pao-chain', 'gov.ifms.bill'])
-    p = pk2.proc('sangam-ifms-advance', 'Employee advance', '', start={'materialFields': 'advanceKind,amount,instalments'})
+    p = pk2.proc('sangam-ifms-advance', 'Employee advance', '', start={'materialFields': 'employeeId,advanceKind,amount,instalments'})
     s = p.root
     st = s.start('av_start', 'Application', form='ifms-loans-advances/application')
     p.forms.append(dict(key='ifms-loans-advances/application', name='Advance application | अग्रिम आवेदन', decision=None,
-                        fields=['advanceKind*', 'amount*', 'instalments*', 'documents'], doc=None))
+                        fields=['employeeId*', 'advanceKind*', 'amount*', 'instalments*', 'documents'], doc=None))
     d = s.setv('av_defaults', 'Configuration', defaults='amount=0;instalments=1;advanceKind=COMPUTER;basicPay=0;'
                'billType=HBA;caseType=ADVANCE;routingDecisionKey=ifms-advance-authority;powersDecisionKey=ifms-advance-powers;scrutinySeat=DDO-1;'
                'appealAllowed=false;outputTemplate=advance-sanction;ledgerId=RECOVERY')

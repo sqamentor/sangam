@@ -140,13 +140,14 @@ public final class ResourcesBookingsApi {
      *
      * <p>ResourcesController.bookingByRef (sangam-rest).
      *
-     * <p>{@code GET /resources/bookings/by-ref/{bookingRef}} (operationId {@code resourcesResourcesBookingByRef}); permission {@code resources.read}.
-     * @param bookingRef path parameter {@code bookingRef}
+     * <p>{@code GET /resources/bookings/by-ref/by-booking-ref} (operationId {@code resourcesResourcesBookingByRef}); permission {@code resources.read}.
+     * @param bookingRef query parameter {@code bookingRef}. Booking ref; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> resourcesResourcesBookingByRef(String bookingRef, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/resources/bookings/by-ref/" + HttpTransport.seg(String.valueOf(bookingRef)));
+        ApiRequest req = ApiRequest.get("/resources/bookings/by-ref/by-booking-ref");
+        req.query("bookingRef", bookingRef);
         return call.json(req, options, R_resourcesResourcesBookingByRef);
     }
 

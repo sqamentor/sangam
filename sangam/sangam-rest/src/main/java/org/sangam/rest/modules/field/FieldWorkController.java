@@ -58,9 +58,12 @@ public class FieldWorkController {
         return Lists.ok(port.listTemplates(caller(ctx, CAPTURE)));
     }
 
-    /** A template (latest version, or a given version). */
-    @GetMapping("/templates/{key}")
-    public Map<String, Object> template(RequestContext ctx, @PathVariable String key,
+    /**
+     * A template (latest version, or a given version).
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
+    @GetMapping("/templates/by-key")
+    public Map<String, Object> template(RequestContext ctx, @RequestParam("key") String key,
                                         @RequestParam(required = false) Integer version) {
         return port.getTemplate(caller(ctx, CAPTURE), key, version);
     }
@@ -70,12 +73,13 @@ public class FieldWorkController {
     public ResponseEntity<Map<String, Object>> publishTemplate(RequestContext ctx, @RequestBody Map<String, Object> body) {
         Map<String, Object> t = port.publishTemplate(caller(ctx, ADMIN), body);
         String ref = t.get("key") + "@" + t.get("version");
-        return Lists.created("/api/v1/field/templates/" + t.get("key") + "?version=" + t.get("version"), ref, t);
+        return Lists.created("/api/v1/field/templates/by-key?key="
+                + java.net.URLEncoder.encode(String.valueOf(t.get("key")), java.nio.charset.StandardCharsets.UTF_8) + "&version=" + t.get("version"), ref, t);
     }
 
-    /** Retire a template version. */
-    @PostMapping("/templates/{key}/{version}/retire")
-    public ResponseEntity<Void> retireTemplate(RequestContext ctx, @PathVariable String key, @PathVariable int version) {
+    /** Retire a template version. Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/templates/by-key/{version}/retire")
+    public ResponseEntity<Void> retireTemplate(RequestContext ctx, @RequestParam("key") String key, @PathVariable int version) {
         port.retireTemplate(caller(ctx, ADMIN), key, version);
         return ResponseEntity.noContent().build();
     }
@@ -161,9 +165,9 @@ public class FieldWorkController {
         return port.defineSchedule(caller(ctx, ADMIN), body);
     }
 
-    /** Run one schedule now. */
-    @PostMapping("/schedules/{id}/run")
-    public Object runSchedule(RequestContext ctx, @PathVariable String id) {
+    /** Run one schedule now. Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/schedules/by-id/run")
+    public Object runSchedule(RequestContext ctx, @RequestParam("id") String id) {
         return port.runSchedule(caller(ctx, ADMIN), id);
     }
 
@@ -199,34 +203,49 @@ public class FieldWorkController {
         return Lists.ok(port.listDevices(caller(ctx, CAPTURE)));
     }
 
-    /** Set a device status (active, lost, revoked: revoke wipes the local queue). */
-    @PostMapping("/devices/{id}/status")
-    public Map<String, Object> deviceStatus(RequestContext ctx, @PathVariable String id, @RequestBody Map<String, Object> body) {
+    /**
+     * Set a device status (active, lost, revoked: revoke wipes the local queue).
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
+    @PostMapping("/devices/by-id/status")
+    public Map<String, Object> deviceStatus(RequestContext ctx, @RequestParam("id") String id, @RequestBody Map<String, Object> body) {
         return port.setDeviceStatus(caller(ctx, ADMIN), id, body);
     }
 
-    /** Set a device's offline queue policy. */
-    @PostMapping("/devices/{id}/policy")
-    public Map<String, Object> devicePolicy(RequestContext ctx, @PathVariable String id, @RequestBody Map<String, Object> body) {
+    /**
+     * Set a device's offline queue policy.
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
+    @PostMapping("/devices/by-id/policy")
+    public Map<String, Object> devicePolicy(RequestContext ctx, @RequestParam("id") String id, @RequestBody Map<String, Object> body) {
         return port.setDevicePolicy(caller(ctx, ADMIN), id, body);
     }
 
-    /** Verify a device's packet hash chain. */
-    @GetMapping("/devices/{id}/chain")
-    public Map<String, Object> chain(RequestContext ctx, @PathVariable String id) {
+    /**
+     * Verify a device's packet hash chain.
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
+    @GetMapping("/devices/by-id/chain")
+    public Map<String, Object> chain(RequestContext ctx, @RequestParam("id") String id) {
         return port.verifyChain(caller(ctx, REVIEW), id);
     }
 
-    /** Upload offline packets from a device (idempotent per packet). */
-    @PostMapping("/sync/{deviceId}/upload")
-    public ResponseEntity<List<Object>> upload(RequestContext ctx, @PathVariable String deviceId,
+    /**
+     * Upload offline packets from a device (idempotent per packet).
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
+    @PostMapping("/sync/by-device-id/upload")
+    public ResponseEntity<List<Object>> upload(RequestContext ctx, @RequestParam("deviceId") String deviceId,
                                                @RequestBody List<Map<String, Object>> packets) {
         return Lists.ok(port.upload(caller(ctx, CAPTURE), deviceId, packets));
     }
 
-    /** Pull server changes for a device since a cursor. */
-    @GetMapping("/sync/{deviceId}/pull")
-    public Object pull(RequestContext ctx, @PathVariable String deviceId,
+    /**
+     * Pull server changes for a device since a cursor.
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
+    @GetMapping("/sync/by-device-id/pull")
+    public Object pull(RequestContext ctx, @RequestParam("deviceId") String deviceId,
                        @RequestParam(required = false, defaultValue = "0") long cursor) {
         return port.pull(caller(ctx, CAPTURE), deviceId, cursor);
     }
@@ -262,24 +281,33 @@ public class FieldWorkController {
         return port.uploadEvidence(caller(ctx, CAPTURE), m, file.getBytes());
     }
 
-    /** Evidence metadata and integrity report. */
-    @GetMapping("/evidence/{id}")
-    public Object evidence(RequestContext ctx, @PathVariable String id) {
+    /**
+     * Evidence metadata and integrity report.
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
+    @GetMapping("/evidence/by-id")
+    public Object evidence(RequestContext ctx, @RequestParam("id") String id) {
         return port.getEvidence(caller(ctx, CAPTURE), id);
     }
 
-    /** Evidence content (streamed). */
-    @GetMapping("/evidence/{id}/content")
-    public ResponseEntity<StreamingResponseBody> evidenceContent(RequestContext ctx, @PathVariable String id) {
+    /**
+     * Evidence content (streamed).
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
+    @GetMapping("/evidence/by-id/content")
+    public ResponseEntity<StreamingResponseBody> evidenceContent(RequestContext ctx, @RequestParam("id") String id) {
         byte[] bytes = port.evidenceContent(caller(ctx, CAPTURE), id)
                 .orElseThrow(() -> ApiProblem.notFound("evidence content", id));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(bytes.length)
                 .body(out -> out.write(bytes));
     }
 
-    /** Re-run the integrity checks of an evidence item. */
-    @PostMapping("/evidence/{id}/reverify")
-    public Map<String, Object> reverifyEvidence(RequestContext ctx, @PathVariable String id) {
+    /**
+     * Re-run the integrity checks of an evidence item.
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
+    @PostMapping("/evidence/by-id/reverify")
+    public Map<String, Object> reverifyEvidence(RequestContext ctx, @RequestParam("id") String id) {
         return port.reverifyEvidence(caller(ctx, REVIEW), id);
     }
 
@@ -297,39 +325,42 @@ public class FieldWorkController {
         return Lists.ok(port.listUnits(caller(ctx, DISPATCH), status));
     }
 
-    /** A field unit. */
-    @GetMapping("/units/{id}")
-    public Object unit(RequestContext ctx, @PathVariable String id) {
+    /** A field unit. Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/units/by-id")
+    public Object unit(RequestContext ctx, @RequestParam("id") String id) {
         return port.getUnit(caller(ctx, DISPATCH), id);
     }
 
-    /** Set a unit status. */
-    @PostMapping("/units/{id}/status")
-    public Object unitStatus(RequestContext ctx, @PathVariable String id, @RequestBody Map<String, Object> body) {
+    /** Set a unit status. Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/units/by-id/status")
+    public Object unitStatus(RequestContext ctx, @RequestParam("id") String id, @RequestBody Map<String, Object> body) {
         return port.setUnitStatus(caller(ctx, DISPATCH), id, body);
     }
 
-    /** Position ping from a unit (AVL feed, N12). */
-    @PostMapping("/units/{id}/pings")
-    public Object ping(RequestContext ctx, @PathVariable String id, @RequestBody Map<String, Object> body) {
+    /**
+     * Position ping from a unit (AVL feed, N12).
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
+    @PostMapping("/units/by-id/pings")
+    public Object ping(RequestContext ctx, @RequestParam("id") String id, @RequestBody Map<String, Object> body) {
         return port.ping(caller(ctx, DISPATCH), id, body);
     }
 
-    /** Open offers for a unit. */
-    @GetMapping("/units/{id}/offers")
-    public ResponseEntity<List<Object>> unitOffers(RequestContext ctx, @PathVariable String id) {
+    /** Open offers for a unit. Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/units/by-id/offers")
+    public ResponseEntity<List<Object>> unitOffers(RequestContext ctx, @RequestParam("id") String id) {
         return Lists.ok(port.unitOffers(caller(ctx, DISPATCH), id));
     }
 
-    /** ETA of a unit to a job. */
-    @GetMapping("/units/{id}/eta")
-    public Object eta(RequestContext ctx, @PathVariable String id, @RequestParam String jobId) {
+    /** ETA of a unit to a job. Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/units/by-id/eta")
+    public Object eta(RequestContext ctx, @RequestParam("id") String id, @RequestParam String jobId) {
         return port.eta(caller(ctx, DISPATCH), id, jobId);
     }
 
-    /** Trips of a unit. */
-    @GetMapping("/units/{id}/trips")
-    public ResponseEntity<List<Object>> trips(RequestContext ctx, @PathVariable String id) {
+    /** Trips of a unit. Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/units/by-id/trips")
+    public ResponseEntity<List<Object>> trips(RequestContext ctx, @RequestParam("id") String id) {
         return Lists.ok(port.listTrips(caller(ctx, DISPATCH), id));
     }
 

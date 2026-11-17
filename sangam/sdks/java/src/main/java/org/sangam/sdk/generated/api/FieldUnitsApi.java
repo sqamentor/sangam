@@ -71,13 +71,14 @@ public final class FieldUnitsApi {
      *
      * <p>A field unit.
      *
-     * <p>{@code GET /field/units/{id}} (operationId {@code fieldWorkUnit}); permission {@code dispatch.operate}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /field/units/by-id} (operationId {@code fieldWorkUnit}); permission {@code dispatch.operate}.
+     * @param id query parameter {@code id}. unit id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> fieldWorkUnit(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/field/units/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.get("/field/units/by-id");
+        req.query("id", id);
         return call.json(req, options, R_fieldWorkUnit);
     }
 
@@ -86,15 +87,16 @@ public final class FieldUnitsApi {
      *
      * <p>Set a unit status.
      *
-     * <p>{@code POST /field/units/{id}/status} (operationId {@code fieldWorkUnitStatus}); permission {@code dispatch.operate}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /field/units/by-id/status} (operationId {@code fieldWorkUnitStatus}); permission {@code dispatch.operate}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. unit id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> fieldWorkUnitStatus(String id, FieldWorkUnitStatusBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/field/units/" + HttpTransport.seg(String.valueOf(id)) + "/status");
+    public java.util.Map<String, Object> fieldWorkUnitStatus(FieldWorkUnitStatusBody body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/field/units/by-id/status");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_fieldWorkUnitStatus);
     }
 
@@ -103,15 +105,16 @@ public final class FieldUnitsApi {
      *
      * <p>Position ping from a unit (AVL feed, N12).
      *
-     * <p>{@code POST /field/units/{id}/pings} (operationId {@code fieldWorkPing}); permission {@code dispatch.operate}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /field/units/by-id/pings} (operationId {@code fieldWorkPing}); permission {@code dispatch.operate}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. unit id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> fieldWorkPing(String id, FieldWorkPingBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/field/units/" + HttpTransport.seg(String.valueOf(id)) + "/pings");
+    public java.util.Map<String, Object> fieldWorkPing(FieldWorkPingBody body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/field/units/by-id/pings");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_fieldWorkPing);
     }
 
@@ -120,13 +123,14 @@ public final class FieldUnitsApi {
      *
      * <p>Open offers for a unit.
      *
-     * <p>{@code GET /field/units/{id}/offers} (operationId {@code fieldWorkUnitOffers}); permission {@code dispatch.operate}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /field/units/by-id/offers} (operationId {@code fieldWorkUnitOffers}); permission {@code dispatch.operate}.
+     * @param id query parameter {@code id}. unit id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<Object> fieldWorkUnitOffers(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/field/units/" + HttpTransport.seg(String.valueOf(id)) + "/offers");
+        ApiRequest req = ApiRequest.get("/field/units/by-id/offers");
+        req.query("id", id);
         return call.json(req, options, R_fieldWorkUnitOffers);
     }
 
@@ -135,14 +139,15 @@ public final class FieldUnitsApi {
      *
      * <p>ETA of a unit to a job.
      *
-     * <p>{@code GET /field/units/{id}/eta} (operationId {@code fieldWorkEta}); permission {@code dispatch.operate}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /field/units/by-id/eta} (operationId {@code fieldWorkEta}); permission {@code dispatch.operate}.
+     * @param id query parameter {@code id}. unit id; may carry '/' or ':'
      * @param jobId query parameter {@code jobId}
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> fieldWorkEta(String id, String jobId, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/field/units/" + HttpTransport.seg(String.valueOf(id)) + "/eta");
+        ApiRequest req = ApiRequest.get("/field/units/by-id/eta");
+        req.query("id", id);
         req.query("jobId", jobId);
         return call.json(req, options, R_fieldWorkEta);
     }
@@ -152,13 +157,14 @@ public final class FieldUnitsApi {
      *
      * <p>Trips of a unit.
      *
-     * <p>{@code GET /field/units/{id}/trips} (operationId {@code fieldWorkTrips}); permission {@code dispatch.operate}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /field/units/by-id/trips} (operationId {@code fieldWorkTrips}); permission {@code dispatch.operate}.
+     * @param id query parameter {@code id}. unit id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<Object> fieldWorkTrips(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/field/units/" + HttpTransport.seg(String.valueOf(id)) + "/trips");
+        ApiRequest req = ApiRequest.get("/field/units/by-id/trips");
+        req.query("id", id);
         return call.json(req, options, R_fieldWorkTrips);
     }
 }

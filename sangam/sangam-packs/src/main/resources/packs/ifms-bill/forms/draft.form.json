@@ -1,6 +1,6 @@
 {
   "key": "ifms-bill/draft",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "pack": "gov.ifms.bill",
   "title": {
     "en": "Bill",

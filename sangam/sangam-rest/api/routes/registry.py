@@ -3,8 +3,8 @@
 # (sangam-rest modules/registry/web), registered by RegistryRestConfiguration. Operations are derived from the controller source (_v2_spring.py).
 TAGS.append(("Registry", "Registers, numbering, instruments, parties (payees, venue parties), assets and custody "
                          "(sangam-registry; public verification endpoints are unauthenticated and rate-limited)"))
-_V2_REGISTRY_PUBLIC = ("/registry/instruments/public/{tenant}/verify", "/registry/instruments/public/verify-qr",
-                       "/registry/registers/public/{tenant}/extracts/verify")
+_V2_REGISTRY_PUBLIC = ("/registry/instruments/public/by-tenant/verify", "/registry/instruments/public/verify-qr",
+                       "/registry/registers/public/by-tenant/extracts/verify")
 v2_spring_routes("sangam-rest/src/main/java/org/sangam/rest/modules/registry/web", "Registry", "registry", "registry",
                  "registry.read", "registry.write", ["R19", "R41", "R42", "R50", "R53", "R74"],
                  no_cmd=("match", "matchParty"), public_paths=_V2_REGISTRY_PUBLIC)

@@ -1614,10 +1614,10 @@ op("get", "/ops/workers", "listWorkers", "Ops", "Workers", "Workers seen recentl
    ["R26", "VI.3"], resp=(200, "array:WorkerInfo"), perm="ops.read", errors=WS_E)
 op("get", "/ops/topics", "listTopics", "Ops", "Worker topics", "Topics with backlog, capability class and pause state.", ["R26", "R36"],
    resp=(200, "array:TopicInfo"), perm="ops.read", errors=WS_E)
-TOPIC = pp("name", "Topic name")
-op("post", "/ops/topics/{name}/pause", "pauseTopic", "Ops", "Pause a topic", "Fetch-and-lock stops offering the topic; leases already held continue.",
+TOPIC = q("name", desc="Topic name; may carry '/' or ':'", required=True)
+op("post", "/ops/topics/by-name/pause", "pauseTopic", "Ops", "Pause a topic", "Fetch-and-lock stops offering the topic; leases already held continue.",
    ["R26", "R41", "R42"], params=[TOPIC], body="ReasonRequest", resp=(200, "TopicInfo"), cmd="ops.topic.pause", perm="ops.write")
-op("post", "/ops/topics/{name}/resume", "resumeTopic", "Ops", "Resume a topic", "Offers the topic again.",
+op("post", "/ops/topics/by-name/resume", "resumeTopic", "Ops", "Resume a topic", "Offers the topic again.",
    ["R26", "R41", "R42"], params=[TOPIC], body="ReasonRequest", resp=(200, "TopicInfo"), cmd="ops.topic.resume", perm="ops.write")
 op("get", "/ops/incidents/{id}/preview", "previewIncidentAction", "Ops", "Consequence preview of an incident action",
    "What retry, skip or cancel would do (O02).", ["R63", "O02"], params=[ID, q("action", required=True, enum=["retry", "skip", "cancel"])],
@@ -1636,14 +1636,14 @@ op("post", "/ops/reconciliation/{id}/evidence", "addReconciliationEvidence", "Op
    body={"required": True, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ["kind", "file"], "properties": {
        "kind": {"type": "string"}, "file": FPR()}}}}},
    resp=(201, "Evidence"), cmd="ops.reconciliation.evidence", perm="recon.resolve", created=True)
-op("put", "/ops/cleanup/ttl/{key}", "setHistoryTtl", "Ops", "Set history time-to-live", "History TTL for a definition key (R29).",
-   ["R29", "R41", "R42"], params=[pp("key", "Process definition key")], body="TtlRequest", resp=(200, "CleanupStatus"),
+op("put", "/ops/cleanup/ttl/by-key", "setHistoryTtl", "Ops", "Set history time-to-live", "History TTL for a definition key (R29).",
+   ["R29", "R41", "R42"], params=[q("key", desc="Process definition key; may carry '/' or ':'", required=True)], body="TtlRequest", resp=(200, "CleanupStatus"),
    cmd="ops.cleanup.ttl", perm="ops.write")
 op("get", "/ops/notification-failures", "listNotificationFailures", "Ops", "Notification failures",
    "Failed SMS/e-mail/DLT notifications, recipients masked (R60).", ["R60"], list_=True, resp=(200, "array:NotificationFailure"),
    perm="ops.read", errors=STD_R)
-op("post", "/ops/notification-failures/{id}/resend", "resendNotification", "Ops", "Resend a notification", "Resends with a reason.",
-   ["R60", "R41"], params=[ID], body="ReasonRequest", resp=(204, None), cmd="ops.notification.resend", perm="ops.write")
+op("post", "/ops/notification-failures/by-id/resend", "resendNotification", "Ops", "Resend a notification", "Resends with a reason.",
+   ["R60", "R41"], params=[q("id", desc="Notification failure id; may carry '/' or ':'", required=True)], body="ReasonRequest", resp=(204, None), cmd="ops.notification.resend", perm="ops.write")
 
 # Debugger (DebugPort)
 DE = ("Unauthorized", "Forbidden", "NotFound")

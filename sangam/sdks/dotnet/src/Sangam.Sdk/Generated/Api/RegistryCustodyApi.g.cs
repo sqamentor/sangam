@@ -60,11 +60,12 @@ public sealed class RegistryCustodyApi
     /// <summary>
     /// By label
     /// CustodyController.byLabel (sangam-rest).
-    /// GET /registry/custody/items/by-label/{label} (operationId registryCustodyByLabel); permission registry.read.
+    /// GET /registry/custody/items/by-label (operationId registryCustodyByLabel); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyByLabelAsync(string label, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/registry/custody/items/by-label/{HttpTransport.Seg(GeneratedCalls.Str(label)!)}");
+        var req = ApiRequest.Get($"/registry/custody/items/by-label");
+        req.WithQuery("label", GeneratedCalls.Q(label));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 

@@ -105,7 +105,7 @@ class SlashValueRoutesH2Test {
                 {"GET", "/work/w-ui-demo-1/step" + q("stepName", "a/b:c ~!?", "workerId", "w1", "lockVersion", "1",
                         "attemptId", "1"), null},
                 {"PUT", "/work/w-ui-demo-1/step" + q("stepName", "a/b:c ~!?"), "{}"},
-                {"POST", "/ledger/L-UI-DEMO-1/periods/close" + q("period", "2026/2027"), "{}"},
+                {"POST", "/ledger/by-ledger/periods/close" + q("ledger", "L-UI-DEMO-1", "period", "2026/2027"), "{}"},
         };
         List<String> wrong = new ArrayList<>();
         for (String[] c : calls) {

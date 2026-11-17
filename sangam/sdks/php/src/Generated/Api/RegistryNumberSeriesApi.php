@@ -25,13 +25,15 @@ final class RegistryNumberSeriesApi
      *
      * RegistryController.defineSeries (sangam-rest).
      *
-     * PUT /registry/number-series/{seriesKey} (operationId registryRegistryDefineSeries); permission registry.write; result stored atomically with the state change.
+     * PUT /registry/number-series/by-series-key (operationId registryRegistryDefineSeries); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegistryDefineSeriesBody|array $body request body
+     * @param string $seriesKey query seriesKey
      * @return array<string, mixed>
      */
-    public function registryRegistryDefineSeries(string $seriesKey, Model\RegistryRegistryDefineSeriesBody|array $body, ?RequestOptions $options = null): array
+    public function registryRegistryDefineSeries(Model\RegistryRegistryDefineSeriesBody|array $body, string $seriesKey, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::put('/registry/number-series/' . HttpTransport::seg((string) $seriesKey));
+        $req = ApiRequest::put('/registry/number-series/by-series-key');
+        $req->query('seriesKey', $seriesKey);
         if ($body !== null) {
             $req->body($body);
         }
@@ -43,12 +45,14 @@ final class RegistryNumberSeriesApi
      *
      * RegistryController.series (sangam-rest).
      *
-     * GET /registry/number-series/{seriesKey} (operationId registryRegistrySeries); permission registry.read.
+     * GET /registry/number-series/by-series-key (operationId registryRegistrySeries); permission registry.read.
+     * @param string $seriesKey query seriesKey
      * @return array<string, mixed>
      */
     public function registryRegistrySeries(string $seriesKey, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/registry/number-series/' . HttpTransport::seg((string) $seriesKey));
+        $req = ApiRequest::get('/registry/number-series/by-series-key');
+        $req->query('seriesKey', $seriesKey);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -71,12 +75,14 @@ final class RegistryNumberSeriesApi
      *
      * RegistryController.allocate (sangam-rest).
      *
-     * POST /registry/number-series/{seriesKey}/allocate (operationId registryRegistryAllocate); permission registry.write; result stored atomically with the state change.
+     * POST /registry/number-series/by-series-key/allocate (operationId registryRegistryAllocate); permission registry.write; result stored atomically with the state change.
+     * @param string $seriesKey query seriesKey
      * @return array<string, mixed>
      */
     public function registryRegistryAllocate(string $seriesKey, Model\RegistryRegistryAllocateBody|array|null $body = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/registry/number-series/' . HttpTransport::seg((string) $seriesKey) . '/allocate');
+        $req = ApiRequest::post('/registry/number-series/by-series-key/allocate');
+        $req->query('seriesKey', $seriesKey);
         if ($body !== null) {
             $req->body($body);
         }
@@ -88,12 +94,14 @@ final class RegistryNumberSeriesApi
      *
      * RegistryController.voidNumber (sangam-rest).
      *
-     * POST /registry/number-series/{seriesKey}/void (operationId registryRegistryVoidNumber); permission registry.write; result stored atomically with the state change.
+     * POST /registry/number-series/by-series-key/void (operationId registryRegistryVoidNumber); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegistryVoidNumberBody|array $body request body
+     * @param string $seriesKey query seriesKey
      */
-    public function registryRegistryVoidNumber(string $seriesKey, Model\RegistryRegistryVoidNumberBody|array $body, ?RequestOptions $options = null): void
+    public function registryRegistryVoidNumber(Model\RegistryRegistryVoidNumberBody|array $body, string $seriesKey, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/registry/number-series/' . HttpTransport::seg((string) $seriesKey) . '/void');
+        $req = ApiRequest::post('/registry/number-series/by-series-key/void');
+        $req->query('seriesKey', $seriesKey);
         if ($body !== null) {
             $req->body($body);
         }
@@ -105,12 +113,14 @@ final class RegistryNumberSeriesApi
      *
      * RegistryController.markUsed (sangam-rest).
      *
-     * POST /registry/number-series/{seriesKey}/mark-used (operationId registryRegistryMarkUsed); permission registry.write; result stored atomically with the state change.
+     * POST /registry/number-series/by-series-key/mark-used (operationId registryRegistryMarkUsed); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegistryMarkUsedBody|array $body request body
+     * @param string $seriesKey query seriesKey
      */
-    public function registryRegistryMarkUsed(string $seriesKey, Model\RegistryRegistryMarkUsedBody|array $body, ?RequestOptions $options = null): void
+    public function registryRegistryMarkUsed(Model\RegistryRegistryMarkUsedBody|array $body, string $seriesKey, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/registry/number-series/' . HttpTransport::seg((string) $seriesKey) . '/mark-used');
+        $req = ApiRequest::post('/registry/number-series/by-series-key/mark-used');
+        $req->query('seriesKey', $seriesKey);
         if ($body !== null) {
             $req->body($body);
         }
@@ -122,12 +132,14 @@ final class RegistryNumberSeriesApi
      *
      * RegistryController.closePeriod (sangam-rest).
      *
-     * POST /registry/number-series/{seriesKey}/close-period (operationId registryRegistryClosePeriod); permission registry.write; result stored atomically with the state change.
+     * POST /registry/number-series/by-series-key/close-period (operationId registryRegistryClosePeriod); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegistryClosePeriodBody|array $body request body
+     * @param string $seriesKey query seriesKey
      */
-    public function registryRegistryClosePeriod(string $seriesKey, Model\RegistryRegistryClosePeriodBody|array $body, ?RequestOptions $options = null): void
+    public function registryRegistryClosePeriod(Model\RegistryRegistryClosePeriodBody|array $body, string $seriesKey, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/registry/number-series/' . HttpTransport::seg((string) $seriesKey) . '/close-period');
+        $req = ApiRequest::post('/registry/number-series/by-series-key/close-period');
+        $req->query('seriesKey', $seriesKey);
         if ($body !== null) {
             $req->body($body);
         }
@@ -139,14 +151,16 @@ final class RegistryNumberSeriesApi
      *
      * RegistryController.gaps (sangam-rest).
      *
-     * GET /registry/number-series/{seriesKey}/gaps (operationId registryRegistryGaps); permission registry.read.
+     * GET /registry/number-series/by-series-key/gaps (operationId registryRegistryGaps); permission registry.read.
+     * @param string $seriesKey query seriesKey
      * @param string $period query period
      * @param string|null $scope query scope
      * @return array<string, mixed>
      */
     public function registryRegistryGaps(string $seriesKey, string $period, ?string $scope = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/registry/number-series/' . HttpTransport::seg((string) $seriesKey) . '/gaps');
+        $req = ApiRequest::get('/registry/number-series/by-series-key/gaps');
+        $req->query('seriesKey', $seriesKey);
         $req->query('scope', $scope);
         $req->query('period', $period);
         return Support::arr($this->calls->json($req, $options)) ?? [];
@@ -157,7 +171,8 @@ final class RegistryNumberSeriesApi
      *
      * RegistryController.allocations (sangam-rest).
      *
-     * GET /registry/number-series/{seriesKey}/allocations (operationId registryRegistryAllocations); permission registry.read.
+     * GET /registry/number-series/by-series-key/allocations (operationId registryRegistryAllocations); permission registry.read.
+     * @param string $seriesKey query seriesKey
      * @param string $period query period
      * @param string|null $scope query scope
      * @param int|null $page query page
@@ -166,7 +181,8 @@ final class RegistryNumberSeriesApi
      */
     public function registryRegistryAllocations(string $seriesKey, string $period, ?string $scope = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/registry/number-series/' . HttpTransport::seg((string) $seriesKey) . '/allocations');
+        $req = ApiRequest::get('/registry/number-series/by-series-key/allocations');
+        $req->query('seriesKey', $seriesKey);
         $req->query('scope', $scope);
         $req->query('period', $period);
         $req->query('page', $page);

@@ -344,7 +344,10 @@ def v2_spring_routes(rel_java_dir, tag, opid_prefix, cmd_prefix, perm_read, perm
                     pname = nm.group(1) if nm else toks[-1]
                     jt = toks[-2].split(".")[-1] if len(toks) >= 2 else "String"
                     required = "required = false" not in a and "defaultValue" not in a
-                    params.append(q(pname, _V2_JTYPES.get(jt, "s"), required=required))
+                    # Decision 393: the value of a literal by-<x> segment may carry '/' or ':' (d393-PATTERN.md section 3).
+                    d393 = "/by-" + _v2_kebab(pname) in path
+                    params.append(q(pname, _V2_JTYPES.get(jt, "s"), required=required,
+                                    desc=("%s; may carry '/' or ':'" % _v2_camel_words(pname).capitalize()) if d393 else None))
                 elif "@RequestPart" in p:
                     body = "multipart"
                 elif "@RequestHeader" in p:

@@ -143,7 +143,7 @@
    "tag": "Billing",
    "pathPrefix": "",
    "operations": 11,
-   "maxLines": 241
+   "maxLines": 254
   },
   {
    "class": "BulkIngestApi",
@@ -283,7 +283,7 @@
    "tag": "Field",
    "pathPrefix": "",
    "operations": 35,
-   "maxLines": 623
+   "maxLines": 634
   },
   {
    "class": "FieldAssignmentsApi",
@@ -297,7 +297,7 @@
    "tag": "Field",
    "pathPrefix": "units",
    "operations": 8,
-   "maxLines": 164
+   "maxLines": 170
   },
   {
    "class": "FormsApi",
@@ -311,7 +311,7 @@
    "tag": "Geo",
    "pathPrefix": "",
    "operations": 22,
-   "maxLines": 433
+   "maxLines": 449
   },
   {
    "class": "HealthHooksApi",
@@ -332,7 +332,7 @@
    "tag": "Ledger",
    "pathPrefix": "",
    "operations": 9,
-   "maxLines": 214
+   "maxLines": 223
   },
   {
    "class": "LinksApi",
@@ -374,7 +374,7 @@
    "tag": "Ops",
    "pathPrefix": "",
    "operations": 18,
-   "maxLines": 350
+   "maxLines": 354
   },
   {
    "class": "OpsBatchesApi",
@@ -458,7 +458,7 @@
    "tag": "Queues",
    "pathPrefix": "",
    "operations": 26,
-   "maxLines": 492
+   "maxLines": 514
   },
   {
    "class": "RegistriesApi",
@@ -472,42 +472,42 @@
    "tag": "Registry",
    "pathPrefix": "",
    "operations": 5,
-   "maxLines": 108
+   "maxLines": 111
   },
   {
    "class": "RegistryAssetsApi",
    "tag": "Registry",
    "pathPrefix": "assets",
    "operations": 34,
-   "maxLines": 658
+   "maxLines": 662
   },
   {
    "class": "RegistryCustodyApi",
    "tag": "Registry",
    "pathPrefix": "custody",
    "operations": 26,
-   "maxLines": 510
+   "maxLines": 511
   },
   {
    "class": "RegistryInstrumentsApi",
    "tag": "Registry",
    "pathPrefix": "instruments",
    "operations": 22,
-   "maxLines": 444
+   "maxLines": 446
   },
   {
    "class": "RegistryNumberSeriesApi",
    "tag": "Registry",
    "pathPrefix": "number-series",
    "operations": 9,
-   "maxLines": 189
+   "maxLines": 197
   },
   {
    "class": "RegistryObjectsApi",
    "tag": "Registry",
    "pathPrefix": "objects",
    "operations": 11,
-   "maxLines": 238
+   "maxLines": 239
   },
   {
    "class": "RegistryPartiesApi",
@@ -521,14 +521,14 @@
    "tag": "Registry",
    "pathPrefix": "registers",
    "operations": 15,
-   "maxLines": 296
+   "maxLines": 301
   },
   {
    "class": "ResourcesApi",
    "tag": "Resources",
    "pathPrefix": "",
    "operations": 21,
-   "maxLines": 386
+   "maxLines": 391
   },
   {
    "class": "ResourcesAllotmentsApi",
@@ -542,21 +542,21 @@
    "tag": "Resources",
    "pathPrefix": "bookings",
    "operations": 13,
-   "maxLines": 265
+   "maxLines": 266
   },
   {
    "class": "ResourcesItemsApi",
    "tag": "Resources",
    "pathPrefix": "items",
    "operations": 9,
-   "maxLines": 209
+   "maxLines": 216
   },
   {
    "class": "RostersApi",
    "tag": "Rosters",
    "pathPrefix": "",
    "operations": 37,
-   "maxLines": 703
+   "maxLines": 709
   },
   {
    "class": "SCIMApi",
@@ -584,14 +584,14 @@
    "tag": "Tenant operations",
    "pathPrefix": "",
    "operations": 21,
-   "maxLines": 403
+   "maxLines": 404
   },
   {
    "class": "TenantOperationsFlowableMigrationsApi",
    "tag": "Tenant operations",
    "pathPrefix": "flowable-migrations",
    "operations": 10,
-   "maxLines": 198
+   "maxLines": 206
   },
   {
    "class": "TenantOperationsRetentionApi",
@@ -605,14 +605,14 @@
    "tag": "Tenant operations",
    "pathPrefix": "secrets",
    "operations": 6,
-   "maxLines": 123
+   "maxLines": 125
   },
   {
    "class": "TenantOperationsVariablesApi",
    "tag": "Tenant operations",
    "pathPrefix": "variables",
    "operations": 7,
-   "maxLines": 141
+   "maxLines": 142
   },
   {
    "class": "TenantMigrationApi",
@@ -4140,7 +4140,7 @@
   {
    "operationId": "pauseTopic",
    "method": "POST",
-   "path": "/ops/topics/{name}/pause",
+   "path": "/ops/topics/by-name/pause",
    "tag": "Ops",
    "apiClass": "OpsApi",
    "java": "OpsApi#pauseTopic",
@@ -4152,7 +4152,7 @@
   {
    "operationId": "resumeTopic",
    "method": "POST",
-   "path": "/ops/topics/{name}/resume",
+   "path": "/ops/topics/by-name/resume",
    "tag": "Ops",
    "apiClass": "OpsApi",
    "java": "OpsApi#resumeTopic",
@@ -4236,7 +4236,7 @@
   {
    "operationId": "setHistoryTtl",
    "method": "PUT",
-   "path": "/ops/cleanup/ttl/{key}",
+   "path": "/ops/cleanup/ttl/by-key",
    "tag": "Ops",
    "apiClass": "OpsApi",
    "java": "OpsApi#setHistoryTtl",
@@ -4260,7 +4260,7 @@
   {
    "operationId": "resendNotification",
    "method": "POST",
-   "path": "/ops/notification-failures/{id}/resend",
+   "path": "/ops/notification-failures/by-id/resend",
    "tag": "Ops",
    "apiClass": "OpsApi",
    "java": "OpsApi#resendNotification",
@@ -6912,7 +6912,7 @@
   {
    "operationId": "listBillingAccounts",
    "method": "GET",
-   "path": "/billing/{ledger}/accounts",
+   "path": "/billing/by-ledger/accounts",
    "tag": "Billing",
    "apiClass": "BillingApi",
    "java": "BillingApi#listBillingAccounts",
@@ -6924,7 +6924,7 @@
   {
    "operationId": "raiseBillingInvoice",
    "method": "POST",
-   "path": "/billing/{ledger}/invoices",
+   "path": "/billing/by-ledger/invoices",
    "tag": "Billing",
    "apiClass": "BillingApi",
    "java": "BillingApi#raiseBillingInvoice",
@@ -6936,7 +6936,7 @@
   {
    "operationId": "recordBillingCollection",
    "method": "POST",
-   "path": "/billing/{ledger}/collections",
+   "path": "/billing/by-ledger/collections",
    "tag": "Billing",
    "apiClass": "BillingApi",
    "java": "BillingApi#recordBillingCollection",
@@ -6948,7 +6948,7 @@
   {
    "operationId": "getBillingArrears",
    "method": "GET",
-   "path": "/billing/{ledger}/consumers/{consumer}/arrears",
+   "path": "/billing/by-ledger/consumers/by-consumer/arrears",
    "tag": "Billing",
    "apiClass": "BillingApi",
    "java": "BillingApi#getBillingArrears",
@@ -6960,7 +6960,7 @@
   {
    "operationId": "levyBillingPenalties",
    "method": "POST",
-   "path": "/billing/{ledger}/consumers/{consumer}/penalties",
+   "path": "/billing/by-ledger/consumers/by-consumer/penalties",
    "tag": "Billing",
    "apiClass": "BillingApi",
    "java": "BillingApi#levyBillingPenalties",
@@ -6972,7 +6972,7 @@
   {
    "operationId": "recordBillingWaiver",
    "method": "POST",
-   "path": "/billing/{ledger}/waivers",
+   "path": "/billing/by-ledger/waivers",
    "tag": "Billing",
    "apiClass": "BillingApi",
    "java": "BillingApi#recordBillingWaiver",
@@ -6984,7 +6984,7 @@
   {
    "operationId": "refundBillingCollection",
    "method": "POST",
-   "path": "/billing/{ledger}/refunds",
+   "path": "/billing/by-ledger/refunds",
    "tag": "Billing",
    "apiClass": "BillingApi",
    "java": "BillingApi#refundBillingCollection",
@@ -6996,7 +6996,7 @@
   {
    "operationId": "acceptUnverifiedPayment",
    "method": "POST",
-   "path": "/billing/{ledger}/unverified-payments",
+   "path": "/billing/by-ledger/unverified-payments",
    "tag": "Billing",
    "apiClass": "BillingApi",
    "java": "BillingApi#acceptUnverifiedPayment",
@@ -7008,7 +7008,7 @@
   {
    "operationId": "listUnverifiedPayments",
    "method": "GET",
-   "path": "/billing/{ledger}/unverified-payments",
+   "path": "/billing/by-ledger/unverified-payments",
    "tag": "Billing",
    "apiClass": "BillingApi",
    "java": "BillingApi#listUnverifiedPayments",
@@ -7020,7 +7020,7 @@
   {
    "operationId": "getUnverifiedPayment",
    "method": "GET",
-   "path": "/billing/{ledger}/unverified-payments/{id}",
+   "path": "/billing/by-ledger/unverified-payments/{id}",
    "tag": "Billing",
    "apiClass": "BillingApi",
    "java": "BillingApi#getUnverifiedPayment",
@@ -7032,7 +7032,7 @@
   {
    "operationId": "resolveUnverifiedPayment",
    "method": "POST",
-   "path": "/billing/{ledger}/unverified-payments/{id}/resolution",
+   "path": "/billing/by-ledger/unverified-payments/{id}/resolution",
    "tag": "Billing",
    "apiClass": "BillingApi",
    "java": "BillingApi#resolveUnverifiedPayment",
@@ -9060,7 +9060,7 @@
   {
    "operationId": "fieldWorkTemplate",
    "method": "GET",
-   "path": "/field/templates/{key}",
+   "path": "/field/templates/by-key",
    "tag": "Field",
    "apiClass": "FieldApi",
    "java": "FieldApi#fieldWorkTemplate",
@@ -9072,7 +9072,7 @@
   {
    "operationId": "fieldWorkRetireTemplate",
    "method": "POST",
-   "path": "/field/templates/{key}/{version}/retire",
+   "path": "/field/templates/by-key/{version}/retire",
    "tag": "Field",
    "apiClass": "FieldApi",
    "java": "FieldApi#fieldWorkRetireTemplate",
@@ -9216,7 +9216,7 @@
   {
    "operationId": "fieldWorkRunSchedule",
    "method": "POST",
-   "path": "/field/schedules/{id}/run",
+   "path": "/field/schedules/by-id/run",
    "tag": "Field",
    "apiClass": "FieldApi",
    "java": "FieldApi#fieldWorkRunSchedule",
@@ -9288,7 +9288,7 @@
   {
    "operationId": "fieldWorkDeviceStatus",
    "method": "POST",
-   "path": "/field/devices/{id}/status",
+   "path": "/field/devices/by-id/status",
    "tag": "Field",
    "apiClass": "FieldApi",
    "java": "FieldApi#fieldWorkDeviceStatus",
@@ -9300,7 +9300,7 @@
   {
    "operationId": "fieldWorkDevicePolicy",
    "method": "POST",
-   "path": "/field/devices/{id}/policy",
+   "path": "/field/devices/by-id/policy",
    "tag": "Field",
    "apiClass": "FieldApi",
    "java": "FieldApi#fieldWorkDevicePolicy",
@@ -9312,7 +9312,7 @@
   {
    "operationId": "fieldWorkChain",
    "method": "GET",
-   "path": "/field/devices/{id}/chain",
+   "path": "/field/devices/by-id/chain",
    "tag": "Field",
    "apiClass": "FieldApi",
    "java": "FieldApi#fieldWorkChain",
@@ -9324,7 +9324,7 @@
   {
    "operationId": "fieldWorkUpload",
    "method": "POST",
-   "path": "/field/sync/{deviceId}/upload",
+   "path": "/field/sync/by-device-id/upload",
    "tag": "Field",
    "apiClass": "FieldApi",
    "java": "FieldApi#fieldWorkUpload",
@@ -9336,7 +9336,7 @@
   {
    "operationId": "fieldWorkPull",
    "method": "GET",
-   "path": "/field/sync/{deviceId}/pull",
+   "path": "/field/sync/by-device-id/pull",
    "tag": "Field",
    "apiClass": "FieldApi",
    "java": "FieldApi#fieldWorkPull",
@@ -9396,7 +9396,7 @@
   {
    "operationId": "fieldWorkEvidence",
    "method": "GET",
-   "path": "/field/evidence/{id}",
+   "path": "/field/evidence/by-id",
    "tag": "Field",
    "apiClass": "FieldApi",
    "java": "FieldApi#fieldWorkEvidence",
@@ -9408,7 +9408,7 @@
   {
    "operationId": "fieldWorkEvidenceContent",
    "method": "GET",
-   "path": "/field/evidence/{id}/content",
+   "path": "/field/evidence/by-id/content",
    "tag": "Field",
    "apiClass": "FieldApi",
    "java": "FieldApi#fieldWorkEvidenceContent",
@@ -9420,7 +9420,7 @@
   {
    "operationId": "fieldWorkReverifyEvidence",
    "method": "POST",
-   "path": "/field/evidence/{id}/reverify",
+   "path": "/field/evidence/by-id/reverify",
    "tag": "Field",
    "apiClass": "FieldApi",
    "java": "FieldApi#fieldWorkReverifyEvidence",
@@ -9456,7 +9456,7 @@
   {
    "operationId": "fieldWorkUnit",
    "method": "GET",
-   "path": "/field/units/{id}",
+   "path": "/field/units/by-id",
    "tag": "Field",
    "apiClass": "FieldUnitsApi",
    "java": "FieldUnitsApi#fieldWorkUnit",
@@ -9468,7 +9468,7 @@
   {
    "operationId": "fieldWorkUnitStatus",
    "method": "POST",
-   "path": "/field/units/{id}/status",
+   "path": "/field/units/by-id/status",
    "tag": "Field",
    "apiClass": "FieldUnitsApi",
    "java": "FieldUnitsApi#fieldWorkUnitStatus",
@@ -9480,7 +9480,7 @@
   {
    "operationId": "fieldWorkPing",
    "method": "POST",
-   "path": "/field/units/{id}/pings",
+   "path": "/field/units/by-id/pings",
    "tag": "Field",
    "apiClass": "FieldUnitsApi",
    "java": "FieldUnitsApi#fieldWorkPing",
@@ -9492,7 +9492,7 @@
   {
    "operationId": "fieldWorkUnitOffers",
    "method": "GET",
-   "path": "/field/units/{id}/offers",
+   "path": "/field/units/by-id/offers",
    "tag": "Field",
    "apiClass": "FieldUnitsApi",
    "java": "FieldUnitsApi#fieldWorkUnitOffers",
@@ -9504,7 +9504,7 @@
   {
    "operationId": "fieldWorkEta",
    "method": "GET",
-   "path": "/field/units/{id}/eta",
+   "path": "/field/units/by-id/eta",
    "tag": "Field",
    "apiClass": "FieldUnitsApi",
    "java": "FieldUnitsApi#fieldWorkEta",
@@ -9516,7 +9516,7 @@
   {
    "operationId": "fieldWorkTrips",
    "method": "GET",
-   "path": "/field/units/{id}/trips",
+   "path": "/field/units/by-id/trips",
    "tag": "Field",
    "apiClass": "FieldUnitsApi",
    "java": "FieldUnitsApi#fieldWorkTrips",
@@ -9660,7 +9660,7 @@
   {
    "operationId": "getFlowableMigration",
    "method": "GET",
-   "path": "/ops/flowable-migrations/{id}",
+   "path": "/ops/flowable-migrations/by-id",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsFlowableMigrationsApi",
    "java": "TenantOperationsFlowableMigrationsApi#getFlowableMigration",
@@ -9672,7 +9672,7 @@
   {
    "operationId": "listFlowableMigrationItems",
    "method": "GET",
-   "path": "/ops/flowable-migrations/{id}/items",
+   "path": "/ops/flowable-migrations/by-id/items",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsFlowableMigrationsApi",
    "java": "TenantOperationsFlowableMigrationsApi#listFlowableMigrationItems",
@@ -9684,7 +9684,7 @@
   {
    "operationId": "freezeFlowableMigration",
    "method": "POST",
-   "path": "/ops/flowable-migrations/{id}/freeze",
+   "path": "/ops/flowable-migrations/by-id/freeze",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsFlowableMigrationsApi",
    "java": "TenantOperationsFlowableMigrationsApi#freezeFlowableMigration",
@@ -9696,7 +9696,7 @@
   {
    "operationId": "applyFlowableMigration",
    "method": "POST",
-   "path": "/ops/flowable-migrations/{id}/apply",
+   "path": "/ops/flowable-migrations/by-id/apply",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsFlowableMigrationsApi",
    "java": "TenantOperationsFlowableMigrationsApi#applyFlowableMigration",
@@ -9708,7 +9708,7 @@
   {
    "operationId": "reconcileFlowableMigration",
    "method": "POST",
-   "path": "/ops/flowable-migrations/{id}/reconcile",
+   "path": "/ops/flowable-migrations/by-id/reconcile",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsFlowableMigrationsApi",
    "java": "TenantOperationsFlowableMigrationsApi#reconcileFlowableMigration",
@@ -9720,7 +9720,7 @@
   {
    "operationId": "cutOverFlowableMigration",
    "method": "POST",
-   "path": "/ops/flowable-migrations/{id}/cut-over",
+   "path": "/ops/flowable-migrations/by-id/cut-over",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsFlowableMigrationsApi",
    "java": "TenantOperationsFlowableMigrationsApi#cutOverFlowableMigration",
@@ -9732,7 +9732,7 @@
   {
    "operationId": "releaseFlowableMigration",
    "method": "POST",
-   "path": "/ops/flowable-migrations/{id}/release",
+   "path": "/ops/flowable-migrations/by-id/release",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsFlowableMigrationsApi",
    "java": "TenantOperationsFlowableMigrationsApi#releaseFlowableMigration",
@@ -9744,7 +9744,7 @@
   {
    "operationId": "rollbackFlowableMigration",
    "method": "POST",
-   "path": "/ops/flowable-migrations/{id}/rollback",
+   "path": "/ops/flowable-migrations/by-id/rollback",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsFlowableMigrationsApi",
    "java": "TenantOperationsFlowableMigrationsApi#rollbackFlowableMigration",
@@ -9780,7 +9780,7 @@
   {
    "operationId": "geoGeoLayer",
    "method": "GET",
-   "path": "/geo/layers/{layer}",
+   "path": "/geo/layers/by-layer",
    "tag": "Geo",
    "apiClass": "GeoApi",
    "java": "GeoApi#geoGeoLayer",
@@ -9792,7 +9792,7 @@
   {
    "operationId": "geoGeoImportBoundaries",
    "method": "POST",
-   "path": "/geo/layers/{layer}/import",
+   "path": "/geo/layers/by-layer/import",
    "tag": "Geo",
    "apiClass": "GeoApi",
    "java": "GeoApi#geoGeoImportBoundaries",
@@ -9804,7 +9804,7 @@
   {
    "operationId": "geoGeoFeatures",
    "method": "GET",
-   "path": "/geo/layers/{layer}/features",
+   "path": "/geo/layers/by-layer/features",
    "tag": "Geo",
    "apiClass": "GeoApi",
    "java": "GeoApi#geoGeoFeatures",
@@ -9816,7 +9816,7 @@
   {
    "operationId": "geoGeoPutFeature",
    "method": "POST",
-   "path": "/geo/layers/{layer}/features",
+   "path": "/geo/layers/by-layer/features",
    "tag": "Geo",
    "apiClass": "GeoApi",
    "java": "GeoApi#geoGeoPutFeature",
@@ -9828,7 +9828,7 @@
   {
    "operationId": "geoGeoFeature",
    "method": "GET",
-   "path": "/geo/features/{id}",
+   "path": "/geo/features/by-id",
    "tag": "Geo",
    "apiClass": "GeoApi",
    "java": "GeoApi#geoGeoFeature",
@@ -9840,7 +9840,7 @@
   {
    "operationId": "geoGeoRetire",
    "method": "DELETE",
-   "path": "/geo/features/{id}",
+   "path": "/geo/features/by-id",
    "tag": "Geo",
    "apiClass": "GeoApi",
    "java": "GeoApi#geoGeoRetire",
@@ -9852,7 +9852,7 @@
   {
    "operationId": "geoGeoLineage",
    "method": "GET",
-   "path": "/geo/features/{id}/lineage",
+   "path": "/geo/features/by-id/lineage",
    "tag": "Geo",
    "apiClass": "GeoApi",
    "java": "GeoApi#geoGeoLineage",
@@ -9912,7 +9912,7 @@
   {
    "operationId": "geoGeoFence",
    "method": "GET",
-   "path": "/geo/fences/{id}",
+   "path": "/geo/fences/by-id",
    "tag": "Geo",
    "apiClass": "GeoApi",
    "java": "GeoApi#geoGeoFence",
@@ -9924,7 +9924,7 @@
   {
    "operationId": "geoGeoDeactivateFence",
    "method": "DELETE",
-   "path": "/geo/fences/{id}",
+   "path": "/geo/fences/by-id",
    "tag": "Geo",
    "apiClass": "GeoApi",
    "java": "GeoApi#geoGeoDeactivateFence",
@@ -9936,7 +9936,7 @@
   {
    "operationId": "geoGeoCheckFence",
    "method": "POST",
-   "path": "/geo/fences/{id}/check",
+   "path": "/geo/fences/by-id/check",
    "tag": "Geo",
    "apiClass": "GeoApi",
    "java": "GeoApi#geoGeoCheckFence",
@@ -9948,7 +9948,7 @@
   {
    "operationId": "geoGeoPutObjectGeometry",
    "method": "PUT",
-   "path": "/geo/objects/{type}/{id}/geometry",
+   "path": "/geo/objects/by-type/by-id/geometry",
    "tag": "Geo",
    "apiClass": "GeoApi",
    "java": "GeoApi#geoGeoPutObjectGeometry",
@@ -9960,7 +9960,7 @@
   {
    "operationId": "geoGeoObjectGeometry",
    "method": "GET",
-   "path": "/geo/objects/{type}/{id}/geometry",
+   "path": "/geo/objects/by-type/by-id/geometry",
    "tag": "Geo",
    "apiClass": "GeoApi",
    "java": "GeoApi#geoGeoObjectGeometry",
@@ -9996,7 +9996,7 @@
   {
    "operationId": "geoGeoQueryExternal",
    "method": "POST",
-   "path": "/geo/external-layers/{ref}/query",
+   "path": "/geo/external-layers/by-ref/query",
    "tag": "Geo",
    "apiClass": "GeoApi",
    "java": "GeoApi#geoGeoQueryExternal",
@@ -10008,7 +10008,7 @@
   {
    "operationId": "geoGeoImportExternal",
    "method": "POST",
-   "path": "/geo/external-layers/{ref}/import",
+   "path": "/geo/external-layers/by-ref/import",
    "tag": "Geo",
    "apiClass": "GeoApi",
    "java": "GeoApi#geoGeoImportExternal",
@@ -10104,7 +10104,7 @@
   {
    "operationId": "listLedgerAccounts",
    "method": "GET",
-   "path": "/ledger/{ledger}/accounts",
+   "path": "/ledger/by-ledger/accounts",
    "tag": "Ledger",
    "apiClass": "LedgerApi",
    "java": "LedgerApi#listLedgerAccounts",
@@ -10128,7 +10128,7 @@
   {
    "operationId": "applyLedgerOperation",
    "method": "POST",
-   "path": "/ledger/{ledger}/operations",
+   "path": "/ledger/by-ledger/operations",
    "tag": "Ledger",
    "apiClass": "LedgerApi",
    "java": "LedgerApi#applyLedgerOperation",
@@ -10140,7 +10140,7 @@
   {
    "operationId": "createLedgerFreezeOrder",
    "method": "POST",
-   "path": "/ledger/{ledger}/freeze-orders",
+   "path": "/ledger/by-ledger/freeze-orders",
    "tag": "Ledger",
    "apiClass": "LedgerApi",
    "java": "LedgerApi#createLedgerFreezeOrder",
@@ -10152,7 +10152,7 @@
   {
    "operationId": "listLedgerFreezeOrders",
    "method": "GET",
-   "path": "/ledger/{ledger}/freeze-orders",
+   "path": "/ledger/by-ledger/freeze-orders",
    "tag": "Ledger",
    "apiClass": "LedgerApi",
    "java": "LedgerApi#listLedgerFreezeOrders",
@@ -10164,7 +10164,7 @@
   {
    "operationId": "releaseLedgerFreezeOrder",
    "method": "DELETE",
-   "path": "/ledger/{ledger}/freeze-orders/{id}",
+   "path": "/ledger/by-ledger/freeze-orders/by-id",
    "tag": "Ledger",
    "apiClass": "LedgerApi",
    "java": "LedgerApi#releaseLedgerFreezeOrder",
@@ -10176,7 +10176,7 @@
   {
    "operationId": "closeLedgerPeriod",
    "method": "POST",
-   "path": "/ledger/{ledger}/periods/close",
+   "path": "/ledger/by-ledger/periods/close",
    "tag": "Ledger",
    "apiClass": "LedgerApi",
    "java": "LedgerApi#closeLedgerPeriod",
@@ -10188,7 +10188,7 @@
   {
    "operationId": "listLedgerHolds",
    "method": "GET",
-   "path": "/ledger/{ledger}/holds",
+   "path": "/ledger/by-ledger/holds",
    "tag": "Ledger",
    "apiClass": "LedgerApi",
    "java": "LedgerApi#listLedgerHolds",
@@ -10200,7 +10200,7 @@
   {
    "operationId": "reconcileLedger",
    "method": "POST",
-   "path": "/ledger/{ledger}/reconcile",
+   "path": "/ledger/by-ledger/reconcile",
    "tag": "Ledger",
    "apiClass": "LedgerApi",
    "java": "LedgerApi#reconcileLedger",
@@ -11064,7 +11064,7 @@
   {
    "operationId": "uiOpsDeleteVariable",
    "method": "DELETE",
-   "path": "/ops/variables/{id}",
+   "path": "/ops/variables/by-id",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsVariablesApi",
    "java": "TenantOperationsVariablesApi#uiOpsDeleteVariable",
@@ -11088,7 +11088,7 @@
   {
    "operationId": "uiOpsPutSecret",
    "method": "PUT",
-   "path": "/ops/secrets/{name}",
+   "path": "/ops/secrets/by-name",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsSecretsApi",
    "java": "TenantOperationsSecretsApi#uiOpsPutSecret",
@@ -11100,7 +11100,7 @@
   {
    "operationId": "uiOpsDeleteSecret",
    "method": "DELETE",
-   "path": "/ops/secrets/{name}",
+   "path": "/ops/secrets/by-name",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsSecretsApi",
    "java": "TenantOperationsSecretsApi#uiOpsDeleteSecret",
@@ -11124,7 +11124,7 @@
   {
    "operationId": "uiOpsAdvance",
    "method": "POST",
-   "path": "/ops/sequences/{name}/advance",
+   "path": "/ops/sequences/by-name/advance",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsApi",
    "java": "TenantOperationsApi#uiOpsAdvance",
@@ -12096,7 +12096,7 @@
   {
    "operationId": "registryAssetGetClass",
    "method": "GET",
-   "path": "/registry/assets/classes/{classKey}",
+   "path": "/registry/assets/classes/by-class-key",
    "tag": "Registry",
    "apiClass": "RegistryAssetsApi",
    "java": "RegistryAssetsApi#registryAssetGetClass",
@@ -12156,7 +12156,7 @@
   {
    "operationId": "registryAssetByTag",
    "method": "GET",
-   "path": "/registry/assets/by-tag/{tag}",
+   "path": "/registry/assets/by-tag",
    "tag": "Registry",
    "apiClass": "RegistryAssetsApi",
    "java": "RegistryAssetsApi#registryAssetByTag",
@@ -12300,7 +12300,7 @@
   {
    "operationId": "registryAssetRecordReading",
    "method": "POST",
-   "path": "/registry/assets/{id}/meters/{meterType}/readings",
+   "path": "/registry/assets/{id}/meters/by-meter-type/readings",
    "tag": "Registry",
    "apiClass": "RegistryAssetsApi",
    "java": "RegistryAssetsApi#registryAssetRecordReading",
@@ -12312,7 +12312,7 @@
   {
    "operationId": "registryAssetReadings",
    "method": "GET",
-   "path": "/registry/assets/{id}/meters/{meterType}/readings",
+   "path": "/registry/assets/{id}/meters/by-meter-type/readings",
    "tag": "Registry",
    "apiClass": "RegistryAssetsApi",
    "java": "RegistryAssetsApi#registryAssetReadings",
@@ -12516,7 +12516,7 @@
   {
    "operationId": "registryCustodyByLabel",
    "method": "GET",
-   "path": "/registry/custody/items/by-label/{label}",
+   "path": "/registry/custody/items/by-label",
    "tag": "Registry",
    "apiClass": "RegistryCustodyApi",
    "java": "RegistryCustodyApi#registryCustodyByLabel",
@@ -12888,7 +12888,7 @@
   {
    "operationId": "registryInstrumentTransition",
    "method": "POST",
-   "path": "/registry/instruments/{id}/transitions/{name}",
+   "path": "/registry/instruments/{id}/transitions/by-name",
    "tag": "Registry",
    "apiClass": "RegistryInstrumentsApi",
    "java": "RegistryInstrumentsApi#registryInstrumentTransition",
@@ -13032,7 +13032,7 @@
   {
    "operationId": "registryInstrumentVerifyCode",
    "method": "GET",
-   "path": "/registry/instruments/public/{tenant}/verify",
+   "path": "/registry/instruments/public/by-tenant/verify",
    "tag": "Registry",
    "apiClass": "RegistryInstrumentsApi",
    "java": "RegistryInstrumentsApi#registryInstrumentVerifyCode",
@@ -13476,7 +13476,7 @@
   {
    "operationId": "registryRegisterDefine",
    "method": "PUT",
-   "path": "/registry/registers/{registerKey}",
+   "path": "/registry/registers/by-register-key",
    "tag": "Registry",
    "apiClass": "RegistryRegistersApi",
    "java": "RegistryRegistersApi#registryRegisterDefine",
@@ -13488,7 +13488,7 @@
   {
    "operationId": "registryRegisterDefinition",
    "method": "GET",
-   "path": "/registry/registers/{registerKey}",
+   "path": "/registry/registers/by-register-key",
    "tag": "Registry",
    "apiClass": "RegistryRegistersApi",
    "java": "RegistryRegistersApi#registryRegisterDefinition",
@@ -13512,7 +13512,7 @@
   {
    "operationId": "registryRegisterAppend",
    "method": "POST",
-   "path": "/registry/registers/{registerKey}/entries",
+   "path": "/registry/registers/by-register-key/entries",
    "tag": "Registry",
    "apiClass": "RegistryRegistersApi",
    "java": "RegistryRegistersApi#registryRegisterAppend",
@@ -13524,7 +13524,7 @@
   {
    "operationId": "registryRegisterBooks",
    "method": "GET",
-   "path": "/registry/registers/{registerKey}/books",
+   "path": "/registry/registers/by-register-key/books",
    "tag": "Registry",
    "apiClass": "RegistryRegistersApi",
    "java": "RegistryRegistersApi#registryRegisterBooks",
@@ -13644,7 +13644,7 @@
   {
    "operationId": "registryRegisterVerifyExtract",
    "method": "GET",
-   "path": "/registry/registers/public/{tenant}/extracts/verify",
+   "path": "/registry/registers/public/by-tenant/extracts/verify",
    "tag": "Registry",
    "apiClass": "RegistryRegistersApi",
    "java": "RegistryRegistersApi#registryRegisterVerifyExtract",
@@ -13680,7 +13680,7 @@
   {
    "operationId": "registryRegistryCurrentType",
    "method": "GET",
-   "path": "/registry/types/{typeKey}",
+   "path": "/registry/types/by-type-key",
    "tag": "Registry",
    "apiClass": "RegistryApi",
    "java": "RegistryApi#registryRegistryCurrentType",
@@ -13692,7 +13692,7 @@
   {
    "operationId": "registryRegistryTypeVersion",
    "method": "GET",
-   "path": "/registry/types/{typeKey}/versions/{version}",
+   "path": "/registry/types/by-type-key/versions/{version}",
    "tag": "Registry",
    "apiClass": "RegistryApi",
    "java": "RegistryApi#registryRegistryTypeVersion",
@@ -13704,7 +13704,7 @@
   {
    "operationId": "registryRegistryRetireType",
    "method": "POST",
-   "path": "/registry/types/{typeKey}/versions/{version}/retire",
+   "path": "/registry/types/by-type-key/versions/{version}/retire",
    "tag": "Registry",
    "apiClass": "RegistryApi",
    "java": "RegistryApi#registryRegistryRetireType",
@@ -13776,7 +13776,7 @@
   {
    "operationId": "registryRegistryTransition",
    "method": "POST",
-   "path": "/registry/objects/{id}/transitions/{name}",
+   "path": "/registry/objects/{id}/transitions/by-name",
    "tag": "Registry",
    "apiClass": "RegistryObjectsApi",
    "java": "RegistryObjectsApi#registryRegistryTransition",
@@ -13848,7 +13848,7 @@
   {
    "operationId": "registryRegistryDefineSeries",
    "method": "PUT",
-   "path": "/registry/number-series/{seriesKey}",
+   "path": "/registry/number-series/by-series-key",
    "tag": "Registry",
    "apiClass": "RegistryNumberSeriesApi",
    "java": "RegistryNumberSeriesApi#registryRegistryDefineSeries",
@@ -13860,7 +13860,7 @@
   {
    "operationId": "registryRegistrySeries",
    "method": "GET",
-   "path": "/registry/number-series/{seriesKey}",
+   "path": "/registry/number-series/by-series-key",
    "tag": "Registry",
    "apiClass": "RegistryNumberSeriesApi",
    "java": "RegistryNumberSeriesApi#registryRegistrySeries",
@@ -13884,7 +13884,7 @@
   {
    "operationId": "registryRegistryAllocate",
    "method": "POST",
-   "path": "/registry/number-series/{seriesKey}/allocate",
+   "path": "/registry/number-series/by-series-key/allocate",
    "tag": "Registry",
    "apiClass": "RegistryNumberSeriesApi",
    "java": "RegistryNumberSeriesApi#registryRegistryAllocate",
@@ -13896,7 +13896,7 @@
   {
    "operationId": "registryRegistryVoidNumber",
    "method": "POST",
-   "path": "/registry/number-series/{seriesKey}/void",
+   "path": "/registry/number-series/by-series-key/void",
    "tag": "Registry",
    "apiClass": "RegistryNumberSeriesApi",
    "java": "RegistryNumberSeriesApi#registryRegistryVoidNumber",
@@ -13908,7 +13908,7 @@
   {
    "operationId": "registryRegistryMarkUsed",
    "method": "POST",
-   "path": "/registry/number-series/{seriesKey}/mark-used",
+   "path": "/registry/number-series/by-series-key/mark-used",
    "tag": "Registry",
    "apiClass": "RegistryNumberSeriesApi",
    "java": "RegistryNumberSeriesApi#registryRegistryMarkUsed",
@@ -13920,7 +13920,7 @@
   {
    "operationId": "registryRegistryClosePeriod",
    "method": "POST",
-   "path": "/registry/number-series/{seriesKey}/close-period",
+   "path": "/registry/number-series/by-series-key/close-period",
    "tag": "Registry",
    "apiClass": "RegistryNumberSeriesApi",
    "java": "RegistryNumberSeriesApi#registryRegistryClosePeriod",
@@ -13932,7 +13932,7 @@
   {
    "operationId": "registryRegistryGaps",
    "method": "GET",
-   "path": "/registry/number-series/{seriesKey}/gaps",
+   "path": "/registry/number-series/by-series-key/gaps",
    "tag": "Registry",
    "apiClass": "RegistryNumberSeriesApi",
    "java": "RegistryNumberSeriesApi#registryRegistryGaps",
@@ -13944,7 +13944,7 @@
   {
    "operationId": "registryRegistryAllocations",
    "method": "GET",
-   "path": "/registry/number-series/{seriesKey}/allocations",
+   "path": "/registry/number-series/by-series-key/allocations",
    "tag": "Registry",
    "apiClass": "RegistryNumberSeriesApi",
    "java": "RegistryNumberSeriesApi#registryRegistryAllocations",
@@ -13980,7 +13980,7 @@
   {
    "operationId": "resourcesResourcesRetireType",
    "method": "DELETE",
-   "path": "/resources/types/{typeId}",
+   "path": "/resources/types/by-type-id",
    "tag": "Resources",
    "apiClass": "ResourcesApi",
    "java": "ResourcesApi#resourcesResourcesRetireType",
@@ -14016,7 +14016,7 @@
   {
    "operationId": "resourcesResourcesResource",
    "method": "GET",
-   "path": "/resources/items/{resourceId}",
+   "path": "/resources/items/by-resource-id",
    "tag": "Resources",
    "apiClass": "ResourcesItemsApi",
    "java": "ResourcesItemsApi#resourcesResourcesResource",
@@ -14028,7 +14028,7 @@
   {
    "operationId": "resourcesResourcesUpdateResource",
    "method": "PATCH",
-   "path": "/resources/items/{resourceId}",
+   "path": "/resources/items/by-resource-id",
    "tag": "Resources",
    "apiClass": "ResourcesItemsApi",
    "java": "ResourcesItemsApi#resourcesResourcesUpdateResource",
@@ -14040,7 +14040,7 @@
   {
    "operationId": "resourcesResourcesSetStatus",
    "method": "POST",
-   "path": "/resources/items/{resourceId}/status",
+   "path": "/resources/items/by-resource-id/status",
    "tag": "Resources",
    "apiClass": "ResourcesItemsApi",
    "java": "ResourcesItemsApi#resourcesResourcesSetStatus",
@@ -14052,7 +14052,7 @@
   {
    "operationId": "resourcesResourcesMove",
    "method": "POST",
-   "path": "/resources/items/{resourceId}/move",
+   "path": "/resources/items/by-resource-id/move",
    "tag": "Resources",
    "apiClass": "ResourcesItemsApi",
    "java": "ResourcesItemsApi#resourcesResourcesMove",
@@ -14064,7 +14064,7 @@
   {
    "operationId": "resourcesResourcesChildren",
    "method": "GET",
-   "path": "/resources/items/{resourceId}/children",
+   "path": "/resources/items/by-resource-id/children",
    "tag": "Resources",
    "apiClass": "ResourcesItemsApi",
    "java": "ResourcesItemsApi#resourcesResourcesChildren",
@@ -14076,7 +14076,7 @@
   {
    "operationId": "resourcesResourcesSaveCalendar",
    "method": "PUT",
-   "path": "/resources/calendars/{calendarId}",
+   "path": "/resources/calendars/by-calendar-id",
    "tag": "Resources",
    "apiClass": "ResourcesApi",
    "java": "ResourcesApi#resourcesResourcesSaveCalendar",
@@ -14088,7 +14088,7 @@
   {
    "operationId": "resourcesResourcesCalendar",
    "method": "GET",
-   "path": "/resources/calendars/{calendarId}",
+   "path": "/resources/calendars/by-calendar-id",
    "tag": "Resources",
    "apiClass": "ResourcesApi",
    "java": "ResourcesApi#resourcesResourcesCalendar",
@@ -14136,7 +14136,7 @@
   {
    "operationId": "resourcesResourcesDeleteSlotTemplate",
    "method": "DELETE",
-   "path": "/resources/slot-templates/{templateId}",
+   "path": "/resources/slot-templates/by-template-id",
    "tag": "Resources",
    "apiClass": "ResourcesApi",
    "java": "ResourcesApi#resourcesResourcesDeleteSlotTemplate",
@@ -14148,7 +14148,7 @@
   {
    "operationId": "resourcesResourcesSlots",
    "method": "GET",
-   "path": "/resources/items/{resourceId}/slots",
+   "path": "/resources/items/by-resource-id/slots",
    "tag": "Resources",
    "apiClass": "ResourcesItemsApi",
    "java": "ResourcesItemsApi#resourcesResourcesSlots",
@@ -14160,7 +14160,7 @@
   {
    "operationId": "resourcesResourcesAvailability",
    "method": "GET",
-   "path": "/resources/items/{resourceId}/availability",
+   "path": "/resources/items/by-resource-id/availability",
    "tag": "Resources",
    "apiClass": "ResourcesItemsApi",
    "java": "ResourcesItemsApi#resourcesResourcesAvailability",
@@ -14244,7 +14244,7 @@
   {
    "operationId": "resourcesResourcesBookingByRef",
    "method": "GET",
-   "path": "/resources/bookings/by-ref/{bookingRef}",
+   "path": "/resources/bookings/by-ref/by-booking-ref",
    "tag": "Resources",
    "apiClass": "ResourcesBookingsApi",
    "java": "ResourcesBookingsApi#resourcesResourcesBookingByRef",
@@ -14340,7 +14340,7 @@
   {
    "operationId": "resourcesResourcesHistory",
    "method": "GET",
-   "path": "/resources/history/{entityType}/{entityId}",
+   "path": "/resources/history/{entityType}/by-entity-id",
    "tag": "Resources",
    "apiClass": "ResourcesApi",
    "java": "ResourcesApi#resourcesResourcesHistory",
@@ -14580,7 +14580,7 @@
   {
    "operationId": "queuesQueueDefineServicePoint",
    "method": "PUT",
-   "path": "/queues/service-points/{servicePointId}",
+   "path": "/queues/service-points/by-service-point-id",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueDefineServicePoint",
@@ -14592,7 +14592,7 @@
   {
    "operationId": "queuesQueueServicePoint",
    "method": "GET",
-   "path": "/queues/service-points/{servicePointId}",
+   "path": "/queues/service-points/by-service-point-id",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueServicePoint",
@@ -14604,7 +14604,7 @@
   {
    "operationId": "queuesQueueSetServicePointStatus",
    "method": "POST",
-   "path": "/queues/service-points/{servicePointId}/status",
+   "path": "/queues/service-points/by-service-point-id/status",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueSetServicePointStatus",
@@ -14628,7 +14628,7 @@
   {
    "operationId": "queuesQueueDefineCounter",
    "method": "PUT",
-   "path": "/queues/service-points/{servicePointId}/counters/{counterId}",
+   "path": "/queues/service-points/by-service-point-id/counters/by-counter-id",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueDefineCounter",
@@ -14640,7 +14640,7 @@
   {
    "operationId": "queuesQueueCounters",
    "method": "GET",
-   "path": "/queues/service-points/{servicePointId}/counters",
+   "path": "/queues/service-points/by-service-point-id/counters",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueCounters",
@@ -14652,7 +14652,7 @@
   {
    "operationId": "queuesQueueOpenCounter",
    "method": "POST",
-   "path": "/queues/counters/{counterId}/open",
+   "path": "/queues/counters/by-counter-id/open",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueOpenCounter",
@@ -14664,7 +14664,7 @@
   {
    "operationId": "queuesQueuePauseCounter",
    "method": "POST",
-   "path": "/queues/counters/{counterId}/pause",
+   "path": "/queues/counters/by-counter-id/pause",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueuePauseCounter",
@@ -14676,7 +14676,7 @@
   {
    "operationId": "queuesQueueCloseCounter",
    "method": "POST",
-   "path": "/queues/counters/{counterId}/close",
+   "path": "/queues/counters/by-counter-id/close",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueCloseCounter",
@@ -14688,7 +14688,7 @@
   {
    "operationId": "queuesQueueIssueToken",
    "method": "POST",
-   "path": "/queues/service-points/{servicePointId}/tokens",
+   "path": "/queues/service-points/by-service-point-id/tokens",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueIssueToken",
@@ -14700,7 +14700,7 @@
   {
    "operationId": "queuesQueueTokens",
    "method": "GET",
-   "path": "/queues/service-points/{servicePointId}/tokens",
+   "path": "/queues/service-points/by-service-point-id/tokens",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueTokens",
@@ -14760,7 +14760,7 @@
   {
    "operationId": "queuesQueueCallNext",
    "method": "POST",
-   "path": "/queues/counters/{counterId}/call-next",
+   "path": "/queues/counters/by-counter-id/call-next",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueCallNext",
@@ -14772,7 +14772,7 @@
   {
    "operationId": "queuesQueueCallToken",
    "method": "POST",
-   "path": "/queues/counters/{counterId}/call",
+   "path": "/queues/counters/by-counter-id/call",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueCallToken",
@@ -14784,7 +14784,7 @@
   {
    "operationId": "queuesQueueRecall",
    "method": "POST",
-   "path": "/queues/counters/{counterId}/recall",
+   "path": "/queues/counters/by-counter-id/recall",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueRecall",
@@ -14796,7 +14796,7 @@
   {
    "operationId": "queuesQueueSkip",
    "method": "POST",
-   "path": "/queues/counters/{counterId}/skip",
+   "path": "/queues/counters/by-counter-id/skip",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueSkip",
@@ -14808,7 +14808,7 @@
   {
    "operationId": "queuesQueueStartServing",
    "method": "POST",
-   "path": "/queues/counters/{counterId}/start-serving",
+   "path": "/queues/counters/by-counter-id/start-serving",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueStartServing",
@@ -14820,7 +14820,7 @@
   {
    "operationId": "queuesQueueComplete",
    "method": "POST",
-   "path": "/queues/counters/{counterId}/complete",
+   "path": "/queues/counters/by-counter-id/complete",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueComplete",
@@ -14832,7 +14832,7 @@
   {
    "operationId": "queuesQueueNoShowSweep",
    "method": "POST",
-   "path": "/queues/service-points/{servicePointId}/no-show-sweep",
+   "path": "/queues/service-points/by-service-point-id/no-show-sweep",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueNoShowSweep",
@@ -14844,7 +14844,7 @@
   {
    "operationId": "queuesQueueSlaBreaches",
    "method": "GET",
-   "path": "/queues/service-points/{servicePointId}/sla-breaches",
+   "path": "/queues/service-points/by-service-point-id/sla-breaches",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueSlaBreaches",
@@ -14856,7 +14856,7 @@
   {
    "operationId": "queuesQueueStats",
    "method": "GET",
-   "path": "/queues/service-points/{servicePointId}/stats",
+   "path": "/queues/service-points/by-service-point-id/stats",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueStats",
@@ -14868,7 +14868,7 @@
   {
    "operationId": "queuesQueueDisplay",
    "method": "GET",
-   "path": "/queues/service-points/{servicePointId}/display",
+   "path": "/queues/service-points/by-service-point-id/display",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueDisplay",
@@ -14880,7 +14880,7 @@
   {
    "operationId": "queuesQueueCallEvents",
    "method": "GET",
-   "path": "/queues/service-points/{servicePointId}/call-events",
+   "path": "/queues/service-points/by-service-point-id/call-events",
    "tag": "Queues",
    "apiClass": "QueuesApi",
    "java": "QueuesApi#queuesQueueCallEvents",
@@ -14916,7 +14916,7 @@
   {
    "operationId": "rostersRosterDeleteShift",
    "method": "DELETE",
-   "path": "/rosters/shifts/{shiftId}",
+   "path": "/rosters/shifts/by-shift-id",
    "tag": "Rosters",
    "apiClass": "RostersApi",
    "java": "RostersApi#rostersRosterDeleteShift",
@@ -14952,7 +14952,7 @@
   {
    "operationId": "rostersRosterDeleteRotation",
    "method": "DELETE",
-   "path": "/rosters/rotations/{rotationId}",
+   "path": "/rosters/rotations/by-rotation-id",
    "tag": "Rosters",
    "apiClass": "RostersApi",
    "java": "RostersApi#rostersRosterDeleteRotation",
@@ -15036,7 +15036,7 @@
   {
    "operationId": "rostersRosterSetMember",
    "method": "PUT",
-   "path": "/rosters/periods/{periodId}/members/{personId}",
+   "path": "/rosters/periods/{periodId}/members/by-person-id",
    "tag": "Rosters",
    "apiClass": "RostersApi",
    "java": "RostersApi#rostersRosterSetMember",
@@ -15048,7 +15048,7 @@
   {
    "operationId": "rostersRosterRemoveMember",
    "method": "DELETE",
-   "path": "/rosters/periods/{periodId}/members/{personId}",
+   "path": "/rosters/periods/{periodId}/members/by-person-id",
    "tag": "Rosters",
    "apiClass": "RostersApi",
    "java": "RostersApi#rostersRosterRemoveMember",
@@ -15084,7 +15084,7 @@
   {
    "operationId": "rostersRosterRemoveDemand",
    "method": "DELETE",
-   "path": "/rosters/periods/{periodId}/demand/{demandId}",
+   "path": "/rosters/periods/{periodId}/demand/by-demand-id",
    "tag": "Rosters",
    "apiClass": "RostersApi",
    "java": "RostersApi#rostersRosterRemoveDemand",
@@ -15252,7 +15252,7 @@
   {
    "operationId": "rostersRosterPersonalRoster",
    "method": "GET",
-   "path": "/rosters/people/{personId}/duties",
+   "path": "/rosters/people/by-person-id/duties",
    "tag": "Rosters",
    "apiClass": "RostersApi",
    "java": "RostersApi#rostersRosterPersonalRoster",

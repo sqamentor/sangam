@@ -174,11 +174,12 @@ public sealed class OpsApi
     /// <summary>
     /// Pause a topic
     /// Fetch-and-lock stops offering the topic; leases already held continue.
-    /// POST /ops/topics/{name}/pause (operationId pauseTopic); permission ops.write; result stored atomically with the state change.
+    /// POST /ops/topics/by-name/pause (operationId pauseTopic); permission ops.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.TopicInfo?> PauseTopicAsync(string name, M.ReasonRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.TopicInfo?> PauseTopicAsync(M.ReasonRequest body, string name, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ops/topics/{HttpTransport.Seg(GeneratedCalls.Str(name)!)}/pause");
+        var req = ApiRequest.Post($"/ops/topics/by-name/pause");
+        req.WithQuery("name", GeneratedCalls.Q(name));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.TopicInfo?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -186,11 +187,12 @@ public sealed class OpsApi
     /// <summary>
     /// Resume a topic
     /// Offers the topic again.
-    /// POST /ops/topics/{name}/resume (operationId resumeTopic); permission ops.write; result stored atomically with the state change.
+    /// POST /ops/topics/by-name/resume (operationId resumeTopic); permission ops.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.TopicInfo?> ResumeTopicAsync(string name, M.ReasonRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.TopicInfo?> ResumeTopicAsync(M.ReasonRequest body, string name, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ops/topics/{HttpTransport.Seg(GeneratedCalls.Str(name)!)}/resume");
+        var req = ApiRequest.Post($"/ops/topics/by-name/resume");
+        req.WithQuery("name", GeneratedCalls.Q(name));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.TopicInfo?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -198,11 +200,12 @@ public sealed class OpsApi
     /// <summary>
     /// Set history time-to-live
     /// History TTL for a definition key (R29).
-    /// PUT /ops/cleanup/ttl/{key} (operationId setHistoryTtl); permission ops.write; result stored atomically with the state change.
+    /// PUT /ops/cleanup/ttl/by-key (operationId setHistoryTtl); permission ops.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.CleanupStatus?> SetHistoryTtlAsync(string key, M.TtlRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.CleanupStatus?> SetHistoryTtlAsync(M.TtlRequest body, string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/ops/cleanup/ttl/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}");
+        var req = ApiRequest.Put($"/ops/cleanup/ttl/by-key");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.CleanupStatus?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -223,11 +226,12 @@ public sealed class OpsApi
     /// <summary>
     /// Resend a notification
     /// Resends with a reason.
-    /// POST /ops/notification-failures/{id}/resend (operationId resendNotification); permission ops.write; result stored atomically with the state change.
+    /// POST /ops/notification-failures/by-id/resend (operationId resendNotification); permission ops.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task ResendNotificationAsync(string id, M.ReasonRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task ResendNotificationAsync(M.ReasonRequest body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ops/notification-failures/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/resend");
+        var req = ApiRequest.Post($"/ops/notification-failures/by-id/resend");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }

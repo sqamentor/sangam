@@ -42,22 +42,24 @@ public sealed class TenantOperationsFlowableMigrationsApi
     /// <summary>
     /// Get a Flowable migration run
     /// The run's report. Tenant administrators only (ops.tenant.admin).
-    /// GET /ops/flowable-migrations/{id} (operationId getFlowableMigration); permission ops.tenant.admin.
+    /// GET /ops/flowable-migrations/by-id (operationId getFlowableMigration); permission ops.tenant.admin.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.FlowableMigrationReport?> GetFlowableMigrationAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/ops/flowable-migrations/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Get($"/ops/flowable-migrations/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<M.FlowableMigrationReport?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Items of a Flowable migration run
     /// Source instances of the run with status and findings. Tenant administrators only (ops.tenant.admin).
-    /// GET /ops/flowable-migrations/{id}/items (operationId listFlowableMigrationItems); permission ops.tenant.admin.
+    /// GET /ops/flowable-migrations/by-id/items (operationId listFlowableMigrationItems); permission ops.tenant.admin.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.FlowableMigrationItem>> ListFlowableMigrationItemsAsync(string id, string? status = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/ops/flowable-migrations/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/items");
+        var req = ApiRequest.Get($"/ops/flowable-migrations/by-id/items");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         req.WithQuery("status", GeneratedCalls.Q(status));
         req.WithQuery("page", GeneratedCalls.Q(page));
         req.WithQuery("size", GeneratedCalls.Q(size));
@@ -67,66 +69,72 @@ public sealed class TenantOperationsFlowableMigrationsApi
     /// <summary>
     /// Freeze the source
     /// From DRY_RUN: freezes the Flowable workers and rechecks every planned instance's fingerprint. When the workers are not drained or an instance changed or vanished, the problems are listed and the run stays DRY_RUN; otherwise FROZEN. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
-    /// POST /ops/flowable-migrations/{id}/freeze (operationId freezeFlowableMigration); permission ops.tenant.admin; result stored atomically with the state change.
+    /// POST /ops/flowable-migrations/by-id/freeze (operationId freezeFlowableMigration); permission ops.tenant.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.FlowableMigrationReport?> FreezeFlowableMigrationAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ops/flowable-migrations/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/freeze");
+        var req = ApiRequest.Post($"/ops/flowable-migrations/by-id/freeze");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<M.FlowableMigrationReport?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Apply the run
     /// From FROZEN, APPLYING or APPLIED: creates the Sangam instances, idempotent per item (APPLYING, then APPLIED). No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
-    /// POST /ops/flowable-migrations/{id}/apply (operationId applyFlowableMigration); permission ops.tenant.admin; result stored atomically with the state change.
+    /// POST /ops/flowable-migrations/by-id/apply (operationId applyFlowableMigration); permission ops.tenant.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.FlowableMigrationReport?> ApplyFlowableMigrationAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ops/flowable-migrations/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/apply");
+        var req = ApiRequest.Post($"/ops/flowable-migrations/by-id/apply");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<M.FlowableMigrationReport?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Reconcile the run
     /// Compares every applied instance with its plan (RECONCILED or RECONCILE_FAILED). No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
-    /// POST /ops/flowable-migrations/{id}/reconcile (operationId reconcileFlowableMigration); permission ops.tenant.admin; result stored atomically with the state change.
+    /// POST /ops/flowable-migrations/by-id/reconcile (operationId reconcileFlowableMigration); permission ops.tenant.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.FlowableMigrationReport?> ReconcileFlowableMigrationAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ops/flowable-migrations/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/reconcile");
+        var req = ApiRequest.Post($"/ops/flowable-migrations/by-id/reconcile");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<M.FlowableMigrationReport?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Cut over
     /// From RECONCILED: CUT_OVER. Then end the migrated instances on Flowable and release; rejected instances stay on Flowable. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
-    /// POST /ops/flowable-migrations/{id}/cut-over (operationId cutOverFlowableMigration); permission ops.tenant.admin; result stored atomically with the state change.
+    /// POST /ops/flowable-migrations/by-id/cut-over (operationId cutOverFlowableMigration); permission ops.tenant.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.FlowableMigrationReport?> CutOverFlowableMigrationAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ops/flowable-migrations/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/cut-over");
+        var req = ApiRequest.Post($"/ops/flowable-migrations/by-id/cut-over");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<M.FlowableMigrationReport?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Release the source freeze
     /// From DRY_RUN, FROZEN (back to DRY_RUN), ROLLED_BACK or CUT_OVER: lifts the Flowable freeze. After CUT_OVER it is refused, with a problem, while a migrated instance still exists on Flowable. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
-    /// POST /ops/flowable-migrations/{id}/release (operationId releaseFlowableMigration); permission ops.tenant.admin; result stored atomically with the state change.
+    /// POST /ops/flowable-migrations/by-id/release (operationId releaseFlowableMigration); permission ops.tenant.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.FlowableMigrationReport?> ReleaseFlowableMigrationAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ops/flowable-migrations/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/release");
+        var req = ApiRequest.Post($"/ops/flowable-migrations/by-id/release");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<M.FlowableMigrationReport?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Roll back the run
     /// From APPLYING, APPLIED, RECONCILED or RECONCILE_FAILED, while Flowable is still frozen: deletes the run's Sangam instances (ROLLED_BACK). Refused as a whole, with problems and no change, when Flowable is no longer frozen or a target instance has moved on. 400 REASON_REQUIRED without a reason. Tenant administrators only (ops.tenant.admin).
-    /// POST /ops/flowable-migrations/{id}/rollback (operationId rollbackFlowableMigration); permission ops.tenant.admin; result stored atomically with the state change.
+    /// POST /ops/flowable-migrations/by-id/rollback (operationId rollbackFlowableMigration); permission ops.tenant.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.FlowableMigrationReport?> RollbackFlowableMigrationAsync(string id, M.FlowableMigrationRollbackRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.FlowableMigrationReport?> RollbackFlowableMigrationAsync(M.FlowableMigrationRollbackRequest body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ops/flowable-migrations/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/rollback");
+        var req = ApiRequest.Post($"/ops/flowable-migrations/by-id/rollback");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.FlowableMigrationReport?>(req, options, cancellationToken).ConfigureAwait(false);
     }

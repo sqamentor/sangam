@@ -370,6 +370,16 @@ def check_held(packs_root, held_packs=None):
 for _pid in ('gov.ifms.monthly-accounts', 'gov.ifms.year-end-closing', 'gov.ifms.audit-para-settlement',
              'gov.ifms.surrender-lapse', 'gov.leave', 'gov.ifms.gpf'):
     SHIPS[_pid] = ('1.0.1', '1.0.3')
+# SANGAM-PAYMENT-LOOP and SANGAM-PAYEE-VERIFIED v2 (lane L-packs, E-31 §6): the bill's refused / returned payment goes
+# to a person (bl_payCorrect: reissue after correction or cancel) instead of an automatic reissue loop, and the
+# verified payee version is resolved before the payment (bl_payeeVerify); GPF and advances declare employeeId.
+# gov.ifms.bill and gov.ifms.gpf already ship other content as 1.0.3 on the integration branch, so the new content
+# ships as 1.0.4; gov.ifms.loans-advances ships 1.0.3 (decision 390 (4): a deployed version is immutable).
+SHIPS['gov.ifms.bill'] = ('1.0.1', '1.0.4')
+SHIPS['gov.ifms.gpf'] = ('1.0.1', '1.0.4')
+SHIPS['gov.ifms.loans-advances'] = ('1.0.1', '1.0.3')
+# gov.ifms.gia-uc pins the bill (gr_bill calledElementVersionTag), so its content changes with the bill's bump: 1.0.3.
+SHIPS['gov.ifms.gia-uc'] = ('1.0.1', '1.0.3')
 # R8-ifms-tests IFT-5: approval bound at the PAO pass before core execution (bill PAO chain, SNA-SPARSH).
 SHIPS['gov.ifms.pao-chain'] = ('1.0.1', '1.0.3')
 SHIPS['gov.ifms.sna-sparsh'] = ('1.0.1', '1.0.3')
