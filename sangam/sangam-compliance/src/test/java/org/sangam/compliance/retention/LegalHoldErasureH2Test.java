@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.compliance.retention;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -110,6 +111,23 @@ class LegalHoldErasureH2Test {
                     c.setAutoCommit(false);
                     try {
                         T out = work.apply(c);
+                        c.commit();
+                        return out;
+                    } catch (RuntimeException e) {
+                        c.rollback();
+                        throw e;
+                    }
+                } catch (SQLException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                try (Connection c = DriverManager.getConnection(url, "sa", "")) {
+                    c.setAutoCommit(false);
+                    try {
+                        T out = work.read(c);
                         c.commit();
                         return out;
                     } catch (RuntimeException e) {

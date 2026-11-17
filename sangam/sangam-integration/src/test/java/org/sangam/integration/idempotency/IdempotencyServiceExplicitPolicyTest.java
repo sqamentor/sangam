@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.integration.idempotency;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,6 +24,11 @@ class IdempotencyServiceExplicitPolicyTest {
     private static final Transactions TX = new Transactions() {
         @Override
         public <T> T inTransaction(Function<Connection, T> work) {
+            throw new IllegalStateException("no database in this test");
+        }
+
+        @Override
+        public <T> T read(ReadWork<T> work) {
             throw new IllegalStateException("no database in this test");
         }
     };

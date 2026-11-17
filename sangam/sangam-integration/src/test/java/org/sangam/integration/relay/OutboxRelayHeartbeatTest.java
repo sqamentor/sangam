@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.integration.relay;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -56,6 +57,26 @@ class OutboxRelayHeartbeatTest {
                     c.setAutoCommit(false);
                     try {
                         T r = work.apply(c);
+                        c.commit();
+                        return r;
+                    } catch (RuntimeException e) {
+                        c.rollback();
+                        throw e;
+                    }
+                } catch (java.sql.SQLException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                if (databaseDown.get()) {
+                    throw new IllegalStateException("database down");
+                }
+                try (Connection c = DriverManager.getConnection(url, "sa", "")) {
+                    c.setAutoCommit(false);
+                    try {
+                        T r = work.read(c);
                         c.commit();
                         return r;
                     } catch (RuntimeException e) {

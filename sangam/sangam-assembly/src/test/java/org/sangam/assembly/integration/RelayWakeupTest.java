@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.assembly.integration;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -31,6 +32,15 @@ class RelayWakeupTest {
 
         @Override
         public <T> T inTransaction(Function<Connection, T> work) {
+            opened.incrementAndGet();
+            if (failure != null) {
+                throw failure;
+            }
+            return null;
+        }
+
+        @Override
+        public <T> T read(ReadWork<T> work) {
             opened.incrementAndGet();
             if (failure != null) {
                 throw failure;

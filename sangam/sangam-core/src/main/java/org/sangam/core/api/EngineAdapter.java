@@ -115,6 +115,12 @@ public interface EngineAdapter extends AutoCloseable {
      */
     <T> T inEngineTransaction(Function<Connection, T> work);
 
+    /**
+     * {@link #inEngineTransaction(Function)} for work that only reads (round 9): the same transaction and connection,
+     * a {@link ReadWork} callback. Must not delegate to {@code inEngineTransaction}.
+     */
+    <T> T inEngineReadTransaction(ReadWork<T> work);
+
     /** JDBC URL the engine was configured with (for experiment reporting). */
     String jdbcUrl();
 
