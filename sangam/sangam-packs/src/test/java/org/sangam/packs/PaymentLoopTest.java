@@ -136,6 +136,37 @@ class PaymentLoopTest {
         assertEquals("ACCOUNT_CLOSED", driver.var("PL/1", "opReasonCode"));
     }
 
+    /**
+     * Owner decision (option A): the payee of an account held by several parties is confirmed by the dealing hand
+     * (DH-1). Before the fix bl_payeeReview was at PAO-1, so the PAO pass (pc_pao, SoD against every earlier actor) was
+     * refused with 422 SOD_VIOLATION whoever held PAO-1, and the bill could never be paid.
+     */
+    @Test
+    void aReviewedPayeeIsPaidAfterThePaoPass() {
+        install(new SimulatorConnectorGateway());
+        String bk = "PL/REVIEW";
+        Map<String, Object> v = AllPacksSmokeTest.bag();
+        v.put("amount", 1_500_000L);
+        v.put("sim_ledger_available", "available=100000000");
+        v.put("sim_registry_party", "multiple=true;verified=true;matchCount=2;partyId=P-REVIEW");
+        engine.getRuntimeService().createProcessInstanceByKey(BILL).businessKey(bk).setVariables(v)
+                .processDefinitionTenantId(PackTestTenant.ID).execute();
+        FormAnswers answers = new FormAnswers(engine);
+        String stopped = null;
+        try {
+            driver.run(bk, answers::answer, 150);
+        } catch (RuntimeException e) {
+            stopped = String.valueOf(e);
+        }
+        List<String> done = engine.getHistoryService().createHistoricTaskInstanceQuery()
+                .processInstanceBusinessKey(bk).finished().list().stream()
+                .map(org.operaton.bpm.engine.history.HistoricTaskInstance::getTaskDefinitionKey).toList();
+        assertTrue(done.contains("bl_payeeReview"), "the payee was reviewed: " + done);
+        assertTrue(done.contains("pc_pao"), "the PAO passed the bill: " + done + " stopped " + stopped);
+        assertEquals(1, payments(), "paid once");
+        assertTrue(driver.ended(bk), "paid and closed; stopped " + stopped + " open " + open(bk));
+    }
+
     /** SNA-SPARSH: before the fix ss_reissue re-pushed a refused RBI batch for ever. */
     @Test
     void aRefusedSnaSparshBatchStopsAtAPersonAndIsNeverRePushedAutomatically() {
