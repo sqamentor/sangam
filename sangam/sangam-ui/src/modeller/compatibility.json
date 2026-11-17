@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-04T22:29:11.468Z",
+  "generatedAt": "2026-11-17T17:53:02.203Z",
   "inputs": {
     "bpmnPalette": 9,
     "bpmnReplaceMenu": 34,
-    "operatonBpmnParse": true,
-    "operatonCmmnRegistry": true,
-    "operatonHitPolicies": true
+    "operatonBpmnParse": false,
+    "operatonCmmnRegistry": false,
+    "operatonHitPolicies": false
   },
   "rows": [
     {
@@ -122,8 +122,8 @@
       "modeller": "PALETTE",
       "engine": "NOT_PARSED",
       "status": "NOT_EXECUTABLE",
-      "note": "Documentation only; data stores are not executed (D-52).",
-      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "note": "Documentation only; accepted with a DOC-ONLY warning, not executed (D-52; refused before R10-bpmn).",
+      "source": "sangam-flowable-ports SangamModelValidator",
       "xml": [
         "dataStoreReference"
       ]
@@ -385,9 +385,9 @@
       "construct": "StandardLoopCharacteristics",
       "modeller": "PROPERTIES",
       "engine": "NOT_PARSED",
-      "status": "UNSUPPORTED",
-      "note": "Standard loop is not executed (D-52); use multi-instance or a gateway loop.",
-      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "status": "PORTED",
+      "note": "Loop body around the activity: loopCondition (do-while, or while with testBefore), loopMaximum; a loop with neither is refused; a non-boolean condition fails the step (R10-bpmn).",
+      "source": "sangam-flowable-ports P-6 StandardLoopActivityBehavior",
       "xml": [
         "standardLoopCharacteristics"
       ]
