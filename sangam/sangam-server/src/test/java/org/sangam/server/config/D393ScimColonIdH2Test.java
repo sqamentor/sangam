@@ -2,6 +2,7 @@
 package org.sangam.server.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
@@ -30,9 +31,11 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 /**
- * Decision 393 ruling on {@code /scim/v2/Users/{id}}: EXEMPT, because RFC 7644 section 3.2 fixes the resource path and
- * the IdP builds it. Root-level protection: a SCIM user whose id carries ':' (an adopted person id, ScimService
- * create) is read, patched and deleted through the percent-encoded path on the real server (h2, connector and filters).
+ * Decision 393 on {@code /scim/v2/Users/{id}}: the path is fixed by RFC 7644 section 3.2 and built by the IdP (EXEMPT), and
+ * option (a) (owner "Go ahead" 2026-11-17) makes the SCIM id opaque and server-assigned, so a person whose id holds '/'
+ * or ':' (LDAP sync, bootstrap) is still reachable: Tomcat refuses %2F in a path. On the real server (h2, connector and
+ * filters), an adopted person with such an id is read, patched and deleted at its {@code meta.location}, and a group
+ * whose member is that person round-trips in SCIM ids.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("h2")
@@ -41,7 +44,6 @@ class D393ScimColonIdH2Test {
 
     static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10))
             .followRedirects(HttpClient.Redirect.NEVER).build();
-    static final String[] VALUES = {"d393/a/b", "d393:a:b"};
 
     @DynamicPropertySource
     static void settings(DynamicPropertyRegistry r) {
@@ -73,16 +75,12 @@ class D393ScimColonIdH2Test {
         return HTTP.send(b.build(), HttpResponse.BodyHandlers.ofString());
     }
 
-    @Test
-    void aScimUserWhoseIdCarriesAColonIsReadPatchedAndDeletedThroughTheEncodedPath() throws Exception {
-        String tenant = env.getProperty("sangam.security.dev-token.tenant", "dev");
-        String personId = "scim:d393:" + UUID.randomUUID();
-        String subject = "d393-subject-" + UUID.randomUUID();
+    String person(String tenant, String personId, String subject) throws Exception {
         try (var c = ds.getConnection(); var ps = c.prepareStatement("INSERT INTO SEC_PERSON(tenant_id, person_id, display_name,"
                 + " external_subject, email, status, created_at) VALUES (?,?,?,?,NULL,'ACTIVE',CURRENT_TIMESTAMP)")) {
             ps.setString(1, tenant);
             ps.setString(2, personId);
-            ps.setString(3, "D393 colon person");
+            ps.setString(3, "D393 " + personId);
             ps.setString(4, subject);
             assertEquals(1, ps.executeUpdate());
         }
@@ -90,13 +88,29 @@ class D393ScimColonIdH2Test {
                 + "\"userName\":\"" + subject + "\",\"externalId\":\"" + subject + "\"}");
         assertEquals(201, created.statusCode(), created.body());
         JsonNode u = Json.tree(created.body());
-        assertEquals(personId, u.path("id").asText(), "the adopted person id is the SCIM id");
+        String id = u.path("id").asText();
+        assertNotEquals(personId, id, "the SCIM id is server-assigned, not the person id");
+        assertTrue(id.matches("[A-Za-z0-9._~-]+"), id);
+        assertEquals("/scim/v2/Users/" + id, u.path("meta").path("location").asText());
+        assertEquals(personId, u.path("urn:sangam:params:scim:schemas:extension:2.0:User").path("personId").asText(),
+                u.toString());
+        return id;
+    }
 
-        String path = "/scim/v2/Users/" + URLEncoder.encode(personId, StandardCharsets.UTF_8);
-        assertTrue(path.contains("%3A"), path);
+    @Test
+    void anAdoptedPersonWhoseIdHoldsSlashesAndColonsIsReadPatchedAndDeletedAtItsLocation() throws Exception {
+        String tenant = env.getProperty("sangam.security.dev-token.tenant", "dev");
+        String personId = "ldap/d393:" + UUID.randomUUID() + "/b";
+        String id = person(tenant, personId, "d393-subject-" + UUID.randomUUID());
+        String path = "/scim/v2/Users/" + id;
+
         HttpResponse<String> read = scim("GET", path, null);
         assertEquals(200, read.statusCode(), read.body());
-        assertEquals(personId, Json.tree(read.body()).path("id").asText());
+        assertEquals(id, Json.tree(read.body()).path("id").asText());
+        HttpResponse<String> listed = scim("GET", "/scim/v2/Users?filter="
+                + URLEncoder.encode("id eq \"" + id + "\"", StandardCharsets.UTF_8), null);
+        assertEquals(200, listed.statusCode(), listed.body());
+        assertEquals(1, Json.tree(listed.body()).path("totalResults").asInt(), listed.body());
 
         HttpResponse<String> patched = scim("PATCH", path, "{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:PatchOp\"],"
                 + "\"Operations\":[{\"op\":\"replace\",\"path\":\"displayName\",\"value\":\"D393 patched\"}]}");
@@ -107,5 +121,25 @@ class D393ScimColonIdH2Test {
         assertEquals(204, deleted.statusCode(), deleted.body());
         HttpResponse<String> gone = scim("GET", path, null);
         assertEquals(404, gone.statusCode(), gone.body());
+    }
+
+    @Test
+    void aGroupWhoseMemberHasASlashedPersonIdRoundTrips() throws Exception {
+        String tenant = env.getProperty("sangam.security.dev-token.tenant", "dev");
+        String a = person(tenant, "ldap/d393g/" + UUID.randomUUID(), "d393-g-" + UUID.randomUUID());
+        HttpResponse<String> created = scim("POST", "/scim/v2/Groups", "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:Group\"],"
+                + "\"displayName\":\"D393 " + UUID.randomUUID() + "\",\"members\":[{\"value\":\"" + a + "\"}]}");
+        assertEquals(201, created.statusCode(), created.body());
+        JsonNode g = Json.tree(created.body());
+        assertEquals(a, g.path("members").path(0).path("value").asText(), created.body());
+        String gpath = g.path("meta").path("location").asText();
+        HttpResponse<String> read = scim("GET", gpath, null);
+        assertEquals(200, read.statusCode(), read.body());
+        assertEquals(a, Json.tree(read.body()).path("members").path(0).path("value").asText(), read.body());
+        HttpResponse<String> replaced = scim("PUT", gpath, read.body());
+        assertEquals(200, replaced.statusCode(), replaced.body());
+        assertEquals(1, Json.tree(replaced.body()).path("members").size(), replaced.body());
+        HttpResponse<String> user = scim("GET", "/scim/v2/Users/" + a, null);
+        assertEquals(g.path("id").asText(), Json.tree(user.body()).path("groups").path(0).path("value").asText(), user.body());
     }
 }

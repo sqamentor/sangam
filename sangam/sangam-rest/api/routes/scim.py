@@ -4,7 +4,7 @@
 # (sangam-rest JdbcIdentityAdminAdapter). Contract-first: the controller and the mapping belong to the security and REST
 # lanes. SCIM differs from the rest of the API on purpose, because IdP clients follow the RFCs:
 #   - media type application/scim+json; errors are SCIM error bodies (RFC 7644 section 3.12), not RFC 9457;
-#   - lists use startIndex (1-based) and count, and filter (eq, co, sw on userName, externalId, displayName);
+#   - lists use startIndex (1-based) and count, and filter (eq, co, sw on id, userName, externalId, displayName);
 #   - the caller is an IdP service principal (R26) holding its own permission, scim.provision (a security surface with
 #     its own role, backlog M-099); every change is audited (USER_PROVISIONED, USER_UPDATED, USER_DISABLED,
 #     MEMBERSHIP_CHANGED; X.4.0.3).
@@ -89,7 +89,7 @@ RESPONSES["ScimError"] = {"description": "SCIM error: 400 invalidFilter/invalidV
                           "content": {_SCIM_CT: {"schema": R("ScimError")}}}
 
 _SCIM_REQ = ["R67", "R26", "IX.5", "R42"]
-_SCIM_LIST_P = [q("filter", desc="SCIM filter: eq, co, sw on userName / externalId / displayName (others: 400 invalidFilter)"),
+_SCIM_LIST_P = [q("filter", desc="SCIM filter: eq, co, sw on id / userName / externalId / displayName (others: 400 invalidFilter)"),
                 q("startIndex", "int", "1-based"), q("count", "int", "Page size, at most 200"),
                 q("attributes"), q("excludedAttributes")]
 

@@ -13878,7 +13878,7 @@ export class SCIMApi {
    *
    * `GET /scim/v2/Users` (operationId `scimListUsers`); permission `scim.provision`.
    */
-  async scimListUsers(params?: { filter?: string /* SCIM filter: eq, co, sw on userName / externalId / displayName (others: 400 invalidFilter) */; startIndex?: number /* 1-based */; count?: number /* Page size, at most 200 */; attributes?: string; excludedAttributes?: string }, options?: RequestOptions): Promise<Uint8Array> {
+  async scimListUsers(params?: { filter?: string /* SCIM filter: eq, co, sw on id / userName / externalId / displayName (others: 400 invalidFilter) */; startIndex?: number /* 1-based */; count?: number /* Page size, at most 200 */; attributes?: string; excludedAttributes?: string }, options?: RequestOptions): Promise<Uint8Array> {
     const req: ApiRequest = { method: 'GET', path: `/scim/v2/Users`, query: { filter: params?.filter, startIndex: params?.startIndex, count: params?.count, attributes: params?.attributes, excludedAttributes: params?.excludedAttributes } };
     return this.calls.bytes(req, options, 'application/scim+json');
   }
@@ -13953,7 +13953,7 @@ export class SCIMApi {
    *
    * `GET /scim/v2/Groups` (operationId `scimListGroups`); permission `scim.provision`.
    */
-  async scimListGroups(params?: { filter?: string /* SCIM filter: eq, co, sw on userName / externalId / displayName (others: 400 invalidFilter) */; startIndex?: number /* 1-based */; count?: number /* Page size, at most 200 */; attributes?: string; excludedAttributes?: string }, options?: RequestOptions): Promise<Uint8Array> {
+  async scimListGroups(params?: { filter?: string /* SCIM filter: eq, co, sw on id / userName / externalId / displayName (others: 400 invalidFilter) */; startIndex?: number /* 1-based */; count?: number /* Page size, at most 200 */; attributes?: string; excludedAttributes?: string }, options?: RequestOptions): Promise<Uint8Array> {
     const req: ApiRequest = { method: 'GET', path: `/scim/v2/Groups`, query: { filter: params?.filter, startIndex: params?.startIndex, count: params?.count, attributes: params?.attributes, excludedAttributes: params?.excludedAttributes } };
     return this.calls.bytes(req, options, 'application/scim+json');
   }

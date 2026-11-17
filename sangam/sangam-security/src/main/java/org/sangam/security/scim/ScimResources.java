@@ -41,7 +41,7 @@ public final class ScimResources {
         StringBuilder s = new StringBuilder(BASE).append(collection).append('/');
         for (byte b : id.getBytes(java.nio.charset.StandardCharsets.UTF_8)) {
             int c = b & 0xff;
-            if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-' || c == '.' || c == '_' || c == '~') {
+            if (unreserved(c)) {
                 s.append((char) c);
             } else {
                 s.append('%').append(Character.toUpperCase(Character.forDigit(c >> 4, 16)))
@@ -49,6 +49,26 @@ public final class ScimResources {
             }
         }
         return s.toString();
+    }
+
+    /**
+     * Whether the id is one path segment without any percent-encoding (RFC 3986 unreserved characters only). Ids
+     * Sangam assigns always are (decision 393 (a)); a person id from before may hold '/' or ':', which Tomcat refuses.
+     */
+    public static boolean isPathSegment(String id) {
+        if (id == null || id.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < id.length(); i++) {
+            if (!unreserved(id.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean unreserved(int c) {
+        return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-' || c == '.' || c == '_' || c == '~';
     }
     /** The core attributes Sangam keeps verbatim in {@code SEC_SCIM_RESOURCE.attributes}. */
     public static final List<String> KEPT = List.of("name", "emails", "phoneNumbers", "locale", "preferredLanguage",

@@ -90,27 +90,41 @@ public final class ScimService {
         if (in.postings() != null && !in.postings().isEmpty()) {
             throw ScimException.mutability("postings are read-only in SCIM (decision 154); assign seats through the admin API");
         }
-        unique(c, t, ScimStore.USER, null, in.userName(), in.externalId());
         String subject = subject(in);
-        Instant now = Sql.dbNow(c, dialect);
         Optional<OrgModel.Person> existing = persons.findBySubject(c, t, subject);
+        // A user provisioned before decision 393 (a) kept the person id as its SCIM id (changeset 0046-03). When that id
+        // is not one plain path segment the IdP could never address it, so its re-sync POST re-keys it to an opaque id.
+        Optional<ScimStore.Row> unreachable = Optional.empty();
+        if (existing.isPresent()) {
+            Optional<ScimStore.Row> prior = store.findByPerson(c, t, ScimStore.USER, existing.get().personId());
+            if (prior.isPresent() && ScimResources.isPathSegment(prior.get().id())) {
+                throw ScimException.uniqueness("the person with this subject is already provisioned");
+            }
+            unreachable = prior;
+        }
+        unique(c, t, ScimStore.USER, unreachable.map(ScimStore.Row::id).orElse(null), in.userName(), in.externalId());
+        Instant now = Sql.dbNow(c, dialect);
         String personId;
         if (existing.isPresent()) {
             personId = existing.get().personId();
-            if (store.find(c, t, ScimStore.USER, personId).isPresent()) {
-                throw ScimException.uniqueness("the person with this subject is already provisioned");
+            if (unreachable.isPresent() && !store.delete(c, t, ScimStore.USER, unreachable.get().id(), unreachable.get().version())) {
+                throw ScimException.versionMismatch(unreachable.get().id());
             }
             persons.updateUser(c, actor, personId, in.personName(), in.email());
         } else {
             personId = Sql.newId();
             persons.createUser(c, actor, personId, in.personName(), subject, in.email(), SOURCE);
         }
-        if (!store.insert(c, t, ScimStore.USER, personId, in.userName(), in.displayName(), in.externalId(), in.attributes(), now)) {
+        // decision 393 (a): the SCIM id is opaque and server-assigned (RFC 7643 section 3.1), never the person id,
+        // which may hold '/' or ':' (LDAP sync, bootstrap) and so could not be one path segment
+        String id = Sql.newId();
+        if (!store.insert(c, t, ScimStore.USER, id, personId, in.userName(), in.displayName(), in.externalId(),
+                in.attributes(), now)) {
             throw ScimException.uniqueness("userName or externalId is already taken");
         }
         OrgModel.Person person = persons.find(c, t, personId).orElseThrow();
         applyActive(c, actor, person, in.active());
-        return user(c, t, store.find(c, t, ScimStore.USER, personId).orElseThrow());
+        return user(c, t, store.find(c, t, ScimStore.USER, id).orElseThrow());
     }
 
     public ObjectNode getUser(Connection c, SecurityIdentity actor, String id) {
@@ -150,13 +164,14 @@ public final class ScimService {
         requireUsers(c, actor, Permission.ADMIN);
         String t = actor.tenantId();
         ScimStore.Row row = versioned(c, t, ScimStore.USER, id, ifMatch);
-        OrgModel.Person person = persons.find(c, t, id).orElseThrow(() -> ScimException.notFound("User", id));
+        String pid = row.personId();
+        OrgModel.Person person = persons.find(c, t, pid).orElseThrow(() -> ScimException.notFound("User", id));
         applyActive(c, actor, person, false);
         Instant now = Sql.dbNow(c, dialect);
-        for (String g : groups.groupsOf(c, t, id)) {
-            Optional<ScimStore.Row> group = store.find(c, t, ScimStore.GROUP, g);
+        for (String g : groups.groupsOf(c, t, pid)) {
+            Optional<ScimStore.Row> group = store.findByPerson(c, t, ScimStore.GROUP, g);
             if (group.isPresent()) {
-                groups.removeMember(c, actor, g, id);
+                groups.removeMember(c, actor, g, pid);
                 bump(c, t, group.get(), now);
             }
         }
@@ -168,29 +183,30 @@ public final class ScimService {
     private ObjectNode writeUser(Connection c, SecurityIdentity actor, ScimStore.Row row, JsonNode body) {
         String t = actor.tenantId();
         String id = row.id();
-        OrgModel.Person person = persons.find(c, t, id).orElseThrow(() -> ScimException.notFound("User", id));
+        String pid = row.personId();
+        OrgModel.Person person = persons.find(c, t, pid).orElseThrow(() -> ScimException.notFound("User", id));
         ScimResources.UserInput in = ScimResources.user(body);
-        if (in.postings() != null && !in.postings().equals(postings(c, t, id))) {
+        if (in.postings() != null && !in.postings().equals(postings(c, t, pid))) {
             throw ScimException.mutability("postings are read-only in SCIM (decision 154); change them through the admin API");
         }
         unique(c, t, ScimStore.USER, id, in.userName(), in.externalId());
         String subject = subject(in);
         if (!subject.equals(person.externalSubject())) {
             Optional<OrgModel.Person> other = persons.findBySubject(c, t, subject);
-            if (other.isPresent() && !other.get().personId().equals(id)) {
+            if (other.isPresent() && !other.get().personId().equals(pid)) {
                 throw ScimException.uniqueness("another person already has this subject");
             }
-            persons.linkSubject(c, actor, id, subject);
+            persons.linkSubject(c, actor, pid, subject);
         }
         if (!Objects.equals(in.personName(), person.displayName()) || !Objects.equals(in.email(), person.email())) {
-            persons.updateUser(c, actor, id, in.personName(), in.email());
+            persons.updateUser(c, actor, pid, in.personName(), in.email());
         }
         Instant now = Sql.dbNow(c, dialect);
         if (!store.update(c, t, ScimStore.USER, id, row.version(), in.userName(), in.displayName(), in.externalId(),
                 in.attributes(), now)) {
             throw ScimException.versionMismatch(id);
         }
-        applyActive(c, actor, persons.find(c, t, id).orElseThrow(), in.active());
+        applyActive(c, actor, persons.find(c, t, pid).orElseThrow(), in.active());
         return user(c, t, store.find(c, t, ScimStore.USER, id).orElseThrow());
     }
 
@@ -224,7 +240,8 @@ public final class ScimService {
 
     private ObjectNode user(Connection c, String t, ScimStore.Row row) {
         String id = row.id();
-        OrgModel.Person person = persons.find(c, t, id).orElseThrow(() -> ScimException.notFound("User", id));
+        String pid = row.personId();
+        OrgModel.Person person = persons.find(c, t, pid).orElseThrow(() -> ScimException.notFound("User", id));
         ObjectNode u = Sql.JSON.createObjectNode();
         u.set("schemas", ScimResources.schemas(ScimResources.USER_SCHEMA, ScimResources.SANGAM_USER));
         u.put("id", id);
@@ -245,14 +262,14 @@ public final class ScimService {
             }
         }
         ArrayNode memberOf = u.putArray("groups");
-        for (String g : groups.groupsOf(c, t, id)) {
-            store.find(c, t, ScimStore.GROUP, g).ifPresent(gr -> memberOf.addObject().put("value", g)
-                    .put("display", gr.displayName()).put("$ref", ScimResources.location("Groups", g)));
+        for (String g : groups.groupsOf(c, t, pid)) {
+            store.findByPerson(c, t, ScimStore.GROUP, g).ifPresent(gr -> memberOf.addObject().put("value", gr.id())
+                    .put("display", gr.displayName()).put("$ref", ScimResources.location("Groups", gr.id())));
         }
         ObjectNode ext = u.putObject(ScimResources.SANGAM_USER);
-        ext.put("personId", id);
+        ext.put("personId", pid);
         ArrayNode p = ext.putArray("postings");
-        for (ScimResources.Posting x : postings(c, t, id)) {
+        for (ScimResources.Posting x : postings(c, t, pid)) {
             ObjectNode o = p.addObject().put("seatId", x.seatId()).put("kind", x.kind()).put("validFrom", x.validFrom());
             if (x.validTo() != null) {
                 o.put("validTo", x.validTo());
@@ -269,13 +286,13 @@ public final class ScimService {
         String t = actor.tenantId();
         ScimResources.GroupInput in = ScimResources.group(body);
         unique(c, t, ScimStore.GROUP, null, null, in.externalId());
-        requireMembers(c, t, in.members());
-        String id = Sql.newId();
+        Set<String> members = memberPersons(c, t, in.members());
+        String id = Sql.newId();   // the group id and the SCIM id are the same new UUID
         groups.createGroup(c, actor, id, in.displayName(), in.externalId(), SOURCE);
-        if (!store.insert(c, t, ScimStore.GROUP, id, null, in.displayName(), in.externalId(), null, Sql.dbNow(c, dialect))) {
+        if (!store.insert(c, t, ScimStore.GROUP, id, id, null, in.displayName(), in.externalId(), null, Sql.dbNow(c, dialect))) {
             throw ScimException.uniqueness("externalId is already taken");
         }
-        for (String m : in.members()) {
+        for (String m : members) {
             groups.addMember(c, actor, id, m, SOURCE);
         }
         return group(c, t, store.find(c, t, ScimStore.GROUP, id).orElseThrow());
@@ -307,7 +324,7 @@ public final class ScimService {
         requireGroups(c, actor, Permission.ADMIN);
         String t = actor.tenantId();
         ScimStore.Row row = versioned(c, t, ScimStore.GROUP, id, ifMatch);
-        groups.deleteGroup(c, actor, id);
+        groups.deleteGroup(c, actor, row.personId());
         if (!store.delete(c, t, ScimStore.GROUP, id, row.version())) {
             throw ScimException.versionMismatch(id);
         }
@@ -316,21 +333,22 @@ public final class ScimService {
     private ObjectNode writeGroup(Connection c, SecurityIdentity actor, ScimStore.Row row, JsonNode body) {
         String t = actor.tenantId();
         String id = row.id();
+        String gid = row.personId();
         ScimResources.GroupInput in = ScimResources.group(body);
         unique(c, t, ScimStore.GROUP, id, null, in.externalId());
-        requireMembers(c, t, in.members());
+        Set<String> members = memberPersons(c, t, in.members());
         if (!Objects.equals(in.displayName(), row.displayName()) || !Objects.equals(in.externalId(), row.externalId())) {
-            groups.updateGroup(c, actor, id, in.displayName(), in.externalId());   // MEMBERSHIP_CHANGED updated=true
+            groups.updateGroup(c, actor, gid, in.displayName(), in.externalId());   // MEMBERSHIP_CHANGED updated=true
         }
-        List<String> current = groups.members(c, t, id);
-        for (String m : in.members()) {
+        List<String> current = groups.members(c, t, gid);
+        for (String m : members) {
             if (!current.contains(m)) {
-                groups.addMember(c, actor, id, m, SOURCE);
+                groups.addMember(c, actor, gid, m, SOURCE);
             }
         }
         for (String m : current) {
-            if (!in.members().contains(m)) {
-                groups.removeMember(c, actor, id, m);
+            if (!members.contains(m)) {
+                groups.removeMember(c, actor, gid, m);
             }
         }
         if (!store.update(c, t, ScimStore.GROUP, id, row.version(), null, in.displayName(), in.externalId(), null,
@@ -340,13 +358,17 @@ public final class ScimService {
         return group(c, t, store.find(c, t, ScimStore.GROUP, id).orElseThrow());
     }
 
-    /** Members are SCIM users of the tenant (RFC 7644 section 3.5.2: an unknown member is 400 invalidValue). */
-    private void requireMembers(Connection c, String t, Set<String> members) {
+    /**
+     * The person ids of the members, which are SCIM ids of the tenant's users (RFC 7644 section 3.5.2: an unknown
+     * member is 400 invalidValue). Decision 393 (a): a SCIM id is not the person id.
+     */
+    private Set<String> memberPersons(Connection c, String t, Set<String> members) {
+        Set<String> out = new LinkedHashSet<>();
         for (String m : members) {
-            if (store.find(c, t, ScimStore.USER, m).isEmpty()) {
-                throw ScimException.invalidValue("member " + m + " is not a provisioned User");
-            }
+            out.add(store.find(c, t, ScimStore.USER, m)
+                    .orElseThrow(() -> ScimException.invalidValue("member " + m + " is not a provisioned User")).personId());
         }
+        return out;
     }
 
     private ObjectNode group(Connection c, String t, ScimStore.Row row) {
@@ -359,12 +381,13 @@ public final class ScimService {
         }
         g.put("displayName", row.displayName());
         ArrayNode members = g.putArray("members");
-        for (String m : groups.members(c, t, id)) {
-            ObjectNode o = members.addObject().put("value", m).put("type", "User");
-            Optional<ScimStore.Row> u = store.find(c, t, ScimStore.USER, m);
+        for (String m : groups.members(c, t, row.personId())) {
+            Optional<ScimStore.Row> u = store.findByPerson(c, t, ScimStore.USER, m);
+            // a SCIM user's member value is its SCIM id; a member added outside SCIM keeps its person id, without $ref
+            ObjectNode o = members.addObject().put("value", u.map(ScimStore.Row::id).orElse(m)).put("type", "User");
             if (u.isPresent()) {
                 o.put("display", u.get().displayName() != null ? u.get().displayName() : u.get().userName());
-                o.put("$ref", ScimResources.location("Users", m));
+                o.put("$ref", ScimResources.location("Users", u.get().id()));
             }
         }
         g.set("meta", ScimResources.meta("Group", id, row));

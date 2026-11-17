@@ -58194,7 +58194,7 @@ paths:
         in: query
         schema:
           type: string
-        description: 'SCIM filter: eq, co, sw on userName / externalId / displayName (others: 400 invalidFilter)'
+        description: 'SCIM filter: eq, co, sw on id / userName / externalId / displayName (others: 400 invalidFilter)'
       - name: startIndex
         in: query
         schema:
@@ -58523,7 +58523,7 @@ paths:
         in: query
         schema:
           type: string
-        description: 'SCIM filter: eq, co, sw on userName / externalId / displayName (others: 400 invalidFilter)'
+        description: 'SCIM filter: eq, co, sw on id / userName / externalId / displayName (others: 400 invalidFilter)'
       - name: startIndex
         in: query
         schema:
