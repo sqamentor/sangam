@@ -15,7 +15,7 @@ package org.sangam.sdk.generated.model;
  * @param properties wire field {@code properties} (required). Display properties as a JSON object (priority, description, refresh, variables); {} when none
  * @param createdBy wire field {@code createdBy} (required)
  * @param createdAt wire field {@code createdAt} (required)
- * @param version wire field {@code version} (required). Row version, 1 on creation
+ * @param version wire field {@code version} (required). Row version, 1 on creation, +1 per update; the ETag and the If-Match of update and delete
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record TeamTaskFilter(

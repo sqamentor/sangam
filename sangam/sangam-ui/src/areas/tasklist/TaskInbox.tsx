@@ -14,6 +14,7 @@ import { fmtDate, fmtDecimal, fmtMoneyAmount, isCurrencyCode } from '../../i18n'
 import { DecimalValue } from '../../lib/decimal';
 import { Badge, DataTable, Empty, Loading, Notice, PageHeader, Pagination, ProblemAlert, ReasonDialog, SearchBox, SelectField, Tabs, TextField } from '../../components/ui';
 import { useAuth } from '../../auth/AuthProvider';
+import { TEAM_READ, canAccess } from '../../app/access';
 import { browserStore, loadSavedFilters, savedFiltersKey, storeSavedFilters, type CardVariable, type SavedInboxFilter } from './savedFilters';
 
 const SECTIONS: TaskSection[] = ['MY_SEAT', 'ACTING_FOR', 'POOL', 'ESCALATED', 'RETURNED'];
@@ -62,6 +63,11 @@ export function TaskInbox() {
   const [sla, setSla] = useState('');
   const [packKey, setPackKey] = useState('');
   const [currency, setCurrency] = useState('');
+  // Decision 404: a shared task list of the organisation, run by the server (GET /tasks?filterId=). Choosing one needs
+  // team.read; the server keeps the caller's tenant and visibility, so a list only narrows what this person may see.
+  const [teamListId, setTeamListId] = useState('');
+  const canTeamLists = canAccess(me, TEAM_READ);
+  const teamLists = useAsync(() => (canTeamLists ? api.team.taskFilters() : Promise.resolve(null)), [canTeamLists, me?.tenantId]);
   const [sortChoice, setSort] = useState('slaDue');
   const [sort2Choice, setSort2] = useState('');
   const cur = isCurrencyCode(currency) ? currency : undefined;
@@ -101,8 +107,8 @@ export function TaskInbox() {
   const variableNames = cardVars.map((v) => v.name);
   const counts = useAsync(() => api.tasks.counts(), [seat?.seatId]);
   const list = usePaged(
-    (p) => api.tasks.list({ ...p, section, q, slaState: sla || undefined, packKey: packKey || undefined, currency: cur, variableNames, sort: sort2 ? `${sort},${sort2}` : sort }),
-    [section, q, sla, packKey, cur, sort, sort2, seat?.seatId, variableNames.join(',')],
+    (p) => api.tasks.list({ ...p, section, q, slaState: sla || undefined, packKey: packKey || undefined, currency: cur, filterId: teamListId || undefined, variableNames, sort: sort2 ? `${sort},${sort2}` : sort }),
+    [section, q, sla, packKey, cur, teamListId, sort, sort2, seat?.seatId, variableNames.join(',')],
   );
   // Leaving the currency drops an amount sort for good, so it does not come back silently with the next currency.
   useEffect(() => {
@@ -294,6 +300,16 @@ export function TaskInbox() {
             options={['OK', 'WARNING', 'BREACHED', 'PAUSED'].map((v) => ({ value: v, label: t(`enum.${v}`) }))}
           />
           <TextField label={t('task.pack')} value={packKey} onChange={setPackKey} />
+          {canTeamLists && teamLists.data && teamLists.data.length > 0 && (
+            <SelectField
+              label={t('task.teamList')}
+              hint={t('task.teamListHint')}
+              value={teamListId}
+              onChange={setTeamListId}
+              placeholder={t('common.no')}
+              options={teamLists.data.map((f) => ({ value: f.id, label: f.name }))}
+            />
+          )}
           <TextField
             label={t('task.currency')}
             hint={cur ? t('task.currencyHint') : t('task.amountSortNeedsCurrency')}

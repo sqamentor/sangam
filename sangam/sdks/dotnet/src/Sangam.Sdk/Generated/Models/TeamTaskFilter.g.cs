@@ -52,7 +52,7 @@ public sealed record TeamTaskFilter
     public global::System.DateTimeOffset? CreatedAt { get; init; }
 
     /// <summary>
-    /// Row version, 1 on creation Required.
+    /// Row version, 1 on creation, +1 per update; the ETag and the If-Match of update and delete Required.
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("version")]
     public int? Version { get; init; }

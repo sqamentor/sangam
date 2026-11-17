@@ -651,6 +651,14 @@ paths:
             type: string
         description: 'P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at
           most 20 names, repeated or comma-separated'
+      - name: filterId
+        in: query
+        schema:
+          type: string
+        description: 'Owner decision 406: runs a saved task list of the caller''s tenant (GET /team/task-filters): its criteria are added to this
+          request''s, and the caller''s tenant and task visibility still apply, so a list only narrows what the caller sees. 404 NOT_FOUND for
+          a list that is not the caller''s tenant''s, 403 TENANT_REQUIRED without a tenant, 422 TASK_FILTER_CONFLICT when a request criterion
+          differs from the list''s (sortBy, sortOrder and variableNames are taken from the request, variable names merged)'
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/size'
       x-sangam-permission: task.read
@@ -8661,6 +8669,8 @@ paths:
               $ref: '#/components/headers/Idempotency-Key-Expires'
             Location:
               $ref: '#/components/headers/Location'
+            ETag:
+              $ref: '#/components/headers/ETag'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -8700,12 +8710,131 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TeamTaskFilter'
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+    put:
+      operationId: updateTeamTaskFilter
+      tags:
+      - Me
+      summary: Replace a shared task list of my tenant
+      description: 'Owner decision 404: shared saved task lists of the caller''s tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have
+        no tenant). Only the caller''s tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Owner decision 406:
+        same body and validation as create; If-Match with the list''s version (ETag) is required (428 PRECONDITION_REQUIRED without it, 409 REVISION_CONFLICT
+        with currentVersion when stale). 404 NOT_FOUND for a list that is not the caller''s tenant''s (never changed). Audited TASK_FILTER_UPDATED
+        on the tenant''s security chain.'
+      x-sangam-command-type: team.task-filter.update
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: team.write
+      x-sangam-requirements:
+      - R76
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamTaskFilterCreateRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamTaskFilter'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            ETag:
+              $ref: '#/components/headers/ETag'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+    delete:
+      operationId: deleteTeamTaskFilter
+      tags:
+      - Me
+      summary: Delete a shared task list of my tenant
+      description: 'Owner decision 404: shared saved task lists of the caller''s tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have
+        no tenant). Only the caller''s tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Owner decision 406:
+        If-Match with the list''s version is required (428 / 409 REVISION_CONFLICT as for update) and a reason (400 REASON_REQUIRED, at most 1000
+        characters). 404 NOT_FOUND for a list that is not the caller''s tenant''s (never deleted). Audited TASK_FILTER_DELETED with the reason.'
+      x-sangam-command-type: team.task-filter.delete
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: reason
+        in: query
+        schema:
+          type: string
+        required: true
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: team.write
+      x-sangam-requirements:
+      - R76
+      - R41
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
   /me/notifications:
@@ -60307,7 +60436,7 @@ components:
         version:
           type: integer
           format: int32
-          description: Row version, 1 on creation
+          description: Row version, 1 on creation, +1 per update; the ETag and the If-Match of update and delete
       required:
       - id
       - name
@@ -60318,7 +60447,7 @@ components:
       - version
     TeamTaskFilterCreateRequest:
       type: object
-      description: 'Owner decision 404: a new shared task list.'
+      description: 'Owner decisions 404 and 406: a new shared task list, or its replacement (PUT).'
       properties:
         name:
           type: string
@@ -60329,7 +60458,10 @@ components:
         query:
           type: object
           additionalProperties: true
-          description: JSON object, at most 16384 characters as JSON; no tenant* or withoutTenant* criterion
+          description: 'JSON object, at most 16384 characters as JSON. Owner decision 406: only the criteria of GET /tasks by the same names:
+            assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy,
+            sortOrder, currency (ISO 4217) and variableNames (list of 1 to 20 names); strings 1 to 255 characters, mine and unassigned booleans.
+            Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID'
         properties:
           type: object
           additionalProperties: true

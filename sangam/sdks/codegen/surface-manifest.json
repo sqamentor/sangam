@@ -1,7 +1,7 @@
 {
  "contractVersion": "0.1.0",
  "paths": 992,
- "operations": 1178,
+ "operations": 1180,
  "schemas": 899,
  "tags": [
   "AI",
@@ -352,8 +352,8 @@
    "class": "MeApi",
    "tag": "Me",
    "pathPrefix": "",
-   "operations": 10,
-   "maxLines": 193
+   "operations": 12,
+   "maxLines": 231
   },
   {
    "class": "ModellerApi",
@@ -577,7 +577,7 @@
    "tag": "Tasks",
    "pathPrefix": "",
    "operations": 15,
-   "maxLines": 319
+   "maxLines": 321
   },
   {
    "class": "TenantOperationsApi",
@@ -3608,6 +3608,30 @@
    "python": "me.get_team_task_filter",
    "dotnet": "MeApi#GetTeamTaskFilterAsync",
    "php": "MeApi#getTeamTaskFilter"
+  },
+  {
+   "operationId": "updateTeamTaskFilter",
+   "method": "PUT",
+   "path": "/team/task-filters/{id}",
+   "tag": "Me",
+   "apiClass": "MeApi",
+   "java": "MeApi#updateTeamTaskFilter",
+   "typescript": "me.updateTeamTaskFilter",
+   "python": "me.update_team_task_filter",
+   "dotnet": "MeApi#UpdateTeamTaskFilterAsync",
+   "php": "MeApi#updateTeamTaskFilter"
+  },
+  {
+   "operationId": "deleteTeamTaskFilter",
+   "method": "DELETE",
+   "path": "/team/task-filters/{id}",
+   "tag": "Me",
+   "apiClass": "MeApi",
+   "java": "MeApi#deleteTeamTaskFilter",
+   "typescript": "me.deleteTeamTaskFilter",
+   "python": "me.delete_team_task_filter",
+   "dotnet": "MeApi#DeleteTeamTaskFilterAsync",
+   "php": "MeApi#deleteTeamTaskFilter"
   },
   {
    "operationId": "listMyNotifications",

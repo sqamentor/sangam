@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Me (10 operations). */
+/** Typed operations of Me (12 operations). */
 final class MeApi
 {
     public function __construct(private readonly Calls $calls)
@@ -110,6 +110,43 @@ final class MeApi
     {
         $req = ApiRequest::get('/team/task-filters/' . HttpTransport::seg((string) $id));
         return $this->calls->model($req, $options, Model\TeamTaskFilter::class);
+    }
+
+    /**
+     * Replace a shared task list of my tenant
+     *
+     * Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Owner decision 406: same body and validation as create; If-Match with the list's version (ETag) is required (428 PRECONDITION_REQUIRED without it, 409 REVISION_CONFLICT with currentVersion when stale). 404 NOT_FOUND for a list that is not the caller's tenant's (never changed). Audited TASK_FILTER_UPDATED on the tenant's security chain.
+     *
+     * PUT /team/task-filters/{id} (operationId updateTeamTaskFilter); permission team.write; result stored atomically with the state change.
+     * @param Model\TeamTaskFilterCreateRequest|array $body request body
+     * @param string $ifMatch header If-Match
+     * @return Model\TeamTaskFilter|null
+     */
+    public function updateTeamTaskFilter(string $id, Model\TeamTaskFilterCreateRequest|array $body, string $ifMatch, ?RequestOptions $options = null): ?Model\TeamTaskFilter
+    {
+        $req = ApiRequest::put('/team/task-filters/' . HttpTransport::seg((string) $id));
+        $req->header('If-Match', Support::headerValue($ifMatch));
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\TeamTaskFilter::class);
+    }
+
+    /**
+     * Delete a shared task list of my tenant
+     *
+     * Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Owner decision 406: If-Match with the list's version is required (428 / 409 REVISION_CONFLICT as for update) and a reason (400 REASON_REQUIRED, at most 1000 characters). 404 NOT_FOUND for a list that is not the caller's tenant's (never deleted). Audited TASK_FILTER_DELETED with the reason.
+     *
+     * DELETE /team/task-filters/{id} (operationId deleteTeamTaskFilter); permission team.write; result stored atomically with the state change.
+     * @param string $reason query reason
+     * @param string $ifMatch header If-Match
+     */
+    public function deleteTeamTaskFilter(string $id, string $reason, string $ifMatch, ?RequestOptions $options = null): void
+    {
+        $req = ApiRequest::delete('/team/task-filters/' . HttpTransport::seg((string) $id));
+        $req->query('reason', $reason);
+        $req->header('If-Match', Support::headerValue($ifMatch));
+        $this->calls->none($req, $options);
     }
 
     /**

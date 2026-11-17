@@ -16,13 +16,15 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.sangam.core.layer.Jdbc;
+import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.TaskFilterPort;
 import org.sangam.rest.support.TxSupport;
 
 /**
  * Owner decision 404: {@link TaskFilterPort} on the product table {@code TEAM_TASK_FILTER} (changeset 0047-01, PK
  * {@code tenant_id, filter_id}). Every statement carries {@code tenant_id=?}; a blank tenant is refused before any
- * statement (fail closed). Rows are only inserted; {@code created_at} is database time (A-1). Runs in the caller's
+ * statement (fail closed). Updates and deletes apply only at the expected row version; {@code created_at} is
+ * database time (A-1). Runs in the caller's
  * transaction ({@link TxSupport#withConnection}), so the audit row commits with the insert.
  */
 public final class JdbcTaskFilterAdapter implements TaskFilterPort {
@@ -65,6 +67,46 @@ public final class JdbcTaskFilterAdapter implements TaskFilterPort {
             return Jdbc.one(c, "SELECT " + COLS + " FROM TEAM_TASK_FILTER WHERE tenant_id=? AND filter_id=?",
                     JdbcTaskFilterAdapter::map, t, id).orElseThrow();
         });
+    }
+
+    @Override
+    public Optional<TaskFilter> update(String tenantId, String id, int expectedVersion, String name, String owner,
+                                       Map<String, Object> query, Map<String, Object> properties) {
+        String t = tenant(tenantId);
+        return tx.withConnection(c -> {
+            int n = Jdbc.update(c, "UPDATE TEAM_TASK_FILTER SET name=?, owner_id=?, query_json=?, properties_json=?,"
+                    + " row_version=row_version+1 WHERE tenant_id=? AND filter_id=? AND row_version=?", name, owner,
+                    json(query), properties == null ? null : json(properties), t, id, expectedVersion);
+            Optional<TaskFilter> now = Jdbc.one(c, "SELECT " + COLS + " FROM TEAM_TASK_FILTER WHERE tenant_id=?"
+                    + " AND filter_id=?", JdbcTaskFilterAdapter::map, t, id);
+            if (n == 0 && now.isPresent()) {
+                throw stale(id, now.get().version());
+            }
+            return now;
+        });
+    }
+
+    @Override
+    public Optional<TaskFilter> delete(String tenantId, String id, int expectedVersion) {
+        String t = tenant(tenantId);
+        return tx.withConnection(c -> {
+            Optional<TaskFilter> cur = Jdbc.one(c, "SELECT " + COLS + " FROM TEAM_TASK_FILTER WHERE tenant_id=?"
+                    + " AND filter_id=?", JdbcTaskFilterAdapter::map, t, id);
+            if (cur.isEmpty()) {
+                return cur;
+            }
+            int n = Jdbc.update(c, "DELETE FROM TEAM_TASK_FILTER WHERE tenant_id=? AND filter_id=? AND row_version=?",
+                    t, id, expectedVersion);
+            if (n == 0) {
+                throw stale(id, cur.get().version());
+            }
+            return cur;
+        });
+    }
+
+    private static ApiProblem stale(String id, int current) {
+        return ApiProblem.conflict("REVISION_CONFLICT", "Task list " + id + " is at version " + current
+                + "; reload it and try again").with("currentVersion", current);
     }
 
     private static String tenant(String tenantId) {

@@ -49,6 +49,21 @@ class TaskFilterControllerTest {
             return new TaskFilter("f1", name, owner, query, properties == null ? Map.of() : properties, actor,
                     Instant.EPOCH, 1);
         }
+
+        @Override
+        public Optional<TaskFilter> update(String tenantId, String id, int expectedVersion, String name, String owner,
+                                           Map<String, Object> query, Map<String, Object> properties) {
+            calls.add("update " + tenantId + " " + id + " " + expectedVersion + " " + name);
+            return "f1".equals(id) ? Optional.of(new TaskFilter(id, name, owner, query, Map.of(), "p0", Instant.EPOCH,
+                    expectedVersion + 1)) : Optional.empty();
+        }
+
+        @Override
+        public Optional<TaskFilter> delete(String tenantId, String id, int expectedVersion) {
+            calls.add("delete " + tenantId + " " + id + " " + expectedVersion);
+            return "f1".equals(id) ? Optional.of(new TaskFilter(id, "n", null, Map.of(), Map.of(), "p0",
+                    Instant.EPOCH, expectedVersion)) : Optional.empty();
+        }
     }
 
     private final Recording port = new Recording();
@@ -147,6 +162,75 @@ class TaskFilterControllerTest {
         }
         assertTrue(port.calls.isEmpty());
         assertTrue(audits.isEmpty());
+    }
+
+    @Test
+    void updateAndDeleteNeedTeamWriteIfMatchAndAreAuditedOnTheTenantsChain() {
+        RequestContext sup = ctx("t1", Permissions.GROUP_SUPERVISOR);
+        var body = new TaskFilterController.CreateRequest(" Desk ", null, Map.of("candidateGroup", "desk"), null);
+        var r = c.update(sup, "f1", "\"3\"", body);
+        assertEquals("\"4\"", r.getHeaders().getETag());
+        assertEquals("Desk", r.getBody().name());
+        assertEquals(204, c.delete(sup, "f1", "W/\"4\"", " no longer used ").getStatusCode().value());
+        assertEquals(List.of("update t1 f1 3 Desk", "delete t1 f1 4"), port.calls);
+        assertEquals(List.of("sec:t1 TASK_FILTER_UPDATED", "sec:t1 TASK_FILTER_DELETED"), audits);
+
+        assertEquals(404, assertThrows(ApiProblem.class, () -> c.update(sup, "other", "\"1\"", body)).status());
+        assertEquals(404, assertThrows(ApiProblem.class, () -> c.delete(sup, "other", "\"1\"", "r")).status());
+        assertEquals(428, assertThrows(ApiProblem.class, () -> c.update(sup, "f1", null, body)).status());
+        assertEquals(428, assertThrows(ApiProblem.class, () -> c.delete(sup, "f1", null, "r")).status());
+        assertEquals("REASON_REQUIRED", assertThrows(ApiProblem.class, () -> c.delete(sup, "f1", "\"1\"", " "))
+                .code());
+        assertEquals(403, assertThrows(ApiProblem.class, () -> c.update(ctx("t1", Permissions.GROUP_AUDITOR), "f1",
+                "\"1\"", body)).status());
+        assertEquals(403, assertThrows(ApiProblem.class, () -> c.delete(ctx("t1", Permissions.GROUP_USER), "f1",
+                "\"1\"", "r")).status());
+        assertEquals("TENANT_REQUIRED", assertThrows(ApiProblem.class, () -> c.delete(ctx(null,
+                Permissions.GROUP_SUPERVISOR), "f1", "\"1\"", "r")).code());
+        assertEquals(422, assertThrows(ApiProblem.class, () -> c.update(sup, "f1", "\"1\"",
+                new TaskFilterController.CreateRequest("n", null, Map.of("priority", 3), null))).status());
+        assertEquals(4, port.calls.size(), "refused requests touch nothing");
+        assertEquals(2, audits.size());
+    }
+
+    @Test
+    void aSavedQueryHoldsOnlyCriteriaTheTaskListApplies() {
+        RequestContext sup = ctx("t1", Permissions.GROUP_SUPERVISOR);
+        for (Map<String, Object> bad : List.<Map<String, Object>>of(Map.of("priority", 3), Map.of("dueBefore", "x"),
+                Map.of("candidateGroups", List.of("a")), Map.of("assignee", 7), Map.of("mine", "yes"),
+                Map.of("state", "DONE"), Map.of("currency", "inr"), Map.of("variableNames", List.of()),
+                Map.of("candidateGroup", " "))) {
+            ApiProblem p = assertThrows(ApiProblem.class, () -> c.create(sup,
+                    new TaskFilterController.CreateRequest("n", null, bad, null)), bad.toString());
+            assertEquals(422, p.status(), bad.toString());
+            assertEquals("TASK_FILTER_INVALID", p.code(), bad.toString());
+        }
+        assertTrue(port.calls.isEmpty());
+        c.create(sup, new TaskFilterController.CreateRequest("all", null, Map.of("assignee", "a", "mine", true,
+                "unassigned", false, "candidateGroup", "g", "processDefinitionKey", "p", "taskDefinitionKey", "t",
+                "businessKey", "b", "state", "ACTIVE", "sortBy", "due", "sortOrder", "asc"), null));
+        c.create(sup, new TaskFilterController.CreateRequest("money", null, Map.of("currency", "INR",
+                "variableNames", List.of("amount")), null));
+        assertEquals(2, port.calls.size());
+    }
+
+    @Test
+    void runningAListCombinesItsCriteriaWithTheRequest() {
+        var req = new org.sangam.rest.port.TaskPort.TaskFilter(null, null, null, null, "seat-1", null, null, null,
+                null, null, null, "name", null, List.of("x"), null);
+        var f = SavedTaskQuery.combine(Map.of("candidateGroup", "clerks", "sortBy", "due", "state", "ACTIVE",
+                "variableNames", List.of("amount")), req);
+        assertEquals("clerks", f.candidateGroup());
+        assertEquals("ACTIVE", f.state());
+        assertEquals("name", f.sortBy(), "sorting is the request's display choice");
+        assertEquals("seat-1", f.seatId());
+        assertEquals(List.of("amount", "x"), f.variableNames());
+        var other = new org.sangam.rest.port.TaskPort.TaskFilter("bob", null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null);
+        assertEquals("TASK_FILTER_CONFLICT", assertThrows(ApiProblem.class,
+                () -> SavedTaskQuery.combine(Map.of("assignee", "alice"), other)).code());
+        assertEquals("TASK_FILTER_INVALID", assertThrows(ApiProblem.class,
+                () -> SavedTaskQuery.combine(Map.of("assigned", false), other)).code(), "an old unknown key never runs");
     }
 
     @Test

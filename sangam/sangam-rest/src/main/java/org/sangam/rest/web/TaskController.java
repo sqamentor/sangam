@@ -4,12 +4,15 @@ package org.sangam.rest.web;
 import java.util.List;
 import java.util.Map;
 
+import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.DocumentPort;
 import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.RequestContext;
+import org.sangam.rest.port.TaskFilterPort;
 import org.sangam.rest.port.TaskPort;
 import org.sangam.rest.support.Permissions;
 import org.sangam.rest.support.SlotVariableGuard;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,11 +32,14 @@ public class TaskController {
     private final TaskPort tasks;
     private final DocumentPort documents;
     private final PermissionPort permissions;
+    private final ObjectProvider<TaskFilterPort> savedLists;
 
-    public TaskController(TaskPort tasks, DocumentPort documents, PermissionPort permissions) {
+    public TaskController(TaskPort tasks, DocumentPort documents, PermissionPort permissions,
+                          ObjectProvider<TaskFilterPort> savedLists) {
         this.tasks = tasks;
         this.documents = documents;
         this.permissions = permissions;
+        this.savedLists = savedLists;
     }
 
     @GetMapping
@@ -47,11 +53,20 @@ public class TaskController {
             @RequestParam(required = false) String sortBy, @RequestParam(required = false) String sortOrder,
             @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
             @RequestParam(required = false) List<String> variableNames,
-            @RequestParam(required = false) String currency) {
+            @RequestParam(required = false) String currency, @RequestParam(required = false) String filterId) {
         permissions.require(ctx, Permissions.TASK_READ);
         var filter = new TaskPort.TaskFilter(assignee, mine, unassigned, candidateGroup, seatId, processInstanceId,
                 caseInstanceId, businessKey, processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder,
                 variableNames, currency);
+        if (filterId != null) {
+            // Owner decision 406: a saved list of the caller's tenant adds its criteria; tenant and visibility of the
+            // task list below still apply, so a list only narrows what the caller sees.
+            String tenant = TenantCustomFieldController.tenant(ctx);
+            TaskFilterPort port = savedLists.getIfAvailable();
+            TaskFilterPort.TaskFilter saved = (port == null ? java.util.Optional.<TaskFilterPort.TaskFilter>empty()
+                    : port.get(tenant, filterId)).orElseThrow(() -> ApiProblem.notFound("Task list", filterId));
+            filter = SavedTaskQuery.combine(saved.query(), filter);
+        }
         return Lists.ok(tasks.list(ctx, filter, Lists.page(page, size)));
     }
 

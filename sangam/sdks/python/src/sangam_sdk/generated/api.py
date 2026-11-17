@@ -5884,7 +5884,7 @@ class LowCodeApi:
         return cast("M.DataObjectRecordOperation", self._c.json(req, options))
 
 class MeApi:
-    """``Me`` (10 operations)."""
+    """``Me`` (12 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -5949,6 +5949,29 @@ class MeApi:
         """
         req = ApiRequest("GET", f"/team/task-filters/{seg(str(id))}")
         return cast("M.TeamTaskFilter", self._c.json(req, options))
+
+    def update_team_task_filter(self, id: str, body: M.TeamTaskFilterCreateRequest, *, if_match: str, options: Optional[RequestOptions] = None) -> M.TeamTaskFilter:
+        """Replace a shared task list of my tenant
+
+        Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Owner decision 406: same body and validation as create; If-Match with the list's version (ETag) is required (428 PRECONDITION_REQUIRED without it, 409 REVISION_CONFLICT with currentVersion when stale). 404 NOT_FOUND for a list that is not the caller's tenant's (never changed). Audited TASK_FILTER_UPDATED on the tenant's security chain.
+
+        ``PUT /team/task-filters/{id}`` (operationId ``updateTeamTaskFilter``); permission ``team.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("PUT", f"/team/task-filters/{seg(str(id))}")
+        _headers(req, {"If-Match": if_match})
+        req.body = body
+        return cast("M.TeamTaskFilter", self._c.json(req, options))
+
+    def delete_team_task_filter(self, id: str, *, reason: str, if_match: str, options: Optional[RequestOptions] = None) -> None:
+        """Delete a shared task list of my tenant
+
+        Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Owner decision 406: If-Match with the list's version is required (428 / 409 REVISION_CONFLICT as for update) and a reason (400 REASON_REQUIRED, at most 1000 characters). 404 NOT_FOUND for a list that is not the caller's tenant's (never deleted). Audited TASK_FILTER_DELETED with the reason.
+
+        ``DELETE /team/task-filters/{id}`` (operationId ``deleteTeamTaskFilter``); permission ``team.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("DELETE", f"/team/task-filters/{seg(str(id))}", query={"reason": reason})
+        _headers(req, {"If-Match": if_match})
+        self._c.none(req, options)
 
     def list_my_notifications(self, *, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Notification]:
         """My notifications
@@ -12050,14 +12073,14 @@ class TasksApi:
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
 
-    def list_tasks(self, *, assignee: Optional[str] = None, mine: Optional[bool] = None, unassigned: Optional[bool] = None, candidate_group: Optional[str] = None, seat_id: Optional[str] = None, process_instance_id: Optional[str] = None, case_instance_id: Optional[str] = None, business_key: Optional[str] = None, process_definition_key: Optional[str] = None, task_definition_key: Optional[str] = None, state: Optional[str] = None, sort_by: Optional[str] = None, currency: Optional[str] = None, sort_order: Optional[str] = None, variable_names: Optional[list[str]] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Task]:
+    def list_tasks(self, *, assignee: Optional[str] = None, mine: Optional[bool] = None, unassigned: Optional[bool] = None, candidate_group: Optional[str] = None, seat_id: Optional[str] = None, process_instance_id: Optional[str] = None, case_instance_id: Optional[str] = None, business_key: Optional[str] = None, process_definition_key: Optional[str] = None, task_definition_key: Optional[str] = None, state: Optional[str] = None, sort_by: Optional[str] = None, currency: Optional[str] = None, sort_order: Optional[str] = None, variable_names: Optional[list[str]] = None, filter_id: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Task]:
         """List tasks
 
         Tasks visible to the caller through the one authorization predicate (VI.4 rules 1–3, K2); BPMN user tasks and CMMN human tasks.
 
         ``GET /tasks`` (operationId ``listTasks``); permission ``task.read``.
         """
-        req = ApiRequest("GET", f"/tasks", query={"assignee": assignee, "mine": mine, "unassigned": unassigned, "candidateGroup": candidate_group, "seatId": seat_id, "processInstanceId": process_instance_id, "caseInstanceId": case_instance_id, "businessKey": business_key, "processDefinitionKey": process_definition_key, "taskDefinitionKey": task_definition_key, "state": state, "sortBy": sort_by, "currency": currency, "sortOrder": sort_order, "variableNames": variable_names, "page": page, "size": size})
+        req = ApiRequest("GET", f"/tasks", query={"assignee": assignee, "mine": mine, "unassigned": unassigned, "candidateGroup": candidate_group, "seatId": seat_id, "processInstanceId": process_instance_id, "caseInstanceId": case_instance_id, "businessKey": business_key, "processDefinitionKey": process_definition_key, "taskDefinitionKey": task_definition_key, "state": state, "sortBy": sort_by, "currency": currency, "sortOrder": sort_order, "variableNames": variable_names, "filterId": filter_id, "page": page, "size": size})
         return cast("Page[M.Task]", self._c.page(req, options, page, size))
 
     def get_task(self, id: str, *, options: Optional[RequestOptions] = None) -> M.TaskDetail:
@@ -13010,7 +13033,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1178 operations on 992 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1180 operations on 992 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)

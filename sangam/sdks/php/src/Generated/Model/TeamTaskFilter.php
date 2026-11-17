@@ -19,7 +19,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read array<string, mixed>|null $properties (required) Display properties as a JSON object (priority, description, refresh, variables); {} when none
  * @property-read string|null $createdBy (required)
  * @property-read string|null $createdAt (required)
- * @property-read int|null $version (required) Row version, 1 on creation
+ * @property-read int|null $version (required) Row version, 1 on creation, +1 per update; the ETag and the If-Match of update and delete
  */
 final class TeamTaskFilter implements \JsonSerializable
 {

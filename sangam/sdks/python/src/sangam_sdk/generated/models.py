@@ -10855,7 +10855,7 @@ class _TeamTaskFilterCreateRequestRequired(TypedDict):
 
 
 class TeamTaskFilterCreateRequest(_TeamTaskFilterCreateRequestRequired, total=False):
-    """Owner decision 404: a new shared task list.
+    """Owner decisions 404 and 406: a new shared task list, or its replacement (PUT).
 
 Schema ``TeamTaskFilterCreateRequest``."""
     owner: str

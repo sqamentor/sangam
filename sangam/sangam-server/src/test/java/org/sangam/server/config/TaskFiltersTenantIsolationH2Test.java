@@ -67,6 +67,36 @@ class TaskFiltersTenantIsolationH2Test {
     }
 
     @Test
+    void tenantANeverUpdatesOrDeletesTenantBsListAndStaleVersionsChangeNothing() {
+        TaskFilter a = filters.create("tenant-a", "sup-a", "Clerks", null, Map.of("candidateGroup", "clerks"), null);
+        TaskFilter b = filters.create("tenant-b", "sup-b", "B desk", null, Map.of("candidateGroup", "desk"), null);
+
+        assertTrue(filters.update("tenant-a", b.id(), 1, "taken", null, Map.of(), null).isEmpty(),
+                "tenant A cannot update tenant B's list");
+        assertTrue(filters.delete("tenant-a", b.id(), 1).isEmpty(), "tenant A cannot delete tenant B's list");
+        assertEquals(b, filters.get("tenant-b", b.id()).orElseThrow(), "tenant B's list is untouched");
+
+        TaskFilter a2 = filters.update("tenant-a", a.id(), 1, "Clerks 2", "lead", Map.of("candidateGroup", "c2"),
+                Map.of("refresh", true)).orElseThrow();
+        assertEquals(2, a2.version());
+        assertEquals("Clerks 2", a2.name());
+        assertEquals(Map.of("candidateGroup", "c2"), a2.query());
+        assertEquals(a.createdAt(), a2.createdAt());
+        org.sangam.rest.port.ApiProblem stale = assertThrows(org.sangam.rest.port.ApiProblem.class,
+                () -> filters.update("tenant-a", a.id(), 1, "lost", null, Map.of(), null));
+        assertEquals("REVISION_CONFLICT", stale.code());
+        assertEquals("REVISION_CONFLICT", assertThrows(org.sangam.rest.port.ApiProblem.class,
+                () -> filters.delete("tenant-a", a.id(), 1)).code());
+        assertEquals(a2, filters.get("tenant-a", a.id()).orElseThrow(), "stale writes changed nothing");
+
+        assertEquals(a2, filters.delete("tenant-a", a.id(), 2).orElseThrow());
+        assertTrue(filters.get("tenant-a", a.id()).isEmpty());
+        assertEquals(List.of(b.id()), filters.list("tenant-b").stream().map(TaskFilter::id).toList());
+        assertThrows(IllegalArgumentException.class, () -> filters.update(" ", b.id(), 1, "n", null, Map.of(), null));
+        assertThrows(IllegalArgumentException.class, () -> filters.delete(null, b.id(), 1));
+    }
+
+    @Test
     void noTenantIsRefusedBeforeAnyStatement() {
         assertThrows(IllegalArgumentException.class, () -> filters.list(null));
         assertThrows(IllegalArgumentException.class, () -> filters.list(" "));

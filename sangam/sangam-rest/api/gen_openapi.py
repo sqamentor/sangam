@@ -214,11 +214,13 @@ schema("TeamTaskFilter", "Owner decision 404: one shared saved task list of the 
        descs={"owner": "Optional user or group the list is meant for (informational); absent or null when not set",
               "query": "Task query criteria as a JSON object (as the shared task list screen sends them)",
               "properties": "Display properties as a JSON object (priority, description, refresh, variables); {} when none",
-              "version": "Row version, 1 on creation"})
-schema("TeamTaskFilterCreateRequest", "Owner decision 404: a new shared task list.", "name owner query:obj properties:obj",
+              "version": "Row version, 1 on creation, +1 per update; the ETag and the If-Match of update and delete"})
+schema("TeamTaskFilterCreateRequest", "Owner decisions 404 and 406: a new shared task list, or its replacement (PUT).", "name owner query:obj properties:obj",
        required=("name", "query"),
        descs={"name": "1 to 255 characters after trimming", "owner": "Optional, at most 255 characters",
-              "query": "JSON object, at most 16384 characters as JSON; no tenant* or withoutTenant* criterion",
+              "query": "JSON object, at most 16384 characters as JSON. Owner decision 406: only the criteria of GET /tasks "
+                       "by the same names: assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy, sortOrder, currency (ISO 4217) and variableNames (list of 1 to 20 names); strings 1 to 255 characters, mine and unassigned "
+                       "booleans. Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID",
               "properties": "Optional JSON object, at most 16384 characters as JSON"})
 schema("Me", "The authenticated caller: identity, tenant, personas (roles), seats held, current seat context and permissions (K1, S02).",
        "tenantId tenantName principalId userId displayName groups:list:s roles:list:s seats:list:SeatHolding seatId actingForSeatId "
@@ -939,7 +941,8 @@ op("get", "/tasks", "listTasks", "Tasks", "List tasks",
            q("seatId"), q("processInstanceId"), q("caseInstanceId"), q("businessKey"), q("processDefinitionKey"),
            q("taskDefinitionKey"), q("state"), q("sortBy", desc="created, due, priority, name, amount or reference (M-042 task index); a comma-separated list sorts by several keys. amount sorts within the currency filter and needs currency (400 VALIDATION_FAILED otherwise), so only tasks with an amount in that currency are listed; reference sorts by the indexed reference, tasks without one placed by the database's NULL ordering"),
            dict(q("currency", desc="M-042: only tasks whose indexed amount is in this ISO 4217 currency; required when sortBy contains amount"), schema={"type": "string", "pattern": "^[A-Z]{3}$"}), q("sortOrder", desc="asc or desc per key, comma-separated"),
-             q("variableNames", "list:s", "P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at most 20 names, repeated or comma-separated")])
+             q("variableNames", "list:s", "P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at most 20 names, repeated or comma-separated"),
+           q("filterId", desc="Owner decision 406: runs a saved task list of the caller's tenant (GET /team/task-filters): its criteria are added to this request's, and the caller's tenant and task visibility still apply, so a list only narrows what the caller sees. 404 NOT_FOUND for a list that is not the caller's tenant's, 403 TENANT_REQUIRED without a tenant, 422 TASK_FILTER_CONFLICT when a request criterion differs from the list's (sortBy, sortOrder and variableNames are taken from the request, variable names merged)")])
 op("get", "/tasks/{id}", "getTask", "Tasks", "Get a task", "Task with variables (field masks applied, K11), the material payload hash and case version (VI.4 rule 5).",
    ["VI.4", "R47"], params=[ID], resp=(200, "TaskDetail"), perm="task.read", errors=GET_E)
 op("get", "/tasks/{id}/variables", "getTaskVariables", "Tasks", "Task variables", "Variables visible on the task (K11).", ["VI.4"],
@@ -1447,13 +1450,26 @@ op("get", "/team/task-filters", "listTeamTaskFilters", "Me", "Shared task lists 
    errors=("Unauthorized", "Forbidden"))
 op("get", "/team/task-filters/{id}", "getTeamTaskFilter", "Me", "One shared task list of my tenant",
    TF_NOTE + "404 NOT_FOUND for an id that is not a list of the caller's tenant.", ["R76"], params=[ID],
-   resp=(200, "TeamTaskFilter"), perm="team.read", errors=("Unauthorized", "Forbidden", "NotFound"))
+   resp=(200, "TeamTaskFilter"), perm="team.read", etag=True, errors=("Unauthorized", "Forbidden", "NotFound"))
 op("post", "/team/task-filters", "createTeamTaskFilter", "Me", "Create a shared task list in my tenant",
    TF_NOTE + "Audited TASK_FILTER_CREATED on the tenant's security chain. 400 VALIDATION_FAILED (name missing or over "
    "255 characters, owner over 255, query missing, query or properties over 16384 characters as JSON); 422 "
    "TASK_FILTER_INVALID for a query criterion naming tenants (tenant*, withoutTenant*).", ["R76", "R41"],
    body="TeamTaskFilterCreateRequest", resp=(201, "TeamTaskFilter"), cmd="team.task-filter.create",
-   perm="team.write", created=True, errors=("BadRequest", "Unauthorized", "Forbidden", "Unprocessable"))
+   perm="team.write", created=True, etag=True, errors=("BadRequest", "Unauthorized", "Forbidden", "Unprocessable"))
+op("put", "/team/task-filters/{id}", "updateTeamTaskFilter", "Me", "Replace a shared task list of my tenant",
+   TF_NOTE + "Owner decision 406: same body and validation as create; If-Match with the list's version (ETag) is "
+   "required (428 PRECONDITION_REQUIRED without it, 409 REVISION_CONFLICT with currentVersion when stale). 404 NOT_FOUND "
+   "for a list that is not the caller's tenant's (never changed). Audited TASK_FILTER_UPDATED on the tenant's security "
+   "chain.", ["R76", "R41"], params=[ID], if_match=True, body="TeamTaskFilterCreateRequest",
+   resp=(200, "TeamTaskFilter"), cmd="team.task-filter.update", perm="team.write", etag=True,
+   errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "Conflict", "Unprocessable"))
+op("delete", "/team/task-filters/{id}", "deleteTeamTaskFilter", "Me", "Delete a shared task list of my tenant",
+   TF_NOTE + "Owner decision 406: If-Match with the list's version is required (428 / 409 REVISION_CONFLICT as for "
+   "update) and a reason (400 REASON_REQUIRED, at most 1000 characters). 404 NOT_FOUND for a list that is not the "
+   "caller's tenant's (never deleted). Audited TASK_FILTER_DELETED with the reason.", ["R76", "R41"],
+   params=[ID, q("reason", required=True)], if_match=True, resp=(204, None), cmd="team.task-filter.delete",
+   perm="team.write", errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "Conflict"))
 op("get", "/me/notifications", "listMyNotifications", "Me", "My notifications", "In-app notifications of the caller (R60).",
    ["R60", "R76"], list_=True, resp=(200, "array:Notification"), errors=WS_E)
 op("post", "/me/notifications/{id}/read", "markNotificationRead", "Me", "Mark a notification read", "Marks one notification read.",
