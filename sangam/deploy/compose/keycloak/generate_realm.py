@@ -372,7 +372,7 @@ def platform_realm(tenant_realm):
 # the environment (SANGAM_PRESENTATION_PASSWORD_<USERNAME>, upper case, "." and "-" as "_") or from the git-ignored
 # file deploy/presentation/presentation-users.local.json ({"<username>": "<password>"}); a missing one is generated
 # (secrets module) and stored in that file. Seats and roles follow the IFMS pack seeds (ifms-gpf, ifms-bill,
-# ifms-budget-allocation: seats DDO-1, HOO-1, PAO-1 in office PAO-OFFICE). No visible name uses a word barred by
+# ifms-budget-allocation: seats DDO-1, HOO-1, BD-1, DH-1, AAO-1, PAO-1, SS-1 in office PAO-OFFICE). No visible name uses a word barred by
 # IFMS SD-544. deploy/presentation/seed_presentation.py reads these same lists (one source).
 PRESENTATION_TENANT = os.environ.get("SANGAM_PRESENTATION_TENANT", "GOI.FIN")
 PRESENTATION_OFFICE = "PAO-OFFICE"
@@ -380,6 +380,10 @@ PRESENTATION_ROLES = [
     ("DDO", "Drawing and disbursing officer (IFMS pack role)"),
     ("HOO", "Head of Office (IFMS pack role)"),
     ("PAO", "Pay and accounts officer (IFMS pack role)"),
+    ("BILL_DISTRIBUTOR", "Bill distributor (IFMS pack role)"),
+    ("DEALING_HAND", "Dealing hand (IFMS pack role)"),
+    ("AAO", "Assistant accounts officer (IFMS pack role)"),
+    ("SECOND_SIGNATORY", "Second signatory (IFMS pack role)"),
     ("sangam-tenant-admin", "Department (organisation) administrator"),
     ("sangam-supervisor", "Supervisor: team workload (team.read)"),
 ]
@@ -388,6 +392,14 @@ PRESENTATION_USERS = [
     ("ddo.maker", "Rakesh", "Sharma", ["DDO", "sangam-user"], ["DDO-1"]),
     ("hoo.office", "Anita", "Verma", ["HOO", "sangam-user"], ["HOO-1"]),
     ("pao.accounts", "Suresh", "Iyer", ["PAO", "sangam-user"], ["PAO-1"]),
+    # the PAO chain of a bill (ifms-pao-chain: distribute, dealing hand, AAO, PAO, second signature)
+    ("bill.distributor", "Farhan", "Qureshi", ["BILL_DISTRIBUTOR", "sangam-user"], ["BD-1"]),
+    ("dealing.hand", "Lakshmi", "Menon", ["DEALING_HAND", "sangam-user"], ["DH-1"]),
+    ("aao.accounts", "Harpreet", "Singh", ["AAO", "sangam-user"], ["AAO-1"]),
+    ("second.signatory", "Deepa", "Kulkarni", ["SECOND_SIGNATORY", "sangam-user"], ["SS-1"]),
+    # the GPF subscriber: starts a GPF application as an employee, with no seat (IfmsPacksIT employee()); a person
+    # distinct from the DDO who scrutinises it (SoD, IX.5 rule 5)
+    ("gpf.subscriber", "Pooja", "Nair", ["sangam-user"], []),
     ("org.admin", "Kavita", "Rao", ["sangam-tenant-admin", "sangam-user"], []),
     ("section.supervisor", "Manoj", "Gupta", ["sangam-supervisor", "sangam-user"], []),
 ]

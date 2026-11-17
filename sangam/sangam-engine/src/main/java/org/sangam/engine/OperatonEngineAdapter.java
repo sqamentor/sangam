@@ -1078,41 +1078,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             CommandState.of(cc).markAcquisition();
             return expiry.sweep(conn, SWEEP_LIMIT);
         });
-        int executed = 0;
-        Map<String, Integer> perDefinition = new HashMap<>();
-        Set<String> skipped = new HashSet<>();
-        while (executed < settings.getMaxJobExecutionsPerCall()) {
-            List<Job> due = managementService.createJobQuery().executable().active().orderByJobId().asc().listPage(0, 100);
-            boolean progressed = false;
-            for (Job job : due) {
-                if (executed >= settings.getMaxJobExecutionsPerCall()) {
-                    break;
-                }
-                String def = job.getJobDefinitionId() == null ? "-" : job.getJobDefinitionId();
-                int n = perDefinition.getOrDefault(def, 0);
-                if (n >= settings.getMaxExecutionsPerJobDefinitionPerCall()) {
-                    skipped.add(def);
-                    continue;
-                }
-                perDefinition.put(def, n + 1);
-                c.metrics().jobsAcquired(1); // sangam_jobs_acquired_total (adapter acquisition path)
-                try {
-                    managementService.executeJob(job.getId());
-                } catch (RuntimeException e) {
-                    LOG.debug("job {} failed; the engine handles its retries", job.getId(), e);
-                }
-                executed++;
-                progressed = true;
-            }
-            if (!progressed) {
-                break;
-            }
-        }
-        if (executed >= settings.getMaxJobExecutionsPerCall() || !skipped.isEmpty()) {
-            c.metrics().jobExecutionBounded(skipped.isEmpty() ? "per-call" : "per-job-definition");
-            LOG.warn("executeDueJobs stopped at a bound: {} executions; job definitions at their limit: {}", executed, skipped);
-        }
-        return executed;
+        return DueJobRunner.run(managementService, settings, c.metrics());
     }
 
     /** Moves the engine clock; {@code null} returns to system time. JVM-wide (FLOWABLE-INTO-OPERATON D-10). */
