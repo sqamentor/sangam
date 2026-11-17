@@ -121,6 +121,10 @@ public final class PackWorkers {
             @Override
             public Map<String, Object> handle(String tenantId, String businessKey, String operationId,
                                               Map<String, Object> variables) {
+                String held = org.sangam.packs.core.MoneyOutApproval.refusal(connector, variables::get);
+                if (held != null) {
+                    throw new WorkerBpmnError(org.sangam.packs.core.MoneyOutApproval.ERROR, held);
+                }
                 Map<String, Object> payload = new HashMap<>();
                 variables.forEach((k, v) -> {
                     if (!k.startsWith("sim_")) {

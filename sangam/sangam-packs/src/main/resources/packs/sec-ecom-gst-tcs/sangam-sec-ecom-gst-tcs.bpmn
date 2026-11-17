@@ -20,6 +20,13 @@
     <exclusiveGateway id="gt_review_done" name=""></exclusiveGateway>
     <userTask id="gt_suppliesUnconfirmed" name="Net supplies not confirmed: establish them in the ERP" operaton:candidateGroups="${taxSeat}" operaton:formKey="sangam:sec-ecom-gst-tcs/suppliesUnconfirmed"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <callActivity id="gt_deposit" name="Deposit TCS (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="gt_deposit_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="gt_deposit_sgw" name="Sanctioned?" default="gt_deposit_sgw_no"></exclusiveGateway>
+    <endEvent id="gt_deposit_notReleased" name="Not released"></endEvent>
+    <sequenceFlow id="gt_deposit_sanction_f" sourceRef="gt_deposit_sanction" targetRef="gt_deposit_sgw"/>
+    <sequenceFlow id="gt_deposit_sgw_yes" name="sanctioned" sourceRef="gt_deposit_sgw" targetRef="gt_deposit"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="gt_deposit_sgw_no" name="not sanctioned" sourceRef="gt_deposit_sgw" targetRef="gt_deposit_notReleased"/>
+
     <serviceTask id="gt_gstr8" name="File GSTR-8" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>gstn.gstr8</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>file</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>period,tcsAmount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>gstr8</operaton:string></operaton:field><operaton:field name="step"><operaton:string>gstr8</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="gt_fileGw" name="Filed?" default="sec_ecom_gst_tcs_f22"></exclusiveGateway>
     <endEvent id="gt_end" name="Filed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
@@ -42,7 +49,7 @@
     <sequenceFlow id="sec_ecom_gst_tcs_f15" name="confirmed" sourceRef="gt_suppliesGw" targetRef="gt_rate"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f16" sourceRef="gt_rate" targetRef="gt_compute"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f17" sourceRef="gt_compute" targetRef="gt_review_slaPlan"/>
-    <sequenceFlow id="sec_ecom_gst_tcs_f18" sourceRef="gt_review_done" targetRef="gt_deposit"/>
+    <sequenceFlow id="sec_ecom_gst_tcs_f18" sourceRef="gt_review_done" targetRef="gt_deposit_sanction"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f19" sourceRef="gt_deposit" targetRef="gt_gstr8"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f20" sourceRef="gt_gstr8" targetRef="gt_fileGw"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f21" name="error: correct" sourceRef="gt_fileGw" targetRef="gt_review_slaPlan"><conditionExpression xsi:type="tFormalExpression">${gstr8Status == 'FAILED'}</conditionExpression></sequenceFlow>
@@ -65,7 +72,7 @@
       <bpmndi:BPMNShape id="gt_review_breachGw_di" bpmnElement="gt_review_breachGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gt_review_done_di" bpmnElement="gt_review_done"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gt_suppliesUnconfirmed_di" bpmnElement="gt_suppliesUnconfirmed"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gt_deposit_di" bpmnElement="gt_deposit"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gt_deposit_sanction_di" bpmnElement="gt_deposit_sanction"><dc:Bounds x="1820" y="-100" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="gt_deposit_sgw_di" bpmnElement="gt_deposit_sgw" isMarkerVisible="true"><dc:Bounds x="1950" y="-90" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="gt_deposit_notReleased_di" bpmnElement="gt_deposit_notReleased"><dc:Bounds x="1957" y="-180" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="gt_deposit_sanction_f_di" bpmnElement="gt_deposit_sanction_f"><di:waypoint x="1920" y="-65"/><di:waypoint x="1950" y="-65"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="gt_deposit_sgw_yes_di" bpmnElement="gt_deposit_sgw_yes"><di:waypoint x="1975" y="-40"/><di:waypoint x="1975" y="30"/><di:waypoint x="2000" y="30"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="gt_deposit_sgw_no_di" bpmnElement="gt_deposit_sgw_no"><di:waypoint x="1975" y="-90"/><di:waypoint x="1975" y="-144"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="gt_deposit_di" bpmnElement="gt_deposit"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gt_gstr8_di" bpmnElement="gt_gstr8"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gt_fileGw_di" bpmnElement="gt_fileGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gt_end_di" bpmnElement="gt_end"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
