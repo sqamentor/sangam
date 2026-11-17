@@ -3,13 +3,11 @@ package org.sangam.server.config;
 
 import java.sql.Connection;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.sangam.core.layer.AuditChain;
-import org.sangam.core.layer.Jdbc;
 import org.sangam.core.layer.TenantKey;
 
 /**
@@ -50,17 +48,14 @@ public final class KeyEnvironmentBootstrap {
 
     /** The bootstrap events of {@code environment}; an erased or unreadable payload counts (fail closed). */
     static long bootstraps(Connection c, String environment) {
-        List<String[]> rows = Jdbc.query(c, "SELECT p.payload, p.erased_at FROM AUDIT_EVENT e LEFT JOIN AUDIT_PAYLOAD p"
-                        + " ON p.event_id = e.event_id WHERE e.tenant_id = ? AND e.chain_id = ? AND e.event_type = ?",
-                rs -> new String[] {rs.getString(1), rs.getString(2)}, TenantKey.SHARED, CHAIN, EVENT);
         long n = 0;
-        for (String[] row : rows) {
-            if (row[0] == null || row[1] != null) {
+        for (String payload : AuditChain.payloads(c, TenantKey.SHARED, CHAIN, EVENT)) {
+            if (payload == null) {
                 n++;
                 continue;
             }
             try {
-                Object env = JSON.readValue(row[0], Map.class).get("environment");
+                Object env = JSON.readValue(payload, Map.class).get("environment");
                 if (environment.equals(env)) {
                     n++;
                 }
