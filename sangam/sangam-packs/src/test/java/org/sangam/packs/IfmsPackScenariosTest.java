@@ -461,6 +461,31 @@ class IfmsPackScenariosTest {
         closed(bk, done);
     }
 
+    /**
+     * IFT-6: a pack sub-process of the same case (bill -> PAO chain) must not re-create the case. After the resubmitted
+     * bill went through the chain twice, the bill keeps its own caseVersion, packId and packVersion, the case is created
+     * once, and every audit row carries the bill's package.
+     */
+    @Test
+    void billKeepsItsOwnCaseIdentityAcrossThePaoChain() {
+        String bk = start("sangam-ifms-bill", "BL-IDN", bill());
+        List<String> done = run(bk, new Script().at("pc_pao", 1, "paoDecision", "returnBill", "remarks", "Sanction copy missing")
+                .at("bl_revise", 1, "reviseDecision", "resubmit", "remarks", "Sanction copy attached"));
+        String r = report(bk, done);
+        List<org.sangam.packs.port.PackAuditEvent> tl = ((LoggingAuditSink) PackRuntime.audit()).timeline(bk);
+        List<org.sangam.packs.port.PackAuditEvent> created = tl.stream().filter(e -> "CASE_CREATED".equals(e.type())).toList();
+        assertEquals(1, created.size(), r + ": the case is created once, not again by the PAO chain " + created);
+        String pv = created.get(0).packageVersion();
+        assertTrue(pv != null && pv.startsWith("gov.ifms.bill@"), r + ": created by the bill, was " + pv);
+        assertEquals(pv, String.valueOf(driver.var(bk, "packVersion")), r + ": packVersion after the chain");
+        assertEquals(pv.substring(0, pv.indexOf('@')), String.valueOf(driver.var(bk, "packId")), r + ": packId after the chain");
+        assertEquals("2", String.valueOf(driver.var(bk, "caseVersion")), r + ": the resubmitted version survives the chain");
+        List<String> foreign = tl.stream().filter(e -> e.packageVersion() != null && !pv.equals(e.packageVersion()))
+                .map(e -> e.type() + "@" + e.packageVersion()).toList();
+        assertTrue(foreign.isEmpty(), r + ": audit rows of this case carry another package " + foreign);
+        closed(bk, done);
+    }
+
     /** G14 on the bill: cancelled at the PAO after encumbrance; the encumbrance is released and nothing is paid. */
     @Test
     void billCancelledAtThePaoReleasesItsEncumbranceAndPaysNothing() {

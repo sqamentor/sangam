@@ -4,13 +4,14 @@ package org.sangam.security.policy.external;
 import java.time.Duration;
 import java.util.function.LongSupplier;
 
-import org.sangam.engine.tx.LockScope;
+import org.sangam.core.engine.IllegalRemoteCallInLockScope;
+import org.sangam.core.engine.RemoteCalls;
 
 /**
  * The framework-independent decision at command entry for the external deny-only policy check (owner decision 166,
  * M-083). The host calls {@link #evaluate} once per command, after authentication and before the idempotency claim,
  * the command transaction and any L2 lock; the gate itself refuses to make the remote call while a lock is held
- * ({@link LockScope#assertNoLockHeld}, decision 86).
+ * ({@link RemoteCalls#assertNoLockHeld}, decision 86).
  *
  * <p>Deny-only by construction: the verdict is either {@link Proceed} (the command goes on to Sangam's own
  * authorisation, which still decides and may still refuse) or {@link Refuse}. Nothing here can grant what Sangam's own
@@ -85,7 +86,7 @@ public final class ExternalPolicyGate {
     /**
      * Decides one command.
      *
-     * @throws LockScope.IllegalRemoteCallInLockScope when called while this thread holds an L2 root lock (a defect of
+     * @throws IllegalRemoteCallInLockScope when called while this thread holds an L2 root lock (a defect of
      *                                                the caller: the check belongs at command entry, decision 86)
      */
     public Verdict evaluate(ExternalPolicyRequest request) {
@@ -95,7 +96,7 @@ public final class ExternalPolicyGate {
             observer.observed(commandType, Result.SKIPPED, Duration.ZERO);
             return new Proceed(Result.SKIPPED);
         }
-        LockScope.assertNoLockHeld("external policy check " + commandType);
+        RemoteCalls.assertNoLockHeld("external policy check " + commandType);
         long start = nanoTime.getAsLong();
         Verdict verdict = decide(request, requirement);
         observer.observed(commandType, verdict.result(), Duration.ofNanos(Math.max(0, nanoTime.getAsLong() - start)));
@@ -111,7 +112,7 @@ public final class ExternalPolicyGate {
             }
         } catch (ExternalPolicyUnavailable e) {
             return unavailable(requirement, e.reason());
-        } catch (LockScope.IllegalRemoteCallInLockScope e) {
+        } catch (IllegalRemoteCallInLockScope e) {
             throw e;
         } catch (RuntimeException e) {
             // A failing check implementation is no answer: the same fail-closed rule as an unreachable service.
