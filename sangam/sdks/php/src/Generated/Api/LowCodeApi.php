@@ -89,14 +89,16 @@ final class LowCodeApi
      *
      * Named query (R25); further query parameters are passed to the query. Uses the same authorization as the underlying data.
      *
-     * GET /queries/{name} (operationId runNamedQuery); permission lowcode.read.
+     * GET /queries/by-name (operationId runNamedQuery); permission lowcode.read.
+     * @param string $name query name
      * @param int|null $page query page
      * @param int|null $size query size
      * @return Page<array<string, mixed>>
      */
     public function runNamedQuery(string $name, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/queries/' . HttpTransport::seg((string) $name));
+        $req = ApiRequest::get('/queries/by-name');
+        $req->query('name', $name);
         $req->query('page', $page);
         $req->query('size', $size);
         return $this->calls->page($req, $options, null, $page, $size);

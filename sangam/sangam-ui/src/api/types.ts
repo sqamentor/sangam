@@ -641,7 +641,7 @@ export interface ModelViewer {
   since: string;
 }
 
-/** Data of the 'presence' event of GET /models/{file}/presence/stream (ModelPresence). */
+/** Data of the 'presence' event of GET /models/by-file/presence/stream?file= (ModelPresence). */
 export interface ModelPresence {
   fileId: string;
   viewers: ModelViewer[];

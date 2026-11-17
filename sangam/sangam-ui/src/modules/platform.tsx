@@ -342,9 +342,13 @@ export type LeaseView = { fileId?: string; holder?: string; fence?: number; expi
 /** What the workspace needs from the lease: may this user save, and with which fence (X-Sangam-Edit-Fence). */
 export type LeaseState = { mine: boolean; fence?: number };
 
-/** The lease path of a package. The lease, the save fence (ModellerWiring.fenced, PUT /packages/{id}) and presence all key a model file by its package id. */
-export function leasePath(packageId: string): string {
-  return `/models/${encodeURIComponent(packageId)}/lease`;
+/**
+ * The lease path of a package, with an optional sub-route (/acquire, /heartbeat, ...). The lease, the save fence
+ * (ModellerWiring.fenced, PUT /packages/{id}) and presence all key a model file by its package id; the id is the query
+ * parameter file (decision 393: it may carry '/' or ':').
+ */
+export function leasePath(packageId: string, action = ''): string {
+  return `/models/by-file/lease${action}?file=${encodeURIComponent(packageId)}`;
 }
 
 /**
@@ -358,7 +362,7 @@ export function LeaseBanner({ packageId, onState }: { packageId: string; onState
   const [lease, setLease] = useState<LeaseView>();
   const [taking, setTaking] = useState(false);
   const [asked, setAsked] = useState(false);
-  const path = leasePath(packageId);
+  const path = (action: string) => leasePath(packageId, action);
   const held = useRef<number | undefined>(undefined);
   const stateRef = useRef(onState);
   stateRef.current = onState;
@@ -368,21 +372,21 @@ export function LeaseBanner({ packageId, onState }: { packageId: string; onState
     held.current = r.mine && typeof r.fence === 'number' ? r.fence : undefined;
     stateRef.current?.({ mine: r.mine, fence: held.current });
   };
-  const acquire = () => act.run(() => http.post<LeaseView>(`${path}/acquire`, {})).then((r) => { if (r) apply(r); });
+  const acquire = () => act.run(() => http.post<LeaseView>(path('/acquire'), {})).then((r) => { if (r) apply(r); });
   useEffect(() => {
     void acquire();
     return () => {
       const fence = held.current;
       held.current = undefined;
-      if (fence !== undefined) void http.post(`${path}/release`, { fence }).catch(() => undefined);
+      if (fence !== undefined) void http.post(path('/release'), { fence }).catch(() => undefined);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path]);
+  }, [packageId]);
   useInterval(() => {
     const fence = held.current;
     if (fence === undefined) return;
     // the contract answers 204; ModellerController answers the LeaseView: keep the lease as it is on an empty answer
-    void http.post<LeaseView | undefined>(`${path}/heartbeat`, { fence }).then((r) => { if (r) apply(r); }, () => {
+    void http.post<LeaseView | undefined>(path('/heartbeat'), { fence }).then((r) => { if (r) apply(r); }, () => {
       held.current = undefined;
       stateRef.current?.({ mine: false });
       void acquire();
@@ -396,7 +400,7 @@ export function LeaseBanner({ packageId, onState }: { packageId: string; onState
       {lease && !lease.mine && lease.holder && (
         <Notice tone="warn">
           {t('mod.modeller2.leased', { who: lease.holder })}{' '}
-          <button type="button" className="link" disabled={asked || act.busy} onClick={() => void act.run(() => http.post(`${path}/request-takeover`, {}).then(() => true)).then((ok) => ok && setAsked(true))}>
+          <button type="button" className="link" disabled={asked || act.busy} onClick={() => void act.run(() => http.post(path('/request-takeover'), {}).then(() => true)).then((ok) => ok && setAsked(true))}>
             {asked ? t('mod.modeller2.leaseAsked') : t('mod.modeller2.leaseAsk')}
           </button>{' '}
           <button type="button" className="link" onClick={() => setTaking(true)}>{t('mod.modeller2.takeover')}</button>
@@ -410,7 +414,7 @@ export function LeaseBanner({ packageId, onState }: { packageId: string; onState
         danger
         onClose={() => setTaking(false)}
         onConfirm={(reason) =>
-          void act.run(() => http.post(`${path}/takeover`, { reason }).then(() => true)).then((ok) => {
+          void act.run(() => http.post(path('/takeover'), { reason }).then(() => true)).then((ok) => {
             if (!ok) return;
             setTaking(false);
             void acquire(); // the takeover answer is the bare lease; acquire renews it and says mine and the fence
@@ -450,7 +454,7 @@ const mocks: ScreenDef = {
   columns: [c('service'), c('operation'), c('enabled'), c('scope')], rowKey: ['id', 'service'],
   create: { id: 'save', label: 'act.create', path: '/service-mocks', fields: [f.text('service', undefined, true), f.text('operation'), f.json('response', 'fld.body', true), f.num('delayMs'), f.bool('enabled')] },
   toolbar: [{ id: 'global', label: 'mod.modeller2.mocksGlobal', method: 'PUT', path: '/service-mocks/global', fields: [f.bool('enabled')], noJson: true }],
-  actions: [{ id: 'toggle', label: 'act.update', method: 'PATCH', path: '/service-mocks/{id}', fields: [f.bool('enabled')], noJson: true }],
+  actions: [{ id: 'toggle', label: 'act.update', method: 'PATCH', path: '/service-mocks/by-id?id={id}', fields: [f.bool('enabled')], noJson: true }],
 };
 const catalogue: ScreenDef = {
   id: 'catalogue', title: 'mod.modeller2.catalogue', list: '/catalogue',

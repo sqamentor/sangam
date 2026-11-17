@@ -262,14 +262,14 @@
    "tag": "EventGridHooks",
    "pathPrefix": "",
    "operations": 1,
-   "maxLines": 45
+   "maxLines": 46
   },
   {
    "class": "EventsApi",
    "tag": "Events",
    "pathPrefix": "",
    "operations": 14,
-   "maxLines": 272
+   "maxLines": 282
   },
   {
    "class": "ExecutorApi",
@@ -346,7 +346,7 @@
    "tag": "LowCode",
    "pathPrefix": "",
    "operations": 11,
-   "maxLines": 222
+   "maxLines": 223
   },
   {
    "class": "MeApi",
@@ -360,7 +360,7 @@
    "tag": "Modeller",
    "pathPrefix": "",
    "operations": 37,
-   "maxLines": 683
+   "maxLines": 692
   },
   {
    "class": "OnboardingApi",
@@ -416,7 +416,7 @@
    "tag": "Packs",
    "pathPrefix": "",
    "operations": 4,
-   "maxLines": 99
+   "maxLines": 102
   },
   {
    "class": "PluginsApi",
@@ -3235,7 +3235,7 @@
   {
    "operationId": "getEventChannel",
    "method": "GET",
-   "path": "/events/channels/{key}",
+   "path": "/events/channels/by-key",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#getEventChannel",
@@ -3247,7 +3247,7 @@
   {
    "operationId": "updateEventChannel",
    "method": "PUT",
-   "path": "/events/channels/{key}",
+   "path": "/events/channels/by-key",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#updateEventChannel",
@@ -3259,7 +3259,7 @@
   {
    "operationId": "deleteEventChannel",
    "method": "DELETE",
-   "path": "/events/channels/{key}",
+   "path": "/events/channels/by-key",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#deleteEventChannel",
@@ -3271,7 +3271,7 @@
   {
    "operationId": "retireEventChannel",
    "method": "POST",
-   "path": "/events/channels/{key}/retire",
+   "path": "/events/channels/by-key/retire",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#retireEventChannel",
@@ -3283,7 +3283,7 @@
   {
    "operationId": "restoreEventChannel",
    "method": "POST",
-   "path": "/events/channels/{key}/restore",
+   "path": "/events/channels/by-key/restore",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#restoreEventChannel",
@@ -3319,7 +3319,7 @@
   {
    "operationId": "getEventDefinition",
    "method": "GET",
-   "path": "/events/definitions/{key}",
+   "path": "/events/definitions/by-key",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#getEventDefinition",
@@ -3331,7 +3331,7 @@
   {
    "operationId": "deleteEventDefinition",
    "method": "DELETE",
-   "path": "/events/definitions/{key}",
+   "path": "/events/definitions/by-key",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#deleteEventDefinition",
@@ -3343,7 +3343,7 @@
   {
    "operationId": "retireEventDefinition",
    "method": "POST",
-   "path": "/events/definitions/{key}/retire",
+   "path": "/events/definitions/by-key/retire",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#retireEventDefinition",
@@ -3355,7 +3355,7 @@
   {
    "operationId": "restoreEventDefinition",
    "method": "POST",
-   "path": "/events/definitions/{key}/restore",
+   "path": "/events/definitions/by-key/restore",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#restoreEventDefinition",
@@ -3367,7 +3367,7 @@
   {
    "operationId": "publishEvent",
    "method": "POST",
-   "path": "/events/{channel}",
+   "path": "/events/by-channel",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#publishEvent",
@@ -5383,7 +5383,7 @@
   {
    "operationId": "runNamedQuery",
    "method": "GET",
-   "path": "/queries/{name}",
+   "path": "/queries/by-name",
    "tag": "LowCode",
    "apiClass": "LowCodeApi",
    "java": "LowCodeApi#runNamedQuery",
@@ -8887,7 +8887,7 @@
   {
    "operationId": "receiveEventGridDelivery",
    "method": "POST",
-   "path": "/hooks/eventgrid/{tenant}/{channel}",
+   "path": "/hooks/eventgrid/{tenant}/by-channel",
    "tag": "EventGridHooks",
    "apiClass": "EventGridHooksApi",
    "java": "EventGridHooksApi#receiveEventGridDelivery",
@@ -10159,7 +10159,7 @@
   {
    "operationId": "getModelLease",
    "method": "GET",
-   "path": "/models/{file}/lease",
+   "path": "/models/by-file/lease",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#getModelLease",
@@ -10171,7 +10171,7 @@
   {
    "operationId": "acquireModelLease",
    "method": "POST",
-   "path": "/models/{file}/lease",
+   "path": "/models/by-file/lease",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#acquireModelLease",
@@ -10183,7 +10183,7 @@
   {
    "operationId": "heartbeatModelLease",
    "method": "POST",
-   "path": "/models/{file}/lease/heartbeat",
+   "path": "/models/by-file/lease/heartbeat",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#heartbeatModelLease",
@@ -10195,7 +10195,7 @@
   {
    "operationId": "releaseModelLease",
    "method": "POST",
-   "path": "/models/{file}/lease/release",
+   "path": "/models/by-file/lease/release",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#releaseModelLease",
@@ -10207,7 +10207,7 @@
   {
    "operationId": "requestModelLeaseTakeover",
    "method": "POST",
-   "path": "/models/{file}/lease/request-takeover",
+   "path": "/models/by-file/lease/request-takeover",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#requestModelLeaseTakeover",
@@ -10219,7 +10219,7 @@
   {
    "operationId": "takeOverModelLease",
    "method": "POST",
-   "path": "/models/{file}/lease/takeover",
+   "path": "/models/by-file/lease/takeover",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#takeOverModelLease",
@@ -10231,7 +10231,7 @@
   {
    "operationId": "streamModelPresence",
    "method": "GET",
-   "path": "/models/{file}/presence/stream",
+   "path": "/models/by-file/presence/stream",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#streamModelPresence",
@@ -10363,7 +10363,7 @@
   {
    "operationId": "acquireModelLeaseUi",
    "method": "POST",
-   "path": "/models/{file}/lease/acquire",
+   "path": "/models/by-file/lease/acquire",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#acquireModelLeaseUi",
@@ -10435,7 +10435,7 @@
   {
    "operationId": "toggleServiceMock",
    "method": "PATCH",
-   "path": "/service-mocks/{id}",
+   "path": "/service-mocks/by-id",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#toggleServiceMock",
@@ -11323,7 +11323,7 @@
   {
    "operationId": "uninstallPack",
    "method": "POST",
-   "path": "/packs/{id}/uninstall",
+   "path": "/packs/by-id/uninstall",
    "tag": "Packs",
    "apiClass": "PacksApi",
    "java": "PacksApi#uninstallPack",
@@ -11335,7 +11335,7 @@
   {
    "operationId": "rollbackPack",
    "method": "POST",
-   "path": "/packs/{id}/rollback",
+   "path": "/packs/by-id/rollback",
    "tag": "Packs",
    "apiClass": "PacksApi",
    "java": "PacksApi#rollbackPack",
@@ -11347,7 +11347,7 @@
   {
    "operationId": "listPackDocumentSlots",
    "method": "GET",
-   "path": "/packs/{id}/document-slots",
+   "path": "/packs/by-id/document-slots",
    "tag": "Packs",
    "apiClass": "PacksApi",
    "java": "PacksApi#listPackDocumentSlots",
@@ -15621,7 +15621,7 @@
   {
    "operationId": "eventGridHookHandshake",
    "method": "OPTIONS",
-   "path": "/hooks/eventgrid/{tenant}/{channel}"
+   "path": "/hooks/eventgrid/{tenant}/by-channel"
   }
  ]
 }

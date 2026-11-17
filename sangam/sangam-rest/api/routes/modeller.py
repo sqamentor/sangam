@@ -53,8 +53,8 @@ schema("ModelDiffReport", "Semantic diff of two model versions.", "resource form
        enums={"format": ["BPMN", "DMN", "CMMN", "FORM"]},
        descs={"changes": "Sorted by level, elementId, path, kind"})
 
-ML = "/models/{file}/lease"
-F = pp("file", "model file: the package id")
+ML = "/models/by-file/lease"
+F = q("file", desc="Model file id; may carry '/' or ':'", required=True)
 op("get", "/landscape", "getProcessLandscape", "Modeller", "Process landscape", "Call graph across packages, with cycles.", MR,
    resp=(200, "object"), perm="package.read")
 op("post", "/models/token-walk", "walkModelToken", "Modeller", "Token walk",
@@ -84,7 +84,7 @@ schema("ModelViewer", "One user who has the model file open.", "userId displayNa
        ["userId", "editing", "since"],
        descs={"editing": "True for the holder of the file's edit lease", "since": "When this user opened the file"})
 schema("ModelPresence", "Who has a model file open.", "fileId viewers:list:ModelViewer", ["fileId", "viewers"])
-op("get", "/models/{file}/presence/stream", "streamModelPresence", "Modeller", "Model presence stream",
+op("get", "/models/by-file/presence/stream", "streamModelPresence", "Modeller", "Model presence stream",
    "Server-sent events, event name 'presence', data = ModelPresence: one event on connect and one on every join, leave "
    "or lease change (M-101). The caller is present while the stream is open; closing it leaves. Live across nodes like "
    "the conversation stream (M-040).", MR, params=[F],
@@ -118,10 +118,10 @@ _ML = {"application/json": {"schema": {"type": "array", "items": {}}}}
 _MOD = "sangam-rest/src/main/java/org/sangam/rest/modules/modeller/ModellerController.java"
 _MOCKS = "sangam-rest/src/main/java/org/sangam/rest/modules/modeller/ServiceMocksController.java"
 op("get", "/templates/{key}", "getElementTemplate", "Modeller", "Get a template", "Latest version unless one is named.", MR, params=[pp("key"), q("version", "int")], resp=(200, "object"), perm="package.read")
-op("post", ML + "/acquire", "acquireModelLeaseUi", "Modeller", "Acquire the edit lease (console)", "Same as POST on the lease.", MR, params=[pp("file")], body=record_body(_MOD, "FenceRequest", False), resp=(200, "object"), cmd="modeller.lease.acquire.ui", perm="package.author")
+op("post", ML + "/acquire", "acquireModelLeaseUi", "Modeller", "Acquire the edit lease (console)", "Same as POST on the lease.", MR, params=[F], body=record_body(_MOD, "FenceRequest", False), resp=(200, "object"), cmd="modeller.lease.acquire.ui", perm="package.author")
 op("post", "/actions/{key}/run", "runActionModel", "Modeller", "Run an action", "The permission and the subject (subjectRef: the case, process instance or task of the action's scope, visible to the caller) are checked on every call; idempotent per request key; a reason is recorded in the ACTION_INVOKED audit entry.", MR, params=[pp("key")], body=record_body(_MOD, "RunActionRequest"), resp=(200, "object"), cmd="modeller.action.run", perm="modeller.action.invoke")
 op("delete", "/actions/{key}", "retireActionModel", "Modeller", "Retire an action", "Needs a reason; audited.", MR, params=[pp("key"), q("reason", required=True)], resp=(204, None), cmd="modeller.action.retire", perm="modeller.action.publish")
 op("get", "/service-mocks", "listServiceMocks", "Modeller", "List service mocks", "Not on a production profile.", MR, params=[q("page", "int"), q("size", "int")], resp=(200, _ML), perm="ops.read")
 op("post", "/service-mocks", "createServiceMock", "Modeller", "Add a service mock", "This node, until restart.", MR, body=record_body(_MOCKS, "CreateMock"), resp=(201, "object"), cmd="modeller.mock.create", perm="ops.write")
 op("put", "/service-mocks/global", "setServiceMocksGlobal", "Modeller", "Toggle all mocks", "This node.", MR, body=record_body(_MOCKS, "Toggle"), resp=(200, "object"), cmd="modeller.mock.global", perm="ops.write")
-op("patch", "/service-mocks/{id}", "toggleServiceMock", "Modeller", "Toggle a mock's service", "Affects every rule of the service.", MR, params=[pp("id")], body=record_body(_MOCKS, "Toggle"), resp=(200, "object"), cmd="modeller.mock.toggle", perm="ops.write")
+op("patch", "/service-mocks/by-id", "toggleServiceMock", "Modeller", "Toggle a mock's service", "Affects every rule of the service.", MR, params=[q("id", desc="Mock row id (service.operation); may carry '/' or ':'", required=True)], body=record_body(_MOCKS, "Toggle"), resp=(200, "object"), cmd="modeller.mock.toggle", perm="ops.write")

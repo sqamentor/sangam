@@ -7,7 +7,7 @@ namespace Sangam\Sdk\Model;
 use Sangam\Sdk\Http\HttpTransport;
 
 /**
- * CloudEvents 1.0 envelope for POST /events/{channel} (R16). Required: id, source, type, specversion.
+ * CloudEvents 1.0 envelope for POST /events/by-channel?channel= (R16). Required: id, source, type, specversion.
  * $extensions are CloudEvents extension attributes, sent as the "extensions" member.
  */
 final class CloudEvent implements \JsonSerializable

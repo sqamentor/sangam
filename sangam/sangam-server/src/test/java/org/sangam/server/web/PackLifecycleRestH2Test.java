@@ -70,7 +70,7 @@ class PackLifecycleRestH2Test {
 
     @Test
     void aReasonIsRequired() throws Exception {
-        HttpResponse<String> r = send("POST", "/api/v1/packs/no.such.pack/uninstall", DEV, "{\"tenant\":\"dev\"}");
+        HttpResponse<String> r = send("POST", "/api/v1/packs/by-id/uninstall?id=no.such.pack", DEV, "{\"tenant\":\"dev\"}");
         assertEquals(400, r.statusCode(), r.body());
         assertEquals("REASON_REQUIRED", JSON.readTree(r.body()).path("code").asText(), r.body());
     }

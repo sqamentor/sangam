@@ -602,7 +602,7 @@ export function PackLifecycle() {
         onClose={() => setOp(null)}
         onConfirm={(reason) =>
           op &&
-          void act.run((k) => http.post<unknown>(`/packs/${encodeURIComponent(op.packId)}/${op.kind}`, { tenant, reason }, k)).then((r) => {
+          void act.run((k) => http.post<unknown>(`/packs/by-id/${op.kind}?id=${encodeURIComponent(op.packId)}`, { tenant, reason }, k)).then((r) => {
             if (r !== undefined) {
               setResult(r);
               setOp(null);

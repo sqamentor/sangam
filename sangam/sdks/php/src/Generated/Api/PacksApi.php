@@ -41,13 +41,15 @@ final class PacksApi
      *
      * Removes every version of the pack from the tenant, audited (PACK_UNINSTALLED). 404 PACK_NOT_INSTALLED; 409 PACK_HAS_DEPENDANTS or PACK_HAS_LIVE_INSTANCES with `blockers`; 400 REASON_REQUIRED. 409 PACK_OPERATION_IN_PROGRESS while another operation on the pack runs (SL-116).
      *
-     * POST /packs/{id}/uninstall (operationId uninstallPack); permission tenant.admin; result stored atomically with the state change.
+     * POST /packs/by-id/uninstall (operationId uninstallPack); permission tenant.admin; result stored atomically with the state change.
      * @param Model\PackLifecycleRequest|array $body request body
+     * @param string $id query id
      * @return Model\PackUninstalled|null
      */
-    public function uninstallPack(string $id, Model\PackLifecycleRequest|array $body, ?RequestOptions $options = null): ?Model\PackUninstalled
+    public function uninstallPack(Model\PackLifecycleRequest|array $body, string $id, ?RequestOptions $options = null): ?Model\PackUninstalled
     {
-        $req = ApiRequest::post('/packs/' . HttpTransport::seg((string) $id) . '/uninstall');
+        $req = ApiRequest::post('/packs/by-id/uninstall');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -59,13 +61,15 @@ final class PacksApi
      *
      * Roll-forward (SL-54): the resources of the most recent deployment of a different version are read back from the engine and deployed as a NEW version, the next patch above the highest installed version of the pack, with every version-bearing part restated for it; no existing `id@version` is reused or changed. New instances started by key then start on the previous models; running instances keep the definitions they started on. Each further rollback rolls forward again to a new version. Audited (PACK_ROLLED_BACK, with the new version). 404 PACK_NOT_INSTALLED; 409 PACK_NO_PREVIOUS_VERSION; 409 PACK_VERSION_NOT_SEMVER with `blockers` (the installed versions that are not MAJOR.MINOR.PATCH, so the next version cannot be determined); 422 PACK_REJECTED with `violations`; 400 REASON_REQUIRED. 409 PACK_OPERATION_IN_PROGRESS while another operation on the pack runs (SL-116).
      *
-     * POST /packs/{id}/rollback (operationId rollbackPack); permission tenant.admin; result stored atomically with the state change.
+     * POST /packs/by-id/rollback (operationId rollbackPack); permission tenant.admin; result stored atomically with the state change.
      * @param Model\PackLifecycleRequest|array $body request body
+     * @param string $id query id
      * @return Model\PackDeployResult|null
      */
-    public function rollbackPack(string $id, Model\PackLifecycleRequest|array $body, ?RequestOptions $options = null): ?Model\PackDeployResult
+    public function rollbackPack(Model\PackLifecycleRequest|array $body, string $id, ?RequestOptions $options = null): ?Model\PackDeployResult
     {
-        $req = ApiRequest::post('/packs/' . HttpTransport::seg((string) $id) . '/rollback');
+        $req = ApiRequest::post('/packs/by-id/rollback');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -77,12 +81,14 @@ final class PacksApi
      *
      * The documentType-to-slot pairs the pack declares for its DSC steps (decision 269), in manifest order; empty when the pack declares none. 404 NOT_FOUND when no pack with this id is registered.
      *
-     * GET /packs/{id}/document-slots (operationId listPackDocumentSlots); permission tenant.admin.
+     * GET /packs/by-id/document-slots (operationId listPackDocumentSlots); permission tenant.admin.
+     * @param string $id query id
      * @return list<Model\PackDocumentSlot>
      */
     public function listPackDocumentSlots(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/packs/' . HttpTransport::seg((string) $id) . '/document-slots');
+        $req = ApiRequest::get('/packs/by-id/document-slots');
+        $req->query('id', $id);
         return $this->calls->models($req, $options, Model\PackDocumentSlot::class);
     }
 }

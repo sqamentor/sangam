@@ -6738,7 +6738,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/channels/{key}:
+  /events/channels/by-key:
     get:
       operationId: getEventChannel
       tags:
@@ -6747,7 +6747,8 @@ paths:
       description: One channel.
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -6777,7 +6778,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -6829,7 +6831,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -6861,7 +6864,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/channels/{key}/retire:
+  /events/channels/by-key/retire:
     post:
       operationId: retireEventChannel
       tags:
@@ -6874,7 +6877,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -6916,7 +6920,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/channels/{key}/restore:
+  /events/channels/by-key/restore:
     post:
       operationId: restoreEventChannel
       tags:
@@ -6927,7 +6931,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7052,7 +7057,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/definitions/{key}:
+  /events/definitions/by-key:
     get:
       operationId: getEventDefinition
       tags:
@@ -7061,7 +7066,8 @@ paths:
       description: One definition.
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7092,7 +7098,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7124,7 +7131,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/definitions/{key}/retire:
+  /events/definitions/by-key/retire:
     post:
       operationId: retireEventDefinition
       tags:
@@ -7136,7 +7143,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7178,7 +7186,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/definitions/{key}/restore:
+  /events/definitions/by-key/restore:
     post:
       operationId: restoreEventDefinition
       tags:
@@ -7189,7 +7197,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7231,7 +7240,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/{channel}:
+  /events/by-channel:
     post:
       operationId: publishEvent
       tags:
@@ -7243,7 +7252,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: channel
-        in: path
+        in: query
+        description: Inbound event channel key; may carry ':'
         required: true
         schema:
           type: string
@@ -14180,7 +14190,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queries/{name}:
+  /queries/by-name:
     get:
       operationId: runNamedQuery
       tags:
@@ -14189,7 +14199,8 @@ paths:
       description: Named query (R25); further query parameters are passed to the query. Uses the same authorization as the underlying data.
       parameters:
       - name: name
-        in: path
+        in: query
+        description: Named query (tasks.mine, process-instances, or data:<data object key>); may carry ':'
         required: true
         schema:
           type: string
@@ -28755,7 +28766,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease:
+  /models/by-file/lease:
     get:
       operationId: getModelLease
       tags:
@@ -28764,11 +28775,11 @@ paths:
       description: The lease on a model file.
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       x-sangam-permission: package.read
       x-sangam-requirements:
       - R43
@@ -28798,11 +28809,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -28834,7 +28845,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease/heartbeat:
+  /models/by-file/lease/heartbeat:
     post:
       operationId: heartbeatModelLease
       tags:
@@ -28845,11 +28856,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -28883,7 +28894,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease/release:
+  /models/by-file/lease/release:
     post:
       operationId: releaseModelLease
       tags:
@@ -28894,11 +28905,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -28932,7 +28943,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease/request-takeover:
+  /models/by-file/lease/request-takeover:
     post:
       operationId: requestModelLeaseTakeover
       tags:
@@ -28943,11 +28954,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -28975,7 +28986,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease/takeover:
+  /models/by-file/lease/takeover:
     post:
       operationId: takeOverModelLease
       tags:
@@ -28986,11 +28997,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -29503,7 +29514,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /models/{file}/lease/acquire:
+  /models/by-file/lease/acquire:
     post:
       operationId: acquireModelLeaseUi
       tags:
@@ -29514,7 +29525,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -29789,7 +29801,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /service-mocks/{id}:
+  /service-mocks/by-id:
     patch:
       operationId: toggleServiceMock
       tags:
@@ -29800,7 +29812,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
+        in: query
+        description: Mock row id (service.operation); may carry '/' or ':'
         required: true
         schema:
           type: string

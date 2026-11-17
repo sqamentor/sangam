@@ -30,16 +30,17 @@ public final class EventGridHooksApi {
      *
      * <p>Public at the Sangam layer; the channel's authentication is checked first: a Microsoft Entra ID delivery token (Authorization: Bearer; issuer, audience and signature validated against the channel's configured tenant and application) or the delivery-property secret header, whichever the channel configures (decision 219). A delivery that satisfies no configured method is 401 WEBHOOK_SIGNATURE_INVALID (fail closed), 404 when the channel is not configured or not enabled. CloudEvents structured single or batch, or the Event Grid schema (an array). A Microsoft.EventGrid.SubscriptionValidationEvent is answered with {validationResponse} and writes nothing; other events are written to the inbox (deduplicated by id) and acknowledged. A content type the channel does not accept is 400.
      *
-     * <p>{@code POST /hooks/eventgrid/{tenant}/{channel}} (operationId {@code receiveEventGridDelivery}).
+     * <p>{@code POST /hooks/eventgrid/{tenant}/by-channel} (operationId {@code receiveEventGridDelivery}).
      * @param tenant path parameter {@code tenant}
-     * @param channel path parameter {@code channel}. Configured Event Grid inbound channel of the tenant
      * @param body request body
+     * @param channel query parameter {@code channel}. Configured Event Grid inbound channel of the tenant (an event channel key); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public EventGridHookResult receiveEventGridDelivery(String tenant, String channel, java.util.List<java.util.Map<String, Object>> body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/hooks/eventgrid/" + HttpTransport.seg(String.valueOf(tenant)) + "/" + HttpTransport.seg(String.valueOf(channel)));
+    public EventGridHookResult receiveEventGridDelivery(String tenant, java.util.List<java.util.Map<String, Object>> body, String channel, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/hooks/eventgrid/" + HttpTransport.seg(String.valueOf(tenant)) + "/by-channel");
         req.body(body);
+        req.query("channel", channel);
         return call.json(req, options, R_receiveEventGridDelivery);
     }
 }

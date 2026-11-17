@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * M-101: who else has a model file open, over GET /models/{file}/presence/stream (operationId streamModelPresence,
+ * M-101: who else has a model file open, over GET /models/by-file/presence/stream?file= (operationId streamModelPresence,
  * package.read; sangam-rest/api/routes/modeller.py). Server-sent events, event name 'presence', data = ModelPresence
  * {fileId, viewers: ModelViewer[]}: one event on connect and one on every join, leave or lease change. The caller is
  * present while the stream is open; closing it leaves. The stream is the M-040 fetch client (api/sse.ts), so it carries

@@ -30,11 +30,12 @@ public sealed class PacksApi
     /// <summary>
     /// Uninstall a pack
     /// Removes every version of the pack from the tenant, audited (PACK_UNINSTALLED). 404 PACK_NOT_INSTALLED; 409 PACK_HAS_DEPENDANTS or PACK_HAS_LIVE_INSTANCES with `blockers`; 400 REASON_REQUIRED. 409 PACK_OPERATION_IN_PROGRESS while another operation on the pack runs (SL-116).
-    /// POST /packs/{id}/uninstall (operationId uninstallPack); permission tenant.admin; result stored atomically with the state change.
+    /// POST /packs/by-id/uninstall (operationId uninstallPack); permission tenant.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.PackUninstalled?> UninstallPackAsync(string id, M.PackLifecycleRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.PackUninstalled?> UninstallPackAsync(M.PackLifecycleRequest body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/packs/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/uninstall");
+        var req = ApiRequest.Post($"/packs/by-id/uninstall");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.PackUninstalled?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -42,11 +43,12 @@ public sealed class PacksApi
     /// <summary>
     /// Roll a pack back
     /// Roll-forward (SL-54): the resources of the most recent deployment of a different version are read back from the engine and deployed as a NEW version, the next patch above the highest installed version of the pack, with every version-bearing part restated for it; no existing `id@version` is reused or changed. New instances started by key then start on the previous models; running instances keep the definitions they started on. Each further rollback rolls forward again to a new version. Audited (PACK_ROLLED_BACK, with the new version). 404 PACK_NOT_INSTALLED; 409 PACK_NO_PREVIOUS_VERSION; 409 PACK_VERSION_NOT_SEMVER with `blockers` (the installed versions that are not MAJOR.MINOR.PATCH, so the next version cannot be determined); 422 PACK_REJECTED with `violations`; 400 REASON_REQUIRED. 409 PACK_OPERATION_IN_PROGRESS while another operation on the pack runs (SL-116).
-    /// POST /packs/{id}/rollback (operationId rollbackPack); permission tenant.admin; result stored atomically with the state change.
+    /// POST /packs/by-id/rollback (operationId rollbackPack); permission tenant.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.PackDeployResult?> RollbackPackAsync(string id, M.PackLifecycleRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.PackDeployResult?> RollbackPackAsync(M.PackLifecycleRequest body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/packs/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/rollback");
+        var req = ApiRequest.Post($"/packs/by-id/rollback");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.PackDeployResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -54,11 +56,12 @@ public sealed class PacksApi
     /// <summary>
     /// Document slots of a pack
     /// The documentType-to-slot pairs the pack declares for its DSC steps (decision 269), in manifest order; empty when the pack declares none. 404 NOT_FOUND when no pack with this id is registered.
-    /// GET /packs/{id}/document-slots (operationId listPackDocumentSlots); permission tenant.admin.
+    /// GET /packs/by-id/document-slots (operationId listPackDocumentSlots); permission tenant.admin.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.PackDocumentSlot>?> ListPackDocumentSlotsAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/packs/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/document-slots");
+        var req = ApiRequest.Get($"/packs/by-id/document-slots");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.PackDocumentSlot>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 }

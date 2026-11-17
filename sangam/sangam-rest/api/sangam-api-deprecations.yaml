@@ -1077,3 +1077,155 @@ corrections:
     to: "/compliance/contacts/by-role?role= (literal route, the value as a query parameter; the old route is removed)"
     reason: "decision 393: the value is client-chosen with no pattern on create (ContactDirectory.java:49), so a value with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
     decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: GET
+    path: /models/{file}/lease
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/models/{file}/lease: the value as a path parameter"
+    to: "/models/by-file/lease?file= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: model file ids are client-chosen with no rule (EditLeases.java:47, example pkg/main.bpmn), so a file id with '/' never reached its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /models/{file}/lease
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/models/{file}/lease: the value as a path parameter"
+    to: "/models/by-file/lease?file= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: model file ids are client-chosen with no rule (EditLeases.java:47, example pkg/main.bpmn), so a file id with '/' never reached its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /models/{file}/lease/acquire
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/models/{file}/lease/acquire: the value as a path parameter"
+    to: "/models/by-file/lease/acquire?file= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: model file ids are client-chosen with no rule (EditLeases.java:47, example pkg/main.bpmn), so a file id with '/' never reached its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /models/{file}/lease/heartbeat
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/models/{file}/lease/heartbeat: the value as a path parameter"
+    to: "/models/by-file/lease/heartbeat?file= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: model file ids are client-chosen with no rule (EditLeases.java:47, example pkg/main.bpmn), so a file id with '/' never reached its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /models/{file}/lease/release
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/models/{file}/lease/release: the value as a path parameter"
+    to: "/models/by-file/lease/release?file= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: model file ids are client-chosen with no rule (EditLeases.java:47, example pkg/main.bpmn), so a file id with '/' never reached its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /models/{file}/lease/request-takeover
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/models/{file}/lease/request-takeover: the value as a path parameter"
+    to: "/models/by-file/lease/request-takeover?file= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: model file ids are client-chosen with no rule (EditLeases.java:47, example pkg/main.bpmn), so a file id with '/' never reached its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /models/{file}/lease/takeover
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/models/{file}/lease/takeover: the value as a path parameter"
+    to: "/models/by-file/lease/takeover?file= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: model file ids are client-chosen with no rule (EditLeases.java:47, example pkg/main.bpmn), so a file id with '/' never reached its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: GET
+    path: /events/channels/{key}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/channels/{key}: the value as a path parameter"
+    to: "/events/channels/by-key?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the server's event registry accepts channel keys of [A-Za-z0-9_.:-] (EventRegistry.java:316, deployed through PortsEventBridge), so a key with ':' is valid and is moved as decision 393 requires"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: PUT
+    path: /events/channels/{key}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/channels/{key}: the value as a path parameter"
+    to: "/events/channels/by-key?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the server's event registry accepts channel keys of [A-Za-z0-9_.:-] (EventRegistry.java:316, deployed through PortsEventBridge), so a key with ':' is valid and is moved as decision 393 requires"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /events/channels/{key}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/channels/{key}: the value as a path parameter"
+    to: "/events/channels/by-key?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the server's event registry accepts channel keys of [A-Za-z0-9_.:-] (EventRegistry.java:316, deployed through PortsEventBridge), so a key with ':' is valid and is moved as decision 393 requires"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /events/channels/{key}/retire
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/channels/{key}/retire: the value as a path parameter"
+    to: "/events/channels/by-key/retire?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the server's event registry accepts channel keys of [A-Za-z0-9_.:-] (EventRegistry.java:316, deployed through PortsEventBridge), so a key with ':' is valid and is moved as decision 393 requires"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /events/channels/{key}/restore
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/channels/{key}/restore: the value as a path parameter"
+    to: "/events/channels/by-key/restore?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the server's event registry accepts channel keys of [A-Za-z0-9_.:-] (EventRegistry.java:316, deployed through PortsEventBridge), so a key with ':' is valid and is moved as decision 393 requires"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: GET
+    path: /events/definitions/{key}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/definitions/{key}: the value as a path parameter"
+    to: "/events/definitions/by-key?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: event definition keys are checked only against reserved words (JdbcEventAdapter.java:411) and the registry pattern [A-Za-z0-9_.:-] (EventRegistry.java:316), so a key may carry ':'"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /events/definitions/{key}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/definitions/{key}: the value as a path parameter"
+    to: "/events/definitions/by-key?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: event definition keys are checked only against reserved words (JdbcEventAdapter.java:411) and the registry pattern [A-Za-z0-9_.:-] (EventRegistry.java:316), so a key may carry ':'"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /events/definitions/{key}/retire
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/definitions/{key}/retire: the value as a path parameter"
+    to: "/events/definitions/by-key/retire?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: event definition keys are checked only against reserved words (JdbcEventAdapter.java:411) and the registry pattern [A-Za-z0-9_.:-] (EventRegistry.java:316), so a key may carry ':'"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /events/definitions/{key}/restore
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/definitions/{key}/restore: the value as a path parameter"
+    to: "/events/definitions/by-key/restore?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: event definition keys are checked only against reserved words (JdbcEventAdapter.java:411) and the registry pattern [A-Za-z0-9_.:-] (EventRegistry.java:316), so a key may carry ':'"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /events/{channel}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/{channel}: the value as a path parameter"
+    to: "/events/by-channel?channel= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the server's event registry accepts channel keys of [A-Za-z0-9_.:-] (EventRegistry.java:316, deployed through PortsEventBridge), so a key with ':' is valid and is moved as decision 393 requires"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: GET
+    path: /queries/{name}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queries/{name}: the value as a path parameter"
+    to: "/queries/by-name?name= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a named query of a data object is data:<key> (JdbcLowCodeAdapter.java:209), so the name carries ':' by design"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: PATCH
+    path: /service-mocks/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/service-mocks/{id}: the value as a path parameter"
+    to: "/service-mocks/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a mock row id is service + '.' + operation (ServiceMocksController id()), both free text, so it may carry '/' or ':'"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"

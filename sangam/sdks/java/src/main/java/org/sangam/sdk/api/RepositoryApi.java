@@ -59,9 +59,9 @@ public final class RepositoryApi extends ApiSupport {
         return (List) callList(ApiRequest.get("/events/definitions"), Map.class);
     }
 
-    /** {@code POST /events/{channel}}: a CloudEvent, de-duplicated by (tenant, source, id) (R38). */
+    /** {@code POST /events/by-channel?channel=} (a channel key may carry ':'): a CloudEvent, de-duplicated by (tenant, source, id) (R38). */
     public PublishResult publishEvent(String channel, CloudEvent event, String idempotencyKey) {
-        return call(ApiRequest.post("/events/" + seg(channel)).body(event).idempotencyKey(idempotencyKey), PublishResult.class);
+        return call(ApiRequest.post("/events/by-channel").query("channel", channel).body(event).idempotencyKey(idempotencyKey), PublishResult.class);
     }
 
     /** Builds a CloudEvents 1.0 event with a random id and the current time. */

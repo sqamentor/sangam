@@ -31,7 +31,7 @@ import org.sangam.rest.support.RestProperties;
  *       registry's version states ({@code ACTIVE} / {@code RETIRED}); delete retires first and then removes the
  *       retired versions; all three are refused with {@code 409 EVENT_IN_FLIGHT} while events of the key are buffered
  *       or undelivered.</li>
- *   <li>{@code POST /events/{channel}} goes to {@link WebhookInboundEndpoint#receiveAuthenticated}: the caller is a
+ *   <li>{@code POST /events/by-channel?channel=} goes to {@link WebhookInboundEndpoint#receiveAuthenticated}: the caller is a
  *       Sangam principal of the tenant holding {@code EVENT_PUBLISH} (token-authenticated API), so its token, not the
  *       channel HMAC, authenticates the event (SL-76). The CloudEvent (structured mode) is the body, {@code id} is the
  *       message id, so the inbox de-duplicates redeliveries (R38); dispatch to processes and cases (start, correlation,

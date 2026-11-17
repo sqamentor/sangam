@@ -19,7 +19,7 @@ import org.sangam.rest.support.Permissions;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
 /**
- * Round-5 lane w2 item 3 (decision 269): {@code GET /packs/{id}/document-slots} answers the pack's pairs to a platform
+ * Round-5 lane w2 item 3 (decision 269): {@code GET /packs/by-id/document-slots?id=} answers the pack's pairs to a platform
  * pack administrator (tenant.admin and the sangam-admin group, the gate of every /packs/ route), 404 for an unknown
  * pack, 501 without the packs module, and nothing reaches the port without the gate.
  */

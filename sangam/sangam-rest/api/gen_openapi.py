@@ -1319,44 +1319,45 @@ op("get", "/events/channels", "listEventChannels", "Events", "List channels", "E
 op("post", "/events/channels", "createEventChannel", "Events", "Create a channel", "Registers a channel; keys 'channels' and 'definitions' are reserved.",
    ["FC-03", "R41"], body="EventChannel", resp=(201, "EventChannel"), cmd="event.channel.create", perm="event.admin", created=True)
 KEY = pp("key")
-op("get", "/events/channels/{key}", "getEventChannel", "Events", "Get a channel", "One channel.", ["FC-03"], params=[KEY],
+EVK = q("key", desc="Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'", required=True)
+op("get", "/events/channels/by-key", "getEventChannel", "Events", "Get a channel", "One channel.", ["FC-03"], params=[EVK],
    resp=(200, "EventChannel"), perm="event.admin", errors=GET_E)
-op("put", "/events/channels/{key}", "updateEventChannel", "Events", "Update a channel", "Updates a channel.", ["FC-03", "R41"], params=[KEY],
+op("put", "/events/channels/by-key", "updateEventChannel", "Events", "Update a channel", "Updates a channel.", ["FC-03", "R41"], params=[EVK],
    body="EventChannel", resp=(200, "EventChannel"), cmd="event.channel.update", perm="event.admin")
 EVT_CONFLICT = ("BadRequest", "Unauthorized", "Forbidden", "NotFound", "Conflict")
-op("delete", "/events/channels/{key}", "deleteEventChannel", "Events", "Delete a channel",
+op("delete", "/events/channels/by-key", "deleteEventChannel", "Events", "Delete a channel",
    "Retires every active version and removes the retired versions. Refused with 409 EVENT_IN_FLIGHT while events on the channel are buffered in the inbox or undelivered in the outbox.",
-   ["FC-03", "R41"], params=[KEY, P("reason")], resp=(204, None), cmd="event.channel.delete", perm="event.admin",
+   ["FC-03", "R41"], params=[EVK, P("reason")], resp=(204, None), cmd="event.channel.delete", perm="event.admin",
    errors=EVT_CONFLICT)
-op("post", "/events/channels/{key}/retire", "retireEventChannel", "Events", "Retire a channel",
+op("post", "/events/channels/by-key/retire", "retireEventChannel", "Events", "Retire a channel",
    "Marks every active version RETIRED: the channel no longer resolves and stops receiving; an older active version, if any, becomes current. Refused with 409 EVENT_IN_FLIGHT while events are in flight. Returns the channel with active=false (or the version that became current).",
-   ["FC-03", "R41", "R42"], params=[KEY], body="ReasonRequest", resp=(200, "EventChannel"), cmd="event.channel.retire",
+   ["FC-03", "R41", "R42"], params=[EVK], body="ReasonRequest", resp=(200, "EventChannel"), cmd="event.channel.retire",
    perm="event.admin", errors=EVT_CONFLICT)
-op("post", "/events/channels/{key}/restore", "restoreEventChannel", "Events", "Restore a channel",
+op("post", "/events/channels/by-key/restore", "restoreEventChannel", "Events", "Restore a channel",
    "Re-activates the newest retired version (undo of a retire); 409 NOT_RETIRED when there is none.",
-   ["FC-03", "R41", "R42"], params=[KEY], body="ReasonRequest", resp=(200, "EventChannel"), cmd="event.channel.restore",
+   ["FC-03", "R41", "R42"], params=[EVK], body="ReasonRequest", resp=(200, "EventChannel"), cmd="event.channel.restore",
    perm="event.admin", errors=EVT_CONFLICT)
 op("get", "/events/definitions", "listEventDefinitions", "Events", "List event definitions", "Event definitions (FC-02, FC-04).", ["FC-02", "FC-04"],
    list_=True, resp=(200, "array:EventDefinition"), perm="event.admin", errors=STD_R)
 op("post", "/events/definitions", "createEventDefinition", "Events", "Create an event definition", "Registers an event definition.",
    ["FC-02", "FC-04", "R41"], body="EventDefinition", resp=(201, "EventDefinition"), cmd="event.definition.create", perm="event.admin", created=True)
-op("get", "/events/definitions/{key}", "getEventDefinition", "Events", "Get an event definition", "One definition.", ["FC-02"], params=[KEY],
+op("get", "/events/definitions/by-key", "getEventDefinition", "Events", "Get an event definition", "One definition.", ["FC-02"], params=[EVK],
    resp=(200, "EventDefinition"), perm="event.admin", errors=GET_E)
-op("delete", "/events/definitions/{key}", "deleteEventDefinition", "Events", "Delete an event definition",
+op("delete", "/events/definitions/by-key", "deleteEventDefinition", "Events", "Delete an event definition",
    "Retires every active version and removes the retired versions. Refused with 409 EVENT_IN_FLIGHT while events of the key are buffered or undelivered.",
-   ["FC-02", "R41"], params=[KEY, P("reason")], resp=(204, None), cmd="event.definition.delete", perm="event.admin",
+   ["FC-02", "R41"], params=[EVK, P("reason")], resp=(204, None), cmd="event.definition.delete", perm="event.admin",
    errors=EVT_CONFLICT)
-op("post", "/events/definitions/{key}/retire", "retireEventDefinition", "Events", "Retire an event definition",
+op("post", "/events/definitions/by-key/retire", "retireEventDefinition", "Events", "Retire an event definition",
    "Marks every active version RETIRED; an older active version, if any, becomes current. Refused with 409 EVENT_IN_FLIGHT while events of the key are in flight.",
-   ["FC-02", "R41", "R42"], params=[KEY], body="ReasonRequest", resp=(200, "EventDefinition"),
+   ["FC-02", "R41", "R42"], params=[EVK], body="ReasonRequest", resp=(200, "EventDefinition"),
    cmd="event.definition.retire", perm="event.admin", errors=EVT_CONFLICT)
-op("post", "/events/definitions/{key}/restore", "restoreEventDefinition", "Events", "Restore an event definition",
+op("post", "/events/definitions/by-key/restore", "restoreEventDefinition", "Events", "Restore an event definition",
    "Re-activates the newest retired version (undo of a retire); 409 NOT_RETIRED when there is none.",
-   ["FC-02", "R41", "R42"], params=[KEY], body="ReasonRequest", resp=(200, "EventDefinition"),
+   ["FC-02", "R41", "R42"], params=[EVK], body="ReasonRequest", resp=(200, "EventDefinition"),
    cmd="event.definition.restore", perm="event.admin", errors=EVT_CONFLICT)
-op("post", "/events/{channel}", "publishEvent", "Events", "Publish an event",
+op("post", "/events/by-channel", "publishEvent", "Events", "Publish an event",
    "Accepts a CloudEvent on an inbound channel; de-duplicated through the inbox by (tenant, source, id) (R38), then starts (uniqueStart) or correlates (FC-02, FC-04, R83).",
-   ["FC-02", "FC-03", "FC-04", "R38", "R83", "R41"], params=[pp("channel")],
+   ["FC-02", "FC-03", "FC-04", "R38", "R83", "R41"], params=[q("channel", desc="Inbound event channel key; may carry ':'", required=True)],
    body={"required": True, "content": {"application/cloudevents+json": {"schema": R("CloudEvent")}, "application/json": {"schema": R("CloudEvent")}}},
    resp=(202, "PublishResult"), cmd="event.publish", perm="event.publish",
    errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "ServiceUnavailable"))
@@ -1763,9 +1764,9 @@ op("get", "/pages/{key}", "getPage", "LowCode", "Get a page", "Page model; autho
    resp=(200, "PageModel"), perm="lowcode.read", errors=GET_E)
 op("put", "/pages/{key}", "updatePage", "LowCode", "Update a page", "New version of the page.", ["R77", "R41"], params=[KEY],
    body="PageModel", resp=(200, "PageModel"), cmd="page.update", perm="lowcode.admin")
-op("get", "/queries/{name}", "runNamedQuery", "LowCode", "Run a named query",
+op("get", "/queries/by-name", "runNamedQuery", "LowCode", "Run a named query",
    "Named query (R25); further query parameters are passed to the query. Uses the same authorization as the underlying data.",
-   ["R25", "R77", "VI.4"], list_=True, params=[pp("name")], resp=(200, "array:VariableMap"), perm="lowcode.read", errors=GET_E)
+   ["R25", "R77", "VI.4"], list_=True, params=[q("name", desc="Named query (tasks.mine, process-instances, or data:<data object key>); may carry ':'", required=True)], resp=(200, "array:VariableMap"), perm="lowcode.read", errors=GET_E)
 op("get", "/data-objects", "listDataObjects", "LowCode", "Data objects", "Data-object definitions (R78, EC-06).", ["R78"],
    resp=(200, "array:DataObjectDef"), perm="lowcode.read", errors=WS_E)
 op("post", "/data-objects", "createDataObject", "LowCode", "Create a data object", "New definition.", ["R78", "R41"], body="DataObjectDef",

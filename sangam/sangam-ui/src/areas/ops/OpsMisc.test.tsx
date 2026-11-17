@@ -279,7 +279,7 @@ describe('event registry', () => {
         ],
       }),
     );
-    expect(api.del).toHaveBeenCalledWith('/events/definitions/paid', { reason: 'definition updated' });
+    expect(api.del).toHaveBeenCalledWith('/events/definitions/by-key?key=paid', { reason: 'definition updated' });
   });
 });
 

@@ -31,7 +31,7 @@ public class DocumentSlotsWiring {
                 engine.getRepositoryService(), sangamPackRegistry, tx), permissions);
     }
 
-    /** Decision 269: the read side, {@code GET /packs/{id}/document-slots}, from the same manifests. */
+    /** Decision 269: the read side, {@code GET /packs/by-id/document-slots?id=}, from the same manifests. */
     @Bean
     @ConditionalOnMissingBean(PackDocumentSlotsPort.class)
     public PackDocumentSlotsPort sangamPackDocumentSlots(PackRegistry sangamPackRegistry) {

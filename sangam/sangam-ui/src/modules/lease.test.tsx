@@ -34,8 +34,8 @@ const call = (i: number) => ({ url: String(fetchMock.mock.calls[i][0]), body: JS
 
 describe('lease key', () => {
   it('is the package id, the same key as the save fence and presence', () => {
-    expect(leasePath('pkg/1')).toBe('/models/pkg%2F1/lease');
-    expect(api.models.presencePath('pkg/1')).toBe('/models/pkg%2F1/presence/stream');
+    expect(leasePath('pkg/1')).toBe('/models/by-file/lease?file=pkg%2F1');
+    expect(api.models.presencePath('pkg/1')).toBe('/models/by-file/presence/stream?file=pkg%2F1');
   });
 });
 
@@ -45,7 +45,7 @@ describe('LeaseBanner', () => {
     const onState = vi.fn<(s: LeaseState) => void>();
     const { container } = render(<LeaseBanner packageId="pkg/1" onState={onState} />);
     await waitFor(() => expect(onState).toHaveBeenCalledWith({ mine: true, fence: 7 }));
-    expect(call(0).url).toBe('/api/v1/models/pkg%2F1/lease/acquire');
+    expect(call(0).url).toBe('/api/v1/models/by-file/lease/acquire?file=pkg%2F1');
     expect(container.querySelector('.alert')).toBeNull();
   });
 
@@ -57,10 +57,10 @@ describe('LeaseBanner', () => {
     await waitFor(() => expect(onState).toHaveBeenCalled());
     await act(async () => { await vi.advanceTimersByTimeAsync(30000); });
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2));
-    expect(call(1).url).toBe('/api/v1/models/pkg-1/lease/heartbeat');
+    expect(call(1).url).toBe('/api/v1/models/by-file/lease/heartbeat?file=pkg-1');
     expect(call(1).body).toEqual({ fence: 7 });
     unmount();
-    await waitFor(() => expect(String(last()[0])).toBe('/api/v1/models/pkg-1/lease/release'));
+    await waitFor(() => expect(String(last()[0])).toBe('/api/v1/models/by-file/lease/release?file=pkg-1'));
     expect(JSON.parse(String(last()[1].body))).toEqual({ fence: 7 });
   });
 
@@ -84,16 +84,16 @@ describe('LeaseBanner', () => {
     render(<LeaseBanner packageId="pkg-1" />);
     await waitFor(() => expect(screen.getByText(/asha is editing this model\./)).toBeTruthy());
     fireEvent.click(screen.getByRole('button', { name: 'Ask to edit' }));
-    await waitFor(() => expect(call(1).url).toBe('/api/v1/models/pkg-1/lease/request-takeover'));
+    await waitFor(() => expect(call(1).url).toBe('/api/v1/models/by-file/lease/request-takeover?file=pkg-1'));
     fetchMock.mockResolvedValueOnce(json({ fileId: 'pkg-1', holder: 'me', fence: 10 })).mockResolvedValueOnce(json({ ...MINE, fence: 10 }));
     fireEvent.click(screen.getByRole('button', { name: 'Take over' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.change(dialog.querySelector('textarea')!, { target: { value: 'Holder is on leave' } });
     fireEvent.click(Array.from(dialog.querySelectorAll('button')).find((b) => b.className.includes('danger') || b.className.includes('primary'))!);
-    await waitFor(() => expect(fetchMock.mock.calls.some((c) => String(c[0]).endsWith('/lease/takeover'))).toBe(true));
-    const take = fetchMock.mock.calls.find((c) => String(c[0]).endsWith('/lease/takeover'))!;
+    await waitFor(() => expect(fetchMock.mock.calls.some((c) => String(c[0]).includes('/lease/takeover?'))).toBe(true));
+    const take = fetchMock.mock.calls.find((c) => String(c[0]).includes('/lease/takeover?'))!;
     expect(JSON.parse(String(take[1].body))).toEqual({ reason: 'Holder is on leave' });
-    await waitFor(() => expect(String(last()[0])).toBe('/api/v1/models/pkg-1/lease/acquire'));
+    await waitFor(() => expect(String(last()[0])).toBe('/api/v1/models/by-file/lease/acquire?file=pkg-1'));
   });
 
   it('a reader without package.author (403) sees no error banner', async () => {
