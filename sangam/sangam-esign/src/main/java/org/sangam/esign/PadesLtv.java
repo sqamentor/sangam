@@ -35,7 +35,15 @@ import org.apache.pdfbox.cos.COSObject;
 import org.apache.pdfbox.cos.COSObjectKey;
 import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
+import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
@@ -83,7 +91,16 @@ import org.sangam.esign.PdfSignatureValidator.Ltv;
  *       skew), not after now plus the skew and not after the certificate expired is required: only answers older
  *       than the signature is {@value #REVOCATION_STALE}, none at all {@value #REVOCATION_MISSING}.</li>
  * </ol>
- * Document time-stamps (B-LTA) and Adobe's {@code adbe-revocationInfoArchival} attribute are not evaluated.
+ *
+ * <p>D8 (lane R7-sweep, 2026-11-16): Adobe's signed attribute {@code adbe-revocationInfoArchival}
+ * ({@value #ADBE_REVOCATION_INFO_ARCHIVAL}, ISO 32000-1 12.8.3.3.2: CRLs and OCSP answers the signer embedded when it
+ * signed) is evaluated as more embedded material of that one signature, under exactly the rules above: it is pooled with
+ * the DSS, so its answers count only when authentic and fresh, and a signature that carries it needs no DSS. An attribute
+ * that cannot be read is {@value #ARCHIVAL_INVALID}; its {@code otherRevInfo} entries are not a kind of answer these rules
+ * know and never count. Document time-stamps (B-LTA, {@code /DocTimeStamp}, {@code ETSI.RFC3161}) are not evaluated: such
+ * a signature is reported as {@value #DOCUMENT_TIMESTAMP_NOT_EVALUATED} and makes the report invalid (fail closed),
+ * because judging one needs ETSI EN 319 102-1 past-signature validation (each earlier signature at the archive
+ * time-stamp time), which this validator does not implement.
  */
 final class PadesLtv {
 
@@ -96,6 +113,12 @@ final class PadesLtv {
     static final String REVOCATION_MISSING = "LTV_REVOCATION_MISSING";
     static final String REVOCATION_STALE = "LTV_REVOCATION_STALE";
     static final String REVOKED = "LTV_REVOKED";
+    static final String ARCHIVAL_INVALID = "LTV_ARCHIVAL_INVALID";
+
+    /** The OID of Adobe's {@code adbe-revocationInfoArchival} signed attribute. */
+    static final String ADBE_REVOCATION_INFO_ARCHIVAL = "1.2.840.113583.1.1.8";
+    /** The problem code of a document time-stamp (PAdES B-LTA): not evaluated, so the report is not valid. */
+    static final String DOCUMENT_TIMESTAMP_NOT_EVALUATED = "DOCUMENT_TIMESTAMP_NOT_EVALUATED";
 
     /** The value of {@code afterLastSignature} when only validation data (the DSS) was added after the last signature. */
     static final String VALIDATION_DATA_ONLY = "VALIDATION_DATA_ONLY";
@@ -210,13 +233,61 @@ final class PadesLtv {
     }
 
     /**
+     * The material of a signature's {@code adbe-revocationInfoArchival} signed attribute: null when the signature has
+     * none; {@code error} set when it cannot be read. {@code RevocationInfoArchival ::= SEQUENCE { crl [0] EXPLICIT
+     * SEQUENCE OF CRLs OPTIONAL, ocsp [1] EXPLICIT SEQUENCE OF OCSPResponse OPTIONAL, otherRevInfo [2] EXPLICIT
+     * SEQUENCE OF OtherRevInfo OPTIONAL }}; {@code otherRevInfo} is skipped (never evidence).
+     */
+    static Material archival(AttributeTable signed) {
+        Attribute a = signed == null ? null : signed.get(new ASN1ObjectIdentifier(ADBE_REVOCATION_INFO_ARCHIVAL));
+        if (a == null) {
+            return null;
+        }
+        List<BasicOCSPResp> ocsps = new ArrayList<>();
+        List<X509CRL> crls = new ArrayList<>();
+        try {
+            if (a.getAttrValues().size() != 1) {
+                throw new IOException("the attribute has " + a.getAttrValues().size() + " values, not one");
+            }
+            CertificateFactory x509 = CertificateFactory.getInstance("X.509");
+            int entries = 0;
+            for (ASN1Encodable e : ASN1Sequence.getInstance(a.getAttrValues().getObjectAt(0))) {
+                ASN1TaggedObject t = ASN1TaggedObject.getInstance(e);
+                if (t.getTagClass() != BERTags.CONTEXT_SPECIFIC || t.getTagNo() > 2) {
+                    throw new IOException("unexpected entry [" + t.getTagNo() + "]");
+                }
+                ASN1Sequence items = ASN1Sequence.getInstance(t, true);
+                entries += items.size();
+                if (entries > MAX_ENTRIES) {
+                    throw new IOException("more than " + MAX_ENTRIES + " archival entries");
+                }
+                for (ASN1Encodable item : items) {
+                    byte[] der = item.toASN1Primitive().getEncoded(ASN1Encoding.DER);
+                    if (t.getTagNo() == 0) {
+                        crls.add((X509CRL) x509.generateCRL(new ByteArrayInputStream(der)));
+                    } else if (t.getTagNo() == 1) {
+                        BasicOCSPResp basic = ocsp(der);
+                        if (basic != null) {
+                            ocsps.add(basic);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            return new Material(List.of(), List.of(), List.of(), e.getClass().getSimpleName() + ": " + e.getMessage());
+        }
+        return new Material(List.of(), List.copyOf(ocsps), List.copyOf(crls), null);
+    }
+
+    /**
      * Long-term validation of one signature.
      *
      * @param material the DSS ({@link #material}); null when the document has none
+     * @param archival the signature's {@code adbe-revocationInfoArchival} ({@link #archival}); null when it has none
      * @param tsValid  whether the signature time-stamp verified ({@link PdfSignatureValidator})
      */
     static Ltv check(Set<TrustAnchor> anchors, X509Certificate signer, Collection<X509Certificate> cmsCerts,
-                        TimeStampToken token, Boolean tsValid, Material material, Instant now) {
+                        TimeStampToken token, Boolean tsValid, Material material, Material archival, Instant now) {
         List<String> evidence = new ArrayList<>();
         if (anchors.isEmpty()) {
             return new Ltv(NO_TRUST_ANCHORS, "no trust anchors are configured", evidence);
@@ -224,12 +295,18 @@ final class PadesLtv {
         if (token == null || !Boolean.TRUE.equals(tsValid)) {
             return new Ltv(NO_TIMESTAMP, "the signature has no verified signature time-stamp", evidence);
         }
-        if (material == null) {
-            return new Ltv(NO_DSS, "the document has no document security store", evidence);
+        if (material == null && archival == null) {
+            return new Ltv(NO_DSS, "the document has no document security store and the signature no"
+                    + " adbe-revocationInfoArchival", evidence);
         }
-        if (material.error() != null) {
+        if (material != null && material.error() != null) {
             return new Ltv(DSS_INVALID, material.error(), evidence);
         }
+        if (archival != null && archival.error() != null) {
+            return new Ltv(ARCHIVAL_INVALID, "the adbe-revocationInfoArchival attribute cannot be read: "
+                    + archival.error(), evidence);
+        }
+        material = pooled(material, archival);
         Instant at = token.getTimeStampInfo().getGenTime().toInstant();
         List<X509Certificate> tsaCerts = new ArrayList<>();
         X509Certificate tsa;
@@ -267,6 +344,20 @@ final class PadesLtv {
             }
         }
         return new Ltv(VALID, null, evidence);
+    }
+
+    /** The DSS and the signature's archival material as one pool (either may be null, not both). */
+    private static Material pooled(Material dss, Material archival) {
+        if (dss == null || archival == null) {
+            return dss == null ? archival : dss;
+        }
+        List<X509Certificate> certs = new ArrayList<>(dss.certs());
+        certs.addAll(archival.certs());
+        List<BasicOCSPResp> ocsps = new ArrayList<>(dss.ocsps());
+        ocsps.addAll(archival.ocsps());
+        List<X509CRL> crls = new ArrayList<>(dss.crls());
+        crls.addAll(archival.crls());
+        return new Material(List.copyOf(certs), List.copyOf(ocsps), List.copyOf(crls), null);
     }
 
     /** The path from {@code target} to an anchor (inclusive of the anchor certificate) at {@code at}. */
@@ -321,7 +412,7 @@ final class PadesLtv {
                 CertificateStatus st = s.getCertStatus();
                 if (st instanceof RevokedStatus rs) {
                     return new Ltv(REVOKED, who + " is revoked since " + rs.getRevocationTime().toInstant()
-                            + " (OCSP in the DSS)", evidence);
+                            + " (embedded OCSP answer)", evidence);
                 }
                 if (st == CertificateStatus.GOOD) {
                     if (fresh(thisUpdate, cert, at, now)) {
@@ -339,7 +430,7 @@ final class PadesLtv {
             X509CRLEntry e = crl.getRevokedCertificate(cert);
             if (e != null) {
                 return new Ltv(REVOKED, who + " is revoked since " + e.getRevocationDate().toInstant()
-                        + " (CRL in the DSS)", evidence);
+                        + " (embedded CRL)", evidence);
             }
             Instant thisUpdate = crl.getThisUpdate().toInstant();
             if (fresh(thisUpdate, cert, at, now)) {
@@ -356,7 +447,8 @@ final class PadesLtv {
         return stale
                 ? new Ltv(REVOCATION_STALE, "the embedded revocation answers for " + who
                         + " were all issued before the signature time-stamp " + at, evidence)
-                : new Ltv(REVOCATION_MISSING, "no authentic revocation answer for " + who + " in the DSS", evidence);
+                : new Ltv(REVOCATION_MISSING, "no authentic revocation answer for " + who
+                        + " in the DSS or the signature's adbe-revocationInfoArchival", evidence);
     }
 
     /** Issued after the signature existed (less the skew), not in the future, and while the certificate was valid. */

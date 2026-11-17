@@ -50,6 +50,11 @@ spring:
       max-file-size: ${SANGAM_CONTENT_MAX_FILE:256MB}
       max-request-size: ${SANGAM_CONTENT_MAX_REQUEST:260MB}
       file-size-threshold: 1MB
+      # D6 (lane R7-sweep): parse the parts when a handler reads them, not before the handler is chosen. Eager parsing
+      # failed an oversized upload before handler mapping (no controller advice applies), and the error dispatch parsed
+      # the same body again, failed again and sent a bare 413 with no body. Lazily, the failure is raised in the
+      # argument resolver and the error dispatch answers it as problem JSON (413 PAYLOAD_TOO_LARGE).
+      resolve-lazily: true
 
 operaton:
   bpm:
