@@ -136,6 +136,15 @@ public final class Permissions {
     public static final String GROUP_MODEL_DEPLOYER = "sangam-model-deployer";
     public static final String GROUP_INTEGRATION = "sangam-integration";
     public static final String GROUP_SYSTEM = "sangam-system";
+
+    /** Decision 380: platform-only, submit an entry to the hosted catalogue (CatalogueHostController.PUBLISH). */
+    public static final String CATALOGUE_PUBLISH = "platform.catalogue.publish";
+    /** Decision 380: platform-only, approve or reject a submitted entry (CatalogueHostController.REVIEW). */
+    public static final String CATALOGUE_REVIEW = "platform.catalogue.review";
+    /** The cell service role of the cell tenant-admin routes (CellTenantAdminController.ROLE). */
+    public static final String CELL_ADMIN_ROLE = "CELL_ADMIN";
+    /** The OpenAPI contract on the class path (CommandCatalog.CONTRACT_RESOURCE; ReplayRules reads it). */
+    public static final String CONTRACT_RESOURCE = "sangam-api.yaml";
     /** Engine administrators: the unchanged Operaton REST API ({@code /engine-rest/**}) and nothing else extra. */
     public static final String GROUP_ENGINE_ADMIN = "sangam-engine-admin";
 

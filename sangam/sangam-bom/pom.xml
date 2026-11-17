@@ -51,6 +51,7 @@
       <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-flowable-ports</artifactId><version>${project.version}</version></dependency>
       <!-- Decision 285: the Spring-free ports and default adapters of sangam-rest (package names unchanged) -->
       <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-rest-core</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-security-bridge</artifactId><version>${project.version}</version></dependency>
       <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-rest</artifactId><version>${project.version}</version></dependency>
       <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-packs</artifactId><version>${project.version}</version></dependency>
       <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-compliance</artifactId><version>${project.version}</version></dependency>
