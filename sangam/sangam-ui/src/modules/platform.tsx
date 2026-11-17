@@ -39,7 +39,7 @@ const kb: ScreenDef = {
   id: 'kb', title: 'mod.ai.kb', list: '/ai/knowledge-bases', unpaged: true,
   columns: [c('key'), c('version'), c('status'), c('chunks'), c('updatedAt')], rowKey: ['key', 'id'],
   create: { id: 'publish', label: 'act.publish', path: '/ai/knowledge-bases', fields: [f.text('key', undefined, true), f.area('text', 'fld.body', true), f.json('metadata')], hint: 'mod.ai.kbHint' },
-  actions: [{ id: 'retire', label: 'act.retire', path: '/ai/knowledge-bases/{key}/retire', reason: 'body', danger: true, noJson: true }],
+  actions: [{ id: 'retire', label: 'act.retire', path: '/ai/knowledge-bases/by-key/retire?key={key}', reason: 'body', danger: true, noJson: true }],
 };
 const drafts: ScreenDef = {
   id: 'drafts', title: 'mod.ai.drafts', description: 'mod.ai.draftsDesc', list: '/ai/drafts',

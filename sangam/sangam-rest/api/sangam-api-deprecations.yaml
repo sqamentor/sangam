@@ -981,3 +981,59 @@ corrections:
     to: "query parameter periodId required"
     reason: "UI-DEMO sweep S5: the swaps of a roster are listed per period (RosterService.swaps looks the period up first), so a call without periodId always answered 404 'roster period not found: null'; no working client can omit it. It is now a 400 VALIDATION_FAILED naming periodId"
     decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: POST
+    path: /ai/knowledge-bases/{kb}/versions
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ai/knowledge-bases/{kb}/versions: the value as a path parameter"
+    to: "/ai/knowledge-bases/by-kb/versions?kb= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: knowledge base keys are client-chosen and unvalidated (KnowledgeBaseService.java:102), so a key with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /ai/knowledge-bases/{kb}/versions/{version}/documents
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ai/knowledge-bases/{kb}/versions/{version}/documents: the value as a path parameter"
+    to: "/ai/knowledge-bases/by-kb/versions/{version}/documents?kb= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: knowledge base keys are client-chosen and unvalidated (KnowledgeBaseService.java:102), so a key with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /ai/knowledge-bases/{kb}/versions/{version}/activate
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ai/knowledge-bases/{kb}/versions/{version}/activate: the value as a path parameter"
+    to: "/ai/knowledge-bases/by-kb/versions/{version}/activate?kb= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: knowledge base keys are client-chosen and unvalidated (KnowledgeBaseService.java:102), so a key with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /ai/knowledge-bases/{kb}/search
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ai/knowledge-bases/{kb}/search: the value as a path parameter"
+    to: "/ai/knowledge-bases/by-kb/search?kb= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: knowledge base keys are client-chosen and unvalidated (KnowledgeBaseService.java:102), so a key with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /ai/knowledge-bases/{key}/retire
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ai/knowledge-bases/{key}/retire: the value as a path parameter"
+    to: "/ai/knowledge-bases/by-key/retire?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: knowledge base keys are client-chosen and unvalidated (KnowledgeBaseService.java:102), so a key with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: GET
+    path: /ai/a2a/{agent}/card
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ai/a2a/{agent}/card: the value as a path parameter"
+    to: "/ai/a2a/by-agent/card?agent= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: inbound agent keys are configuration names with no pattern (AgentDefinition.java:17, example gov:clerk-bot), so a key with '/' or ':' could never reach its route"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /ai/a2a/{agent}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ai/a2a/{agent}: the value as a path parameter"
+    to: "/ai/a2a/by-agent?agent= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: inbound agent keys are configuration names with no pattern (AgentDefinition.java:17, example gov:clerk-bot), so a key with '/' or ':' could never reach its route"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"

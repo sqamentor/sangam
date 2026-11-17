@@ -19611,7 +19611,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/knowledge-bases/{kb}/versions:
+  /ai/knowledge-bases/by-kb/versions:
     post:
       operationId: aiKbNewVersion
       tags:
@@ -19622,10 +19622,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: kb
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Knowledge base key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -19661,7 +19662,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/knowledge-bases/{kb}/versions/{version}/documents:
+  /ai/knowledge-bases/by-kb/versions/{version}/documents:
     post:
       operationId: aiKbIngest
       tags:
@@ -19672,10 +19673,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: kb
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Knowledge base key; may carry '/' or ':'
+        required: true
       - name: version
         in: path
         required: true
@@ -19722,7 +19724,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/knowledge-bases/{kb}/versions/{version}/activate:
+  /ai/knowledge-bases/by-kb/versions/{version}/activate:
     post:
       operationId: aiKbActivate
       tags:
@@ -19733,10 +19735,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: kb
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Knowledge base key; may carry '/' or ':'
+        required: true
       - name: version
         in: path
         required: true
@@ -19773,7 +19776,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/knowledge-bases/{kb}/search:
+  /ai/knowledge-bases/by-kb/search:
     post:
       operationId: aiKbSearch
       tags:
@@ -19782,10 +19785,11 @@ paths:
       description: Results are filtered by what the caller may read.
       parameters:
       - name: kb
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Knowledge base key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
       x-sangam-permission: ai.use
@@ -19817,7 +19821,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/knowledge-bases/{kb}/versions/{version}/ocr:
+  /ai/knowledge-bases/by-kb/versions/{version}/ocr:
     post:
       operationId: aiKbOcr
       tags:
@@ -19832,10 +19836,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: kb
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Knowledge base key; may carry '/' or ':'
+        required: true
       - name: version
         in: path
         required: true
@@ -20613,7 +20618,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/a2a/{agent}/card:
+  /ai/a2a/by-agent/card:
     get:
       operationId: aiA2aCard
       tags:
@@ -20622,10 +20627,11 @@ paths:
       description: Card of a configured inbound agent of the tenant.
       parameters:
       - name: agent
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Inbound agent key; may carry '/' or ':'
+        required: true
       x-sangam-permission: ai.use
       x-sangam-requirements:
       - VI.4
@@ -20648,7 +20654,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/a2a/{agent}:
+  /ai/a2a/by-agent:
     post:
       operationId: aiA2a
       tags:
@@ -20662,10 +20668,11 @@ paths:
         extendedAgentCard false. The caller must be on the agent allow-list; a browser Origin must be allow-listed.'
       parameters:
       - name: agent
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Inbound agent key; may carry '/' or ':'
+        required: true
       - name: A2A-Version
         in: header
         required: false
@@ -21064,7 +21071,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/knowledge-bases/{key}/retire:
+  /ai/knowledge-bases/by-key/retire:
     post:
       operationId: aiUiRetireKb
       tags:
@@ -21075,10 +21082,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Knowledge base key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'

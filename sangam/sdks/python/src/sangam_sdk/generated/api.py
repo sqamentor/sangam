@@ -200,56 +200,56 @@ class AIApi:
         req.body = body
         return cast("M.AiApproval", self._c.json(req, options))
 
-    def ai_kb_new_version(self, kb: str, *, options: Optional[RequestOptions] = None) -> M.AiKbVersion:
+    def ai_kb_new_version(self, *, kb: str, options: Optional[RequestOptions] = None) -> M.AiKbVersion:
         """Create a knowledge base version
 
         Starts a BUILDING version.
 
-        ``POST /ai/knowledge-bases/{kb}/versions`` (operationId ``aiKbNewVersion``); permission ``ai.admin``; result stored atomically with the state change.
+        ``POST /ai/knowledge-bases/by-kb/versions`` (operationId ``aiKbNewVersion``); permission ``ai.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/ai/knowledge-bases/{seg(str(kb))}/versions")
+        req = ApiRequest("POST", f"/ai/knowledge-bases/by-kb/versions", query={"kb": kb})
         return cast("M.AiKbVersion", self._c.json(req, options))
 
-    def ai_kb_ingest(self, kb: str, version: str, body: M.AiIngest, *, options: Optional[RequestOptions] = None) -> M.AiIngestResult:
+    def ai_kb_ingest(self, version: str, body: M.AiIngest, *, kb: str, options: Optional[RequestOptions] = None) -> M.AiIngestResult:
         """Ingest a document
 
         Only a BUILDING version accepts documents.
 
-        ``POST /ai/knowledge-bases/{kb}/versions/{version}/documents`` (operationId ``aiKbIngest``); permission ``ai.admin``; result stored atomically with the state change.
+        ``POST /ai/knowledge-bases/by-kb/versions/{version}/documents`` (operationId ``aiKbIngest``); permission ``ai.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/ai/knowledge-bases/{seg(str(kb))}/versions/{seg(str(version))}/documents")
+        req = ApiRequest("POST", f"/ai/knowledge-bases/by-kb/versions/{seg(str(version))}/documents", query={"kb": kb})
         req.body = body
         return cast("M.AiIngestResult", self._c.json(req, options))
 
-    def ai_kb_activate(self, kb: str, version: str, *, options: Optional[RequestOptions] = None) -> None:
+    def ai_kb_activate(self, version: str, *, kb: str, options: Optional[RequestOptions] = None) -> None:
         """Activate a version
 
         Makes the version the searched one.
 
-        ``POST /ai/knowledge-bases/{kb}/versions/{version}/activate`` (operationId ``aiKbActivate``); permission ``ai.admin``; result stored atomically with the state change.
+        ``POST /ai/knowledge-bases/by-kb/versions/{version}/activate`` (operationId ``aiKbActivate``); permission ``ai.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/ai/knowledge-bases/{seg(str(kb))}/versions/{seg(str(version))}/activate")
+        req = ApiRequest("POST", f"/ai/knowledge-bases/by-kb/versions/{seg(str(version))}/activate", query={"kb": kb})
         self._c.none(req, options)
 
-    def ai_kb_search(self, kb: str, body: M.AiKbSearch, *, options: Optional[RequestOptions] = None) -> list[M.AiKbHit]:
+    def ai_kb_search(self, body: M.AiKbSearch, *, kb: str, options: Optional[RequestOptions] = None) -> list[M.AiKbHit]:
         """Search a knowledge base
 
         Results are filtered by what the caller may read.
 
-        ``POST /ai/knowledge-bases/{kb}/search`` (operationId ``aiKbSearch``); permission ``ai.use``.
+        ``POST /ai/knowledge-bases/by-kb/search`` (operationId ``aiKbSearch``); permission ``ai.use``.
         """
-        req = ApiRequest("POST", f"/ai/knowledge-bases/{seg(str(kb))}/search")
+        req = ApiRequest("POST", f"/ai/knowledge-bases/by-kb/search", query={"kb": kb})
         req.body = body
         return cast("list[M.AiKbHit]", self._c.json(req, options))
 
-    def ai_kb_ocr(self, kb: str, version: str, body: Mapping[str, Any], *, options: Optional[RequestOptions] = None) -> M.AiOcrTranscript:
+    def ai_kb_ocr(self, version: str, body: Mapping[str, Any], *, kb: str, options: Optional[RequestOptions] = None) -> M.AiOcrTranscript:
         """Submit an image for OCR
 
         M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.
 
-        ``POST /ai/knowledge-bases/{kb}/versions/{version}/ocr`` (operationId ``aiKbOcr``); permission ``ai.admin``; result stored atomically with the state change.
+        ``POST /ai/knowledge-bases/by-kb/versions/{version}/ocr`` (operationId ``aiKbOcr``); permission ``ai.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/ai/knowledge-bases/{seg(str(kb))}/versions/{seg(str(version))}/ocr")
+        req = ApiRequest("POST", f"/ai/knowledge-bases/by-kb/versions/{seg(str(version))}/ocr", query={"kb": kb})
         _multipart(req, body)
         return cast("M.AiOcrTranscript", self._c.json(req, options))
 
@@ -413,24 +413,24 @@ class AIApi:
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
 
-    def ai_a2a_card(self, agent: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
+    def ai_a2a_card(self, *, agent: str, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """A2A agent card
 
         Card of a configured inbound agent of the tenant.
 
-        ``GET /ai/a2a/{agent}/card`` (operationId ``aiA2aCard``); permission ``ai.use``.
+        ``GET /ai/a2a/by-agent/card`` (operationId ``aiA2aCard``); permission ``ai.use``.
         """
-        req = ApiRequest("GET", f"/ai/a2a/{seg(str(agent))}/card")
+        req = ApiRequest("GET", f"/ai/a2a/by-agent/card", query={"agent": agent})
         return cast("dict[str, Any]", self._c.json(req, options))
 
-    def ai_a2a(self, agent: str, body: M.AiMcpBody, *, a2_a_version: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
+    def ai_a2a(self, body: M.AiMcpBody, *, agent: str, a2_a_version: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """A2A endpoint
 
         A2A v1.0 JSON-RPC binding (application/json). Methods: SendMessage; GetTask; CancelTask (params id, tenant, metadata; result Task; errors -32001, -32002, -32004); ListTasks (params tenant, contextId, status, pageSize 1 to 100 default 50, pageToken, historyLength, statusTimestampAfter, includeArtifacts; result tasks, nextPageToken (empty on the last page), pageSize, totalSize; -32602 on a bad pageSize; -32004 while the process gateway does not implement it). SendStreamingMessage, SubscribeToTask and GetExtendedAgentCard answer -32004 (unsupported operation) and the four TaskPushNotificationConfig methods -32003 (push notifications not supported); the agent card says extendedAgentCard false. The caller must be on the agent allow-list; a browser Origin must be allow-listed.
 
-        ``POST /ai/a2a/{agent}`` (operationId ``aiA2a``); permission ``ai.use``.
+        ``POST /ai/a2a/by-agent`` (operationId ``aiA2a``); permission ``ai.use``.
         """
-        req = ApiRequest("POST", f"/ai/a2a/{seg(str(agent))}")
+        req = ApiRequest("POST", f"/ai/a2a/by-agent", query={"agent": agent})
         _headers(req, {"A2A-Version": a2_a_version})
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
@@ -518,14 +518,14 @@ class AIApi:
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
 
-    def ai_ui_retire_kb(self, key: str, body: Optional[M.AiUiDecisionRequest] = None, *, options: Optional[RequestOptions] = None) -> None:
+    def ai_ui_retire_kb(self, body: Optional[M.AiUiDecisionRequest] = None, *, key: str, options: Optional[RequestOptions] = None) -> None:
         """Retire a knowledge base
 
         Retrieval stops. Needs a reason; actor and reason are kept.
 
-        ``POST /ai/knowledge-bases/{key}/retire`` (operationId ``aiUiRetireKb``); permission ``ai.admin``; result stored atomically with the state change.
+        ``POST /ai/knowledge-bases/by-key/retire`` (operationId ``aiUiRetireKb``); permission ``ai.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/ai/knowledge-bases/{seg(str(key))}/retire")
+        req = ApiRequest("POST", f"/ai/knowledge-bases/by-key/retire", query={"key": key})
         req.body = body
         self._c.none(req, options)
 

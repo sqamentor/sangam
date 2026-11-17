@@ -66,7 +66,7 @@
    "tag": "AI",
    "pathPrefix": "",
    "operations": 38,
-   "maxLines": 734
+   "maxLines": 742
   },
   {
    "class": "AdminApi",
@@ -6355,7 +6355,7 @@
   {
    "operationId": "aiKbNewVersion",
    "method": "POST",
-   "path": "/ai/knowledge-bases/{kb}/versions",
+   "path": "/ai/knowledge-bases/by-kb/versions",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiKbNewVersion",
@@ -6367,7 +6367,7 @@
   {
    "operationId": "aiKbIngest",
    "method": "POST",
-   "path": "/ai/knowledge-bases/{kb}/versions/{version}/documents",
+   "path": "/ai/knowledge-bases/by-kb/versions/{version}/documents",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiKbIngest",
@@ -6379,7 +6379,7 @@
   {
    "operationId": "aiKbActivate",
    "method": "POST",
-   "path": "/ai/knowledge-bases/{kb}/versions/{version}/activate",
+   "path": "/ai/knowledge-bases/by-kb/versions/{version}/activate",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiKbActivate",
@@ -6391,7 +6391,7 @@
   {
    "operationId": "aiKbSearch",
    "method": "POST",
-   "path": "/ai/knowledge-bases/{kb}/search",
+   "path": "/ai/knowledge-bases/by-kb/search",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiKbSearch",
@@ -6403,7 +6403,7 @@
   {
    "operationId": "aiKbOcr",
    "method": "POST",
-   "path": "/ai/knowledge-bases/{kb}/versions/{version}/ocr",
+   "path": "/ai/knowledge-bases/by-kb/versions/{version}/ocr",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiKbOcr",
@@ -6595,7 +6595,7 @@
   {
    "operationId": "aiA2aCard",
    "method": "GET",
-   "path": "/ai/a2a/{agent}/card",
+   "path": "/ai/a2a/by-agent/card",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiA2aCard",
@@ -6607,7 +6607,7 @@
   {
    "operationId": "aiA2a",
    "method": "POST",
-   "path": "/ai/a2a/{agent}",
+   "path": "/ai/a2a/by-agent",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiA2a",
@@ -6715,7 +6715,7 @@
   {
    "operationId": "aiUiRetireKb",
    "method": "POST",
-   "path": "/ai/knowledge-bases/{key}/retire",
+   "path": "/ai/knowledge-bases/by-key/retire",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiUiRetireKb",

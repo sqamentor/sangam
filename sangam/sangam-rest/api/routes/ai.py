@@ -65,17 +65,17 @@ op('get', '/ai/runs/{id}', 'aiGetRun', 'AI', 'Get an agent run', 'Visible to its
 op('post', '/ai/runs/{id}/cancel', 'aiCancelRun', 'AI', 'Cancel an agent run', 'Cancels a run the caller can see.', _R, params=[pp('id')], body=_b('AiReason'), resp=(200, 'AiRun'), cmd='ai.run.cancel', perm='ai.use')
 op('get', '/ai/approvals', 'aiListApprovals', 'AI', 'Pending tool approvals', 'Pending approvals of the tenant.', _R, resp=(200, _LIST), perm='ai.review')
 op('post', '/ai/approvals/{id}/decide', 'aiDecideApproval', 'AI', 'Decide a tool approval', 'The decider differs from the requester and confirms the reviewed argument hash.', _R, params=[pp('id')], body=_b('AiDecide'), resp=(200, 'AiApproval'), cmd='ai.approval.decide', perm='ai.review')
-op('post', '/ai/knowledge-bases/{kb}/versions', 'aiKbNewVersion', 'AI', 'Create a knowledge base version', 'Starts a BUILDING version.', _R, params=[pp('kb')], body_required=False, resp=(200, 'AiKbVersion'), cmd='ai.kb.version', perm='ai.admin')
-op('post', '/ai/knowledge-bases/{kb}/versions/{version}/documents', 'aiKbIngest', 'AI', 'Ingest a document', 'Only a BUILDING version accepts documents.', _R, params=[pp('kb'), pp('version')], body=_b('AiIngest'), resp=(200, 'AiIngestResult'), cmd='ai.kb.ingest', perm='ai.admin')
-op('post', '/ai/knowledge-bases/{kb}/versions/{version}/activate', 'aiKbActivate', 'AI', 'Activate a version', 'Makes the version the searched one.', _R, params=[pp('kb'), pp('version')], body_required=False, resp=(204, None), cmd='ai.kb.activate', perm='ai.admin')
-op('post', '/ai/knowledge-bases/{kb}/search', 'aiKbSearch', 'AI', 'Search a knowledge base', 'Results are filtered by what the caller may read.', _R, params=[pp('kb')], body=_b('AiKbSearch'), resp=(200, 'array:AiKbHit'), perm='ai.use')
-op('post', '/ai/knowledge-bases/{kb}/versions/{version}/ocr', 'aiKbOcr', 'AI', 'Submit an image for OCR',
+op('post', '/ai/knowledge-bases/by-kb/versions', 'aiKbNewVersion', 'AI', 'Create a knowledge base version', 'Starts a BUILDING version.', _R, params=[q('kb', desc="Knowledge base key; may carry '/' or ':'", required=True)], body_required=False, resp=(200, 'AiKbVersion'), cmd='ai.kb.version', perm='ai.admin')
+op('post', '/ai/knowledge-bases/by-kb/versions/{version}/documents', 'aiKbIngest', 'AI', 'Ingest a document', 'Only a BUILDING version accepts documents.', _R, params=[q('kb', desc="Knowledge base key; may carry '/' or ':'", required=True), pp('version')], body=_b('AiIngest'), resp=(200, 'AiIngestResult'), cmd='ai.kb.ingest', perm='ai.admin')
+op('post', '/ai/knowledge-bases/by-kb/versions/{version}/activate', 'aiKbActivate', 'AI', 'Activate a version', 'Makes the version the searched one.', _R, params=[q('kb', desc="Knowledge base key; may carry '/' or ':'", required=True), pp('version')], body_required=False, resp=(204, None), cmd='ai.kb.activate', perm='ai.admin')
+op('post', '/ai/knowledge-bases/by-kb/search', 'aiKbSearch', 'AI', 'Search a knowledge base', 'Results are filtered by what the caller may read.', _R, params=[q('kb', desc="Knowledge base key; may carry '/' or ':'", required=True)], body=_b('AiKbSearch'), resp=(200, 'array:AiKbHit'), perm='ai.use')
+op('post', '/ai/knowledge-bases/by-kb/versions/{version}/ocr', 'aiKbOcr', 'AI', 'Submit an image for OCR',
    'M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state '
    'PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version '
    'must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. '
    'No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, '
    'another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.',
-   _R, params=[pp('kb'), pp('version')], body=_OCR_UPLOAD, resp=(201, 'AiOcrTranscript'), cmd='ai.kb.ocr', perm='ai.admin', created=True)
+   _R, params=[q('kb', desc="Knowledge base key; may carry '/' or ':'", required=True), pp('version')], body=_OCR_UPLOAD, resp=(201, 'AiOcrTranscript'), cmd='ai.kb.ocr', perm='ai.admin', created=True)
 op('get', '/ai/ocr-transcripts', 'aiListOcrTranscripts', 'AI', 'OCR review queue',
    'Transcripts of the tenant, newest first, without their texts; state and kb filter, limit 1..500 (default 100).', _R,
    params=[q('state', enum=_OCR_STATES), q('kb'), q('limit', 'int')], resp=(200, 'array:AiOcrTranscriptSummary'), perm='ai.review')
@@ -125,8 +125,8 @@ op('post', '/ai/mcp', 'aiMcp', 'AI', 'MCP endpoint',
            _hdr('Mcp-Name', False, 'The tool name. Required when _meta carries a protocol version and the method is '
                                    'tools/call, and then equal to params.name (400 HeaderMismatch otherwise)')],
    body=_OBJ, resp=(200, _ANY), perm='ai.use')
-op('get', '/ai/a2a/{agent}/card', 'aiA2aCard', 'AI', 'A2A agent card', 'Card of a configured inbound agent of the tenant.', _R, params=[pp('agent')], resp=(200, _ANY), perm='ai.use')
-op('post', '/ai/a2a/{agent}', 'aiA2a', 'AI', 'A2A endpoint',
+op('get', '/ai/a2a/by-agent/card', 'aiA2aCard', 'AI', 'A2A agent card', 'Card of a configured inbound agent of the tenant.', _R, params=[q('agent', desc="Inbound agent key; may carry '/' or ':'", required=True)], resp=(200, _ANY), perm='ai.use')
+op('post', '/ai/a2a/by-agent', 'aiA2a', 'AI', 'A2A endpoint',
    'A2A v1.0 JSON-RPC binding (application/json). Methods: SendMessage; GetTask; CancelTask (params id, tenant, '
    'metadata; result Task; errors -32001, -32002, -32004); ListTasks (params tenant, contextId, status, pageSize 1 to '
    '100 default 50, pageToken, historyLength, statusTimestampAfter, includeArtifacts; result tasks, nextPageToken (empty '
@@ -135,7 +135,7 @@ op('post', '/ai/a2a/{agent}', 'aiA2a', 'AI', 'A2A endpoint',
    'operation) and the four TaskPushNotificationConfig methods -32003 (push notifications not supported); the agent '
    'card says extendedAgentCard false. The caller must be on the agent allow-list; a browser Origin must be '
    'allow-listed.', _R,
-   params=[pp('agent'), _hdr('A2A-Version', False, 'Major.Minor protocol version, 1.0 for A2A v1.0.x')],
+   params=[q('agent', desc="Inbound agent key; may carry '/' or ':'", required=True), _hdr('A2A-Version', False, 'Major.Minor protocol version, 1.0 for A2A v1.0.x')],
    body=_OBJ, resp=(200, _ANY), perm='ai.use')
 
 # The console's routes (AiUiController).
@@ -150,7 +150,7 @@ op('post', '/ai/agent-approvals/{approvalId}/approve', 'aiUiApprove', 'AI', 'App
 op('post', '/ai/agent-approvals/{approvalId}/reject', 'aiUiReject', 'AI', 'Reject a tool call', 'Not by the requester.', _R, params=[pp('approvalId')], body=record_body(_AIUI, 'DecisionRequest', False), resp=(200, _ANY), cmd='ai.approval.reject', perm='ai.review')
 op('get', '/ai/knowledge-bases', 'aiUiListKb', 'AI', 'List knowledge bases', 'Active version, else newest.', _R, resp=(200, _LIST), perm='ai.admin')
 op('post', '/ai/knowledge-bases', 'aiUiPublishKb', 'AI', 'Publish a knowledge base', 'A new version with this text, activated.', _R, body=record_body(_AIUI, 'PublishKbRequest'), resp=(201, _ANY), cmd='ai.kb.publish', perm='ai.admin', created=True)
-op('post', '/ai/knowledge-bases/{key}/retire', 'aiUiRetireKb', 'AI', 'Retire a knowledge base', 'Retrieval stops. Needs a reason; actor and reason are kept.', _R, params=[pp('key')], body=record_body(_AIUI, 'DecisionRequest', False), resp=(204, None), cmd='ai.kb.retire', perm='ai.admin')
+op('post', '/ai/knowledge-bases/by-key/retire', 'aiUiRetireKb', 'AI', 'Retire a knowledge base', 'Retrieval stops. Needs a reason; actor and reason are kept.', _R, params=[q('key', desc="Knowledge base key; may carry '/' or ':'", required=True)], body=record_body(_AIUI, 'DecisionRequest', False), resp=(204, None), cmd='ai.kb.retire', perm='ai.admin')
 op('get', '/ai/drafts', 'aiUiListDrafts', 'AI', 'List drafts', 'Own drafts; all of the tenant with ai.review. Filter by status or packageId.', _R, params=[q('status'), q('packageId')] + _P, resp=(200, _LIST), perm='ai.use')
 op('get', '/ai/classifications', 'aiUiListClassifications', 'AI', 'List classifications', 'The tenant only.', _R, params=[q('status')] + _P, resp=(200, _LIST), perm='ai.review')
 op('post', '/ai/classifications/{id}/review', 'aiUiReviewClassification', 'AI', 'Review a classification', 'ACCEPT or RETURN.', _R, params=[pp('id')], body=record_body(_AIUI, 'ReviewRequest'), resp=(200, _ANY), cmd='ai.classification.review', perm='ai.review')

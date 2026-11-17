@@ -164,10 +164,10 @@ export class AIApi {
    *
    * Starts a BUILDING version.
    *
-   * `POST /ai/knowledge-bases/{kb}/versions` (operationId `aiKbNewVersion`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-kb/versions` (operationId `aiKbNewVersion`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiKbNewVersion(kb: string, options?: RequestOptions): Promise<M.AiKbVersion> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/versions` };
+  async aiKbNewVersion(params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.AiKbVersion> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/versions`, query: { kb: params?.kb } };
     return this.calls.json<M.AiKbVersion>(req, options);
   }
 
@@ -176,10 +176,10 @@ export class AIApi {
    *
    * Only a BUILDING version accepts documents.
    *
-   * `POST /ai/knowledge-bases/{kb}/versions/{version}/documents` (operationId `aiKbIngest`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-kb/versions/{version}/documents` (operationId `aiKbIngest`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiKbIngest(kb: string, version: string, body: M.AiIngest, options?: RequestOptions): Promise<M.AiIngestResult> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/versions/${seg(String(version))}/documents` };
+  async aiKbIngest(version: string, body: M.AiIngest, params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.AiIngestResult> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/versions/${seg(String(version))}/documents`, query: { kb: params?.kb } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.AiIngestResult>(req, options);
   }
@@ -189,10 +189,10 @@ export class AIApi {
    *
    * Makes the version the searched one.
    *
-   * `POST /ai/knowledge-bases/{kb}/versions/{version}/activate` (operationId `aiKbActivate`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-kb/versions/{version}/activate` (operationId `aiKbActivate`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiKbActivate(kb: string, version: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/versions/${seg(String(version))}/activate` };
+  async aiKbActivate(version: string, params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/versions/${seg(String(version))}/activate`, query: { kb: params?.kb } };
     await this.calls.none(req, options);
   }
 
@@ -201,10 +201,10 @@ export class AIApi {
    *
    * Results are filtered by what the caller may read.
    *
-   * `POST /ai/knowledge-bases/{kb}/search` (operationId `aiKbSearch`); permission `ai.use`.
+   * `POST /ai/knowledge-bases/by-kb/search` (operationId `aiKbSearch`); permission `ai.use`.
    */
-  async aiKbSearch(kb: string, body: M.AiKbSearch, options?: RequestOptions): Promise<Array<M.AiKbHit>> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/search` };
+  async aiKbSearch(body: M.AiKbSearch, params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.AiKbHit>> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/search`, query: { kb: params?.kb } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Array<M.AiKbHit>>(req, options);
   }
@@ -214,10 +214,10 @@ export class AIApi {
    *
    * M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.
    *
-   * `POST /ai/knowledge-bases/{kb}/versions/{version}/ocr` (operationId `aiKbOcr`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-kb/versions/{version}/ocr` (operationId `aiKbOcr`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiKbOcr(kb: string, version: string, body: FormData, options?: RequestOptions): Promise<M.AiOcrTranscript> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/versions/${seg(String(version))}/ocr` };
+  async aiKbOcr(version: string, body: FormData, params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.AiOcrTranscript> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/versions/${seg(String(version))}/ocr`, query: { kb: params?.kb } };
     if (body !== undefined) req.rawBody = body;
     return this.calls.json<M.AiOcrTranscript>(req, options);
   }
@@ -417,10 +417,10 @@ export class AIApi {
    *
    * Card of a configured inbound agent of the tenant.
    *
-   * `GET /ai/a2a/{agent}/card` (operationId `aiA2aCard`); permission `ai.use`.
+   * `GET /ai/a2a/by-agent/card` (operationId `aiA2aCard`); permission `ai.use`.
    */
-  async aiA2aCard(agent: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/ai/a2a/${seg(String(agent))}/card` };
+  async aiA2aCard(params: { agent: string /* Inbound agent key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/ai/a2a/by-agent/card`, query: { agent: params?.agent } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -429,10 +429,10 @@ export class AIApi {
    *
    * A2A v1.0 JSON-RPC binding (application/json). Methods: SendMessage; GetTask; CancelTask (params id, tenant, metadata; result Task; errors -32001, -32002, -32004); ListTasks (params tenant, contextId, status, pageSize 1 to 100 default 50, pageToken, historyLength, statusTimestampAfter, includeArtifacts; result tasks, nextPageToken (empty on the last page), pageSize, totalSize; -32602 on a bad pageSize; -32004 while the process gateway does not implement it). SendStreamingMessage, SubscribeToTask and GetExtendedAgentCard answer -32004 (unsupported operation) and the four TaskPushNotificationConfig methods -32003 (push notifications not supported); the agent card says extendedAgentCard false. The caller must be on the agent allow-list; a browser Origin must be allow-listed.
    *
-   * `POST /ai/a2a/{agent}` (operationId `aiA2a`); permission `ai.use`.
+   * `POST /ai/a2a/by-agent` (operationId `aiA2a`); permission `ai.use`.
    */
-  async aiA2a(agent: string, body: M.AiMcpBody, params?: { a2AVersion?: string /* Major.Minor protocol version, 1.0 for A2A v1.0.x */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/a2a/${seg(String(agent))}` };
+  async aiA2a(body: M.AiMcpBody, params: { agent: string /* Inbound agent key; may carry '/' or ':' */; a2AVersion?: string /* Major.Minor protocol version, 1.0 for A2A v1.0.x */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/a2a/by-agent`, query: { agent: params?.agent } };
     headersOf(req, { 'A2A-Version': params?.a2AVersion });
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
@@ -542,10 +542,10 @@ export class AIApi {
    *
    * Retrieval stops. Needs a reason; actor and reason are kept.
    *
-   * `POST /ai/knowledge-bases/{key}/retire` (operationId `aiUiRetireKb`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-key/retire` (operationId `aiUiRetireKb`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiUiRetireKb(key: string, body?: M.AiUiDecisionRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(key))}/retire` };
+  async aiUiRetireKb(body: M.AiUiDecisionRequest | undefined, params: { key: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-key/retire`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
