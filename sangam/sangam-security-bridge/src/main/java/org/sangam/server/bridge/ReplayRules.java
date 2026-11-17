@@ -11,15 +11,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.sangam.rest.web.CommandCatalog;
-import org.sangam.server.web.CellTenantAdminController;
+import org.sangam.rest.support.Permissions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  * R41 step 4: what a caller must still satisfy to receive a stored command response, per command type. The table is
- * the OpenAPI contract itself ({@value CommandCatalog#CONTRACT_RESOURCE} on the class path, as {@link CommandCatalog}):
+ * the OpenAPI contract itself ({@value Permissions#CONTRACT_RESOURCE} on the class path, as sangam-rest's {@code CommandCatalog}):
  * each {@code x-sangam-command-type} gets the permission its route declares in {@code x-sangam-permission} (every one,
  * when routes of one type declare different permissions). A route whose contract text is not one permission name has an
  * explicit entry in {@link #EXPLICIT}, valid only while the contract still says exactly that text. A type with no rule
@@ -75,7 +74,7 @@ final class ReplayRules {
     /** The {@code x-sangam-permission} of a plain route: one dotted permission name. */
     static final Pattern PERMISSION_NAME = Pattern.compile("[a-z][a-z0-9-]*(\\.[a-z0-9-]+)+");
 
-    private static final Rule CELL_ADMIN = new InGroup(Set.of(CellTenantAdminController.ROLE, "sangam-cell-admin"));
+    private static final Rule CELL_ADMIN = new InGroup(Set.of(Permissions.CELL_ADMIN_ROLE, "sangam-cell-admin"));
     private static final String CELL_TEXT = "role CELL_ADMIN";
     private static final String BULK_TEXT =
             "the permission declared by the object type sink (ops.variable: ops.tenant.admin)";
@@ -130,7 +129,7 @@ final class ReplayRules {
         this.rules = Map.copyOf(out);
     }
 
-    /** The rules of {@value CommandCatalog#CONTRACT_RESOURCE} on the class path, read once. */
+    /** The rules of {@value Permissions#CONTRACT_RESOURCE} on the class path, read once. */
     static ReplayRules fromClassPath() {
         ReplayRules r = contract;
         if (r == null) {
@@ -170,7 +169,7 @@ final class ReplayRules {
     static Map<String, Set<String>> texts(Map<String, Object> openApi) {
         Object paths = openApi == null ? null : openApi.get("paths");
         if (!(paths instanceof Map<?, ?> pathMap)) {
-            throw new IllegalStateException(CommandCatalog.CONTRACT_RESOURCE + " has no paths");
+            throw new IllegalStateException(Permissions.CONTRACT_RESOURCE + " has no paths");
         }
         Map<String, Set<String>> out = new HashMap<>();
         for (Object item : pathMap.values()) {
@@ -196,15 +195,15 @@ final class ReplayRules {
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> load() {
-        try (InputStream in = ReplayRules.class.getClassLoader().getResourceAsStream(CommandCatalog.CONTRACT_RESOURCE)) {
+        try (InputStream in = ReplayRules.class.getClassLoader().getResourceAsStream(Permissions.CONTRACT_RESOURCE)) {
             if (in == null) {
-                throw new IllegalStateException(CommandCatalog.CONTRACT_RESOURCE + " is not on the class path");
+                throw new IllegalStateException(Permissions.CONTRACT_RESOURCE + " is not on the class path");
             }
             LoaderOptions options = new LoaderOptions();
             options.setCodePointLimit(64 * 1024 * 1024);
             return (Map<String, Object>) new Yaml(new SafeConstructor(options)).load(in);
         } catch (IOException e) {
-            throw new IllegalStateException("cannot read " + CommandCatalog.CONTRACT_RESOURCE, e);
+            throw new IllegalStateException("cannot read " + Permissions.CONTRACT_RESOURCE, e);
         }
     }
 }

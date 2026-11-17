@@ -7026,6 +7026,16 @@ export interface Me {
 }
 
 /**
+ * Owner decision 399 (Q3): the installed optional modules (GET /me/capabilities).
+ *
+ * Schema `MeCapabilities`.
+ */
+export interface MeCapabilities {
+  /** Sorted module ids, a subset of: ai, billing, case, channels, compliance, field, geo, ledger, programme, registry, resources */
+  modules: Array<string>;
+}
+
+/**
  * The tenant's resolved profile locale (sangam-config LocaleSettings): currency, zone and digit grouping.
  *
  * Schema `MeLocale`.
@@ -12499,6 +12509,30 @@ export interface TaskStat {
   open?: number;
   avgDurationMs?: number;
   p95DurationMs?: number;
+}
+
+/**
+ * Owner decision 401: one candidate group of the caller's tenant.
+ *
+ * Schema `TeamGroupCount`.
+ */
+export interface TeamGroupCount {
+  group: string;
+  unassignedTasks: number;
+}
+
+/**
+ * Owner decision 401: the team workload of the caller's tenant (GET /team/task-groups).
+ *
+ * Schema `TeamTaskGroupReport`.
+ */
+export interface TeamTaskGroupReport {
+  open: number;
+  assigned: number;
+  unassigned: number;
+  withoutCandidateGroup: number;
+  /** Sorted by group id */
+  groups: Array<TeamGroupCount>;
 }
 
 /**

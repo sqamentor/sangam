@@ -273,6 +273,19 @@ function isAncestor(a, b) {
   catch { return false; }
 }
 
+/**
+ * Owner decision 411 (2026-11-17): test-only branches refs/heads/ci/<name> on sqamentor/sangam may be pushed without
+ * a signed approval, so GitHub Actions (ci-lanes.yml) can run long builds. Nothing else is exempt: not main, not
+ * release/*, not tags, not `ci` without a slash, not refs/heads/cix, not another remote. Deletions and non-fast-forward
+ * updates stay refused for every ref (checked before this). Each exempt push is logged as CI_EXEMPT.
+ */
+const CI_REF = /^refs\/heads\/ci\/[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/;
+const CI_REMOTE = /^(https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)sqamentor\/sangam(\.git)?\/?$/;
+export function ciExempt(remoteUrl, remoteRef) {
+  return typeof remoteUrl === 'string' && typeof remoteRef === 'string' && CI_REMOTE.test(remoteUrl)
+      && CI_REF.test(remoteRef) && !remoteRef.includes('..') && !remoteRef.endsWith('.lock') && !remoteRef.endsWith('.');
+}
+
 function cmdCheck(ctx, remoteUrl, stdinText) {
   if (!remoteUrl) throw new Error('check needs the remote URL (pre-push $2)');
   for (const line of stdinText.split('\n').map((l) => l.trim()).filter(Boolean)) {
@@ -280,6 +293,13 @@ function cmdCheck(ctx, remoteUrl, stdinText) {
     if (ZERO.test(localSha)) throw new Error(`deleting ${remoteRef} is not allowed through this gate`);
     if (!ZERO.test(remoteSha) && !isAncestor(remoteSha, localSha)) {
       throw new Error(`${remoteRef}: not a fast-forward (${remoteSha.slice(0, 12)} is not an ancestor of ${localSha.slice(0, 12)}); force pushes are refused`);
+    }
+    if (ciExempt(remoteUrl, remoteRef)) {
+      const v0 = verifyChain(readChain(ctx));
+      if (!v0.ok) throw new Error('push-approval ledger does not verify:\n  ' + v0.issues.join('\n  '));
+      append(ctx, { kind: 'CI_EXEMPT', decision: '411', sha: localSha, ref: remoteRef, remote: remoteUrl });
+      console.log(`  CI_EXEMPT (decision 411): ${localSha.slice(0, 12)} -> ${remoteRef} (test-only branch, logged)`);
+      continue;
     }
     const trust = trustRoot(ctx, remoteSha);
     assertWorkingTreeMatches(ctx, trust);

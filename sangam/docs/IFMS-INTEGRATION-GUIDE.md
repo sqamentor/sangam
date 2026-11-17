@@ -11,14 +11,14 @@ packs, profiles, configuration or a generic capability, never as IFMS code in th
 [IFMS-KNOWLEDGE-LINKS.md](IFMS-KNOWLEDGE-LINKS.md)). The IFMS side's own records (its decision register, test plan and
 scenario catalogue) are read-only for Sangam and are cited here only by id.
 
-**Sources.** The integration tree at 5ba0a7b4 (2026-11-17). The owner decisions in
+**Sources.** The integration tree at 5ba0a7b4 (2026-11-17), refreshed at 0c5f5518 for the 0.1.0 release (lane R8-release-docs). The owner decisions in
 `docs/records/OWNER-DECISIONS-2026-11-12.md`. The joint coordination ledger `JOINT-LEDGER-SANGAM-IFMS.md` and the
 handoff index `HANDOFF-INDEX.md`, which are kept outside this repository in the owner's shared project folder. The
 Sangam master pending list of 2026-11-17, section E. The test
 `sangam-server/src/test/java/org/sangam/server/acceptance/consumer/ifms/IfmsPacksIT.java`. Paths are relative to
 `sangam/`.
 
-**Status marks.** Each step is marked **available now** (in 5ba0a7b4), or **pending (id)**, where the id says what
+**Status marks.** Each step is marked **available now** (in 5ba0a7b4, or in 0c5f5518 where a sha says so), **merging** (coded on a lane branch, being merged for 0.1.0), or **pending (id)**, where the id says what
 it waits on. "NOT_RUN" means a test is written but has not run on that database.
 
 ## 0. Status at a glance
@@ -27,12 +27,13 @@ it waits on. "NOT_RUN" means a test is written but has not run on that database.
 |---|---|
 | A green Sangam sha that IFMS may pin | **pending (E1)**: there is no green sha yet (joint ledger §(3)b) |
 | `IfmsPacksIT` on Oracle and SQL Server | **pending (E2)**: FAIL on both; fixes on feat/round7-it, not merged |
-| PG_CONFIG → PG_PROGRAMME_CONFIG | **pending (decision 388, lane commit 0438ccd9)** |
-| BANK_ACCOUNT clear-value custody | **pending (decision 389, lane commit 57ca10fc)** |
-| CONTROLLING leave sanction power | **pending (decision 391, lane commit 6383c10c)** |
+| PG_CONFIG → PG_PROGRAMME_CONFIG | **available now** (decision 388; 0438ccd9, merged in 1261db4f) |
+| BANK_ACCOUNT clear-value custody | **available now** (decision 389; 57ca10fc, merged in 1261db4f); acceptance `IfmsPacksIT` on Oracle and SQL Server still due (E2) |
+| CONTROLLING leave sanction power | **available now** (decision 391; 6383c10c, merged in 1261db4f; `CorePowersControllingLeaveTest`) |
 | Contract deltas announcement | **pending (E3)** |
 | GA-55 bill-type contract | **pending (E4, joint JL-S-06, IFMS side)** |
 | Routing incident v1 + keys, service-token headers, version immutability, isolation | **available now** (E5, DONE-VERIFIED) |
+| Plain-Operaton host swap (PNP-1), host bean approval by configuration (PNP-2), typed routing-incident read (PNP-3) | **merged** (13aa5186; H2 64/0; Oracle and SQL Server pending) (lane R8-pnp, branch feat/round8-pnp: 72fac64f, 5c944df4, eee38a23, 4fd97c61; H2 and unit evidence only; section 2.1) |
 | DSC gate through a call, slot consumption | **available now** (decisions 382, 385, 387, 390 (1); merged eb779e1a) |
 | Exact decimals end to end (TypedVariables, ExactJson) | **available now** in code; DB evidence NOT_RUN |
 | SD-505 confidence score | 0.00% as scored by IFMS on 2026-11-16 (joint ledger) |
@@ -80,6 +81,30 @@ it waits on. "NOT_RUN" means a test is written but has not run on that database.
 - Tenancy: one engine tenant per government scope. The tenant always comes from the token (decision 145).
 - Domain logic lives only in the `gov.ifms.*` packs and the India profiles. The adapter on the IFMS side owns the mapping to IFMS screens.
 
+### 2.1 Embedded swap behind the IFMS workflow port (IFMS report SANGAM-PNP-H2, lane R8-pnp)
+
+IFMS's H2 trial (E-65) found three gaps. Here is how each one is closed in code, on branch feat/round8-pnp (PNP-2 72fac64f, PNP-1 5c944df4, PNP-3 eee38a23, decision 404 (5) 4fd97c61). Status: **merged** (13aa5186; H2 64/0; Oracle and SQL Server pending) for 0.1.0. These changes are H2 and unit evidence only, and they are not pushed.
+
+| Finding | Before | Now |
+|---|---|---|
+| PNP-1: the engine was chosen by which adapter was built | The host built the engine through `SangamEngineConfigurer` (IFMS C-1, C-3: about 100 lines) | The host keeps its plain Operaton adapter and adds one process engine plugin, `org.sangam.engine.SangamEnginePlugin`, with its settings as `sangam.engine.*` properties (`SangamEngineSettingsBinder`, the same names as the Spring binding; an unknown key refuses the start). The host keeps its engine name, history level, job-executor choice and schema mode. The plugin must come first in the list. Test: `DropInHostH2Test` |
+| PNP-2: SL-160 refused `${recorder.record()}` | Approving the bean was already possible (`deploy-allowed-beans`), but the setting was not documented for hosts, and an entry with a pattern such as `recorder.*` was accepted and silently approved nothing | Approval is by configuration only: `sangam.engine.deploy-allowed-beans.*=recorder.record` (or a tenant id instead of `*`). It stays fail-closed: no host bean is approved unless it is listed, and this includes beans passed to `setBeans`. Each entry must be one exact name (`bean` or `bean.member`; one class name for `deploy-allowed-classes`). A wildcard, a pattern, an engine context object (`execution`, `task`, ...) or a reflective member refuses the start with `SL160-ALLOW-ENTRY`. Every approval in force is logged at start as `SL160-HOST-APPROVAL`. Tests: `HostApprovalEntriesTest`, `DropInHostH2Test` |
+| PNP-3: SG-35 cost about 235 lines of mapping (IFMS C-5) | The host wrote its own incident query, the walk over called children and the message parsing | `org.sangam.engine.incident.RoutingIncidents.collect(engine, caseInstanceId)` returns typed `Found` rows: incident id, instance, root, gateway, `RouteDecision.Outcome`, the raw code, the message and a stable `dedupKey()`. A code it does not know is returned with outcome `null`, never guessed. The host keeps only its own reason mapping (two cases) and its audit write. Test: `DropInHostH2Test` |
+
+The IFMS host code for the swap is then:
+
+```java
+cfg.getProcessEnginePlugins().add(0, new org.sangam.engine.SangamEnginePlugin()); // or name the class in the host's plugin list
+// -Dsangam.engine.system-audit-scope=system:ifms -Dsangam.engine.timer-zone=Asia/Kolkata
+// -Dsangam.engine.deploy-allowed-beans.*=recorder.record
+```
+
+**Host bean approval setting.** `sangam.engine.deploy-allowed-beans.<scope>` (scope `*` for every tenant, or one tenant id) lists exact bean names or `bean.member` names that SL-160 lets deployed models call. The default is empty, so no host bean is callable (fail-closed). Exact names only, in every environment (decision 404 (4)); bad entries refuse the start with `SL160-ALLOW-ENTRY`; each approval is logged at start as `SL160-HOST-APPROVAL` (72fac64f, `HostApprovalEntriesTest`). Each deployment that uses a host-approved bean is also written to the class-B audit chain (decision 404 (5), 4fd97c61).
+
+**Reading routing incidents.** Sangam keeps its incident when no gateway route matches (decision 404 (3)). IFMS reads them with `RoutingIncidents.collect(engine, caseInstanceId)`, which walks called children and returns typed rows (eee38a23, `DropInHostH2Test`). The incident keys stay ROUTING-INCIDENT v1 (section 11).
+
+Still on the IFMS side: the two adapter modules cannot share one classpath (E-65 item 2). That is IFMS packaging, not a Sangam gap. If the IFMS adapter reads its plugin class names from configuration, the swap needs no code change at all. The Sangam-only behaviours stay on purpose: the strict exclusive gateway raises an incident instead of `ENGINE-02004` (ADR-D-25), and compensation is reverse and sequential (SG-08). Whether to add an Operaton-compatible "throw" mode for SG-35 is an open owner question (R8-pnp report).
+
 ## 3. Pinning a Sangam version
 
 1. IFMS pins **only** a sha that Sangam announces as green in the joint ledger, as `[INFO] GREEN-SHA <sha>` (joint ledger §(3)b; IFMS's reply "IFMS does not re-pin until Sangam announces a green sha"). **pending (E1)**
@@ -113,7 +138,7 @@ Oracle and SQL Server come first, because the sponsor gate scores only scenarios
 1. Prepare the database as in `deploy/README.md` section 1.4: Oracle AL32UTF8 with the listed grants; SQL Server `READ_COMMITTED_SNAPSHOT ON` (the start is refused without it) and a `*_UTF8` collation. **available now**
 2. Set `SANGAM_DB_URL`, `SANGAM_DB_USER` and `SANGAM_DB_PASSWORD`. Production refuses a loopback URL, an unset value and the shipped default password (`ProductionStartupFailFastTest`). **available now**
 3. Migrate once with `SANGAM_LIQUIBASE_MODE=migrate-only`. Later starts validate only and refuse a missing engine schema with `ENGINE_SCHEMA_MISSING` (decision 334). **available now**
-4. **PG_CONFIG rename (decision 388).** The programme table `PG_CONFIG` becomes `PG_PROGRAMME_CONFIG` on every database. Applied changesets are never edited: on Oracle and SQL Server a new rename changeset follows the applied ones. A guard refuses product table names that collide with PostgreSQL catalog relations. IFMS is affected only if it reads Sangam tables directly; it should not (use the REST contract). **pending (decision 388, 0438ccd9 on feat/round7-it)**
+4. **PG_CONFIG rename (decision 388).** The programme table `PG_CONFIG` becomes `PG_PROGRAMME_CONFIG` on every database. Applied changesets are never edited: on Oracle and SQL Server a new rename changeset follows the applied ones. A guard refuses product table names that collide with PostgreSQL catalog relations. IFMS is affected only if it reads Sangam tables directly; it should not (use the REST contract). **available now** (0438ccd9, merged in 1261db4f)
 5. Check the schema with `GET /api/v1/ops/schema-status` or `sangam upgrade check --schema` (register M-092). **available now**; Oracle/SQL Server reading NOT_RUN.
 
 ## 6. Identity, tenants and seats
@@ -121,7 +146,7 @@ Oracle and SQL Server come first, because the sponsor gate scores only scenarios
 1. Configure OIDC: `SANGAM_OIDC_ISSUER`, the tenant claim, the audience `sangam-server`, and the platform issuer for platform administrators (INTEGRATION-GUIDE sections 6-7). **available now**
 2. Create the tenant (`POST /api/v1/admin/tenants`, platform administrator). Its id matches `[A-Za-z0-9][A-Za-z0-9_.-]{0,59}`, for example a Government of India department scope `GOI.<DEPT>` as in `IfmsPacksIT`. Platform role rows are created then, and backfilled at every start (decisions 368, 370 (1)). **available now**
 3. Seats and holders come from the pack seeds: for example `CONTROLLING-1` from `packs/leave/seed.json`. Every task is answered by the person who holds its seat today; each approval step must be a different person (`IfmsPacksIT` class comment). **available now**
-4. **CONTROLLING (decision 391).** The leave pack names CONTROLLING as the sanctioning role. `sangam-core-powers.dmn` gets a CONTROLLING row scoped to the leave case type only, with no money power, and the core pack gets a new version. Without it, a leave sanction is refused with `POWER_LIMIT_EXCEEDED`. **pending (decision 391, 6383c10c on feat/round7-it; IfmsPacksIT.leave NOT_RUN)**
+4. **CONTROLLING (decision 391).** The leave pack names CONTROLLING as the sanctioning role. `sangam-core-powers.dmn` gets a CONTROLLING row scoped to the leave case type only, with no money power, and the core pack is `sangam.core` 1.0.2. **UNCERTAIN:** 6383c10c changed `sangam-core-powers.dmn` without a version bump (the 1.0.2 bump came earlier, in 89b8d068), so a database that already holds an older 1.0.2 content of `sangam.core` would refuse it with `PACK_VERSION_IMMUTABLE`; deploy on a fresh database, or wait for the integrator's ruling. Without it, a leave sanction is refused with `POWER_LIMIT_EXCEEDED`. **available now** (6383c10c, merged in 1261db4f; `CorePowersControllingLeaveTest`); `IfmsPacksIT.leave` on Oracle and SQL Server still due (E2)
 5. Other IFMS roles come from pack data and the profile power tables (`profiles/in/dmn/<STATE>/ifms-financial-powers.dmn`, and `GOI`). The seat model for budget distribution (who enters, who scrutinises, who approves) follows IFMS's evidence report IFMS-WF-SOD (joint ledger 2026-11-09 23:40). **available now** as data
 6. Worker and adapter identities: service principals (`POST /api/v1/admin/service-principals`). A scope must be held, otherwise `TOKEN_SCOPE_NOT_HELD`. Topics must be bound, otherwise `WORKER_TOPIC_NOT_BOUND` (INTEGRATION-GUIDE section 7). **available now**
 
@@ -129,13 +154,13 @@ Oracle and SQL Server come first, because the sponsor gate scores only scenarios
 
 ### 7.1 The packs
 
-Versions are as generated by packgen in 5ba0a7b4 (`sangam-packs/src/main/resources/packs/*/pack.json`).
+Versions are as generated by packgen in 0c5f5518 (`sangam-packs/src/main/resources/packs/*/pack.json`; the compliance pack is `sangam-compliance/src/main/resources/packs/compliance/pack.json`).
 
 | Pack id | Version | Folder |
 |---|---|---|
 | `sangam.core` | 1.0.2 | `core` |
 | `gov.ifms.audit-para-settlement` | 1.0.2 | `ifms-audit-para-settlement` |
-| `gov.ifms.bill` | 1.0.2 | `ifms-bill` |
+| `gov.ifms.bill` | 1.0.3 | `ifms-bill` |
 | `gov.ifms.budget-allocation` | 1.0.2 | `ifms-budget-allocation` |
 | `gov.ifms.budget-formulation` | 1.0.2 | `ifms-budget-formulation` |
 | `gov.ifms.budget-reappropriation` | 1.0.2 | `budget-reappropriation` |
@@ -155,10 +180,9 @@ Versions are as generated by packgen in 5ba0a7b4 (`sangam-packs/src/main/resourc
 | `gov.ifms.year-end-closing` | 1.0.2 | `ifms-year-end-closing` |
 | `gov.leave` | 1.0.2 | `leave` |
 | `gov.pension` | 1.0.2 | `pension` |
+| `sangam.compliance` | 1.1.1 | `compliance` (in `sangam-compliance`; decision 402 (8)) |
 
-Version changes are **pending**:
-- `sangam.core` gets a new version for decision 391 (pending, R7-it).
-- The core version bump with the repins of dependent packs is MASTER-PENDING B4 (lane L-packs).
+Merged since 5ba0a7b4: `gov.ifms.bill` 1.0.3 (f48f6f1a, decision 400 (2)), `sangam.compliance` 1.1.1 (f58fecc9, F7-4, decision 402 (8); merge 95d8956c). `sangam.core` stays 1.0.2 with the decision 391 row (see section 6 item 4 for the UNCERTAIN version point).
 
 Take the versions from the green sha's packgen output, never from this table.
 
@@ -202,8 +226,8 @@ Take the versions from the green sha's packgen output, never from this table.
 - Registry identifiers such as `BANK_ACCOUNT` keep an HMAC hash for lookup. The clear value is stored in, and revealed from, the compliance national-id vault (`EncryptedNationalIdVault`, table `CMP_NATIONAL_ID_VAULT`). It is encrypted per tenant, and every reveal is audited.
 - A reveal needs an explicit actor and purpose. A reveal without them is refused.
 - `HmacIdentifierVault` stays as the hash-only vault, and it refuses to store clear values.
-- Today 5ba0a7b4 wires the hash-only vault (`sangam-server/.../config/RegistryWiring.java:127`). So a payee with a clear bank account fails with `PAYEE_DIRECTORY_ERROR` ("no vault service is configured to hold clear identifier values").
-- **pending (decision 389, 57ca10fc on feat/round7-it; acceptance `IfmsPacksIT` on every database, FAIL on Oracle after the fix, NOT_RUN on SQL Server)**
+- Since 1261db4f the server wires the custody vault (`RegistryCustodyVault` over the compliance `NationalIdVault`, `sangam-server/.../config/RegistryWiring.java:129-134`). Without a `NationalIdVault` bean a payee with a clear bank account still fails with `PAYEE_DIRECTORY_ERROR` ("no vault service is configured to hold clear identifier values").
+- **available now** (decision 389, 57ca10fc merged in 1261db4f). Acceptance `IfmsPacksIT` on Oracle and SQL Server is still due (E2); the last recorded runs (joint ledger §(1)) predate the merge.
 - IFMS check (joint ledger §(3)a): if any IFMS path reads a revealed BANK_ACCOUNT value, tell Sangam the file and line so it joins the acceptance test.
 
 ## 11. Contracts IFMS consumes
@@ -216,8 +240,8 @@ Take the versions from the green sha's packgen output, never from this table.
 | Events | `sangam-rest/api/sangam-events.asyncapi.yaml`; outbound `SANGAM_OUTBOX_DESTINATIONS` | available now |
 | Idempotency | `Idempotency-Key` on commands; required in the government profile (`sangam.rest.government-profile=true`): `400 IDEMPOTENCY_KEY_REQUIRED` (INTEGRATION-GUIDE section 5) | available now |
 | operationId | UUIDv5 of (tenant, root, activity instance, loop); a worker passes it to PFMS, the bank or GL as their idempotency key | available now |
-| Path parameters | identifiers that can hold `/` or `:` move to query parameters (decision 393) | pending (R7-ui; announced under E3) |
-| Contract deltas since 209d2765 | listed in joint ledger §(3)c | pending (E3) |
+| Path parameters | identifiers that can hold `/` or `:` move to query parameters (decisions 393, 400 (1)); in 0.1.0 by decision 406 (4ec73bba) | **merging** (lane R7-ui; listed in the contract-change notice) |
+| Contract deltas since 209d2765 | `RELEASE-NOTES-0.1.0.md` section 3 and the contract-change notice for the joint ledger | notice written; posting pending (E3) |
 
 ## 12. Workers and connectors
 
@@ -256,7 +280,7 @@ The order follows IFMS's sponsor gate SD-505 and its scenario catalogue R-114 v0
 ## 16. Go-live checklist (per environment)
 
 - [ ] A green Sangam sha is announced and pinned (section 3). **pending (E1)**
-- [ ] Database prepared and migrated once, with the decision 388 rename included (section 5). **pending (388)**
+- [ ] Database prepared and migrated once, with the decision 388 rename included (section 5).
 - [ ] Every production setting of [PLUG-AND-PLAY.md section 2](PLUG-AND-PLAY.md#2-what-every-production-installation-must-configure) is supplied, and the server starts with `sangam.security.production=true`.
 - [ ] Key environment list, or custodian attestation, is in place, and the bootstrap setting is removed after the first start (decision 390 (2)).
 - [ ] Malware scanner is live, or a recorded waiver with its reason is in place.
@@ -264,8 +288,8 @@ The order follows IFMS's sponsor gate SD-505 and its scenario catalogue R-114 v0
 - [ ] `sangam.rest.government-profile=true`, so idempotency keys are required.
 - [ ] Trusted proxies list the IFMS UI and the ingress.
 - [ ] Packs are deployed at the green sha's versions, and the profiles are loaded per tenant.
-- [ ] Seats and holders are loaded. CONTROLLING power is present. **pending (391)**
-- [ ] BANK_ACCOUNT clear-value custody is wired. **pending (389)**
+- [ ] Seats and holders are loaded. CONTROLLING power is present (decision 391).
+- [ ] BANK_ACCOUNT clear-value custody is wired (decision 389): a `NationalIdVault` is configured.
 - [ ] SD-505 score above 98% (section 17). **pending**
 - [ ] Rollback rehearsed (section 19).
 
@@ -317,7 +341,7 @@ The order follows IFMS's sponsor gate SD-505 and its scenario catalogue R-114 v0
 | `IDEMPOTENCY_KEY_REQUIRED` / `_REUSED` / `_IN_PROGRESS` | government profile idempotency | send one key per command; same key = same body |
 | `NO_MATCHING_ROUTE`, `AMBIGUOUS_ROUTE` | routing incident (ROUTING-INCIDENT v1) | fix the DMN or profile data, then resolve the incident |
 | `POWER_LIMIT_EXCEEDED` | the seat has no power for the case type or amount | check the core powers and profile power DMN (decision 391 for CONTROLLING) |
-| `PAYEE_DIRECTORY_ERROR` "no vault service..." | clear BANK_ACCOUNT without custody | decision 389 (pending merge) |
+| `PAYEE_DIRECTORY_ERROR` "no vault service..." | clear BANK_ACCOUNT without custody | decision 389: configure the compliance national-id vault |
 | `DSC_SIGNATURE_NOT_VERIFIED` (422) | gate started directly or slot empty | start the calling pack process |
 | `DOCUMENT_SLOT_NOT_READY` (422) | slot empty, already signed or not bound | upload the document again on the open task |
 | `PACK_REJECTED` (422) / `PACK_VERSION_IMMUTABLE` | changed content under an existing version | regenerate with a new version |
@@ -348,9 +372,7 @@ The order follows IFMS's sponsor gate SD-505 and its scenario catalogue R-114 v0
 |---|---|
 | Green sha announced; RC tag | E1, M-019 |
 | `IfmsPacksIT` green on Oracle and SQL Server | E2 (R7-it) |
-| PG_CONFIG rename merged | decision 388 (0438ccd9) |
-| BANK_ACCOUNT custody merged | decision 389 (57ca10fc) |
-| CONTROLLING leave power merged; `sangam.core` new version | decision 391 (6383c10c), B4 |
+| PNP-1..3 and the decision 404 (5) audit merged | feat/round8-pnp (merging) |
 | Contract deltas announced (incl. decision 393) | E3 |
 | GA-55 bill-type contract | E4, JL-S-06 |
 | Exact-fraction, delegation and archive evidence on Oracle and SQL Server | C1, C2 |

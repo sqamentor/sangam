@@ -12,6 +12,7 @@ import { announce, registerAnnouncer } from '../lib/hooks';
 import { syncFieldRecords, unsentFieldRecords } from '../lib/offline/session';
 import { LogoutPrompt } from './LogoutPrompt';
 import { navEnd, visibleNav } from './nav';
+import { useInstalledModules } from './installed';
 import { usePlugins } from '../plugins/host';
 import { GlobalSearch } from '../modules/platform';
 import { config } from '../config';
@@ -116,7 +117,8 @@ export function Layout({ children }: { children: ReactNode }) {
   }, [loc.pathname]);
 
   // M-028 and decision 397: the seven job groups as this caller may use them (nav.ts visibleNav).
-  const areas = visibleNav(me);
+  const installed = useInstalledModules();
+  const areas = visibleNav(me, installed);
   const appPages = usePlugins('app.page');
   const adminPages = usePlugins('admin.page');
   const pluginPages = [...appPages, ...adminPages];

@@ -9,10 +9,12 @@ import org.sangam.sdk.http.HttpTransport;
 import org.sangam.sdk.generated.model.Assignment;
 import org.sangam.sdk.generated.model.LeaveRequest;
 import org.sangam.sdk.generated.model.Me;
+import org.sangam.sdk.generated.model.MeCapabilities;
 import org.sangam.sdk.generated.model.Notification;
+import org.sangam.sdk.generated.model.TeamTaskGroupReport;
 
 /**
- * Typed operations of {@code Me} (5 operations), generated from
+ * Typed operations of {@code Me} (7 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -21,6 +23,8 @@ import org.sangam.sdk.generated.model.Notification;
 public final class MeApi {
 
     private static final TypeReference<Me> R_getMe = new TypeReference<>() { };
+    private static final TypeReference<MeCapabilities> R_getMyCapabilities = new TypeReference<>() { };
+    private static final TypeReference<TeamTaskGroupReport> R_getTeamTaskGroups = new TypeReference<>() { };
     private static final TypeReference<java.util.List<Assignment>> R_listMyDelegations = new TypeReference<>() { };
     private static final TypeReference<Assignment> R_requestLeave = new TypeReference<>() { };
 
@@ -42,6 +46,34 @@ public final class MeApi {
     public Me getMe(RequestOptions options) {
         ApiRequest req = ApiRequest.get("/me");
         return call.json(req, options, R_getMe);
+    }
+
+    /**
+     * Installed modules
+     *
+     * <p>Owner decision 399 (Q3): the optional modules whose REST API this server serves, derived from the wiring (a module is listed when its controllers are registered, which needs the module on the class path and enabled). Read-only, any signed-in caller, no permission. The UI hides the menu entries of a module that is not listed.
+     *
+     * <p>{@code GET /me/capabilities} (operationId {@code getMyCapabilities}).
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public MeCapabilities getMyCapabilities(RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/me/capabilities");
+        return call.json(req, options, R_getMyCapabilities);
+    }
+
+    /**
+     * Team workload of my tenant
+     *
+     * <p>Owner decision 401: open, assigned and unassigned task counts of the caller's tenant, and per candidate group the open unassigned tasks (groups without one are left out), plus the unassigned tasks that offer no candidate group. Only tasks of the caller's tenant are counted, never another tenant's or a task without a tenant. Read-only.
+     *
+     * <p>{@code GET /team/task-groups} (operationId {@code getTeamTaskGroups}); permission {@code team.read}.
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public TeamTaskGroupReport getTeamTaskGroups(RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/team/task-groups");
+        return call.json(req, options, R_getTeamTaskGroups);
     }
 
     /**
