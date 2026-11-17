@@ -14,7 +14,7 @@ import { LogoutPrompt } from './LogoutPrompt';
 import { navEnd, visibleNav } from './nav';
 import { useInstalledModules } from './installed';
 import { usePlugins } from '../plugins/host';
-import { GlobalSearch } from '../modules/platform';
+import { GlobalSearch } from './GlobalSearch';
 import { config } from '../config';
 
 /** Owner decision Q-06 / 397 Q11: 0.1.0 is English only; the switch shows only when more than one locale is configured. */

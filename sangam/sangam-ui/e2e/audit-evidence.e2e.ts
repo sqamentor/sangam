@@ -21,7 +21,9 @@ import { indiaPack, sha256Hex } from './support/compliance';
 interface Jurisdiction {
   code: string;
   homeCountry: string;
-  limits: Record<string, { value: number }>;
+  /** GET /compliance/jurisdiction sends each limit as its number (ComplianceApiImpl.jurisdiction: JurisdictionPack.limits()
+   *  is Map<String, Integer>); the pack file keeps {value, citation}, the citation stays server side. */
+  limits: Record<string, number>;
 }
 
 test('the tenant runs on the India pack with its one-year retention floors (C-04, D-12)', async ({ page, seed }) => {
@@ -33,17 +35,19 @@ test('the tenant runs on the India pack with its one-year retention floors (C-04
     const j = (await res.json()) as Jurisdiction;
     expect(j.code).toBe('IN');
     expect(j.homeCountry).toBe(pack.homeCountry);
-    expect(j.limits.logRetentionMinDays.value).toBe(pack.limits.logRetentionMinDays.value);
-    expect(j.limits.logRetentionMinDays.value).toBeGreaterThanOrEqual(365);
-    expect(j.limits.minimumRetentionDays.value).toBeGreaterThanOrEqual(365);
-    expect(j.limits.incidentLogRetentionDays.value).toBeGreaterThanOrEqual(180);
+    expect(j.limits.logRetentionMinDays).toBe(pack.limits.logRetentionMinDays.value);
+    expect(j.limits.logRetentionMinDays).toBeGreaterThanOrEqual(365);
+    expect(j.limits.minimumRetentionDays).toBe(pack.limits.minimumRetentionDays.value);
+    expect(j.limits.minimumRetentionDays).toBeGreaterThanOrEqual(365);
+    expect(j.limits.incidentLogRetentionDays).toBe(pack.limits.incidentLogRetentionDays.value);
+    expect(j.limits.incidentLogRetentionDays).toBeGreaterThanOrEqual(180);
   } finally {
     await officer.dispose();
   }
 
   await signInAs(page, seed.identities.complianceOfficer.token);
   await page.goto('/m/compliance');
-  await page.getByRole('tab', { name: t('mod.compliance.evidence') }).click();
+  await page.getByRole('tab', { name: t('mod.compliance.evidence'), exact: true }).click();
   const panel = page.getByRole('tabpanel');
   await expect(panel.getByRole('row').filter({ hasText: 'homeCountry' })).toContainText(pack.homeCountry);
 });

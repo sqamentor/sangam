@@ -176,7 +176,8 @@ export function AuditSearch() {
           rowKey={(r) => r.id}
           columns={[
             { key: 'time', header: t('task.when'), render: (r) => fmtDate(r.time) },
-            { key: 'bk', header: t('ops.businessKey'), render: (r) => <Link to={`/audit/timeline/${encodeURIComponent(r.businessKey)}`}>{r.businessKey}</Link> },
+            // an event with no business key (tenant, admin or compliance events) has no case timeline: no empty link (WCAG 2.4.4)
+            { key: 'bk', header: t('ops.businessKey'), render: (r) => (r.businessKey ? <Link to={`/audit/timeline/${encodeURIComponent(r.businessKey)}`}>{r.businessKey}</Link> : '—') },
             { key: 'type', header: t('audit.type'), render: (r) => <Badge value={r.type} tone="info" /> },
             { key: 'actor', header: t('audit.actor'), render: (r) => `${r.actor}${r.seatName ? ` · ${r.seatName}` : ''}${r.actedFor ? ` · ${t('task.actedFor', { name: r.actedFor })}` : ''}` },
             { key: 'rule', header: t('audit.rule'), render: (r) => r.ruleVersion ?? '—' },

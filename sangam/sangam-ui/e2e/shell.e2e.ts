@@ -28,7 +28,8 @@ test('signing in with the dev token opens the work area', async ({ page }) => {
   await expect(page.getByRole('heading', { name: t('auth.title') })).toBeVisible();
   await page.getByLabel(t('auth.devToken')).fill(devToken());
   await page.getByRole('button', { name: t('auth.signIn') }).click();
-  await expect(page.getByRole('link', { name: t('nav.inbox') })).toBeVisible();
+  // decision 397 (UX-SPEC Q1): the main menu's "My work" group names the task list "My tasks" (nav.ts work.tasks)
+  await expect(page.getByRole('navigation', { name: t('nav.primary') }).getByRole('link', { name: t('menu.work.tasks.label'), exact: true })).toBeVisible();
 });
 
 test('no request leaves the origin (air-gapped, R56)', async ({ signedIn: page, offOrigin, seed }) => {

@@ -57,7 +57,11 @@ server {
     location ~ ^/(api|engine-rest)/ {
         proxy_pass              ${SANGAM_API_UPSTREAM};
         proxy_http_version      1.1;
-        proxy_set_header        Host              $host;
+        # $http_host, not $host: the browser's Host with its port. $host drops the port, so the server saw
+        # http://<host> (port 80) while a write from the UI carried Origin http://<host>:<port>; with CORS origins
+        # configured, Spring took the UI's own requests for cross-origin ones and refused them (403 "Invalid CORS
+        # request", ui.yml e2e run 44135232064). The UI and the API are one origin, so the server must see it.
+        proxy_set_header        Host              $http_host;
         proxy_set_header        X-Real-IP         $remote_addr;
         proxy_set_header        X-Forwarded-For   $proxy_add_x_forwarded_for;
         proxy_set_header        X-Forwarded-Proto $scheme;
@@ -73,6 +77,21 @@ server {
         try_files $uri =404;
         expires 1y;
         add_header Cache-Control "public, max-age=31536000, immutable" always;
+        include /etc/nginx/conf.d/security-headers.inc;
+    }
+
+    # The approved Noto fonts and their OFL texts (owner decisions 120, 121; scripts/deploy-fonts.mjs). The stock
+    # nginx mime.types has no ttf entry, so they went out as application/octet-stream. A types block replaces the
+    # inherited map for its location, so it names every file type served here; a missing file is a 404, never the
+    # single-page index.html.
+    location ^~ /fonts/ {
+        types {
+            font/ttf    ttf;
+            text/plain  txt;
+        }
+        default_type application/octet-stream;
+        try_files $uri =404;
+        add_header Cache-Control "no-cache" always;
         include /etc/nginx/conf.d/security-headers.inc;
     }
 

@@ -54,7 +54,8 @@ test('a fresh citizen has no notices, and the notices page says so (D-15)', asyn
   }
   await signInAs(page, citizen.token);
   await page.goto('/portal');
-  await page.getByRole('link', { name: t('nav.myNotices') }).click();
+  // decision 397: the citizen's menu entry is "Letters and notices" (nav.ts services.notices, /portal/notices)
+  await page.getByRole('navigation', { name: t('nav.primary') }).getByRole('link', { name: t('menu.services.notices.label'), exact: true }).click();
   await expect(page.getByText(t('portal.noNotices'))).toBeVisible();
 });
 

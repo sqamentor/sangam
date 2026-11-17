@@ -49,7 +49,11 @@ server {
         rewrite ^/sangam/(.*)$ /$1 break;
         proxy_pass              ${SANGAM_API_UPSTREAM};
         proxy_http_version      1.1;
-        proxy_set_header        Host              $host;
+        # $http_host, not $host: the browser's Host with its port. $host drops the port, so the server saw
+        # http://<host> (port 80) while a write from the UI carried Origin http://<host>:<port>; with CORS origins
+        # configured, Spring took the UI's own requests for cross-origin ones and refused them (403 "Invalid CORS
+        # request", ui.yml e2e run 44135232064). The UI and the API are one origin, so the server must see it.
+        proxy_set_header        Host              $http_host;
         proxy_set_header        X-Real-IP         $remote_addr;
         proxy_set_header        X-Forwarded-For   $proxy_add_x_forwarded_for;
         proxy_set_header        X-Forwarded-Proto $scheme;
@@ -68,7 +72,21 @@ server {
         include /etc/nginx/conf.d/security-headers.inc;
     }
 
-    # Every other file of the build (fonts, icons), then the single-page fallback.
+    # The approved Noto fonts and their OFL texts (owner decisions 120, 121), as in docker/ui/default.conf.template:
+    # the stock mime.types has no ttf entry, and a types block replaces the inherited map for its location.
+    location ^~ /sangam/fonts/ {
+        alias /usr/share/nginx/html/fonts/;
+        types {
+            font/ttf    ttf;
+            text/plain  txt;
+        }
+        default_type application/octet-stream;
+        try_files $uri =404;
+        add_header Cache-Control "no-cache" always;
+        include /etc/nginx/conf.d/security-headers.inc;
+    }
+
+    # Every other file of the build (icons), then the single-page fallback.
     location /sangam/ {
         alias /usr/share/nginx/html/;
         try_files $uri $uri/ /sangam/index.html;

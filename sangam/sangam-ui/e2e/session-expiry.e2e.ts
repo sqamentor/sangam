@@ -73,7 +73,12 @@ test('"Stay signed in" on the idle warning keeps the session (W-09, decision 349
   await page.goto('/tasks');
   const warning = page.getByRole('alertdialog', { name: t('auth.idleWarningTitle') });
   await expect(warning).toBeVisible({ timeout: 45_000 });
-  await warning.getByRole('button', { name: t('auth.idleStay') }).click();
+  // The button has the focus (autoFocus) and is pressed from the keyboard. A mouse click first moves the pointer, and
+  // any input, a pointer move included, already keeps the session and closes the warning (idle.ts ACTIVITY_EVENTS):
+  // in Firefox the warning was gone before the click landed ("<html> intercepts pointer events", run 44124788893).
+  const stay = warning.getByRole('button', { name: t('auth.idleStay') });
+  await expect(stay).toBeFocused();
+  await stay.press('Enter');
   await expect(warning).toBeHidden();
   // past the end of the first period (the click started a new one): still signed in
   await page.waitForTimeout(35_000);
