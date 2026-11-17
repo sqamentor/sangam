@@ -221,7 +221,9 @@ public final class MoneyPathGuard {
     }
 
     private static boolean out(Function<String, MoneyMovement> mm, String connector) {
-        return connector != null && !connector.isBlank() && mm.apply(connector) == MoneyMovement.OUT;
+        // a connector chosen by an expression is only known at run time; MoneyOutApproval enforces it there
+        return connector != null && !connector.isBlank() && !connector.contains("{")
+                && mm.apply(connector) == MoneyMovement.OUT;
     }
 
     private static String movesMoneyOut(Element e, String carried, Function<String, MoneyMovement> mm,
