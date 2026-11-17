@@ -48,7 +48,13 @@ public final class EquivalenceScenarios {
                 new EquivalenceScenario("inbox-dedupe", "duplicate prevention: an inbound message is accepted once",
                         PortScenarios::inboxDedupe),
                 new EquivalenceScenario("audit-tamper", "audit: a row altered behind the ports breaks the chain",
-                        PortScenarios::auditTamper));
+                        PortScenarios::auditTamper),
+                new EquivalenceScenario("job-fencing", "job fencing: a lost lease is refused and changes nothing",
+                        WorkScenarios::jobFencing),
+                new EquivalenceScenario("p1-rollback", "P-1: engine step and product row commit or roll back together",
+                        WorkScenarios::p1Rollback),
+                new EquivalenceScenario("deny-wins", "authorization: a deny wins over every grant until it is removed",
+                        WorkScenarios::denyWins));
     }
 
     /** The fee decision at its latest version for three amounts, plus a repeat that must give the same digest. */

@@ -58,17 +58,17 @@ class E46ConformanceIT extends EngineScenarioSupport {
         for (String n : names) {
             res.put(n, fixture(n));
         }
-        adapter.deploy(null, "e46-" + names[names.length - 1] + "-" + RUN, res);
+        adapter.deploy(SCENARIO_TENANT, "e46-" + names[names.length - 1] + "-" + RUN, res);
     }
 
     private void deployText(String name, String xml) {
-        adapter.deploy(null, "e46-" + name + "-" + RUN + "-" + key("v"), Map.of(name, xml.getBytes(StandardCharsets.UTF_8)));
+        adapter.deploy(SCENARIO_TENANT, "e46-" + name + "-" + RUN + "-" + key("v"), Map.of(name, xml.getBytes(StandardCharsets.UTF_8)));
     }
 
     // ------------------------------------------------------------------ path steps
 
     private String start(String processKey, String bk, Map<String, Object> vars) {
-        return adapter.startProcess(null, processKey, bk, vars);
+        return adapter.startProcess(SCENARIO_TENANT, processKey, bk, vars);
     }
 
     private List<String> open(String pid) {
@@ -273,7 +273,7 @@ class E46ConformanceIT extends EngineScenarioSupport {
         scenario("E46 WF-5 refused at deploy, every planted item named", ctx -> {
             String error = null;
             try {
-                adapter.deploy(null, "e46-wf5-" + RUN, Map.of("e46-wf5.bpmn", wf5));
+                adapter.deploy(SCENARIO_TENANT, "e46-wf5-" + RUN, Map.of("e46-wf5.bpmn", wf5));
             } catch (RuntimeException e) {
                 StringBuilder sb = new StringBuilder();
                 for (Throwable t = e; t != null; t = t.getCause()) {
@@ -372,7 +372,7 @@ class E46ConformanceIT extends EngineScenarioSupport {
 
     private boolean correlate(String bk) {
         try {
-            adapter.correlateMessage(null, "TREASURY_ACK", bk, Map.of());
+            adapter.correlateMessage(SCENARIO_TENANT, "TREASURY_ACK", bk, Map.of());
             return true;
         } catch (RuntimeException e) {
             return false;

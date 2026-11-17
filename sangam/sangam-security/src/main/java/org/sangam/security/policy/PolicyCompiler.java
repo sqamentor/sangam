@@ -113,6 +113,30 @@ public final class PolicyCompiler {
         return new SqlPredicate(sql.toString(), params);
     }
 
+    /**
+     * The list predicate of the system identity: every row of its own tenant in the type's set (the base filter), and
+     * none for an explicit-only permission. It is the list form of the system rule of
+     * {@link AuthorizationService#allow}, so the list path and the object check decide the same rows; grant rows are
+     * not read (the system principal holds none).
+     */
+    public SqlPredicate tenantScope(SecurityIdentity system, String resourceType, Permission permission, String alias) {
+        if (!system.system()) {
+            throw new IllegalArgumentException("the tenant scope is the system identity's predicate only");
+        }
+        ResourceDescriptor d = registry.get(resourceType);
+        if (!d.hasTable()) {
+            throw new IllegalArgumentException(resourceType + " is a virtual resource type; use allow()");
+        }
+        if (permission.explicitOnly()) {
+            return SqlPredicate.alwaysFalse();
+        }
+        StringBuilder sql = new StringBuilder(alias).append('.').append(d.tenantColumn()).append(" = ?");
+        if (d.baseFilter() != null) {
+            sql.append(" AND (").append(d.baseFilter().replace("r.", alias + ".")).append(")");
+        }
+        return new SqlPredicate(sql.toString(), List.of(system.tenantId()));
+    }
+
     // ------------------------------------------------------------------ object check
 
     /** Object check by id, through the same predicate (table-backed) or the grant rows (virtual types). */
@@ -129,6 +153,9 @@ public final class PolicyCompiler {
         ResourceDescriptor d = registry.get(resourceType);
         if (permission.explicitOnly() && d.hasTable()) {
             return false;    // decision 141: explicit-only permissions exist on virtual types only (BILLING channels)
+        }
+        if (d.hasTable() && ResourceRegistry.ANY_ID.equals(resourceId)) {
+            return allowModuleWide(c, who, resourceType, permission);
         }
         if (d.hasTable()) {
             SqlPredicate p = visible(c, who, resourceType, permission, "r");
@@ -175,6 +202,10 @@ public final class PolicyCompiler {
         ResourceDescriptor d = registry.get(resourceType);
         if (permission.explicitOnly() && d.hasTable()) {
             return out;      // decision 141, as in the object check
+        }
+        if (d.hasTable() && distinct.remove(ResourceRegistry.ANY_ID)
+                && allowModuleWide(c, who, resourceType, permission)) {
+            out.add(ResourceRegistry.ANY_ID);     // R7UI-S12: '*' is decided by policy, as in the object check
         }
         for (int from = 0; from < distinct.size(); from += SET_CHUNK) {
             List<String> chunk = distinct.subList(from, Math.min(distinct.size(), from + SET_CHUNK));
@@ -274,6 +305,43 @@ public final class PolicyCompiler {
                 out.add(chunk.get(i));
             }
         }
+    }
+
+    /**
+     * R7UI-S12: the module-wide object check ({@code '*'}) on a table-backed type. No row has the id {@code '*'}, so the
+     * row predicate refused it to everybody; it is decided from the policy instead:
+     * <ul>
+     *   <li>only a grant on resource id {@code '*'} (of this type or of type {@code '*'}) confers it; a grant on a row or
+     *       a narrower scope never does;</li>
+     *   <li>a conditional grant does not confer it: its condition is about a row, and there is none;</li>
+     *   <li>deny wins: any deny on {@code '*'} refuses it, also a conditional one (fail closed).</li>
+     * </ul>
+     * Row actions keep their own check against the row; this only answers "may act in this module at all".
+     */
+    private boolean allowModuleWide(Connection c, SecurityIdentity who, String resourceType, Permission permission) {
+        StringBuilder sql = new StringBuilder("SELECT a.deny_flag, a.perms, a.condition_id, a.resource_type"
+                + " FROM AUTH_EFFECTIVE a WHERE a.tenant_id = ? AND ");
+        List<Object> params = new ArrayList<>();
+        params.add(who.tenantId());
+        appendPrincipal(sql, params, "a", who);
+        sql.append(" AND a.resource_type IN (?, ?) AND a.resource_id = ?");
+        params.add(resourceType);
+        params.add(ResourceRegistry.ANY_TYPE);
+        params.add(ResourceRegistry.ANY_ID);
+        boolean granted = false;
+        for (Object[] row : Jdbc.query(c, sql.toString(), rs -> new Object[]{rs.getInt(1), rs.getLong(2), rs.getString(3),
+                rs.getString(4)}, params.toArray())) {
+            if (((Long) row[1] & permission.bit()) == 0) {
+                continue;
+            }
+            if ((Integer) row[0] == 1) {
+                return false;                      // deny wins, whatever its condition (fail closed)
+            }
+            if (row[2] == null && grantConfers(permission, (String) row[3], ResourceRegistry.ANY_ID)) {
+                granted = true;
+            }
+        }
+        return granted;
     }
 
     private boolean allowVirtual(Connection c, SecurityIdentity who, String resourceType, Permission permission,

@@ -684,7 +684,8 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             ExternalWork work = new ExternalWork(t.getId(), t.getTopicName(), t.getProcessInstanceId(), t.getActivityId(),
                     t.getActivityInstanceId(), t.getRetries() == null ? -1 : t.getRetries(),
                     Instant.ofEpochMilli(expiresAt), lease.lockVersion(), lease.attemptId(),
-                    new HashMap<>(t.getVariables()), operationId.toString(), org.sangam.engine.deploy.WorkProperties.of(configuration, t, ext));
+                    new HashMap<>(t.getVariables()), operationId.toString(), org.sangam.engine.deploy.WorkProperties.of(configuration, t, ext),
+                    t.getTenantId()); // DEC-145: the engine's own tenant, not the default-mapped lease tenant
             out.add(new LeasedWork(work, tenant, t.getBusinessKey(), rootId, operationId, lease.attemptNo(), capability,
                     fence, false));
         }

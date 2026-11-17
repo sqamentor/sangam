@@ -46,7 +46,8 @@ public final class JdbcUnverifiedPaymentStore implements UnverifiedPaymentStore 
 
     static final String TABLE = "BILL_UNVERIFIED_PAYMENT";
     static final String PAUSES = "BILL_UNVERIFIED_ACCRUAL_PAUSE";
-    private static final ObjectMapper JSON = new ObjectMapper();
+    /** Registry convention (decisions 138, 381(4)): a stored fraction reads as BigDecimal from its text, never Double. */
+    static final ObjectMapper JSON = org.sangam.registry.support.Json.MAPPER;
     private static final String COLUMNS = "tenant_id, payment_id, ledger_id, consumer, office_id, channel, payment_ref,"
             + " amount, currency, paid_at, payer_name, instrument, details_json, reason, evidence_ref, policy_version,"
             + " downstream_json, accepted_by, accepted_at, state, version, outcome_reason, verification_ref,"

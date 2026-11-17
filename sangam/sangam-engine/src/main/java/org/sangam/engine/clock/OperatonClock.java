@@ -67,6 +67,7 @@ public final class OperatonClock implements SangamClock {
      * The caller must {@link Registration#release() release} the handle when its engine closes (or fails to build).
      */
     public static synchronized Registration register(boolean allowMany) {
+        LIVE.removeIf(Registration::ownerClosed); // R8-pnp PNP-1: a drop-in engine closed by its host frees its slot
         if (!LIVE.isEmpty() && !allowMany) {
             throw new IllegalStateException("FLOWABLE-INTO-OPERATON D-10: a second Sangam engine in one JVM shares Operaton's static ClockUtil; "
                     + "run one engine per JVM (set allowMultipleEnginesPerJvm only for tests); live engines: " + LIVE.size());
@@ -85,7 +86,28 @@ public final class OperatonClock implements SangamClock {
     public static final class Registration implements AutoCloseable {
         private final AtomicBoolean released = new AtomicBoolean();
 
+        private volatile org.operaton.bpm.engine.ProcessEngine owner;
+
         private Registration() {
+        }
+
+        /**
+         * R8-pnp PNP-1: binds this slot to the engine that holds it, for an engine whose host closes it with
+         * {@code ProcessEngine.close()} only (the drop-in {@code SangamEnginePlugin}). Operaton unregisters a closed
+         * engine from {@code ProcessEngines}; the next {@link #register} then treats this slot as released.
+         */
+        public void bindTo(org.operaton.bpm.engine.ProcessEngine engine) {
+            owner = engine;
+        }
+
+        /** {@code true} (and released) when the bound engine is no longer the one Operaton registers under its name. */
+        boolean ownerClosed() {
+            org.operaton.bpm.engine.ProcessEngine e = owner;
+            if (e == null || org.operaton.bpm.engine.ProcessEngines.getProcessEngines().get(e.getName()) == e) {
+                return false;
+            }
+            released.set(true);
+            return true;
         }
 
         public void release() {

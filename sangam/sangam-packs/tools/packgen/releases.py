@@ -166,6 +166,11 @@ BUMPED = frozenset({
 # regenerate releases-held.json at that commit and empty SHIPS.
 HELD_AT = '93498ab2'
 HELD_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'releases-held.json')
+# R7UI-F7-4: the compliance pack lives in sangam-compliance (packgen generates its BPMN, compliance.py; its pack.json is
+# kept by hand) and is held the same way: releases-held.json records it at HELD_AT, check_held covers this root too.
+# A regeneration of releases-held.json covers both roots.
+COMPLIANCE_PACKS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..',
+                                                 'sangam-compliance', 'src', 'main', 'resources', 'packs'))
 SHIPS = {pid: ('1.0.1', '1.0.2') for pid in (
     'gov.contract-management',
     'gov.dbt.batch',
@@ -217,6 +222,9 @@ SHIPS['universal.up12-order-decomposition'] = ('1.0.1', '1.0.2')
 SHIPS['universal.up15-recertification'] = ('1.0.1', '1.0.2')
 SHIPS['universal.up17-prior-authorisation'] = ('1.0.1', '1.0.2')
 SHIPS['universal.up21-iot-storm-control'] = ('1.0.1', '1.0.2')
+# R7UI-F7-4: the compliance models changed after HELD_AT (incident report completion guard, isStartableInTasklist).
+# Its pack.json is kept by hand, so this entry is the ledger record of that bump; version_of does not apply to it.
+SHIPS['sangam.compliance'] = ('1.1.0', '1.1.1')
 SHIPS['gov.intl.pfm-breach-case'] = ('1.0.0', '1.0.1')
 SHIPS['gov.intl.pfm-budget-accounting-reconciliation'] = ('1.0.0', '1.0.1')
 SHIPS['gov.intl.pfm-cash-plan'] = ('1.0.0', '1.0.1')

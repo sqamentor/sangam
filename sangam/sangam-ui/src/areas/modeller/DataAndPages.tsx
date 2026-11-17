@@ -261,7 +261,9 @@ export function PageBuilder() {
           </button>
         }
       />
-      <ProblemAlert error={pages.error ?? act.error} />
+      {/* M-047: the refused list read with its retry, the refused save on its own */}
+      <ProblemAlert error={pages.error} onRetry={pages.reload} />
+      <ProblemAlert error={act.error} />
       {pages.data && (
         <DataTable
           caption={t('pages.title')}

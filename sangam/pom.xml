@@ -81,6 +81,7 @@
     <module>sangam-backup</module>
     <!-- Decisions 277 and 285: the Spring-free ports and default adapters of sangam-rest (package names unchanged) -->
     <module>sangam-rest-core</module>
+    <module>sangam-security-bridge</module>
     <module>sangam-rest</module>
     <!-- M-144/M-150: host conformance and cross-host equivalence kit, run by every host's tests -->
     <module>sangam-host-conformance</module>
@@ -426,6 +427,11 @@
       <dependency>
         <groupId>io.github.sqamentor</groupId>
         <artifactId>sangam-host-conformance</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.sqamentor</groupId>
+        <artifactId>sangam-security-bridge</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

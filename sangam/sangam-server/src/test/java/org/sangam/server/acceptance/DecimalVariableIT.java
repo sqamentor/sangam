@@ -35,14 +35,14 @@ class DecimalVariableIT extends EngineScenarioSupport {
     @Test
     void decimalsRoundTripOnThisDatabase() {
         scenario("D138-decimal-" + AcceptanceDatabase.name(), ctx -> {
-            adapter.deploy(null, "d138-" + RUN, Map.of("d138.bpmn", MODEL.getBytes(StandardCharsets.UTF_8)));
+            adapter.deploy(SCENARIO_TENANT, "d138-" + RUN, Map.of("d138.bpmn", MODEL.getBytes(StandardCharsets.UTF_8)));
             Map<String, Object> values = new LinkedHashMap<>();
             values.put("rate", new BigDecimal("0.0725"));
             values.put("amount", new BigDecimal("98765432109876543210.12"));
             values.put("adjustment", new BigDecimal("-1250.50"));
             values.put("scaled", new BigDecimal("1E+3"));
             values.put("widest", new BigDecimal("9".repeat(DecimalText.MAX_CHARS)));
-            String pid = adapter.startProcess(null, "d138", key("d138"), values);
+            String pid = adapter.startProcess(SCENARIO_TENANT, "d138", key("d138"), values);
 
             String prefix = ((ProcessEngineConfigurationImpl) engine.getProcessEngineConfiguration())
                     .getDatabaseTablePrefix();

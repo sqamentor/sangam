@@ -57,6 +57,7 @@ def generate(resources, readme_path, compliance_dir):
           'dmn:', sum(len(p.dmns) for p in packs.ALL) + sum(len(p.overrides) for p in packs.ALL),
           'cmmn:', sum(len(p.cmmns) for p in packs.ALL))
     print('compliance processes:', len(compliance.write_all(compliance_dir)))
+    releases.check_held(os.path.dirname(compliance_dir))  # R7UI-F7-4: the compliance pack is held as well
 
 
 def compliance_files(directory):

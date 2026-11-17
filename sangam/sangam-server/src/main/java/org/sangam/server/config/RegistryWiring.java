@@ -34,6 +34,7 @@ import org.sangam.registry.party.PartyService;
 import org.sangam.registry.register.RegisterBookService;
 import org.sangam.registry.support.Ed25519Signer;
 import org.sangam.registry.support.HmacIdentifierVault;
+import org.sangam.server.bridge.RegistryCustodyVault;
 import org.sangam.rest.port.RegistryPort;
 import org.sangam.rest.support.TxSupport;
 import org.sangam.security.SangamSecurity;
@@ -63,7 +64,8 @@ import org.springframework.security.web.context.SecurityContextHolderFilter;
  * <p>Port bindings: events → integration outbox (same transaction); visibility → sangam-security VI.4 predicate;
  * privacy → security field masks; consent → sangam-compliance purpose binding; decisions → Operaton DMN; documents →
  * flowable-ports renderer + content store; publisher → outbox → document-locker connector after commit; system of
- * record → connectors (facade mode); metrics → Micrometer; signer / identifier vault → configured keys (development
+ * record → connectors (facade mode); metrics → Micrometer; identifier vault → the keyed hash plus, when the compliance
+ * national-id vault is configured, its clear-value custody (decision 389); signer / vault pepper → configured keys (development
  * profiles may run on the module's ephemeral defaults; the module refuses them elsewhere).
  *
  * <p>Properties: {@code sangam.modules.registry.enabled}; {@code sangam.registry.signer.private-key} /
@@ -83,7 +85,8 @@ public class RegistryWiring {
             ObjectProvider<OutboxWriter> outbox, ObjectProvider<SangamSecurity> security,
             ObjectProvider<SangamCompliance> compliance, ObjectProvider<ContentService> content,
             ObjectProvider<RegistryPort> templates, ObjectProvider<ConnectorRegistry> connectors,
-            ObjectProvider<MeterRegistry> meters) {
+            ObjectProvider<MeterRegistry> meters,
+            ObjectProvider<org.sangam.compliance.ports.CompliancePorts.NationalIdVault> nationalIdVault) {
         if (env.getProperty("sangam.persistence.dev-schema", Boolean.class, false)) {
             devSchema(tx);
         }
@@ -123,8 +126,15 @@ public class RegistryWiring {
             ports = ports.withSigner(Ed25519Signer.fromBase64(priv, pub));
         }
         String pepper = env.getProperty("sangam.registry.vault.hmac-pepper");
-        if (pepper != null && !pepper.isBlank()) {
-            ports = ports.withVault(HmacIdentifierVault.fromBase64(pepper));
+        HmacIdentifierVault hashes = pepper != null && !pepper.isBlank() ? HmacIdentifierVault.fromBase64(pepper) : null;
+        org.sangam.compliance.ports.CompliancePorts.NationalIdVault custody = nationalIdVault.getIfUnique();
+        if (custody != null) {
+            // decision 389: clear values of vaulted identifier types are held by the compliance national-id vault; an
+            // unconfigured hash pepper keeps the module's development-only refusal outside development
+            ports = ports.withVault(new RegistryCustodyVault(hashes != null ? hashes : HmacIdentifierVault.ephemeral(),
+                    custody));
+        } else if (hashes != null) {
+            ports = ports.withVault(hashes);
         }
         // The side pool for unique-only number blocks (registry README §2: Transactions.of(plainPool)).
         // RM-06, decision 143: the platform's one environment resolution decides; development-only defaults (with

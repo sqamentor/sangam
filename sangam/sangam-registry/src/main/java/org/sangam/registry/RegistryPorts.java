@@ -247,8 +247,22 @@ public record RegistryPorts(EventPort events, SignerPort signer, DocumentPort do
         /** Protects a normalised value: the hash is deterministic per tenant and type, so matching still works. */
         ProtectedValue protect(String tenant, String idType, String normalisedValue, boolean storeInVault);
 
-        /** The clear value of a vault token, for an authorised and audited purpose. */
-        Optional<String> reveal(String tenant, String vaultRef, String purpose);
+        /**
+         * The clear value of a vault token, for an authorised and audited purpose. Decision 389: the actor and the
+         * purpose are explicit and both required; an implementation refuses a reveal without either (see
+         * {@link #requireRevealReason}) and never falls back to an ambient security context.
+         */
+        Optional<String> reveal(String tenant, String vaultRef, String purpose, String actor);
+
+        /** Decision 389: refuses a reveal without a declared purpose and an acting principal. */
+        static void requireRevealReason(String purpose, String actor) {
+            if (purpose == null || purpose.isBlank()) {
+                throw RegistryException.invalid("revealing an identifier requires a declared purpose");
+            }
+            if (actor == null || actor.isBlank()) {
+                throw RegistryException.invalid("revealing an identifier requires an acting principal");
+            }
+        }
     }
 
     /** A score from an external probabilistic matcher. */

@@ -29,11 +29,12 @@ class MultiInstanceCompensationIT extends EngineScenarioSupport {
                 </userTask>
                 <boundaryEvent id="holdComp" attachedToRef="hold"><compensateEventDefinition/></boundaryEvent>
                 <userTask id="refund" isForCompensation="true"/>
-                <association id="a1" associationDirection="One" sourceRef="holdComp" targetRef="refund"/>
                 <sequenceFlow id="f2" sourceRef="hold" targetRef="decide"/><userTask id="decide"/>
                 <sequenceFlow id="f3" sourceRef="decide" targetRef="comp"/>
                 <intermediateThrowEvent id="comp"><compensateEventDefinition/></intermediateThrowEvent>
                 <sequenceFlow id="f4" sourceRef="comp" targetRef="e"/><endEvent id="e"/>
+                <!-- BPMN 2.0 XSD (tProcess): every flow element precedes the artifacts, so the association is last -->
+                <association id="a1" associationDirection="One" sourceRef="holdComp" targetRef="refund"/>
               </process>
             </definitions>
             """;
@@ -45,8 +46,8 @@ class MultiInstanceCompensationIT extends EngineScenarioSupport {
     @Test
     void eachHandlerSeesItsInstanceOnThisDatabase() {
         scenario("D148-mi-compensation-" + AcceptanceDatabase.name(), ctx -> {
-            adapter.deploy(null, "d27-" + RUN, Map.of("d27.bpmn", MODEL.getBytes(StandardCharsets.UTF_8)));
-            String pid = adapter.startProcess(null, "d27", key("d27"),
+            adapter.deploy(SCENARIO_TENANT, "d27-" + RUN, Map.of("d27.bpmn", MODEL.getBytes(StandardCharsets.UTF_8)));
+            String pid = adapter.startProcess(SCENARIO_TENANT, "d27", key("d27"),
                     Map.of("bidders", new ArrayList<>(List.of("B1", "B2", "B3"))));
             for (int i = 0; i < 3; i++) {
                 Task t = open(pid, "hold").getFirst();

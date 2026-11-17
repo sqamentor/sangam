@@ -1,169 +1,333 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Role } from '../api/types';
-import { MODULE_READERS, ROUTE_ACCESS, type Access } from './access';
+/**
+ * The menu (owner decision 397, UX-SPEC section 3): seven groups named by the job the user wants to do, each split into
+ * short sub-sections, plus Help for everyone. Every entry has a plain label and a one-line description (shown as the
+ * entry's tooltip and as the page description), both under the one namespace `menu.*` in en.json.
+ *
+ * A convenience only: every screen's data is authorised by the server (X.4.7). The visibility rule mirrors each route's
+ * guard in App.tsx, so the menu never offers a screen that the guard would refuse.
+ */
+import type { Me, Role } from '../api/types';
+import { ROUTE_ACCESS, TEAM_READ, canAccess, type Access } from './access';
 
 export interface NavItem {
   to: string;
-  label: string; // i18n key
-  /** Further restriction within the area. */
+  /** i18n key of the label (`menu.<group>.<entry>.label`). */
+  label: string;
+  /** i18n key of the one-line description (`menu.<group>.<entry>.help`). */
+  description: string;
+  /** Further restriction: within the group's roles, or (with `access`) to the callers whose job the group is. */
   only?: Role[];
-  /** Replaces the area roles for this item: role or endpoint permission (M-028, access.ts). */
+  /** Replaces the group's roles for this entry: role or endpoint permission (M-028, access.ts). */
   access?: Access;
+  /** Module id (GET /me/capabilities): the entry is hidden when the installation has not wired that module (Q3). */
+  module?: string;
+}
+export interface NavSection {
+  /** i18n key of the small heading; absent for the group's first, unnamed section. */
+  label?: string;
+  items: NavItem[];
 }
 export interface NavArea {
   id: string;
   label: string; // i18n key
+  /** Roles that see the group's entries without their own `access`; empty = every signed-in caller. */
   roles: Role[];
-  items: NavItem[];
+  sections: NavSection[];
 }
 
-/** Role-aware menu. A convenience only: every screen's data is authorised by the server (X.4.7). */
+const OPS: Role[] = ['OPERATOR', 'PLATFORM_OPERATOR'];
+const MODEL: Role[] = ['MODELLER', 'REVIEWER'];
+const ANALYST: Role[] = ['ANALYST', 'OPERATOR'];
+
+/** Entry with the conventional keys `menu.<group>.<entry>.label` and `.help`. */
+const e = (group: string, entry: string, to: string, extra: Partial<NavItem> = {}): NavItem => ({
+  to,
+  label: `menu.${group}.${entry}.label`,
+  description: `menu.${group}.${entry}.help`,
+  ...extra,
+});
+const sec = (group: string, id: string) => `menu.${group}.section.${id}`;
+/**
+ * Decision 399 Q3: the module behind each module screen, as GET /me/capabilities names it (InstalledModulesController).
+ * When a module is off its routes are not mapped at all, so its screen could only fail.
+ */
+export const MODULE_OF: Readonly<Record<string, string>> = {
+  '/m/ai': 'ai',
+  '/m/channels': 'channels',
+  '/m/case-files': 'case',
+  '/m/committees': 'case',
+  '/m/references': 'case',
+  '/m/registry': 'registry',
+  '/m/ledger': 'ledger',
+  '/m/billing': 'billing',
+  '/m/resources': 'resources',
+  '/m/queues': 'resources',
+  '/m/rosters': 'resources',
+  '/m/programmes': 'programme',
+  '/m/field': 'field',
+  '/m/geo': 'geo',
+  '/m/compliance': 'compliance',
+};
+const mod = (group: string, entry: string, to: string) => e(group, entry, to, { access: ROUTE_ACCESS[to], module: MODULE_OF[to] });
+
 export const NAV: NavArea[] = [
   {
     id: 'work',
-    label: 'nav.work',
+    label: 'menu.work.title',
     roles: ['TASK_USER'],
-    items: [
-      { to: '/tasks', label: 'nav.inbox' },
-      { to: '/tasks/filters', label: 'nav.taskFilters', only: ['PLATFORM_OPERATOR', 'PLATFORM_ADMIN'] },
-      { to: '/start', label: 'nav.start' },
-      { to: '/cases', label: 'nav.caseWorkspace' },
-      { to: '/my/delegations', label: 'nav.myDelegations' },
-      { to: '/my/dsc-certificates', label: 'nav.myDscCertificates', access: ROUTE_ACCESS['/my/dsc-certificates'] },
-      { to: '/field', label: 'nav.field' },
-      { to: '/notifications', label: 'nav.notifications' },
+    sections: [
+      {
+        items: [
+          e('work', 'tasks', '/tasks'),
+          e('work', 'start', '/start'),
+          e('work', 'requests', '/cases'),
+          // Decision 401: a Sangam read limited to the caller's organisation, for holders of team.read.
+          e('work', 'team', '/team', { access: TEAM_READ }),
+          // Saved filters live only in the engine, with no organisation of their own: platform screens still (401 open item).
+          e('work', 'taskLists', '/tasks/filters', { access: { roles: ['PLATFORM_OPERATOR', 'PLATFORM_ADMIN'], perms: [] } }),
+          e('work', 'field', '/field'),
+          e('work', 'away', '/my/delegations'),
+          mod('work', 'signature', '/my/dsc-certificates'),
+        ],
+      },
+      {
+        label: sec('work', 'department'),
+        items: [
+          mod('work', 'ledger', '/m/ledger'),
+          mod('work', 'billing', '/m/billing'),
+          mod('work', 'programmes', '/m/programmes'),
+          mod('work', 'resources', '/m/resources'),
+          mod('work', 'queues', '/m/queues'),
+          mod('work', 'rosters', '/m/rosters'),
+          mod('work', 'geo', '/m/geo'),
+          mod('work', 'fieldSetup', '/m/field'),
+          mod('work', 'ai', '/m/ai'),
+        ],
+      },
     ],
   },
   {
-    id: 'ops',
-    label: 'nav.ops',
-    roles: ['OPERATOR', 'PLATFORM_OPERATOR'],
-    items: [
-      { to: '/ops', label: 'nav.opsDashboard' },
-      { to: '/ops/processes', label: 'nav.processes' },
-      { to: '/ops/cases', label: 'nav.cases' },
-      { to: '/ops/decisions', label: 'nav.decisions' },
-      { to: '/ops/incidents', label: 'nav.incidents' },
-      { to: '/ops/reconciliation', label: 'nav.reconciliation' },
-      { to: '/ops/batches', label: 'nav.batches' },
-      { to: '/ops/migration', label: 'nav.migration' },
-      { to: '/ops/jobs', label: 'nav.jobs' },
-      { to: '/ops/outbox', label: 'nav.outbox' },
-      { to: '/ops/workers', label: 'nav.workers' },
-      { to: '/ops/events', label: 'nav.events' },
-      { to: '/ops/notifications', label: 'nav.notificationFailures' },
-      { to: '/ops/deployments', label: 'nav.deployments' },
-      { to: '/ops/cleanup', label: 'nav.cleanup' },
-      { to: '/ops/debugger', label: 'nav.debugger' },
-      { to: '/ops/audit-log', label: 'nav.operatorAudit' },
-      { to: '/ops/tools', label: 'mod.ops2.title' },
-      { to: '/ops/engine', label: 'nav.engineViews', only: ['PLATFORM_OPERATOR'] },
-      { to: '/ops/task-dashboard', label: 'nav.taskDashboard', only: ['PLATFORM_OPERATOR'] },
-    ],
-  },
-  {
-    id: 'admin',
-    label: 'nav.admin',
-    roles: ['ADMIN', 'PLATFORM_ADMIN'],
-    items: [
-      { to: '/admin/onboarding', label: 'nav.onboarding', access: ROUTE_ACCESS['/admin/onboarding'] },
-      { to: '/admin/packs', label: 'nav.packs', access: ROUTE_ACCESS['/admin/packs'] },
-      { to: '/admin/custom-fields', label: 'nav.customFields', access: ROUTE_ACCESS['/admin/custom-fields'] },
-      { to: '/admin/bulk', label: 'nav.bulk', access: ROUTE_ACCESS['/admin/bulk'] },
-      { to: '/admin/security-defaults', label: 'nav.securityDefaults', access: ROUTE_ACCESS['/admin/security-defaults'] },
-      { to: '/admin/dsc-certificates', label: 'nav.dscCertificates', access: ROUTE_ACCESS['/admin/dsc-certificates'] },
-      { to: '/admin/tenants', label: 'nav.tenants' },
-      { to: '/admin/org', label: 'nav.org' },
-      { to: '/admin/seats', label: 'nav.seats' },
-      { to: '/admin/assignments', label: 'nav.assignments' },
-      { to: '/admin/delegations', label: 'nav.delegationTables' },
-      { to: '/admin/policies', label: 'nav.policies' },
-      { to: '/admin/sod', label: 'nav.sod' },
-      { to: '/admin/users', label: 'nav.users' },
-      { to: '/admin/groups', label: 'nav.groups' },
-      { to: '/admin/idp', label: 'nav.idp' },
-      { to: '/admin/principals', label: 'nav.principals' },
-      { to: '/admin/services', label: 'nav.serviceRegistry' },
-      { to: '/admin/sla', label: 'nav.sla' },
-      { to: '/admin/routing', label: 'nav.routing' },
-      { to: '/admin/templates', label: 'nav.templates' },
-      { to: '/admin/channels', label: 'nav.channels' },
-      { to: '/admin/agents', label: 'nav.agents' },
-      { to: '/admin/retention', label: 'nav.retention' },
-      { to: '/admin/config', label: 'nav.config' },
-      { to: '/admin/engine', label: 'nav.engineAdmin', only: ['PLATFORM_ADMIN'] },
-      { to: '/admin/plugins', label: 'mod.plugins.title', only: ['PLATFORM_ADMIN'] },
-    ],
-  },
-  {
-    id: 'model',
-    label: 'nav.model',
-    roles: ['MODELLER', 'REVIEWER'],
-    items: [
-      { to: '/modeller', label: 'nav.packages' },
-      { to: '/modeller/review', label: 'nav.review' },
-      { to: '/modeller/data-objects', label: 'nav.dataObjects' },
-      { to: '/modeller/pages', label: 'nav.pageBuilder' },
-      { to: '/modeller/assess', label: 'nav.assessment' },
-      { to: '/modeller/compatibility', label: 'nav.compatibility' },
-      { to: '/modeller/tools', label: 'mod.modeller2.title' },
-    ],
-  },
-  {
-    id: 'analytics',
-    label: 'nav.analytics',
-    roles: ['ANALYST', 'OPERATOR'],
-    items: [
-      { to: '/analytics', label: 'nav.analyticsDashboard' },
-      { to: '/analytics/mining', label: 'nav.mining' },
-      { to: '/analytics/reports', label: 'nav.reports' },
-      { to: '/analytics/alerts', label: 'nav.alerts' },
-      { to: '/analytics/agents', label: 'nav.agentUsage' },
-    ],
-  },
-  {
-    id: 'audit',
-    label: 'nav.audit',
-    roles: ['AUDITOR', 'OPERATOR', 'TASK_USER'],
-    items: [
-      { to: '/audit', label: 'nav.auditSearch' },
-      { to: '/audit/exports', label: 'nav.auditExports' },
-      { to: '/documents', label: 'nav.documents' },
-    ],
-  },
-  {
-    id: 'modules',
-    label: 'nav.modules',
-    // M-028: the union of the module screens' roles (access.ts); ANALYST grants no module permission.
-    roles: MODULE_READERS,
-    items: [
-      { to: '/m/ai', label: 'mod.ai.title', access: ROUTE_ACCESS['/m/ai'] },
-      { to: '/m/channels', label: 'mod.channels.title', access: ROUTE_ACCESS['/m/channels'] },
-      { to: '/m/case-files', label: 'mod.cases.title', access: ROUTE_ACCESS['/m/case-files'] },
-      { to: '/m/committees', label: 'mod.committees.title', access: ROUTE_ACCESS['/m/committees'] },
-      { to: '/m/references', label: 'mod.references.title', access: ROUTE_ACCESS['/m/references'] },
-      { to: '/m/registry', label: 'mod.registry.title', access: ROUTE_ACCESS['/m/registry'] },
-      { to: '/m/ledger', label: 'mod.ledger.title', access: ROUTE_ACCESS['/m/ledger'] },
-      { to: '/m/billing', label: 'mod.billing.title', access: ROUTE_ACCESS['/m/billing'] },
-      { to: '/m/resources', label: 'mod.resources.title', access: ROUTE_ACCESS['/m/resources'] },
-      { to: '/m/queues', label: 'mod.queues.title', access: ROUTE_ACCESS['/m/queues'] },
-      { to: '/m/rosters', label: 'mod.rosters.title', access: ROUTE_ACCESS['/m/rosters'] },
-      { to: '/m/programmes', label: 'mod.programmes.title', access: ROUTE_ACCESS['/m/programmes'] },
-      { to: '/m/field', label: 'mod.field.title', access: ROUTE_ACCESS['/m/field'] },
-      { to: '/m/geo', label: 'mod.geo.title', access: ROUTE_ACCESS['/m/geo'] },
-      { to: '/m/compliance', label: 'mod.compliance.title', access: ROUTE_ACCESS['/m/compliance'] },
-    ],
-  },
-  {
-    id: 'portal',
-    label: 'nav.portal',
+    id: 'services',
+    label: 'menu.services.title',
     roles: ['CITIZEN'],
-    items: [
-      { to: '/portal', label: 'nav.services' },
-      { to: '/portal/applications', label: 'nav.myApplications' },
-      { to: '/portal/grievances', label: 'nav.grievances' },
-      { to: '/portal/consents', label: 'nav.myConsents' },
-      { to: '/portal/notices', label: 'nav.myNotices' },
+    sections: [
+      {
+        items: [
+          e('services', 'find', '/portal'),
+          e('services', 'applications', '/portal/applications'),
+          e('services', 'complaints', '/portal/grievances'),
+          e('services', 'notices', '/portal/notices'),
+          e('services', 'consent', '/portal/consents'),
+        ],
+      },
+    ],
+  },
+  {
+    id: 'find',
+    label: 'menu.find.title',
+    // The guard of /documents (App.tsx AUDIT).
+    roles: ['TASK_USER', 'OPERATOR', 'AUDITOR'],
+    sections: [
+      {
+        items: [
+          mod('find', 'caseFiles', '/m/case-files'),
+          mod('find', 'committees', '/m/committees'),
+          mod('find', 'references', '/m/references'),
+          mod('find', 'registers', '/m/registry'),
+          e('find', 'documents', '/documents'),
+        ],
+      },
+    ],
+  },
+  {
+    id: 'design',
+    label: 'menu.design.title',
+    roles: MODEL,
+    sections: [
+      {
+        items: [
+          e('design', 'projects', '/modeller'),
+          e('design', 'review', '/modeller/review'),
+          e('design', 'recordTypes', '/modeller/data-objects'),
+          e('design', 'screens', '/modeller/pages'),
+          e('design', 'testRun', '/design/test', { access: { roles: [...MODEL, ...OPS], perms: [] } }),
+        ],
+      },
+      {
+        label: sec('design', 'more'),
+        items: [e('design', 'assess', '/modeller/assess'), e('design', 'compatibility', '/modeller/compatibility'), e('design', 'tools', '/modeller/tools')],
+      },
+    ],
+  },
+  {
+    id: 'monitor',
+    label: 'menu.monitor.title',
+    roles: OPS,
+    sections: [
+      { label: sec('monitor', 'glance'), items: [e('monitor', 'health', '/ops')] },
+      {
+        label: sec('monitor', 'requests'),
+        items: [
+          e('monitor', 'stuck', '/ops/incidents'),
+          e('monitor', 'running', '/ops/processes'),
+          e('monitor', 'cases', '/ops/cases'),
+          e('monitor', 'decisions', '/ops/decisions'),
+          e('monitor', 'batches', '/ops/batches'),
+          e('monitor', 'migration', '/ops/migration'),
+        ],
+      },
+      {
+        label: sec('monitor', 'behind'),
+        items: [
+          e('monitor', 'jobs', '/ops/jobs'),
+          e('monitor', 'outbox', '/ops/outbox'),
+          e('monitor', 'workers', '/ops/workers'),
+          e('monitor', 'notifications', '/ops/notifications'),
+          e('monitor', 'events', '/ops/events'),
+          e('monitor', 'money', '/ops/reconciliation'),
+        ],
+      },
+      {
+        label: sec('monitor', 'maintenance'),
+        items: [
+          e('monitor', 'deployments', '/ops/deployments'),
+          e('monitor', 'cleanup', '/ops/cleanup'),
+          e('monitor', 'tools', '/ops/tools'),
+          e('monitor', 'engine', '/ops/engine', { only: ['PLATFORM_OPERATOR'] }),
+          e('monitor', 'operatorLog', '/ops/audit-log'),
+        ],
+      },
+    ],
+  },
+  {
+    id: 'setup',
+    label: 'menu.setup.title',
+    roles: ['ADMIN', 'PLATFORM_ADMIN'],
+    sections: [
+      { label: sec('setup', 'start'), items: [mod('setup', 'checklist', '/admin/onboarding'), mod('setup', 'packs', '/admin/packs')] },
+      {
+        label: sec('setup', 'org'),
+        items: [
+          e('setup', 'organisations', '/admin/tenants', { only: ['PLATFORM_ADMIN'] }),
+          e('setup', 'offices', '/admin/org'),
+          e('setup', 'posts', '/admin/seats'),
+          e('setup', 'postings', '/admin/assignments'),
+          e('setup', 'people', '/admin/users'),
+          e('setup', 'groups', '/admin/groups'),
+          e('setup', 'powers', '/admin/delegations'),
+        ],
+      },
+      {
+        label: sec('setup', 'access'),
+        items: [
+          e('setup', 'policies', '/admin/policies'),
+          e('setup', 'sod', '/admin/sod'),
+          e('setup', 'idp', '/admin/idp'),
+          e('setup', 'principals', '/admin/principals'),
+          mod('setup', 'securityDefaults', '/admin/security-defaults'),
+          mod('setup', 'signatures', '/admin/dsc-certificates'),
+        ],
+      },
+      {
+        label: sec('setup', 'work'),
+        items: [
+          e('setup', 'sla', '/admin/sla'),
+          e('setup', 'routing', '/admin/routing'),
+          e('setup', 'services', '/admin/services'),
+          e('setup', 'templates', '/admin/templates'),
+          e('setup', 'channels', '/admin/channels'),
+          // channels.read is a module read held by every staff role; the status page is an administrator's job.
+          e('setup', 'channelStatus', '/m/channels', { access: ROUTE_ACCESS['/m/channels'], module: MODULE_OF['/m/channels'], only: ['ADMIN', 'PLATFORM_ADMIN'] }),
+          e('setup', 'agents', '/admin/agents'),
+          mod('setup', 'customFields', '/admin/custom-fields'),
+        ],
+      },
+      {
+        label: sec('setup', 'data'),
+        items: [
+          mod('setup', 'bulk', '/admin/bulk'),
+          e('setup', 'retention', '/admin/retention'),
+          e('setup', 'config', '/admin/config'),
+          e('setup', 'plugins', '/admin/plugins', { only: ['PLATFORM_ADMIN'] }),
+          e('setup', 'engine', '/admin/engine', { only: ['PLATFORM_ADMIN'] }),
+        ],
+      },
+    ],
+  },
+  {
+    id: 'reports',
+    label: 'menu.reports.title',
+    roles: ['ANALYST', 'OPERATOR', 'AUDITOR'],
+    sections: [
+      {
+        items: [
+          e('reports', 'overview', '/analytics', { only: ANALYST }),
+          e('reports', 'reports', '/analytics/reports', { only: ANALYST }),
+          e('reports', 'alerts', '/analytics/alerts', { only: ANALYST }),
+          e('reports', 'mining', '/analytics/mining', { only: ANALYST }),
+          e('reports', 'aiUsage', '/analytics/agents', { only: ANALYST }),
+          // Decision 397 Q6: task users read a request's history inside the request; the route guard is unchanged.
+          e('reports', 'audit', '/audit', { only: ['AUDITOR', 'OPERATOR'] }),
+          e('reports', 'exports', '/audit/exports', { only: ['AUDITOR', 'OPERATOR'] }),
+          mod('reports', 'dataProtection', '/m/compliance'),
+        ],
+      },
+    ],
+  },
+  {
+    id: 'help',
+    label: 'menu.help.title',
+    roles: [],
+    sections: [
+      {
+        items: [
+          e('help', 'glossary', '/help/glossary'),
+          e('help', 'shortcuts', '/help/shortcuts'),
+          e('help', 'verify', '/verify'),
+          e('help', 'accessibility', '/help/accessibility'),
+          e('help', 'about', '/help/about'),
+        ],
+      },
     ],
   },
 ];
+
+/** Every entry of a group, in menu order. */
+export const areaItems = (a: NavArea): NavItem[] => a.sections.flatMap((s) => s.items);
+/** Every entry of the menu. */
+export const NAV_ITEMS: NavItem[] = NAV.flatMap(areaItems);
+
+const hasAny = (me: Pick<Me, 'roles'>, roles: Role[]) => roles.length === 0 || roles.some((r) => me.roles.includes(r));
+
+/**
+ * M-028: an entry with its own access (role or endpoint permission) is shown on that alone; otherwise on the group's
+ * roles and its `only`. A group is shown when one of its entries is.
+ */
+export function navVisible(me: Pick<Me, 'roles' | 'permissions'> | null | undefined, a: NavArea, i: NavItem, installed?: ReadonlySet<string> | null): boolean {
+  if (!me) return false;
+  // Q3: unknown (null/undefined: the read failed or has not answered) shows the entry; the server stays the judge.
+  if (i.module && installed && !installed.has(i.module)) return false;
+  // `only` with `access`: the entry belongs to the group's job, though the screen itself opens to more callers.
+  if (i.access) return canAccess(me, i.access) && (!i.only || hasAny(me, i.only));
+  return hasAny(me, a.roles) && (!i.only || hasAny(me, i.only));
+}
+
+/** The menu as one caller sees it: groups and sections with no visible entry are left out. */
+export function visibleNav(me: Pick<Me, 'roles' | 'permissions'> | null | undefined, installed?: ReadonlySet<string> | null): NavArea[] {
+  return NAV.map((a) => ({ ...a, sections: a.sections.map((s) => ({ ...s, items: s.items.filter((i) => navVisible(me, a, i, installed)) })).filter((s) => s.items.length > 0) })).filter(
+    (a) => a.sections.length > 0,
+  );
+}
+
+/** A link must match exactly when another entry lies below it (/tasks vs /tasks/filters, /ops vs /ops/jobs). */
+export const navEnd = (to: string): boolean => NAV_ITEMS.some((i) => i.to !== to && i.to.startsWith(to + '/'));
+
+/** The group and entry a path belongs to (longest matching entry), for the breadcrumb and page description. */
+export function navLocate(pathname: string): { area: NavArea; item: NavItem } | null {
+  let best: { area: NavArea; item: NavItem } | null = null;
+  for (const area of NAV)
+    for (const item of areaItems(area))
+      if ((pathname === item.to || pathname.startsWith(item.to + '/')) && (!best || item.to.length > best.item.to.length)) best = { area, item };
+  return best;
+}

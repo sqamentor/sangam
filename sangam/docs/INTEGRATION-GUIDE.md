@@ -15,6 +15,9 @@ and the decisions in `docs/records/OWNER-DECISIONS-2026-11-12.md` meet, the deci
 unreleased. Tests named here were written and most ran in the local H2 unit run; database ITs on Oracle, SQL Server and
 MySQL, and the live integrations, belong to the test phase (`TESTING-GAP-REGISTER.md`).
 
+Related: [PLUG-AND-PLAY.md](PLUG-AND-PLAY.md) answers, mode by mode and with evidence, how far Sangam is plug and play
+today. [IFMS-INTEGRATION-GUIDE.md](IFMS-INTEGRATION-GUIDE.md) is the end-to-end guide to plugging Sangam into IFMS.
+
 ## 1. Choose a mode
 
 | | Embedded (starter) | Standalone server |

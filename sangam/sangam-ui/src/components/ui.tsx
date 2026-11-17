@@ -16,6 +16,9 @@ import {
   type TextareaHTMLAttributes,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useInRouterContext } from 'react-router-dom';
+import { Breadcrumbs, PageDescription } from './Breadcrumbs';
+import { toneOf } from './status';
 import { ApiError, type Page } from '../api/client';
 import type { ConsequencePreview } from '../api/types';
 import { traceUrl } from '../lib/trace';
@@ -23,14 +26,20 @@ import { fmtNumber } from '../i18n';
 
 // ------------------------------------------------------------------ layout bits
 
+/**
+ * Page frame (UX-SPEC 6.1, decision 397): breadcrumb from the menu, the title, a one-line "what this page is" (the
+ * page's own, else its menu entry's description) and the page's actions.
+ */
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
+  const routed = useInRouterContext();
   return (
     <header className="page-header">
       <div>
+        {routed && <Breadcrumbs current={title} />}
         <h1 tabIndex={-1} id="page-title">
           {title}
         </h1>
-        {description && <p className="muted">{description}</p>}
+        {routed ? <PageDescription given={description} /> : description && <p className="muted">{description}</p>}
       </div>
       {actions && <div className="toolbar">{actions}</div>}
     </header>
@@ -66,15 +75,8 @@ export function KeyValues({ items }: { items: [string, ReactNode][] }) {
 
 export function Badge({ value, tone }: { value: string; tone?: 'ok' | 'warn' | 'bad' | 'info' | 'neutral' }) {
   const { t } = useTranslation();
-  const auto =
-    tone ??
-    (/BREACH|FAIL|INCIDENT|REJECT|DENY|DOWN|INFECTED|UNKNOWN|ERROR|CANCEL/.test(value)
-      ? 'bad'
-      : /WARN|PENDING|REVIEW|PAUSED|AWAIT|DEGRADED|SUSPEND|PARKED|CLARIFICATION|RETURNED/.test(value)
-        ? 'warn'
-        : /OK|ACTIVE|COMPLETED|APPROVED|UP|CLEAN|DELIVERED|ALLOW|GRANT|SUCCEEDED|DEPLOYED|PAID|VALID|PASS/.test(value)
-          ? 'ok'
-          : 'neutral');
+  // One colour per state on every screen (status.ts, UX-SPEC 6.5).
+  const auto = tone ?? toneOf(value);
   return <span className={`badge badge-${auto}`}>{t(`enum.${value}`, { defaultValue: value })}</span>;
 }
 
@@ -146,24 +148,49 @@ const CODE_TITLES = new Set([
 ]);
 
 /**
- * The i18n key of the title a refusal is shown under: by its stable code first, then by its status. A 501 is a module
- * this installation does not have (CAPABILITY_NOT_INSTALLED), named as such rather than "something went wrong".
+ * The plain-language kind of a refusal (UX-SPEC 6.3, decision 397): by its stable code first, then by its status. A 501
+ * is a module this installation does not have (CAPABILITY_NOT_INSTALLED), named as such rather than "something went
+ * wrong". Every kind has a title (error.<kind>) and a next step (error.next.<kind>).
  */
-export function problemTitleKey(error: Error): string {
-  if (!(error instanceof ApiError)) return 'error.generic';
+export type ProblemKind =
+  | 'validation'
+  | 'sessionEnded'
+  | 'notAvailable'
+  | 'notFound'
+  | 'conflict'
+  | 'stale'
+  | 'approvalInvalidated'
+  | 'retryExhausted'
+  | 'notInstalled'
+  | 'backpressure'
+  | 'network'
+  | 'generic';
+
+export function problemKind(error: Error): ProblemKind {
+  if (!(error instanceof ApiError)) return 'generic';
   const p = error.problem;
-  if (p.code && CODE_TITLES.has(p.code)) return `error.code.${p.code}`;
-  if (error.isNotAvailable) return 'error.notAvailable';
-  if (p.status === 0) return 'error.network';
-  if (p.code === 'stale-lease' || p.code === 'FORM_VERSION_STALE') return 'error.stale';
-  if (p.code === 'APPROVAL_INVALIDATED') return 'error.approvalInvalidated';
-  if (p.code === 'CONFLICT_RETRY_EXHAUSTED') return 'error.retryExhausted';
-  if (p.code === 'CAPABILITY_NOT_INSTALLED' || p.status === 501) return 'error.notInstalled';
-  if (p.status === 409) return 'error.conflict';
-  if (p.status === 503) return 'error.backpressure';
-  if (p.status === 422 || p.status === 400) return 'error.validation';
-  return 'error.generic';
+  if (p.status === 0) return 'network';
+  if (p.status === 401) return 'sessionEnded';
+  if (p.status === 403) return 'notAvailable';
+  if (p.status === 404) return 'notFound';
+  if (p.code === 'stale-lease' || p.code === 'FORM_VERSION_STALE') return 'stale';
+  if (p.code === 'APPROVAL_INVALIDATED') return 'approvalInvalidated';
+  if (p.code === 'CONFLICT_RETRY_EXHAUSTED') return 'retryExhausted';
+  if (p.code === 'CAPABILITY_NOT_INSTALLED' || p.status === 501) return 'notInstalled';
+  if (p.status === 409) return 'conflict';
+  if (p.status === 503) return 'backpressure';
+  if (p.status === 422 || p.status === 400) return 'validation';
+  return 'generic';
 }
+
+/** The i18n key of the title a refusal is shown under: a stable code with a title of its own, else its kind. */
+export function problemTitleKey(error: Error): string {
+  if (error instanceof ApiError && error.problem.code && CODE_TITLES.has(error.problem.code)) return `error.code.${error.problem.code}`;
+  return `error.${problemKind(error)}`;
+}
+
+/** The i18n key of the next step shown under the title (UX-SPEC 6.3). */
+export const problemNextKey = (error: Error): string => `error.next.${problemKind(error)}`;
 
 export function ProblemAlert({ error, onRetry }: { error?: Error | null; onRetry?: () => void }) {
   const { t } = useTranslation();
@@ -185,6 +212,7 @@ export function ProblemAlert({ error, onRetry }: { error?: Error | null; onRetry
     <div className="alert alert-bad" role="alert">
       <strong>{title}</strong>
       {detail && <p>{detail}</p>}
+      <p className="problem-next">{t(problemNextKey(error))}</p>
       {fieldErrors.length > 0 && (
         <ul>
           {fieldErrors.map((f, i) => (

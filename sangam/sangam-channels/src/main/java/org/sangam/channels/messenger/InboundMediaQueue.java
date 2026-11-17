@@ -93,6 +93,18 @@ public final class InboundMediaQueue {
                 p.tenantId(), p.channel(), p.messageId(), p.epoch()) == 1;
     }
 
+    /**
+     * Records the stored copy on the claimed row at once, in its own transaction (SL-176), so a worker that stops after
+     * storing and before {@link #complete} leaves the copy for the node that takes the row over: its claim then returns it
+     * as {@link Pending#stored()} and nothing is downloaded or stored twice.
+     *
+     * @return false when the claim was lost; the copy is then referenced by no row and the caller must remove it
+     */
+    public boolean remember(Pending p, MediaDownloads.StoredMedia stored) {
+        return tx.inTransaction(c -> Jdbc.update(c, "UPDATE CH_INBOUND_SEEN SET media_doc=?" + FENCE,
+                Json.write(doc(stored)), p.tenantId(), p.channel(), p.messageId(), p.epoch()) == 1);
+    }
+
     /** Back to {@code PENDING}, due after {@code wait}, with the attempt counted (own transaction). */
     public boolean retry(Pending p, Duration wait, String reason, MediaDownloads.StoredMedia stored) {
         return tx.inTransaction(c -> Jdbc.update(c, "UPDATE CH_INBOUND_SEEN SET media_state='PENDING', media_owner=NULL, media_attempt=media_attempt+1,"

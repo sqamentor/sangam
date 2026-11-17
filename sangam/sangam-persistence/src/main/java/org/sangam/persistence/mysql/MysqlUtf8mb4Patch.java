@@ -28,7 +28,7 @@ import java.util.TreeSet;
  * and collation, and with {@code foreign_key_checks=1} it refuses an {@code ALTER TABLE ... CONVERT TO CHARACTER SET}
  * that would break this (error 3780, {@code ER_FK_INCOMPATIBLE_COLUMNS}). One {@code ALTER TABLE} changes one table, so
  * no conversion order works for an FK whose two tables both need converting (the parent first breaks the pair just as
- * the child first does; Operaton 2.2.0 has 46 such FKs, self-references included). The patch therefore:
+ * the child first does; Operaton 2.2.0 has 42 such FKs, self-references included). The patch therefore:
  * <ol>
  * <li>groups the tables to convert into FK-connected components (string-column FKs only; integer FKs are not touched by
  * the conversion) and converts or skips a whole component, never a part of one;</li>

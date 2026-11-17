@@ -169,7 +169,7 @@ public final class JdbcTenantQuotas implements TenantQuotas {
         long windowMs = limit.window().toMillis();
         long start = now - Math.floorMod(now, windowMs);
         int retryAfter = (int) Math.max(1, (start + windowMs - now + 999) / 1000);
-        boolean admitted = permits <= max && tx.inTransaction(c -> admit(c, tenantId, limit, start, permits, max));
+        boolean admitted = permits <= max && admit(tenantId, limit, start, permits, max);
         if (!admitted) {
             refuse(tenantId, limit, start, max, permits, retryAfter);
         }
@@ -191,19 +191,31 @@ public final class JdbcTenantQuotas implements TenantQuotas {
         refuse(tenantId, limit, now - Math.floorMod(now, SIZE_AUDIT_WINDOW_MS), max, amount, null);
     }
 
-    private boolean admit(java.sql.Connection c, String tenant, QuotaLimit limit, long start, long permits, long max) {
-        if (increment(c, tenant, limit, start, permits, max)) {
+    /**
+     * Counts {@code permits} in the window row. A lost insert race never updates the row in the transaction that lost
+     * it: on InnoDB the duplicate-key check leaves a shared lock on the existing row until that transaction ends, so two
+     * nodes that both lost the race and then both ran the counting UPDATE each waited for the other's shared lock
+     * (MySQL "Deadlock found when trying to get lock", TenantQuotaIT on the mysql lane). The insert is therefore its own
+     * transaction, and a lost race counts in a new one, after the shared lock is gone.
+     */
+    private boolean admit(String tenant, QuotaLimit limit, long start, long permits, long max) {
+        if (tx.inTransaction(c -> increment(c, tenant, limit, start, permits, max))) {
             return true;
         }
-        if (Jdbc.insertIfAbsent(c, dialect, "INSERT INTO SEC_TENANT_QUOTA_WINDOW(tenant_id, quota_name, window_start,"
-                + " used, refused) VALUES (?,?,?,?,0)", tenant, limit.key(), start, permits)) {
+        if (tx.inTransaction(c -> {
+            if (!Jdbc.insertIfAbsent(c, dialect, "INSERT INTO SEC_TENANT_QUOTA_WINDOW(tenant_id, quota_name, window_start,"
+                    + " used, refused) VALUES (?,?,?,?,0)", tenant, limit.key(), start, permits)) {
+                return false;
+            }
             // housekeeping on the first request of a window: old windows of this tenant and limit
             Jdbc.update(c, "DELETE FROM SEC_TENANT_QUOTA_WINDOW WHERE tenant_id=? AND quota_name=? AND window_start<?",
                     tenant, limit.key(), start - KEEP_WINDOWS_MS);
             return true;
+        })) {
+            return true;
         }
         // another node created the row first: its count now decides
-        return increment(c, tenant, limit, start, permits, max);
+        return tx.inTransaction(c -> increment(c, tenant, limit, start, permits, max));
     }
 
     private static boolean increment(java.sql.Connection c, String tenant, QuotaLimit limit, long start, long permits,
@@ -215,9 +227,10 @@ public final class JdbcTenantQuotas implements TenantQuotas {
     private void refuse(String tenant, QuotaLimit limit, long windowStart, long max, long requested, Integer retryAfter) {
         TenantQuotaExceededException e = new TenantQuotaExceededException(tenant, limit, max, requested, retryAfter);
         if (audit != null) {
+            // the row first, in its own transaction (see admit: no update after a lost insert race in one transaction)
+            tx.inTransaction(c -> Jdbc.insertIfAbsent(c, dialect, "INSERT INTO SEC_TENANT_QUOTA_WINDOW(tenant_id,"
+                    + " quota_name, window_start, used, refused) VALUES (?,?,?,0,0)", tenant, limit.key(), windowStart));
             tx.inTransaction(c -> {
-                Jdbc.insertIfAbsent(c, dialect, "INSERT INTO SEC_TENANT_QUOTA_WINDOW(tenant_id, quota_name, window_start,"
-                        + " used, refused) VALUES (?,?,?,0,0)", tenant, limit.key(), windowStart);
                 if (Jdbc.update(c, "UPDATE SEC_TENANT_QUOTA_WINDOW SET refused=1 WHERE tenant_id=? AND quota_name=?"
                         + " AND window_start=? AND refused=0", tenant, limit.key(), windowStart) == 1) {
                     Map<String, Object> payload = new LinkedHashMap<>(e.details());

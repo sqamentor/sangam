@@ -335,8 +335,7 @@ public class IntegrationWiring {
     @Bean
     public IntegrationBridge sangamIntegrationBridge(ConnectorInvoker invoker, PendingAuditDrainer sangamPendingAuditDrainer,
                                                      OutboxWriter writer, Environment env) {
-        IntegrationBridge bridge = new IntegrationBridge(invoker.deferringAudit(sangamPendingAuditDrainer), writer,
-                defaultTenant(env));
+        IntegrationBridge bridge = new IntegrationBridge(invoker.deferringAudit(sangamPendingAuditDrainer), writer);
         IntegrationBridge.install(bridge);
         return bridge;
     }
@@ -472,12 +471,40 @@ public class IntegrationWiring {
      */
     @Bean(initMethod = "start", destroyMethod = "close")
     public WakeupListener sangamWakeupListener(TxSupport tx, DataSource ds) {
-        WakeupListener.ConnectionSource source = tx.dialect() == Dialect.POSTGRESQL ? listenerConnections(ds) : null;
-        if (tx.dialect() == Dialect.POSTGRESQL && source == null) {
+        boolean listen = tx.dialect() == Dialect.POSTGRESQL && databaseHasListen(ds);
+        WakeupListener.ConnectionSource source = listenSourceFor(listen, ds);
+        if (listen && source == null) {
             LOG.warn("M-005: the data source is not a HikariCP pool with a JDBC URL; the relay wake-up is in-JVM only "
                     + "(other nodes' long-polls use their 1 s poll)");
         }
         return WakeupListener.forDialect(tx.dialect(), source, WakeupNotifier.CHANNEL);
+    }
+
+    /**
+     * R7UI-S11: the {@code LISTEN} connection source for {@code dialect} on {@code ds}, or null (in-JVM wake-up only).
+     * The product dialect alone is not enough: {@code TxSupport.detectDialect} treats H2 as PostgreSQL for its SQL, and
+     * H2 has no {@code LISTEN}, so the database identity decides ({@link #databaseHasListen}).
+     */
+    static WakeupListener.ConnectionSource listenSource(Dialect dialect, DataSource ds) {
+        return listenSourceFor(dialect == Dialect.POSTGRESQL && databaseHasListen(ds), ds);
+    }
+
+    static WakeupListener.ConnectionSource listenSourceFor(boolean databaseHasListen, DataSource ds) {
+        return databaseHasListen ? listenerConnections(ds) : null;
+    }
+
+    /**
+     * True when the database itself is PostgreSQL (JDBC product name), the only supported database with
+     * {@code LISTEN/NOTIFY}. A database that cannot be asked counts as without {@code LISTEN}: the wake-up is a hint
+     * and the poll stays authoritative (R1).
+     */
+    static boolean databaseHasListen(DataSource ds) {
+        try (java.sql.Connection c = ds.getConnection()) {
+            return "PostgreSQL".equalsIgnoreCase(c.getMetaData().getDatabaseProductName());
+        } catch (java.sql.SQLException | RuntimeException e) {
+            LOG.warn("M-005: cannot read the database product name ({}); the wake-up is in-JVM only", e.toString());
+            return false;
+        }
     }
 
     /** A source of physical connections with the pool's own URL, driver, credentials and driver properties. */
@@ -571,7 +598,7 @@ public class IntegrationWiring {
             return new IntegrationWorkerHolder(null);
         }
         ConnectorExternalTaskWorker worker = new ConnectorExternalTaskWorker(a, invoker,
-                WorkContextResolver.fromVariables(defaultTenant(env)), lifecycle, rest.getNode() + "-connectors", 10,
+                WorkContextResolver.engineTenant(), lifecycle, rest.getNode() + "-connectors", 10,
                 Duration.ofSeconds(2));
         for (String spec : specs) {
             int eq = spec.indexOf('=');

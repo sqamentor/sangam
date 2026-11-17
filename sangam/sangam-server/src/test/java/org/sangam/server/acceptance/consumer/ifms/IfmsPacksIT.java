@@ -407,6 +407,22 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
         return ran;
     }
 
+    /** Each running called case of the case (one level): its definition, where it waits, and its status facts. */
+    private List<String> calledCases(String pid) {
+        List<String> out = new ArrayList<>();
+        for (var sub : engine.getRuntimeService().createProcessInstanceQuery().superProcessInstanceId(pid).list()) {
+            Map<String, Object> f = new java.util.TreeMap<>();
+            engine.getRuntimeService().getVariables(sub.getId()).forEach((k, v) -> {
+                if (k.matches("(?i).*(status|reason|message|error|available|amount|head|hold|rail|connector).*")) {
+                    f.put(k, v);
+                }
+            });
+            out.add(sub.getProcessDefinitionId() + " active=" + engine.getRuntimeService().getActiveActivityIds(sub.getId())
+                    + " " + f);
+        }
+        return out;
+    }
+
     private void assertClosed(String what, Run r) {
         String incidents = engine.getRuntimeService().createIncidentQuery().processInstanceId(r.pid()).list().stream()
                 .map(i -> i.getActivityId() + ": " + i.getIncidentMessage()).toList().toString();
@@ -420,7 +436,8 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
         });
         String report = "[acceptance] " + what + " steps=" + r.steps() + " seats=" + r.seats() + " caseState="
                 + r.finalVars().get("caseState") + " incidents=" + incidents + " active=" + (ended ? "[]"
-                : engine.getRuntimeService().getActiveActivityIds(r.pid())) + " facts=" + facts;
+                : engine.getRuntimeService().getActiveActivityIds(r.pid())) + " called=" + calledCases(r.pid())
+                + " facts=" + facts;
         System.out.println(report + " ended=" + ended);
         assertThat(ended).as(report).isTrue();
         assertThat(incidents).as(report).isEqualTo("[]");
@@ -525,7 +542,7 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
     @Test
     void gpfAdvance() throws Exception {
         Run r = drive("sangam-ifms-gpf", bk("GPF"), employee("gpfAccount", "GPF-123", "gpfPurpose", "ADVANCE",
-                "amount", 5_000_000L, "gpfBalance", 40_000_000L, "qualifyingService", 12.0, "employeeId", EMPLOYEE,
+                "amount", 5_000_000L, "gpfBalance", 40_000_000L, "qualifyingService", new BigDecimal("12.0"), "employeeId", EMPLOYEE,
                 "payee", "A Subscriber", "payeeAccount", "XXXX1001", "ifsc", "SBIN0000001"));
         assertClosed("GPF advance", r);
     }
@@ -544,7 +561,7 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
     @Test
     void pensionSanctionAndStatus() throws Exception {
         Run r = drive("sangam-pension-sanction", bk("PEN"), employee("employeeId", EMPLOYEE,
-                "employeeName", "A Pensioner", "retirementDate", date(60), "qualifyingService", 33.0, "lastPay", 900_000_000L,
+                "employeeName", "A Pensioner", "retirementDate", date(60), "qualifyingService", new BigDecimal("33.0"), "lastPay", 900_000_000L,
                 "bankAccount", "XXXX5678", "ifsc", "SBIN0000001"));
         assertClosed("pension sanction", r);
     }

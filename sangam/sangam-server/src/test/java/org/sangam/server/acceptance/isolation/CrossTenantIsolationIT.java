@@ -210,7 +210,9 @@ class CrossTenantIsolationIT extends AbstractAcceptanceIT {
         assertEquals(RUN + "-evdef", JSON.readTree(definition.body).path("key").asText(), definition.body);
         Reply channel = send(tokenB, "POST", "/api/v1/events/channels", Map.of("key", RUN + "-chan",
                 "name", "SL-45 channel", "direction", "INBOUND", "transport", "REST",
-                "eventDefinitionKeys", List.of(RUN + "-evdef"), "active", true), Map.of());
+                "eventDefinitionKeys", List.of(RUN + "-evdef"), "active", true,
+                // an inbound webhook channel is signed (PortsEventBridge: WEBHOOK_SECRET_REQUIRED); the sweep never posts to it
+                "config", Map.of("secretRef", "secret://sl45-webhook/" + RUN)), Map.of());
         assertEquals(201, channel.status, "tenant B's own event channel is created: " + channel.body);
         assertEquals(RUN + "-chan", JSON.readTree(channel.body).path("key").asText(), channel.body);
         taskA = processEngine.getTaskService().createTaskQuery().tenantIdIn(A).processInstanceBusinessKey(BK_A)

@@ -26,7 +26,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.sangam.core.engine.LockScope;
+import org.sangam.engine.tx.LockScope;
 
 /**
  * Owner decision 166 (M-083): the HTTP adapter against a loopback policy service. The request carries the OPA input

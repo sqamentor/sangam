@@ -561,3 +561,117 @@ Decisions 392 to 394 were taken on 2026-11-17 by the owner's words "Yes, recomme
 - **392 (one id per policy principal, R7UI-S10; owner chat 2026-11-17)**: a policy that names several principals is stored and listed so that each principal has its own policy id; the admin list never shows two rows with one id. Existing multi-principal policies are migrated to one row and one id per principal, with an audit event per split. Assigned to R7-ui.
 - **393 (no "/" or ":" in path parameters, R7UI-S14; owner chat 2026-11-17)**: every REST identifier that can contain "/" or ":" (for example compliance notice ids and portal ids, and the secrets names of R7UI-S13) moves from a path parameter to a query parameter, the same way as UI-DEMO-1; the contract, the SDKs and the UI are regenerated, and a contract guard refuses a new path parameter of such a value. Assigned to R7-ui.
 - **394 (registrationWindow is a duration, R7UI-F7-3; owner chat 2026-11-17)**: the exam-cycle pack's registrationWindow is an ISO-8601 duration counted from the cycle's start; the pack, its form and its validation say so, and the pack gets a new version (decision 390(4)). Assigned to R7-ui.
+
+Decisions 395 and 396 were taken on 2026-11-17 by the owner in chat, answering lane R8-quarkus (choices "Approve download (Recommended)" and "Yes, all recommended (Recommended)").
+
+- **395 (Quarkus conformance download; owner chat 2026-11-17)**: approved, one artifact only: io.quarkus:quarkus-bom-quarkus-platform-properties:properties:3.40.1.1 from Maven Central into the local Maven repository (same Quarkus version and batch as decision 56). Any other download still needs its own approval.
+- **396 (Quarkus host plan; owner chat 2026-11-17)**: (1) the Quarkus host tests run in the opt-in build profile -Psangam-quarkus and its CI job; the default reactor stays without an optional host (DefaultReactorHasNoOptionalHostTest); (2) phase 4 (ports, packs, case plugin) comes before phase 5 (domain modules), as the design note orders them; (3) SL-172 option A: LockScope moves unchanged into sangam-engine (org.sangam.engine.tx) and its ArchitectureGuardTest allowance is removed, after a CHANGE post and file claims; (4) phase 3a uses one shared field-encryptor rule for both hosts (decision 274). Assigned to R8-quarkus.
+
+Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it (Recommended)") on the UX specification sangam-handoff/2026-11-17/r8-ux/UX-SPEC.md, after the owner asked that Sangam's UI, menus and naming be the easiest to understand for a non-technical first-time user (at least Flowable / Camunda level).
+
+- **397 (UX specification, all 12 recommended answers; owner chat 2026-11-17)**: Q1 the 7-group menu (Home, My work, Services, Track and find, Design, Monitor and fix, Set up, Reports and audit, Help); the "Modules" area goes away. Q2 one running item is a "request" for staff and an "application" for citizens. Q3 modules that are not installed are hidden (one read at sign-in). Q4 a team.read permission for supervisors; until it exists Team workload is shown to operators too. Q5 only platform admins see the list of organisations. Q6 Audit search and exports leave the task user's menu. Q7 "Grievances" becomes "Complaints", "My consents" becomes "My data and consent". Q8 first-run checklist progress kept in the browser for 0.1.0. Q9 "Post" for seat, "Postings and additional charge" for assignments. Q10 the sandbox debugger moves to Design as "Test run". Q11 the language switch is hidden in 0.1.0 (English only, Q-06). Q12 phase 2 order: menu, labels, routes and errors first, then page frame, status chips and first run. API or contract changes stay out of scope unless approved separately. Assigned to R8-ux.
+
+- **398 (UX top 10 problems: accept the spec's recommended fix for each, where confidence is 98% or more; owner chat 2026-11-17)**: The owner wrote "I accept all recommended answer for all those question that having 98% confidence" about UX-SPEC.md section 1.10 (top 10 problems).
+  - Assigned to R8-ux-build (phase 2):
+    1. Menu by job.
+    2. Plain words instead of engine jargon.
+    3. One name per duplicate.
+    4. The Modules area is removed.
+    5. Misplaced entries are moved.
+    6. (Assigned to R7-ui; see below.)
+    7. Shared status words and colours.
+    8. Page descriptions, breadcrumbs and empty-state next steps.
+    9. First-run checklists and a glossary.
+    10. One label namespace, matching route words, Hindi switch hidden.
+  - Assigned to R7-ui: problem 6, the dead ends UI-DEMO-1, UI-DEMO-2, UI-DEMO-7 and R7UI-S2, plus hiding modules that answer 501.
+  - Also assigned to R7-ui: the misleading statuses UI-DEMO-3, UI-DEMO-4 and UI-DEMO-5 (the data or logic fixes) under problem 7.
+  - Any fix below 98% confidence comes back to the owner as a question before it is built.
+
+- **399 (UX Q1-Q12 confirmed again, with the conditional parts settled; owner chat 2026-11-17)**: The owner re-sent the 12 questions with "also recommend all answer that having confidence atleast 98%". This confirms decision 397 as written.
+  - Q3: if no existing capability or extension read can tell the UI which modules are installed, a small read-only endpoint for that is approved. It reads only, and is announced in the contract register and to IFMS.
+  - Q4: the team.read permission is approved, mapped to a new group.
+  - Q12: phase 2 is split into lanes that do not share files.
+
+- **400 (owner chat 2026-11-17, recommended answers)**:
+  - (1) Decision 393 is built split: first the engine and admin routes plus the guard, then each module in its own batch.
+  - (2) F7-2: when the profile binding is missing, the case waits on a visible hold task, "Profile binding missing", until the binding is fixed, instead of raising an incident.
+  - (3) UI-DEMO-1: serving pack start forms (server endpoint plus start screen) is a new 0.1.0 item.
+  - All three are assigned to R7-ui.
+
+- **401 (UX Q4 team workload; owner chat 2026-11-17, "New scoped reads (Recommended)")**: Add read-only endpoints, limited to the caller's own organisation, for the team task-group report and the shared saved filters, behind the team.read permission mapped to a new group. These are additive, read-only API changes and are announced in the contract register and to IFMS. Assigned to R8-ux-build.
+
+- **402 (owner chat 2026-11-17, all recommended answers)**:
+  - (1) Quarkus host tests use Sangam's sshd-core 2.15.0 pin, with no download. If that cannot be done offline, the lane stops and asks again.
+  - (2) Plain-Java host: the security bridges (SecurityPermissionBridge, SecurityAdminBridge) move into a small plain-Java module, coordinated with lane w2. The plain-Java host is built on EngineTxSupport and the rest-core ports. A four-eyes policy-change approval port is added, and deny-wins then uses ports instead of database rows.
+  - (3) SL-180: finished work held as "outcome unknown" is released at once.
+  - (4) DEC-148: close the three known points as accepted: operation ids now differ per instance; instances finished before the fix cannot be migrated; the re-check on upgrade.
+  - (5) DEC-145: work with no engine tenant is refused (fail-closed).
+  - (6) D5: keep the strict list of credential-like field names, and keep package.author for template installs.
+  - (7) DEC-140: the ESP request-signature profile is inclusive canonicalization with rsa-sha256 and the certificate included, with keys from env/secrets only. To be confirmed against the ESP when live (decision 215).
+  - (8) Compliance pack ships as 1.1.1.
+  - (9) A named refusal at run time for a manifest that uses a case-type table without declaring ruleCaseType.
+  - (10) The REST start endpoint refuses a process that is not startable in the tasklist.
+
+- **403 (owner chat 2026-11-17, standing instruction)**:
+  - Miss nothing that was proposed or planned for Sangam, from the start until now.
+  - Above all, make Sangam end-to-end 100% suitable for IFMS, together with every plug-and-play provision.
+  - Use all agents, plus extra ones, to finish as fast as possible, aiming for a stable release today, within a few hours.
+  - Nothing is coded or developed below 98% confidence; this raises the floor from 97% to 98%.
+
+- **404 (owner chat 2026-11-17, recommended answers)**:
+  - (1) Shared task lists use a Sangam-owned saved-filter table, limited to the caller's organisation, with its own create and list endpoints.
+  - (2) The organisation admin also gets team.read, alongside supervisor and operator.
+  - (3) PNP-3: keep Sangam's incident when no gateway route matches; IFMS reads incidents through `RoutingIncidents.collect`.
+  - (4) PNP-2: host bean approvals stay exact-name only, in all environments.
+  - (5) PNP-2: each deployment that uses a host-approved bean is also recorded in the class-B audit chain, done now.
+  - Assigned to R8-ux-build for (1) and (2), and to R8-pnp for (3) to (5).
+
+- **405 (owner chat 2026-11-17, "Release, list as limits (Recommended)")**: Sangam 0.1.0 ships today with everything that is green.
+  - Decision 392, the full decision 393 change and decision 402(2) (plain-Java host and four-eyes port) are listed in the release notes as known limitations and land in 0.1.1. Work on them continues.
+  - The other limitations named in IFMS-FIT-AUDIT.md are also listed in the release notes.
+  - Release path: merge the PNP and UX branches and test them; code SL-180; full verify; IfmsPacksIT on Oracle and SQL Server; refresh the IFMS guide and post the contract-change list; owner-signed push; SANGAM-GREEN-SHA.
+
+- **406 (owner chat 2026-11-17, supersedes 405)**: The owner answered the release-scope question with "I need release with all today any how any way at any cost". So 0.1.0 includes decision 392, the full decision 393 change and decision 402(2); none is deferred to 0.1.1.
+  - Maximum parallel lanes are put on them.
+  - The owner's 98% confidence floor (decision 403) and the shared heavy-lock rules still apply. A piece that cannot reach 98% is reported to the owner, not shipped.
+
+- **407 (owner chat 2026-11-17, standing authorisation)**:
+  - For every open or future question or doubt, choose the recommended answer, provided research and R&D bring confidence in it to at least 98%. Record each such choice as a decision with its evidence.
+  - Below 98%, keep researching until 98% is reached. If it cannot be reached, report the question.
+  - Goal: clear everything and take Sangam and IFMS live as fast as possible.
+  - This does not replace what only the owner can do: the owner-signed push gate and release tag, break-glass, and outward actions that need the owner in person (Rule 4).
+
+- **408 (integrator, under decision 407; confidence 98% or more)**: `sangam.core` stays at 1.0.2 with the decision 391 row (6383c10c); no bump to 1.0.3.
+  - Evidence: the pushed main 209d2765 ships sangam.core 1.0.1, so 1.0.2 has never been released or pushed.
+  - packgen `--check`, the held-content ledger (HELD_AT 93498ab2) and SHIPS all accept it.
+  - Only local development databases built from unpushed integration code can hold an earlier 1.0.2. Those are reset, not upgraded, which the release notes state.
+
+- **409 (integrator, under decision 407; lane R8-392, confidence 98% or more)**: decision 392's data migration is a Java start-time step on the decision 370 `sangamPlatformRoleRows` runner precedent, with no SQL changesets.
+  - Evidence: the audit chain appends through `SecurityAuditService.record` (hash-chained, `SecurityAuditService.java:96-112`); `AUTH_EFFECTIVE` rewrites go through `AuthEffectiveMaintainer`; `SEC_POLICY` needs no schema change.
+  - Conditions:
+    1. Cluster-safe, with no double split or double audit when two nodes start together.
+    2. Idempotent.
+    3. Fail-closed per tenant.
+    4. Pending multi-subject four-eyes changes are marked SUPERSEDED, with a test proving that they cannot restore a grant.
+
+- **410 (integrator, under decision 407; the decision 393 pattern by lane R7-ui, confidence 98-99%)**: The rules are in `sangam-handoff/2026-11-17/d393-PATTERN.md`.
+  - A path parameter stays only when the code proves it can never hold '/' or ':'. Everything else moves to the literal `by-<x>` plus a required query parameter of the same name.
+  - The old routes are removed (0.1.0 is unreleased), with a correction entry in `sangam-api-deprecations.yaml`.
+  - Exempt: plugin UI asset `{*path}` and the Matrix `{txnId}`.
+  - FHIR, SMS-DLT and Event Grid callbacks move. The joint ledger shows no IFMS-configured callback URL for them.
+  - Guard: `PathParameterGuardTest` with the ledger `sangam-rest/api/path-parameters.tsv`. Its PENDING count can only go down, and the release gate is zero PENDING.
+
+- **411 (owner chat 2026-11-17, "Yes, ci/ branches (Recommended)")**: Lanes may push test-only branches to `sqamentor/sangam` under the `ci/` prefix, so that GitHub Actions runs the long builds and the per-database tests in parallel. `main` and release tags stay behind the owner-signed push gate. This approval is for Sangam only; IFMS follows its own push rules.
+
+- **412 (owner chat 2026-11-17, "GitHub and AWS both, set it up now")**: Set up the three-level build strategy now.
+  - Level 1: the local heavy lock, for quick runs.
+  - Level 2: GitHub Actions on `ci/*` branches (decision 411), with a matrix job per database for long runs or when the local wait exceeds 30 minutes.
+  - Level 3: AWS CodeBuild, used when GitHub is backed up or its minutes are used up.
+  - The main push and the tags stay owner-signed.
+
+- **413 (owner chat 2026-11-17)**: AWS account 196337091345 belongs to VyaparTrust. The owner allows Sangam and IFMS to use it for their development CI; VyaparTrust is allowed the same functionality.
+  - This is an explicit, owner-made exception to the project boundary, for shared infrastructure only. No code, data or records are mixed.
+  - Root keys may be used to set it up (owner's choice).
+  - Every Sangam resource is named `sangam-ci-*` and tagged `project=sangam-ci`. VyaparTrust resources are never touched.
+  - Created: S3 bucket `sangam-ci-196337091345` (ap-south-1, public access blocked, 14-day expiry), IAM role `sangam-ci-codebuild-role` (logs plus this bucket only), CodeBuild project `sangam-ci-lanes` (LARGE, privileged Docker, S3 source, 120-minute timeout).
+  - Routing is automatic: local; then GitHub when the local queue is long; then AWS when GitHub is also busy for a long time.

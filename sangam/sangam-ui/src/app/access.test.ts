@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import appSource from './App.tsx?raw';
 import { MODULE_READERS, ROUTE_ACCESS, SIGNED_IN_ROUTES, canAccess } from './access';
-import { NAV } from './nav';
+import { NAV_ITEMS } from './nav';
 import type { Role } from '../api/types';
 
 const me = (roles: Role[], permissions?: string[]) => ({ roles, permissions });
@@ -43,8 +43,9 @@ describe('M-028 route guards', () => {
     // for platform users only, inside the screen). /pages/:key (lowcode.read, LowCodeController.java:53) is outside
     // M-028 and unchanged.
     // /privacy/:tenant? (M-033): the privacy policy is public on the server (security: [], SecurityConfig.java:80-81).
-    // /inbox (UI-DEMO-6): a redirect to the guarded /tasks, the screen the menu calls Inbox; it renders nothing itself.
-    const open = new Set(['/', '*', '/welcome', '/account', '/pages/:key', '/help/accessibility', '/help/about', '/privacy/:tenant?', '/inbox', ...SIGNED_IN_ROUTES]);
+    // /inbox (UI-DEMO-6), /ops/task-dashboard and /ops/debugger (decision 397): redirects to guarded routes; they render
+    // nothing themselves. /help/glossary and /help/shortcuts: static help, no server call.
+    const open = new Set(['/', '*', '/welcome', '/account', '/pages/:key', '/help/accessibility', '/help/about', '/help/glossary', '/help/shortcuts', '/privacy/:tenant?', '/inbox', '/ops/task-dashboard', '/ops/debugger', ...SIGNED_IN_ROUTES]);
     const unguarded = routes().filter((r) => !r.guarded).map((r) => r.path);
     expect(unguarded.filter((p) => !open.has(p))).toEqual([]);
     for (const p of SIGNED_IN_ROUTES) expect(unguarded).toContain(p);
@@ -85,9 +86,9 @@ describe('M-028 route guards', () => {
   });
 
   it('gives the menu the same requirement as the route', () => {
-    const modules = NAV.find((a) => a.id === 'modules');
-    expect(modules?.roles).toEqual(MODULE_READERS);
-    for (const i of modules?.items ?? []) expect(i.access, i.to).toBe(ROUTE_ACCESS[i.to]);
+    const modules = NAV_ITEMS.filter((i) => i.to.startsWith('/m/'));
+    expect(modules).toHaveLength(15);
+    for (const i of modules) expect(i.access, i.to).toBe(ROUTE_ACCESS[i.to]);
     for (const a of Object.values(ROUTE_ACCESS)) for (const r of a.roles) expect(MODULE_READERS).toContain(r);
   });
 });
@@ -112,9 +113,8 @@ describe('W2-C admin screens follow the server gates', () => {
     expect(canAccess(me(['TASK_USER']), ROUTE_ACCESS['/admin/security-defaults'])).toBe(false);
   });
   it('the menu uses the same requirement as the route', () => {
-    const admin = NAV.find((a) => a.id === 'admin')!;
     for (const r of ['/admin/onboarding', '/admin/packs', '/admin/custom-fields', '/admin/bulk', '/admin/security-defaults']) {
-      expect(admin.items.find((i) => i.to === r)?.access, r).toBe(ROUTE_ACCESS[r]);
+      expect(NAV_ITEMS.find((i) => i.to === r)?.access, r).toBe(ROUTE_ACCESS[r]);
     }
   });
 });
@@ -123,17 +123,18 @@ describe('UI-DEMO-6: menu entries and addresses', () => {
   /** A route path of App.tsx as a matcher: :param matches one segment, a trailing * the rest, an optional :param? may be absent. */
   const matcher = (route: string) =>
     new RegExp(`^${route.replace(/\/:\w+\?/g, '(?:/[^/]+)?').replace(/:\w+/g, '[^/]+').replace(/\/\*$/, '(?:/.*)?')}$`);
-  const paths = () => routes().map((r) => r.path).filter((p) => p !== '*');
+  // /verify/:tenant? is public and served by Gate outside the authenticated table (App.tsx).
+  const paths = () => [...routes().map((r) => r.path).filter((p) => p !== '*'), '/verify/:tenant?'];
   const resolves = (to: string) => paths().some((r) => matcher(r).test(to.split('?')[0]));
 
   it('every menu entry opens a real route, not the not-found page', () => {
-    const missing = NAV.flatMap((a) => a.items.map((i) => i.to)).filter((to) => !resolves(to));
+    const missing = NAV_ITEMS.map((i) => i.to).filter((to) => !resolves(to));
     expect(missing).toEqual([]);
   });
 
   it('/inbox, the menu name of the task list, is an address that leads to /tasks', () => {
     expect(appSource).toMatch(/<Route path="\/inbox" element=\{<Navigate to="\/tasks" replace \/>\} \/>/);
-    expect(NAV.flatMap((a) => a.items).find((i) => i.label === 'nav.inbox')?.to).toBe('/tasks');
+    expect(NAV_ITEMS.find((i) => i.label === 'menu.work.tasks.label')?.to).toBe('/tasks');
   });
 
   it('every redirect in the route table leads to a real route', () => {

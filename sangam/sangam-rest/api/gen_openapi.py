@@ -198,6 +198,16 @@ LOCK_REQ = ("workerId", "lockVersion")
 schema("SeatHolding", "A seat held by the caller on the action date (IX.5 rules 1, 4).",
        "seatId seatName designation orgUnitName kind actingForPersonName validFrom:date validTo:date pendingApproval:bool",
        enums={"kind": ["SUBSTANTIVE", "ADDITIONAL_CHARGE", "LEAVE_SUBSTITUTE"]})
+schema("MeCapabilities", "Owner decision 399 (Q3): the installed optional modules (GET /me/capabilities).",
+       "modules:list:s", required=("modules",),
+       descs={"modules": "Sorted module ids, a subset of: ai, billing, case, channels, compliance, field, geo, ledger, "
+                         "programme, registry, resources"})
+schema("TeamGroupCount", "Owner decision 401: one candidate group of the caller's tenant.",
+       "group unassignedTasks:long", required=("group", "unassignedTasks"))
+schema("TeamTaskGroupReport", "Owner decision 401: the team workload of the caller's tenant (GET /team/task-groups).",
+       "open:long assigned:long unassigned:long withoutCandidateGroup:long groups:list:TeamGroupCount",
+       required=("open", "assigned", "unassigned", "withoutCandidateGroup", "groups"),
+       descs={"groups": "Sorted by group id"})
 schema("Me", "The authenticated caller: identity, tenant, personas (roles), seats held, current seat context and permissions (K1, S02).",
        "tenantId tenantName principalId userId displayName groups:list:s roles:list:s seats:list:SeatHolding seatId actingForSeatId "
        "authMethod permissions:list:s preferredLanguage locale:MeLocale",
@@ -1407,6 +1417,16 @@ FPR = lambda ct="application/octet-stream": {"type": "string", "contentMediaType
 op("get", "/me", "getMe", "Me", "Current caller",
    "Identity, tenant, personas (roles), seats held on today's date with kind and validity, the selected seat context and the permissions the server grants (K1, VI.4 rule 6, IX.5 rules 1 and 4, S02).",
    ["VI.4", "IX.5", "R76"], resp=(200, "Me"), errors=("Unauthorized",))
+op("get", "/me/capabilities", "getMyCapabilities", "Me", "Installed modules",
+   "Owner decision 399 (Q3): the optional modules whose REST API this server serves, derived from the wiring (a module "
+   "is listed when its controllers are registered, which needs the module on the class path and enabled). Read-only, "
+   "any signed-in caller, no permission. The UI hides the menu entries of a module that is not listed.",
+   ["R76"], resp=(200, "MeCapabilities"), errors=("Unauthorized",))
+op("get", "/team/task-groups", "getTeamTaskGroups", "Me", "Team workload of my tenant",
+   "Owner decision 401: open, assigned and unassigned task counts of the caller's tenant, and per candidate group the "
+   "open unassigned tasks (groups without one are left out), plus the unassigned tasks that offer no candidate group. "
+   "Only tasks of the caller's tenant are counted, never another tenant's or a task without a tenant. Read-only.",
+   ["R76"], resp=(200, "TeamTaskGroupReport"), perm="team.read", errors=("Unauthorized", "Forbidden"))
 op("get", "/me/notifications", "listMyNotifications", "Me", "My notifications", "In-app notifications of the caller (R60).",
    ["R60", "R76"], list_=True, resp=(200, "array:Notification"), errors=WS_E)
 op("post", "/me/notifications/{id}/read", "markNotificationRead", "Me", "Mark a notification read", "Marks one notification read.",

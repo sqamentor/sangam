@@ -57,7 +57,7 @@
     "working": "Working…"
   },
   "error": {
-    "approvalInvalidated": "The approval no longer applies because the case changed",
+    "approvalInvalidated": "The approval no longer applies because the request changed",
     "code": {
       "KB_VERSION_NOT_BUILDING": "This knowledge-base version is not being built, so nothing can be added to it",
       "OCR_REJECTED": "The OCR engine refused this image",
@@ -74,20 +74,36 @@
       "SELF_DISABLE": "You cannot disable your own user",
       "GROUP_EXISTS": "A group with this id already exists"
     },
-    "backpressure": "The system is busy. Your work is saved; try again shortly.",
-    "conflict": "Someone else changed this item first",
+    "backpressure": "The system is busy. Your work is saved.",
+    "conflict": "Someone else changed this first",
     "generic": "Something went wrong",
     "goHome": "Go to the start page",
     "network": "The server could not be reached",
-    "notAvailable": "Not available for your current seat",
-    "notAvailableHint": "If you hold another seat that can act on this, switch seat in the header.",
-    "notInstalled": "This feature is not installed on this server",
+    "notAvailable": "You do not have access to this",
+    "notAvailableHint": "If another post you hold can do this, change it under \"Acting as\" in the header. Otherwise ask your administrator.",
+    "notInstalled": "This feature is not installed here",
     "pageNotFound": "This page does not exist",
     "pageNotFoundHint": "The address may be mistyped or out of date.",
     "reference": "Reference",
-    "retryExhausted": "The change could not be applied after several attempts",
-    "stale": "This item changed since you opened it",
-    "validation": "Please correct the highlighted fields"
+    "retryExhausted": "The system was busy and could not save",
+    "stale": "This task was updated while you had it open",
+    "validation": "Some details need fixing",
+    "sessionEnded": "Your session has ended",
+    "notFound": "We could not find this",
+    "next": {
+      "validation": "Correct the fields listed below, then try again.",
+      "sessionEnded": "Sign in again. What you typed on this page is kept until you leave it.",
+      "notFound": "Go back, or search for it again. If you typed a reference number, check the number.",
+      "conflict": "Reload to see the change. Copy anything you typed first.",
+      "stale": "Reload the task to see the latest version.",
+      "approvalInvalidated": "Review the request again before approving.",
+      "retryExhausted": "Try again.",
+      "notInstalled": "Ask your administrator to install it.",
+      "backpressure": "Try again in a minute.",
+      "network": "Check your connection, then try again.",
+      "generic": "Try again. If it keeps happening, quote the reference number below.",
+      "notAvailable": "If another post you hold can do this, change it under \"Acting as\" in the header. Otherwise ask your administrator."
+    }
   },
   "auth": {
     "assisted": "Need help? Visit your nearest service centre for assisted applications.",
@@ -135,9 +151,9 @@
     "ops": "Operations",
     "opsDashboard": "Dashboard",
     "processes": "Processes",
-    "cases": "Case instances",
+    "cases": "Running cases",
     "decisions": "Decisions",
-    "incidents": "Incidents",
+    "incidents": "Stuck requests",
     "reconciliation": "Reconciliation",
     "batches": "Batch operations",
     "migration": "Migration",
@@ -148,12 +164,12 @@
     "notificationFailures": "Notification failures",
     "deployments": "Deployments",
     "cleanup": "History cleanup",
-    "debugger": "Sandbox debugger",
+    "debugger": "Test run",
     "operatorAudit": "Operator audit log",
     "admin": "Administration",
-    "tenants": "Tenants",
+    "tenants": "Organisations",
     "org": "Organisation",
-    "seats": "Seats",
+    "seats": "Posts",
     "assignments": "Postings and charges",
     "delegationTables": "Delegation of powers",
     "policies": "Policies",
@@ -170,7 +186,7 @@
     "agents": "AI agents",
     "retention": "Retention classes",
     "model": "Modelling",
-    "packages": "Packages",
+    "packages": "Projects",
     "review": "Review queue",
     "dataObjects": "Data objects",
     "pageBuilder": "Pages",
@@ -186,7 +202,7 @@
     "auditExports": "Audit exports",
     "documents": "Documents",
     "portal": "Citizen services",
-    "services": "Services",
+    "services": "Find a service",
     "myApplications": "My applications",
     "grievances": "Grievances",
     "myConsents": "My consents",
@@ -464,11 +480,11 @@
     "seatReason": "Reason for this choice",
     "seatReasonHint": "Required when you choose a seat other than the proposed one.",
     "section": {
-      "MY_SEAT": "My seat",
-      "ACTING_FOR": "Acting for",
-      "POOL": "Pool (claimable)",
-      "ESCALATED": "Escalated",
-      "RETURNED": "Returned to me"
+      "MY_SEAT": "Mine",
+      "ACTING_FOR": "On behalf of",
+      "POOL": "Team list",
+      "ESCALATED": "Overdue",
+      "RETURNED": "Sent back"
     },
     "sections": "Inbox sections",
     "size": "Size",
@@ -3185,7 +3201,7 @@
       "pendency": "Pendency",
       "quorum": "Quorum",
       "quorumChecked": "Quorum is checked when the meeting starts.",
-      "title": "Committees",
+      "title": "Committees and meetings",
       "urgentHint": "Required if the notice is shorter than the committee's minimum notice period.",
       "ackHint": "The notice id is in the answer of Send notices."
     },
@@ -3244,7 +3260,7 @@
       "reportHint": "Generates the DPDP and CERT-In evidence report for the selected period.",
       "reportId": "Report ID",
       "rights": "Rights requests",
-      "title": "Compliance",
+      "title": "Data protection",
       "verifyChains": "Verify hash chains",
       "basisHint": "A legal-basis code of the tenant's jurisdiction pack. The server checks it against the pack.",
       "searchHint": "The reference is sent in the request body, never in the address. Every look-up of another person's records is recorded in that person's audit trail.",
@@ -3283,7 +3299,7 @@
       "register": "Change register",
       "rejectHint": "Required to reject. At least 5 characters.",
       "saveDraft": "Save draft",
-      "title": "Configuration",
+      "title": "Settings",
       "versions": "Versions"
     },
     "field": {
@@ -3303,7 +3319,7 @@
       "templateHint": "Publishes the checklist template. Enter sections as JSON. A NUMBER item may have min and max, written as decimal text such as \"12.5\", and scale, the most decimal places an answer may have (0 to 10).",
       "templates": "Inspection templates",
       "templatesDesc": "Versioned inspection checklists.",
-      "title": "Field operations",
+      "title": "Field visit set-up",
       "trips": "Trips",
       "units": "Units",
       "check": {
@@ -3362,7 +3378,7 @@
       "run_validate": "Validate profile",
       "seat": "Seat",
       "tenant": "Tenant",
-      "title": "Tenant onboarding",
+      "title": "Setup checklist",
       "validate": "Validate",
       "runs": "Onboarding runs",
       "new": "New run",
@@ -3571,7 +3587,7 @@
       "registersDesc": "Statutory registers and their books.",
       "relationships": "Relationships",
       "reliability": "Reliability",
-      "title": "Registry",
+      "title": "Registers",
       "transfers": "Transfers",
       "types": "Types",
       "typesDesc": "Definitions of registry object types.",
@@ -3654,7 +3670,7 @@
       "links": "Links"
     },
     "plugins": {
-      "title": "UI and server plugins",
+      "title": "Extensions",
       "desc": "The server verifies signatures. Enable or disable with a reason."
     },
     "op3": {
@@ -3685,7 +3701,7 @@
       "due_custom": "Choose a date"
     },
     "ai": {
-      "title": "AI",
+      "title": "AI assistant",
       "desc": "Agent runs, approvals, knowledge bases, drafts and classification review.",
       "runs": "Agent runs",
       "runsDesc": "Each run with its step timeline.",
@@ -3720,7 +3736,11 @@
         "queue": "Review queue",
         "state": "State",
         "anyState": "Any state",
-        "states": { "PENDING_REVIEW": "Waiting for review", "APPROVED": "Approved", "REJECTED": "Rejected" },
+        "states": {
+          "PENDING_REVIEW": "Waiting for review",
+          "APPROVED": "Approved",
+          "REJECTED": "Rejected"
+        },
         "id": "Transcript",
         "createdBy": "Submitted by",
         "createdAt": "Submitted at",
@@ -3750,7 +3770,7 @@
       }
     },
     "channels": {
-      "title": "Channels",
+      "title": "Channel status",
       "desc": "Conversations, opt-ins and inbound channel status.",
       "conversations": "Conversations",
       "optIns": "Opt-ins",
@@ -3763,7 +3783,7 @@
       "optInHint": "Matrix and Slack have no adapter. Existing opt-ins cannot be listed yet."
     },
     "modeller2": {
-      "title": "Modelling tools",
+      "title": "Design tools",
       "landscape": "Process landscape",
       "tokenWalk": "Token walk",
       "gateway": "Choose a branch",
@@ -3775,7 +3795,12 @@
       "espAt": "At node",
       "trigger": "Trigger",
       "moves": "Moves",
-      "via": { "FLOW": "sequence flow", "BOUNDARY": "boundary event", "EVENT_SUB_PROCESS": "event sub-process", "COMPENSATION": "compensation" },
+      "via": {
+        "FLOW": "sequence flow",
+        "BOUNDARY": "boundary event",
+        "EVENT_SUB_PROCESS": "event sub-process",
+        "COMPENSATION": "compensation"
+      },
       "leased": "{{who}} is editing this model.",
       "takeover": "Take over",
       "takeoverHint": "{{who}} holds the edit lease. Taking it over is recorded in the audit trail with your reason; their unsaved draft is kept.",
@@ -4242,5 +4267,809 @@
     "decisionInTasklist": "This task needs a decision that is taken in the Sangam tasklist.",
     "diagramTitle": "Process diagram",
     "missingAttribute": "The {{name}} attribute is required."
+  },
+  "menu": {
+    "work": {
+      "title": "My work",
+      "section": {
+        "department": "Department tools"
+      },
+      "tasks": {
+        "label": "My tasks",
+        "help": "Work waiting for you, your team, or people you act for."
+      },
+      "start": {
+        "label": "Start a request",
+        "help": "Begin a new application or internal request."
+      },
+      "requests": {
+        "label": "My requests",
+        "help": "Requests you started or work on."
+      },
+      "team": {
+        "label": "Team workload",
+        "help": "See who has how much work and what is overdue."
+      },
+      "taskLists": {
+        "label": "Shared task lists",
+        "help": "Saved views of tasks that a team uses."
+      },
+      "field": {
+        "label": "Field visits",
+        "help": "Record site visits, also offline."
+      },
+      "away": {
+        "label": "Away and hand-over",
+        "help": "Pass your work to someone while you are away."
+      },
+      "signature": {
+        "label": "My signature",
+        "help": "Register the digital signature certificate you sign with."
+      },
+      "ledger": {
+        "label": "Ledger",
+        "help": "The book of money entries kept by the system."
+      },
+      "billing": {
+        "label": "Billing",
+        "help": "Bills, demands and payments."
+      },
+      "programmes": {
+        "label": "Programmes",
+        "help": "Schemes, their beneficiaries and payments."
+      },
+      "resources": {
+        "label": "Resources",
+        "help": "Rooms, vehicles and other things that can be booked."
+      },
+      "queues": {
+        "label": "Queues",
+        "help": "Tokens and counters at service points."
+      },
+      "rosters": {
+        "label": "Rosters",
+        "help": "Duty rosters and shifts."
+      },
+      "geo": {
+        "label": "Geography",
+        "help": "Maps, areas and locations."
+      },
+      "fieldSetup": {
+        "label": "Field visit set-up",
+        "help": "Forms and plans used for field visits."
+      },
+      "ai": {
+        "label": "AI assistant",
+        "help": "Ask an AI helper to draft or read documents."
+      }
+    },
+    "services": {
+      "title": "Services",
+      "find": {
+        "label": "Find a service",
+        "help": "Search and apply for a service."
+      },
+      "applications": {
+        "label": "My applications",
+        "help": "Status of what you applied for."
+      },
+      "complaints": {
+        "label": "Complaints",
+        "help": "Raise or follow a complaint."
+      },
+      "notices": {
+        "label": "Letters and notices",
+        "help": "Notices sent to you."
+      },
+      "consent": {
+        "label": "My data and consent",
+        "help": "What you agreed to share, and how to withdraw."
+      }
+    },
+    "find": {
+      "title": "Track and find",
+      "caseFiles": {
+        "label": "Case files",
+        "help": "Paper-style files with notes and attachments."
+      },
+      "committees": {
+        "label": "Committees and meetings",
+        "help": "Meetings, agendas and decisions."
+      },
+      "references": {
+        "label": "References",
+        "help": "Letters and references between offices."
+      },
+      "registers": {
+        "label": "Registers",
+        "help": "Official registers and their entries."
+      },
+      "documents": {
+        "label": "Documents",
+        "help": "Find documents of a task or request."
+      },
+      "notifications": {
+        "label": "Notifications",
+        "help": "Messages for you."
+      }
+    },
+    "design": {
+      "title": "Design",
+      "section": {
+        "more": "More"
+      },
+      "projects": {
+        "label": "Projects",
+        "help": "Your process designs, forms and decision tables."
+      },
+      "review": {
+        "label": "Waiting for review",
+        "help": "Designs that need approval before publishing."
+      },
+      "recordTypes": {
+        "label": "Record types",
+        "help": "The kinds of records your services keep."
+      },
+      "screens": {
+        "label": "Screens",
+        "help": "Build simple screens without code."
+      },
+      "testRun": {
+        "label": "Test run",
+        "help": "Try a design step by step with sample data."
+      },
+      "assess": {
+        "label": "Check imported design",
+        "help": "See how well a design from another product works here."
+      },
+      "compatibility": {
+        "label": "Feature support",
+        "help": "Which design features this installation supports."
+      },
+      "tools": {
+        "label": "Design tools",
+        "help": "Further tools for designers."
+      }
+    },
+    "monitor": {
+      "title": "Monitor and fix",
+      "section": {
+        "glance": "At a glance",
+        "requests": "Requests",
+        "behind": "Behind the scenes",
+        "maintenance": "Maintenance"
+      },
+      "health": {
+        "label": "Health overview",
+        "help": "Is everything running? Counts of stuck work and failures."
+      },
+      "stuck": {
+        "label": "Stuck requests",
+        "help": "Requests that stopped because a step failed, and how to retry."
+      },
+      "running": {
+        "label": "Running requests",
+        "help": "Every type of request and the ones running now."
+      },
+      "cases": {
+        "label": "Running cases",
+        "help": "Open case files that are in progress."
+      },
+      "decisions": {
+        "label": "Decision results",
+        "help": "How decision tables answered, for checking."
+      },
+      "batches": {
+        "label": "Fix many at once",
+        "help": "Retry, cancel or move many requests together."
+      },
+      "migration": {
+        "label": "Move to a new version",
+        "help": "Move running requests to a newer design."
+      },
+      "jobs": {
+        "label": "Scheduled steps",
+        "help": "Timers and steps that run later in the background."
+      },
+      "outbox": {
+        "label": "Message delivery",
+        "help": "Messages waiting to go out or come in from other systems."
+      },
+      "workers": {
+        "label": "Background workers",
+        "help": "Programs that do automated steps, and their queues."
+      },
+      "notifications": {
+        "label": "Failed notifications",
+        "help": "Emails and SMS that could not be sent."
+      },
+      "events": {
+        "label": "Event types",
+        "help": "The kinds of events the system knows."
+      },
+      "money": {
+        "label": "Money checks",
+        "help": "Differences between the ledger and other records."
+      },
+      "deployments": {
+        "label": "Installed versions",
+        "help": "Which versions of each design are live, and since when."
+      },
+      "cleanup": {
+        "label": "Clean up old history",
+        "help": "Remove history that is past its keeping time."
+      },
+      "tools": {
+        "label": "Platform tools",
+        "help": "Further tools for operators."
+      },
+      "engine": {
+        "label": "Engine screens",
+        "help": "Advanced: the raw screens of the process engine."
+      },
+      "operatorLog": {
+        "label": "Operator action log",
+        "help": "What operators did, and when."
+      }
+    },
+    "setup": {
+      "title": "Set up",
+      "section": {
+        "start": "Get started",
+        "org": "Organisation and people",
+        "access": "Access and security",
+        "work": "How work runs",
+        "data": "Data and system"
+      },
+      "checklist": {
+        "label": "Setup checklist",
+        "help": "Steps to get an organisation ready to use."
+      },
+      "packs": {
+        "label": "Ready-made services",
+        "help": "Install or upgrade service packs."
+      },
+      "organisations": {
+        "label": "Organisations",
+        "help": "Separate organisations sharing this platform."
+      },
+      "offices": {
+        "label": "Offices and units",
+        "help": "Your office structure."
+      },
+      "posts": {
+        "label": "Posts",
+        "help": "Positions that hold work, like a section officer post."
+      },
+      "postings": {
+        "label": "Postings and charges",
+        "help": "Who holds which post, and for how long."
+      },
+      "people": {
+        "label": "People",
+        "help": "People who can sign in."
+      },
+      "groups": {
+        "label": "Groups",
+        "help": "Groups used to share work and access."
+      },
+      "powers": {
+        "label": "Financial powers",
+        "help": "Who may approve what, up to which amount."
+      },
+      "policies": {
+        "label": "Access rules",
+        "help": "Who may see and do what."
+      },
+      "sod": {
+        "label": "Duty conflict exceptions",
+        "help": "Allowed cases where one person does two checking steps."
+      },
+      "idp": {
+        "label": "Sign-in providers",
+        "help": "Where people sign in from, for example the state login."
+      },
+      "principals": {
+        "label": "System accounts",
+        "help": "Accounts used by other software, not people."
+      },
+      "securityDefaults": {
+        "label": "Default feature access",
+        "help": "Starting permissions for each feature."
+      },
+      "signatures": {
+        "label": "Signature approvals",
+        "help": "Approve digital signature certificates people registered."
+      },
+      "sla": {
+        "label": "Time limits",
+        "help": "How long each step may take before it is overdue."
+      },
+      "routing": {
+        "label": "Work assignment rules",
+        "help": "How new tasks are given to people."
+      },
+      "services": {
+        "label": "Connected systems",
+        "help": "Other systems the services call."
+      },
+      "templates": {
+        "label": "Message templates",
+        "help": "Wording of emails, SMS and letters."
+      },
+      "channels": {
+        "label": "Messaging channels",
+        "help": "Email, SMS, WhatsApp and chat set-up."
+      },
+      "channelStatus": {
+        "label": "Channel status",
+        "help": "Whether each messaging channel is working."
+      },
+      "agents": {
+        "label": "AI assistants",
+        "help": "AI helpers and their limits."
+      },
+      "customFields": {
+        "label": "Extra fields",
+        "help": "Add fields to records without design work."
+      },
+      "bulk": {
+        "label": "Load data from a file",
+        "help": "Upload many records at once."
+      },
+      "retention": {
+        "label": "Record keeping",
+        "help": "How long each kind of record is kept."
+      },
+      "config": {
+        "label": "Settings",
+        "help": "General settings of this organisation."
+      },
+      "plugins": {
+        "label": "Extensions",
+        "help": "Add-ons installed on this platform."
+      },
+      "engine": {
+        "label": "Engine settings",
+        "help": "Advanced: low-level engine administration."
+      }
+    },
+    "reports": {
+      "title": "Reports and audit",
+      "overview": {
+        "label": "Overview",
+        "help": "Volumes, waiting times and trends."
+      },
+      "reports": {
+        "label": "Reports",
+        "help": "Ready reports you can filter and download."
+      },
+      "alerts": {
+        "label": "Alerts",
+        "help": "Get told when a number crosses a limit."
+      },
+      "mining": {
+        "label": "How work flows",
+        "help": "See the actual paths requests took."
+      },
+      "aiUsage": {
+        "label": "AI usage",
+        "help": "How much the AI helpers were used."
+      },
+      "audit": {
+        "label": "Audit trail",
+        "help": "Search who did what and when."
+      },
+      "exports": {
+        "label": "Audit exports",
+        "help": "Signed downloads of the audit trail."
+      },
+      "dataProtection": {
+        "label": "Data protection",
+        "help": "Consents, rights requests, breaches, notices."
+      }
+    },
+    "help": {
+      "title": "Help",
+      "glossary": {
+        "label": "Glossary",
+        "help": "Plain meanings of the words used in Sangam."
+      },
+      "shortcuts": {
+        "label": "Keyboard shortcuts",
+        "help": "Keys that take you to common pages."
+      },
+      "accessibility": {
+        "label": "Accessibility",
+        "help": "How this site supports assistive technology."
+      },
+      "about": {
+        "label": "About",
+        "help": "Version, licences and credits."
+      },
+      "verify": {
+        "label": "Verify a document",
+        "help": "Check that a signed document is genuine."
+      }
+    },
+    "home": "Home"
+  },
+  "glossary": {
+    "intro": "Plain meanings of the words used in Sangam. The technical term, where there is one, is in brackets.",
+    "technical": "Technical term: {{term}}",
+    "request": {
+      "term": "Request",
+      "meaning": "One running piece of work, such as one application, from start to finish.",
+      "technical": "process instance"
+    },
+    "requestType": {
+      "term": "Request type",
+      "meaning": "The designed flow that every request of one kind follows.",
+      "technical": "process definition"
+    },
+    "design": {
+      "term": "Design",
+      "meaning": "The drawing of the steps, who does them and in what order.",
+      "technical": "model, BPMN diagram"
+    },
+    "project": {
+      "term": "Project",
+      "meaning": "A folder of designs, forms and tables that are published together.",
+      "technical": "model package"
+    },
+    "readyMade": {
+      "term": "Ready-made service",
+      "meaning": "A complete service you can install and adjust instead of designing from scratch.",
+      "technical": "pack"
+    },
+    "task": {
+      "term": "Task",
+      "meaning": "One step that a person must do, such as checking or approving.",
+      "technical": "user task"
+    },
+    "myTasks": {
+      "term": "My tasks",
+      "meaning": "The list of tasks waiting for you.",
+      "technical": "inbox"
+    },
+    "teamList": {
+      "term": "Team list",
+      "meaning": "Tasks shared with your team that anyone in it can pick up.",
+      "technical": "pool, candidate group"
+    },
+    "pickUp": {
+      "term": "Pick up",
+      "meaning": "Take a task from the team list so that it is yours.",
+      "technical": "claim"
+    },
+    "putBack": {
+      "term": "Put back",
+      "meaning": "Return a task to the team list.",
+      "technical": "release, unclaim"
+    },
+    "sendBack": {
+      "term": "Send back",
+      "meaning": "Return work to the previous person with a reason.",
+      "technical": "return"
+    },
+    "overdue": {
+      "term": "Overdue",
+      "meaning": "Work that has passed its time limit.",
+      "technical": "escalated, SLA breached"
+    },
+    "timeLimit": {
+      "term": "Time limit",
+      "meaning": "How long a step may take before it becomes overdue.",
+      "technical": "SLA"
+    },
+    "post": {
+      "term": "Post",
+      "meaning": "A position that holds work, independent of who sits in it.",
+      "technical": "seat"
+    },
+    "actingAs": {
+      "term": "Acting as",
+      "meaning": "The post you are working for right now; switch it in the header.",
+      "technical": "current seat"
+    },
+    "onBehalfOf": {
+      "term": "On behalf of",
+      "meaning": "Work you do for another person's post while they are away.",
+      "technical": "acting for"
+    },
+    "posting": {
+      "term": "Posting",
+      "meaning": "The record that a person holds a post for a period.",
+      "technical": "assignment"
+    },
+    "additionalCharge": {
+      "term": "Additional charge",
+      "meaning": "Holding a second post temporarily, in addition to your own."
+    },
+    "away": {
+      "term": "Away and hand-over",
+      "meaning": "Passing your tasks to someone while you are on leave.",
+      "technical": "personal delegation"
+    },
+    "powers": {
+      "term": "Financial powers",
+      "meaning": "Who may approve what, up to which amount.",
+      "technical": "delegation of powers"
+    },
+    "organisation": {
+      "term": "Organisation",
+      "meaning": "A department or body whose data is kept separate on the shared platform.",
+      "technical": "tenant"
+    },
+    "office": {
+      "term": "Office or unit",
+      "meaning": "A part of the organisation, such as a district office.",
+      "technical": "org unit"
+    },
+    "people": {
+      "term": "People",
+      "meaning": "Persons who can sign in.",
+      "technical": "users"
+    },
+    "group": {
+      "term": "Group",
+      "meaning": "A named set of people used to share work or access."
+    },
+    "systemAccount": {
+      "term": "System account",
+      "meaning": "An account used by another program, not by a person.",
+      "technical": "service principal"
+    },
+    "signInProvider": {
+      "term": "Sign-in provider",
+      "meaning": "The service people use to prove who they are.",
+      "technical": "identity provider, IdP"
+    },
+    "accessRule": {
+      "term": "Access rule",
+      "meaning": "A rule that says who may see or do something.",
+      "technical": "policy"
+    },
+    "dutyConflict": {
+      "term": "Duty conflict exception",
+      "meaning": "An approved case where one person may do two steps that are normally split.",
+      "technical": "SoD exception"
+    },
+    "decisionTable": {
+      "term": "Decision table",
+      "meaning": "A table of rules that gives an answer, such as eligibility or fee.",
+      "technical": "DMN"
+    },
+    "caseFile": {
+      "term": "Case file",
+      "meaning": "A flexible file where steps are done as needed rather than in a fixed order.",
+      "technical": "CMMN case"
+    },
+    "form": {
+      "term": "Form",
+      "meaning": "The screen where information is entered for a step."
+    },
+    "recordType": {
+      "term": "Record type",
+      "meaning": "A kind of record the service keeps, such as Applicant or Bill.",
+      "technical": "data object"
+    },
+    "screen": {
+      "term": "Screen",
+      "meaning": "A simple screen built without code.",
+      "technical": "page"
+    },
+    "stuck": {
+      "term": "Stuck request",
+      "meaning": "A request that stopped because an automatic step failed and needs a retry or fix.",
+      "technical": "incident"
+    },
+    "scheduled": {
+      "term": "Scheduled step",
+      "meaning": "A step that runs later or in the background.",
+      "technical": "job, timer"
+    },
+    "worker": {
+      "term": "Background worker",
+      "meaning": "A separate program that does automated steps and reports back.",
+      "technical": "external task worker"
+    },
+    "workQueue": {
+      "term": "Work queue",
+      "meaning": "The named list from which background workers take their steps.",
+      "technical": "topic"
+    },
+    "delivery": {
+      "term": "Message delivery",
+      "meaning": "Messages waiting to be sent to, or received from, other systems.",
+      "technical": "outbox, inbox"
+    },
+    "eventType": {
+      "term": "Event type",
+      "meaning": "A named kind of thing that happens, which other parts can react to."
+    },
+    "installed": {
+      "term": "Installed version",
+      "meaning": "A version of a design that has been put live, with its date.",
+      "technical": "deployment"
+    },
+    "migration": {
+      "term": "Move to a new version",
+      "meaning": "Moving running requests from an old design to a newer one.",
+      "technical": "migration"
+    },
+    "batch": {
+      "term": "Fix many at once",
+      "meaning": "Applying retry, cancel or move to many requests in one go.",
+      "technical": "batch operation"
+    },
+    "testRun": {
+      "term": "Test run",
+      "meaning": "Trying a design step by step without affecting real data.",
+      "technical": "sandbox debugger"
+    },
+    "moneyCheck": {
+      "term": "Money check",
+      "meaning": "Comparing ledger totals with other records to find differences.",
+      "technical": "reconciliation"
+    },
+    "ledger": {
+      "term": "Ledger",
+      "meaning": "The book of money entries kept by the system."
+    },
+    "auditTrail": {
+      "term": "Audit trail",
+      "meaning": "The permanent record of who did what and when."
+    },
+    "tamperCheck": {
+      "term": "Tamper check",
+      "meaning": "A check that no entry in the audit trail was changed or removed.",
+      "technical": "hash chain"
+    },
+    "recordKeeping": {
+      "term": "Record keeping",
+      "meaning": "How long one kind of record is kept before it is removed.",
+      "technical": "retention class"
+    },
+    "signature": {
+      "term": "Signature certificate",
+      "meaning": "The digital certificate you use to sign documents.",
+      "technical": "DSC"
+    },
+    "connected": {
+      "term": "Connected system",
+      "meaning": "Another system that a service calls, with its address.",
+      "technical": "service registry entry"
+    },
+    "channel": {
+      "term": "Messaging channel",
+      "meaning": "A way to send messages: email, SMS, WhatsApp or chat."
+    },
+    "aiAssistant": {
+      "term": "AI assistant",
+      "meaning": "An AI helper that can draft or read documents within set limits.",
+      "technical": "agent"
+    },
+    "extension": {
+      "term": "Extension",
+      "meaning": "An add-on that adds screens or features.",
+      "technical": "plugin"
+    },
+    "notInstalled": {
+      "term": "Feature not installed",
+      "meaning": "This part of the product is not set up on this installation.",
+      "technical": "capability not installed"
+    },
+    "reference": {
+      "term": "Reference number",
+      "meaning": "The number that identifies a request, used to search and track it.",
+      "technical": "business key"
+    },
+    "versionConflict": {
+      "term": "Version conflict",
+      "meaning": "Someone else changed this item while you were working on it."
+    },
+    "health": {
+      "term": "Health overview",
+      "meaning": "A summary of whether everything is running normally."
+    },
+    "complaint": {
+      "term": "Complaint",
+      "meaning": "A problem a citizen raises about a service, which must be answered.",
+      "technical": "grievance"
+    }
+  },
+  "shortcuts": {
+    "intro": "Press these keys together from any page.",
+    "none": "No keyboard shortcuts are offered for your role.",
+    "keys": "Keys",
+    "goesTo": "Opens"
+  },
+  "frame": {
+    "breadcrumb": "Breadcrumb"
+  },
+  "status": {
+    "waiting": "Waiting",
+    "inProgress": "In progress",
+    "overdue": "Overdue",
+    "attention": "Needs attention",
+    "sentBack": "Sent back",
+    "done": "Done",
+    "cancelled": "Cancelled",
+    "draft": "Draft",
+    "checked_one": "Checked ({{count}} item)",
+    "checked_other": "Checked ({{count}} items)",
+    "notChecked": "Not checked"
+  },
+  "checklist": {
+    "hide": "Hide this list",
+    "progress": "{{done}} of {{total}} done",
+    "go": "Go",
+    "goTo": "Go to: {{step}}",
+    "citizen": {
+      "title": "Getting started",
+      "find": "Find a service",
+      "apply": "Apply",
+      "track": "Track your application"
+    },
+    "taskUser": {
+      "title": "Getting started with your tasks",
+      "post": "Confirm the post you act as",
+      "open": "Open My tasks",
+      "pickUp": "Pick up a task from the team list",
+      "complete": "Complete a task",
+      "away": "Set an away hand-over"
+    },
+    "supervisor": {
+      "title": "Getting started as a supervisor",
+      "team": "Open Team workload",
+      "list": "Create a shared task list",
+      "reassign": "Reassign a task"
+    },
+    "designer": {
+      "title": "Getting started with design",
+      "project": "Create a project",
+      "flow": "Draw a flow",
+      "form": "Add a form",
+      "test": "Try it in a test run",
+      "review": "Send it for review"
+    },
+    "admin": {
+      "title": "Set up your organisation",
+      "offices": "Add offices and units",
+      "posts": "Create posts",
+      "people": "Add people or a sign-in provider",
+      "postings": "Post people to posts",
+      "packs": "Install a ready-made service",
+      "timeLimits": "Set time limits",
+      "templates": "Set message templates",
+      "test": "Test with a sample request"
+    },
+    "operator": {
+      "title": "Getting started with monitoring",
+      "health": "Open the health overview",
+      "stuck": "Look at stuck requests",
+      "retry": "Retry one stuck request",
+      "delivery": "Check message delivery",
+      "versions": "Check installed versions"
+    },
+    "auditor": {
+      "title": "Getting started with audit",
+      "audit": "Search the audit trail",
+      "timeline": "Open a request's timeline",
+      "tamper": "Run a tamper check",
+      "export": "Export evidence"
+    }
+  },
+  "team": {
+    "totals": "Totals",
+    "open": "Open tasks",
+    "assigned": "Picked up",
+    "unassigned": "Not picked up",
+    "withoutGroup": "Not offered to any team list",
+    "byGroup": "Not picked up, by team list",
+    "group": "Team list",
+    "unassignedTasks": "Tasks not picked up",
+    "noGroups": "No team list has tasks waiting to be picked up."
   }
 }

@@ -36,7 +36,7 @@ Paths under `src/main/java/org/sangam/programme/`.
 
 | File | Covers |
 |---|---|
-| `ProgrammeSchema.java` | DDL in dialect tokens (A-15) plus `{dec}` (NUMBER/DECIMAL(24,6)) and `{date}`. Tables: PG_CONFIG, PG_PROGRAMME, PG_INDICATOR, PG_PERIOD, PG_TARGET, PG_MILESTONE, PG_RETURN_DEF, PG_RETURN, PG_RETURN_VALUE, PG_RETURN_FINDING, PG_RETURN_EVENT, PG_ACHIEVEMENT, PG_FINANCIAL, PG_ALERT, PG_DASHBOARD_SNAPSHOT, with indexes. All tables are tenant-first |
+| `ProgrammeSchema.java` | DDL in dialect tokens (A-15) plus `{dec}` (NUMBER/DECIMAL(24,6)) and `{date}`. Tables: PG_PROGRAMME_CONFIG, PG_PROGRAMME, PG_INDICATOR, PG_PERIOD, PG_TARGET, PG_MILESTONE, PG_RETURN_DEF, PG_RETURN, PG_RETURN_VALUE, PG_RETURN_FINDING, PG_RETURN_EVENT, PG_ACHIEVEMENT, PG_FINANCIAL, PG_ALERT, PG_DASHBOARD_SNAPSHOT, with indexes. All tables are tenant-first |
 | `ProgrammeException.java` | Stable codes with HTTP status for RFC 9457 mapping (R28) |
 | `ProgrammeModule.java` | Wiring, port defaults (air-gapped §1.9), static holder for delegates |
 | `support/Db.java` | JDBC/JSON helpers; canonical JSON with decimals as strings (R33); optimistic `row_version` |

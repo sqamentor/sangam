@@ -46,6 +46,8 @@ public final class SendEventDelegate implements JavaDelegate {
     @SuppressWarnings("unchecked")
     public void execute(DelegateExecution execution) {
         IntegrationBridge bridge = IntegrationBridge.get();
+        // DEC-145: the outbox stream is the engine tenant's; resolved (or refused) before anything is written
+        String tenant = EngineContext.tenant(execution, "send-event delegate");
         Object typeValue = eventType == null ? null : eventType.getValue(execution);
         if (typeValue == null) {
             throw new IllegalStateException("field 'eventType' is required on " + execution.getCurrentActivityId());
@@ -56,7 +58,6 @@ public final class SendEventDelegate implements JavaDelegate {
         body.putIfAbsent("processInstanceId", execution.getProcessInstanceId());
         body.putIfAbsent("activityId", execution.getCurrentActivityId());
         body.putIfAbsent("businessKey", execution.getProcessBusinessKey());
-        String tenant = EngineContext.tenant(execution, bridge.defaultTenant());
         String root = EngineContext.rootId(execution);
         Object ch = channel == null ? null : channel.getValue(execution);
         if (ch != null) {

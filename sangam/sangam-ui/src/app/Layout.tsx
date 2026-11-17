@@ -3,7 +3,7 @@
  * Application shell: skip link, banner with language switch and seat context (S02), role-aware navigation, main
  * landmark, GIGW footer and a polite live region. Focus moves to the page heading on every navigation.
  */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
@@ -11,17 +11,20 @@ import { LANGS, setLanguage, fmtDate, type Lang } from '../i18n';
 import { announce, registerAnnouncer } from '../lib/hooks';
 import { syncFieldRecords, unsentFieldRecords } from '../lib/offline/session';
 import { LogoutPrompt } from './LogoutPrompt';
-import { NAV, type NavArea, type NavItem } from './nav';
-import { canAccess } from './access';
+import { navEnd, visibleNav } from './nav';
+import { useInstalledModules } from './installed';
 import { usePlugins } from '../plugins/host';
 import { GlobalSearch } from '../modules/platform';
 import { config } from '../config';
 
+/** Owner decision Q-06 / 397 Q11: 0.1.0 is English only; the switch shows only when more than one locale is configured. */
 export function LanguageSwitch() {
   const { t, i18n } = useTranslation();
+  const offered = LANGS.filter((l) => config().locales.includes(l.code));
+  if (offered.length < 2) return null;
   return (
     <div className="lang-switch" role="group" aria-label={t('common.language')}>
-      {LANGS.filter((l) => config().locales.includes(l.code)).map((l) => (
+      {offered.map((l) => (
         <button
           key={l.code}
           type="button"
@@ -59,7 +62,7 @@ export function SeatSwitcher() {
 
 export function Layout({ children }: { children: ReactNode }) {
   const { t, i18n } = useTranslation();
-  const { me, hasRole, logout, mode } = useAuth();
+  const { me, logout, mode } = useAuth();
   const loc = useLocation();
   const [msg, setMsg] = useState('');
   const [navOpen, setNavOpen] = useState(false);
@@ -88,11 +91,12 @@ export function Layout({ children }: { children: ReactNode }) {
 
   useEffect(() => registerAnnouncer((m) => setMsg(m)), []);
   const goto = useNavigate();
-  // Tasklist-style shortcuts: Alt+Shift+T inbox, F filters, S start a process.
+  // Tasklist-style shortcuts (Help > Keyboard shortcuts), each only for a caller whose menu offers its page.
+  const shortcuts = useShortcuts();
   useEffect(() => {
     const on = (e: KeyboardEvent) => {
       if (!e.altKey || !e.shiftKey) return;
-      const to = { T: '/tasks', F: '/tasks/filters', S: '/start' }[e.key.toUpperCase()];
+      const to = shortcuts.find((k) => k.key === e.key.toUpperCase())?.to;
       if (to) {
         e.preventDefault();
         goto(to);
@@ -100,7 +104,7 @@ export function Layout({ children }: { children: ReactNode }) {
     };
     window.addEventListener('keydown', on);
     return () => window.removeEventListener('keydown', on);
-  }, [goto]);
+  }, [goto, shortcuts]);
 
   useEffect(() => {
     setNavOpen(false);
@@ -112,10 +116,9 @@ export function Layout({ children }: { children: ReactNode }) {
     window.setTimeout(() => (document.getElementById('page-title') as HTMLElement | null)?.focus(), 50);
   }, [loc.pathname]);
 
-  // M-028: an item with its own access (role or endpoint permission) is shown on that alone; an area is shown when
-  // one of its items is (a caller holding only a module permission still reaches that module).
-  const visible = (a: NavArea, i: NavItem) => (i.access ? canAccess(me, i.access) : hasRole(...a.roles) && (!i.only || hasRole(...i.only)));
-  const areas = NAV.filter((a) => a.items.some((i) => visible(a, i)));
+  // M-028 and decision 397: the seven job groups as this caller may use them (nav.ts visibleNav).
+  const installed = useInstalledModules();
+  const areas = visibleNav(me, installed);
   const appPages = usePlugins('app.page');
   const adminPages = usePlugins('admin.page');
   const pluginPages = [...appPages, ...adminPages];
@@ -135,6 +138,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </Link>
         <div className="banner-right">
           <LanguageSwitch />
+          {me && <Link to="/notifications" className="bell">{t('menu.find.notifications.label')}</Link>}
           <SeatSwitcher />
           {me && (
             <div className="user">
@@ -153,18 +157,30 @@ export function Layout({ children }: { children: ReactNode }) {
       {unsent !== null && <LogoutPrompt count={unsent} busy={syncing} onSync={() => void syncBeforeLogout()} onLogout={() => void logout()} />}
       <div className="body">
         <nav id="primary-nav" className={`sidenav${navOpen ? ' open' : ''}`} aria-label={t('nav.primary')}>
+          <ul className="nav-home">
+            <li>
+              <NavLink to="/" end>
+                {t('menu.home')}
+              </NavLink>
+            </li>
+          </ul>
           {areas.map((a) => (
-            <div key={a.id} className="nav-area">
+            <div key={a.id} className={`nav-area nav-area-${a.id}`}>
               <h2 className="nav-heading">{t(a.label)}</h2>
-              <ul>
-                {a.items.filter((i) => visible(a, i)).map((i) => (
-                  <li key={i.to}>
-                    <NavLink to={i.to} end={i.to === '/ops' || i.to === '/analytics' || i.to === '/audit' || i.to === '/portal' || i.to === '/modeller'}>
-                      {t(i.label)}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
+              {a.sections.map((s, n) => (
+                <div key={s.label ?? n} className="nav-section">
+                  {s.label && <h3 className="nav-subheading">{t(s.label)}</h3>}
+                  <ul>
+                    {s.items.map((i) => (
+                      <li key={i.to}>
+                        <NavLink to={i.to} end={navEnd(i.to)} title={t(i.description)}>
+                          {t(i.label)}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
           ))}
           {pluginPages.length > 0 && (
@@ -194,7 +210,9 @@ export function Layout({ children }: { children: ReactNode }) {
             <Link to="/help/about">{t('footer.about')}</Link>
           </li>
           <li>{t('footer.licence')}</li>
-          <li>{t('footer.shortcuts')}</li>
+          <li>
+            <Link to="/help/shortcuts">{t('menu.help.shortcuts.label')}</Link>
+          </li>
         </ul>
       </footer>
       <div className="sr-only" aria-live="polite" aria-atomic="true">
@@ -202,4 +220,17 @@ export function Layout({ children }: { children: ReactNode }) {
       </div>
     </div>
   );
+}
+
+/** Keyboard shortcuts offered to this caller: each only when the caller's menu holds its page (UX-SPEC 6.7). */
+export function useShortcuts(): { key: string; to: string; label: string }[] {
+  const { me } = useAuth();
+  return useMemo(() => {
+    const open = new Set(visibleNav(me).flatMap((a) => a.sections.flatMap((s) => s.items.map((i) => i.to))));
+    return [
+    { key: 'T', to: '/tasks', label: 'menu.work.tasks.label' },
+    { key: 'F', to: '/tasks/filters', label: 'menu.work.taskLists.label' },
+    { key: 'S', to: '/start', label: 'menu.work.start.label' },
+    ].filter((k) => open.has(k.to));
+  }, [me]);
 }

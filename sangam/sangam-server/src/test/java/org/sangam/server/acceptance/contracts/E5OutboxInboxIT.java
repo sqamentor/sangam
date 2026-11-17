@@ -291,7 +291,7 @@ class E5OutboxInboxIT extends ContractSupport {
 
     @Test
     @Order(5)
-    void e5_5_earlyMessageBufferedThenCorrelated() {
+    void e5_5_earlyMessageBufferedThenCorrelated() throws InterruptedException {
         String bk = key("lic-e5-5");
         String source = key("applicant-portal");
         String msgId = key("msg-e5-5");
@@ -307,11 +307,22 @@ class E5OutboxInboxIT extends ContractSupport {
         engine.completeTask(singleTask(pid, "scrutiny").id(), Map.of("scrutinyDecision", "clarify"));
         assertTrue(engine.getInstance(pid).activeActivityIds().contains("awaitApplicantResponse"));
 
-        int processed = inbox.processOnce(10, clarificationHandler());
+        // The server's own inbox loop processes this source too (same handler, registered above), with its own buffer
+        // retry (InboxService.Settings: 5 s). When its poll finds the BUFFERED row before this test's next call, it
+        // buffers it again for 5 s and this test's processOnce sees nothing due; either inbox may then correlate it.
+        // Skip-locked claims with epochs make that exactly once whichever inbox wins: one correlation into this
+        // instance and the row PROCESSED, as for the relay above ("whichever relay delivers").
+        long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
         Inbox.State after = inTx(c -> Inbox.state(c, T, source, msgId));
-        assertEquals(1, processed);
+        while (after != Inbox.State.PROCESSED && System.nanoTime() < deadline) {
+            inbox.processOnce(10, clarificationHandler());
+            after = inTx(c -> Inbox.state(c, T, source, msgId));
+            if (after != Inbox.State.PROCESSED) {
+                Thread.sleep(200);
+            }
+        }
         assertEquals(Inbox.State.PROCESSED, after);
-        assertEquals(List.of(pid), correlated);
+        assertEquals(List.of(pid), correlated, "correlated exactly once, into this instance");
         var view = engine.getInstance(pid);
         assertTrue(view.activeActivityIds().contains("scrutiny"), "back at scrutiny");
         assertEquals("documents attached", view.variables().get("applicantResponseNote"));

@@ -145,10 +145,8 @@ class ArchitectureGuardTest {
     static {
         // JobIdentityBinder.CURRENT removed 2026-11-12 (W3-F C3-05): the job identity is passed explicitly and kept on
         // the job's engine command (sangam-engine JobIdentitySupport / CommandState).
-        // LockScope.DEPTH: VI.1 rule 5 marker (L2 root lock held), entered/exited by sangam-engine CommandState and read by
-        // connector and HTTP clients; it marks the thread that holds the lock, which Operaton's fixed delegate
-        // signatures cannot carry to a remote client (W3-F evidence, owner question in the W3-F report).
-        DETERMINISM_ALLOWED.put("sangam-core/src/main/java/org/sangam/core/engine/LockScope.java", 1);
+        // LockScope.DEPTH removed 2026-11-17 (SL-172, owner decision 396(3)): the L2 lock-held marker moved unchanged to
+        // sangam-engine (org.sangam.engine.tx.LockScope), next to CommandState, its only writer. The list is empty.
     }
 
     static Path root() {
@@ -485,8 +483,10 @@ class ArchitectureGuardTest {
             }
         }
         assertEquals(3, DETERMINISM_PROVIDERS.size(), "the D11 providers are SangamClock, BusinessClock and IdSource");
-        assertTrue(DETERMINISM_ALLOWED.size() <= 1,
-                "M-097 debt only shrinks (3 entries on 2026-11-12, 1 after W3-F C3-05 removed JobIdentityBinder.CURRENT)");
+        assertTrue(DETERMINISM_ALLOWED.isEmpty(),
+                "M-097 debt only shrinks (3 entries on 2026-11-12, 1 after W3-F C3-05, 0 after SL-172 moved LockScope)");
+        assertFalse(java.nio.file.Files.exists(root().resolve("sangam-core/src/main/java/org/sangam/core/engine/LockScope.java")),
+                "SL-172: the lock-held marker lives in sangam-engine, never again in sangam-core");
         assertFalse(DETERMINISM_ALLOWED.containsKey("sangam-core/src/main/java/org/sangam/core/engine/JobIdentityBinder.java"),
                 "C3-05: the job identity is passed explicitly, JobIdentityBinder holds no thread-local state");
     }

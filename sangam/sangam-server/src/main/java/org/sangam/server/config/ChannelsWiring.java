@@ -150,8 +150,8 @@ public class ChannelsWiring {
     @Bean(destroyMethod = "close")
     LiveFanout sangamChannelsLiveFanout(TxSupport tx, DataSource ds) {
         Dialect d = tx.dialect();
-        WakeupListener listener = WakeupListener.forDialect(d, d == Dialect.POSTGRESQL ? IntegrationWiring.listenerConnections(ds) : null,
-                LIVE_CHANNEL);
+        // R7UI-S11: LISTEN only where the database itself is PostgreSQL (H2 runs the PostgreSQL dialect without LISTEN)
+        WakeupListener listener = WakeupListener.forDialect(d, IntegrationWiring.listenSource(d, ds), LIVE_CHANNEL);
         WakeupNotifier notifier = listener.usesListen() ? WakeupNotifier.postgres(d, tx.newTransactions(), LIVE_CHANNEL)
                 : listener.inJvmNotifier();
         listener.start();

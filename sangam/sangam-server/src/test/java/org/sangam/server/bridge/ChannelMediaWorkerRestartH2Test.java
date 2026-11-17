@@ -113,6 +113,90 @@ class ChannelMediaWorkerRestartH2Test {
         assertEquals("DONE", f.state("Ev5"));
     }
 
+    /**
+     * SL-176: a worker that loses its claim while it is storing (its lease ran out and another node took the row and
+     * delivered it) leaves no copy that no row references. Without the fix the slow worker's copy stayed in the store.
+     */
+    @Test
+    void aWorkerThatLostItsClaimWhileStoringLeavesNoUnreferencedCopy() throws Exception {
+        f.inbox("Ev7", "F7");
+        CountDownLatch inPut = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        org.sangam.core.ports.DocumentStore slow = new org.sangam.core.ports.DocumentStore() {
+            public String type() {
+                return "mem";
+            }
+
+            public StoredObject put(String key, java.io.InputStream c, String t) throws java.io.IOException {
+                StoredObject o = f.store.put(key, c, t);
+                inPut.countDown();
+                hang(release);   // the copy is in the store; the node is stalled before it can record it
+                return o;
+            }
+
+            public java.util.Optional<java.io.InputStream> get(String key) throws java.io.IOException {
+                return f.store.get(key);
+            }
+
+            public boolean exists(String key) throws java.io.IOException {
+                return f.store.exists(key);
+            }
+
+            public void delete(String key) throws java.io.IOException {
+                f.store.delete(key);
+            }
+        };
+        ChannelMediaWorker first = new ChannelMediaWorker(f.queue("node-1", Duration.ofMillis(200)), f.tx, t -> MediaQueueFixture.ENTRIES,
+                (t, e, ref) -> media(ref), slow, (n, b) -> true, f.bot, 1, Duration.ofMillis(50), List.of(Duration.ofMillis(10)),
+                (c, m, reason) -> f.failures.add(m.messageId() + ":" + reason)).start();
+        try {
+            assertTrue(inPut.await(10, TimeUnit.SECONDS));
+            assertEquals(1, f.docs.size());
+            try (ChannelMediaWorker second = f.worker("node-2", LEASE, (t, e, ref) -> media(ref), true, 1).start()) {
+                await(() -> f.delivered().size() == 1);
+                assertEquals(List.of("F7.pdf"), f.delivered(), "the other node took the row after the lease and delivered it");
+            }
+            assertEquals(2, f.docs.size(), "the stalled node's copy and the delivering node's copy");
+            release.countDown();
+            await(() -> f.docs.size() == 1);
+            assertEquals(1, f.docs.size(), "the stalled node removes its copy once it finds its claim lost");
+            String recorded = f.column("media_doc", "Ev7");
+            assertTrue(recorded != null && recorded.contains(f.docs.keySet().iterator().next()),
+                    "the copy that stays is the one recorded on the row");
+            assertEquals(List.of("F7.pdf"), f.delivered(), "delivered once");
+        } finally {
+            release.countDown();
+            first.close();
+        }
+        assertTrue(f.failures.isEmpty());
+    }
+
+    /**
+     * SL-176: the copy is recorded on the row as soon as it is stored, so a node that stops between storing and delivering
+     * leaves it to the node that takes over, which delivers it without downloading or storing again.
+     */
+    @Test
+    void aCopyStoredBeforeTheStopIsReusedByTheTakeover() throws Exception {
+        f.inbox("Ev8", "F8");
+        InboundMediaQueue dead = f.queue("node-dead", Duration.ofMillis(200));
+        InboundMediaQueue.Pending p = dead.claim(1).get(0);
+        MediaDownloads.StoredMedia stored = MediaDownloads.store(f.store, (n, b) -> true, "t", "SLACK", media("F8"));
+        assertTrue(dead.remember(p, stored), "recorded under the node's claim");
+        // the node disappears here, before it delivers
+        AtomicInteger downloads = new AtomicInteger();
+        try (ChannelMediaWorker other = f.worker("node-2", LEASE, (t, e, ref) -> {
+            downloads.incrementAndGet();
+            return media(ref);
+        }, true, 1).start()) {
+            await(() -> f.delivered().size() == 1);
+            assertEquals(List.of("F8.pdf"), f.delivered());
+        }
+        assertEquals(0, downloads.get(), "the takeover reuses the recorded copy");
+        assertEquals(1, f.docs.size(), "no second copy");
+        assertEquals("DONE", f.state("Ev8"));
+        assertFalse(dead.remember(p, stored), "a lost claim records nothing");
+    }
+
     @Test
     void aRetryScheduledBeforeTheStopIsKeptAcrossTheRestart() {
         f.inbox("Ev6", "F6");

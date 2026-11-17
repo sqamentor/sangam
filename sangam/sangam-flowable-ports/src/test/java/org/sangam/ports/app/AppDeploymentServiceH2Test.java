@@ -110,6 +110,21 @@ class AppDeploymentServiceH2Test {
         assertEquals("ACTIVE", listed.get(0).state());
     }
 
+    /** SL-179: a caller (a package's own deploy) names the engine deployment and its source; null keeps the defaults. */
+    @Test
+    void theCallerCanNameTheEngineDeploymentAndItsSource() {
+        AppDeploymentService.AppDeployment named = svc.deploy("acc", full(), "kim", "pkg:claims:abc", "sangam-package");
+        var d = h2.engine.getRepositoryService().createDeploymentQuery().deploymentId(named.engineDeploymentId()).singleResult();
+        assertEquals("pkg:claims:abc", d.getName());
+        assertEquals("sangam-package", d.getSource());
+        assertEquals("acc", d.getTenantId());
+        assertEquals("claims", named.appKey(), "the app key is still the manifest's");
+        AppDeploymentService.AppDeployment plain = svc.deploy("ops", full(), "kim", null, null);
+        var p = h2.engine.getRepositoryService().createDeploymentQuery().deploymentId(plain.engineDeploymentId()).singleResult();
+        assertEquals("claims", p.getName());
+        assertEquals("sangam-app", p.getSource());
+    }
+
     @Test
     void theSameBundleAgainIsIdempotentAndAChangedOneIsTheNextVersion() throws Exception {
         AppDeploymentService.AppDeployment first = svc.deploy("acc", full(), "kim");

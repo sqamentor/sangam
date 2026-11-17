@@ -47,10 +47,13 @@ No default-reactor module declares Quarkus, Micronaut or Helidon, and the baseli
 The code and tests are written. Nothing has run yet: it runs in the test phase, H2 first, then PostgreSQL, Oracle and
 SQL Server.
 
+RM-30 (decision 386(2)) added six scenarios on host-neutral ports: inbox dedupe and audit tamper (`PortScenarios`), and
+job fencing after a lease loss (expired and released leases), P-1 rollback inside a fenced lease, and deny-wins
+(`WorkScenarios`). The deny-wins scenario writes its grants as effective rows through `HostHarness.database()`,
+because the conformance tenants require four-eyes and no port approves a pending policy change yet. The Spring host
+passes all of them on H2.
+
 Scenarios still to add once their ports exist host-neutrally:
 
 - ledger posting balance;
-- outbox order across a relay restart;
-- inbox dedupe;
-- job fencing after a lease loss;
-- audit tamper detection.
+- outbox order across a relay restart.
