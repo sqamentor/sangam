@@ -11,6 +11,7 @@
  * session.idleMinutes (decision 349: minutes without input after which the session ends; see IDLE_MINUTES).
  * The API is called on the same origin (/api/v1, /engine-rest are proxied by the UI image).
  */
+import { appPath } from './basePath';
 import type { FontsConfig } from './fonts';
 
 export type AuthMode = 'oidc' | 'dev';
@@ -155,7 +156,7 @@ export function normalise(raw: RawConfig): SangamConfig {
 
 export async function loadConfig(): Promise<SangamConfig> {
   try {
-    const res = await fetch('/config.json', { cache: 'no-store', credentials: 'same-origin' });
+    const res = await fetch(appPath('/config.json'), { cache: 'no-store', credentials: 'same-origin' });
     current = res.ok ? normalise((await res.json()) as RawConfig) : defaults;
   } catch {
     current = defaults;
