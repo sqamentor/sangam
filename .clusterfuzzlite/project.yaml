@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
+# ClusterFuzzLite (round 9, owner-approved): runs the existing Jazzer @FuzzTest targets of sangam-packs
+# (PackParserFuzzTest) on GitHub. See Dockerfile and build.sh next to this file and .github/workflows/cflite.yml.
+language: jvm
