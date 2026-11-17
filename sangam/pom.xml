@@ -627,14 +627,6 @@
           <artifactId>versions-maven-plugin</artifactId>
           <version>${version.versions-maven-plugin}</version>
         </plugin>
-        <!-- RM-45 (X1 U-1, DR-07): the site plugin is pinned, not taken from the super-POM. 3.12.1 is the version the
-             Maven 3.9.9 wrapper binds by default and the one in the local repository, so the pin changes no resolved
-             byte; no phase of the default lifecycle runs it. -->
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-site-plugin</artifactId>
-          <version>3.12.1</version>
-        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>

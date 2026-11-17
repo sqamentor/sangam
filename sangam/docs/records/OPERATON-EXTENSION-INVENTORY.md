@@ -6,31 +6,32 @@ Every `operaton:` extension element and attribute in the model files under `sang
 sources and build output are left out). An engine exit has to map each row. The governance unit tests fail
 when this file is not current.
 
-Model files scanned: 498 (BPMN 224, DMN 270, CMMN 4). Files with an Operaton extension: 497.
+Model files scanned: 499 (BPMN 224, DMN 271, CMMN 4). Files with an Operaton extension: 498.
 
 ## Extensions
 
 | Extension | Kind | Model | Used on | Uses | Files |
 |---|---|---|---|---|---|
-| `operaton:field` | element | bpmn | executionListener, extensionElements, taskListener | 6953 | 218 |
-| `operaton:string` | element | bpmn | field | 6783 | 217 |
-| `operaton:class` | attribute | bpmn | businessRuleTask, serviceTask | 1938 | 219 |
-| `operaton:in` | element | bpmn | extensionElements | 1021 | 132 |
-| `operaton:executionListener` | element | bpmn | extensionElements | 687 | 191 |
-| `operaton:formKey` | attribute | bpmn | startEvent, userTask | 602 | 193 |
-| `operaton:taskListener` | element | bpmn | extensionElements | 525 | 155 |
-| `operaton:out` | element | bpmn | extensionElements | 493 | 132 |
-| `operaton:calledElementBinding` | attribute | bpmn | callActivity | 475 | 118 |
-| `operaton:calledElementVersionTag` | attribute | bpmn | callActivity | 475 | 118 |
+| `operaton:field` | element | bpmn | executionListener, extensionElements, taskListener | 7029 | 218 |
+| `operaton:string` | element | bpmn | field | 6859 | 217 |
+| `operaton:class` | attribute | bpmn | businessRuleTask, serviceTask | 1951 | 219 |
+| `operaton:in` | element | bpmn | extensionElements | 1035 | 132 |
+| `operaton:executionListener` | element | bpmn | extensionElements | 694 | 191 |
+| `operaton:formKey` | attribute | bpmn | startEvent, userTask | 635 | 193 |
+| `operaton:taskListener` | element | bpmn | extensionElements | 591 | 162 |
+| `operaton:out` | element | bpmn | extensionElements | 500 | 132 |
+| `operaton:candidateGroups` | attribute | bpmn | userTask | 490 | 174 |
+| `operaton:calledElementBinding` | attribute | bpmn | callActivity | 482 | 118 |
+| `operaton:calledElementVersionTag` | attribute | bpmn | callActivity | 482 | 118 |
 | `operaton:asyncBefore` | attribute | bpmn | serviceTask | 467 | 167 |
-| `operaton:candidateGroups` | attribute | bpmn | userTask | 457 | 167 |
-| `operaton:historyTimeToLive` | attribute | dmn | decision | 270 | 270 |
-| `operaton:versionTag` | attribute | dmn | decision | 270 | 270 |
+| `operaton:historyTimeToLive` | attribute | dmn | decision | 271 | 271 |
+| `operaton:versionTag` | attribute | dmn | decision | 271 | 271 |
 | `operaton:historyTimeToLive` | attribute | bpmn | process | 223 | 223 |
 | `operaton:versionTag` | attribute | bpmn | process | 218 | 218 |
 | `operaton:expression` | element | bpmn | field | 168 | 85 |
-| `operaton:dueDate` | attribute | bpmn | userTask | 150 | 86 |
+| `operaton:dueDate` | attribute | bpmn | userTask | 151 | 87 |
 | `operaton:initiator` | attribute | bpmn | startEvent | 148 | 148 |
+| `operaton:isStartableInTasklist` | attribute | bpmn | process | 50 | 50 |
 | `operaton:expression` | attribute | bpmn | serviceTask | 30 | 19 |
 | `operaton:failedJobRetryTimeCycle` | element | bpmn | extensionElements | 18 | 2 |
 | `operaton:candidateGroups` | attribute | cmmn | humanTask | 17 | 4 |
@@ -53,11 +54,11 @@ Model files scanned: 498 (BPMN 224, DMN 270, CMMN 4). Files with an Operaton ext
 |---|---|---|
 | examples | 1 | 16 |
 | sangam-channels | 1 | 9 |
-| sangam-compliance | 12 | 237 |
+| sangam-compliance | 12 | 249 |
 | sangam-control-plane | 1 | 27 |
 | sangam-onboarding | 1 | 33 |
-| sangam-packs | 479 | 22098 |
-| sangam-resources | 2 | 33 |
+| sangam-packs | 480 | 22476 |
+| sangam-resources | 2 | 35 |
 
 ## Other engine namespaces
 
