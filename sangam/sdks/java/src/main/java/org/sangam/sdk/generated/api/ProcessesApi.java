@@ -334,14 +334,15 @@ public final class ProcessesApi {
      *
      * <p>Enabled and active activities of an ad-hoc scope.
      *
-     * <p>{@code GET /process-instances/{id}/ad-hoc/{adHocActivityId}} (operationId {@code getAdHocState}); permission {@code process.read}.
+     * <p>{@code GET /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id} (operationId {@code getAdHocState}); permission {@code process.read}.
      * @param id path parameter {@code id}
-     * @param adHocActivityId path parameter {@code adHocActivityId}. Id of the ad-hoc sub-process activity
+     * @param adHocActivityId query parameter {@code adHocActivityId}. Id of the ad-hoc sub-process activity (a BPMN element id from the deployed model); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public AdHocState getAdHocState(String id, String adHocActivityId, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/ad-hoc/" + HttpTransport.seg(String.valueOf(adHocActivityId)));
+        ApiRequest req = ApiRequest.get("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/ad-hoc/by-ad-hoc-activity-id");
+        req.query("adHocActivityId", adHocActivityId);
         return call.json(req, options, R_getAdHocState);
     }
 
@@ -350,16 +351,17 @@ public final class ProcessesApi {
      *
      * <p>Starts an enabled activity in the ad-hoc scope.
      *
-     * <p>{@code POST /process-instances/{id}/ad-hoc/{adHocActivityId}/start} (operationId {@code startAdHocActivity}); permission {@code process.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * <p>{@code POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/start} (operationId {@code startAdHocActivity}); permission {@code process.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
-     * @param adHocActivityId path parameter {@code adHocActivityId}. Id of the ad-hoc sub-process activity
      * @param body request body
+     * @param adHocActivityId query parameter {@code adHocActivityId}. Id of the ad-hoc sub-process activity (a BPMN element id from the deployed model); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public AdHocState startAdHocActivity(String id, String adHocActivityId, StartAdHocActivityRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/ad-hoc/" + HttpTransport.seg(String.valueOf(adHocActivityId)) + "/start");
+    public AdHocState startAdHocActivity(String id, StartAdHocActivityRequest body, String adHocActivityId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/ad-hoc/by-ad-hoc-activity-id/start");
         req.body(body);
+        req.query("adHocActivityId", adHocActivityId);
         return call.json(req, options, R_startAdHocActivity);
     }
 
@@ -368,15 +370,16 @@ public final class ProcessesApi {
      *
      * <p>Completes the ad-hoc sub-process when its completion condition allows.
      *
-     * <p>{@code POST /process-instances/{id}/ad-hoc/{adHocActivityId}/complete} (operationId {@code completeAdHoc}); permission {@code process.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * <p>{@code POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/complete} (operationId {@code completeAdHoc}); permission {@code process.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
-     * @param adHocActivityId path parameter {@code adHocActivityId}. Id of the ad-hoc sub-process activity
+     * @param adHocActivityId query parameter {@code adHocActivityId}. Id of the ad-hoc sub-process activity (a BPMN element id from the deployed model); may carry '/' or ':'
      * @param reason query parameter {@code reason}, or null. Mandatory reason (audited, R42)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public AdHocState completeAdHoc(String id, String adHocActivityId, String reason, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/ad-hoc/" + HttpTransport.seg(String.valueOf(adHocActivityId)) + "/complete");
+        ApiRequest req = ApiRequest.post("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/ad-hoc/by-ad-hoc-activity-id/complete");
+        req.query("adHocActivityId", adHocActivityId);
         req.query("reason", reason);
         return call.json(req, options, R_completeAdHoc);
     }

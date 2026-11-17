@@ -39,12 +39,16 @@ final class ModellerApi
      *
      * Installs a kind package entry into the caller's tenant: the catalogue checks first (index signature, licence allow-list, platform version, artefact SHA-256), then the package import (T70: the bundle's own hash and signatures; the package lands APPROVED, activation still needs a deployer and the ENV_BINDING values). 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds are never installed), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_ARTIFACT_PATH_INVALID, CATALOGUE_EGRESS_DENIED, or a package import refusal (PACKAGE_HASH_MISMATCH, signatures); 409 PACKAGE_EXISTS.
      *
-     * POST /catalogue/{id}/{version}/install (operationId installCatalogueEntry); permission package.deploy; result stored atomically with the state change.
+     * POST /catalogue/by-id/by-version/install (operationId installCatalogueEntry); permission package.deploy; result stored atomically with the state change.
+     * @param string $id query id
+     * @param string $version query version
      * @return Model\Package|null
      */
     public function installCatalogueEntry(string $id, string $version, Model\CatalogueInstallRequest|array|null $body = null, ?RequestOptions $options = null): ?Model\Package
     {
-        $req = ApiRequest::post('/catalogue/' . HttpTransport::seg((string) $id) . '/' . HttpTransport::seg((string) $version) . '/install');
+        $req = ApiRequest::post('/catalogue/by-id/by-version/install');
+        $req->query('id', $id);
+        $req->query('version', $version);
         if ($body !== null) {
             $req->body($body);
         }
@@ -56,12 +60,16 @@ final class ModellerApi
      *
      * Decision 380 P2 (b): publishes the connector element templates of a kind connector-template entry in the caller's tenant after the same catalogue checks as a package install (index signature, licence allow-list, platform version, artefact SHA-256). The artefact is data only ({templates: [{id, name, description, appliesTo, fields}]}, the format of the built-in connector templates); every template id is the entry id or starts with it and a dot, so an entry never replaces a built-in or another entry's template, and no field may be named like a credential. Only changed templates get a new version, with one CATALOGUE_TEMPLATES_INSTALLED audit event in the same transaction; a repeated install writes nothing. 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds), CATALOGUE_KIND_MISMATCH (a package entry), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_EGRESS_DENIED; 501 when the modeller template store is not installed.
      *
-     * POST /catalogue/{id}/{version}/install-templates (operationId installCatalogueTemplates); permission package.author; result stored atomically with the state change.
+     * POST /catalogue/by-id/by-version/install-templates (operationId installCatalogueTemplates); permission package.author; result stored atomically with the state change.
+     * @param string $id query id
+     * @param string $version query version
      * @return Model\CatalogueTemplatesInstalled|null
      */
     public function installCatalogueTemplates(string $id, string $version, Model\CatalogueInstallRequest|array|null $body = null, ?RequestOptions $options = null): ?Model\CatalogueTemplatesInstalled
     {
-        $req = ApiRequest::post('/catalogue/' . HttpTransport::seg((string) $id) . '/' . HttpTransport::seg((string) $version) . '/install-templates');
+        $req = ApiRequest::post('/catalogue/by-id/by-version/install-templates');
+        $req->query('id', $id);
+        $req->query('version', $version);
         if ($body !== null) {
             $req->body($body);
         }

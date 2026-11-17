@@ -208,7 +208,7 @@ public sealed record StartCaseRequest(string Key, string? BusinessKey = null, Va
 public sealed record CaseInstance(string Id, string? CaseDefinitionId, string? CaseDefinitionKey, string? BusinessKey,
     string? TenantId, string? State, DateTimeOffset? Created, JsonElement? Executions, string? ReactivatedFrom);
 
-/// <summary><c>POST /decisions/{key}/evaluate</c>; <c>Purpose</c> = ROUTING | AUTHORITY | OTHER.</summary>
+/// <summary><c>POST /decisions/by-key/evaluate?key=</c>; <c>Purpose</c> = ROUTING | AUTHORITY | OTHER.</summary>
 public sealed record DecisionEvaluateRequest(Vars? Variables, int? Version = null, string? Purpose = null, string? BusinessKey = null);
 
 /// <summary>Decision output rows (VariableMaps), evaluated version, output digest and audit event (R33).</summary>

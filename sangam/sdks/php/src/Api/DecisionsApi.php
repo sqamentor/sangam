@@ -8,7 +8,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\Json;
 
 /**
- * DMN 1.6 decisions: POST /decisions/{key}/evaluate. purpose ROUTING or AUTHORITY together with a businessKey
+ * DMN 1.6 decisions: POST /decisions/by-key/evaluate?key=. purpose ROUTING or AUTHORITY together with a businessKey
  * writes an audit event (class B); OTHER is side-effect free.
  */
 final class DecisionsApi extends ApiSupport
@@ -25,7 +25,7 @@ final class DecisionsApi extends ApiSupport
     public function evaluate(string $decisionKey, array $variables, ?int $version = null, ?string $purpose = null,
                              ?string $businessKey = null): array
     {
-        return (array) $this->call(ApiRequest::post('/decisions/' . self::seg($decisionKey) . '/evaluate')
+        return (array) $this->call(ApiRequest::post('/decisions/by-key/evaluate')->query('key', $decisionKey)
             ->body(['variables' => Json::obj($variables), 'version' => $version, 'purpose' => $purpose,
                 'businessKey' => $businessKey]));
     }

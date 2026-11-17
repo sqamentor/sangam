@@ -112,7 +112,7 @@ describe('decisions', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Fee table' }));
     fireEvent.change(screen.getByLabelText(L('ops.variablesJson')), { target: { value: '{"amount": 1200, "urgent": true}' } });
     fireEvent.click(screen.getByRole('button', { name: T('ops.evaluate') }));
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/decisions/fee/evaluate', { variables: { amount: { type: 'Long', value: 1200 }, urgent: { type: 'Boolean', value: true } } }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/decisions/by-key/evaluate?key=fee', { variables: { amount: { type: 'Long', value: 1200 }, urgent: { type: 'Boolean', value: true } } }));
     expect(await screen.findByText(/"fee": 25/)).toBeTruthy();
     api.post.mockRejectedValueOnce(problem(422, 'DECISION_INPUT_MISSING', 'Input amount is missing'));
     fireEvent.click(screen.getByRole('button', { name: T('ops.evaluate') }));

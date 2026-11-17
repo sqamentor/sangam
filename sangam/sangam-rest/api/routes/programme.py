@@ -104,8 +104,8 @@ op('post', '/programme-periods/generate', 'programmeGeneratePeriods', 'Programme
    body='PgGeneratePeriodsRequest', resp=(200, 'array:PgPeriod'), cmd='programme.generate-periods', perm='programme.admin')
 op('get', '/programme-periods', 'programmeListPeriods', 'Programmes', 'Reporting periods', 'Reporting periods.', ['N15', 'VI.4', 'R41', 'R42'],
    params=[q('frequency', 's'), q('fiscalYear', 's')], resp=(200, 'array:PgPeriod'), perm='programme.read')
-op('post', '/programme-periods/{id}/state', 'programmeChangePeriodState', 'Programmes', 'Open, close or lock a reporting period', 'Open, close or lock a reporting period.', ['N15', 'VI.4', 'R41', 'R42'],
-   params=[pp('id')], body='PgPeriodStateRequest', resp=(200, 'PgPeriod'), cmd='programme.change-period-state', perm='programme.admin')
+op('post', '/programme-periods/by-id/state', 'programmeChangePeriodState', 'Programmes', 'Open, close or lock a reporting period', 'Open, close or lock a reporting period.', ['N15', 'VI.4', 'R41', 'R42'],
+   params=[q('id', desc="Reporting period id (<frequency>:<start>, PeriodService); may carry '/' or ':'", required=True)], body='PgPeriodStateRequest', resp=(200, 'PgPeriod'), cmd='programme.change-period-state', perm='programme.admin')
 op('post', '/programmes', 'programmeCreateProgramme', 'Programmes', 'Create a programme (or a component under a parent)', 'Create a programme (or a component under a parent).', ['N15', 'VI.4', 'R41', 'R42'],
    body='PgProgrammeInput', resp=(201, 'PgProgramme'), cmd='programme.create-programme', perm='programme.write', created=True)
 op('get', '/programmes', 'programmeListProgrammes', 'Programmes', 'Programmes visible to the caller', 'Programmes visible to the caller.', ['N15', 'VI.4', 'R41', 'R42'],

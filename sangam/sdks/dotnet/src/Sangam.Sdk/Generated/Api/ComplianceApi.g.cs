@@ -370,22 +370,24 @@ public sealed class ComplianceApi
     /// <summary>
     /// Active legal holds of a process root
     /// The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
-    /// GET /compliance/process-roots/{rootId}/legal-holds (operationId listComplianceLegalHolds); permission compliance.read.
+    /// GET /compliance/process-roots/by-root-id/legal-holds (operationId listComplianceLegalHolds); permission compliance.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.ComplianceLegalHold>?> ListComplianceLegalHoldsAsync(string rootId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/compliance/process-roots/{HttpTransport.Seg(GeneratedCalls.Str(rootId)!)}/legal-holds");
+        var req = ApiRequest.Get($"/compliance/process-roots/by-root-id/legal-holds");
+        req.WithQuery("rootId", GeneratedCalls.Q(rootId));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.ComplianceLegalHold>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Place a legal hold on a process root
     /// Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
-    /// POST /compliance/process-roots/{rootId}/legal-holds (operationId placeComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
+    /// POST /compliance/process-roots/by-root-id/legal-holds (operationId placeComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.ComplianceLegalHold?> PlaceComplianceLegalHoldAsync(string rootId, M.ComplianceLegalHoldRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.ComplianceLegalHold?> PlaceComplianceLegalHoldAsync(M.ComplianceLegalHoldRequest body, string rootId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/compliance/process-roots/{HttpTransport.Seg(GeneratedCalls.Str(rootId)!)}/legal-holds");
+        var req = ApiRequest.Post($"/compliance/process-roots/by-root-id/legal-holds");
+        req.WithQuery("rootId", GeneratedCalls.Q(rootId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.ComplianceLegalHold?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -393,11 +395,13 @@ public sealed class ComplianceApi
     /// <summary>
     /// Release a legal hold
     /// Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.
-    /// POST /compliance/process-roots/{rootId}/legal-holds/{holdId}/release (operationId releaseComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
+    /// POST /compliance/process-roots/by-root-id/legal-holds/by-hold-id/release (operationId releaseComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task ReleaseComplianceLegalHoldAsync(string rootId, string holdId, M.ComplianceLegalHoldRelease body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task ReleaseComplianceLegalHoldAsync(M.ComplianceLegalHoldRelease body, string rootId, string holdId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/compliance/process-roots/{HttpTransport.Seg(GeneratedCalls.Str(rootId)!)}/legal-holds/{HttpTransport.Seg(GeneratedCalls.Str(holdId)!)}/release");
+        var req = ApiRequest.Post($"/compliance/process-roots/by-root-id/legal-holds/by-hold-id/release");
+        req.WithQuery("rootId", GeneratedCalls.Q(rootId));
+        req.WithQuery("holdId", GeneratedCalls.Q(holdId));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }

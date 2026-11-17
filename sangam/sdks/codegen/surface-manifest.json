@@ -178,7 +178,7 @@
    "tag": "Cases",
    "pathPrefix": "",
    "operations": 11,
-   "maxLines": 234
+   "maxLines": 243
   },
   {
    "class": "CellApi",
@@ -199,7 +199,7 @@
    "tag": "Compliance",
    "pathPrefix": "",
    "operations": 39,
-   "maxLines": 753
+   "maxLines": 757
   },
   {
    "class": "ConfigApi",
@@ -220,7 +220,7 @@
    "tag": "Decisions",
    "pathPrefix": "",
    "operations": 3,
-   "maxLines": 83
+   "maxLines": 84
   },
   {
    "class": "DeploymentsApi",
@@ -248,7 +248,7 @@
    "tag": "Documents",
    "pathPrefix": "",
    "operations": 10,
-   "maxLines": 205
+   "maxLines": 211
   },
   {
    "class": "DscCertificatesApi",
@@ -339,7 +339,7 @@
    "tag": "Links",
    "pathPrefix": "",
    "operations": 3,
-   "maxLines": 81
+   "maxLines": 82
   },
   {
    "class": "LowCodeApi",
@@ -360,14 +360,14 @@
    "tag": "Modeller",
    "pathPrefix": "",
    "operations": 37,
-   "maxLines": 683
+   "maxLines": 687
   },
   {
    "class": "OnboardingApi",
    "tag": "Onboarding",
    "pathPrefix": "",
    "operations": 17,
-   "maxLines": 328
+   "maxLines": 330
   },
   {
    "class": "OpsApi",
@@ -430,21 +430,21 @@
    "tag": "Portal",
    "pathPrefix": "",
    "operations": 13,
-   "maxLines": 253
+   "maxLines": 259
   },
   {
    "class": "ProcessesApi",
    "tag": "Processes",
    "pathPrefix": "",
    "operations": 33,
-   "maxLines": 653
+   "maxLines": 656
   },
   {
    "class": "ProgrammesApi",
    "tag": "Programmes",
    "pathPrefix": "",
    "operations": 25,
-   "maxLines": 503
+   "maxLines": 504
   },
   {
    "class": "Programmes2Api",
@@ -1966,7 +1966,7 @@
   {
    "operationId": "getAdHocState",
    "method": "GET",
-   "path": "/process-instances/{id}/ad-hoc/{adHocActivityId}",
+   "path": "/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id",
    "tag": "Processes",
    "apiClass": "ProcessesApi",
    "java": "ProcessesApi#getAdHocState",
@@ -1978,7 +1978,7 @@
   {
    "operationId": "startAdHocActivity",
    "method": "POST",
-   "path": "/process-instances/{id}/ad-hoc/{adHocActivityId}/start",
+   "path": "/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/start",
    "tag": "Processes",
    "apiClass": "ProcessesApi",
    "java": "ProcessesApi#startAdHocActivity",
@@ -1990,7 +1990,7 @@
   {
    "operationId": "completeAdHoc",
    "method": "POST",
-   "path": "/process-instances/{id}/ad-hoc/{adHocActivityId}/complete",
+   "path": "/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/complete",
    "tag": "Processes",
    "apiClass": "ProcessesApi",
    "java": "ProcessesApi#completeAdHoc",
@@ -2098,7 +2098,7 @@
   {
    "operationId": "getCaseInstance",
    "method": "GET",
-   "path": "/case-instances/{id}",
+   "path": "/case-instances/by-id",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#getCaseInstance",
@@ -2110,7 +2110,7 @@
   {
    "operationId": "getCaseVariables",
    "method": "GET",
-   "path": "/case-instances/{id}/variables",
+   "path": "/case-instances/by-id/variables",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#getCaseVariables",
@@ -2122,7 +2122,7 @@
   {
    "operationId": "commandCaseInstance",
    "method": "POST",
-   "path": "/case-instances/{id}/commands",
+   "path": "/case-instances/by-id/commands",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#commandCaseInstance",
@@ -2134,7 +2134,7 @@
   {
    "operationId": "commandCaseExecution",
    "method": "POST",
-   "path": "/case-instances/{id}/executions/{executionId}/commands",
+   "path": "/case-instances/by-id/executions/by-execution-id/commands",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#commandCaseExecution",
@@ -2158,7 +2158,7 @@
   {
    "operationId": "evaluateDecision",
    "method": "POST",
-   "path": "/decisions/{key}/evaluate",
+   "path": "/decisions/by-key/evaluate",
    "tag": "Decisions",
    "apiClass": "DecisionsApi",
    "java": "DecisionsApi#evaluateDecision",
@@ -2350,7 +2350,7 @@
   {
    "operationId": "getDocument",
    "method": "GET",
-   "path": "/documents/{id}",
+   "path": "/documents/by-id",
    "tag": "Documents",
    "apiClass": "DocumentsApi",
    "java": "DocumentsApi#getDocument",
@@ -2362,7 +2362,7 @@
   {
    "operationId": "deleteDocument",
    "method": "DELETE",
-   "path": "/documents/{id}",
+   "path": "/documents/by-id",
    "tag": "Documents",
    "apiClass": "DocumentsApi",
    "java": "DocumentsApi#deleteDocument",
@@ -2374,7 +2374,7 @@
   {
    "operationId": "getDocumentContent",
    "method": "GET",
-   "path": "/documents/{id}/content",
+   "path": "/documents/by-id/content",
    "tag": "Documents",
    "apiClass": "DocumentsApi",
    "java": "DocumentsApi#getDocumentContent",
@@ -2386,7 +2386,7 @@
   {
    "operationId": "addDocumentVersion",
    "method": "POST",
-   "path": "/documents/{id}/versions",
+   "path": "/documents/by-id/versions",
    "tag": "Documents",
    "apiClass": "DocumentsApi",
    "java": "DocumentsApi#addDocumentVersion",
@@ -2398,7 +2398,7 @@
   {
    "operationId": "listDocumentVersions",
    "method": "GET",
-   "path": "/documents/{id}/versions",
+   "path": "/documents/by-id/versions",
    "tag": "Documents",
    "apiClass": "DocumentsApi",
    "java": "DocumentsApi#listDocumentVersions",
@@ -2434,7 +2434,7 @@
   {
    "operationId": "deleteLink",
    "method": "DELETE",
-   "path": "/links/{id}",
+   "path": "/links/by-id",
    "tag": "Links",
    "apiClass": "LinksApi",
    "java": "LinksApi#deleteLink",
@@ -3706,7 +3706,7 @@
   {
    "operationId": "listCaseComments",
    "method": "GET",
-   "path": "/case-instances/{id}/comments",
+   "path": "/case-instances/by-id/comments",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#listCaseComments",
@@ -3718,7 +3718,7 @@
   {
    "operationId": "addCaseComment",
    "method": "POST",
-   "path": "/case-instances/{id}/comments",
+   "path": "/case-instances/by-id/comments",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#addCaseComment",
@@ -3730,7 +3730,7 @@
   {
    "operationId": "listCaseParticipants",
    "method": "GET",
-   "path": "/case-instances/{id}/participants",
+   "path": "/case-instances/by-id/participants",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#listCaseParticipants",
@@ -3742,7 +3742,7 @@
   {
    "operationId": "reactivateCase",
    "method": "POST",
-   "path": "/case-instances/{id}/reactivation",
+   "path": "/case-instances/by-id/reactivation",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#reactivateCase",
@@ -3922,7 +3922,7 @@
   {
    "operationId": "getMyApplication",
    "method": "GET",
-   "path": "/portal/applications/{id}",
+   "path": "/portal/applications/by-id",
    "tag": "Portal",
    "apiClass": "PortalApi",
    "java": "PortalApi#getMyApplication",
@@ -3934,7 +3934,7 @@
   {
    "operationId": "replyToClarification",
    "method": "POST",
-   "path": "/portal/applications/{id}/clarifications/{clarificationId}/reply",
+   "path": "/portal/applications/by-id/clarifications/by-clarification-id/reply",
    "tag": "Portal",
    "apiClass": "PortalApi",
    "java": "PortalApi#replyToClarification",
@@ -3946,7 +3946,7 @@
   {
    "operationId": "withdrawApplication",
    "method": "POST",
-   "path": "/portal/applications/{id}/withdraw",
+   "path": "/portal/applications/by-id/withdraw",
    "tag": "Portal",
    "apiClass": "PortalApi",
    "java": "PortalApi#withdrawApplication",
@@ -3958,7 +3958,7 @@
   {
    "operationId": "appealApplication",
    "method": "POST",
-   "path": "/portal/applications/{id}/appeal",
+   "path": "/portal/applications/by-id/appeal",
    "tag": "Portal",
    "apiClass": "PortalApi",
    "java": "PortalApi#appealApplication",
@@ -3970,7 +3970,7 @@
   {
    "operationId": "downloadOutcome",
    "method": "GET",
-   "path": "/portal/applications/{id}/outcome",
+   "path": "/portal/applications/by-id/outcome",
    "tag": "Portal",
    "apiClass": "PortalApi",
    "java": "PortalApi#downloadOutcome",
@@ -4414,7 +4414,7 @@
   {
    "operationId": "setDocumentLegalHold",
    "method": "POST",
-   "path": "/documents/{id}/legal-hold",
+   "path": "/documents/by-id/legal-hold",
    "tag": "Documents",
    "apiClass": "DocumentsApi",
    "java": "DocumentsApi#setDocumentLegalHold",
@@ -5950,7 +5950,7 @@
   {
    "operationId": "listComplianceLegalHolds",
    "method": "GET",
-   "path": "/compliance/process-roots/{rootId}/legal-holds",
+   "path": "/compliance/process-roots/by-root-id/legal-holds",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#listComplianceLegalHolds",
@@ -5962,7 +5962,7 @@
   {
    "operationId": "placeComplianceLegalHold",
    "method": "POST",
-   "path": "/compliance/process-roots/{rootId}/legal-holds",
+   "path": "/compliance/process-roots/by-root-id/legal-holds",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#placeComplianceLegalHold",
@@ -5974,7 +5974,7 @@
   {
    "operationId": "releaseComplianceLegalHold",
    "method": "POST",
-   "path": "/compliance/process-roots/{rootId}/legal-holds/{holdId}/release",
+   "path": "/compliance/process-roots/by-root-id/legal-holds/by-hold-id/release",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#releaseComplianceLegalHold",
@@ -8086,7 +8086,7 @@
   {
    "operationId": "installCatalogueEntry",
    "method": "POST",
-   "path": "/catalogue/{id}/{version}/install",
+   "path": "/catalogue/by-id/by-version/install",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#installCatalogueEntry",
@@ -8098,7 +8098,7 @@
   {
    "operationId": "installCatalogueTemplates",
    "method": "POST",
-   "path": "/catalogue/{id}/{version}/install-templates",
+   "path": "/catalogue/by-id/by-version/install-templates",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#installCatalogueTemplates",
@@ -10606,7 +10606,7 @@
   {
    "operationId": "exportTenantBundle",
    "method": "GET",
-   "path": "/onboarding/tenants/{tenant}/bundle",
+   "path": "/onboarding/tenants/by-tenant/bundle",
    "tag": "Onboarding",
    "apiClass": "OnboardingApi",
    "java": "OnboardingApi#exportTenantBundle",
@@ -11446,7 +11446,7 @@
   {
    "operationId": "programmeChangePeriodState",
    "method": "POST",
-   "path": "/programme-periods/{id}/state",
+   "path": "/programme-periods/by-id/state",
    "tag": "Programmes",
    "apiClass": "ProgrammesApi",
    "java": "ProgrammesApi#programmeChangePeriodState",
@@ -11974,7 +11974,7 @@
   {
    "operationId": "exportPromotionBundle",
    "method": "GET",
-   "path": "/onboarding/promotions/{tenant}/bundle",
+   "path": "/onboarding/promotions/by-tenant/bundle",
    "tag": "Onboarding",
    "apiClass": "OnboardingApi",
    "java": "OnboardingApi#exportPromotionBundle",

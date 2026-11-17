@@ -144,13 +144,14 @@ public final class PortalApi {
      *
      * <p>Status, stage, clarifications and messages; officers appear only as seat designations (PER-8).
      *
-     * <p>{@code GET /portal/applications/{id}} (operationId {@code getMyApplication}); permission {@code portal.use}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /portal/applications/by-id} (operationId {@code getMyApplication}); permission {@code portal.use}.
+     * @param id query parameter {@code id}. Application id from the portal adapter; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public Application getMyApplication(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/portal/applications/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.get("/portal/applications/by-id");
+        req.query("id", id);
         return call.json(req, options, R_getMyApplication);
     }
 
@@ -159,16 +160,18 @@ public final class PortalApi {
      *
      * <p>Text plus files (CLARIFICATION_RECEIVED, C04).
      *
-     * <p>{@code POST /portal/applications/{id}/clarifications/{clarificationId}/reply} (operationId {@code replyToClarification}); permission {@code portal.use}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
-     * @param clarificationId path parameter {@code clarificationId}
+     * <p>{@code POST /portal/applications/by-id/clarifications/by-clarification-id/reply} (operationId {@code replyToClarification}); permission {@code portal.use}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body (multipart parts by name: FilePart or byte[] values are files, a list repeats the part)
+     * @param id query parameter {@code id}. Application id from the portal adapter; may carry '/' or ':'
+     * @param clarificationId query parameter {@code clarificationId}. Clarification id (an engine task id); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public Application replyToClarification(String id, String clarificationId, java.util.Map<String, Object> body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/portal/applications/" + HttpTransport.seg(String.valueOf(id)) + "/clarifications/" + HttpTransport.seg(String.valueOf(clarificationId)) + "/reply");
+    public Application replyToClarification(java.util.Map<String, Object> body, String id, String clarificationId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/portal/applications/by-id/clarifications/by-clarification-id/reply");
         GeneratedCalls.multipart(req, body, options);
+        req.query("id", id);
+        req.query("clarificationId", clarificationId);
         return call.json(req, options, R_replyToClarification);
     }
 
@@ -177,15 +180,16 @@ public final class PortalApi {
      *
      * <p>CASE_WITHDRAWN.
      *
-     * <p>{@code POST /portal/applications/{id}/withdraw} (operationId {@code withdrawApplication}); permission {@code portal.use}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /portal/applications/by-id/withdraw} (operationId {@code withdrawApplication}); permission {@code portal.use}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. Application id from the portal adapter; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public Application withdrawApplication(String id, WithdrawRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/portal/applications/" + HttpTransport.seg(String.valueOf(id)) + "/withdraw");
+    public Application withdrawApplication(WithdrawRequest body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/portal/applications/by-id/withdraw");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_withdrawApplication);
     }
 
@@ -194,15 +198,16 @@ public final class PortalApi {
      *
      * <p>APPEAL_FILED.
      *
-     * <p>{@code POST /portal/applications/{id}/appeal} (operationId {@code appealApplication}); permission {@code portal.use}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /portal/applications/by-id/appeal} (operationId {@code appealApplication}); permission {@code portal.use}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. Application id from the portal adapter; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public Application appealApplication(String id, AppealRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/portal/applications/" + HttpTransport.seg(String.valueOf(id)) + "/appeal");
+    public Application appealApplication(AppealRequest body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/portal/applications/by-id/appeal");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_appealApplication);
     }
 
@@ -211,13 +216,14 @@ public final class PortalApi {
      *
      * <p>Certificate, sanction or rejection order (C05).
      *
-     * <p>{@code GET /portal/applications/{id}/outcome} (operationId {@code downloadOutcome}); permission {@code portal.use}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /portal/applications/by-id/outcome} (operationId {@code downloadOutcome}); permission {@code portal.use}.
+     * @param id query parameter {@code id}. Application id from the portal adapter; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public byte[] downloadOutcome(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/portal/applications/" + HttpTransport.seg(String.valueOf(id)) + "/outcome");
+        ApiRequest req = ApiRequest.get("/portal/applications/by-id/outcome");
+        req.query("id", id);
         return call.bytes(req, options, "application/octet-stream");
     }
 

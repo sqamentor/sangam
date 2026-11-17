@@ -461,21 +461,21 @@ public class ComplianceController {
 
     // ---------------------------------------------------------------- legal holds on a process root (decision 361)
 
-    @GetMapping("/process-roots/{rootId}/legal-holds")
-    public List<org.sangam.compliance.ports.CompliancePorts.ActiveHold> legalHolds(RequestContext ctx, @PathVariable String rootId) {
+    @GetMapping("/process-roots/by-root-id/legal-holds")
+    public List<org.sangam.compliance.ports.CompliancePorts.ActiveHold> legalHolds(RequestContext ctx, @RequestParam("rootId") String rootId) {
         return api.legalHolds(require(ctx, Permissions.COMPLIANCE_READ), rootId);
     }
 
-    @PostMapping("/process-roots/{rootId}/legal-holds")
+    @PostMapping("/process-roots/by-root-id/legal-holds")
     public ResponseEntity<org.sangam.compliance.ports.CompliancePorts.ActiveHold> placeLegalHold(RequestContext ctx,
-            @PathVariable String rootId, @RequestBody ComplianceRequests.LegalHoldRequest body) {
+            @RequestParam("rootId") String rootId, @RequestBody ComplianceRequests.LegalHoldRequest body) {
         SecurityIdentity id = require(ctx, Permissions.COMPLIANCE_MODIFY);
         org.sangam.compliance.ports.CompliancePorts.ActiveHold h = api.placeLegalHold(id, rootId, body);
         return Lists.created("/api/v1/compliance/process-roots/" + rootId + "/legal-holds", h.holdId(), h);
     }
 
-    @PostMapping("/process-roots/{rootId}/legal-holds/{holdId}/release")
-    public ResponseEntity<Void> releaseLegalHold(RequestContext ctx, @PathVariable String rootId, @PathVariable String holdId,
+    @PostMapping("/process-roots/by-root-id/legal-holds/by-hold-id/release")
+    public ResponseEntity<Void> releaseLegalHold(RequestContext ctx, @RequestParam("rootId") String rootId, @RequestParam("holdId") String holdId,
                                                  @RequestBody ComplianceRequests.LegalHoldRelease body) {
         SecurityIdentity id = require(ctx, Permissions.COMPLIANCE_MODIFY);
         api.releaseLegalHold(id, rootId, holdId, body == null ? null : body.reason());

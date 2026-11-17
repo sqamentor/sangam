@@ -46,33 +46,36 @@ public sealed class CasesApi
     /// <summary>
     /// Get a case
     /// Case with plan item instances.
-    /// GET /case-instances/{id} (operationId getCaseInstance); permission case.read.
+    /// GET /case-instances/by-id (operationId getCaseInstance); permission case.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.CaseInstance?> GetCaseInstanceAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/case-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Get($"/case-instances/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<M.CaseInstance?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Case variables
     /// Case variables (K11).
-    /// GET /case-instances/{id}/variables (operationId getCaseVariables); permission case.read.
+    /// GET /case-instances/by-id/variables (operationId getCaseVariables); permission case.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GetCaseVariablesAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/case-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/variables");
+        var req = ApiRequest.Get($"/case-instances/by-id/variables");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Case command
     /// complete | close | terminate | reactivate (linked new case).
-    /// POST /case-instances/{id}/commands (operationId commandCaseInstance); permission case.write; result stored atomically with the state change.
+    /// POST /case-instances/by-id/commands (operationId commandCaseInstance); permission case.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.CaseInstance?> CommandCaseInstanceAsync(string id, M.CaseInstanceCommand body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.CaseInstance?> CommandCaseInstanceAsync(M.CaseInstanceCommand body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/case-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/commands");
+        var req = ApiRequest.Post($"/case-instances/by-id/commands");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.CaseInstance?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -80,11 +83,13 @@ public sealed class CasesApi
     /// <summary>
     /// Plan item command
     /// start | complete | disable | reenable | terminate | manualStart (discretionary items).
-    /// POST /case-instances/{id}/executions/{executionId}/commands (operationId commandCaseExecution); permission case.write; result stored atomically with the state change.
+    /// POST /case-instances/by-id/executions/by-execution-id/commands (operationId commandCaseExecution); permission case.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.CaseInstance?> CommandCaseExecutionAsync(string id, string executionId, M.CaseExecutionCommand body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.CaseInstance?> CommandCaseExecutionAsync(M.CaseExecutionCommand body, string id, string executionId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/case-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/executions/{HttpTransport.Seg(GeneratedCalls.Str(executionId)!)}/commands");
+        var req = ApiRequest.Post($"/case-instances/by-id/executions/by-execution-id/commands");
+        req.WithQuery("id", GeneratedCalls.Q(id));
+        req.WithQuery("executionId", GeneratedCalls.Q(executionId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.CaseInstance?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -107,22 +112,24 @@ public sealed class CasesApi
     /// <summary>
     /// Case comments
     /// Comments on the case (R76 case workspace).
-    /// GET /case-instances/{id}/comments (operationId listCaseComments); permission case.read.
+    /// GET /case-instances/by-id/comments (operationId listCaseComments); permission case.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.CaseComment>?> ListCaseCommentsAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/case-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/comments");
+        var req = ApiRequest.Get($"/case-instances/by-id/comments");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.CaseComment>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Add a case comment
     /// Adds a comment.
-    /// POST /case-instances/{id}/comments (operationId addCaseComment); permission case.write; result stored atomically with the state change.
+    /// POST /case-instances/by-id/comments (operationId addCaseComment); permission case.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.CaseComment?> AddCaseCommentAsync(string id, M.AddCaseCommentRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.CaseComment?> AddCaseCommentAsync(M.AddCaseCommentRequest body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/case-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/comments");
+        var req = ApiRequest.Post($"/case-instances/by-id/comments");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.CaseComment?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -130,22 +137,24 @@ public sealed class CasesApi
     /// <summary>
     /// Case participants
     /// Participants, including external experts and parties (UP-09, UP-22).
-    /// GET /case-instances/{id}/participants (operationId listCaseParticipants); permission case.read.
+    /// GET /case-instances/by-id/participants (operationId listCaseParticipants); permission case.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.Participant>?> ListCaseParticipantsAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/case-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/participants");
+        var req = ApiRequest.Get($"/case-instances/by-id/participants");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.Participant>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Reactivate a case
     /// Starts a linked new case of the same definition with the old variables; audited on both chains.
-    /// POST /case-instances/{id}/reactivation (operationId reactivateCase); permission case.write; result stored atomically with the state change.
+    /// POST /case-instances/by-id/reactivation (operationId reactivateCase); permission case.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.CaseInstance?> ReactivateCaseAsync(string id, M.ReasonRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.CaseInstance?> ReactivateCaseAsync(M.ReasonRequest body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/case-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/reactivation");
+        var req = ApiRequest.Post($"/case-instances/by-id/reactivation");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.CaseInstance?>(req, options, cancellationToken).ConfigureAwait(false);
     }

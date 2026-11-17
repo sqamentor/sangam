@@ -47,7 +47,7 @@ import org.sangam.rest.support.TxSupport;
  *       IN_REVIEW → REJECTED. Editing an ACTIVE, SUPERSEDED, REJECTED or APPROVED table creates a new DRAFT version.</li>
  *   <li>Four-eyes: the approver differs from the author by person and by seat (422 SEGREGATION_OF_DUTIES).</li>
  *   <li>Activation deploys the DMN as {@code power-table:<key>:v<version>} (resource {@code <key>.dmn}), so
- *       {@code POST /decisions/{key}/evaluate} uses it; {@code published_at} records the activation.</li>
+ *       {@code POST /decisions/by-key/evaluate?key=} uses it; {@code published_at} records the activation.</li>
  *   <li>An approved table with a future {@code effectiveFrom} stays APPROVED; it is activated lazily on the first
  *       {@code list}/{@code get} after that instant (no scheduler in this adapter).</li>
  *   <li>Column mapping: {@code status} = state, {@code dmn_hash} = SHA-256 hex of the DMN, {@code decision_id} = the first

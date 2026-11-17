@@ -105,7 +105,7 @@ const periods: ScreenDef = {
   // M-051: GeneratePeriodsRequest(frequency, fiscalStartYear, dueOffsetDays) (ProgrammeController.java:70); frequency is
   // IndicatorDefinition.Frequency (IndicatorDefinition.java:33)
   toolbar: [{ id: 'generate', label: 'act.generatePeriods', path: '/programme-periods/generate', fields: [f.num('fiscalStartYear', 'fld.fiscalYear', true), f.select('frequency', ['WEEKLY', 'FORTNIGHTLY', 'MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'ANNUAL'], undefined, true), f.num('dueOffsetDays', 'fld.dueOffsetDays', true)], showResult: true }],
-  actions: [{ id: 'state', label: 'act.setState', path: '/programme-periods/{periodId}/state', fields: [f.select('state', ['OPEN', 'CLOSED', 'LOCKED'], undefined, true)], reason: 'body' }],
+  actions: [{ id: 'state', label: 'act.setState', path: '/programme-periods/by-id/state?id={periodId}', fields: [f.select('state', ['OPEN', 'CLOSED', 'LOCKED'], undefined, true)], reason: 'body' }],
 };
 
 const alerts: ScreenDef = {

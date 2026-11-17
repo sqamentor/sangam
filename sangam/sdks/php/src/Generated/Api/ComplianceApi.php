@@ -529,12 +529,14 @@ final class ComplianceApi
      *
      * The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
      *
-     * GET /compliance/process-roots/{rootId}/legal-holds (operationId listComplianceLegalHolds); permission compliance.read.
+     * GET /compliance/process-roots/by-root-id/legal-holds (operationId listComplianceLegalHolds); permission compliance.read.
+     * @param string $rootId query rootId
      * @return list<Model\ComplianceLegalHold>
      */
     public function listComplianceLegalHolds(string $rootId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/compliance/process-roots/' . HttpTransport::seg((string) $rootId) . '/legal-holds');
+        $req = ApiRequest::get('/compliance/process-roots/by-root-id/legal-holds');
+        $req->query('rootId', $rootId);
         return $this->calls->models($req, $options, Model\ComplianceLegalHold::class);
     }
 
@@ -543,13 +545,15 @@ final class ComplianceApi
      *
      * Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
      *
-     * POST /compliance/process-roots/{rootId}/legal-holds (operationId placeComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
+     * POST /compliance/process-roots/by-root-id/legal-holds (operationId placeComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
      * @param Model\ComplianceLegalHoldRequest|array $body request body
+     * @param string $rootId query rootId
      * @return Model\ComplianceLegalHold|null
      */
-    public function placeComplianceLegalHold(string $rootId, Model\ComplianceLegalHoldRequest|array $body, ?RequestOptions $options = null): ?Model\ComplianceLegalHold
+    public function placeComplianceLegalHold(Model\ComplianceLegalHoldRequest|array $body, string $rootId, ?RequestOptions $options = null): ?Model\ComplianceLegalHold
     {
-        $req = ApiRequest::post('/compliance/process-roots/' . HttpTransport::seg((string) $rootId) . '/legal-holds');
+        $req = ApiRequest::post('/compliance/process-roots/by-root-id/legal-holds');
+        $req->query('rootId', $rootId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -561,12 +565,16 @@ final class ComplianceApi
      *
      * Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.
      *
-     * POST /compliance/process-roots/{rootId}/legal-holds/{holdId}/release (operationId releaseComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
+     * POST /compliance/process-roots/by-root-id/legal-holds/by-hold-id/release (operationId releaseComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
      * @param Model\ComplianceLegalHoldRelease|array $body request body
+     * @param string $rootId query rootId
+     * @param string $holdId query holdId
      */
-    public function releaseComplianceLegalHold(string $rootId, string $holdId, Model\ComplianceLegalHoldRelease|array $body, ?RequestOptions $options = null): void
+    public function releaseComplianceLegalHold(Model\ComplianceLegalHoldRelease|array $body, string $rootId, string $holdId, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/compliance/process-roots/' . HttpTransport::seg((string) $rootId) . '/legal-holds/' . HttpTransport::seg((string) $holdId) . '/release');
+        $req = ApiRequest::post('/compliance/process-roots/by-root-id/legal-holds/by-hold-id/release');
+        $req->query('rootId', $rootId);
+        $req->query('holdId', $holdId);
         if ($body !== null) {
             $req->body($body);
         }

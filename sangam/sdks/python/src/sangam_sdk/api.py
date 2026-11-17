@@ -263,7 +263,7 @@ class ProcessesApi(_Api):
 
 
 class DecisionsApi(_Api):
-    """DMN 1.6 ``POST /decisions/{key}/evaluate``."""
+    """DMN 1.6 ``POST /decisions/by-key/evaluate?key=`` (a decision key may carry '/' or ':')."""
 
     def evaluate(self, decision_key: str, variables: Vars = None, *, version: int | None = None,
                  purpose: str | None = None, business_key: str | None = None) -> DecisionEvaluateResult:
@@ -271,7 +271,7 @@ class DecisionsApi(_Api):
         body = compact({"variables": encode_variables(variables), "version": version, "purpose": purpose,
                         "businessKey": business_key})
         return DecisionEvaluateResult.from_dict(self._call(ApiRequest(
-            "POST", f"/decisions/{seg(decision_key)}/evaluate", body=body)))
+            "POST", "/decisions/by-key/evaluate", query={"key": decision_key}, body=body)))
 
 
 class AuditApi(_Api):

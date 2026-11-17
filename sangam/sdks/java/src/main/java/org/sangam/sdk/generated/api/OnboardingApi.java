@@ -237,13 +237,14 @@ public final class OnboardingApi {
      *
      * <p>The tenant's configuration, signed. No secrets, no go-live evidence.
      *
-     * <p>{@code GET /onboarding/tenants/{tenant}/bundle} (operationId {@code exportTenantBundle}); permission {@code tenant.admin}.
-     * @param tenant path parameter {@code tenant}
+     * <p>{@code GET /onboarding/tenants/by-tenant/bundle} (operationId {@code exportTenantBundle}); permission {@code tenant.admin}.
+     * @param tenant query parameter {@code tenant}. Tenant id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public TenantBundle exportTenantBundle(String tenant, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/onboarding/tenants/" + HttpTransport.seg(String.valueOf(tenant)) + "/bundle");
+        ApiRequest req = ApiRequest.get("/onboarding/tenants/by-tenant/bundle");
+        req.query("tenant", tenant);
         return call.json(req, options, R_exportTenantBundle);
     }
 
@@ -284,13 +285,14 @@ public final class OnboardingApi {
      *
      * <p>The tenant's signed bundle labelled with this environment (sangam.onboarding.environment). 409 PROMOTION_ENVIRONMENT_NOT_SET without a label.
      *
-     * <p>{@code GET /onboarding/promotions/{tenant}/bundle} (operationId {@code exportPromotionBundle}); permission {@code tenant.admin}.
-     * @param tenant path parameter {@code tenant}. tenant id
+     * <p>{@code GET /onboarding/promotions/by-tenant/bundle} (operationId {@code exportPromotionBundle}); permission {@code tenant.admin}.
+     * @param tenant query parameter {@code tenant}. Tenant id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public TenantBundle exportPromotionBundle(String tenant, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/onboarding/promotions/" + HttpTransport.seg(String.valueOf(tenant)) + "/bundle");
+        ApiRequest req = ApiRequest.get("/onboarding/promotions/by-tenant/bundle");
+        req.query("tenant", tenant);
         return call.json(req, options, R_exportPromotionBundle);
     }
 

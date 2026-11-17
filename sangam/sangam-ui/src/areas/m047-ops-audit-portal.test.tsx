@@ -519,21 +519,21 @@ describe('M-047 citizen portal', () => {
   });
 
   it('a rejected application can be appealed with grounds before the deadline', async () => {
-    routes['/portal/applications/a1'] = { id: 'a1', reference: 'APP-1', serviceName: 'Certificate', status: 'REJECTED', appealDeadline: '2999-01-01', clarifications: [] };
+    routes['/portal/applications/by-id?id=a1'] = { id: 'a1', reference: 'APP-1', serviceName: 'Certificate', status: 'REJECTED', appealDeadline: '2999-01-01', clarifications: [] };
     show(<PortalApplication />, '/portal/applications/a1', '/portal/applications/:id');
     fireEvent.click(await screen.findByRole('button', { name: T('portal.fileAppeal') }));
     const d = dialog();
     fireEvent.change(within(d).getByLabelText(L('portal.grounds')), { target: { value: 'The record was correct' } });
     reasonAndConfirm('Appeal against the rejection');
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/portal/applications/a1/appeal', { grounds: 'The record was correct' }, KEY));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/portal/applications/by-id/appeal?id=a1', { grounds: 'The record was correct' }, KEY));
   });
 
   it('a submitted application is withdrawn with a reason', async () => {
-    routes['/portal/applications/a1'] = { id: 'a1', reference: 'APP-1', serviceName: 'Certificate', status: 'SUBMITTED', clarifications: [] };
+    routes['/portal/applications/by-id?id=a1'] = { id: 'a1', reference: 'APP-1', serviceName: 'Certificate', status: 'SUBMITTED', clarifications: [] };
     show(<PortalApplication />, '/portal/applications/a1', '/portal/applications/:id');
     fireEvent.click(await screen.findByRole('button', { name: T('portal.withdraw') }));
     reasonAndConfirm('No longer needed');
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/portal/applications/a1/withdraw', { reason: 'No longer needed' }, KEY));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/portal/applications/by-id/withdraw?id=a1', { reason: 'No longer needed' }, KEY));
   });
 
   it('a grievance is filed and its reference is shown', async () => {

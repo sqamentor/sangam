@@ -157,16 +157,16 @@ public class PortalController {
         return Lists.ok(portal.applications(ctx, Lists.page(page, size)));
     }
 
-    @GetMapping("/applications/{id}")
-    public PortalPort.Application application(RequestContext ctx, @PathVariable String id) {
+    @GetMapping("/applications/by-id")
+    public PortalPort.Application application(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.PORTAL_USE);
         return portal.application(ctx, id);
     }
 
-    @PostMapping(value = "/applications/{id}/clarifications/{clarificationId}/reply",
+    @PostMapping(value = "/applications/by-id/clarifications/by-clarification-id/reply",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<PortalPort.Application> reply(RequestContext ctx, @PathVariable String id,
-            @PathVariable String clarificationId, @RequestParam("text") String text,
+    public ResponseEntity<PortalPort.Application> reply(RequestContext ctx, @RequestParam("id") String id,
+            @RequestParam("clarificationId") String clarificationId, @RequestParam("text") String text,
             @RequestPart(value = "files", required = false) List<MultipartFile> files) throws IOException {
         permissions.require(ctx, Permissions.PORTAL_USE);
         if (text == null || text.isBlank()) {
@@ -184,16 +184,16 @@ public class PortalController {
         return Lists.okRef(id, portal.reply(ctx, id, clarificationId, new PortalPort.ReplyRequest(text, attached)));
     }
 
-    @PostMapping("/applications/{id}/withdraw")
-    public ResponseEntity<PortalPort.Application> withdraw(RequestContext ctx, @PathVariable String id,
+    @PostMapping("/applications/by-id/withdraw")
+    public ResponseEntity<PortalPort.Application> withdraw(RequestContext ctx, @RequestParam("id") String id,
                                                            @RequestBody PortalPort.WithdrawRequest body) {
         permissions.require(ctx, Permissions.PORTAL_USE);
         ProcessController.requireReason(body.reason());
         return Lists.okRef(id, portal.withdraw(ctx, id, body));
     }
 
-    @PostMapping("/applications/{id}/appeal")
-    public ResponseEntity<PortalPort.Application> appeal(RequestContext ctx, @PathVariable String id,
+    @PostMapping("/applications/by-id/appeal")
+    public ResponseEntity<PortalPort.Application> appeal(RequestContext ctx, @RequestParam("id") String id,
                                                          @RequestBody PortalPort.AppealRequest body) {
         permissions.require(ctx, Permissions.PORTAL_USE);
         if (body.grounds() == null || body.grounds().isBlank()) {
@@ -202,8 +202,8 @@ public class PortalController {
         return Lists.okRef(id, portal.appeal(ctx, id, body));
     }
 
-    @GetMapping("/applications/{id}/outcome")
-    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> outcome(RequestContext ctx, @PathVariable String id) {
+    @GetMapping("/applications/by-id/outcome")
+    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> outcome(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.PORTAL_USE);
         return DocumentController.download(portal.outcome(ctx, id));
     }

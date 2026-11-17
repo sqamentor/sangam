@@ -98,15 +98,17 @@ public final class ModellerApi {
      *
      * <p>Installs a kind package entry into the caller's tenant: the catalogue checks first (index signature, licence allow-list, platform version, artefact SHA-256), then the package import (T70: the bundle's own hash and signatures; the package lands APPROVED, activation still needs a deployer and the ENV_BINDING values). 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds are never installed), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_ARTIFACT_PATH_INVALID, CATALOGUE_EGRESS_DENIED, or a package import refusal (PACKAGE_HASH_MISMATCH, signatures); 409 PACKAGE_EXISTS.
      *
-     * <p>{@code POST /catalogue/{id}/{version}/install} (operationId {@code installCatalogueEntry}); permission {@code package.deploy}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}. catalogue entry id
-     * @param version path parameter {@code version}. catalogue entry version
+     * <p>{@code POST /catalogue/by-id/by-version/install} (operationId {@code installCatalogueEntry}); permission {@code package.deploy}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Catalogue entry id from the remote index; may carry '/' or ':'
+     * @param version query parameter {@code version}. Catalogue entry version from the remote index; may carry '/' or ':'
      * @param body request body, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
     public Package installCatalogueEntry(String id, String version, CatalogueInstallRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/catalogue/" + HttpTransport.seg(String.valueOf(id)) + "/" + HttpTransport.seg(String.valueOf(version)) + "/install");
+        ApiRequest req = ApiRequest.post("/catalogue/by-id/by-version/install");
+        req.query("id", id);
+        req.query("version", version);
         req.body(body);
         return call.json(req, options, R_installCatalogueEntry);
     }
@@ -116,15 +118,17 @@ public final class ModellerApi {
      *
      * <p>Decision 380 P2 (b): publishes the connector element templates of a kind connector-template entry in the caller's tenant after the same catalogue checks as a package install (index signature, licence allow-list, platform version, artefact SHA-256). The artefact is data only ({templates: [{id, name, description, appliesTo, fields}]}, the format of the built-in connector templates); every template id is the entry id or starts with it and a dot, so an entry never replaces a built-in or another entry's template, and no field may be named like a credential. Only changed templates get a new version, with one CATALOGUE_TEMPLATES_INSTALLED audit event in the same transaction; a repeated install writes nothing. 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds), CATALOGUE_KIND_MISMATCH (a package entry), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_EGRESS_DENIED; 501 when the modeller template store is not installed.
      *
-     * <p>{@code POST /catalogue/{id}/{version}/install-templates} (operationId {@code installCatalogueTemplates}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}. catalogue entry id
-     * @param version path parameter {@code version}. catalogue entry version
+     * <p>{@code POST /catalogue/by-id/by-version/install-templates} (operationId {@code installCatalogueTemplates}); permission {@code package.author}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Catalogue entry id from the remote index; may carry '/' or ':'
+     * @param version query parameter {@code version}. Catalogue entry version from the remote index; may carry '/' or ':'
      * @param body request body, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public CatalogueTemplatesInstalled installCatalogueTemplates(String id, String version, CatalogueInstallRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/catalogue/" + HttpTransport.seg(String.valueOf(id)) + "/" + HttpTransport.seg(String.valueOf(version)) + "/install-templates");
+        ApiRequest req = ApiRequest.post("/catalogue/by-id/by-version/install-templates");
+        req.query("id", id);
+        req.query("version", version);
         req.body(body);
         return call.json(req, options, R_installCatalogueTemplates);
     }

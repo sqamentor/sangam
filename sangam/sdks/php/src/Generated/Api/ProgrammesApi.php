@@ -107,13 +107,15 @@ final class ProgrammesApi
      *
      * Open, close or lock a reporting period.
      *
-     * POST /programme-periods/{id}/state (operationId programmeChangePeriodState); permission programme.admin; result stored atomically with the state change.
+     * POST /programme-periods/by-id/state (operationId programmeChangePeriodState); permission programme.admin; result stored atomically with the state change.
      * @param Model\PgPeriodStateRequest|array $body request body
+     * @param string $id query id
      * @return Model\PgPeriod|null
      */
-    public function programmeChangePeriodState(string $id, Model\PgPeriodStateRequest|array $body, ?RequestOptions $options = null): ?Model\PgPeriod
+    public function programmeChangePeriodState(Model\PgPeriodStateRequest|array $body, string $id, ?RequestOptions $options = null): ?Model\PgPeriod
     {
-        $req = ApiRequest::post('/programme-periods/' . HttpTransport::seg((string) $id) . '/state');
+        $req = ApiRequest::post('/programme-periods/by-id/state');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }

@@ -593,13 +593,14 @@ public final class ComplianceApi {
      *
      * <p>The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
      *
-     * <p>{@code GET /compliance/process-roots/{rootId}/legal-holds} (operationId {@code listComplianceLegalHolds}); permission {@code compliance.read}.
-     * @param rootId path parameter {@code rootId}
+     * <p>{@code GET /compliance/process-roots/by-root-id/legal-holds} (operationId {@code listComplianceLegalHolds}); permission {@code compliance.read}.
+     * @param rootId query parameter {@code rootId}. Process root id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<ComplianceLegalHold> listComplianceLegalHolds(String rootId, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/compliance/process-roots/" + HttpTransport.seg(String.valueOf(rootId)) + "/legal-holds");
+        ApiRequest req = ApiRequest.get("/compliance/process-roots/by-root-id/legal-holds");
+        req.query("rootId", rootId);
         return call.json(req, options, R_listComplianceLegalHolds);
     }
 
@@ -608,15 +609,16 @@ public final class ComplianceApi {
      *
      * <p>Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
      *
-     * <p>{@code POST /compliance/process-roots/{rootId}/legal-holds} (operationId {@code placeComplianceLegalHold}); permission {@code compliance.modify}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param rootId path parameter {@code rootId}
+     * <p>{@code POST /compliance/process-roots/by-root-id/legal-holds} (operationId {@code placeComplianceLegalHold}); permission {@code compliance.modify}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param rootId query parameter {@code rootId}. Process root id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
-    public ComplianceLegalHold placeComplianceLegalHold(String rootId, ComplianceLegalHoldRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/compliance/process-roots/" + HttpTransport.seg(String.valueOf(rootId)) + "/legal-holds");
+    public ComplianceLegalHold placeComplianceLegalHold(ComplianceLegalHoldRequest body, String rootId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/compliance/process-roots/by-root-id/legal-holds");
         req.body(body);
+        req.query("rootId", rootId);
         return call.json(req, options, R_placeComplianceLegalHold);
     }
 
@@ -625,15 +627,17 @@ public final class ComplianceApi {
      *
      * <p>Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.
      *
-     * <p>{@code POST /compliance/process-roots/{rootId}/legal-holds/{holdId}/release} (operationId {@code releaseComplianceLegalHold}); permission {@code compliance.modify}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param rootId path parameter {@code rootId}
-     * @param holdId path parameter {@code holdId}
+     * <p>{@code POST /compliance/process-roots/by-root-id/legal-holds/by-hold-id/release} (operationId {@code releaseComplianceLegalHold}); permission {@code compliance.modify}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param rootId query parameter {@code rootId}. Process root id; may carry '/' or ':'
+     * @param holdId query parameter {@code holdId}. Legal hold id (a breach hold is breach:&lt;id&gt;); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void releaseComplianceLegalHold(String rootId, String holdId, ComplianceLegalHoldRelease body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/compliance/process-roots/" + HttpTransport.seg(String.valueOf(rootId)) + "/legal-holds/" + HttpTransport.seg(String.valueOf(holdId)) + "/release");
+    public void releaseComplianceLegalHold(ComplianceLegalHoldRelease body, String rootId, String holdId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/compliance/process-roots/by-root-id/legal-holds/by-hold-id/release");
         req.body(body);
+        req.query("rootId", rootId);
+        req.query("holdId", holdId);
         call.none(req, options);
     }
 

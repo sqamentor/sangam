@@ -90,8 +90,8 @@ op("post", "/onboarding/runs/{id}/cancel", "cancelOnboardingRun", "Onboarding", 
 op("post", "/onboarding/packs/resolve", "resolveOnboardingPacks", "Onboarding", "Resolve packs",
    "Dependencies, semantic versions, compatibility, conflicts and upgrade paths.", ONB, body="PackResolveRequest",
    resp=(200, "PackResolution"), perm="tenant.admin")
-op("get", "/onboarding/tenants/{tenant}/bundle", "exportTenantBundle", "Onboarding", "Export a bundle",
-   "The tenant's configuration, signed. No secrets, no go-live evidence.", ONB, params=[pp("tenant")],
+op("get", "/onboarding/tenants/by-tenant/bundle", "exportTenantBundle", "Onboarding", "Export a bundle",
+   "The tenant's configuration, signed. No secrets, no go-live evidence.", ONB, params=[q("tenant", desc="Tenant id; may carry '/' or ':'", required=True)],
    resp=(200, "TenantBundle"), perm="tenant.admin")
 op("post", "/onboarding/bundles/import", "importTenantBundle", "Onboarding", "Import a bundle",
    "Verifies the signature (422 BUNDLE_SIGNATURE_INVALID, BUNDLE_UNSIGNED), renames the scope, then dry-runs or starts.",

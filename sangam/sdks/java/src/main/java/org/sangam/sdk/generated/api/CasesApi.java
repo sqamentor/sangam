@@ -86,13 +86,14 @@ public final class CasesApi {
      *
      * <p>Case with plan item instances.
      *
-     * <p>{@code GET /case-instances/{id}} (operationId {@code getCaseInstance}); permission {@code case.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /case-instances/by-id} (operationId {@code getCaseInstance}); permission {@code case.read}.
+     * @param id query parameter {@code id}. Case instance id from the case engine; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public CaseInstance getCaseInstance(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/case-instances/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.get("/case-instances/by-id");
+        req.query("id", id);
         return call.json(req, options, R_getCaseInstance);
     }
 
@@ -101,13 +102,14 @@ public final class CasesApi {
      *
      * <p>Case variables (K11).
      *
-     * <p>{@code GET /case-instances/{id}/variables} (operationId {@code getCaseVariables}); permission {@code case.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /case-instances/by-id/variables} (operationId {@code getCaseVariables}); permission {@code case.read}.
+     * @param id query parameter {@code id}. Case instance id from the case engine; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> getCaseVariables(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/case-instances/" + HttpTransport.seg(String.valueOf(id)) + "/variables");
+        ApiRequest req = ApiRequest.get("/case-instances/by-id/variables");
+        req.query("id", id);
         return call.json(req, options, R_getCaseVariables);
     }
 
@@ -116,15 +118,16 @@ public final class CasesApi {
      *
      * <p>complete | close | terminate | reactivate (linked new case).
      *
-     * <p>{@code POST /case-instances/{id}/commands} (operationId {@code commandCaseInstance}); permission {@code case.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /case-instances/by-id/commands} (operationId {@code commandCaseInstance}); permission {@code case.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. Case instance id from the case engine; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public CaseInstance commandCaseInstance(String id, CaseInstanceCommand body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/case-instances/" + HttpTransport.seg(String.valueOf(id)) + "/commands");
+    public CaseInstance commandCaseInstance(CaseInstanceCommand body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/case-instances/by-id/commands");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_commandCaseInstance);
     }
 
@@ -133,16 +136,18 @@ public final class CasesApi {
      *
      * <p>start | complete | disable | reenable | terminate | manualStart (discretionary items).
      *
-     * <p>{@code POST /case-instances/{id}/executions/{executionId}/commands} (operationId {@code commandCaseExecution}); permission {@code case.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
-     * @param executionId path parameter {@code executionId}
+     * <p>{@code POST /case-instances/by-id/executions/by-execution-id/commands} (operationId {@code commandCaseExecution}); permission {@code case.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. Case instance id from the case engine; may carry '/' or ':'
+     * @param executionId query parameter {@code executionId}. Case execution (plan item) id from the case engine; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public CaseInstance commandCaseExecution(String id, String executionId, CaseExecutionCommand body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/case-instances/" + HttpTransport.seg(String.valueOf(id)) + "/executions/" + HttpTransport.seg(String.valueOf(executionId)) + "/commands");
+    public CaseInstance commandCaseExecution(CaseExecutionCommand body, String id, String executionId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/case-instances/by-id/executions/by-execution-id/commands");
         req.body(body);
+        req.query("id", id);
+        req.query("executionId", executionId);
         return call.json(req, options, R_commandCaseExecution);
     }
 
@@ -173,13 +178,14 @@ public final class CasesApi {
      *
      * <p>Comments on the case (R76 case workspace).
      *
-     * <p>{@code GET /case-instances/{id}/comments} (operationId {@code listCaseComments}); permission {@code case.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /case-instances/by-id/comments} (operationId {@code listCaseComments}); permission {@code case.read}.
+     * @param id query parameter {@code id}. Case instance id from the case engine; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<CaseComment> listCaseComments(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/case-instances/" + HttpTransport.seg(String.valueOf(id)) + "/comments");
+        ApiRequest req = ApiRequest.get("/case-instances/by-id/comments");
+        req.query("id", id);
         return call.json(req, options, R_listCaseComments);
     }
 
@@ -188,15 +194,16 @@ public final class CasesApi {
      *
      * <p>Adds a comment.
      *
-     * <p>{@code POST /case-instances/{id}/comments} (operationId {@code addCaseComment}); permission {@code case.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /case-instances/by-id/comments} (operationId {@code addCaseComment}); permission {@code case.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. Case instance id from the case engine; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
-    public CaseComment addCaseComment(String id, AddCaseCommentRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/case-instances/" + HttpTransport.seg(String.valueOf(id)) + "/comments");
+    public CaseComment addCaseComment(AddCaseCommentRequest body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/case-instances/by-id/comments");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_addCaseComment);
     }
 
@@ -205,13 +212,14 @@ public final class CasesApi {
      *
      * <p>Participants, including external experts and parties (UP-09, UP-22).
      *
-     * <p>{@code GET /case-instances/{id}/participants} (operationId {@code listCaseParticipants}); permission {@code case.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /case-instances/by-id/participants} (operationId {@code listCaseParticipants}); permission {@code case.read}.
+     * @param id query parameter {@code id}. Case instance id from the case engine; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<Participant> listCaseParticipants(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/case-instances/" + HttpTransport.seg(String.valueOf(id)) + "/participants");
+        ApiRequest req = ApiRequest.get("/case-instances/by-id/participants");
+        req.query("id", id);
         return call.json(req, options, R_listCaseParticipants);
     }
 
@@ -220,15 +228,16 @@ public final class CasesApi {
      *
      * <p>Starts a linked new case of the same definition with the old variables; audited on both chains.
      *
-     * <p>{@code POST /case-instances/{id}/reactivation} (operationId {@code reactivateCase}); permission {@code case.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /case-instances/by-id/reactivation} (operationId {@code reactivateCase}); permission {@code case.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. Case instance id from the case engine; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
-    public CaseInstance reactivateCase(String id, ReasonRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/case-instances/" + HttpTransport.seg(String.valueOf(id)) + "/reactivation");
+    public CaseInstance reactivateCase(ReasonRequest body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/case-instances/by-id/reactivation");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_reactivateCase);
     }
 }

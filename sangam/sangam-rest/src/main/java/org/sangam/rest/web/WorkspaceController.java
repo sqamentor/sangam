@@ -141,14 +141,14 @@ public class WorkspaceController {
         return Lists.ok(workspace.startCatalogue(ctx));
     }
 
-    @GetMapping("/case-instances/{id}/comments")
-    public ResponseEntity<List<WorkspacePort.CaseComment>> caseComments(RequestContext ctx, @PathVariable String id) {
+    @GetMapping("/case-instances/by-id/comments")
+    public ResponseEntity<List<WorkspacePort.CaseComment>> caseComments(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.CASE_READ);
         return Lists.ok(workspace.caseComments(ctx, id));
     }
 
-    @PostMapping("/case-instances/{id}/comments")
-    public ResponseEntity<WorkspacePort.CaseComment> addCaseComment(RequestContext ctx, @PathVariable String id,
+    @PostMapping("/case-instances/by-id/comments")
+    public ResponseEntity<WorkspacePort.CaseComment> addCaseComment(RequestContext ctx, @RequestParam("id") String id,
             @RequestBody WorkspacePort.AddCaseCommentRequest body) {
         permissions.require(ctx, Permissions.CASE_WRITE);
         if (body.text() == null || body.text().isBlank()) {
@@ -158,14 +158,14 @@ public class WorkspaceController {
         return Lists.created("/api/v1/case-instances/" + id + "/comments", c.id(), c);
     }
 
-    @GetMapping("/case-instances/{id}/participants")
-    public ResponseEntity<List<WorkspacePort.Participant>> participants(RequestContext ctx, @PathVariable String id) {
+    @GetMapping("/case-instances/by-id/participants")
+    public ResponseEntity<List<WorkspacePort.Participant>> participants(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.CASE_READ);
         return Lists.ok(workspace.participants(ctx, id));
     }
 
-    @PostMapping("/case-instances/{id}/reactivation")
-    public ResponseEntity<CasePort.CaseInstance> reactivate(RequestContext ctx, @PathVariable String id,
+    @PostMapping("/case-instances/by-id/reactivation")
+    public ResponseEntity<CasePort.CaseInstance> reactivate(RequestContext ctx, @RequestParam("id") String id,
                                                             @RequestBody ReasonBody body) {
         permissions.require(ctx, Permissions.CASE_WRITE);
         ProcessController.requireReason(body == null ? null : body.reason());

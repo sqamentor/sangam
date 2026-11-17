@@ -151,15 +151,16 @@ public final class ProgrammesApi {
      *
      * <p>Open, close or lock a reporting period.
      *
-     * <p>{@code POST /programme-periods/{id}/state} (operationId {@code programmeChangePeriodState}); permission {@code programme.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /programme-periods/by-id/state} (operationId {@code programmeChangePeriodState}); permission {@code programme.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. Reporting period id (&lt;frequency&gt;:&lt;start&gt;, PeriodService); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public PgPeriod programmeChangePeriodState(String id, PgPeriodStateRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/programme-periods/" + HttpTransport.seg(String.valueOf(id)) + "/state");
+    public PgPeriod programmeChangePeriodState(PgPeriodStateRequest body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/programme-periods/by-id/state");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_programmeChangePeriodState);
     }
 
