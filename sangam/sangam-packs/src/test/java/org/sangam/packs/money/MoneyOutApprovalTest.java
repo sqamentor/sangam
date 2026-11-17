@@ -30,7 +30,6 @@ import org.sangam.packs.spi.MoneyMovement;
 import org.sangam.packs.spi.MoneyPathGuard;
 import org.sangam.packs.spi.PackDescriptor;
 import org.sangam.packs.spi.PackRegistry;
-import org.sangam.packs.spi.PackResource;
 import org.sangam.packs.spi.SangamPack;
 
 /**
@@ -176,8 +175,8 @@ class MoneyOutApprovalTest {
         for (SangamPack p : PackRegistry.discover().all()) {
             Map<String, String> topics = new HashMap<>();
             p.descriptor().workers().forEach(w -> topics.put(w.topic(), w.connector()));
-            for (PackResource r : p.descriptor().resources()) {
-                if (r.kind() == PackResource.Kind.BPMN) {
+            for (PackDescriptor.PackResource r : p.descriptor().resources()) {
+                if (r.kind() == PackDescriptor.PackResource.Kind.BPMN) {
                     all.addAll(MoneyPathGuard.check(r.path(), read(p, r.path()), ConnectorMoneyMovements::enforced,
                             topics));
                 }
