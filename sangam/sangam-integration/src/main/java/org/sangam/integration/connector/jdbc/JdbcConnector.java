@@ -26,7 +26,7 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
-import org.sangam.core.engine.LockScope;
+import org.sangam.engine.tx.LockScope;
 import org.sangam.core.integration.ConnectorDescriptor;
 import org.sangam.core.integration.ConnectorProfile;
 import org.sangam.core.integration.ConnectorRequest;

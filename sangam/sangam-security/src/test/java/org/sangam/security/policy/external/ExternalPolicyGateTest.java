@@ -14,7 +14,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
-import org.sangam.core.engine.LockScope;
+import org.sangam.engine.tx.LockScope;
 
 /**
  * Owner decision 166 (M-083): the gate's verdict table. Deny wins for every checked command; an allow only continues
