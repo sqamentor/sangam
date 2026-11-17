@@ -55,6 +55,11 @@ class FwtInputGuardsTest {
                     public <T> T inTransaction(java.util.function.Function<java.sql.Connection, T> work) {
                         throw new AssertionError("no query may run without a predicate");
                     }
+
+                    @Override
+                    public <T> T read(org.sangam.core.api.ReadWork<T> work) {
+                        throw new AssertionError("no query may run without a predicate");
+                    }
                 });
         HistoryQueryService.Filter f = new HistoryQueryService.Filter("t1", null, null, null, null, null, null, null, null,
                 null, null, null);

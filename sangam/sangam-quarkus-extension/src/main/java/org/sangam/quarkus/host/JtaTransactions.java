@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.quarkus.host;
 
+import org.sangam.core.api.ReadWork;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
@@ -57,6 +58,27 @@ public final class JtaTransactions implements Transactions {
         T result;
         try (Connection c = dataSource.getConnection()) {
             result = work.apply(c);
+        } catch (SQLException e) {
+            Jdbc.LayerSqlException failure = new Jdbc.LayerSqlException("transaction", e);
+            abandon(owner, failure);
+            throw failure;
+        } catch (RuntimeException | Error e) {
+            abandon(owner, e);
+            throw e;
+        }
+        if (owner) {
+            commit();
+        }
+        return result;
+    }
+
+    @Override
+    public <T> T read(ReadWork<T> work) {
+        Objects.requireNonNull(work, "work");
+        boolean owner = begin();
+        T result;
+        try (Connection c = dataSource.getConnection()) {
+            result = work.read(c);
         } catch (SQLException e) {
             Jdbc.LayerSqlException failure = new Jdbc.LayerSqlException("transaction", e);
             abandon(owner, failure);

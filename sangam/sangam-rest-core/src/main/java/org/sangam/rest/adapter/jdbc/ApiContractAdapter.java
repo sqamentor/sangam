@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.adapter.jdbc;
 
+import org.sangam.core.api.ReadWork;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Objects;
@@ -55,6 +56,11 @@ public final class ApiContractAdapter implements ApiContractPort {
             @Override
             public <T> T inTransaction(Function<Connection, T> work) {
                 return tx.withConnection(work);
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                return tx.withReadConnection(work);
             }
         };
     }

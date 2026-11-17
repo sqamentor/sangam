@@ -70,7 +70,7 @@ public class DscSigningWiring {
         if (tx == null) {
             throw new IllegalStateException(P + "enabled is true but there is no TxSupport for the enrolments");
         }
-        return new DscEnrolment(new JdbcDscCertificateEnrolments(tx::withConnection), Clock.systemUTC());
+        return new DscEnrolment(new JdbcDscCertificateEnrolments(tx.joinedTransactions()), Clock.systemUTC());
     }
 
     @Bean

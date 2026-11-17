@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.ops.utc;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -195,6 +196,15 @@ class UtcConversionToolH2Test {
                     throw new IllegalStateException("simulated stop after the first batch");
                 }
                 return tx.inTransaction(work);
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                // 1 gate close, 2 start (APPLYING), 3 row access, 4 first batch (committed), 5 second batch: stop
+                if (calls.incrementAndGet() == 5) {
+                    throw new IllegalStateException("simulated stop after the first batch");
+                }
+                return tx.read(work);
             }
         };
         UtcConversionTool crashing = new UtcConversionTool(failing, Dialect.POSTGRESQL, audit, UtcInventory.product());

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.restadapter;
 
+import org.sangam.core.api.ReadWork;
 import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -158,6 +159,37 @@ class WorkCompleteAcknowledgementH2Test {
                 current = c;
                 try {
                     R r = work.apply(c);
+                    if (completing) {
+                        acknowledgementsSeenBeforeCommit.add(acknowledgements(c, completingWork));
+                        completing = false;
+                    }
+                    if (failCommit) {
+                        throw new IllegalStateException("commit failed");
+                    }
+                    c.commit();
+                    return r;
+                } catch (RuntimeException e) {
+                    c.rollback();
+                    throw e;
+                } finally {
+                    current = null;
+                    completing = false;
+                }
+            } catch (java.sql.SQLException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        @Override
+        public <R> R inEngineReadTransaction(ReadWork<R> work) {
+            if (current != null) {
+                return work.read(current);   // context reuse, as OperatonEngineAdapter does
+            }
+            try (Connection c = DriverManager.getConnection(url, "sa", "")) {
+                c.setAutoCommit(false);
+                current = c;
+                try {
+                    R r = work.read(c);
                     if (completing) {
                         acknowledgementsSeenBeforeCommit.add(acknowledgements(c, completingWork));
                         completing = false;

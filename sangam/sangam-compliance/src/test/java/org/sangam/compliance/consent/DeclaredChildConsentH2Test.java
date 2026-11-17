@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.compliance.consent;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -80,6 +81,11 @@ class DeclaredChildConsentH2Test {
         Transactions tx = new Transactions() {
             @Override
             public <T> T inTransaction(Function<Connection, T> work) {
+                throw new AssertionError("the tests pass their own connection");
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
                 throw new AssertionError("the tests pass their own connection");
             }
         };

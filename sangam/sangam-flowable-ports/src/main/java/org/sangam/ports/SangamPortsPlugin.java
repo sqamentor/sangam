@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.ports;
 
+import org.sangam.core.api.ReadWork;
 import org.operaton.bpm.dmn.engine.DmnEngineConfiguration;
 import org.operaton.bpm.dmn.engine.impl.DefaultDmnEngineConfiguration;
 import org.operaton.bpm.engine.ProcessEngine;
@@ -197,6 +198,12 @@ public class SangamPortsPlugin implements ProcessEnginePlugin {
             public <T> T inTransaction(java.util.function.Function<java.sql.Connection, T> work) {
                 // EngineTx.connection(): FW-23 rollback guard, product rows roll back with a failed command
                 return cfg.getCommandExecutorTxRequired().execute(cc -> work.apply(org.sangam.ports.support.EngineTx.connection()));
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                // EngineTx.connection(): FW-23 rollback guard, product rows roll back with a failed command
+                return cfg.getCommandExecutorTxRequired().execute(cc -> work.read(org.sangam.ports.support.EngineTx.connection()));
             }
         };
     }

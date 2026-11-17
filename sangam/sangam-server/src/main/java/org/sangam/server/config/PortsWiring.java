@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
+import org.sangam.core.api.ReadWork;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
@@ -178,6 +179,11 @@ public class PortsWiring {
             @Override
             public <T> T inTransaction(Function<Connection, T> work) {
                 return EngineTx.transactions(engine.getObject()).inTransaction(work);
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                return EngineTx.transactions(engine.getObject()).read(work);
             }
         };
         return new DebuggerService(lazy, settings.getDialect(), tx, sandboxTenants(env), true);

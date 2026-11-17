@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.compliance;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -115,6 +116,11 @@ class PortalComplianceAdapterH2Test {
             @Override
             public <T> T inTransaction(Function<Connection, T> work) {
                 return tx.withConnection(work);
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                return tx.withReadConnection(work);
             }
         };
         props.put("jurisdiction", "IN");

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.acceptance.contracts;
 
+import org.sangam.core.api.ReadWork;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -40,6 +41,12 @@ abstract class LayerSpecSupport extends ContractSupport {
         public <T> T inTransaction(Function<Connection, T> work) {
             ensureIso();
             return iso.tx().inTransaction(work);
+        }
+
+        @Override
+        public <T> T read(ReadWork<T> work) {
+            ensureIso();
+            return iso.tx().read(work);
         }
     };
 

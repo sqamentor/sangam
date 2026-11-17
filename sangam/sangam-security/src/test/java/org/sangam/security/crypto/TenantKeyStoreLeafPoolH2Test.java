@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.security.crypto;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -82,6 +83,24 @@ class TenantKeyStoreLeafPoolH2Test {
                     mainPool.release();
                 }
             }
+
+            @Override
+            public <R> R read(ReadWork<R> work) {
+                mainPoolRequests.incrementAndGet();
+                try {
+                    if (!mainPool.tryAcquire(1, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("main pool exhausted: connection is not available");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(e);
+                }
+                try {
+                    return readTransaction(work);
+                } finally {
+                    mainPool.release();
+                }
+            }
         };
     }
 
@@ -92,6 +111,12 @@ class TenantKeyStoreLeafPoolH2Test {
                 leafTransactions.incrementAndGet();
                 return transaction(work);
             }
+
+            @Override
+            public <R> R read(ReadWork<R> work) {
+                leafTransactions.incrementAndGet();
+                return readTransaction(work);
+            }
         };
     }
 
@@ -100,6 +125,22 @@ class TenantKeyStoreLeafPoolH2Test {
             c.setAutoCommit(false);
             try {
                 R r = work.apply(c);
+                c.commit();
+                return r;
+            } catch (RuntimeException e) {
+                c.rollback();
+                throw e;
+            }
+        } catch (java.sql.SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    <R> R readTransaction(ReadWork<R> work) {
+        try (Connection c = DriverManager.getConnection(url, "sa", "")) {
+            c.setAutoCommit(false);
+            try {
+                R r = work.read(c);
                 c.commit();
                 return r;
             } catch (RuntimeException e) {
