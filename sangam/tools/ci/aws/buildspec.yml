@@ -32,7 +32,7 @@ phases:
       - cd sangam
       - export P="python3 -I tools/ci/ci_plan.py --file ../ci-lane.json"
       - $P | tee ../ci-plan.json
-      - mapfile -t args < <($P --print-build-args) && bash ./mvnw $MAVEN_ARGS "${args[@]}"
+      - mapfile -t args < <($P --print-build-args) && [ "${#args[@]}" -gt 0 ] && bash ./mvnw $MAVEN_ARGS "${args[@]}"
       - |
         set -euo pipefail
         rc=0
@@ -43,6 +43,7 @@ phases:
           case "$ref" in *@sha256:*) docker tag "$ref" "${ref%@sha256:*}" ;; esac
           echo "image $db pulled in $(( $(date +%s) - s )) s"
           mapfile -t args < <($P --db "$db" --print-it-args)
+          if [ "${#args[@]}" -eq 0 ]; then echo "ERROR $db: ci_plan refused"; rc=1; continue; fi
           SANGAM_IT_DB=$db bash ./mvnw $MAVEN_ARGS "${args[@]}" || rc=1
           mkdir -p ../reports/it-$db
           find . -path '*/target/failsafe-reports/*' -name 'TEST-*.xml' -exec cp {} ../reports/it-$db/ \;
