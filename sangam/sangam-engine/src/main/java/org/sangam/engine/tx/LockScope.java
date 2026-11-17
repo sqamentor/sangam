@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.engine.tx;
 
+import org.sangam.core.engine.IllegalRemoteCallInLockScope;
+import org.sangam.core.engine.LockProbe;
+import org.sangam.core.engine.RemoteCalls;
+
 /**
  * VI.1 rule 5: no remote work while the L2 root lock is held. The engine marks the current thread while a command
- * holds L2; connectors, HTTP clients, LLM and broker clients call {@link #assertNoLockHeld(String)} before any remote
- * call and get {@link IllegalRemoteCallInLockScope} inside a locked transaction. Side effects belong in the outbox or
- * in external tasks, carried out after commit.
+ * holds L2. Connectors, HTTP clients, LLM and broker clients do not link this class: they call
+ * {@link RemoteCalls#assertNoLockHeld(String)} in sangam-core, which reads this marker through {@link Probe} (registered
+ * in {@code META-INF/services/org.sangam.core.engine.LockProbe}) and throws {@link IllegalRemoteCallInLockScope} inside
+ * a locked transaction. Side effects belong in the outbox or in external tasks, carried out after commit.
  */
 public final class LockScope {
 
@@ -34,18 +39,18 @@ public final class LockScope {
         return DEPTH.get()[0] > 0;
     }
 
-    /** Remote-call side: throws inside a locked transaction. */
+    /** Remote-call side: throws inside a locked transaction (same check as {@link RemoteCalls#assertNoLockHeld}). */
     public static void assertNoLockHeld(String remoteCall) {
         if (isLockHeld()) {
             throw new IllegalRemoteCallInLockScope(remoteCall);
         }
     }
 
-    /** VI.1 rule 5 violation. */
-    public static final class IllegalRemoteCallInLockScope extends IllegalStateException {
-        public IllegalRemoteCallInLockScope(String remoteCall) {
-            super("IllegalRemoteCallInLockScope: " + remoteCall
-                    + " called while an L2 root lock is held; use the outbox or an external task");
+    /** The engine's {@link LockProbe}: exposes this thread's marker to {@link RemoteCalls}. */
+    public static final class Probe implements LockProbe {
+        @Override
+        public boolean lockHeld() {
+            return isLockHeld();
         }
     }
 }

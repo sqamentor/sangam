@@ -26,6 +26,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.sangam.core.engine.IllegalRemoteCallInLockScope;
 import org.sangam.engine.tx.LockScope;
 
 /**
@@ -206,7 +207,7 @@ class HttpExternalPolicyCheckTest {
         AtomicInteger before = new AtomicInteger(bodies.size());
         LockScope.enter();
         try {
-            assertThrows(LockScope.IllegalRemoteCallInLockScope.class,
+            assertThrows(IllegalRemoteCallInLockScope.class,
                     () -> check(uri, Duration.ofSeconds(2), null).check(request()));
         } finally {
             LockScope.exit();
