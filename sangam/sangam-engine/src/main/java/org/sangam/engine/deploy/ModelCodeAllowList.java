@@ -54,6 +54,56 @@ public final class ModelCodeAllowList {
     public static final String DELEGATE_NOT_ALLOWED = "SL160-DELEGATE";
     public static final String UNREADABLE = "SL160-XML";
     public static final String SCRIPT = "SL160-SCRIPT";
+    /** R8-pnp PNP-2: a host approval ({@code deploy-allowed-classes} / {@code -beans}) that is not one exact name. */
+    public static final String ALLOW_ENTRY = "SL160-ALLOW-ENTRY";
+    /** R8-pnp PNP-2: the start-up record of every host approval in force. */
+    public static final String HOST_APPROVAL = "SL160-HOST-APPROVAL";
+    /** Decision 404 (5): audit event of a new deployment that uses a host approval. */
+    public static final String HOST_APPROVAL_USED = "SL160_HOST_APPROVAL_USED";
+
+    private static final Pattern IDENT = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
+    private static final Pattern BEAN_ENTRY = Pattern.compile("(" + IDENT + ")(?:\\.(" + IDENT + "))?");
+    private static final Pattern CLASS_ENTRY = Pattern.compile("[A-Za-z_$][A-Za-z0-9_$]*(?:\\.[A-Za-z_$][A-Za-z0-9_$]*)+");
+
+    /**
+     * R8-pnp PNP-2: the invalid host approvals (empty: all valid). A tenant key is a tenant id or {@code *} (every
+     * tenant). A class entry is one binary class name ({@code com.dept.Delegate}, {@code Outer$Inner}); a bean entry
+     * is one bean ({@code recorder}, every member except the reflective ones) or one member ({@code recorder.record}).
+     * Refused: blanks, wildcards and patterns ({@code *}, {@code recorder.*}, {@code com.dept.*}), an engine context
+     * object as a bean ({@code execution}, {@code task}, ...: they are never beans), and a reflective member.
+     */
+    public static List<String> invalidEntries(Map<String, Set<String>> classes, Map<String, Set<String>> beans) {
+        List<String> bad = new ArrayList<>();
+        check(classes, "deploy-allowed-classes", e -> CLASS_ENTRY.matcher(e).matches(), bad);
+        check(beans, "deploy-allowed-beans", e -> {
+            Matcher m = BEAN_ENTRY.matcher(e);
+            return m.matches() && !ExpressionPolicy.CONTEXTS.contains(m.group(1))
+                    && !ExpressionPolicy.FORBIDDEN_MEMBERS.contains(m.group(1))
+                    && (m.group(2) == null || !ExpressionPolicy.FORBIDDEN_MEMBERS.contains(m.group(2)));
+        }, bad);
+        return bad;
+    }
+
+    private static void check(Map<String, Set<String>> configured, String setting,
+                              java.util.function.Predicate<String> valid, List<String> bad) {
+        if (configured == null) {
+            return;
+        }
+        configured.forEach((tenant, entries) -> {
+            if (tenant == null || tenant.isBlank()) {
+                bad.add(setting + ": blank tenant key");
+            }
+            if (entries == null) {
+                bad.add(setting + "." + tenant + ": no entries");
+                return;
+            }
+            for (String e : entries) {
+                if (e == null || !valid.test(e)) {
+                    bad.add(setting + "." + tenant + ": '" + e + "'");
+                }
+            }
+        });
+    }
 
     /** Elements whose text is prose, never evaluated. */
     static final Set<String> PROSE = Set.of("documentation", "text");
@@ -95,7 +145,7 @@ public final class ModelCodeAllowList {
             "org.sangam.packs.core.CumulativeThresholdDelegate",
             "org.sangam.packs.core.DecisionDelegate",
             "org.sangam.packs.core.DocumentDelegate",
-            "org.sangam.packs.core.DocumentSlotReadyListener",
+            "org.sangam.packs.core.DocumentSlotReadyListener", // decision 390 (1) prepare-task listener (22 packs)
             "org.sangam.packs.core.DscSignatureGuardListener",
             "org.sangam.packs.core.ExternalOperationDelegate",
             "org.sangam.packs.core.LedgerDelegate",
@@ -334,9 +384,40 @@ public final class ModelCodeAllowList {
          * @param allowedClasses tenant id or {@code *} -> extra allowed classes ({@code sangam.engine.deploy-allowed-classes})
          * @param allowedBeans   tenant id or {@code *} -> extra allowed beans ({@code sangam.engine.deploy-allowed-beans})
          */
+        private org.sangam.core.engine.AuditSink audit;
+        private java.util.function.Supplier<String> systemScope;
+
+        /** Decision 404 (5): audits deployments that use a host approval (untenanted: the system audit scope). */
+        public DeployRule(Map<String, Set<String>> allowedClasses, Map<String, Set<String>> allowedBeans,
+                          org.sangam.core.engine.AuditSink audit, java.util.function.Supplier<String> systemScope) {
+            this(allowedClasses, allowedBeans);
+            this.audit = audit;
+            this.systemScope = systemScope;
+        }
+
         public DeployRule(Map<String, Set<String>> allowedClasses, Map<String, Set<String>> allowedBeans) {
+            List<String> bad = invalidEntries(allowedClasses, allowedBeans);
+            if (!bad.isEmpty()) {
+                throw new IllegalArgumentException(ALLOW_ENTRY + ": the engine refuses to start with an invalid host "
+                        + "approval (an entry names one class, one bean or one bean.member; no wildcard): " + bad);
+            }
             this.allowedClasses = allowedClasses;
             this.allowedBeans = allowedBeans;
+            logApprovals("class", allowedClasses);
+            logApprovals("bean", allowedBeans);
+        }
+
+        private static void logApprovals(String kind, Map<String, Set<String>> configured) {
+            if (configured == null) {
+                return;
+            }
+            org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ModelCodeAllowList.class);
+            configured.forEach((tenant, entries) -> {
+                for (String e : entries) {
+                    log.warn("{}: host-approved {} '{}' for tenant '{}' (beyond Sangam's own reviewed list)",
+                            HOST_APPROVAL, kind, e, tenant);
+                }
+            });
         }
 
         @Override
@@ -355,6 +436,41 @@ public final class ModelCodeAllowList {
             if (!findings.isEmpty()) {
                 throw new ProcessEngineException("SL-160: deployment '" + deployment.getName() + "' refused: " + findings);
             }
+            if (audit != null) {
+                auditHostApprovals(deployment);
+            }
+        }
+
+        /**
+         * Decision 404 (5): a new deployment that needs a host approval is written to the class-B audit chain
+         * ({@value #HOST_APPROVAL_USED}), in the deploy command. "Needs" is exact: the findings the deployment would
+         * have against Sangam's own lists alone, each naming the host-approved class, bean or member it uses.
+         */
+        private void auditHostApprovals(DeploymentEntity deployment) {
+            List<String> used = new ArrayList<>();
+            List<String> resources = new ArrayList<>();
+            for (ResourceEntity r : deployment.getResources().values()) {
+                if (isModel(r.getName()) && r.getBytes() != null) {
+                    List<Finding> own = check(r.getName(), r.getBytes(), SANGAM_CLASSES, SANGAM_BEANS);
+                    if (!own.isEmpty()) {
+                        resources.add(r.getName());
+                        own.forEach(f -> used.add(f.toString()));
+                    }
+                }
+            }
+            if (used.isEmpty()) {
+                return;
+            }
+            String tenant = deployment.getTenantId();
+            Map<String, Object> payload = new java.util.LinkedHashMap<>();
+            payload.put("deploymentId", deployment.getId());
+            payload.put("deploymentName", deployment.getName());
+            payload.put("tenantId", tenant);
+            payload.put("resources", List.copyOf(resources));
+            payload.put("approvalsUsed", List.copyOf(used));
+            audit.append(org.sangam.engine.tx.CommandState.currentConnection(),
+                    tenant != null ? tenant : systemScope.get(), "platform:deployment:" + deployment.getId(),
+                    HOST_APPROVAL_USED, payload);
         }
     }
 }

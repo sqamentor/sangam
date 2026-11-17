@@ -242,7 +242,7 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         preDeployers.add(new org.sangam.engine.deploy.OperationRefPinning.DeployRule(s.getOperationRefPinner())); // M-068
         // SL-160 / TM-10: only reviewed Java classes and delegate beans in new BPMN / CMMN deployments
         preDeployers.add(new org.sangam.engine.deploy.ModelCodeAllowList.DeployRule(s.getDeployAllowedClasses(),
-                s.getDeployAllowedBeans()));
+                s.getDeployAllowedBeans(), components.auditSink(), () -> components.workTenants().systemAuditScope()));
         cfg.setCustomPreDeployers(preDeployers);
         cfg.setDmnEngineConfiguration(dmn);
 

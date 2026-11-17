@@ -33,7 +33,7 @@ it waits on. "NOT_RUN" means a test is written but has not run on that database.
 | Contract deltas announcement | **pending (E3)** |
 | GA-55 bill-type contract | **pending (E4, joint JL-S-06, IFMS side)** |
 | Routing incident v1 + keys, service-token headers, version immutability, isolation | **available now** (E5, DONE-VERIFIED) |
-| Plain-Operaton host swap (PNP-1), host bean approval by configuration (PNP-2), typed routing-incident read (PNP-3) | **merging** (lane R8-pnp, branch feat/round8-pnp: 72fac64f, 5c944df4, eee38a23, 4fd97c61; H2 and unit evidence only; section 2.1) |
+| Plain-Operaton host swap (PNP-1), host bean approval by configuration (PNP-2), typed routing-incident read (PNP-3) | **merged** (13aa5186; H2 64/0; Oracle and SQL Server pending) (lane R8-pnp, branch feat/round8-pnp: 72fac64f, 5c944df4, eee38a23, 4fd97c61; H2 and unit evidence only; section 2.1) |
 | DSC gate through a call, slot consumption | **available now** (decisions 382, 385, 387, 390 (1); merged eb779e1a) |
 | Exact decimals end to end (TypedVariables, ExactJson) | **available now** in code; DB evidence NOT_RUN |
 | SD-505 confidence score | 0.00% as scored by IFMS on 2026-11-16 (joint ledger) |
@@ -83,7 +83,7 @@ it waits on. "NOT_RUN" means a test is written but has not run on that database.
 
 ### 2.1 Embedded swap behind the IFMS workflow port (IFMS report SANGAM-PNP-H2, lane R8-pnp)
 
-IFMS's H2 trial (E-65) found three gaps. Here is how each one is closed in code, on branch feat/round8-pnp (PNP-2 72fac64f, PNP-1 5c944df4, PNP-3 eee38a23, decision 404 (5) 4fd97c61). Status: **merging** for 0.1.0. These changes are H2 and unit evidence only, and they are not pushed.
+IFMS's H2 trial (E-65) found three gaps. Here is how each one is closed in code, on branch feat/round8-pnp (PNP-2 72fac64f, PNP-1 5c944df4, PNP-3 eee38a23, decision 404 (5) 4fd97c61). Status: **merged** (13aa5186; H2 64/0; Oracle and SQL Server pending) for 0.1.0. These changes are H2 and unit evidence only, and they are not pushed.
 
 | Finding | Before | Now |
 |---|---|---|
