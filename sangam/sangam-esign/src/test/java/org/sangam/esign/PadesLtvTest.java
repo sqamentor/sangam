@@ -28,8 +28,15 @@ import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
@@ -54,7 +61,10 @@ import org.bouncycastle.cert.ocsp.CertificateStatus;
 import org.bouncycastle.cert.ocsp.OCSPRespBuilder;
 import org.bouncycastle.cert.ocsp.RespID;
 import org.bouncycastle.cert.ocsp.RevokedStatus;
+import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
+import org.bouncycastle.cms.CMSSignedDataGenerator;
+import org.bouncycastle.cms.DefaultSignedAttributeTableGenerator;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
@@ -72,7 +82,9 @@ import org.junit.jupiter.api.Test;
 /**
  * M-080 PAdES long-term validation (B-LT) from the material embedded in the PDF, with nothing fetched: a test PKI (root
  * anchor, signer, time-stamp authority) built in memory, a signed and time-stamped PDF, and a DSS added in an
- * incremental update with OCSP answers and CRLs made by the test. Every failed rule has its own code.
+ * incremental update with OCSP answers and CRLs made by the test. Every failed rule has its own code. D8 (lane R7-sweep):
+ * answers in the signer's adbe-revocationInfoArchival are pooled with the DSS under the same rules, and a B-LTA document
+ * time-stamp is the named problem DOCUMENT_TIMESTAMP_NOT_EVALUATED (fail closed).
  */
 class PadesLtvTest {
 
@@ -236,6 +248,114 @@ class PadesLtvTest {
         assertTrue(junk.afterLastSignature().startsWith(PadesLtv.MODIFIED_AFTER_SIGNING), junk.afterLastSignature());
     }
 
+    // ---- D8 (lane R7-sweep): adbe-revocationInfoArchival and document time-stamps -----------------------
+
+    /** The adbe-revocationInfoArchival signed attribute: {@code crl [0]} and {@code ocsp [1]}, each explicit. */
+    static Attribute archival(List<byte[]> crls, List<byte[]> ocsps) throws Exception {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        if (!crls.isEmpty()) {
+            v.add(new DERTaggedObject(true, 0, sequence(crls)));
+        }
+        if (!ocsps.isEmpty()) {
+            v.add(new DERTaggedObject(true, 1, sequence(ocsps)));
+        }
+        return new Attribute(new ASN1ObjectIdentifier(PadesLtv.ADBE_REVOCATION_INFO_ARCHIVAL),
+                new DERSet(new DERSequence(v)));
+    }
+
+    private static DERSequence sequence(List<byte[]> ders) throws Exception {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        for (byte[] d : ders) {
+            v.add(ASN1Primitive.fromByteArray(d));
+        }
+        return new DERSequence(v);
+    }
+
+    @Test
+    void archivedAnswersInTheSignatureAreEvidenceWithoutADss() throws Exception {
+        // the signer embeds answers for its own path and the TSA's when it signs: within the clock skew of the time-stamp
+        byte[] pdf = sign(true, archival(List.of(), List.of(ocsp(signer, root, root, SIGNED_AT, null),
+                ocsp(tsa, root, root, SIGNED_AT, null))));
+        PdfSignatureValidator.Report r = validate(pdf, true);
+        assertTrue(r.valid(), r.toString());
+        assertNull(r.afterLastSignature(), "nothing was added after signing");
+        assertEquals(PadesLtv.VALID, ltv(r).code(), ltv(r).toString());
+        assertEquals(2, ltv(r).evidence().size(), ltv(r).evidence().toString());
+    }
+
+    @Test
+    void archivedAndDssMaterialArePooledAndAnArchivedRevocationWins() throws Exception {
+        byte[] pooled = withDss(sign(true, archival(List.of(crl(root, root, SIGNED_AT, null)), List.of())), List.of(),
+                List.of(ocsp(tsa, root, root, TSA_TIME.plusSeconds(60), null)), List.of(), false);
+        PdfSignatureValidator.Report r = validate(pooled, true);
+        assertTrue(r.valid(), r.toString());
+        assertEquals(PadesLtv.VALID, ltv(r).code(), "signer from the archived CRL, TSA from the DSS: " + ltv(r));
+
+        byte[] revoked = withDss(sign(true, archival(List.of(crl(root, root, SIGNED_AT, signer.cert().getSerialNumber())),
+                List.of())), List.of(), List.of(ocsp(signer, root, root, TSA_TIME.plusSeconds(60), null),
+                ocsp(tsa, root, root, TSA_TIME.plusSeconds(60), null)), List.of(), false);
+        assertEquals(PadesLtv.REVOKED, ltv(validate(revoked, true)).code(), "a revoked archived answer is not ignored");
+
+        byte[] forged = sign(true, archival(List.of(), List.of(ocsp(signer, root, stranger, SIGNED_AT, null),
+                ocsp(tsa, root, root, SIGNED_AT, null))));
+        assertEquals(PadesLtv.REVOCATION_MISSING, ltv(validate(forged, true)).code(),
+                "an archived answer counts only when authentic");
+    }
+
+    @Test
+    void anUnreadableArchivalAttributeFailsClosed() throws Exception {
+        Attribute junk = new Attribute(new ASN1ObjectIdentifier(PadesLtv.ADBE_REVOCATION_INFO_ARCHIVAL),
+                new DERSet(new DEROctetString(new byte[] {1, 2, 3})));
+        PdfSignatureValidator.Report r = validate(sign(true, junk), true);
+        assertFalse(r.valid());
+        assertEquals(PadesLtv.ARCHIVAL_INVALID, ltv(r).code(), ltv(r).toString());
+    }
+
+    @Test
+    void aDocumentTimeStampIsNotEvaluatedAndMakesTheReportInvalid() throws Exception {
+        byte[] withDss = withDss(signedPdf, List.of(), List.of(ocsp(signer, root, root, TSA_TIME.plusSeconds(60), null),
+                ocsp(tsa, root, root, TSA_TIME.plusSeconds(60), null)), List.of(), false);
+        assertTrue(validate(withDss, true).valid(), "the control: B-LT without a document time-stamp is valid");
+
+        byte[] bLta;
+        try (PDDocument doc = Loader.loadPDF(withDss); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            PDSignature ts = new PDSignature();
+            ts.setType(COSName.DOC_TIME_STAMP);
+            ts.setFilter(PDSignature.FILTER_ADOBE_PPKLITE);
+            ts.setSubFilter(COSName.getPDFName("ETSI.RFC3161"));
+            doc.addSignature(ts, content -> {
+                try {
+                    TimeStampTokenGenerator gen = new TimeStampTokenGenerator(
+                            new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build()).build(
+                                    new JcaContentSignerBuilder("SHA256withRSA").build(tsa.keys().getPrivate()),
+                                    tsa.cert()),
+                            new JcaDigestCalculatorProviderBuilder().build()
+                                    .get(new DefaultDigestAlgorithmIdentifierFinder().find("SHA-256")),
+                            new ASN1ObjectIdentifier("1.2.3.4.1"));
+                    gen.addCertificates(new JcaCertStore(List.of(tsa.cert())));
+                    TimeStampRequestGenerator request = new TimeStampRequestGenerator();
+                    request.setCertReq(true);
+                    return gen.generate(request.generate(TSPAlgorithms.SHA256,
+                            PadesSigning.sha256(content.readAllBytes())), BigInteger.TWO,
+                            Date.from(TSA_TIME.plusSeconds(3600))).getEncoded();
+                } catch (Exception e) {
+                    throw new java.io.IOException(e);
+                }
+            });
+            doc.saveIncremental(out);
+            bLta = out.toByteArray();
+        }
+        PdfSignatureValidator.Report r = validate(bLta, false);
+        assertFalse(r.valid(), r.toString());
+        assertEquals(2, r.signatures().size(), r.toString());
+        PdfSignatureValidator.SignatureReport docTs = r.signatures().get(1);
+        assertTrue(docTs.problem() != null && docTs.problem().startsWith(PadesLtv.DOCUMENT_TIMESTAMP_NOT_EVALUATED),
+                String.valueOf(docTs.problem()));
+        assertNull(r.signatures().get(0).problem(), "the earlier signature itself is still reported as it is");
+        assertTrue(PdfSignatureValidator.LIMITS.contains(PadesLtv.DOCUMENT_TIMESTAMP_NOT_EVALUATED),
+                PdfSignatureValidator.LIMITS);
+    }
+
     // ---- test PKI and documents ------------------------------------------------------------------
 
     static Party ca(String cn) throws Exception {
@@ -271,10 +391,27 @@ class PadesLtvTest {
 
     /** A signed PDF; {@code stamped} adds a signature time-stamp from the test TSA at {@link #TSA_TIME}. */
     static byte[] sign(boolean stamped) throws Exception {
+        return sign(stamped, null);
+    }
+
+    /** As {@link #sign(boolean)}; {@code signedExtra}, when given, is one more signed attribute of the signer. */
+    static byte[] sign(boolean stamped, Attribute signedExtra) throws Exception {
         PadesSigning.Prepared p = PadesSigning.prepare(SignTestKit.onePagePdf(), PadesSigning.Profile.PKCS7_DETACHED,
                 null, SIGNED_AT, 0);
-        byte[] cms = SignTestKit.detachedCms(new SignTestKit.Signer(signer.keys(), signer.cert()),
-                SignTestKit.signedContent(p.pdf(), p.byteRange()), false);
+        byte[] content = SignTestKit.signedContent(p.pdf(), p.byteRange());
+        byte[] cms;
+        if (signedExtra == null) {
+            cms = SignTestKit.detachedCms(new SignTestKit.Signer(signer.keys(), signer.cert()), content, false);
+        } else {
+            JcaSignerInfoGeneratorBuilder sib = new JcaSignerInfoGeneratorBuilder(
+                    new JcaDigestCalculatorProviderBuilder().build());
+            sib.setSignedAttributeGenerator(new DefaultSignedAttributeTableGenerator(new AttributeTable(signedExtra)));
+            CMSSignedDataGenerator g = new CMSSignedDataGenerator();
+            g.addSignerInfoGenerator(sib.build(new JcaContentSignerBuilder("SHA256withRSA").build(
+                    signer.keys().getPrivate()), signer.cert()));
+            g.addCertificates(new JcaCertStore(List.of(signer.cert())));
+            cms = g.generate(new CMSProcessableByteArray(content), false).getEncoded("DER");
+        }
         if (stamped) {
             CMSSignedData sd = new CMSSignedData(cms);
             SignerInformation si = sd.getSignerInfos().getSigners().iterator().next();

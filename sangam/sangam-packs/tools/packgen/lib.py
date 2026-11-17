@@ -493,8 +493,9 @@ class Proc:
         self.root = Scope(self)
         self.listeners = []
         self.pack = pack
-        if start:
-            self.listeners.append(xlistener('start', C['START'], start))
+        # PackStartListener fields; written with the process (decision 394: durationFields comes from the start form)
+        self.start = start
+        self.duration_fields = ()
 
     def fid(self, k):
         self.n += 1
@@ -564,8 +565,14 @@ class Proc:
                    f'operaton:historyTimeToLive="{self.ttl}" operaton:versionTag="{self.version}"{startable}>')
         if self.doc:
             out.append(f'    <documentation>{escape(self.doc)}</documentation>')
-        if self.listeners:
-            out.append('    <extensionElements>' + ''.join(self.listeners) + '</extensionElements>')
+        listeners = list(self.listeners)
+        if self.start:
+            start = dict(self.start)
+            if self.duration_fields:
+                start['durationFields'] = ','.join(self.duration_fields)
+            listeners.insert(0, xlistener('start', C['START'], start))
+        if listeners:
+            out.append('    <extensionElements>' + ''.join(listeners) + '</extensionElements>')
         self._scope_xml(self.root, out, '    ')
         out.append('  </process>')
         layout_proc(self)

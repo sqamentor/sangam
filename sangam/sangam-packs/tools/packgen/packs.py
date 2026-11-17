@@ -272,6 +272,16 @@ def document_slots(pids, own, calls, pack_id):
     return [{'documentType': t, 'slot': s} for t, s in sorted(pairs.items())]
 
 
+def duration_fields(pack, proc):
+    """Decision 394: the start-form fields of type 'duration' (an ISO-8601 duration counted from the start); the
+    start listener refuses a start whose value of such a field is not one (PackStartListener durationFields)."""
+    form = next((f for p in pack.procs for f in p.forms if f['key'] == proc.start_form), None)
+    if form is None:
+        return ()
+    ids = [fid.rstrip('*') for fid in form['fields']]
+    return tuple(fid for fid in ids if fid in L and L[fid][2] == 'duration')
+
+
 def write_all(root):
     """root = src/main/resources. Writes packs/<dir>/..., META-INF/sangam/packs.idx; returns catalogue rows."""
     idx = ['# Sangam pack manifests (generated). One manifest path per line.']
@@ -285,6 +295,7 @@ def write_all(root):
     for pk in ALL:
         for p in pk.procs:
             p.started_by = tuple(sorted(starters.get(p.pid, ())))
+            p.duration_fields = duration_fields(pk, p)
     core_tables = {did: xml for pk in ALL if pk.id == 'sangam.core' for did, xml in pk.dmns}
     # decision 382: every process is generated first, so a pack's manifest can name the DSC gates of the processes
     # it calls, whichever pack holds them

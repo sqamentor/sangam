@@ -167,7 +167,9 @@ SEC_L = {
     'vehicleNo': ('Vehicle number', 'वाहन संख्या', 'string'),
     'recipientGstin': ('Recipient GSTIN', 'प्राप्तकर्ता जीएसटीआईएन', 'string'),
     'examName': ('Examination', 'परीक्षा', 'string'),
-    'registrationWindow': ('Registration window', 'पंजीकरण अवधि', 'string'),
+    # decision 394: an ISO-8601 duration counted from the cycle's start (the registration-close timer)
+    'registrationWindow': ('Registration window (ISO-8601 duration from the cycle start, e.g. P15D)',
+                           'पंजीकरण अवधि (चक्र के आरंभ से ISO-8601 अवधि, जैसे P15D)', 'duration'),
     'units': ('Units consumed', 'उपभुक्त इकाइयाँ', 'decimal'),
     'consumerNo': ('Consumer number', 'उपभोक्ता संख्या', 'string'),
     'billAmount': ('Bill amount (INR)', 'बिल राशि (रुपये)', 'decimal'),

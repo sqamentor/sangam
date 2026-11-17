@@ -70,6 +70,18 @@ public class AppDeploymentService {
     }
 
     public AppDeployment deploy(String tenant, AppBundle bundle, String requestedBy) {
+        return deploy(tenant, bundle, requestedBy, null, null);
+    }
+
+    /**
+     * As {@link #deploy(String, AppBundle, String)}, with the engine deployment's name and source given by the caller
+     * (SL-179): a package's own deploy names it {@code pkg:<key>:<hash>} with source {@code sangam-package} and runs this
+     * with the engine's package-deploy proof bound, so the engine may pin the package's {@code sangam:operationRef}s.
+     * Null means the defaults: the app key and {@code sangam-app}.
+     */
+    public AppDeployment deploy(String tenant, AppBundle bundle, String requestedBy, String engineDeploymentName, String engineSource) {
+        String deploymentName = engineDeploymentName == null ? bundle.manifest().key() : engineDeploymentName;
+        String deploymentSource = engineSource == null ? "sangam-app" : engineSource;
         Optional<AppDeployment> same = byHash(tenant, bundle.manifest().key(), bundle.bundleSha256());
         if (same.isPresent()) {
             return same.get();
@@ -100,8 +112,8 @@ public class AppDeploymentService {
             String id = UUID.randomUUID().toString();
             String engineDeploymentId = null;
             if (!expanded.isEmpty()) {
-                DeploymentBuilder db = engine.getRepositoryService().createDeployment().name(bundle.manifest().key())
-                        .source("sangam-app");
+                DeploymentBuilder db = engine.getRepositoryService().createDeployment().name(deploymentName)
+                        .source(deploymentSource);
                 if (org.sangam.core.layer.TenantKey.toEngine(tenant) != null) {
                     db.tenantId(tenant);
                 }

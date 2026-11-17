@@ -4,7 +4,7 @@ package org.sangam.security.policy.external;
 import java.time.Duration;
 import java.util.function.LongSupplier;
 
-import org.sangam.core.engine.LockScope;
+import org.sangam.engine.tx.LockScope;
 
 /**
  * The framework-independent decision at command entry for the external deny-only policy check (owner decision 166,

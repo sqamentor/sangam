@@ -1,6 +1,6 @@
 {
   "key": "ifms-bill/revise",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.ifms.bill",
   "title": {
     "en": "Reply to objection / correct",

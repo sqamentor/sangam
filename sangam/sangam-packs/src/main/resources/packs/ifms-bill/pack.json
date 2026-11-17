@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.bill",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Bill by catalogue type (all bill-type families)",
     "hi": "सूची प्रकार अनुसार बिल (सभी बिल श्रेणियाँ)"
@@ -78,6 +78,10 @@
     {
       "kind": "FORM",
       "path": "packs/ifms-bill/forms/draft.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/bindingHold.form.json"
     },
     {
       "kind": "FORM",

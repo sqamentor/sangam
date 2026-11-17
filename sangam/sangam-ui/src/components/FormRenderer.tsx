@@ -44,6 +44,24 @@ function flatten(components: FormField[]): FormField[] {
   return components.flatMap((c) => (c.type === 'group' ? flatten(c.components ?? []) : [c]));
 }
 
+/**
+ * UI-DEMO-1 (decision 400 (3)): the values to send for a form. A money field (FormField.money) is entered in major units
+ * and sent as exact integer minor units (validateForm has refused more decimals than the exponent); everything else is
+ * sent as entered.
+ */
+export function submitValues(schema: FormSchema, values: FormValues): FormValues {
+  const out: FormValues = { ...values };
+  for (const f of flatten(schema.components)) {
+    const v = f.key ? values[f.key] : undefined;
+    if (!f.key || !f.money || !(typeof v === 'number' || v instanceof DecimalValue)) continue;
+    const [whole, frac = ''] = String(v).split('.');
+    const digits = (whole + frac.padEnd(f.money.exponent, '0')).replace(/^(-?)0+(?=\d)/, '$1');
+    const n = Number(digits);
+    out[f.key] = Number.isSafeInteger(n) ? n : new DecimalValue(digits, 'BigInteger');
+  }
+  return out;
+}
+
 export function validateForm(schema: FormSchema, values: FormValues, t: (k: string, o?: Record<string, unknown>) => string): Record<string, string> {
   const errs: Record<string, string> = {};
   for (const f of flatten(schema.components)) {
@@ -63,6 +81,8 @@ export function validateForm(schema: FormSchema, values: FormValues, t: (k: stri
     } else if (f.type === 'number' && typeof v === 'string') {
       errs[f.key] = t('form.notANumber');
     }
+    if (f.money && (typeof v === 'number' || v instanceof DecimalValue) && (String(v).split('.')[1] ?? '').length > f.money.exponent)
+      errs[f.key] = t('form.moneyScale', { n: f.money.exponent });
     if (typeof v === 'string') {
       // Code points, as the server's form validator counts them (FormSchemaValidator.java:117), not UTF-16 units
       const len = codePointLength(v);
