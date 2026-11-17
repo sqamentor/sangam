@@ -1037,3 +1037,43 @@ corrections:
     to: "/ai/a2a/by-agent?agent= (literal route, the value as a query parameter; the old route is removed)"
     reason: "decision 393: inbound agent keys are configuration names with no pattern (AgentDefinition.java:17, example gov:clerk-bot), so a key with '/' or ':' could never reach its route"
     decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: GET
+    path: /compliance/notices/{key}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/compliance/notices/{key}: the value as a path parameter"
+    to: "/compliance/notices/by-key?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the value is client-chosen with no pattern on create (ConsentNoticeService, no key rule; R7UI-S14), so a value with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /compliance/notices/{key}/publish
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/compliance/notices/{key}/publish: the value as a path parameter"
+    to: "/compliance/notices/by-key/publish?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the value is client-chosen with no pattern on create (ConsentNoticeService, no key rule; R7UI-S14), so a value with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: PUT
+    path: /compliance/purposes/{code}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/compliance/purposes/{code}: the value as a path parameter"
+    to: "/compliance/purposes/by-code?code= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the value is client-chosen with no pattern on create (LegitimateUseRegistry.java:96), so a value with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /compliance/consent-managers/{cm}/artefacts
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/compliance/consent-managers/{cm}/artefacts: the value as a path parameter"
+    to: "/compliance/consent-managers/by-cm/artefacts?cm= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the value is client-chosen with no pattern on create (ConsentService.java:114), so a value with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /compliance/contacts/{role}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/compliance/contacts/{role}: the value as a path parameter"
+    to: "/compliance/contacts/by-role?role= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the value is client-chosen with no pattern on create (ContactDirectory.java:49), so a value with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"

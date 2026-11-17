@@ -184,7 +184,7 @@ describe('owner decision 345: the contact form shows the fields the pack require
     const poc = inPack.contactRoles.find((r) => r.code === 'CERT_IN_POC') as unknown as { requiredFields?: string[] };
     expect(poc.requiredFields).toEqual(['designation', 'mobile', 'address']);
     const act = contactAct(role('CERT_IN_POC'));
-    expect(act.path).toBe('/compliance/contacts/CERT_IN_POC');
+    expect(act.path).toBe('/compliance/contacts/by-role?role=CERT_IN_POC');
     for (const k of ['name', 'email', 'designation', 'mobile', 'address']) expect(field(act.fields, k).validate?.required).toBe(true);
     expect(field(act.fields, 'phone').validate?.required).toBeUndefined();
   });

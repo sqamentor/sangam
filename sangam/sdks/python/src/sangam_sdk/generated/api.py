@@ -3327,25 +3327,25 @@ class ComplianceApi:
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
 
-    def get_compliance_notice(self, key: str, *, version: Optional[int] = None, lang: Optional[str] = None, tenant: Optional[str] = None, x_sangam_tenant: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.ComplianceRenderedNotice:
+    def get_compliance_notice(self, *, key: str, version: Optional[int] = None, lang: Optional[str] = None, tenant: Optional[str] = None, x_sangam_tenant: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.ComplianceRenderedNotice:
         """Render a consent notice (public)
 
         The notice in the requested language; falls back to the pack default only where the pack allows (DPDP Rules r.3).
 
-        ``GET /compliance/notices/{key}`` (operationId ``getComplianceNotice``).
+        ``GET /compliance/notices/by-key`` (operationId ``getComplianceNotice``).
         """
-        req = ApiRequest("GET", f"/compliance/notices/{seg(str(key))}", query={"version": version, "lang": lang, "tenant": tenant})
+        req = ApiRequest("GET", f"/compliance/notices/by-key", query={"key": key, "version": version, "lang": lang, "tenant": tenant})
         _headers(req, {"X-Sangam-Tenant": x_sangam_tenant})
         return cast("M.ComplianceRenderedNotice", self._c.json(req, options))
 
-    def publish_compliance_notice(self, key: str, body: M.CompliancePublishNoticeRequest, *, options: Optional[RequestOptions] = None) -> M.CompliancePublishResult:
+    def publish_compliance_notice(self, body: M.CompliancePublishNoticeRequest, *, key: str, options: Optional[RequestOptions] = None) -> M.CompliancePublishResult:
         """Publish a notice version
 
         Publishes a new version for every enabled language; reports missing translations.
 
-        ``POST /compliance/notices/{key}/publish`` (operationId ``publishComplianceNotice``); permission ``compliance.admin``; result stored atomically with the state change.
+        ``POST /compliance/notices/by-key/publish`` (operationId ``publishComplianceNotice``); permission ``compliance.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/compliance/notices/{seg(str(key))}/publish")
+        req = ApiRequest("POST", f"/compliance/notices/by-key/publish", query={"key": key})
         req.body = body
         return cast("M.CompliancePublishResult", self._c.json(req, options))
 
@@ -3370,14 +3370,14 @@ class ComplianceApi:
         req = ApiRequest("GET", f"/compliance/purposes")
         return cast("list[M.CompliancePurpose]", self._c.json(req, options))
 
-    def define_compliance_purpose(self, code: str, body: M.ComplianceDefinePurposeRequest, *, options: Optional[RequestOptions] = None) -> M.CompliancePurpose:
+    def define_compliance_purpose(self, body: M.ComplianceDefinePurposeRequest, *, code: str, options: Optional[RequestOptions] = None) -> M.CompliancePurpose:
         """Define a purpose
 
         Defines or versions a purpose; validated against the jurisdiction pack (legal basis, legitimate uses, retention).
 
-        ``PUT /compliance/purposes/{code}`` (operationId ``defineCompliancePurpose``); permission ``compliance.admin``; result stored atomically with the state change.
+        ``PUT /compliance/purposes/by-code`` (operationId ``defineCompliancePurpose``); permission ``compliance.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("PUT", f"/compliance/purposes/{seg(str(code))}")
+        req = ApiRequest("PUT", f"/compliance/purposes/by-code", query={"code": code})
         req.body = body
         return cast("M.CompliancePurpose", self._c.json(req, options))
 
@@ -3424,14 +3424,14 @@ class ComplianceApi:
         req.body = body
         return cast("list[M.ComplianceConsent]", self._c.json(req, options))
 
-    def ingest_consent_artefact(self, cm: str, body: M.ComplianceConsentArtefact, *, tenant: Optional[str] = None, x_sangam_tenant: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.ComplianceConsent:
+    def ingest_consent_artefact(self, body: M.ComplianceConsentArtefact, *, cm: str, tenant: Optional[str] = None, x_sangam_tenant: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.ComplianceConsent:
         """Ingest a consent-manager artefact
 
         Called by a registered consent manager (mTLS at the gateway; public at the API).
 
-        ``POST /compliance/consent-managers/{cm}/artefacts`` (operationId ``ingestConsentArtefact``); result stored atomically with the state change.
+        ``POST /compliance/consent-managers/by-cm/artefacts`` (operationId ``ingestConsentArtefact``); result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/compliance/consent-managers/{seg(str(cm))}/artefacts", query={"tenant": tenant})
+        req = ApiRequest("POST", f"/compliance/consent-managers/by-cm/artefacts", query={"cm": cm, "tenant": tenant})
         _headers(req, {"X-Sangam-Tenant": x_sangam_tenant})
         req.body = body
         return cast("M.ComplianceConsent", self._c.json(req, options))
@@ -3606,14 +3606,14 @@ class ComplianceApi:
         req = ApiRequest("GET", f"/compliance/contacts")
         return cast("list[M.ComplianceContact]", self._c.json(req, options))
 
-    def set_compliance_contact(self, role: str, body: M.ComplianceContact, *, options: Optional[RequestOptions] = None) -> None:
+    def set_compliance_contact(self, body: M.ComplianceContact, *, role: str, options: Optional[RequestOptions] = None) -> None:
         """Set a contact
 
         Sets the effective contact for a role of the jurisdiction pack (residency checked where required).
 
-        ``POST /compliance/contacts/{role}`` (operationId ``setComplianceContact``); permission ``compliance.admin``; result stored atomically with the state change.
+        ``POST /compliance/contacts/by-role`` (operationId ``setComplianceContact``); permission ``compliance.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/compliance/contacts/{seg(str(role))}")
+        req = ApiRequest("POST", f"/compliance/contacts/by-role", query={"role": role})
         req.body = body
         self._c.none(req, options)
 
@@ -7394,24 +7394,24 @@ class PortalApi:
         req = ApiRequest("GET", f"/portal/services")
         return cast("list[M.PortalService]", self._c.json(req, options))
 
-    def get_portal_service_form(self, key: str, *, options: Optional[RequestOptions] = None) -> M.FormVersion:
+    def get_portal_service_form(self, *, key: str, options: Optional[RequestOptions] = None) -> M.FormVersion:
         """Application form of a service
 
         The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); versionHash is the form's own. 404 for a service not in the catalogue or without a form.
 
-        ``GET /portal/services/{key}/form`` (operationId ``getPortalServiceForm``); permission ``portal.use``.
+        ``GET /portal/services/by-key/form`` (operationId ``getPortalServiceForm``); permission ``portal.use``.
         """
-        req = ApiRequest("GET", f"/portal/services/{seg(str(key))}/form")
+        req = ApiRequest("GET", f"/portal/services/by-key/form", query={"key": key})
         return cast("M.FormVersion", self._c.json(req, options))
 
-    def get_portal_service_notice(self, key: str, *, lang: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.PortalNotice:
+    def get_portal_service_notice(self, *, key: str, lang: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.PortalNotice:
         """Consent notice of a service
 
         The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
 
-        ``GET /portal/services/{key}/notice`` (operationId ``getPortalServiceNotice``); permission ``portal.use``.
+        ``GET /portal/services/by-key/notice`` (operationId ``getPortalServiceNotice``); permission ``portal.use``.
         """
-        req = ApiRequest("GET", f"/portal/services/{seg(str(key))}/notice", query={"lang": lang})
+        req = ApiRequest("GET", f"/portal/services/by-key/notice", query={"key": key, "lang": lang})
         return cast("M.PortalNotice", self._c.json(req, options))
 
     def apply_for_service(self, body: M.ApplyRequest, *, options: Optional[RequestOptions] = None) -> M.Application:

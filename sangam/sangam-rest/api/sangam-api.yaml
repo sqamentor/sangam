@@ -9622,7 +9622,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /portal/services/{key}/form:
+  /portal/services/by-key/form:
     get:
       operationId: getPortalServiceForm
       tags:
@@ -9633,11 +9633,11 @@ paths:
         a service not in the catalogue or without a form.
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: service key
+        description: Service key (the service form key); may carry '/' or ':'
+        required: true
       x-sangam-permission: portal.use
       x-sangam-requirements:
       - UP-22
@@ -9658,7 +9658,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /portal/services/{key}/notice:
+  /portal/services/by-key/notice:
     get:
       operationId: getPortalServiceNotice
       tags:
@@ -9669,11 +9669,11 @@ paths:
         for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: service key
+        description: Service key (the service form key); may carry '/' or ':'
+        required: true
       - name: lang
         in: query
         schema:
@@ -16404,7 +16404,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /compliance/notices/{key}:
+  /compliance/notices/by-key:
     get:
       operationId: getComplianceNotice
       tags:
@@ -16413,10 +16413,11 @@ paths:
       description: The notice in the requested language; falls back to the pack default only where the pack allows (DPDP Rules r.3).
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Consent notice key; may carry '/' or ':'
+        required: true
       - name: version
         in: query
         schema:
@@ -16455,7 +16456,7 @@ paths:
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
       security: []
-  /compliance/notices/{key}/publish:
+  /compliance/notices/by-key/publish:
     post:
       operationId: publishComplianceNotice
       tags:
@@ -16466,10 +16467,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Consent notice key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -16582,7 +16584,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /compliance/purposes/{code}:
+  /compliance/purposes/by-code:
     put:
       operationId: defineCompliancePurpose
       tags:
@@ -16593,10 +16595,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: code
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Purpose code; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -16825,7 +16828,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /compliance/consent-managers/{cm}/artefacts:
+  /compliance/consent-managers/by-cm/artefacts:
     post:
       operationId: ingestConsentArtefact
       tags:
@@ -16836,10 +16839,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: cm
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Consent manager id; may carry '/' or ':'
+        required: true
       - name: X-Sangam-Tenant
         in: header
         required: false
@@ -17645,7 +17649,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /compliance/contacts/{role}:
+  /compliance/contacts/by-role:
     post:
       operationId: setComplianceContact
       tags:
@@ -17656,10 +17660,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: role
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Contact role of the jurisdiction pack; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -65046,8 +65051,8 @@ components:
       - basis
     ComplianceDefinePurposeRequest:
       type: object
-      description: A processing purpose to define or version (PUT /compliance/purposes/{code}). standardsAttested, active and every data item's
-        sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version
+      description: A processing purpose to define or version (PUT /compliance/purposes/by-code?code=). standardsAttested, active and every data
+        item's sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version
         is assigned by the server (previous + 1). Durations are ISO-8601.
       properties:
         code:
@@ -65534,7 +65539,7 @@ components:
       properties:
         role:
           type: string
-          description: Taken from the path on POST /compliance/contacts/{role}.
+          description: Taken from the query parameter role on POST /compliance/contacts/by-role.
         name:
           type: string
         designation:

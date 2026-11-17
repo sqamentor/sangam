@@ -799,9 +799,9 @@ export const api = {
   portal: {
     services: () => http.get<T.PortalService[]>('/portal/services'),
     /** Decision 63: the service's own form under portal.use (never an arbitrary form key). */
-    form: async (serviceKey: string) => A.normForm(await http.get<Record<string, unknown>>(`/portal/services/${enc(serviceKey)}/form`)),
+    form: async (serviceKey: string) => A.normForm(await http.get<Record<string, unknown>>(`/portal/services/by-key/form?key=${enc(serviceKey)}`)),
     /** Decisions 339, 341, 343: the current published consent notice of the service, one entry per purpose. */
-    notice: (serviceKey: string, lang?: string) => http.get<T.PortalNotice>(`/portal/services/${enc(serviceKey)}/notice`, { lang }),
+    notice: (serviceKey: string, lang?: string) => http.get<T.PortalNotice>(`/portal/services/by-key/notice?key=${enc(serviceKey)}`, { lang }),
     /** A submission to a noticed service carries the consent; a draft never does (decision 341). */
     apply: (serviceKey: string, variables: Record<string, unknown>, submit: boolean, key?: string, consent?: T.PortalConsent) =>
       http.post<T.Application>('/portal/applications', { serviceKey, variables: A.toVariableMap(variables), submit, ...(consent ? { consent } : {}) }, key),

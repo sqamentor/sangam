@@ -3844,10 +3844,10 @@ export class ComplianceApi {
    *
    * The notice in the requested language; falls back to the pack default only where the pack allows (DPDP Rules r.3).
    *
-   * `GET /compliance/notices/{key}` (operationId `getComplianceNotice`).
+   * `GET /compliance/notices/by-key` (operationId `getComplianceNotice`).
    */
-  async getComplianceNotice(key: string, params?: { version?: number; lang?: string; tenant?: string /* Tenant of an unauthenticated call (else X-Sangam-Tenant) */; xSangamTenant?: string /* Tenant of an unauthenticated call (else ?tenant=) */ }, options?: RequestOptions): Promise<M.ComplianceRenderedNotice> {
-    const req: ApiRequest = { method: 'GET', path: `/compliance/notices/${seg(String(key))}`, query: { version: params?.version, lang: params?.lang, tenant: params?.tenant } };
+  async getComplianceNotice(params: { key: string /* Consent notice key; may carry '/' or ':' */; version?: number; lang?: string; tenant?: string /* Tenant of an unauthenticated call (else X-Sangam-Tenant) */; xSangamTenant?: string /* Tenant of an unauthenticated call (else ?tenant=) */ }, options?: RequestOptions): Promise<M.ComplianceRenderedNotice> {
+    const req: ApiRequest = { method: 'GET', path: `/compliance/notices/by-key`, query: { key: params?.key, version: params?.version, lang: params?.lang, tenant: params?.tenant } };
     headersOf(req, { 'X-Sangam-Tenant': params?.xSangamTenant });
     return this.calls.json<M.ComplianceRenderedNotice>(req, options);
   }
@@ -3857,10 +3857,10 @@ export class ComplianceApi {
    *
    * Publishes a new version for every enabled language; reports missing translations.
    *
-   * `POST /compliance/notices/{key}/publish` (operationId `publishComplianceNotice`); permission `compliance.admin`; result stored atomically with the state change.
+   * `POST /compliance/notices/by-key/publish` (operationId `publishComplianceNotice`); permission `compliance.admin`; result stored atomically with the state change.
    */
-  async publishComplianceNotice(key: string, body: M.CompliancePublishNoticeRequest, options?: RequestOptions): Promise<M.CompliancePublishResult> {
-    const req: ApiRequest = { method: 'POST', path: `/compliance/notices/${seg(String(key))}/publish` };
+  async publishComplianceNotice(body: M.CompliancePublishNoticeRequest, params: { key: string /* Consent notice key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CompliancePublishResult> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/notices/by-key/publish`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CompliancePublishResult>(req, options);
   }
@@ -3895,10 +3895,10 @@ export class ComplianceApi {
    *
    * Defines or versions a purpose; validated against the jurisdiction pack (legal basis, legitimate uses, retention).
    *
-   * `PUT /compliance/purposes/{code}` (operationId `defineCompliancePurpose`); permission `compliance.admin`; result stored atomically with the state change.
+   * `PUT /compliance/purposes/by-code` (operationId `defineCompliancePurpose`); permission `compliance.admin`; result stored atomically with the state change.
    */
-  async defineCompliancePurpose(code: string, body: M.ComplianceDefinePurposeRequest, options?: RequestOptions): Promise<M.CompliancePurpose> {
-    const req: ApiRequest = { method: 'PUT', path: `/compliance/purposes/${seg(String(code))}` };
+  async defineCompliancePurpose(body: M.ComplianceDefinePurposeRequest, params: { code: string /* Purpose code; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CompliancePurpose> {
+    const req: ApiRequest = { method: 'PUT', path: `/compliance/purposes/by-code`, query: { code: params?.code } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CompliancePurpose>(req, options);
   }
@@ -3959,10 +3959,10 @@ export class ComplianceApi {
    *
    * Called by a registered consent manager (mTLS at the gateway; public at the API).
    *
-   * `POST /compliance/consent-managers/{cm}/artefacts` (operationId `ingestConsentArtefact`); result stored atomically with the state change.
+   * `POST /compliance/consent-managers/by-cm/artefacts` (operationId `ingestConsentArtefact`); result stored atomically with the state change.
    */
-  async ingestConsentArtefact(cm: string, body: M.ComplianceConsentArtefact, params?: { tenant?: string /* Tenant of an unauthenticated call (else X-Sangam-Tenant) */; xSangamTenant?: string /* Tenant of an unauthenticated call (else ?tenant=) */ }, options?: RequestOptions): Promise<M.ComplianceConsent> {
-    const req: ApiRequest = { method: 'POST', path: `/compliance/consent-managers/${seg(String(cm))}/artefacts`, query: { tenant: params?.tenant } };
+  async ingestConsentArtefact(body: M.ComplianceConsentArtefact, params: { cm: string /* Consent manager id; may carry '/' or ':' */; tenant?: string /* Tenant of an unauthenticated call (else X-Sangam-Tenant) */; xSangamTenant?: string /* Tenant of an unauthenticated call (else ?tenant=) */ }, options?: RequestOptions): Promise<M.ComplianceConsent> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/consent-managers/by-cm/artefacts`, query: { cm: params?.cm, tenant: params?.tenant } };
     headersOf(req, { 'X-Sangam-Tenant': params?.xSangamTenant });
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ComplianceConsent>(req, options);
@@ -4175,10 +4175,10 @@ export class ComplianceApi {
    *
    * Sets the effective contact for a role of the jurisdiction pack (residency checked where required).
    *
-   * `POST /compliance/contacts/{role}` (operationId `setComplianceContact`); permission `compliance.admin`; result stored atomically with the state change.
+   * `POST /compliance/contacts/by-role` (operationId `setComplianceContact`); permission `compliance.admin`; result stored atomically with the state change.
    */
-  async setComplianceContact(role: string, body: M.ComplianceContact, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/compliance/contacts/${seg(String(role))}` };
+  async setComplianceContact(body: M.ComplianceContact, params: { role: string /* Contact role of the jurisdiction pack; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/contacts/by-role`, query: { role: params?.role } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -8614,10 +8614,10 @@ export class PortalApi {
    *
    * The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); versionHash is the form's own. 404 for a service not in the catalogue or without a form.
    *
-   * `GET /portal/services/{key}/form` (operationId `getPortalServiceForm`); permission `portal.use`.
+   * `GET /portal/services/by-key/form` (operationId `getPortalServiceForm`); permission `portal.use`.
    */
-  async getPortalServiceForm(key: string, options?: RequestOptions): Promise<M.FormVersion> {
-    const req: ApiRequest = { method: 'GET', path: `/portal/services/${seg(String(key))}/form` };
+  async getPortalServiceForm(params: { key: string /* Service key (the service form key); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.FormVersion> {
+    const req: ApiRequest = { method: 'GET', path: `/portal/services/by-key/form`, query: { key: params?.key } };
     return this.calls.json<M.FormVersion>(req, options);
   }
 
@@ -8626,10 +8626,10 @@ export class PortalApi {
    *
    * The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
    *
-   * `GET /portal/services/{key}/notice` (operationId `getPortalServiceNotice`); permission `portal.use`.
+   * `GET /portal/services/by-key/notice` (operationId `getPortalServiceNotice`); permission `portal.use`.
    */
-  async getPortalServiceNotice(key: string, params?: { lang?: string /* language code of the jurisdiction pack (default: the tenant's) */ }, options?: RequestOptions): Promise<M.PortalNotice> {
-    const req: ApiRequest = { method: 'GET', path: `/portal/services/${seg(String(key))}/notice`, query: { lang: params?.lang } };
+  async getPortalServiceNotice(params: { key: string /* Service key (the service form key); may carry '/' or ':' */; lang?: string /* language code of the jurisdiction pack (default: the tenant's) */ }, options?: RequestOptions): Promise<M.PortalNotice> {
+    const req: ApiRequest = { method: 'GET', path: `/portal/services/by-key/notice`, query: { key: params?.key, lang: params?.lang } };
     return this.calls.json<M.PortalNotice>(req, options);
   }
 

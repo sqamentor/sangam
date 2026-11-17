@@ -14824,7 +14824,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /compliance/notices/{key}:
+  /compliance/notices/by-key:
     get:
       operationId: getComplianceNotice
       tags:
@@ -14833,7 +14833,8 @@ paths:
       description: The notice in the requested language; falls back to the pack default only where the pack allows (DPDP Rules r.3).
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Consent notice key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -14873,7 +14874,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       security: []
-  /compliance/notices/{key}/publish:
+  /compliance/notices/by-key/publish:
     post:
       operationId: publishComplianceNotice
       tags:
@@ -14884,7 +14885,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Consent notice key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -14992,7 +14994,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /compliance/purposes/{code}:
+  /compliance/purposes/by-code:
     put:
       operationId: defineCompliancePurpose
       tags:
@@ -15003,7 +15005,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: code
-        in: path
+        in: query
+        description: Purpose code; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -15180,7 +15183,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /compliance/consent-managers/{cm}/artefacts:
+  /compliance/consent-managers/by-cm/artefacts:
     post:
       operationId: ingestConsentArtefact
       tags:
@@ -15191,7 +15194,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: cm
-        in: path
+        in: query
+        description: Consent manager id; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -15901,7 +15905,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /compliance/contacts/{role}:
+  /compliance/contacts/by-role:
     post:
       operationId: setComplianceContact
       tags:
@@ -15912,7 +15916,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: role
-        in: path
+        in: query
+        description: Contact role of the jurisdiction pack; may carry '/' or ':'
         required: true
         schema:
           type: string

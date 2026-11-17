@@ -199,7 +199,7 @@
    "tag": "Compliance",
    "pathPrefix": "",
    "operations": 39,
-   "maxLines": 753
+   "maxLines": 758
   },
   {
    "class": "ConfigApi",
@@ -430,7 +430,7 @@
    "tag": "Portal",
    "pathPrefix": "",
    "operations": 13,
-   "maxLines": 253
+   "maxLines": 255
   },
   {
    "class": "ProcessesApi",
@@ -3835,7 +3835,7 @@
   {
    "operationId": "getPortalServiceForm",
    "method": "GET",
-   "path": "/portal/services/{key}/form",
+   "path": "/portal/services/by-key/form",
    "tag": "Portal",
    "apiClass": "PortalApi",
    "java": "PortalApi#getPortalServiceForm",
@@ -3847,7 +3847,7 @@
   {
    "operationId": "getPortalServiceNotice",
    "method": "GET",
-   "path": "/portal/services/{key}/notice",
+   "path": "/portal/services/by-key/notice",
    "tag": "Portal",
    "apiClass": "PortalApi",
    "java": "PortalApi#getPortalServiceNotice",
@@ -5575,7 +5575,7 @@
   {
    "operationId": "getComplianceNotice",
    "method": "GET",
-   "path": "/compliance/notices/{key}",
+   "path": "/compliance/notices/by-key",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#getComplianceNotice",
@@ -5587,7 +5587,7 @@
   {
    "operationId": "publishComplianceNotice",
    "method": "POST",
-   "path": "/compliance/notices/{key}/publish",
+   "path": "/compliance/notices/by-key/publish",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#publishComplianceNotice",
@@ -5623,7 +5623,7 @@
   {
    "operationId": "defineCompliancePurpose",
    "method": "PUT",
-   "path": "/compliance/purposes/{code}",
+   "path": "/compliance/purposes/by-code",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#defineCompliancePurpose",
@@ -5683,7 +5683,7 @@
   {
    "operationId": "ingestConsentArtefact",
    "method": "POST",
-   "path": "/compliance/consent-managers/{cm}/artefacts",
+   "path": "/compliance/consent-managers/by-cm/artefacts",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#ingestConsentArtefact",
@@ -5887,7 +5887,7 @@
   {
    "operationId": "setComplianceContact",
    "method": "POST",
-   "path": "/compliance/contacts/{role}",
+   "path": "/compliance/contacts/by-role",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#setComplianceContact",

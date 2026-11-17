@@ -64,13 +64,14 @@ public final class PortalApi {
      *
      * <p>The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); versionHash is the form's own. 404 for a service not in the catalogue or without a form.
      *
-     * <p>{@code GET /portal/services/{key}/form} (operationId {@code getPortalServiceForm}); permission {@code portal.use}.
-     * @param key path parameter {@code key}. service key
+     * <p>{@code GET /portal/services/by-key/form} (operationId {@code getPortalServiceForm}); permission {@code portal.use}.
+     * @param key query parameter {@code key}. Service key (the service form key); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public FormVersion getPortalServiceForm(String key, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/portal/services/" + HttpTransport.seg(String.valueOf(key)) + "/form");
+        ApiRequest req = ApiRequest.get("/portal/services/by-key/form");
+        req.query("key", key);
         return call.json(req, options, R_getPortalServiceForm);
     }
 
@@ -79,14 +80,15 @@ public final class PortalApi {
      *
      * <p>The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
      *
-     * <p>{@code GET /portal/services/{key}/notice} (operationId {@code getPortalServiceNotice}); permission {@code portal.use}.
-     * @param key path parameter {@code key}. service key
+     * <p>{@code GET /portal/services/by-key/notice} (operationId {@code getPortalServiceNotice}); permission {@code portal.use}.
+     * @param key query parameter {@code key}. Service key (the service form key); may carry '/' or ':'
      * @param lang query parameter {@code lang}, or null. language code of the jurisdiction pack (default: the tenant's)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public PortalNotice getPortalServiceNotice(String key, String lang, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/portal/services/" + HttpTransport.seg(String.valueOf(key)) + "/notice");
+        ApiRequest req = ApiRequest.get("/portal/services/by-key/notice");
+        req.query("key", key);
         req.query("lang", lang);
         return call.json(req, options, R_getPortalServiceNotice);
     }

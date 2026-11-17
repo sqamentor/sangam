@@ -1486,17 +1486,17 @@ op("get", "/history/external-task-log", "listExternalTaskLog", "History", "Exter
 PE = ("BadRequest", "Unauthorized", "Forbidden", "NotFound")
 op("get", "/portal/services", "listPortalServices", "Portal", "Citizen services", "Services the applicant can apply for (C01).",
    ["UP-22", "R54"], resp=(200, "array:PortalService"), perm="portal.use", errors=WS_E)
-op("get", "/portal/services/{key}/form", "getPortalServiceForm", "Portal", "Application form of a service",
+op("get", "/portal/services/by-key/form", "getPortalServiceForm", "Portal", "Application form of a service",
    "The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in "
    "force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); "
    "versionHash is the form's own. 404 for a service not in the catalogue or without a form.", ["UP-22", "R47", "C02"],
-   params=[pp("key", "service key")], resp=(200, "FormVersion"), perm="portal.use", errors=GET_E)
-op("get", "/portal/services/{key}/notice", "getPortalServiceNotice", "Portal", "Consent notice of a service",
+   params=[q("key", desc="Service key (the service form key); may carry '/' or ':'", required=True)], resp=(200, "FormVersion"), perm="portal.use", errors=GET_E)
+op("get", "/portal/services/by-key/notice", "getPortalServiceNotice", "Portal", "Consent notice of a service",
    "The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the "
    "jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or "
    "without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED "
    "without sangam-compliance.", ["UP-22", "C02"],
-   params=[pp("key", "service key"), q("lang", desc="language code of the jurisdiction pack (default: the tenant's)")],
+   params=[q("key", desc="Service key (the service form key); may carry '/' or ':'", required=True), q("lang", desc="language code of the jurisdiction pack (default: the tenant's)")],
    resp=(200, "PortalNotice"), perm="portal.use", errors=("Unauthorized", "Forbidden", "NotFound", "Unprocessable",
                                                           "NotImplemented"))
 op("post", "/portal/applications", "applyForService", "Portal", "Apply for a service",
@@ -1879,7 +1879,7 @@ schema("CompliancePurpose", "A processing purpose with its legal basis, data ite
        "code names:smap descriptions:smap dataItems:list:obj basis legalRef subGround registerRef standardsAttested:bool "
        "exemptions:list:s exemptionRef childExemptions:list:s flags:list:s retentionTrigger retention retentionClass "
        "recordClass recordRetention recordRetentionRef version:int active:bool specialCondition", ["basis"])
-schema("ComplianceDefinePurposeRequest", "A processing purpose to define or version (PUT /compliance/purposes/{code}). standardsAttested, active and every data item's sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version is assigned by the server (previous + 1). Durations are ISO-8601.",
+schema("ComplianceDefinePurposeRequest", "A processing purpose to define or version (PUT /compliance/purposes/by-code?code=). standardsAttested, active and every data item's sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version is assigned by the server (previous + 1). Durations are ISO-8601.",
        "code names:smap descriptions:smap dataItems:list:ComplianceDataItemRequest basis legalRef subGround registerRef "
        "standardsAttested:bool exemptions:list:s exemptionRef childExemptions:list:s flags:list:s retentionTrigger retention "
        "retentionClass recordClass recordRetention recordRetentionRef active:bool specialCondition",
@@ -1934,7 +1934,7 @@ schema("ComplianceReasonBody", "A reason.", "reason", ["reason"])
 schema("ComplianceContact", "A published contact (DPO / grievance officer, DPDP s.8(9), s.10(2)).",
        "role name designation organisation email phone mobile address resident:bool validFrom:dt", ["name", "email"],
        descs={"resident": "The person is resident in the pack's home country (a residency attestation). Required by the server, true, for a role the pack marks mustBeResident (IN: the DPO); omitted is not attested, never assumed.",
-              "role": "Taken from the path on POST /compliance/contacts/{role}."})
+              "role": "Taken from the query parameter role on POST /compliance/contacts/by-role."})
 schema("ComplianceAuditEvidenceRequest", "Independent data audit evidence (Significant Data Fiduciary, DPDP s.10).",
        "kind periodFrom:dt periodTo:dt completedAt:dt auditor accreditationRef independent:bool findings:list:s reportHash authorityReportRef",
        ["kind", "auditor", "independent"],
@@ -1977,14 +1977,14 @@ def public(path, method):
 
 
 C = "/compliance"
-op("get", C + "/notices/{key}", "getComplianceNotice", "Compliance", "Render a consent notice (public)",
+op("get", C + "/notices/by-key", "getComplianceNotice", "Compliance", "Render a consent notice (public)",
    "The notice in the requested language; falls back to the pack default only where the pack allows (DPDP Rules r.3).",
-   CR + ["DPDP s.5"], params=[KEY, q("version", "int"), q("lang")] + TENANT_PUBLIC, resp=(200, "ComplianceRenderedNotice"),
+   CR + ["DPDP s.5"], params=[q("key", desc="Consent notice key; may carry '/' or ':'", required=True), q("version", "int"), q("lang")] + TENANT_PUBLIC, resp=(200, "ComplianceRenderedNotice"),
    errors=("BadRequest", "NotFound"))
-public(C + "/notices/{key}", "get")
-op("post", C + "/notices/{key}/publish", "publishComplianceNotice", "Compliance", "Publish a notice version",
+public(C + "/notices/by-key", "get")
+op("post", C + "/notices/by-key/publish", "publishComplianceNotice", "Compliance", "Publish a notice version",
    "Publishes a new version for every enabled language; reports missing translations.", CR + ["DPDP s.5", "R41"],
-   params=[KEY], body="CompliancePublishNoticeRequest", resp=(200, "CompliancePublishResult"),
+   params=[q("key", desc="Consent notice key; may carry '/' or ':'", required=True)], body="CompliancePublishNoticeRequest", resp=(200, "CompliancePublishResult"),
    cmd="compliance.notice.publish", perm="compliance.admin")
 op("get", C + "/privacy-policy", "getPrivacyPolicy", "Compliance", "Render the privacy policy (public)",
    "The published privacy policy in the requested language.", CR, params=[q("lang")] + TENANT_PUBLIC,
@@ -1992,9 +1992,9 @@ op("get", C + "/privacy-policy", "getPrivacyPolicy", "Compliance", "Render the p
 public(C + "/privacy-policy", "get")
 op("get", C + "/purposes", "listCompliancePurposes", "Compliance", "List purposes", "Registered processing purposes.",
    CR + ["DPDP s.4"], resp=(200, "array:CompliancePurpose"), perm="compliance.read", errors=STD_R)
-op("put", C + "/purposes/{code}", "defineCompliancePurpose", "Compliance", "Define a purpose",
+op("put", C + "/purposes/by-code", "defineCompliancePurpose", "Compliance", "Define a purpose",
    "Defines or versions a purpose; validated against the jurisdiction pack (legal basis, legitimate uses, retention).",
-   CR + ["DPDP s.4", "DPDP s.7", "R41"], params=[pp("code")], body="ComplianceDefinePurposeRequest", resp=(200, "CompliancePurpose"),
+   CR + ["DPDP s.4", "DPDP s.7", "R41"], params=[q("code", desc="Purpose code; may carry '/' or ':'", required=True)], body="ComplianceDefinePurposeRequest", resp=(200, "CompliancePurpose"),
    cmd="compliance.purpose.define", perm="compliance.admin")
 op("post", C + "/consents", "giveConsent", "Compliance", "Give consent",
    "The data principal (or verified guardian) consents to purposes of a notice version. Recording consent for another principal needs compliance.modify.",
@@ -2011,11 +2011,11 @@ op("post", C + "/consents/search", "searchConsents", "Compliance", "Search a pri
    "Consents of the principal named in the body (owner decision 338; blank = the caller's own). Another principal's history needs compliance.read and writes PERSONAL_DATA_READ on that principal's chain (owner decision 348).",
    CR + ["DPDP s.6", "DPDP Rules r.6"], body="ComplianceSubjectSearch", body_required=False,
    resp=(200, "array:ComplianceConsent"), perm="owner / compliance.read", errors=STD_R)
-op("post", C + "/consent-managers/{cm}/artefacts", "ingestConsentArtefact", "Compliance", "Ingest a consent-manager artefact",
+op("post", C + "/consent-managers/by-cm/artefacts", "ingestConsentArtefact", "Compliance", "Ingest a consent-manager artefact",
    "Called by a registered consent manager (mTLS at the gateway; public at the API).", CR + ["DPDP s.6(7)", "R41"],
-   params=[pp("cm")] + TENANT_PUBLIC, body="ComplianceConsentArtefact", resp=(201, "ComplianceConsent"),
+   params=[q("cm", desc="Consent manager id; may carry '/' or ':'", required=True)] + TENANT_PUBLIC, body="ComplianceConsentArtefact", resp=(201, "ComplianceConsent"),
    cmd="compliance.consent-artefact.ingest", created=True)
-public(C + "/consent-managers/{cm}/artefacts", "post")
+public(C + "/consent-managers/by-cm/artefacts", "post")
 op("post", C + "/rights-requests", "submitRightsRequest", "Compliance", "Submit a rights request (public)",
    "Access, correction, erasure, grievance or nomination (DPDP s.11-14); authenticated by a method the jurisdiction pack names (owner decision 335: the caller's signed-in identity, or the published identifier with an OTP), else 401 PRINCIPAL_NOT_AUTHENTICATED; due dates from the pack; the acknowledgement carries the published DPO contact (decision 346). 409 COMPLIANCE_PACK_NOT_INSTALLED when the compliance pack is not installed for the tenant (decision 336).",
    CR + ["DPDP s.11", "DPDP s.12", "DPDP s.13", "DPDP s.14", "R41"], params=TENANT_PUBLIC, body="ComplianceRightsSubmission",
@@ -2065,9 +2065,9 @@ for verb, body, cmdv, desc in [
        cmd="compliance.lawful-request." + cmdv, perm="compliance.modify")
 op("get", C + "/contacts", "listComplianceContacts", "Compliance", "List contacts", "DPO, grievance officer and other published contacts.",
    CR + ["DPDP s.8(9)"], resp=(200, "array:ComplianceContact"), perm="compliance.read", errors=STD_R)
-op("post", C + "/contacts/{role}", "setComplianceContact", "Compliance", "Set a contact",
+op("post", C + "/contacts/by-role", "setComplianceContact", "Compliance", "Set a contact",
    "Sets the effective contact for a role of the jurisdiction pack (residency checked where required).",
-   CR + ["DPDP s.8(9)", "DPDP s.10(2)", "R41"], params=[pp("role")], body="ComplianceContact", resp=(204, None),
+   CR + ["DPDP s.8(9)", "DPDP s.10(2)", "R41"], params=[q("role", desc="Contact role of the jurisdiction pack; may carry '/' or ':'", required=True)], body="ComplianceContact", resp=(204, None),
    cmd="compliance.contact.set", perm="compliance.admin")
 # owner decision 360: the compliance-owned one-time code of a rights request (public, as the submission)
 schema("ComplianceOtpChallengeRequest", "A one-time code for a rights request (owner decision 360), sent through the principal notifier to an identifier the tenant accepts (rights.otp.identifier-types; IN pack: MOBILE, EMAIL; DPDP Rules r.14(1)). `language` is a code of the jurisdiction pack.",
