@@ -4,6 +4,7 @@ package org.sangam.integration.bridge;
 import org.sangam.core.api.EngineAdapter;
 import org.sangam.core.api.StaleLeaseException;
 import org.sangam.core.layer.Tombstones;
+import org.sangam.core.tenant.TenantResolutionException;
 import org.sangam.integration.connector.ConnectorInvoker;
 import org.sangam.integration.connector.Json;
 import org.sangam.integration.lifecycle.InstanceLifecycleService;
@@ -120,7 +121,16 @@ public final class ConnectorExternalTaskWorker implements AutoCloseable {
     }
 
     void handle(TopicBinding b, EngineAdapter.ExternalWork w) {
-        WorkContextResolver.WorkContext ctx = contexts.resolve(w);
+        WorkContextResolver.WorkContext ctx;
+        try {
+            ctx = contexts.resolve(w);
+        } catch (TenantResolutionException e) {
+            // DEC-145: no engine tenant, or a tenant variable that differs: the connector is never called; the work
+            // fails with no retries left (an incident naming the stable code) instead of being re-fetched forever
+            LOG.warn("work {} on topic {} refused: {}", w.id(), b.topic(), e.code());
+            engine.failExternal(w.id(), workerId, w.lockVersion(), e.getMessage(), 0, Duration.ZERO);
+            return;
+        }
         if (lifecycle != null && lifecycle.cancelRequested(ctx.tenantId(), w.id())) {
             lifecycle.acknowledgeCancel(ctx.tenantId(), w.id(), w.lockVersion());
             safe(() -> engine.unlockExternal(w.id(), workerId, w.lockVersion()));

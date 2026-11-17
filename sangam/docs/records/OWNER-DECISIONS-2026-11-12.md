@@ -597,3 +597,17 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - (2) F7-2: when the profile binding is missing, the case waits on a visible hold task, "Profile binding missing", until the binding is fixed, instead of raising an incident.
   - (3) UI-DEMO-1: serving pack start forms (server endpoint plus start screen) is a new 0.1.0 item.
   - All three are assigned to R7-ui.
+
+- **401 (UX Q4 team workload; owner chat 2026-11-17, "New scoped reads (Recommended)")**: Add read-only endpoints, limited to the caller's own organisation, for the team task-group report and the shared saved filters, behind the team.read permission mapped to a new group. These are additive, read-only API changes and are announced in the contract register and to IFMS. Assigned to R8-ux-build.
+
+- **402 (owner chat 2026-11-17, all recommended answers)**:
+  - (1) Quarkus host tests use Sangam's sshd-core 2.15.0 pin, with no download. If that cannot be done offline, the lane stops and asks again.
+  - (2) Plain-Java host: the security bridges (SecurityPermissionBridge, SecurityAdminBridge) move into a small plain-Java module, coordinated with lane w2. The plain-Java host is built on EngineTxSupport and the rest-core ports. A four-eyes policy-change approval port is added, and deny-wins then uses ports instead of database rows.
+  - (3) SL-180: finished work held as "outcome unknown" is released at once.
+  - (4) DEC-148: close the three known points as accepted: operation ids now differ per instance; instances finished before the fix cannot be migrated; the re-check on upgrade.
+  - (5) DEC-145: work with no engine tenant is refused (fail-closed).
+  - (6) D5: keep the strict list of credential-like field names, and keep package.author for template installs.
+  - (7) DEC-140: the ESP request-signature profile is inclusive canonicalization with rsa-sha256 and the certificate included, with keys from env/secrets only. To be confirmed against the ESP when live (decision 215).
+  - (8) Compliance pack ships as 1.1.1.
+  - (9) A named refusal at run time for a manifest that uses a case-type table without declaring ruleCaseType.
+  - (10) The REST start endpoint refuses a process that is not startable in the tasklist.

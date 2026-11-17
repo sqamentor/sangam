@@ -424,6 +424,7 @@ export function normPackageDiff(d: unknown, toVersion = ''): T.PackageDiff {
 export function normForm(f: Any): T.FormSchema {
   if (Array.isArray(f.components)) return f as T.FormSchema;
   if (f.layout && Array.isArray(f.layout.components)) return { ...f.layout, key: f.key } as T.FormSchema;
+  if (f.layout && Array.isArray(f.layout.fields)) return packForm(f.layout, f.key);
   const props = (f.dataSchema?.properties ?? {}) as Record<string, Any>;
   const required = new Set<string>(f.dataSchema?.required ?? []);
   const hi = (f.i18n?.hi ?? f.i18n?.bundles?.hi ?? {}) as Record<string, string>;
@@ -440,6 +441,37 @@ export function normForm(f: Any): T.FormSchema {
       readonly: p.readOnly,
     })),
   };
+}
+
+/**
+ * UI-DEMO-1 (decision 400 (3)): a pack form document (packgen: {key, title, fields[{id, type, required, label{en,hi}}]}),
+ * served by GET /forms/by-key as its layout, as form components. Attachments are added on the case once it exists, and
+ * read-only fields are the case's own, so neither is asked at the start.
+ */
+export function packForm(doc: Any, key?: string): T.FormSchema {
+  const components: T.FormField[] = [];
+  for (const fd of (doc.fields ?? []) as Any[]) {
+    const type = String(fd.type ?? 'string');
+    if (type === 'attachments' || type === 'readonly' || type === 'hidden') continue;
+    const label = typeof fd.label === 'object' && fd.label ? fd.label : { en: fd.label ?? fd.id };
+    const c: T.FormField = {
+      key: fd.id,
+      label: label.en ?? fd.id,
+      i18n: label.hi ? { hi: { label: label.hi } } : undefined,
+      type: 'textfield',
+      validate: { required: fd.required === true },
+    };
+    if (type === 'text' || type === 'richtext' || type === 'json') c.type = 'textarea';
+    else if (type === 'integer' || type === 'decimal' || type === 'number') c.type = 'number';
+    else if (type === 'boolean') c.type = 'checkbox';
+    else if (type === 'date') Object.assign(c, { type: 'datetime', subtype: 'date' });
+    else if (type === 'datetime') Object.assign(c, { type: 'datetime', subtype: 'datetime' });
+    else if (type === 'money') Object.assign(c, { type: 'number', money: { exponent: Number(fd.exponent ?? 2), currency: fd.currency } });
+    else if (type === 'masked') c.sensitive = true;
+    else if (type === 'duration') c.validate = { ...c.validate, pattern: '^P(?!$)(\\d+Y)?(\\d+M)?(\\d+W)?(\\d+D)?(T(?=\\d)(\\d+H)?(\\d+M)?(\\d+(\\.\\d+)?S)?)?$' };
+    components.push(c);
+  }
+  return { key: key ?? doc.key, components };
 }
 
 // ------------------------------------------------------------------ audit, analytics

@@ -95,6 +95,7 @@ public final class ModelCodeAllowList {
             "org.sangam.packs.core.CumulativeThresholdDelegate",
             "org.sangam.packs.core.DecisionDelegate",
             "org.sangam.packs.core.DocumentDelegate",
+            "org.sangam.packs.core.DocumentSlotReadyListener",
             "org.sangam.packs.core.DscSignatureGuardListener",
             "org.sangam.packs.core.ExternalOperationDelegate",
             "org.sangam.packs.core.LedgerDelegate",

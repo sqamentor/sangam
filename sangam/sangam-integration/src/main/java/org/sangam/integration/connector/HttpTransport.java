@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.sangam.core.engine.LockScope;
+import org.sangam.engine.tx.LockScope;
 
 /**
  * HTTP transport shared by the REST, SOAP, webhook and government connectors.

@@ -6,7 +6,11 @@ import org.operaton.bpm.engine.impl.context.Context;
 import org.operaton.bpm.engine.impl.interceptor.CommandContext;
 import org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity;
 
+import org.sangam.integration.bridge.ConnectorTenants;
+
 import java.sql.Connection;
+import java.util.HashMap;
+import java.util.Map;
 
 /** Small helpers over Operaton internals used by the bridge (engine identity, the command's JDBC connection). */
 final class EngineContext {
@@ -31,12 +35,18 @@ final class EngineContext {
         return execution.getProcessInstanceId();
     }
 
-    static String tenant(DelegateExecution execution, String fallback) {
-        Object v = execution.getVariable("sangamTenantId");
-        if (v != null) {
-            return v.toString();
+    /**
+     * DEC-145: the engine tenant of tenant-owned connector or send-event work ({@link ConnectorTenants#tenantOwned});
+     * the tenant variables are untrusted claims and there is no default tenant.
+     *
+     * @throws org.sangam.core.tenant.TenantResolutionException when the engine tenant is missing or a claim differs
+     */
+    static String tenant(DelegateExecution execution, String label) {
+        Map<String, Object> claims = new HashMap<>();
+        for (String name : ConnectorTenants.CLAIM_VARIABLES) {
+            claims.put(name, execution.getVariable(name));
         }
-        return execution.getTenantId() != null ? execution.getTenantId() : fallback;
+        return ConnectorTenants.tenantOwned(execution.getTenantId(), claims, label);
     }
 
     static int loopCounter(DelegateExecution execution) {

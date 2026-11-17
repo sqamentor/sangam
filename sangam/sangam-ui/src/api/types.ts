@@ -327,6 +327,11 @@ export interface FormField {
    * refused when missing (Jackson 3, 400 VALIDATION_FAILED).
    */
   omitUntouched?: boolean;
+  /**
+   * UI-DEMO-1 (decision 400 (3)): a pack money field. The person enters major units; the value is sent as integer minor
+   * units of the currency (value x 10^exponent, exact), the pack contract (packgen money.py).
+   */
+  money?: { exponent: number; currency?: string };
 }
 
 export interface FormSchema {

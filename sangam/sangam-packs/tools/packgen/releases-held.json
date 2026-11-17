@@ -231,6 +231,10 @@
   "sha256": "1dd156e42c9e386c18e05e49909ba0da0ac9a7e6f00e99cfddd38cd0ba0c52d1",
   "version": "1.0.1"
  },
+ "sangam.compliance": {
+  "sha256": "43c39fdcc4202cfea0b61cdf84508922b5f0a8c95d83f6c13bd3252c9012b72e",
+  "version": "1.1.0"
+ },
  "sangam.core": {
   "sha256": "8b52875b4e9a0a5ad30209de8f82cb5628ba96d956a66b69c9192ec60d223244",
   "version": "1.0.1"

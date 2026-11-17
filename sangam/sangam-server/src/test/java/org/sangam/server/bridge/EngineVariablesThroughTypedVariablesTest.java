@@ -38,8 +38,25 @@ class EngineVariablesThroughTypedVariablesTest {
 
     static final Pattern READS_JSON = Pattern.compile("\\.(?:readValue|readTree|convertValue|treeToValue)\\("
             + "|\\bJson\\.(?:map|read|tree|readMap)\\(");
-    /** A mapper built without the exact-fraction feature in the same statement. */
-    static final Pattern PLAIN_MAPPER = Pattern.compile("new ObjectMapper\\(\\)(?![^;]*USE_BIG_DECIMAL_FOR_FLOATS)");
+    /**
+     * A mapper built without the exact-fraction feature in the same statement: {@code new ObjectMapper()} or a
+     * {@code JsonMapper.builder()} (simple or fully qualified name, Jackson 2 or 3).
+     */
+    static final Pattern PLAIN_MAPPER = Pattern.compile(
+            "(?:new\\s+ObjectMapper\\s*\\(\\s*\\)|\\bJsonMapper\\s*\\.\\s*builder\\s*\\(\\s*\\))"
+                    + "(?![^;]*USE_BIG_DECIMAL_FOR_FLOATS)");
+
+    @Test
+    void thePlainMapperPatternCatchesBothConstructionStyles() {
+        assertTrue(PLAIN_MAPPER.matcher("static final ObjectMapper M = new ObjectMapper();").find());
+        assertTrue(PLAIN_MAPPER.matcher("ObjectMapper m = JsonMapper.builder().build();").find(), "planted builder");
+        assertTrue(PLAIN_MAPPER.matcher("ObjectMapper m = com.fasterxml.jackson.databind.json.JsonMapper.builder()\n"
+                + "        .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).build();").find(), "planted FQN builder");
+        assertTrue(!PLAIN_MAPPER.matcher("ObjectMapper m = JsonMapper.builder()\n"
+                + "        .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS).build();").find());
+        assertTrue(!PLAIN_MAPPER.matcher("ObjectMapper m = new ObjectMapper()"
+                + ".enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);").find());
+    }
     /**
      * The modules with engine write paths below sangam-rest-core, with the mapper they read JSON through (each shared
      * one checked in {@link #theSharedMappersOfThoseWritePathsReadFractionsExactly}). Any other module must use

@@ -166,6 +166,11 @@ BUMPED = frozenset({
 # regenerate releases-held.json at that commit and empty SHIPS.
 HELD_AT = '93498ab2'
 HELD_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'releases-held.json')
+# R7UI-F7-4: the compliance pack lives in sangam-compliance (packgen generates its BPMN, compliance.py; its pack.json is
+# kept by hand) and is held the same way: releases-held.json records it at HELD_AT, check_held covers this root too.
+# A regeneration of releases-held.json covers both roots.
+COMPLIANCE_PACKS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..',
+                                                 'sangam-compliance', 'src', 'main', 'resources', 'packs'))
 SHIPS = {pid: ('1.0.1', '1.0.2') for pid in (
     'gov.contract-management',
     'gov.dbt.batch',
@@ -217,6 +222,9 @@ SHIPS['universal.up12-order-decomposition'] = ('1.0.1', '1.0.2')
 SHIPS['universal.up15-recertification'] = ('1.0.1', '1.0.2')
 SHIPS['universal.up17-prior-authorisation'] = ('1.0.1', '1.0.2')
 SHIPS['universal.up21-iot-storm-control'] = ('1.0.1', '1.0.2')
+# R7UI-F7-4: the compliance models changed after HELD_AT (incident report completion guard, isStartableInTasklist).
+# Its pack.json is kept by hand, so this entry is the ledger record of that bump; version_of does not apply to it.
+SHIPS['sangam.compliance'] = ('1.1.0', '1.1.1')
 SHIPS['gov.intl.pfm-breach-case'] = ('1.0.0', '1.0.1')
 SHIPS['gov.intl.pfm-budget-accounting-reconciliation'] = ('1.0.0', '1.0.1')
 SHIPS['gov.intl.pfm-cash-plan'] = ('1.0.0', '1.0.1')
@@ -238,7 +246,10 @@ SHIPS['gov.consultancy'] = ('1.0.1', '1.0.2')
 SHIPS['gov.court-case'] = ('1.0.1', '1.0.2')
 SHIPS['gov.grievance'] = ('1.0.1', '1.0.2')
 SHIPS['gov.ifms.audit-para-settlement'] = ('1.0.1', '1.0.2')
-SHIPS['gov.ifms.bill'] = ('1.0.1', '1.0.2')
+# R7UI-F7-2 (decision 400 (2), lane R7-ui): a type or classification check without a result (profile binding missing)
+# holds the case for a person instead of an EL incident at the validity gateway. 1.0.2 already carried other content
+# and may be deployed in a dev environment, so the new content ships as 1.0.3 (decision 390 (4)).
+SHIPS['gov.ifms.bill'] = ('1.0.1', '1.0.3')
 SHIPS['gov.ifms.budget-formulation'] = ('1.0.1', '1.0.2')
 SHIPS['gov.ifms.monthly-accounts'] = ('1.0.1', '1.0.2')
 SHIPS['gov.ifms.reappropriation'] = ('1.0.1', '1.0.2')
@@ -261,7 +272,10 @@ SHIPS['sec.ecom.order-to-cash'] = ('1.0.1', '1.0.2')
 SHIPS['sec.ecom.return-refund'] = ('1.0.1', '1.0.2')
 SHIPS['sec.ecom.seller-onboarding'] = ('1.0.1', '1.0.2')
 SHIPS['sec.edu.admission'] = ('1.0.1', '1.0.2')
-SHIPS['sec.edu.examination'] = ('1.0.1', '1.0.2')
+# decision 394 (lane R7-ui): registrationWindow is an ISO-8601 duration from the cycle start (form type 'duration', the
+# start listener checks it). 1.0.2 already carried other content on the integration branch and may be deployed in a
+# dev environment, so the new content ships as 1.0.3 (decision 390 (4): a deployed version is immutable).
+SHIPS['sec.edu.examination'] = ('1.0.1', '1.0.3')
 SHIPS['sec.edu.scholarship'] = ('1.0.1', '1.0.2')
 SHIPS['sec.health.admission-discharge'] = ('1.0.1', '1.0.2')
 SHIPS['sec.health.ot-scheduling'] = ('1.0.1', '1.0.2')

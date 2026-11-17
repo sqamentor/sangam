@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.sangam.core.engine.LockScope;
+import org.sangam.engine.tx.LockScope;
 import org.sangam.integration.connector.EgressPolicy;
 import org.sangam.integration.connector.SecretResolver;
 

@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.sangam.core.engine.LockScope;
+import org.sangam.engine.tx.LockScope;
 
 /**
  * {@link ExternalPolicyCheck} over HTTP with the JDK client (owner decision 166: a remote check, no in-process policy

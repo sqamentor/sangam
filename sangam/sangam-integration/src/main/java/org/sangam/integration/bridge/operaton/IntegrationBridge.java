@@ -21,12 +21,14 @@ public final class IntegrationBridge {
 
     private final ConnectorInvoker delegateInvoker;
     private final OutboxWriter outboxWriter;
-    private final String defaultTenant;
 
-    public IntegrationBridge(ConnectorInvoker delegateInvoker, OutboxWriter outboxWriter, String defaultTenant) {
+    /**
+     * DEC-145: no default tenant. The delegates take the tenant of their work from the execution's engine tenant only
+     * ({@code ConnectorTenants}) and refuse work without one.
+     */
+    public IntegrationBridge(ConnectorInvoker delegateInvoker, OutboxWriter outboxWriter) {
         this.delegateInvoker = delegateInvoker;
         this.outboxWriter = outboxWriter;
-        this.defaultTenant = defaultTenant == null ? "default" : defaultTenant;
     }
 
     public static void install(IntegrationBridge bridge) {
@@ -47,9 +49,5 @@ public final class IntegrationBridge {
 
     public OutboxWriter outboxWriter() {
         return outboxWriter;
-    }
-
-    public String defaultTenant() {
-        return defaultTenant;
     }
 }

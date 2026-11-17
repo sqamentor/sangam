@@ -29,7 +29,9 @@ import java.util.UUID;
  * }</pre>
  *
  * <p>The operationId is UUIDv5(tenant, root instance, activityInstanceId, loopCounter[, retrySafeKey]) and is set as
- * {@code <resultVariable>_operationId}. The intent is committed before the call through the bridge's own transactions
+ * {@code <resultVariable>_operationId}. DEC-145: the tenant is the execution's engine tenant only
+ * ({@code ConnectorTenants}): without one, or with a tenant variable that differs, the delegate is refused
+ * ({@code TENANT_CONTEXT_MISSING} / {@code TENANT_CONTEXT_CONFLICT}) before the connector is called. The intent is committed before the call through the bridge's own transactions
  * (R37). Rules, because a delegate runs inside an engine transaction (VI.1 rule 5):
  * <ul>
  *   <li>Mark the task {@code asyncBefore} so the call runs in its own job and a retry re-runs only the job.</li>
@@ -74,12 +76,14 @@ public final class SangamConnectorDelegate implements JavaDelegate {
         if (connectorId == null) {
             throw new IllegalStateException("field 'connector' is required on " + execution.getCurrentActivityId());
         }
+        // DEC-145: the engine tenant selects the connector binding; resolved (or refused) before anything else runs
+        String tenant = EngineContext.tenant(execution, "connector delegate");
         String op = text(operation, execution, "invoke");
         String result = text(resultVariable, execution, execution.getCurrentActivityId() + "_result");
         ConnectorInvoker.Invocation inv = new ConnectorInvoker.Invocation(
-                EngineContext.tenant(execution, bridge.defaultTenant()), EngineContext.rootId(execution),
+                tenant, EngineContext.rootId(execution),
                 execution.getActivityInstanceId(), EngineContext.loopCounter(execution), text(retrySafeKey, execution, null),
-                execution.getProcessBusinessKey(), connectorId, op, inputOf(execution), UUID.randomUUID().toString(), 0L, null, mintedId(execution, bridge));
+                execution.getProcessBusinessKey(), connectorId, op, inputOf(execution), UUID.randomUUID().toString(), 0L, null, mintedId(execution, tenant));
         ConnectorInvoker.Outcome o = bridge.delegateInvoker().invoke(inv);
         execution.setVariable(result + "_operationId", o.operationId().toString());
         switch (o) {
@@ -98,7 +102,7 @@ public final class SangamConnectorDelegate implements JavaDelegate {
     }
 
     /** The same T35 identity the engine adapter mints for external tasks (a delegate has no adapter call). */
-    private UUID mintedId(DelegateExecution execution, IntegrationBridge bridge) {
+    private UUID mintedId(DelegateExecution execution, String tenant) {
         String activity = execution.getCurrentActivityId();
         long visit = execution.getProcessEngineServices().getHistoryService().createHistoricActivityInstanceQuery()
                 .processInstanceId(execution.getProcessInstanceId()).activityId(activity).finished().count();
@@ -107,7 +111,7 @@ public final class SangamConnectorDelegate implements JavaDelegate {
         if (bk == null || bk.isEmpty()) {
             bk = EngineContext.rootId(execution);
         }
-        return OperationIdentity.of(EngineContext.tenant(execution, bridge.defaultTenant()), bk, activity,
+        return OperationIdentity.of(tenant, bk, activity,
                 OperationIdentity.scope(visit, loop instanceof Number n ? n.intValue() : null, text(retrySafeKey, execution, null)));
     }
 

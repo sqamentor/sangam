@@ -48,6 +48,30 @@ public final class ConformanceModels {
                 + "<outputEntry id=\"ro" + n + "\"><text>" + output + "</text></outputEntry></rule>\n";
     }
 
+    /** RM-30: the external-work process: start, the external task {@value #CHARGE_TASK}, then {@value #REVIEW_TASK}. */
+    public static final String WORK_PROCESS = "conformance_work_process";
+    public static final String CHARGE_TASK = "charge";
+    public static final String CHARGE_TOPIC = "conformance.charge";
+    public static final String WORK_RESOURCE = "conformance-work-process.bpmn";
+
+    public static byte[] workProcess() {
+        return ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n"
+                + "  xmlns:operaton=\"http://operaton.org/schema/1.0/bpmn\"\n"
+                + "  id=\"defs_" + WORK_PROCESS + "\" targetNamespace=\"http://sangam.org/host-conformance\">\n"
+                + "  <process id=\"" + WORK_PROCESS + "\" isExecutable=\"true\">\n"
+                + "    <startEvent id=\"s\"/>\n"
+                + "    <sequenceFlow id=\"f1\" sourceRef=\"s\" targetRef=\"" + CHARGE_TASK + "\"/>\n"
+                + "    <serviceTask id=\"" + CHARGE_TASK + "\" operaton:type=\"external\" operaton:topic=\""
+                + CHARGE_TOPIC + "\"/>\n"
+                + "    <sequenceFlow id=\"f2\" sourceRef=\"" + CHARGE_TASK + "\" targetRef=\"" + REVIEW_TASK + "\"/>\n"
+                + "    <userTask id=\"" + REVIEW_TASK + "\"/>\n"
+                + "    <sequenceFlow id=\"f3\" sourceRef=\"" + REVIEW_TASK + "\" targetRef=\"e\"/>\n"
+                + "    <endEvent id=\"e\"/>\n"
+                + "  </process>\n"
+                + "</definitions>\n").getBytes(StandardCharsets.UTF_8);
+    }
+
     public static byte[] feeProcess() {
         return ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
                 + "<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n"
