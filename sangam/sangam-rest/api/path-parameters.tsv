@@ -531,7 +531,7 @@ SAFE	/rosters/swaps/{swapId}/accept	swapId	sangam-resources/src/main/java/org/sa
 SAFE	/rosters/swaps/{swapId}/cancel	swapId	sangam-resources/src/main/java/org/sangam/resources/roster/RosterService.java:875 Sql.newId (UUID) (lane R8-393m M3-M5)
 SAFE	/rosters/swaps/{swapId}/decision	swapId	sangam-resources/src/main/java/org/sangam/resources/roster/RosterService.java:875 Sql.newId (UUID) (lane R8-393m M3-M5)
 SAFE	/scim/v2/Groups/{id}	id	ScimService.java:273 Sql.newId (UUID, sangam-security support/Sql.java:59); sole GROUP insert :275, SCIM serves only SEC_SCIM_RESOURCE (:286) (lane R8-393mc C4)
-PENDING	/scim/v2/Users/{id}	id	module batch (R8-393-modules)
+EXEMPT	/scim/v2/Users/{id}	id	RFC 7644 section 3.2 fixes the resource path, IdP clients build it (owner ruling to R8-393mc, like Matrix); a ':' id round-trips encoded, D393ScimColonIdH2Test
 PENDING	/service-mocks/{id}	id	module batch (R8-393-modules)
 SAFE	/tasks/{id}	id	engine-generated: SangamProcessEnginePlugin.java:117 StrongUuidGenerator, or in a cell CellIdGeneratorPlugin.java:23 <cell>.<uuidv7> (GlobalIds.java:25 separator ., CellId.java:14); no main code sets an engine id (no newTask(id)/setId) (lane R8-393mc C2)
 SAFE	/tasks/{id}/attachments	id	engine-generated: SangamProcessEnginePlugin.java:117 StrongUuidGenerator, or in a cell CellIdGeneratorPlugin.java:23 <cell>.<uuidv7> (GlobalIds.java:25 separator ., CellId.java:14); no main code sets an engine id (no newTask(id)/setId) (lane R8-393mc C2)

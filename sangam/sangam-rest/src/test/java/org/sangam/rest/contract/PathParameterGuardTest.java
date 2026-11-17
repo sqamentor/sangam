@@ -35,7 +35,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 class PathParameterGuardTest {
 
     /** The PENDING row count; lowered in the same commit that moves or classifies rows. Release gate: 0. */
-    static final int PENDING_CEILING = 130;
+    static final int PENDING_CEILING = 129;
 
     static final Path CONTRACT = Path.of("api", "sangam-api.yaml");
     static final Path LEDGER = Path.of("api", "path-parameters.tsv");
