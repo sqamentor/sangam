@@ -139,7 +139,9 @@ Before the seed: the tenant `GOI.FIN` exists (`POST /api/v1/admin/tenants`) and 
 
 People: the Jaipur personas of IFMS E-67, `PRESENTATION_USERS` in `generate_realm.py`; seat by seat in the joint
 ledger [ANSWER] SANGAM-PERSONA-SEATS. Seats without a persona (PRAO-1, SECY-1) are created but
-nobody holds them.
+nobody holds them: IFMS E-67 has no person for either (requested in the joint ledger), and the flows that use them
+(monthly accounts, SNA-SPARSH payment, year-end closing, budget formulation) are out of the presentation. Payee review
+in the bill is at the dealing hand DH-1 (69ccc49e).
 
 
 - GPF: started by the subscriber (no seat; the initiator seat is then `citizen`, `PackStartListener`), scrutiny at
