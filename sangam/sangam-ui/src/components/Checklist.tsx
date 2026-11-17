@@ -18,6 +18,8 @@ export interface Step {
 export interface Persona {
   id: string;
   roles: Role[];
+  /** Endpoint permissions that also make the persona (a supervisor holds team.read, decision 401). */
+  perms?: string[];
   steps: Step[];
 }
 
@@ -30,7 +32,7 @@ export const PERSONAS: Persona[] = [
     roles: ['TASK_USER'],
     steps: [s('post', '/account'), s('open', '/tasks'), s('pickUp', '/tasks'), s('complete', '/tasks'), s('away', '/my/delegations')],
   },
-  { id: 'supervisor', roles: ['PLATFORM_OPERATOR'], steps: [s('team', '/team'), s('list', '/tasks/filters'), s('reassign', '/team')] },
+  { id: 'supervisor', roles: [], perms: ['team.read'], steps: [s('team', '/team'), s('list', '/tasks/filters'), s('reassign', '/team')] },
   {
     id: 'designer',
     roles: ['MODELLER'],
@@ -65,7 +67,8 @@ const ALWAYS = new Set(['/account']);
 export function checklistsFor(me: Pick<Me, 'roles' | 'permissions'> | null | undefined): Persona[] {
   if (!me) return [];
   const open = new Set([...ALWAYS, ...visibleNav(me).flatMap((a) => a.sections.flatMap((x) => x.items.map((i) => i.to)))]);
-  return PERSONAS.filter((p) => p.roles.some((r) => me.roles.includes(r)))
+  const held = me.permissions ?? [];
+  return PERSONAS.filter((p) => p.roles.some((r) => me.roles.includes(r)) || (p.perms ?? []).some((x) => held.includes(x)))
     .map((p) => ({ ...p, steps: p.steps.filter((st) => open.has(st.to)) }))
     .filter((p) => p.steps.length > 0);
 }

@@ -87,6 +87,54 @@ class OutcomeUnknownNoReofferH2Test {
         }
     }
 
+    @Test
+    void operatonAdapterOffersResolvedWorkAtOnceInsideTheHold() {
+        try (RestEngineFixture fx = new RestEngineFixture("sl180op")) {
+            fx.engine.getRepositoryService().createDeployment().tenantId("tA")
+                    .addString("sl180.bpmn", WorkerEngineFixture.BPMN).deploy();
+            RestProperties props = new RestProperties();
+            OperatonWorkAdapter work = new OperatonWorkAdapter(fx.engine.getExternalTaskService(),
+                    fx.engine.getRuntimeService(), fx.tx, new JdbcAuditAdapter(fx.tx, fx.engine.getHistoryService(),
+                    fx.engine.getRuntimeService(), props), props, new OperatonOperationIds(fx.engine.getRuntimeService(),
+                    fx.engine.getHistoryService(), fx.engine.getExternalTaskService()));
+            WorkPort.ExternalWork w = check(work, bk -> fx.engine.getRuntimeService()
+                    .createProcessInstanceByKey(WorkerEngineFixture.KEY).processDefinitionTenantId("tA").businessKey(bk)
+                    .execute().getId());
+            resolveAndRelease(fx.tx, fx.engine, w);
+            List<WorkPort.ExternalWork> again = fetch(work, WB, "wb");
+            assertEquals(1, again.size(), "SL-180: resolved work is offered at once, not after the 24 h hold");
+            assertEquals(w.id(), again.get(0).id());
+            assertTrue(again.get(0).lockVersion() > w.lockVersion(), "under a new lease");
+        }
+    }
+
+    @Test
+    void sangamEngineAdapterOffersResolvedWorkAtOnceInsideTheHold() {
+        try (WorkerEngineFixture fx = new WorkerEngineFixture("sl180eng")) {
+            WorkPort.ExternalWork w = check(fx.work, bk -> fx.start("tA", bk));
+            ReconciliationQueue.Item item = resolveAndRelease(fx.tx, fx.engine.processEngine(), w);
+            assertEquals(w.processInstanceId(), item.rootId(), "the item names the root of the held work");
+            List<WorkPort.ExternalWork> again = fetch(fx.work, WB, "wb");
+            assertEquals(1, again.size(), "SL-180: resolved work is offered at once, not after the 24 h hold");
+            assertEquals(w.id(), again.get(0).id());
+            assertTrue(again.get(0).lockVersion() > w.lockVersion(), "under a new lease");
+        }
+    }
+
+    /** Resolves the work's open UNKNOWN_OUTCOME item and releases its held work as ReconciliationEngine does. */
+    static ReconciliationQueue.Item resolveAndRelease(org.sangam.rest.support.TxSupport tx,
+                                                      org.operaton.bpm.engine.ProcessEngine engine, WorkPort.ExternalWork w) {
+        ReconciliationQueue queue = new ReconciliationQueue(Dialect.POSTGRESQL, null);
+        ReconciliationQueue.Item item = tx.inTx(() -> queue.listOpen(tx.connection(), "tA")).stream()
+                .filter(i -> w.id().equals(i.taskId()) && i.kind() == ReconciliationQueue.Kind.UNKNOWN_OUTCOME)
+                .findFirst().orElseThrow();
+        tx.inTx(() -> queue.resolve(tx.connection(), item.id(), ReconciliationQueue.Action.RETRY_SAME_OPERATION,
+                "officer", "{\"reason\":\"no effect\"}"));
+        assertTrue(new OperatonHeldWorkReleaser(engine).release("tA", item.rootId(), item.operationId(), null,
+                item.taskId()) >= 1, "the held work is released");
+        return item;
+    }
+
     /**
      * Leases one work item, reports its outcome unknown and checks that no call with the old lease releases, retries,
      * extends or finishes it and that it is offered to no worker. Returns the leased item.

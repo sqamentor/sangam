@@ -14,7 +14,7 @@ import org.sangam.security.tenant.TenantContext;
 /** Conversions between the REST layer's identity ({@link RequestContext}, {@link SangamPrincipal}) and sangam-security's. */
 public final class SecurityIdentities {
 
-    /** Request attribute carrying the resolved {@link SecurityIdentity} (set by {@link SecurityIdentityFilter}). */
+    /** Request attribute carrying the resolved {@link SecurityIdentity} (set by the host's identity filter). */
     public static final String ATTRIBUTE = SecurityIdentity.class.getName();
 
     private SecurityIdentities() {

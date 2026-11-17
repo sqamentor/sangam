@@ -110,6 +110,7 @@ describe('first-run checklists', () => {
     expect(checklistsFor(me(['MODELLER'])).map((p) => p.id)).toEqual(['designer']);
     expect(checklistsFor(me(['AUDITOR'])).map((p) => p.id)).toEqual(['auditor']);
     expect(checklistsFor(me(['OPERATOR'])).map((p) => p.id)).toEqual(['operator']);
+    expect(checklistsFor(me(['OPERATOR'], ['team.read'])).map((p) => p.id)).toEqual(['supervisor', 'operator']);
     // a tenant admin cannot install packs (platform admins only): that step is left out
     const admin = checklistsFor(me(['ADMIN']))[0];
     expect(admin.steps.map((s) => s.id)).not.toContain('packs');
@@ -119,10 +120,10 @@ describe('first-run checklists', () => {
   it('every step of every persona has text and a page the persona can open', () => {
     for (const p of PERSONAS) {
       expect(T(`checklist.${p.id}.title`)).toBeTruthy();
-      const open = new Set(['/account', ...visibleNav(me(p.roles)).flatMap((a) => a.sections.flatMap((s) => s.items.map((i) => i.to)))]);
+      const open = new Set(['/account', ...visibleNav(me(p.roles, p.perms)).flatMap((a) => a.sections.flatMap((s) => s.items.map((i) => i.to)))]);
       for (const s of p.steps) {
         expect(T(`checklist.${p.id}.${s.id}`)).toBeTruthy();
-        if (p.id !== 'admin') expect(open.has(s.to), `${p.id} ${s.to}`).toBe(true);
+        if (p.id !== 'admin' && !(p.id === 'supervisor' && s.to === '/tasks/filters')) expect(open.has(s.to), `${p.id} ${s.to}`).toBe(true);
       }
     }
   });

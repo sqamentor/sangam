@@ -65,6 +65,12 @@ public final class SecurityAdminBridge implements AdminPort {
         this.props = props;
     }
 
+    /** Drops the cached quota now and again after commit, so a reader never keeps a pre-commit value (was QuotaWiring.invalidateAfterCommit). */
+    private void invalidateQuota(String tenantId) {
+        org.sangam.core.quota.TenantQuotas.current().invalidate(tenantId);
+        tx.afterCommit(() -> org.sangam.core.quota.TenantQuotas.current().invalidate(tenantId));
+    }
+
     // ------------------------------------------------------------------ org units
 
     @Override
@@ -434,7 +440,7 @@ public final class SecurityAdminBridge implements AdminPort {
             return null;
         });
         // SL-43: the tenant row (quotas included) changed; the cached quota overrides of this node go now
-        org.sangam.server.config.QuotaWiring.invalidateAfterCommit(id);
+        invalidateQuota(id);
         return tenant(ctx, id);
     }
 
@@ -455,7 +461,7 @@ public final class SecurityAdminBridge implements AdminPort {
             activate(c, ctx, id, current, reason);
             return null;
         });
-        org.sangam.server.config.QuotaWiring.invalidateAfterCommit(id);
+        invalidateQuota(id);
         return tenant(ctx, id);
     }
 
@@ -466,7 +472,7 @@ public final class SecurityAdminBridge implements AdminPort {
             security.tenants().suspend(c, actor(ctx), id, reason);
             return null;
         });
-        org.sangam.server.config.QuotaWiring.invalidateAfterCommit(id);
+        invalidateQuota(id);
         return tenant(ctx, id);
     }
 

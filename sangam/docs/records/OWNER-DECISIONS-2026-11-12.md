@@ -630,3 +630,48 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - Decision 392, the full decision 393 change and decision 402(2) (plain-Java host and four-eyes port) are listed in the release notes as known limitations and land in 0.1.1. Work on them continues.
   - The other limitations named in IFMS-FIT-AUDIT.md are also listed in the release notes.
   - Release path: merge the PNP and UX branches and test them; code SL-180; full verify; IfmsPacksIT on Oracle and SQL Server; refresh the IFMS guide and post the contract-change list; owner-signed push; SANGAM-GREEN-SHA.
+
+- **406 (owner chat 2026-11-17, supersedes 405)**: The owner answered the release-scope question with "I need release with all today any how any way at any cost". So 0.1.0 includes decision 392, the full decision 393 change and decision 402(2); none is deferred to 0.1.1.
+  - Maximum parallel lanes are put on them.
+  - The owner's 98% confidence floor (decision 403) and the shared heavy-lock rules still apply. A piece that cannot reach 98% is reported to the owner, not shipped.
+
+- **407 (owner chat 2026-11-17, standing authorisation)**:
+  - For every open or future question or doubt, choose the recommended answer, provided research and R&D bring confidence in it to at least 98%. Record each such choice as a decision with its evidence.
+  - Below 98%, keep researching until 98% is reached. If it cannot be reached, report the question.
+  - Goal: clear everything and take Sangam and IFMS live as fast as possible.
+  - This does not replace what only the owner can do: the owner-signed push gate and release tag, break-glass, and outward actions that need the owner in person (Rule 4).
+
+- **408 (integrator, under decision 407; confidence 98% or more)**: `sangam.core` stays at 1.0.2 with the decision 391 row (6383c10c); no bump to 1.0.3.
+  - Evidence: the pushed main 209d2765 ships sangam.core 1.0.1, so 1.0.2 has never been released or pushed.
+  - packgen `--check`, the held-content ledger (HELD_AT 93498ab2) and SHIPS all accept it.
+  - Only local development databases built from unpushed integration code can hold an earlier 1.0.2. Those are reset, not upgraded, which the release notes state.
+
+- **409 (integrator, under decision 407; lane R8-392, confidence 98% or more)**: decision 392's data migration is a Java start-time step on the decision 370 `sangamPlatformRoleRows` runner precedent, with no SQL changesets.
+  - Evidence: the audit chain appends through `SecurityAuditService.record` (hash-chained, `SecurityAuditService.java:96-112`); `AUTH_EFFECTIVE` rewrites go through `AuthEffectiveMaintainer`; `SEC_POLICY` needs no schema change.
+  - Conditions:
+    1. Cluster-safe, with no double split or double audit when two nodes start together.
+    2. Idempotent.
+    3. Fail-closed per tenant.
+    4. Pending multi-subject four-eyes changes are marked SUPERSEDED, with a test proving that they cannot restore a grant.
+
+- **410 (integrator, under decision 407; the decision 393 pattern by lane R7-ui, confidence 98-99%)**: The rules are in `sangam-handoff/2026-11-17/d393-PATTERN.md`.
+  - A path parameter stays only when the code proves it can never hold '/' or ':'. Everything else moves to the literal `by-<x>` plus a required query parameter of the same name.
+  - The old routes are removed (0.1.0 is unreleased), with a correction entry in `sangam-api-deprecations.yaml`.
+  - Exempt: plugin UI asset `{*path}` and the Matrix `{txnId}`.
+  - FHIR, SMS-DLT and Event Grid callbacks move. The joint ledger shows no IFMS-configured callback URL for them.
+  - Guard: `PathParameterGuardTest` with the ledger `sangam-rest/api/path-parameters.tsv`. Its PENDING count can only go down, and the release gate is zero PENDING.
+
+- **411 (owner chat 2026-11-17, "Yes, ci/ branches (Recommended)")**: Lanes may push test-only branches to `sqamentor/sangam` under the `ci/` prefix, so that GitHub Actions runs the long builds and the per-database tests in parallel. `main` and release tags stay behind the owner-signed push gate. This approval is for Sangam only; IFMS follows its own push rules.
+
+- **412 (owner chat 2026-11-17, "GitHub and AWS both, set it up now")**: Set up the three-level build strategy now.
+  - Level 1: the local heavy lock, for quick runs.
+  - Level 2: GitHub Actions on `ci/*` branches (decision 411), with a matrix job per database for long runs or when the local wait exceeds 30 minutes.
+  - Level 3: AWS CodeBuild, used when GitHub is backed up or its minutes are used up.
+  - The main push and the tags stay owner-signed.
+
+- **413 (owner chat 2026-11-17)**: AWS account 196337091345 belongs to VyaparTrust. The owner allows Sangam and IFMS to use it for their development CI; VyaparTrust is allowed the same functionality.
+  - This is an explicit, owner-made exception to the project boundary, for shared infrastructure only. No code, data or records are mixed.
+  - Root keys may be used to set it up (owner's choice).
+  - Every Sangam resource is named `sangam-ci-*` and tagged `project=sangam-ci`. VyaparTrust resources are never touched.
+  - Created: S3 bucket `sangam-ci-196337091345` (ap-south-1, public access blocked, 14-day expiry), IAM role `sangam-ci-codebuild-role` (logs plus this bucket only), CodeBuild project `sangam-ci-lanes` (LARGE, privileged Docker, S3 source, 120-minute timeout).
+  - Routing is automatic: local; then GitHub when the local queue is long; then AWS when GitHub is also busy for a long time.

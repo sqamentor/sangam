@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Me (5 operations).
+/// Typed operations of Me (7 operations).
 /// </summary>
 public sealed class MeApi
 {
@@ -24,6 +24,28 @@ public sealed class MeApi
     {
         var req = ApiRequest.Get($"/me");
         return await _calls.JsonAsync<M.Me?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Installed modules
+    /// Owner decision 399 (Q3): the optional modules whose REST API this server serves, derived from the wiring (a module is listed when its controllers are registered, which needs the module on the class path and enabled). Read-only, any signed-in caller, no permission. The UI hides the menu entries of a module that is not listed.
+    /// GET /me/capabilities (operationId getMyCapabilities).
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.MeCapabilities?> GetMyCapabilitiesAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/me/capabilities");
+        return await _calls.JsonAsync<M.MeCapabilities?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Team workload of my tenant
+    /// Owner decision 401: open, assigned and unassigned task counts of the caller's tenant, and per candidate group the open unassigned tasks (groups without one are left out), plus the unassigned tasks that offer no candidate group. Only tasks of the caller's tenant are counted, never another tenant's or a task without a tenant. Read-only.
+    /// GET /team/task-groups (operationId getTeamTaskGroups); permission team.read.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.TeamTaskGroupReport?> GetTeamTaskGroupsAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/team/task-groups");
+        return await _calls.JsonAsync<M.TeamTaskGroupReport?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

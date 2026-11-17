@@ -28,7 +28,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 public final class CommandCatalog {
 
     public static final String BASE = "/api/v1";
-    public static final String CONTRACT_RESOURCE = "sangam-api.yaml";
+    public static final String CONTRACT_RESOURCE = org.sangam.rest.support.Permissions.CONTRACT_RESOURCE;
 
     public record Command(String method, String pathTemplate, String commandType, boolean requiredInGovernmentProfile) {
     }

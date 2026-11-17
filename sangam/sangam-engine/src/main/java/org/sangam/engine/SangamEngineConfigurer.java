@@ -91,6 +91,37 @@ public final class SangamEngineConfigurer {
      */
     public void configure(ProcessEngineConfigurationImpl cfg, DataSource preparedDataSource,
                           List<? extends ProcessEnginePlugin> extraPlugins) {
+        applyEngineOptions(cfg, preparedDataSource);
+        List<ProcessEnginePlugin> plugins = new ArrayList<>();
+        plugins.add(plugin);
+        if (cfg.getProcessEnginePlugins() != null) {
+            for (ProcessEnginePlugin p : cfg.getProcessEnginePlugins()) {
+                if (p != plugin && !(p instanceof SangamProcessEnginePlugin)) {
+                    plugins.add(p);
+                }
+            }
+        }
+        for (ProcessEnginePlugin p : extraPlugins) {
+            if (!plugins.contains(p)) {
+                plugins.add(p);
+            }
+        }
+        cfg.setProcessEnginePlugins(plugins);
+        // M-098: bootstrap is complete for the settings; the plugin reads them during the build, unchanged from here
+        settings.freeze();
+    }
+
+    /**
+     * R8-pnp PNP-1: the drop-in route ({@link SangamEnginePlugin}). Called from inside Operaton's own plugin preInit,
+     * so the plugin list is left alone (it is being iterated); the caller runs {@link #plugin()} itself.
+     */
+    void configureInPlace(ProcessEngineConfigurationImpl cfg, DataSource preparedDataSource) {
+        applyEngineOptions(cfg, preparedDataSource);
+        settings.freeze();
+    }
+
+    /** The engine options every route applies (slot, name, data source, database type, history, DMN/CMMN, tenants). */
+    private void applyEngineOptions(ProcessEngineConfigurationImpl cfg, DataSource preparedDataSource) {
         if (plugin == null) {
             throw new IllegalStateException("call prepare(DataSource) first");
         }
@@ -113,24 +144,12 @@ public final class SangamEngineConfigurer {
         cfg.setDmnEnabled(true);
         cfg.setCmmnEnabled(true);
         cfg.setTenantCheckEnabled(true);
-        List<ProcessEnginePlugin> plugins = new ArrayList<>();
-        plugins.add(plugin);
-        if (cfg.getProcessEnginePlugins() != null) {
-            for (ProcessEnginePlugin p : cfg.getProcessEnginePlugins()) {
-                if (p != plugin && !(p instanceof SangamProcessEnginePlugin)) {
-                    plugins.add(p);
-                }
-            }
-        }
-        for (ProcessEnginePlugin p : extraPlugins) {
-            if (!plugins.contains(p)) {
-                plugins.add(p);
-            }
-        }
-        cfg.setProcessEnginePlugins(plugins);
         SangamClockHolder.set(components.clock()); // other modules read the engine clock through the holder
-        // M-098: bootstrap is complete for the settings; the plugin reads them during the build, unchanged from here
-        settings.freeze();
+    }
+
+    /** R8-pnp PNP-1: the engine slot taken by this configurer (null before configure). */
+    synchronized OperatonClock.Registration engineSlot() {
+        return engineSlot;
     }
 
     /** After the engine build: engine schema patches (MySQL P-1/P-2) and the adapter. */

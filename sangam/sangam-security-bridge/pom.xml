@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.github.sqamentor</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-security-bridge</artifactId>
+  <name>Sangam security bridges for the service ports (plain Java)</name>
+  <description>Decision 402 (2): the sangam-rest-core permission and admin ports on sangam-security
+    (SecurityPermissionBridge, SecurityAdminBridge, the replay rules and the four-eyes policy-change port), moved out of
+    sangam-server so a host without Spring (sangam-host-plain) wires the same authorization. Package names unchanged
+    (org.sangam.server.bridge), as decision 285 did for sangam-rest-core. Names no host framework.
+  </description>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-rest-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-security</artifactId>
+    </dependency>
+    <!-- ReplayRules reads the R41 replay rules from the OpenAPI contract (sangam-api.yaml) on the class path -->
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+  </dependencies>
+</project>

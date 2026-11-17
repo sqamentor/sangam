@@ -200,6 +200,30 @@ try {
       && (await run(['check', 'origin', REMOTE], { owner: true, stdin: pushLine(c2) })).code === 0,
       'a key in the owner-held file signs a push that is allowed');
 
+  // ── decision 411: refs/heads/ci/<name> on sqamentor/sangam is exempt, nothing else ──
+  const GH = 'https://github.com/sqamentor/sangam.git';
+  const z = '0'.repeat(40);
+  const ciOk = await run(['check', 'origin', GH], { stdin: pushLine(c2, z, 'refs/heads/ci/x') });
+  const ex = readLedger().filter((r) => r.kind === 'CI_EXEMPT');
+  check(ciOk.code === 0 && ex.length === 1 && ex[0].sha === c2 && ex[0].ref === 'refs/heads/ci/x',
+      '411: refs/heads/ci/x on sqamentor/sangam passes without approval and is logged CI_EXEMPT with commit and ref');
+  check((await run(['check', 'origin', 'git@github.com:sqamentor/sangam.git'], { stdin: pushLine(c2, z, 'refs/heads/ci/lane-1/a') })).code === 0,
+      '411: the ssh form of the remote and a nested ci/ name pass');
+  for (const [ref, what] of [['refs/heads/main', 'main'], ['refs/tags/v1.0.0', 'a tag'], ['refs/tags/ci/x', 'a tag named ci/x'],
+      ['refs/heads/release/x', 'release/x'], ['refs/heads/ci', 'ci without a slash'], ['refs/heads/cix', 'refs/heads/cix'],
+      ['refs/heads/ci/', 'ci/ with an empty name'], ['refs/heads/ci/../main', 'ci/../main'], ['refs/heads/feature/ci/x', 'feature/ci/x']]) {
+    check((await run(['check', 'origin', GH], { stdin: pushLine(c2, z, ref) })).code !== 0, `411: ${what} is still blocked without approval`);
+  }
+  check((await run(['check', 'origin', 'https://github.com/someone/sangam.git'], { stdin: pushLine(c2, z, 'refs/heads/ci/x') })).code !== 0,
+      '411: ci/x on another remote is blocked');
+  check((await run(['check', 'origin', REMOTE], { stdin: pushLine(c2, z, 'refs/heads/ci/x') })).code !== 0,
+      '411: ci/x on a non-Sangam remote URL is blocked');
+  check((await run(['check', 'origin', GH], { stdin: `(delete) ${z} refs/heads/ci/x ${c2}\n` })).code !== 0,
+      '411: deleting a ci/ branch is refused');
+  check((await run(['check', 'origin', GH], { stdin: pushLine(c1, c2, 'refs/heads/ci/x') })).code !== 0,
+      '411: a non-fast-forward ci/ update is refused');
+  check(readLedger().filter((r) => r.kind === 'CI_EXEMPT').length === 2, '411: only the two allowed pushes were logged');
+
   // ── tamper detection ──
   const all = readFileSync(ledgerFile(), 'utf8').split('\n').filter(Boolean);
   const r3 = JSON.parse(all[3]); r3.n += 1000; all[3] = JSON.stringify(r3);

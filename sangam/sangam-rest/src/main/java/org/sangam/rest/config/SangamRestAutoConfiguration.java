@@ -430,6 +430,13 @@ public class SangamRestAutoConfiguration {
         return new org.sangam.rest.adapter.jdbc.JdbcRegistryAdapter(store, audit, props);
     }
 
+    /** Owner decision 401: the team workload of the caller's tenant (GET /team/task-groups). */
+    @Bean
+    @ConditionalOnMissingBean
+    public org.sangam.rest.port.TeamPort sangamTeamPort(ProcessEngine engine) {
+        return new org.sangam.rest.adapter.operaton.OperatonTeamAdapter(engine.getTaskService());
+    }
+
     @Bean
     @ConditionalOnMissingBean
     public org.sangam.rest.port.WorkspacePort sangamWorkspacePort(TaskPort tasks, ProcessEngine engine,
