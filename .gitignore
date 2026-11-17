@@ -44,3 +44,8 @@ spike/results/sources/**/*.pdf
 # OS files
 Thumbs.db
 .DS_Store
+
+# R8-present: presentation realms and passwords (never commit)
+sangam/deploy/compose/keycloak/realm-local/
+sangam/deploy/presentation/*.local.json
+sangam/deploy/presentation/*.local.env
