@@ -1,0 +1,98 @@
+org.sangam.spike:r10-dmn-option-a:jar:0-SNAPSHOT
++- org.operaton.bpm:operaton-engine:jar:2.2.0:compile
+|  +- org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile
+|  |  +- org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile
+|  |  \- org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile
+|  +- org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile
+|  +- org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile
+|  |  \- jakarta.el:jakarta.el-api:jar:6.0.1:compile
+|  +- org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile
+|  |  +- org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile
+|  |  +- org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile
+|  |  +- org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile
+|  |  +- org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+|  |  |  \- org.scala-lang:scala-library:jar:2.13.18:compile
+|  |  \- org.camunda.feel:feel-engine:jar:1.22.1:compile
+|  |     +- com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+|  |     |  +- com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+|  |     |  \- com.lihaoyi:geny_2.13:jar:1.1.0:compile
+|  |     +- com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile
+|  |     \- com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile
+|  |        \- com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile
+|  +- org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile
+|  +- org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile
+|  +- org.jspecify:jspecify:jar:1.0.1:compile
+|  +- org.mybatis:mybatis:jar:3.5.19:compile
+|  +- org.springframework:spring-beans:jar:7.0.10:compile
+|  |  \- org.springframework:spring-core:jar:7.0.10:compile
+|  |     \- commons-logging:commons-logging:jar:1.3.5:compile
+|  \- joda-time:joda-time:jar:2.15.0:compile
++- org.kie:kie-dmn-core:jar:10.1.0:compile
+|  +- org.kie:kie-dmn-api:jar:10.1.0:compile
+|  |  \- org.kie:efesto-common-api:jar:10.1.0:compile
+|  +- org.kie:kie-dmn-model:jar:10.1.0:compile
+|  +- org.kie:kie-dmn-backend:jar:10.1.0:compile
+|  |  +- org.kie:kie-util-xml:jar:10.1.0:compile
+|  |  +- org.kie:kie-dmn-xsd-resources:jar:10.1.0:compile
+|  |  \- com.thoughtworks.xstream:xstream:jar:1.4.21:compile
+|  |     \- io.github.x-stream:mxparser:jar:1.2.2:compile
+|  |        \- xmlpull:xmlpull:jar:1.1.3.1:compile
+|  +- org.kie:kie-dmn-feel:jar:10.1.0:compile
+|  |  +- net.sf.saxon:Saxon-HE:jar:12.5:compile
+|  |  |  +- org.xmlresolver:xmlresolver:jar:5.2.2:compile
+|  |  |  |  +- org.apache.httpcomponents.client5:httpclient5:jar:5.1.3:runtime
+|  |  |  |  |  \- org.apache.httpcomponents.core5:httpcore5-h2:jar:5.1.3:runtime
+|  |  |  |  \- org.apache.httpcomponents.core5:httpcore5:jar:5.1.3:runtime
+|  |  |  \- org.xmlresolver:xmlresolver:jar:data:5.2.2:compile
+|  |  +- ch.obermuhlner:big-math:jar:2.0.1:compile
+|  |  \- com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile
+|  |     \- com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile
+|  +- org.kie:kie-api:jar:10.1.0:compile
+|  +- org.kie:kie-internal:jar:10.1.0:compile
+|  +- org.kie:kie-memory-compiler:jar:10.1.0:compile
+|  |  \- org.drools:drools-util:jar:10.1.0:compile
+|  +- org.drools:drools-wiring-api:jar:10.1.0:compile
+|  +- org.drools:drools-core:jar:10.1.0:compile
+|  |  +- org.drools:drools-base:jar:10.1.0:compile
+|  |  +- org.drools:drools-wiring-static:jar:10.1.0:compile
+|  |  +- org.drools:drools-io:jar:10.1.0:compile
+|  |  \- commons-codec:commons-codec:jar:1.18.0:compile
+|  +- org.drools:drools-compiler:jar:10.1.0:compile
+|  |  +- org.drools:drools-drl-parser:jar:10.1.0:compile
+|  |  +- org.drools:drools-drl-extensions:jar:10.1.0:compile
+|  |  +- org.drools:drools-drl-ast:jar:10.1.0:compile
+|  |  +- org.drools:drools-kiesession:jar:10.1.0:compile
+|  |  +- org.drools:drools-ecj:jar:10.1.0:compile
+|  |  |  \- org.eclipse.jdt:ecj:jar:3.33.0:compile
+|  |  +- org.kie:kie-util-maven-support:jar:10.1.0:compile
+|  |  \- org.antlr:antlr-runtime:jar:3.5.2:compile
+|  +- org.drools:drools-canonical-model:jar:10.1.0:compile
+|  +- org.drools:drools-model-compiler:jar:10.1.0:compile
+|  +- com.github.javaparser:javaparser-core:jar:3.25.8:compile
+|  +- org.drools:drools-mvel-parser:jar:10.1.0:compile
+|  +- org.drools:drools-alphanetwork-compiler:jar:10.1.0:compile
+|  |  \- org.drools:drools-model-codegen:jar:10.1.0:compile
+|  |     +- org.drools:drools-codegen-common:jar:10.1.0:compile
+|  |     +- org.drools:drools-model-prototype:jar:10.1.0:compile
+|  |     \- org.drools:drools-mvel-compiler:jar:10.1.0:compile
+|  +- org.kie:efesto-compilation-manager-core:jar:10.1.0:compile
+|  |  +- org.kie:efesto-compilation-manager-api:jar:10.1.0:compile
+|  |  \- org.kie:efesto-common-core:jar:10.1.0:compile
+|  +- org.kie:efesto-runtime-manager-core:jar:10.1.0:compile
+|  |  \- org.kie:efesto-runtime-manager-api:jar:10.1.0:compile
+|  +- org.kie:efesto-common-utils:jar:10.1.0:compile
+|  +- org.slf4j:slf4j-api:jar:2.0.6:compile
+|  +- org.antlr:antlr4-runtime:jar:4.10.1:compile
+|  \- org.jpmml:pmml-model:jar:1.6.4:compile
+|     +- com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile
+|     \- jakarta.xml.bind:jakarta.xml.bind-api:jar:3.0.1:compile
++- com.h2database:h2:jar:2.3.232:test
++- org.junit.jupiter:junit-jupiter:jar:6.0.3:test
+|  +- org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test
+|  |  +- org.opentest4j:opentest4j:jar:1.3.0:test
+|  |  +- org.junit.platform:junit-platform-commons:jar:6.0.3:test
+|  |  \- org.apiguardian:apiguardian-api:jar:1.1.2:test
+|  +- org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test
+|  \- org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test
+|     \- org.junit.platform:junit-platform-engine:jar:6.0.3:test
+\- org.slf4j:slf4j-simple:jar:2.0.17:test

@@ -1,0 +1,4 @@
+mode HYBRID_ALL: 3561 result nodes {ERROR=97, FAIL=60, PASS=3397, STRICT=7}
+  compliance-level-2 {FAIL=6, PASS=119, STRICT=1}
+  compliance-level-3 {ERROR=86, FAIL=42, PASS=3251, STRICT=6}
+  non-compliant {ERROR=11, FAIL=12, PASS=27}

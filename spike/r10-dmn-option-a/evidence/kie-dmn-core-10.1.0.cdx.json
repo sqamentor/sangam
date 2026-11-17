@@ -1,0 +1,4986 @@
+{
+  "bomFormat" : "CycloneDX",
+  "specVersion" : "1.6",
+  "serialNumber" : "urn:uuid:42ed4bb3-7642-36ce-a175-13084e7d6756",
+  "version" : 1,
+  "metadata" : {
+    "timestamp" : "2026-11-17T17:01:52Z",
+    "lifecycles" : [
+      {
+        "phase" : "build"
+      }
+    ],
+    "tools" : {
+      "components" : [
+        {
+          "type" : "library",
+          "author" : "OWASP Foundation",
+          "group" : "org.cyclonedx",
+          "name" : "cyclonedx-maven-plugin",
+          "version" : "2.9.1",
+          "description" : "CycloneDX Maven plugin",
+          "hashes" : [
+            {
+              "alg" : "MD5",
+              "content" : "9c7a565cf28cce58557d0c621c5ea4b1"
+            },
+            {
+              "alg" : "SHA-1",
+              "content" : "be882d5a22050bfa9d19090b1420c188617d0e1c"
+            },
+            {
+              "alg" : "SHA-256",
+              "content" : "698e0f37184a5b28c245c4065fd036dfce253b52f82fbb7113d81d36326cc249"
+            },
+            {
+              "alg" : "SHA-512",
+              "content" : "c0f0b11026858166f872a2eb54719492e5cecaa0bc9cd6b30b3ecb4a174eed220f4a1b5829d18d6734128e778d3cb3db7ffed177c92866133129cb29081814a0"
+            },
+            {
+              "alg" : "SHA-384",
+              "content" : "d80964707dfe5caca8c70521d5066f57589304c0a657e6fbc7c0614ea0fc7b3b3dbe7778361eee0f54ba111e9cb0ffcb"
+            },
+            {
+              "alg" : "SHA3-384",
+              "content" : "80bc3a275d9514bc457461ff52a72add8c7ecbbc01d8912efce57139016c544ee776981851be0a58fa977ab4221f703f"
+            },
+            {
+              "alg" : "SHA3-256",
+              "content" : "142317d6f245390f4fd2d0c100b16281b8dfc5c0c2cff86943bdcc97039cb699"
+            },
+            {
+              "alg" : "SHA3-512",
+              "content" : "af0fb9137c90b65d1a07f72e4d51ae509956cdb8800f35c961b037cdda1fe4a14ce3b496cef71ba85f1621affcfe29cd42704ae4191ff0b090a9602087c8997b"
+            }
+          ]
+        }
+      ]
+    },
+    "component" : {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/spike/deptree@1?type=jar",
+      "group" : "spike",
+      "name" : "deptree",
+      "version" : "1",
+      "purl" : "pkg:maven/spike/deptree@1?type=jar"
+    },
+    "properties" : [
+      {
+        "name" : "maven.goal",
+        "value" : "makeBom"
+      },
+      {
+        "name" : "maven.scopes",
+        "value" : "compile,provided,runtime,system"
+      }
+    ]
+  },
+  "components" : [
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/kie-dmn-core@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "kie-dmn-core",
+      "version" : "10.1.0",
+      "description" : "Top level pom for the KIE DMN support implementation",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "d2a9c7e429b88a16a7e20b3c5e9a7323"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "22c8088746bebbc5eccbea2e4e4557ea489cb412"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "764a0fbc3cc1bf437b9402b48cddec3c86e5ea8abbae9233ff6fc2951d3799cd"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "f5c818cc2fbea95bfc030b2f77d89b77d542d482a03633831e57334f36f9882788d10f3f65efa38dd920acd9b0f0d9c65cd5858f1594237cdc3afaa590279a6a"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "d943e56c8782d388253e547c4ea8284759db84e502ac979e9a63cfadf7f721b1970d20626408b6f8f4982b08f99c3f0e"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "a124c5b90ee531950806e3554b9d1ca71f57a799e7825329d99175dc64a5a63c298168f9c942e753a7cfda3fc86c9da5"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "b3dcfd3c496386b55598db2b3380a266c3dcede547aef00cfd7c0beb609009d3"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "f7666af1b128f5bef7d27fa073dbeb501bc7c9d868e7cf48665ef9544a64b084017236571a72be7316bdbbb3f04b337f779e95849c8f658dd34d096dbc559f40"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/kie-dmn-core@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/kie-dmn/kie-dmn-core"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/kie-dmn/kie-dmn-core"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/kie-dmn-api@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "kie-dmn-api",
+      "version" : "10.1.0",
+      "description" : "Top level pom for the KIE DMN support implementation",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "23ce86fe9bc9485e3c1ac23efebf4ad1"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "80da5b73227adf060725c208ce63a2ebe7406f17"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "8ed0cb93dd58e1f177fd79d8e10cc678849c12a72ad5826fadfa43ae9a93438b"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "5046b164b481beb386486647d657fe2b4041480e026201082069531f37363ecdf191fdd7c744274a091320da853b2415ec6839b19fbb00fa4e85e95753fbfe28"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "b171d729ba1d1007b99458749ca4753f32c1b392d0ea1a7a977d2ed0302b0cdd15f695b8aad031d83a9c13903131270a"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "1036cd3c2e39a32b7d7042648809650510ade6f6eb7aa6f27146db900e9848ac862b2018732200e7ee2d1cc0efc6213d"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "068d3992ed7caf659b8b50e607811c8814296f3bf1dd37232e32c509978c2f3a"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "12cd600f6b591eee61557f27b0e7257b5195fc588c19c6872c415fefc207d1ef4943d15066cf3e49504c1fef555bc9112b9631b2bf93555ba4bd3cb61a48833b"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/kie-dmn-api@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/kie-dmn/kie-dmn-api"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/kie-dmn/kie-dmn-api"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/efesto-common-api@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "efesto-common-api",
+      "version" : "10.1.0",
+      "description" : "New model container framework",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "fd85341f445ab3a61c862ff13ac6a315"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "bba54d09fcff9c2333bbfb86d0f35e9f51845cb5"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "828269dd2a8361ec8cef83b353a89e7e0437590fe50c7c7633cbddb472acec5c"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "8a1c2ffe5835b20dfa6a9865c2591b3dff773d4b5e486b422b2e67b179d6ba4ffa58a5500c37da67f4568e852af962dacec8fc3122bd61c291557d2daf4e4689"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "32c9e6b36bd614900c8b853ed5fb51cb30740f32cf4ee7fc2adf315ca99a6fdc8aabcd274aa9da349abbc643a8740b7a"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "73151ab5fc97c2c461d504f7f1b37207591a8af7eb287cf5cd4aaad77ba15d606a46f02fdf8ab84e0d9c43848feb6c84"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "b2cca4e93edf8fa3eefd9c656d1d70de5d31350501adaf92a6a5916cb7bbde3d"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "839114dfa0112b67b0066d6dd4b0ee0851b8a01970bc1f166b99ecfa7174934e8f91ede05501511e40e83926c5e72cfc6ef14e75f542144b5880cd0c909ae734"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/efesto-common-api@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/efesto/efesto-core/efesto-common-api"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/efesto/efesto-core/efesto-common-api"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/kie-dmn-model@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "kie-dmn-model",
+      "version" : "10.1.0",
+      "description" : "Top level pom for the KIE DMN support implementation",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "c136dfe60373032f6e66a9ecf651ffbc"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "02e93a0fd0865fc67dccc1780ae2778ab1673ce8"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "c0e743fe3845dad7f7fa85b487ec6e7214759d0ccbb5a7a20a9931130ea155a9"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "03eb722885ae15342ae0fafa736e0ed09d3922f171283c6d23a16ccb9b45c0a270af7dc4dc0587fa9ddb43b1d534120340613caf699a3da4adf5920586c2dc87"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "fe5dadb3e8b80e134df039b3ef71f6453b0c0137ae4ccd47644319c09a16779ef4b469190fa7b6d6b647764d6227e493"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "15023d70799d778773849863ac28b783191569576af211dd4b7225e71017a0079f1988b50de7d2fa933c869614eacdc7"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "485bcc27ea94bff6787406f7ef5b3de15fd1ec016637cde38528701ac3009653"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "5cbccc6604d8076e13650b7da07d0b8b076ba9fa41944330dafaae883c4a1e143f14c29fad272699c53452ebeacaf4700b84fd535cf050463edc508ff15965ff"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/kie-dmn-model@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/kie-dmn/kie-dmn-model"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/kie-dmn/kie-dmn-model"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/kie-dmn-backend@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "kie-dmn-backend",
+      "version" : "10.1.0",
+      "description" : "Top level pom for the KIE DMN support implementation",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "81146413a889bbcb2ee454eafaad22ba"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "e0c72286fdd8773ab606cd6ba6ea44a456c4b656"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "8ecf661863764edde919ce2739510bf19e60ef574ca83356c9b4a74a577f823a"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "246de746ec6066d3b98e4a1691cb261df664d2507947017575cbbc5725efbc7b968b940de228c8d5b152f798599cdd85425912ed631a2506582332ae8e4f0df5"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "44667620c356dd3633e7dfda57153cc429856afd6820aeb109a0beefea4ec9cc1ee3196e4249a309ba81de45da7f00c0"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "dd33c7c6ecb38c4559da2cc40728f74e6853c1208c2785fd775f17c6897db5bb79bea4c2d61162ebba9d0cbf62b4ab69"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "06a0ef57e390d47e8378f14c08c67c6753858b9603bc0daeafa083fe1c98cd05"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "046c91da0fa690ad4df9bd4101a14c82f84b2140e3bdcb82a00a7097925560676338ac7f74b1e138653ce5c6c95905478f36eeb05a424dc16817e506da0ab39e"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/kie-dmn-backend@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/kie-dmn/kie-dmn-backend"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/kie-dmn/kie-dmn-backend"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/kie-util-xml@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "kie-util-xml",
+      "version" : "10.1.0",
+      "description" : "Top level pom for KIE utility classes",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "7d1aceb64382be3e12119b13daf1e4a1"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "4cc1a64d91b5d46d93e05da9a8349b3cb0dd1846"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "fe79a7ff836b478a6211baaad0152d46b70581244e6c16f8ee1c6e7a7ae1c79c"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "f641786f1f5e3256bc25f8ed3dc607c5d4c2db1539a6ae1f3ec519cd5014286724bb85c154170c931c0227a6b38007b646ef33bc157fa5a949c126a396d2da78"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "a870a643cfc4e288fa3c0d74b9d696cc6c5635b8260b694d24c26061d64e0e1c115f27ebbe58c54ed5fe94853e26eaaf"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "784a668a1ea430e98da60346f2321fd1a23bfaab11071ed157285250a12baefdd0fa1b56e183255fb7a0e99980be7689"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "8423f94567d6925a5dbb766475bfed1085a8ac7b6359dae43895e41db1cb350d"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "d1ba89f364c3c0540333cbc8acf273610ac395f9246161c5a082bccdb475cbb75095db08d343f58d1164554a40e1d7324fc66f91fc4f5451cde2363f702c7399"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/kie-util-xml@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/kie-util/kie-util-xml"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/kie-util/kie-util-xml"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/kie-dmn-xsd-resources@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "kie-dmn-xsd-resources",
+      "version" : "10.1.0",
+      "description" : "Module meant to bundle all DMN-related xsd files",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "02c129e8849dfe953a8ea4a73f077ee9"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "13ec2f95c469f74012bbffae03ac4c458a60f903"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "6dbd498d279e506b328fe274fc270c810ed82f426f8734c1115da85bf65c4aa2"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "4c152c69be9d8493260c23ffad764dfa89cf6889d52e00943ec96ca159136b8eda66ec0767c982424e96f2a7fda9a9e40b10c005baa937fc0c3e3d25a0b267b9"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "8cdc5fd3e959b1512396351676203525b368dffc24791a174802743230e342349810c384ec25ad5e0d0e19cbf19f5dbb"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "d4a2efac87ed785b0fb2e5b12d8c2c55fe6ca0e4497caceb01f3453744b1d19c8186b7abd8bbc7343055163dfcc0acad"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "ded890a6ec0848759cda34c759d5cbd07cef80c9138f6c7394a748199fe7f96b"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "ad5cb38719b55b29f5c6c06ea0d2aa52a38142c2278c79bf49c3df34384a33da7cea8bed9f66302e790f860f34cd02b86238f5009f69eef88cd2c918ab87ca36"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/kie-dmn-xsd-resources@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/kie-dmn/kie-dmn-xsd-resources"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/kie-dmn/kie-dmn-xsd-resources"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/com.thoughtworks.xstream/xstream@1.4.21?type=jar",
+      "publisher" : "XStream",
+      "group" : "com.thoughtworks.xstream",
+      "name" : "xstream",
+      "version" : "1.4.21",
+      "description" : "XStream is a serialization library from Java objects to XML and back.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "767be88fc6ec4bb96e2906a17aab8e5b"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "65cb3e7f809b18b9aab43f2338ee5b320f72d7bd"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "f56586f3de59ae2a49430acbc9f27942b8c5cebec9245c869fae7136733333ec"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "dbaf02229503c9c69198c7f90f361a20d68c6f1a5c6238d298c13bf8c5090b1eba99307c668481a4c7901fe23a7175f6a5218ccf40c45422bc46894f29cc87c5"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "3679a236d0ed3a4a8a12a5758238f96f307454062bfdfaf26a766aa0199fe0c9398492b7e0be55641c39da4ecd406211"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "b702a358ea938e025cdedba2a6e858cb44083ad76c5cde65a3c792a03c658a7241a7d792e824235fd0715aa7264ed164"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "74d29484f714477f43bb798915f204e1179894c630d181030f9b7f2c24ad86a4"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "f16f8d4a38e6f093e3c30c27d6195f0d7d1dd061e31987c5931fab97bc11adf15ecd291d6a77018cb6354d7a1845e188c84730de86187fbd086e7447ad066910"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "BSD-3-Clause",
+            "url" : "https://opensource.org/licenses/BSD-3-Clause"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/com.thoughtworks.xstream/xstream@1.4.21?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://x-stream.github.io/xstream"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://travis-ci.org/x-stream/xstream"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/x-stream/xstream/issues/"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://groups.google.com/forum/#!forum/xstream-user"
+        },
+        {
+          "type" : "vcs",
+          "url" : "http://github.com/x-stream/xstream/xstream"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/io.github.x-stream/mxparser@1.2.2?type=jar",
+      "group" : "io.github.x-stream",
+      "name" : "mxparser",
+      "version" : "1.2.2",
+      "description" : "MXParser is a fork of xpp3_min 1.1.7 containing only the parser with merged changes of the Plexus fork.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "9d7e42409dfdcee9bd17903015bdeae2"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "476fb3b3bb3716cad797cd054ce45f89445794e9"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "aeeee23a3303d811bca8790ea7f25b534314861c03cff36dafdcc2180969eb97"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "c6578e6d5356b9ff6f80ce2fada028387f78b57099e85eba49b4e80f057fd124c338df2193190072e65b71d4f10d749e3890fae11738e5d7350bf44125fb7d7e"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "e99a1051767142084a6cad9c26b3f7cd03719a6ced00b0f5e4b15fedbc3c1644ad8ce372ca16d869578fb6e990195bde"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "abce50b29b8463b0d9a6ef3ee6d9e7668feedf4b33d36105e5ca16e8db585c4dde3f93f699a3836f984bd319be6be681"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "7649ba8a495192121a025b5e449cabb747765f2d946a32fbc86cac8ea6be96f1"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "48ea68d8f57f0d7462d036f26e68ebab0c03074671dc6bb2dd1f6a5b8598dc9e206d49e930a5845c23b122dc4623011638860bb17b4ad26a08bdd427987c4c7f"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "name" : "Indiana University Extreme! Lab Software License",
+            "url" : "https://raw.githubusercontent.com/x-stream/mxparser/master/LICENSE.txt"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/io.github.x-stream/mxparser@1.2.2?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://x-stream.github.io/mxparser"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://github.com/x-stream/mxparser/actions?query=workflow%3A%22CI+with+Maven%22"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/x-stream/mxparser/issues/"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/x-stream/mxparser"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/xmlpull/xmlpull@1.1.3.1?type=jar",
+      "group" : "xmlpull",
+      "name" : "xmlpull",
+      "version" : "1.1.3.1",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "cc57dacc720eca721a50e78934b822d2"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "2b8e230d2ab644e4ecaa94db7cdedbc40c805dfa"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "34e08ee62116071cbb69c0ed70d15a7a5b208d62798c59f2120bb8929324cb63"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "54d1090623497e81270b2af633268656e8855e1edce2217886431039516a391ba9f8d8db3c21a0b5e51c7f7cb672d63ebe77be75708b760b06f399486960f261"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "11978ca8510acc4aaf6294a4f5a45c0a16c9f91336fd1a1d0553161c9c02f59f9d418c46ef46c962ffd86dc48a82dde5"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "a36913995a31b4d821a6223c24313670830df7d94b377cd7d32a44bdd218252ec7ab794e6471b33dcbca998b506aa50f"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "7a015ab77a056b40550a10f6e24bfdf13395949d9a602dc3b94e156d894abc95"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "d7201b8c2844aa64ca806a02144ad2e1640e860792c35022e1ff6288acd8f975c264aa8c87591733ee1234464a4631ab6777d23f20d6bfb5dc2673fef1807d25"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "name" : "Public Domain",
+            "url" : "http://www.xmlpull.org/v1/download/unpacked/LICENSE.txt"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/xmlpull/xmlpull@1.1.3.1?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.xmlpull.org"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/kie-dmn-feel@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "kie-dmn-feel",
+      "version" : "10.1.0",
+      "description" : "Top level pom for the KIE DMN support implementation",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "c07f6ad147cccafe120055ac7bcb448a"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "8220ebc5531298e0012ac958ded27356b83adc97"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "52757bbb3f90ae7d63e6db71a1c6d89309ccc73f8556a56c2b59ab9c92096f8c"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "fd1acdf9006860f377c196eb96a07b3f2102e0fb3329ca815d09b1876e08dc52fb0c46cfd4c578615728599fba130e886550029fed65176975e68e8f1d33fe21"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "163ea14122df2b422d33f59f4e9c5f512e59231968445521e28650c822c1566e95bb0e2efa9a6609ea82875ba95fc88d"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "3efd8a894942b0ac07204b8486a59314e6314825deffd7508ab3cae846d41cda0af0e040973c01bda01dec80e165f532"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "3f9e53c006325161fc4bd3f918123e6483a36c8d0e4c597678a1363cfaebb8ab"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "eceac580401dfc3e8ad4d1e1351c1ab078b53e2631770a75e91e2006d03ccd362ccabd50b93a4fa95941722d0e512c16c79b1890fb46b3f82fea7d80baf6078b"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/kie-dmn-feel@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/kie-dmn/kie-dmn-feel"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/kie-dmn/kie-dmn-feel"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/net.sf.saxon/Saxon-HE@12.5?type=jar",
+      "publisher" : "Saxonica",
+      "group" : "net.sf.saxon",
+      "name" : "Saxon-HE",
+      "version" : "12.5",
+      "description" : "The XSLT and XQuery Processor",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "39b53a0dcd01522e79223e2506061d44"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "57c007520e2879387b8d13d0a512e9566eeffa73"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "98c3a91e6e5aaf9b3e2b37601e04b214a6e67098493cdd8232fcb705fddcb674"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "f8385b52b9de03bbbcfd9900b78d7e1b544102900316d8d95b5f36b75b6f8f492cee7a1ecf737bd0b4caf85d79c003996f83ac156739d60e4d41edd5ef43a182"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "1e08a834684848bfb6c8029b98d2c8f5634acba483c6cd783aa753a15551c48e32fe718c72abdbb1114bab6e8cbf654d"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "89a7d4688edba721f2960ed5a1d572cf9cf83b6d3d71987ef9b8d4a1b00fbcb47f7f6469d8d14cae2ea3eb8b63841a4d"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "b963a7cb8580e362ee06b8fbd395016900a9842fa03f6f38106544259ebfc464"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "f47e8e8922b657d8190b391178fc86b4808b0c1d40cdc4de8231cefd619d645de971d9b0e33c8da8c25de5cb4f558861cbed77839dd619f4f4f4317378cbdb3d"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MPL-2.0",
+            "url" : "https://www.mozilla.org/MPL/2.0/"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/net.sf.saxon/Saxon-HE@12.5?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.saxonica.com/"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://saxonica.plan.io/projects/saxonmirrorhe/repository"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.xmlresolver/xmlresolver@5.2.2?type=jar",
+      "group" : "org.xmlresolver",
+      "name" : "xmlresolver",
+      "version" : "5.2.2",
+      "description" : "An XML entity/uri resolver",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "0de20e8f7acfa5942d78c239d3034deb"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "152378e04ba01898847bf38fad5023c7d52f0c9d"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "efc92bd7ed32b3e57095e0b3e872051ccfbbdcc980831ef33e89e38161a85222"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "4213b91ddf162a2ee0515f823d859333fa475b84675277bf657eff03162eff4b91660313ce8c19fa9f30b02e2002d87cf06c492e4c303448a96b577b6928f3c0"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "f093746aa8a39a5d1309fe7d14315ce851d649fe3700d2ec49013947d701c33345e32e4a4306d1475e266487b7ba0169"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "a0eb7e9622c96a0dfbd141030b33b24e796e9ae438befde00a77629408a07d855d681f93b0fb052e19e762f5f170c77b"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "d808c261e2be19a82e25034d0a21cf40bad78eabdfba3bc6ff93f0f91ac30397"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "e53fd7e8cc1f17144ac3667667d32a7a6fc21f7b7f7dce715590533f5d276e10be768156338d5e878c47d1e880f9e4799f18f289e00bfa155d45571d02787899"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.xmlresolver/xmlresolver@5.2.2?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://github.com/xmlresolver/xmlresolver"
+        },
+        {
+          "type" : "vcs",
+          "url" : "scm:git@github.com:xmlresolver/xmlresolver.git"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.apache.httpcomponents.client5/httpclient5@5.1.3?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.apache.httpcomponents.client5",
+      "name" : "httpclient5",
+      "version" : "5.1.3",
+      "description" : "Apache HttpComponents Client",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "757bfb86277b9b11798db8fdb351bf74"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "13c984b7b881afcff3a7f0bb95878724a48a4b66"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "28c759254f4e35319e078bb6ffea75676608dc12cb243b24fb3c8732522977fe"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "4fb38b6bf164103e68320ce430776915a6831923eb3e0b6e6f29ff57647e6bd29efc07d46b107aec23bf9004cfd959fbda8153740ba0060260a54d67ccf8a093"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "8e6c7bc00b5e25c564faa6f20d01b26288163de846273943bdc7a043348cbe4a5540dc875ed057054c2af5c6e10f8147"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "ecfe2613d27758859bfadc02b97b073b5ca74c2e983198c949851c2d287de00e85d4c1c822329e63a38617f85ff281fb"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "29df48d822099ef07e6687f12acdecd8f22dcfe84106667183d6790bbc9ed121"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "46cafa187fb940370f545efc73ff7d160d9b54810a9556d13c4e0010b44a0155e0cfad0251fb030f0cbae2d2108a6ef0ac918c32b3ad6d6dc2da1a360815b564"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.apache.httpcomponents.client5/httpclient5@5.1.3?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://hc.apache.org/httpcomponents-client-5.0.x/5.1.3/httpclient5/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://issues.apache.org/jira/browse/HTTPCLIENT"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?httpclient-users@hc.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/httpcomponents-client/tree/5.1.3/httpclient5"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.apache.httpcomponents.core5/httpcore5-h2@5.1.3?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.apache.httpcomponents.core5",
+      "name" : "httpcore5-h2",
+      "version" : "5.1.3",
+      "description" : "Apache HttpComponents HTTP/2 Core Components",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "e12cc9746f6635675a408e641c95b177"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "4664b59b09f5ee008e37a963bbb92f4068e91696"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "d0e78ba15aa8ebe77982b660ac4b09a95d6e035dbdbea762577dc1c8e2935807"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "76a22785285a3c12a98db24d678f1fd695cb4941be438fd80a7c41b4fbf804452694f93947579aba3bcee652671e362ae6d76bfb60a8db75518e52aba4ddad36"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "cfead6178cd1cc30fcd9da2f8753897a2039e7915eded3278fb74545a49db68a10860ed064e9f52d0f1526e3cd7caa35"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "d98a2ba3eaf1eb38629e2d02eb6b31e4e4b2290c321bd58c0377ad4427a969b881d6b31cf8afdc8b9e306ef8d7d39439"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "7114b9fd4612be12d156312568633e13745c8bd3da7c28af60373a70f31875b5"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "3f32c0564b4af84b886df450df91498523c40ba6bf98354413ff3f4c85f782cd2a3cd9e6ef2f38c18a79ecb8c444326c7b043feb5fc3f8cafe043e9217362255"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.apache.httpcomponents.core5/httpcore5-h2@5.1.3?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://hc.apache.org/httpcomponents-core-5.1.x/5.1.3/httpcore5-h2/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://issues.apache.org/jira/browse/HTTPCORE"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?httpclient-users@hc.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/httpcomponents-core/tree/5.1.3/httpcore5-h2"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.apache.httpcomponents.core5/httpcore5@5.1.3?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.apache.httpcomponents.core5",
+      "name" : "httpcore5",
+      "version" : "5.1.3",
+      "description" : "Apache HttpComponents HTTP/1.1 core components",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "e3311847fc70a84038fb2c079dd08c4a"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "d1638d1e5f2793f187d4144c702a93524ba6fd3b"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "f2bf2f2c7772169c9e30699719667ad30f9b46c4e9d7841907deb2d12d9923fe"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "c9b439da0fb0124f37676686c69f8fdb824a30e0d6a3b9ebc0ebca5555727ae18cc5a146d8874b4cfe6fa966d5eb6083a44c379a76017ec79863596a23c571b3"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "63d37103c0b040ed9f0c70af0bcc9792c68afe8c7da5f445f30458c7c802524f07a1bdb573661e680955a257e0fb6b4c"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "5ddd51ea89b40049c0b92bdfd0fc59fd2963c025895bece1b9438166e9e468b8b54694e9e72a8d026f681ec92824f224"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "0a1d52398f2a13124591cc6fce1fee5f353c29c9726b4f68813b01f077940947"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "eecbd33885bb1718a1803951d9217b108e42e39cedfeac99bd0938cec94674b1c67d6f4d6141c8e225061a51a1ac3af07f553501ff2b136e358a3eeffbcd3ea9"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.apache.httpcomponents.core5/httpcore5@5.1.3?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://hc.apache.org/httpcomponents-core-5.1.x/5.1.3/httpcore5/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://issues.apache.org/jira/browse/HTTPCORE"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?httpclient-users@hc.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/httpcomponents-core/tree/5.1.3/httpcore5"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.xmlresolver/xmlresolver@5.2.2?classifier=data&type=jar",
+      "group" : "org.xmlresolver",
+      "name" : "xmlresolver",
+      "version" : "5.2.2",
+      "description" : "An XML entity/uri resolver",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "0e77f628aa613bbe3145c6a24f8973f3"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "5624ede8b8e374979194acaae9f34cff23b62b3e"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "173904bdbd783ba0fac92c5bcc05da5d09f0ce7eed24346666ea0a239461f9b4"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "18f9f0ab3426800c82a707bf5e85a281955695fc703dc6c80c055227e5b78d825329f6b0eee0605b80c3c5cc33c7b81056a7504dd4c2f289e41d608d0ad1c357"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "3c3e1b18e2e0ac1f4b67e17ba189c86d7f69bbf0f1bb491cb65a2a4a4efc76f695559bc61900e5ec5ad694b137547207"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "1623fc11b9650912008cc32276d58c6a3a89e730f3343f4db546218a654bed959050b6a2553393a08a4779c8c36a7b18"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "e5d26342451df2725301cf0ca980906e1b90c2dbbd67561e78a6fc77aafb1789"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "f5199748a7503a51444711a1414ceb5034f0e8730a46a6f20dd2e71c95eaf9e0323b1f41f0b7c70f6051780ed90c6b78282b0f3ff6a302794d0be281374dd3a5"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.xmlresolver/xmlresolver@5.2.2?classifier=data&type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://github.com/xmlresolver/xmlresolver"
+        },
+        {
+          "type" : "vcs",
+          "url" : "scm:git@github.com:xmlresolver/xmlresolver.git"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/ch.obermuhlner/big-math@2.0.1?type=jar",
+      "group" : "ch.obermuhlner",
+      "name" : "big-math",
+      "version" : "2.0.1",
+      "description" : "Math functions for BigDecimal.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "238dbfce9ecbe17019316fc7ed7cac57"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "e7191539e52f9252675595f1ab05e58ce0c93e82"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "d416052f51307628eb8a3b86c22e4579fd9178bfa65c3b1f64de7cb1e3c3f261"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "19d501eb8266797575ae4bb2fb27c8263b69d2d6681c5fc3e8218cb1f451dc61206a872217ba96b3d9d39397f34ff54a276d16035c385a4893c2f9ee280a7437"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "08bd09ce5576cab299c1b4d82653a521ce65a9188cacd60d61a63ceae63b6a373c6dbd4c269dd56c8b00cf8235244ab2"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "bc115c728518aebe29f1574f3986854dc44c920e04e2bd11c6ee70f1c140427f98188a1c1b65f3f20b995b92be90da75"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "deda51c3174e086d2367a68904af47d3cd4fdb847cc92956cae5fa789f7023a3"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "86b96f28c3a6651b1761893baa9ab4eee6dc1541c11327efd816602edde94291774c76d163d619c655df20d58cb7fa745cf7a32c69acdafb49b00a5882a56a1c"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT",
+            "url" : "https://opensource.org/license/mit/"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/ch.obermuhlner/big-math@2.0.1?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://github.com/eobermuhlner/big-math"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/eobermuhlner/big-math/"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.17.2?type=jar",
+      "publisher" : "FasterXML",
+      "group" : "com.fasterxml.jackson.core",
+      "name" : "jackson-databind",
+      "version" : "2.17.2",
+      "description" : "General data-binding functionality for Jackson: works on core streaming API",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "3e1ff7c1f0fda885946619a47ef9d5de"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "e6deb029e5901e027c129341fac39e515066b68c"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "c04993f33c0f845342653784f14f38373d005280e6359db5f808701cfae73c0c"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "ec62267bf58aea531ec7f253e67974fac89e8aa61e7b54a7fb00edf3132ecb969b510630fd353adbbd2ab7d845a25702f168c296c57983a00bd6abc9ce3630f9"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "d2de4602f779a456d0037f9d64efa8bcf9a1a9f06e3c628b2a3b2313319e22209cdfab9157f9251243bc05da870bdcf4"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "14618ad7737700ccd941feefd0bbbb7235ecbc1ac0cf22ba1bd72155eb68a800e98fe72f6ea03ab71cb9927a1d117d39"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "800f9886351c0968d6640e9c7e312c963b0146022fcfc27b173d06fe0c581041"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "49ff7e89ab8936043ac9371cc05c57bf88899a91ca11bd50227c58da9e6716c270e38c34bade5ba5cf39ed6443edf538bd25e85127c3e22f6788b84e14f3019a"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.17.2?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://github.com/FasterXML/jackson"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/FasterXML/jackson-databind/issues"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/FasterXML/jackson-databind"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/com.fasterxml.jackson.core/jackson-core@2.17.2?type=jar",
+      "publisher" : "FasterXML",
+      "group" : "com.fasterxml.jackson.core",
+      "name" : "jackson-core",
+      "version" : "2.17.2",
+      "description" : "Core Jackson processing abstractions (aka Streaming API), implementation for JSON",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "50c2dab1f29136714d5ef5c6c640336c"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "969a35cb35c86512acbadcdbbbfb044c877db814"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "721a189241dab0525d9e858e5cb604d3ecc0ede081e2de77d6f34fa5779a5b46"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "694ae3bf756421d925f833f59a6309c7748ac3a68b28ed4de8ce0d6f93347dfc19991d1106db911c7da78e20734e6f44a02caef751150378a6ffa638c80fc75b"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "acc969e3c312f9d2694e3202eb601dbe2317cb9a444dcb67f6e0f00871f6d5593bebcba272afab55f2541c6a7a107842"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "890610781e8f8c3c1283d8f6bd446d19dd5d83107a852f1446d5d2a4fdb57ff611b36b2267eba46746a305607c5e586a"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "a4b8acc3fd90cc86a9a1507a3e51abf984521f9189218f17a3b551e0a7ccdf44"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "f55e7d0b7a68919c8f8d3b5472796ecb82df852a97b1bb4bb0b45d1f9408d50545b717e8632f7ff975b77541e4d4b35de6ed32eeaff556677227b0985a74172b"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/com.fasterxml.jackson.core/jackson-core@2.17.2?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://github.com/FasterXML/jackson-core"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/FasterXML/jackson-core/issues"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/FasterXML/jackson-core"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "kie-api",
+      "version" : "10.1.0",
+      "description" : "The Drools and jBPM public API which is backwards compatible between releases.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "fad40f414de8437f0c92ac4e81fe9160"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "825b9bdf342ac8e70b371b6c6bbfe33442cacceb"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "f5dd8f088fbfe8695eb55f9a3858224bdae55198d6d54f06d9de8d4f0471f30b"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "f0c8796fcfa055cfc4004e82973265b483e761a1a34c189dbe7a3d15b6973b75997e8d5b03fc49804de5da8bc702a99543d7f93d7534d461ebba063cb1e2dc61"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "254bb84a09ff0fce6f1008bc870f0640e1f2c4ed22e5156932a46a77ec7371b29d748c2c9a1e3a33ffcc8046d537c643"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "27779bc5e0e1c6cea7fbe54e7c99ee27311cf1717a70e253dd0c8d4cf64f48fa56bb2e2d174adc7c86143e6cb23d0067"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "93cde138204ee6236c4405fee6f1aaf69777fa001edc42d8a3e087bb5c387838"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "45a2f3ecc901572f2f58b9e069bc70b6a2d5f8c300e05ac7ce20d707c34098f69825f6e7bd82cdbe19e66c08d64bca52ab2cc89adca3bbb8a729203afadf6148"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/kie-api"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/kie-api"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "kie-internal",
+      "version" : "10.1.0",
+      "description" : "The Drools and jBPM internal API which is NOT backwards compatible between releases.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "4b40427dc406af5966b5bea4fb96f421"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "1b5857dce79a85aeb81a568eadcb0e5fefc1d80a"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "09fc014692bbceee78de5db436bb5a1cb6b42397e2c1c7fb9e44d11ecfc91221"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "3ea05554e3109772bdd8e1a5f5f815ab03a3c870b8fbc1f64e33e932196d7380a3ba5c0c958f4d146162c708e8ae96969ff1dd8f3a3ebb01f566a71e13303439"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "11674015c9a106774cbd6dacc0859acc0cccd6c1e6c96f5f8898cc1c7dba5c1a21cac37718b39fb4afe1a0e9c10f54b8"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "8174fdf43a03c1fde3cd36679048c7f5c6887e28949520f4d0a185c1f3e74dcfb0dbeaa78fe4712872a1e6ad6f51d5f9"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "eb77d06c9174fe850064095d32bc9c7ffb851799b909fa4b9ec1fd79d84cd079"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "96a2be5b6b2cc269f0bed56fddc8d70d36f86708d9a2173f5cb436577dcc59b0cf8506d0a845061655079704324106da9ee7a9bd704ba9623657a9f85ec1871c"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/kie-internal"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/kie-internal"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/kie-memory-compiler@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "kie-memory-compiler",
+      "version" : "10.1.0",
+      "description" : "Utility module to compile and load in a classloader programmatically generated Java Source Files",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "5aa1ce55a2bb80a11d1fa4805d50f364"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "1752d4ea34cec9e9890d6ac2c07e1a42347f06d6"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "15543e7e36749e75f3ccd09ded1d123971a0eba76be41d3757bb21311a9c61b2"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "02a2fb2f69b2b244723074d1273faf31ba343dcc24bb42724eb78ecd0ede3d47af1b10cdcb59fdeee6ac78ee3e1c574ac1d87b01a2cf009546edaa10a90e8ca0"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "bb1c17060451f64d401e9bf50708cb48a9d5e7c03f1a09cac2d7dc2522f2eefb3268cf379da4bc6f9581600c55ee5970"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "5157add7eb419a3fc81085143f499d8d1539a7b6d52ba568ef8b70c4faeca345912ad55aebfa8b0b0e324b17aed49385"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "c9e9e5d38f03cbb26d830f204829f74f4219cdb561c927cb95518a1d72c2fca2"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "d8af1692556c6c15d0554f2d8027afe60fc724470fe36d61e84e6b9554478276bfa6d1bcee7d04c2e2030e036c1b239e2cdffbb9bad82fed77dd5b7951a42b82"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/kie-memory-compiler@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/kie-memory-compiler"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/kie-memory-compiler"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-util@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-util",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "4ad401650a7924295bf056ffd65ba095"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "76097c33ddfec3cd74bbaa09f2c57d7b43f421f4"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "8f53b4cc83851cbbffcfa149259dca4b7dc46776e9528008fe33d369cf46fea2"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "05e4678f87ac056560b16c85384a22504d3ea70ca813c722c8857674d95f791345e43761b59853e48b217f8fe1ea1f39b12a4f89cc20d9c2a94c72dfa04e230d"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "d6cd63feee90cbac9536ef1ec45fe2a4fddef30084511bc9848f366507af552cd6a08d740baf0cc73b37854f8cc365cb"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "eb05f9bff0e3c23218ec06515cea23a69b74fed441c0c65ba92df23a5acebb0f8f4d21e161e422ef1778c1b413b9bd42"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "cc57746f4710fb34fa93a533ec41c6d62c4b8719b1faac6f23174b50b5579ed2"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "23b0e850547d4c478086026ead1c92ab49cb8ffb5631c993ebdaa8e25204ade7a73331597a0a23956b2e9e0610798b315c24f7e4763b65ce7c83a3ec2e036354"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-util@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-util"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-util"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-wiring-api@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-wiring-api",
+      "version" : "10.1.0",
+      "description" : "This module defines an API for wiring classloaders and other services used in Drools.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "27fdecdd89fa99ed93ab573ee82bf167"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "61debcc1a192449d1b072ac19fea162c9d9ac7fd"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "2720bc02ae7bb6ed106f2dfa0fccae05175258c14e6e3ae106b4ae2861333a77"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "49a28004b0b982a33acf79d8cf7343b458abaac6551b8e0c43dae168b385646898045dc95c1dad27c4cc0350aab36c06d5a24330bc37bf33e2b94788ce88370e"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "be81eb109190360e4082ea4971783c7dcd0a529e09d35cba7243253486252cc22605aeaf4b73d0af44cbe7fcc7ef7f3e"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "6f74205d832b6cee40e0497ab94d99e4ad86b4008a23693a8619ca12b1472c8e7e3d886508a60603d7c99da4fb4c76d6"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "461d633cc733fefd30819a3719a5765dec37798fcf9866e1476fc55f5024c9bf"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "96d030bb614d3fe10f2d563c614992e853a17cbbe9918de67d32e87a8d0f3050d667a7aefa9622d999a1e9f5cef698baeb10e7abbdfcc4718093a151a43a274b"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-wiring-api@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-wiring/drools-wiring-api"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-wiring/drools-wiring-api"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-core@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-core",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "a266b892db2220eadd2674009670aec1"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "7fae0676cc70a52b1bdd536526a29c1f78fe366f"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "8ac12fcc454570568dcfe9bef223228dc8018f6587da2e2db483ba7222d4c3e3"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "27db1d8a88a086627c64477cc48f79d7cda6e8849bf1aceb8c9c595c936e3d7a8338b3401c8568ebf13569fd25a30a9d5d0567f4554757ecd74402c37af47002"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "360731d50f6f60263a8623e3784f7f775fc25b6c9917dd3f6e32aa6da63ae9e7173ca490ec1c1e9fd91476028deea8fa"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "20c1a6522be03cf31a8c6d41e946e44a1fe43c44ef391b9883299516b42860ad2f50c9bb0b538cf8167042271cd21bc5"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "52270ba0eb250234ccc8c0b5d9d2bbf66032cfa95c12688b9f541a61e528e5a9"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "258b2f2ea4b21e0cf0d94b59df24fdb112c78fd3bd79de4ddfd7f61adf3d6f02079e9532c399c6ba166c706edbe5be6a41c35fbfaec2423c6e55aba48d7c9715"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-core@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-core"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-core"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-base@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-base",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "726d32dd479bff3707328fc6059ee9c3"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "e358eb1e554e1497c94d0ec1ef07109c1625bf89"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "89a42ee2967226ebd3039eb4d8958ee0b6088b235565c2d15370f579fac02fbc"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "a2fec68584ebfabf0c949129ec4f6d4cf697fc58c2f2ee42e36fc7930a13c04dc9b2c677f489edc2633cdd6383600ddeab232a94b3fdb3fb76f826605fe305d9"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "19193d1dfe67372441a09a375f491e136cc564b02973af5048b25503f7d6c034ba2a08fe38202612511934c91ad7fec4"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "079b25855104680705ae8a3892852e4c1ffc04face727bae202abf33efd87604773853de85cb63cdc64d1af85bc17ad2"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "71f19b50b349122c2bb82606d13a3189a11efdf3503ad19db9da2c7d1137b223"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "8287b6ad42915b049167ce701b434b852e190de46a5b4901938eb70143429537aed2b24b239dad36931d000f8f831664c0c53de636ebf8956e74bf41ff0c9006"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-base@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-base"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-base"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-wiring-static@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-wiring-static",
+      "version" : "10.1.0",
+      "description" : "This module implements the wiring API in a static hardcoded way, that is native compilation friendly.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "780f30d65b92a18b421a628408773c3c"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "c0f6760f9b9bddae15cb7a56f70d0491bbf7430b"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "5a95822e589c688c979e52bb97bdd73b352b40f03bdc96be7ebe02d1f9f23274"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "bee5b0989a6f6a1b894017a8512618353ae02b052aba4323735ed0c76d6c964a9440c745c47223ce68a2df08c7d3a522a0484f462f369acda64ef97f1a4a0bf9"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "a460fd1b5e166d18919f031ff60a7225a404993e7b5f2905154ac64e3dda8d67dcdff5583dcf452617bf788b137e9252"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "3a5586224c397bb307c50aa2c925ef2012ece379730eff8c5e77df2e6939a31a50458e2a302a6cad85681746f976c69c"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "d4611ca09674487329852b91561b1296ae1a51abbc3726cb414db1c9ae38e78c"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "320b43b77ae575c5927d65073170b22739bcd8fc90d626af876fcc9622b4e72816b84e42e27d904aae754e642bf1f678198bf0944e995bc1fa1bd3865e501f95"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-wiring-static@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-wiring/drools-wiring-static"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-wiring/drools-wiring-static"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-io@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-io",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "5ca2f070664004c5d951f3d7d8114a94"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "0276fa8fea1e8c42ef2527f3fc1845a5896087a5"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "8c372ec2d4b38b703f741f7fb7afcffdda2a27c074a75dfe230e4b3be9e389cb"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "3533f2860c02de014e2de2ba9fca96edb55846965c365f1f689c0fb5684539b9210f0bad480aabcdc70525b9a4f407c34a0c36b499716201b309f7cc447a54c7"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "fc91debd759e35e289c9517087020cb91e40fa9f9d7fc39cc476d6c1daeb7be9e3305eadaed02915addf0329620f8401"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "be1802c1ae6fd01e1384698bbdde3166a6dcabb836a8640a3ff19a729eb0722b503ef139d476478178887239fa359268"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "0fecc6ac446fc1179ad64cf52ec5ee6c57fcfde6c4c8bb3693a8fb67df39a4bd"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "7ae9c327644fc1fd359d69d5e4fcc7814233bf01a140efc56d6b65a95a19b78295307081dfc6583c446a9b131a2f93a7bfdad7eae74a71f5678d1a1e1cf0f006"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-io@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-io"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-io"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/commons-codec/commons-codec@1.18.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "commons-codec",
+      "name" : "commons-codec",
+      "version" : "1.18.0",
+      "description" : "The Apache Commons Codec component contains encoders and decoders for formats such as Base16, Base32, Base64, digest, and Hexadecimal. In addition to these widely used encoders and decoders, the codec package also maintains a collection of phonetic encoding utilities.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "2abf189633424b9292fd57a3192c0ed5"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "ee45d1cf6ec2cc2b809ff04b4dc7aec858e0df8f"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "ba005f304cef92a3dede24a38ad5ac9b8afccf0d8f75839d6c1338634cf7f6e4"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "4d974c2203dd6780da6e50ec1c7d8ff727f9ed55fba706fdc50b9484fc5da5e03b67bc6ad2f0d9ae74f823ecce04a40c513bbabd8bf9e91ac8fec04cd3519ffa"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "75d428b434c25041068005fd48f720ddfec8a9fc044b8df53a668828894e9ad542b92601a224d618200e3953ee3c8966"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "b0d03e9b6b548ec3b7e3c0ddc644cf40d36203606fd69be3fccc72c86b0e048bb6c8e7bd74afb77e371e839bce7cc6aa"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "c33f900364c7ba15976e262ac26dbe4ece516bed72278da0e6c636d2c7ffabe6"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "fefe6c1c33f63b9a873a522f8b1f605e4197ed9fe849af650ad8791503cb58cf3d4facafe4f46e070ea11ccfbaec1084e11294154531a07d8ec18ea9c40d9769"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0",
+            "url" : "https://www.apache.org/licenses/LICENSE-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/commons-codec/commons-codec@1.18.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://commons.apache.org/proper/commons-codec/"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://github.com/apache/commons-parent/actions"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://issues.apache.org/jira/browse/CODEC"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://mail-archives.apache.org/mod_mbox/commons-user/"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/commons-codec"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-compiler@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-compiler",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "34d523b43e8a78e910943a231853ce9a"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "9b1d0fc488b99435ce6f45b7b24d10f5a6bec64f"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "415e2d7f6c054f8e6650141ed72b9d9b4df668b24e476333af9fc5105366bb29"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "a9d77528052803a70b71cead21860d836354e1c9ce06f6be1ebc9b7ced3a032ca7618b287607122eb23325fceb0b976bec64e96f898498a13d1aab992529c35f"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "257ecbd2b6d2fad0be91517073b4059ea2989fdac28d107e0cf89e1cb6ff7ecadaff6234641d7a93440577d7fba5ea04"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "75919dcb809893e8af6cbc4f35ad2b9829a074f2fcd1236ef9d852cf632c66f1239dd80f9e4c3a97414e619a9102ed3c"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "0cb25df5e9dccf7fdbf5c718932aa573bda309c40d24d0851ea113e6a9077078"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "f84bab5eb89e107dc4fa54f77e99639a09ed17d946107892b05f230aa0e83b5f9731ab5447367da7ae086f8ef48cb022755835fd9b507b67a198e2f6540a5710"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-compiler@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-compiler"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-compiler"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-drl-parser@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-drl-parser",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "2ecb800b71069e28747932dccc217619"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "f3a350636c84b5452a7fe059980e2e2afdbb183a"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "64bfbe66ee67829ad931d502d8268e37ae5af866b8e7aada0d0a1ca799d1ff44"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "fda028dc93316e1d5084fc45d43365987b063c79acbfd90fb6b5c94784641b8aa207b5df40cb65e0b4bd06cb4c989310a1c5854d0f49cee97910b53808e2b6c3"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "443e8bef70fff9390a5264db7e3aa22b413e09c2aeae08b18ebc5d6c146db388cef49ca22b1007f055a878f9a0e29606"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "1bf93a7715d6d29e87b35cc67225dae8c83c22ca8338f26e8c229d6ea176c2534f691427425d16e72d707369245ea0c0"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "116f1ded04f450ce4c1b15c09bfc67577f15fec4c94faaab69d955d47499a0c9"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "9ef97ec05e0c16c808b642d783405e9b799194d08f1923e384aa31a913fcd5a8120ba80e06299ccc011877817461716a7d9ffe5931c28e2ced9c445469fa22f4"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-drl-parser@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-drl/drools-drl-parser"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-drl/drools-drl-parser"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-drl-extensions@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-drl-extensions",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "34fe075bc8fa5c1d822935c809fb7074"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "0de788d2c0f1ab4877628d7ed58fe7b5c8fe61a0"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "d05392d02bf1cf97bcec202b6a6d83c4f9d3b1430faac08a9c3f06fe5e2263e9"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "bfc052091ff6c251b91692fdbb2244548c00401b7ca9367267013894d5b1ef39fafcab07ee94f99981e48e1706a49691131ea835029c08d9895449bc1f73f545"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "d06a24845631aa920a42eb9ce8ff635e409209c2bd1fe4f6e8f17d066fc0a856dfc0a0196b4d166ba764b6645bda0c09"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "c81ecc438ae89eb47eb69fac54cf50a473b063147f090523b85088ad306cf8f3a6fdd90742a0b0a628627135adf92a2f"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "1a099569f967d0a73aa9f615379f4280978ad37323d57792150bed5854bff82e"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "763c926dedcc23f7ff0e8de78c0904fc187a56f2c0d828d911bcd3b1e04b2bc724cc90f998e13c3f763e438100bba013e1dd6ec94bb15ef43747a22e6f0dba71"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-drl-extensions@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-drl/drools-drl-extensions"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-drl/drools-drl-extensions"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-drl-ast@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-drl-ast",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "1003066912357fa39115505f25ed7bd1"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "0bc1d031d67543dd133590d17384baf679ebe0ce"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "0442dfee44c22c619a376dbc9f94441630adbbcff67bf90df0789e1ca4ed9b69"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "6893238a44011053aa24b73aa55db058773cf84a3b3647f05f47f43ab64ad3a54891c51534ef601a2420a89ecad4df2ad29cf87658911481b1eb4989efbb8db5"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "57b8d273b1e530504bb4b056a57fe29717b948e37eab569f25015fc36f3abd7d88fe35c6819f60e82577e0579cfa2a54"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "01a259e8cbf659031a3229971b7f8ba6ba41e6ca71843beaae9556da054523c7b30915b2ca0fd336f6042d8c9477bc54"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "7cc73d9b0007c9733bc96b81ab0aa2698b39b898f922e50dd7f4523e5fc9b66a"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "a9c71ba041a981766481d9cacdefb103db466992bb43121170130671fd5aea9afe9a85de7a122309360103694d0bd85f4bd85762573f137336536219c7d63daf"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-drl-ast@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-drl/drools-drl-ast"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-drl/drools-drl-ast"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-kiesession@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-kiesession",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "4a20e697ec4cf2849ab6803865a59a3a"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "fa412a1ff6372f12817d361f2a1b51ba9981ae95"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "ca2f5e77a7064f3a3dc9c40b5be88dc03b50c7c3197e864c2eeb191e7ab76ac8"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "3c9ddbd9b3f7ac96da8f1224b71a6cbb79af5c6c728fd8554b2caf99dabeff73d4cd11a28714f411cb93d95f3861e2116dfcba36187c3954885702b66d7bdbab"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "1e3b8a003e46c201b7ce31ae17d0c57f8feb68ccea70a3f376fd5cddf8aa071496f70f1d631e2b5fc935941327c1963f"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "97d01fdeb81a5e88b3f466b8a8727e54dc82389a589c65082a5c4bd1cf13801bbb1a4fcd3a5a18a5cd952b2582da2dd4"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "3e6b3f5431672f397d9ec5894e32f70bdedb37d93792cf40b6e74cc50a089999"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "c140695718e74b3ff6f4965e88dc3ab972a13696c102f20c32272bffbaad3e58279d37cddbd6dfe7ab19bbaff4d19bd79f808bdc519e3b327cad93303b4cfc4e"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-kiesession@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-kiesession"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-kiesession"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-ecj@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-ecj",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "7a0da8e8e3351f3fba04a3b501bfd9cd"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "3e4d706cd8c0a81997f486f853fa9ae449784128"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "58e31f50bb89c7d77bd5396c7699381440e8677105a4ac181a06bdfe9adfaf9f"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "856a7c2a32d729a6d6e333b406cfc3c049630881d4829fd87ee425c6620ce0e33fa7e804a410ee6f1c895bb9ad70a24c944066897d4cd908e17d428cacb7a444"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "f1961b9a2f8d187b07acacacd4aee054e3afb72f1a44c0d4b4f573ec2f7e84d0256337ff029818c9d98a485fe96e4e3a"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "6e01b033406ca18b9ad547efcae2e7d027db735d0d81628df303460cab94fca6d1a209ab5346ea3a139b4ddb5712f866"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "51d0ff9b304686b1e179749310095ac48bc42170bf6f8feaf8eb075c248b2308"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "7be163e1aa759425edc46e4b31ab08e4b6894c7f3a2c9a26e8bc8fe2d0634f8f4d82015606ccfeb2e03b3d3ba9ab2bc2359b9659b464b69685f7aa868b9f8fd3"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-ecj@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-ecj"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-ecj"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.eclipse.jdt/ecj@3.33.0?type=jar",
+      "publisher" : "Eclipse Foundation",
+      "group" : "org.eclipse.jdt",
+      "name" : "ecj",
+      "version" : "3.33.0",
+      "description" : "Eclipse Compiler for Java(TM)",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "8f97ca731449b0dd4cbf23aa34774c6f"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "4041d27ffea3c9351e3121f9bfe94dea4723d583"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "f7686c4960cf70c2ebc5c500a73a8cfc04541b730c18f1c5c21329889b137f45"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "69b57e12aa7f1339fe86fdb82f8fe9a104ff4d5e887448a779059e4f0626c43af0f1539569d9669c3f3add54fce6447e0bdcec93ee52ad25bf9697f7ac59ca7f"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "5d6816535e016403ebbca62356393f1f1484cb8dbcc327cd1f3be9698bfe94b1d29157fe6529770073effbb8da4777e6"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "f5dd816c43b1666a383420b275e47a6d6297ed07393b95e799c0237d42a0ad9afe105b1bbf62979ef6032808309b25eb"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "fac6d26aa92fe8eb343c935c59789939ea02d12327f7c65b0ed95accc01846dc"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "6149a622731bdab696d500f027870a6ab5f37118fca57892b2e52d2a06c4154e1be2690dddd1ed7045b072ee4273cfef3d398156a6fac9387e92a71feccbc78e"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "EPL-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.eclipse.jdt/ecj@3.33.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://projects.eclipse.org/projects/eclipse.jdt"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/eclipse-jdt/eclipse.jdt.core/issues"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/eclipse-jdt/eclipse.jdt.core"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/kie-util-maven-support@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "kie-util-maven-support",
+      "version" : "10.1.0",
+      "description" : "Top level pom for KIE utility classes",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "9cae3104f6ceda32cf1a2fd9cc3568fc"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "edeba07ed88ba43299ddbcc60165d8bc37ccd2c8"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "97621b1068c77562ef83f6e7daca19745e20f5fcd867ab97e7cace319194ea8d"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "2521000972561dc7d537d7fb90e637de6207dac1579d5962d54456a5d3761e5b286878f76bf93845e1eba000367f7ff4bd6aad6ca592031a2d273eea324c09b3"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "8edcb25d1fcf50adb17ed55cd5741ca3549d4aa19621911fd0dc44d27f39d66543f3f2b4362b36a6cf1f6e92074268e1"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "a3b8c9b7793299eb4be64edb6990c071b58f6151f4482ddad25f03771bdf488a39123715a098a4ef8d3502b197957b90"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "f6ff22eff50d7e2378bbcfc38c3da86303e8f96e43ed12e770f075cbb5d359ac"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "fac1c6b6d2103c803c8583cc07e85274c3776c747a7f7f71e80b31131870f8e9eb7b85b784754f1139cf619c11ae7ccd6fe1170a879ba3141fbb0590a0d90370"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/kie-util-maven-support@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/kie-util/kie-util-maven-support"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/kie-util/kie-util-maven-support"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.antlr/antlr-runtime@3.5.2?type=jar",
+      "publisher" : "ANTLR",
+      "group" : "org.antlr",
+      "name" : "antlr-runtime",
+      "version" : "3.5.2",
+      "description" : "A framework for constructing recognizers, compilers, and translators from grammatical descriptions containing Java, C#, C++, or Python actions.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "1fbbae2cb72530207c20b797bdabd029"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "cd9cd41361c155f3af0f653009dcecb08d8b4afd"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "ce3fc8ecb10f39e9a3cddcbb2ce350d272d9cd3d0b1e18e6fe73c3b9389c8734"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "71adb4a78a23e4106e9f09c92a7e0c1d975ad314a49f4a06472e22a2ec09c83fc02c6b684a20055b46ae69fcc119b155b7109ef56e170579c9a462c8839bae52"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "e56770e380da87eda373e1f0fa7da0fd031b3e310e70b581d8a7eeffa80192f7cdccd073e45f277610ca1e161662db62"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "856d53937937c945025382711f9a28b66510ba5fa98ba928cedfa0314cc333d2a570c84d12e3dc877fc11b9e5b5902be"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "52d6cd070ca8a0dc5bfe4dbc2e7f6c095e32d3c83c5030bbc160dcc5eb47457d"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "d9da25347d24b7ccb0f840cec91f7ca7262b61969351f87b3c6ef7fbc202104d45250ae3920d2dd430a9db20c457529b1adcf9c7e3bc068b1f03793123a88646"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "name" : "BSD licence",
+            "url" : "http://antlr.org/license.html"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.antlr/antlr-runtime@3.5.2?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.antlr.org"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/antlr/antlr3/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://groups.google.com/forum/?fromgroups#!forum/antlr-discussion"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/antlr/antlr3/tree/master/antlr-runtime"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-canonical-model@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-canonical-model",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "6f55881156e4e8233ebdcd71bea15bf4"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "a341b3d54b1ac4f482c8e08e4528f68d80b54543"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "43a803d4a80797d3b257b3b2ff1b421870aca8b4d8346583fc5097504cc240ee"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "45dcd34d0d938bda5d494e13fe810f9bfd6a6f5f43fb602ad949ddc84a13ffc37885e7f16e99ff41e8755205196881e1c7104b3f0382ce69eaa198a4c08ecb5e"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "0ec0e915bdfdfb84ba2eb4b35b391acb20f85059ef2b4abcebb3331ab9efba18800753194f50a31fc67094eab74dd94a"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "bd55754e870a3c36e621a3501098fdb3c76377fecc122ce43d41714aea682b8722b71550e4d4ff6db86849b30aa8992b"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "e7046825e5dd87e9aec4b98fa81ef4a463ea8bcd8310eeead941da74536564f1"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "97489f1cd578d0308f1ad19dac1359dd23f545715b85ade90b66b3849efd63275a3d4935d12036fcc9fa401a6375cd9cf240df7398736343541ba65098156afa"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-canonical-model@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-model/drools-canonical-model"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-model/drools-canonical-model"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-model-compiler@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-model-compiler",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "5622d0de064532d0653a71e371092a19"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "af5932112e27ad0555427e42bb00acb039c27956"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "c9cf967984412958ae917f7b66bf2d958245aa30caf5d1cc05349edec446e327"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "cacb0fbabfefa2e83e8b69dc20f39dc75d9d353935144089bda6451ea95e22e11466f78772ee41fd4d667be2399b1e08a6692e0451e0fb89bb94a49c58ca0bcb"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "6db268dfedebadc99fed472342754652821bbe5043f3bc27dab20da2ec80687b899c51a6348a7d8c74ea45024dea863e"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "550f0aa4fe649cd682fdeeddce3bdf201f9acfadc09cc129f97d08b77047a58e1b2704373a7d0df013f89ccf65437145"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "61cc0d8c2f5c7642c777c80794d2a8859db552c8c38f9db198daec57969e0639"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "7d65e2fd9ff481c919d4d9f31837da599d249eceeef578f2fb5f8b66a93603d833a5cc6caffd36f1115330e7df7bc03c47d4b081c04a9fe5e76b62afb458c7e5"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-model-compiler@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-model/drools-model-compiler"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-model/drools-model-compiler"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/com.github.javaparser/javaparser-core@3.25.8?type=jar",
+      "group" : "com.github.javaparser",
+      "name" : "javaparser-core",
+      "version" : "3.25.8",
+      "description" : "The core parser functionality. This may be all you need.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "7956ad601b83d427390d99dc2e0f0494"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "15a9581d0fe18fceafce4f1b7c419732a743508c"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "3ac2c42a234c1ee43a55bc22911934ddd537bba78931265d072ed34c22b06d96"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "6a4e76f64db6947a8fd430aaf954589ff93e58a45515b7d7d8b3d996b0414a1eab4600faa2573cceba02df1c1ad949218c54af40514451aef2dcc6e3918db8b1"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "62c03221f99e8bf7fe3cc697f3a0c05b72596f7c572039f97974dd60e899ff8940c6d09775fac48a3a059cdf10d65488"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "8bce27e5314c8bd80356fb883aeede416bbf06d26094130f4da537792639238e142e9bfa5f8c07ca326f72e059632588"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "cd29b9c4e9bc23fedc5144c5a64ca334f89e2e75cc787f6fb286d994c889dbf5"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "e637a6a185482464a936d8da67c7655bd31a56abe91ac15d42864a247ab8e55de31a962b3a34b4abd06cfd09e0903a7ec7caa46827983c0d2a1f69c2262569d3"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "name" : "GNU Lesser General Public License",
+            "url" : "http://www.gnu.org/licenses/lgpl-3.0.html"
+          }
+        },
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/com.github.javaparser/javaparser-core@3.25.8?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://github.com/javaparser/javaparser-core"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/javaparser/javaparser/issues"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/javaparser/javaparser.git/javaparser-core"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-mvel-parser@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-mvel-parser",
+      "version" : "10.1.0",
+      "description" : "Parsing of constraints in LHS",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "5027b4c4c631c79e393f72d1d8db206f"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "f4bd507413c4526027285c8e8c9d35dc23757635"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "96920b3a6d96f8ea7be59de8f23cfe5ba529b9e705ba9c02a2a6c7411a4b7413"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "44dbfd6d86d805149cf9f5be10b3956e94a3614c951a3ceb80d0766f67d26b5c1f64071c079a454cd54442e0f29bd02857d38e4c1e98dcbffac9e4ab355a3016"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "eaa32eee0ed72ffbf342ee66161a000fa01f26de45f25716c347b807f8f9a90e3ab08f3370d6c649c4d43fae828c4936"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "b67a8dcddf1a21cca1172cbccb0f518643798e2887162c9c8a7e8a3f69458aebe1f49038b6f5c2d4b4f3d7783b8a0109"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "3aeb4e997aa087e9210f28cc5a36626da74d711d0d8804526e31ec2fc372ab4d"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "f0eead8202390392abcb84159882623323d8a98e51726aa7b482793cfbf89c7aa71b07ef0db67265c01070adb9f32eac89d54bfcd3f3b768959a7afcb34204b2"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-mvel-parser@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-model/drools-mvel-parser"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-model/drools-mvel-parser"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-alphanetwork-compiler@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-alphanetwork-compiler",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "b134bf1c8493f47327c9a78c819eca9e"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "87d8174b1829950ee74cf37fe6bee99b81ecc7e9"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "0864a4e0a6bd7398d07b836f9d18459b1a50caefd20c18fd1fefcd654bba45c8"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "428d9443a74823402352c0b3c5ef4e2833fc12ba93084d4a63c11f4ef0eae1e507ca0fbbc2bc09cfc4282e38f121839b3e6be10313a13bed24897017f97d635c"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "5878a929d54072e36be804289a9fa379862d740066692ce5db0c057ab8da3cac43a233ca4ffcf08ca7173201b6206f6f"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "70c23b9aa61e17e1055b378938d7ab443c6190b3f51f63df7c533849dca7c4358dfb96373b35df6b4afaab5dd5665303"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "1cef93d3563cbba003750104419972a57d63542e472fcbdfd70d97b2cfaffcb8"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "8f113d7947ebcfdd44de7e95b5f976a6a005aec6f854dfe6a9a27da30c7d5a6a5195bdd1e2eeb6e351a216fd450d206d3ff67ed8bfaaf04bbf85b730e7937f45"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-alphanetwork-compiler@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-alphanetwork-compiler"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-alphanetwork-compiler"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-model-codegen@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-model-codegen",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "5de11dd34fc2f882ebdbd1cd48f278d8"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "efcfe146a8990ea2e42e06d16b4ca9ee1ff5e3fe"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "4a5164b6da01beca66cc0c1be53e8faa4e35506fa313da363678184d51a72d31"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "ff66e0e164bf9c01fd70e30635b87e29929cf3b0e1228ea5b6a1db204bddbd6b8b5fcc6b65961ec2412e5215f7516579271aee6e4fc5467acc4d5e850aa754e7"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "5550e21d30f6eab565f827fa67ff6b94315c0c60e4b490fc5ce22822e53140aea3200f8fda56cc829483967230ae659e"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "f4d647698d9dccd322fcd00b849dbfffaead7baf39c6423b3daf3b257793c467e4888aba3266cb3ffe0e749de08bbf3f"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "12f81c3b0711a998f6962b3226b5ab36d93d97293d1e133b3850718291863cab"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "55a57272bca89edd1dcda7575d360af0eaa315db71369df43903b0e82cb6f0d4f4ee75d898375a66f5e8f5b620f7a7beb99f9d385b4d2af90c2ecfcd2380981f"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-model-codegen@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-model/drools-model-codegen"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-model/drools-model-codegen"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-codegen-common@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-codegen-common",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "b320239bbfc22d3709d95fddb18fd902"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "ed7dc5df866e2969b6581b95d5644bb69b0d74da"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "72f58ab09c10e6ee0fe8436b459955c310bbf21353dae5ecc003cbb3f472dded"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "6d25f88de4ec76b8486c657008943e641238253b297ac8715cbaff9d0360f6abe67ff3c1f70dcd95ae84da859fb7b9061e22859e90aad5e43501c6ad814da31f"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "5d6ca656135df2f1e0cd2a9264e845a2fd3dd5f857f2d88829a5d19f5408854ce2634422fc15090a07e6018d48e109d5"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "dc137085fd967083e0555046edfc433244303bc182cefe131c03898720fa0feef1f99abf918ee1e1f0c9f2edcf72cb3a"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "2a174b8c18dab91ea4f658b0960cf63f68421c8080873c453895753cb9ad4541"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "7aee8f00dbfdf9207cbf616925100dad55850b1dcce3beb12615ff2bd8d0206b862987e6d8aff311a9ad20f07c707acfaf43dd83ea09c0994cdbe7f742c63747"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-codegen-common@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-model/drools-codegen-common"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-model/drools-codegen-common"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-model-prototype@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-model-prototype",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "19d5d7e3872dd628e83710600f770e5f"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "60c6d4ebf4ca02f90c1d7957109d43c573393282"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "8d18e4948a92b379afd98968311356f5af31a7e7e9ea537e70a9989c672e4d33"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "6855cfa4ab57bf120d9d98af8b98fb5d8af5ad20247137dc15443778b1a2430744533d873e45b3bae5beb75d12ffe6eb8fabab9db364c1365c1e3c27be2d3f8e"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "02178ea05bdbc3bec0f453d500bdfd30c6a4d048d6b5769a7e6360910e1c0300477c52a77415774db858cd9eb2bcc7d4"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "14780f03d8795187bdd61d4b7710ea3b0c58970ae993b3fd754ad62cdcaaeb5e1435fe41ce57b45a626a2cdc2326086f"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "ed8b4be79f719a99e14ae1dec5ac35f5ae1b3e20a779cc4d0a14ac5e1bdf7a6c"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "37dde1ff08e65c09186d1800166c3e7d29cffa1cde41af4d9b73af8c2f2a959e7119ab7cfc86582c1d317d38ec3112c5b3d8dfb887fcd8300618813a4523ae11"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-model-prototype@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-model/drools-model-prototype"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-model/drools-model-prototype"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.drools/drools-mvel-compiler@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.drools",
+      "name" : "drools-mvel-compiler",
+      "version" : "10.1.0",
+      "description" : "The repo contains all code related to Drools project.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "2da64f12783afb54962e88340a043abd"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "b66533946af3943e847a55b6797b88e1bd66c74f"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "a637ece6d297a0d62f5265710fd145d612f1527c77a33b34174e3ad7e2f5c502"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "67e36d843a71f23207bab3cb78b0590b3d626560908377e0aab60ac692442a4789582d039b4021d40e4a5bf7607f7f318765a12409d3418b302244ddd200e744"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "b836b0c4662d5422a74916138fd4a1884e999311b9484aceef0a8cdca6454fc104913cfb7b03867767e53712b26e537f"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "0bb9575741a2ae3997bed7578a7fd6fee611c978348343f686bfd1d33ee9e2ee3b6716804a65bb48bb6ccf872efd2a8c"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "1384943a581c9c4d1212ae061771e25347264e6baab088db86435273b220686a"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "07706675f53f6bad1391d9e20a859d3d8bccd659366c38d40d93e3956afb43dd78f099a178bb0f7d466cb9f26067c96db4fe67291f3d14ed88b77edb7096d161"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.drools/drools-mvel-compiler@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/drools-model/drools-mvel-compiler"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/drools-model/drools-mvel-compiler"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/efesto-compilation-manager-core@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "efesto-compilation-manager-core",
+      "version" : "10.1.0",
+      "description" : "New model container framework",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "30d1ea95e6f3c282ed1518a3099ed554"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "07082ac66b3dc47d634073557a7570fc170a12c3"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "7569c8acee8444230f1d1bb4f6a684eefc04dbdb74614fdcec60e9d473659a7c"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "bdb14e2783568e6c7040b5f1e9da0399b831d7accf2855f8177f4358b2fce9d75abc03a63efa615acb330a2c87ce9b1c626073471cd0ea4127c8d20549eb25f1"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "4713822962e639c3de7d85a91e76ee02673a8a68161c9c6654cea0606eb40e282c0f7b609b26b13971a6f8351178819e"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "30509217fd9241a1e4adfa6395ea341edc7ae4961571c23bd98617498333ed757a95d78551f23f4c794df3fcfe7912aa"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "b991a25cbc475e082d51d17983c3f4419815f720a5b8271d566ce89a3d0a43e8"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "736a2f255fc538832975f6799f6413e7b83089eda8f6ffb5ad78a6fbc55b2962d70ac22cb2cfce7f3c88b0cc98c732932c9698da8c17f950ca09428e247891b4"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/efesto-compilation-manager-core@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/efesto/efesto-core/efesto-compilation-manager/efesto-compilation-manager-core"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/efesto/efesto-core/efesto-compilation-manager/efesto-compilation-manager-core"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/efesto-compilation-manager-api@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "efesto-compilation-manager-api",
+      "version" : "10.1.0",
+      "description" : "New model container framework",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "44e38561f0e9b5c71523392fef9eb671"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "2064bf344f65949d7d207c020dc45f6af0bbc87f"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "260267caf0c3aeba6b6d4bc71adb4180d88e4a87fa265b3ebb550734ae1ce27e"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "d4fd1696b92751132f824eff50c80ac2fb68a35d5d617bf9b27e30ffd1e0660f8ce4ec05b7a0e71291861457647ef0915b86cab07affda15d065c3f229197930"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "9bd3ccb8aeda8dc4f5282e5fa91cd6522e796288b8af82494bc7dcad132e4717796060d633daa9b12dd8e4ece20df200"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "6779210312c02b3d7db3d358b44ee2fdf9ed5e4702368ecff63c54e76a926f5b9ef6ec856a2f76b5587a0a697161e663"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "05367c91867692662f3f9114c61b31514e078402b7ed025a0469b5eac577f6f9"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "b34f55de8430a85f4f7211d81d4e29f48c18c4359ef24cba0f09aabcadc3b5bf8c3edd2d2c617233a5ea158890bf344327057623ed44d13ff6524195a63c1888"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/efesto-compilation-manager-api@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/efesto/efesto-core/efesto-compilation-manager/efesto-compilation-manager-api"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/efesto/efesto-core/efesto-compilation-manager/efesto-compilation-manager-api"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/efesto-common-core@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "efesto-common-core",
+      "version" : "10.1.0",
+      "description" : "New model container framework",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "e068b4a48bcd7de786e8c6658a583d31"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "72b8cf3ec8cacd338ee33471a46d8be54c927675"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "002456811ef23ccd7d527fbba788c54d8b1353ec706cd019d39a25978dd324e7"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "2ebfb1650e474183cf15c2a6a8b831e9e5670cec313ecee8d46169e9dd23acb7d2b53f0dc21cc7d775a9e1d8e6fedbdf9907d8fd405a90b1e01f9d70664339b2"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "463d48e45ba24cff87a1b4bb09119420eff9b2b0216321b06d16521594bea12f3a46565b2363e24dcfd2a456c467fea4"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "9ed60fb1ff8c54b0bf1cd69823d2f7d7382cd0422a4c6aa1281328bcb141851d052a0c861868dd36ccc68abefbb62b07"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "087fd876684b6cc5560b0401705ea1812bf6298cbc45358e1a162a8a6c5913e1"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "81370a1e65f51b81ac8f84c08f877e4910e46e7b723997985bd62dcd4556a420e7bab370aa5e0b5ba9aab088cf21730d7c97d41dcacadae281b37d9dc6f78aa4"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/efesto-common-core@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/efesto/efesto-core/efesto-common-core"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/efesto/efesto-core/efesto-common-core"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/efesto-runtime-manager-core@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "efesto-runtime-manager-core",
+      "version" : "10.1.0",
+      "description" : "New model container framework",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "833d18a1209266436b7321909a2965fa"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "a9d4f9c223e4b312362cb0b21b6fadeee1aada82"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "cb0ba1f999783f7ac55aca41eb7583ed9383cc7fe456bf5983b80f8c2ec8915b"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "da9f3ed7ff0eda53392def0854a653c958b983ecaea2c95bfc0bcf9cff27d589c41170fb946215bfc436a13215b0d516a88545533ab0249d183fe3381c8bcdd3"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "acc06e569ac87bf917ff5a84d591aea69ecc21eb64d26688d0b0e36f5b9500023f9ba3db2bc978f40894989118c14a97"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "6df6e431ebc93b51de9a6e22aea784a65943b308df9852d14d3d9fb6d91ec5192f9209576c30f73ba1916c98b89d8d39"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "f9d6f7aebf9ccede8e6e29574fec6ed8b82e2352ec6770ec2eb6823b5629488b"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "1b81585157152dbd07e92d3ca074f80e8a6c5e4510fde97e8cec9bd59db07a854300403a595087182b62e068bd8ca1b01d88a06a14cbe3817494514d9816bbe5"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/efesto-runtime-manager-core@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/efesto/efesto-core/efesto-runtime-manager/efesto-runtime-manager-core"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/efesto/efesto-core/efesto-runtime-manager/efesto-runtime-manager-core"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/efesto-runtime-manager-api@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "efesto-runtime-manager-api",
+      "version" : "10.1.0",
+      "description" : "New model container framework",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "3dc48db957b254b509ad84805a31ddca"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "29e83b9985b04864194b81aa3db4f16a1466d1e7"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "6247ac5391fddc7f91221f5758a13d30334b8783c1ae3b43fc21525dc6011975"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "8d520afb8a46c5f48234e1d63c8968d9982b3bf229bafaf3c193f1732b6ea78c7ff810a304cc0bc2c558a0a72cf00a23055167f439c35d10c85dc94836409e96"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "416380526761435ba37eb32e805f0940bc9a93d774a5fbff999f50a54fe7023df9e09054d706dc5eb635e359f7365ce2"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "9c9781be88932a70546b760b2f418e98c917ff9f98e06d129484856c413c57de121696a2f046dca6deb5adc65e244e57"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "bed6acde4d676d4b20e2fd34de8e9a04449f221f6b7345b14224d235cf90e3ad"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "662085d22c88bf0432a2398e847ce678a1358fa5d279af267c9d7f138ce4c8d2d12b3d3ee907b38325394ada8977de5f6c24b5d515d3a0883e140fddf7a9ad36"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/efesto-runtime-manager-api@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/efesto/efesto-core/efesto-runtime-manager/efesto-runtime-manager-api"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/efesto/efesto-core/efesto-runtime-manager/efesto-runtime-manager-api"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.kie/efesto-common-utils@10.1.0?type=jar",
+      "publisher" : "The Apache Software Foundation",
+      "group" : "org.kie",
+      "name" : "efesto-common-utils",
+      "version" : "10.1.0",
+      "description" : "New model container framework",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "22d335d9ec4c5c479adb5dd2f1c8a7af"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "d06d857fefb252220004d0bd9549cbaf8f9cf9c5"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "edb3f225fb582156f8c821f039fbfcd5b3f9a0a6af70fdb9a00b308a79142607"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "961c2543ecf4f30f1a38aa4319ac085a78bab125f9332d7478f0954f9ed174e041b611995a5807f1b28f6091c1bfb870626c2714ed028208ea979eafd0dac380"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "a9c75ab6f2240480d8a8f831bdf940304273f12ed875f1d1cd4e640a67e0cd0d4f7321427bb275e228053cb5d6386a7e"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "40fc28069d311c11677be36427ca8227911886650a975c27ef14d0c9d49d166a288ae87ad9a54fcbb51b925347b624cf"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "3db1c3f02801590e5dd73524ef2322804e70b67843ee73698b952418fc58f2f4"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "da92e1bf0dee067c20e8cdd7dec3699f57115bcbe66287cdd70e0bfd34a02962d5c3f8479a30a420224fe3065fea8906e53bb7083a3f7ba031d5d9c871e51583"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.kie/efesto-common-utils@10.1.0?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.drools.org/drools-build-parent/efesto/efesto-common-utils"
+        },
+        {
+          "type" : "build-system",
+          "url" : "https://ci-builds.apache.org/job/KIE/"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://repository.apache.org/service/local/staging/deploy/maven2"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/apache/incubator-kie-issues/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://lists.apache.org/list.html?dev@kie.apache.org"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/apache/incubator-kie-drools/drools-build-parent/efesto/efesto-common-utils"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar",
+      "publisher" : "QOS.ch",
+      "group" : "org.slf4j",
+      "name" : "slf4j-api",
+      "version" : "2.0.6",
+      "description" : "The slf4j API",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "0dd65c386e8c5f4e6e014de3f7a7ae60"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "88c40d8b4f33326f19a7d3c0aaf2c7e8721d4953"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "2f2a92d410b268139d7d63b75ed25e21995cfe4100c19bf23577cfdbc8077bda"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "4f8bcafcbb105542ae9333a79f1779aa299570c129abc718331cb5969af52e06e53e645ba52e67ebbe822006ea95093186656742dd24a4b167e270ba9e55e1e1"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "aae19620668b33d8a5837cd39bfd398644199693c08869812948b52eff238cd9d363cbe1a5bbdd25d6efaac4bd2caa67"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "e70ca0766bfb4ab7b5d4f22855fa7ea28bc26f51e345ce34f11f0d042d08d8fa9b718fa6eab3c19d669dd05ce8075962"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "e0c8b3a870481be3bd73d454901bb6db2a2bd0b34dcd62a13eac94890861caa7"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "d5a1aabdb809a4eb9bf2b81747d33438ec52dbd4cfa87d4f7c11213ec582553d6921c5537e5a09547feb8830c9a7265a163f21df118b9c2e11bc4379a0f514a3"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "MIT",
+            "url" : "https://opensource.org/license/mit/"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.slf4j.org"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/qos-ch/slf4j/slf4j-api"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.antlr/antlr4-runtime@4.10.1?type=jar",
+      "publisher" : "ANTLR",
+      "group" : "org.antlr",
+      "name" : "antlr4-runtime",
+      "version" : "4.10.1",
+      "description" : "The ANTLR 4 Runtime",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "b694fc738bf1a7e8f7eea2638ef2cc7f"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "10839f875928f59c622d675091d51a43ea0dc5f7"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "da66be0c98acfb29bc708300d05f1a3269c40f9984a4cb9251cf2ba1898d1334"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "901c199e15db7e8d92ff62d2255e44e11d29ce350ad20e32e320bdd29d08bf372a0c1bd912558461a06157d36ad4cddc5f89cb890bc511f8365099042b35bd4d"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "f647a9c2bc2dd488e86644d68aa2fe99152bfaaf9c4732260a8ce441e3cdbcd920e221d0f39aa93b555871f5f2431fb9"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "e24593e54061e6e63bd3ea21c97c180c843eb0df525f6fe759c7c2178a5901a527b9033fa4b8b5b0d3243dae610fee64"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "63aebcecd0517936ec580804c47b6f6a1c684ceddc0dbadad45c565f72483847"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "3166cd93d9c7a6cdd2f5c0b56123b00018d3a3ee92eb2563985865c68201b124250075ee26d8965f8a3368c081ecd9589a91240c142a6cdebaaac8f31c03edbd"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "BSD-4-Clause"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.antlr/antlr4-runtime@4.10.1?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.antlr.org/antlr4-runtime"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/antlr/antlr4/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://groups.google.com/forum/?fromgroups#!forum/antlr-discussion"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/antlr/antlr4/tree/master/antlr4-runtime"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/org.jpmml/pmml-model@1.6.4?type=jar",
+      "group" : "org.jpmml",
+      "name" : "pmml-model",
+      "version" : "1.6.4",
+      "description" : "JPMML class model",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "8a91d028d41b1fb7f2fc9c7d89a23c96"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "bb0f579e2a076dd2b512bdbd53bf8645dbb6e6c5"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "9877320960d422641ea1ca7e5093ef295c6a3215fe56cd8facdfe4bdc033fd15"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "5930d9693c59694938f11a9575aae166758d0818379638420fbe9e8852515905280248041d6ed32eaffc0c59fd80fab366c619e760f57800430a82f1518c153c"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "2a048a01e7c2cf11872ee9826cb5d78d34156ae5fde2ea020e82084184d0aba627e13821eb2b8425c95341855daca6b1"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "cc36da09ded5291d218823d1c16f129a777bda6723962ac420158f7609494d30698738a0986c532564c196f018d86f7e"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "4cfbd3adb67655c28ed8fe43c91847abad28d448e75b9e62cce560e9f9fd7962"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "63d7113a08aad35f32a067a0085b38e268166c8af946748b7ce5b6aef763965ea1d981ade805c16be47f38edc51781ded209ff37f5c4bf001651a987b2d13376"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/org.jpmml/pmml-model@1.6.4?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://www.jpmml.org/pmml-model"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/jpmml/jpmml-model/issues"
+        },
+        {
+          "type" : "vcs",
+          "url" : "git://github.com/jpmml/jpmml-model.git/pmml-model"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.13.3?type=jar",
+      "publisher" : "FasterXML",
+      "group" : "com.fasterxml.jackson.core",
+      "name" : "jackson-annotations",
+      "version" : "2.13.3",
+      "description" : "Core annotations used for value types, used by Jackson data binding package.",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "3fb8ee542a62a113fa7474fe88bb97e8"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "7198b3aac15285a49e218e08441c5f70af00fc51"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "5326a6fbcde7cf8817f36c254101cd45f6acea4258518cd3c80ee5b89f4e4b9b"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "7f89b142068879b5fd96e4cb947313b3b39c1dbead43480307360a212fdb5347046b14fbc9b94c480034a4826fdd2a821686ebd121d774d55795326eaa1c95fd"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "245c29f5dff5e7677c7f614df69de1072dbb56717fe88890128dfd6479994bb9a81a9917d41a2831a9a96e6d12aa3bb1"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "14086ba58917fddf8b86e16db4a865d6550c3368e7c4ac11f14a29e60165c1a85cece76c03fa046ff6482af4c96618bb"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "69aa8638b7dee54ed7d676e90054977ffedc0e7e19acd82ae6a2ca28ed706b03"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "74121eb8b75529ebf01a8af81348efa889a9d13914620c95c23548a4dc42babac9f33556b0f668c66610f95db5854ced45fc5c0518147ec233af37213aa9c858"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.13.3?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "http://github.com/FasterXML/jackson"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/FasterXML/jackson-annotations/issues"
+        },
+        {
+          "type" : "vcs",
+          "url" : "http://github.com/FasterXML/jackson-annotations"
+        }
+      ]
+    },
+    {
+      "type" : "library",
+      "bom-ref" : "pkg:maven/jakarta.xml.bind/jakarta.xml.bind-api@3.0.1?type=jar",
+      "publisher" : "Eclipse Foundation",
+      "group" : "jakarta.xml.bind",
+      "name" : "jakarta.xml.bind-api",
+      "version" : "3.0.1",
+      "description" : "Jakarta XML Binding API",
+      "scope" : "required",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "ce443876615a903fdff9e0d5d13cb8d4"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "5257932df36ff3e4e6de50429dde946490a6a800"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "b8fb4bee3ff5b5c1ef77144d8411316018d7bbd41fcf1ede0646f7978546b867"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "7c74cedf7c0baaa5166311a4c4300a72eb09ae280ec3376553dd8651e6e3d5f100794421ba647b328195dfcf98a6cf7623169a0b87de3f13984dd7436c284807"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "9e3e8b7b86884751280e71e3888d1ff3f4f0c9d6446ed8e32cd61f030532b455b7401d1495dc0da72cd3f6300c68f482"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "47bfcb7a14b57aaa6c813a54702af321dd488cd1697a52476bb46fb9e6162cd46b62faa876a77752b4a7271241924b38"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "91d3e457af90b684e246e02808fb8ededfef65f602717e3815417cb63f22c6b6"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "3c72bb852c244bfb7da0f382fda743c0f8522f56fa77337b203f5027ba8b32d12cd6d0d6ffadfea65552b508be9b40601d876b398a8fca8f4ae9ecd979154a93"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "BSD-3-Clause"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/jakarta.xml.bind/jakarta.xml.bind-api@3.0.1?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://github.com/eclipse-ee4j/jaxb-api/jakarta.xml.bind-api"
+        },
+        {
+          "type" : "distribution-intake",
+          "url" : "https://jakarta.oss.sonatype.org/service/local/staging/deploy/maven2/"
+        },
+        {
+          "type" : "issue-tracker",
+          "url" : "https://github.com/eclipse-ee4j/jaxb-api/issues"
+        },
+        {
+          "type" : "mailing-list",
+          "url" : "https://dev.eclipse.org/mhonarc/lists/jaxb-dev"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/eclipse-ee4j/jaxb-api.git/jakarta.xml.bind-api"
+        }
+      ]
+    }
+  ],
+  "dependencies" : [
+    {
+      "ref" : "pkg:maven/spike/deptree@1?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-dmn-core@10.1.0?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/kie-dmn-core@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-dmn-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-dmn-model@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-dmn-backend@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-dmn-feel@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-memory-compiler@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-wiring-api@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-core@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-compiler@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-canonical-model@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-model-compiler@10.1.0?type=jar",
+        "pkg:maven/com.github.javaparser/javaparser-core@3.25.8?type=jar",
+        "pkg:maven/org.drools/drools-mvel-parser@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-alphanetwork-compiler@10.1.0?type=jar",
+        "pkg:maven/org.kie/efesto-compilation-manager-core@10.1.0?type=jar",
+        "pkg:maven/org.kie/efesto-runtime-manager-core@10.1.0?type=jar",
+        "pkg:maven/org.kie/efesto-common-utils@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar",
+        "pkg:maven/org.antlr/antlr4-runtime@4.10.1?type=jar",
+        "pkg:maven/org.jpmml/pmml-model@1.6.4?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/kie-dmn-api@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/efesto-common-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-dmn-model@10.1.0?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/efesto-common-api@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.13.3?type=jar",
+        "pkg:maven/org.kie/kie-memory-compiler@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.13.3?type=jar",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/kie-memory-compiler@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.drools/drools-util@10.1.0?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-util@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/kie-dmn-model@10.1.0?type=jar",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/kie-dmn-backend@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-util-xml@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-dmn-xsd-resources@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-dmn-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-dmn-model@10.1.0?type=jar",
+        "pkg:maven/com.thoughtworks.xstream/xstream@1.4.21?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/kie-util-xml@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/kie-dmn-xsd-resources@10.1.0?type=jar",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "pkg:maven/com.thoughtworks.xstream/xstream@1.4.21?type=jar",
+      "dependsOn" : [
+        "pkg:maven/io.github.x-stream/mxparser@1.2.2?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/io.github.x-stream/mxparser@1.2.2?type=jar",
+      "dependsOn" : [
+        "pkg:maven/xmlpull/xmlpull@1.1.3.1?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/xmlpull/xmlpull@1.1.3.1?type=jar",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/kie-dmn-feel@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-dmn-xsd-resources@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-dmn-model@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-dmn-api@10.1.0?type=jar",
+        "pkg:maven/net.sf.saxon/Saxon-HE@12.5?type=jar",
+        "pkg:maven/org.antlr/antlr4-runtime@4.10.1?type=jar",
+        "pkg:maven/org.drools/drools-compiler@10.1.0?type=jar",
+        "pkg:maven/com.github.javaparser/javaparser-core@3.25.8?type=jar",
+        "pkg:maven/ch.obermuhlner/big-math@2.0.1?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar",
+        "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.17.2?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/net.sf.saxon/Saxon-HE@12.5?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.xmlresolver/xmlresolver@5.2.2?type=jar",
+        "pkg:maven/org.xmlresolver/xmlresolver@5.2.2?classifier=data&type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.xmlresolver/xmlresolver@5.2.2?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.apache.httpcomponents.client5/httpclient5@5.1.3?type=jar",
+        "pkg:maven/org.apache.httpcomponents.core5/httpcore5@5.1.3?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.apache.httpcomponents.client5/httpclient5@5.1.3?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.apache.httpcomponents.core5/httpcore5@5.1.3?type=jar",
+        "pkg:maven/org.apache.httpcomponents.core5/httpcore5-h2@5.1.3?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar",
+        "pkg:maven/commons-codec/commons-codec@1.18.0?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.apache.httpcomponents.core5/httpcore5@5.1.3?type=jar",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "pkg:maven/org.apache.httpcomponents.core5/httpcore5-h2@5.1.3?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.apache.httpcomponents.core5/httpcore5@5.1.3?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/commons-codec/commons-codec@1.18.0?type=jar",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "pkg:maven/org.xmlresolver/xmlresolver@5.2.2?classifier=data&type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.apache.httpcomponents.client5/httpclient5@5.1.3?type=jar",
+        "pkg:maven/org.apache.httpcomponents.core5/httpcore5@5.1.3?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.antlr/antlr4-runtime@4.10.1?type=jar",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-compiler@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.drools/drools-drl-parser@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-drl-extensions@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-wiring-api@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-base@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-core@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-drl-ast@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-kiesession@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-memory-compiler@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-ecj@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-util-xml@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-util-maven-support@10.1.0?type=jar",
+        "pkg:maven/org.antlr/antlr-runtime@3.5.2?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-drl-parser@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.drools/drools-core@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-drl-ast@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.antlr/antlr-runtime@3.5.2?type=jar",
+        "pkg:maven/org.antlr/antlr4-runtime@4.10.1?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-core@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-util-xml@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-wiring-api@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-base@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-wiring-static@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-io@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar",
+        "pkg:maven/commons-codec/commons-codec@1.18.0?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-wiring-api@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-memory-compiler@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-base@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-util@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-wiring-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar",
+        "pkg:maven/commons-codec/commons-codec@1.18.0?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-wiring-static@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.drools/drools-wiring-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-io@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-util@10.1.0?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-drl-ast@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.antlr/antlr-runtime@3.5.2?type=jar",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-drl-extensions@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.drools/drools-core@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-kiesession@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-core@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-wiring-api@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-ecj@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-memory-compiler@10.1.0?type=jar",
+        "pkg:maven/org.eclipse.jdt/ecj@3.33.0?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.eclipse.jdt/ecj@3.33.0?type=jar",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/kie-util-maven-support@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/com.github.javaparser/javaparser-core@3.25.8?type=jar",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "pkg:maven/ch.obermuhlner/big-math@2.0.1?type=jar",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.17.2?type=jar",
+      "dependsOn" : [
+        "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.13.3?type=jar",
+        "pkg:maven/com.fasterxml.jackson.core/jackson-core@2.17.2?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/com.fasterxml.jackson.core/jackson-core@2.17.2?type=jar",
+      "dependsOn" : [ ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-canonical-model@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-model-compiler@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-util-maven-support@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-canonical-model@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-wiring-api@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-core@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-compiler@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-mvel-parser@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/com.github.javaparser/javaparser-core@3.25.8?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-alphanetwork-compiler@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.drools/drools-core@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-compiler@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar",
+        "pkg:maven/org.drools/drools-model-codegen@10.1.0?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-model-codegen@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.drools/drools-util@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-codegen-common@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-compiler@10.1.0?type=jar",
+        "pkg:maven/org.kie/kie-internal@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-model-compiler@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-model-prototype@10.1.0?type=jar",
+        "pkg:maven/com.github.javaparser/javaparser-core@3.25.8?type=jar",
+        "pkg:maven/org.drools/drools-mvel-parser@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-mvel-compiler@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-codegen-common@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.drools/drools-util@10.1.0?type=jar",
+        "pkg:maven/com.github.javaparser/javaparser-core@3.25.8?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-model-prototype@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.drools/drools-base@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-canonical-model@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-model-compiler@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.drools/drools-mvel-compiler@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/com.github.javaparser/javaparser-core@3.25.8?type=jar",
+        "pkg:maven/org.drools/drools-mvel-parser@10.1.0?type=jar",
+        "pkg:maven/org.drools/drools-core@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/efesto-compilation-manager-core@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/efesto-compilation-manager-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/efesto-common-core@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/efesto-compilation-manager-api@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/efesto-common-api@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/efesto-common-core@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/efesto-common-api@10.1.0?type=jar",
+        "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.17.2?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/efesto-runtime-manager-core@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/efesto-runtime-manager-api@10.1.0?type=jar",
+        "pkg:maven/org.kie/efesto-common-core@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/efesto-runtime-manager-api@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/efesto-common-api@10.1.0?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.kie/efesto-common-utils@10.1.0?type=jar",
+      "dependsOn" : [
+        "pkg:maven/org.kie/efesto-common-api@10.1.0?type=jar",
+        "pkg:maven/com.github.javaparser/javaparser-core@3.25.8?type=jar",
+        "pkg:maven/org.slf4j/slf4j-api@2.0.6?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/org.jpmml/pmml-model@1.6.4?type=jar",
+      "dependsOn" : [
+        "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.13.3?type=jar",
+        "pkg:maven/jakarta.xml.bind/jakarta.xml.bind-api@3.0.1?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/jakarta.xml.bind/jakarta.xml.bind-api@3.0.1?type=jar",
+      "dependsOn" : [ ]
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20230324/MODEL/" id="boxedDefs" name="boxed"
+             namespace="https://sangam.org/spike/boxed">
+  <inputData id="i_amount" name="Amount">
+    <variable name="Amount" typeRef="number"/>
+  </inputData>
+  <businessKnowledgeModel id="bkm_fee" name="fee">
+    <variable name="fee"/>
+    <encapsulatedLogic>
+      <formalParameter name="x" typeRef="number"/>
+      <literalExpression><text>x * 0.02</text></literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+  <decision id="charge" name="Charge">
+    <variable name="Charge" typeRef="number"/>
+    <informationRequirement><requiredInput href="#i_amount"/></informationRequirement>
+    <knowledgeRequirement><requiredKnowledge href="#bkm_fee"/></knowledgeRequirement>
+    <context>
+      <contextEntry>
+        <variable name="base"/>
+        <invocation>
+          <literalExpression><text>fee</text></literalExpression>
+          <binding>
+            <parameter name="x"/>
+            <literalExpression><text>Amount</text></literalExpression>
+          </binding>
+        </invocation>
+      </contextEntry>
+      <contextEntry>
+        <literalExpression><text>base + 10</text></literalExpression>
+      </contextEntry>
+    </context>
+  </decision>
+  <decision id="bands" name="Bands">
+    <variable name="Bands"/>
+    <relation>
+      <column name="name"/>
+      <column name="limit"/>
+      <row><literalExpression><text>"low"</text></literalExpression><literalExpression><text>1000</text></literalExpression></row>
+      <row><literalExpression><text>"high"</text></literalExpression><literalExpression><text>100000</text></literalExpression></row>
+    </relation>
+  </decision>
+  <decision id="doubled" name="Doubled">
+    <variable name="Doubled" typeRef="number"/>
+    <informationRequirement><requiredDecision href="#charge"/></informationRequirement>
+    <literalExpression><text>Charge * 2</text></literalExpression>
+  </decision>
+</definitions>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:operaton="http://operaton.org/schema/1.0/bpmn"
+             id="d" targetNamespace="https://sangam.org/spike">
+  <process id="chargeProcess" isExecutable="true" operaton:historyTimeToLive="P1D">
+    <startEvent id="s"/>
+    <sequenceFlow id="f1" sourceRef="s" targetRef="rule"/>
+    <businessRuleTask id="rule" operaton:decisionRef="doubled" operaton:decisionRefTenantId="t1"
+                      operaton:mapDecisionResult="singleEntry" operaton:resultVariable="doubled"/>
+    <sequenceFlow id="f2" sourceRef="rule" targetRef="w"/>
+    <userTask id="w"/>
+    <sequenceFlow id="f3" sourceRef="w" targetRef="e"/>
+    <endEvent id="e"/>
+  </process>
+</definitions>
