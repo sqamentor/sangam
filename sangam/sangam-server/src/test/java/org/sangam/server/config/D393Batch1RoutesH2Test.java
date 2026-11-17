@@ -33,7 +33,7 @@ import org.springframework.test.context.DynamicPropertySource;
  * Decision 393 batch 1 on the real server (h2, the whole connector and filter chain): a process or decision definition
  * id (key:version:uuid), a user id (an IdP principal id), a group id (an IdP group path such as /staff/clerks), a role
  * id (pack:clerk), an ops-admin secret reference, client-chosen org unit, seat and policy ids and a plugin id travel as required query parameters on literal by-&lt;name&gt; routes,
- * so a value with '/' or ':' reaches the application and is answered in JSON or problem+json. Before the change the
+ * so a value with '/' or ':' reaches the application and is answered in JSON, problem+json or 204 No Content. Before the change the
  * value was a path segment, and the servlet connector refuses an encoded '/' (%2F) with an HTML 400 before any
  * application code runs.
  */
@@ -120,6 +120,9 @@ class D393Batch1RoutesH2Test {
                 String where = c[0] + " " + c[1] + " -> " + r.statusCode() + " " + type;
                 if (r.statusCode() == 200 && c.length > 3 && type.startsWith("application/xml")) {
                     continue;
+                }
+                if (r.statusCode() == 204 && r.body().isEmpty()) {
+                    continue; // the controller ran and answered No Content (a write that returns no body)
                 }
                 if (!type.startsWith("application/json") && !type.startsWith("application/problem+json")) {
                     wrong.add(where + ": not JSON: " + r.body());
