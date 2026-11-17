@@ -199,7 +199,7 @@ would duplicate the channel scope and still need that rule. The server binds san
 `UnverifiedPaymentAuthority` to this (`org.sangam.server.bridge.UnverifiedPaymentAuthorityBridge`), evaluating only the
 request's resolved identity (`TenantContext`).
 
-### Flowable gap-list items (`spike/results/FLOWABLE-INTO-OPERATON.md`) in this area
+### Flowable gap-list items (`sangam/docs/records/FLOWABLE-INTO-OPERATON.md`) in this area
 
 | Id | Status | Where |
 |---|---|---|

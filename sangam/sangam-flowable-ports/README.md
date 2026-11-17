@@ -1,6 +1,6 @@
 # sangam-flowable-ports (WS-PORTS)
 
-Every Flowable strength from `spike/results/FLOWABLE-INTO-OPERATON.md` (list C) that is not owned by another
+Every Flowable strength from `sangam/docs/records/FLOWABLE-INTO-OPERATON.md` (list C) that is not owned by another
 workstream, implemented on Operaton 2.2.0 as a dependency plus plugins (ADR-D-16). Base package `org.sangam.ports`.
 Engine source patches: **0**; patch-route items through public setters: P-1 … P-3 ([PATCHES.md](PATCHES.md)).
 

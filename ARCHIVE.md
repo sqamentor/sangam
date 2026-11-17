@@ -6,6 +6,7 @@ maintained, not scanned for new vulnerabilities and not supported for production
 | Archive | Tag | Commit | Original path | Removed from `main` |
 |---|---|---|---|---|
 | Handoff records and worktree snapshots (2026-11-08 and 2026-11-15) | `archive/handoff-2026-11-15` (annotated, tag object `8db5bd79eb1a1e8f450d5b5a999fa84160c4e7ce`) | `a168a54246d03eb78559089f094be1e73c19b0f5` | `handoff/` (16,203 files) | 2026-11-15 |
+| Stage B engine spike (archived in place, not yet removed; removal needs owner confirmation) | `spike-archive-0d28f052` (local, to be signed and pushed by the owner) | `0d28f052fb4611c617ed0c09c1ded876fd259700` | `spike/` (332 files) | not removed; retrieval in `sangam/docs/records/SPIKE-ARCHIVE.md` |
 
 ## What it holds
 

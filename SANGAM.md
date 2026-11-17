@@ -4260,7 +4260,7 @@ No login, CAPTCHA or other protection was bypassed. When a search engine showed 
 
 | Field | Content |
 |---|---|
-| Owner's decision (paraphrased from Hindi) | Testing stops: the Stage B evidence is enough. **Operaton is final as the base engine.** All of Flowable's strengths are to be brought into Operaton/Sangam; the gap list is `spike/results/FLOWABLE-INTO-OPERATON.md`. Answers to the doubts raised: dependency + plugins; Apache 2.0; public GitHub now; run all Stage C work in parallel; publish after removing local paths. |
+| Owner's decision (paraphrased from Hindi) | Testing stops: the Stage B evidence is enough. **Operaton is final as the base engine.** All of Flowable's strengths are to be brought into Operaton/Sangam; the gap list is `sangam/docs/records/FLOWABLE-INTO-OPERATON.md`. Answers to the doubts raised: dependency + plugins; Apache 2.0; public GitHub now; run all Stage C work in parallel; publish after removing local paths. |
 | **ADR-D-1 FINAL** | Base engine = **Operaton 2.2.x** (XI.10: 85.2 vs 72.1). The "owner may override" clause is closed. Flowable is no longer a candidate. Its adapter and results stay in `spike/` only as evidence. |
 | **ADR-D-16 Integration model** | Sangam consumes Operaton as **Maven dependencies** and adds behaviour through **plugins and SPIs**: process-engine plugins, parse listeners, command interceptors, history handlers, the DMN SPI and the product layer. A change to the engine source is allowed only when no extension point exists. Each such change is recorded in the patch ledger (P-n), kept minimal, and **offered upstream** to Operaton. The first example is P-1 (MySQL datetime precision). Sangam does not maintain a hard fork. |
 | **ADR-D-17 Licence** | **Apache License 2.0** for all Sangam code, matching Operaton and Flowable. Ported code keeps its original headers and is marked modified (NOTICE). The rules LIC-1…11 stay in force: no GraalJS; no bundled Oracle, Db2 or MySQL drivers; Liquibase pinned at 4.33.0. |
@@ -6658,7 +6658,7 @@ Methods are in `spike/results/scorecard.md`. The patch and market-fit methods ar
 
 **Evidence:**
 - `sangam/`: 32 reactor modules (`sangam/pom.xml`, `<module>` entries, including `sangam-bom`, `sdks/java` and `tools/sangam-cli`), four more Tier-1 SDKs, the UI, `deploy/` and `perf/`. Each has a README coverage map, except `sangam-core`. (The 2026-11-05 edition counted 25 Maven modules.)
-- `spike/results/TRACEABILITY-REGISTER.md` and `TRACEABILITY-REGISTER.csv`.
+- `sangam/docs/records/TRACEABILITY-REGISTER.md` and `TRACEABILITY-REGISTER.csv`.
 
 **Status (updated 2026-11-12):** the code compiles (compile-only gate). The 2026-11-05 statement "only H2 fast tests exist" no longer holds. Besides the unit and H2 tests, there are 38 integration/acceptance suites (`*IT`, failsafe profile `sangam-db-it`, Testcontainers):
 - `sangam-server` acceptance: `ServerStartsIT`, `E1CorpusCoverageIT`, `E2AuthorizationIT`, `E3LeaseIT`, `E4IdempotencyIT`, `E5OutboxInboxIT`, `E7DeleteIT`, `E8DstTimerIT`, `E10PlatformFitIT`, `E11GapSetIT`, `E16aPatternsIT`, `E16bPatternsIT`, `E16cPatternIT`, `E17aDomainsIT`, `E17bDomainIT`, `E17cDomainIT`, `PlugAndPlayIT`, `T08PoisonOutboxIT`, `T35RestoreIT`, `TScaleLoadIT`, `CrossTenantIsolationIT`, `FwtWorkerCompatIT`, `WorkApiLedgerIT`, `TenantQuotaIT`, `NullBindDialectIT`, `MysqlUtf8mb4PatchIT`;
@@ -6716,7 +6716,7 @@ Earlier runs of some of these are recorded in `sangam/TESTING-GAP-REGISTER.md` (
 
 ## XII.3 Traceability register
 
-The register is [`spike/results/TRACEABILITY-REGISTER.md`](spike/results/TRACEABILITY-REGISTER.md), with the full table in `TRACEABILITY-REGISTER.csv`. For every id it records:
+The register is [`sangam/docs/records/TRACEABILITY-REGISTER.md`](sangam/docs/records/TRACEABILITY-REGISTER.md), with the full table in `TRACEABILITY-REGISTER.csv`. For every id it records:
 - its status;
 - the module, file or pack that covers it;
 - the tests that will prove it.

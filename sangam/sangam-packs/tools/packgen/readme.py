@@ -368,7 +368,7 @@ def write(path, packs):
     for c in secs:
         w(f'| {c} | ' + ', '.join(f'`{p.id}`' for p in cov[c]) + ' |')
     w('')
-    w('### 6.6 Public finance (IFMS) requirements IFC-*, IFS-*, GA-* (`../../spike/results/IFMS-*-REQUIREMENTS.md`)')
+    w('### 6.6 Public finance (IFMS) requirements IFC-*, IFS-*, GA-* (`../docs/records/IFMS-*-REQUIREMENTS.md`)')
     w('')
     w('The `gov.ifms.*` packs are built on the generic services: `sangam-config` (profiles, classification, '
       'document-type catalogue, number series; connectors `config.*`) and `sangam-ledger` (limit / fund ledger; '

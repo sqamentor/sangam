@@ -5,9 +5,9 @@ import glob, json, os, re
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..'))
 PACKS = os.path.join(ROOT, 'sangam', 'sangam-packs', 'src', 'main', 'resources', 'packs')
 OUT = os.path.join(ROOT, 'sangam', 'sangam-packs', 'src', 'main', 'resources', 'profiles', 'README.md')
-central = open(os.path.join(ROOT, 'spike', 'results', 'IFMS-CENTRAL-REQUIREMENTS.md'), encoding='utf-8').read()
-states = open(os.path.join(ROOT, 'spike', 'results', 'IFMS-STATES-REQUIREMENTS.md'), encoding='utf-8').read()
-delta = open(os.path.join(ROOT, 'spike', 'results', 'IFMS-RESEARCH-DELTA.md'), encoding='utf-8').read()
+central = open(os.path.join(ROOT, 'sangam', 'docs', 'records', 'IFMS-CENTRAL-REQUIREMENTS.md'), encoding='utf-8').read()
+states = open(os.path.join(ROOT, 'sangam', 'docs', 'records', 'IFMS-STATES-REQUIREMENTS.md'), encoding='utf-8').read()
+delta = open(os.path.join(ROOT, 'sangam', 'docs', 'records', 'IFMS-RESEARCH-DELTA.md'), encoding='utf-8').read()
 
 cov = {}
 for pj in glob.glob(os.path.join(PACKS, '*', 'pack.json')):
@@ -185,7 +185,7 @@ w('# Government finance profiles (data): GOI, its departments and all 36 States 
 w('')
 w('Domain knowledge as data (ADR-D-20). Read by `sangam-config` (`ProfileLoader.loadIndex(cl, "profiles/profiles.idx")`), '
   'resolved per tenant scope by `ProfileResolver`, used by the `gov.ifms.*` packs through the `config.*` and `ledger.*` connectors. '
-  'Generated from the research documents (`spike/results/IFMS-CENTRAL-REQUIREMENTS.md`, `IFMS-STATES-REQUIREMENTS.md`, '
+  'Generated from the research documents (`sangam/docs/records/IFMS-CENTRAL-REQUIREMENTS.md`, `IFMS-STATES-REQUIREMENTS.md`, '
   '`IFMS-RESEARCH-DELTA.md`); after generation these files are the source and are edited as data (maker-checker through '
   '`ConfigAdminService`).')
 w('')

@@ -13,7 +13,7 @@
 
 ## Requirements and tests (traceability)
 
-<!-- The register ids this change covers (spike/results/TRACEABILITY-REGISTER.csv, e.g. R4, FW-07, CMP-012) and the
+<!-- The register ids this change covers (sangam/docs/records/TRACEABILITY-REGISTER.csv, e.g. R4, FW-07, CMP-012) and the
      tests that prove each one. The governance workflow reports register rows that have no proving test. -->
 - Ids:
 - Tests:

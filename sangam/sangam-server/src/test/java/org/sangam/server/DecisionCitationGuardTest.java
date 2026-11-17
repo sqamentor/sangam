@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
  * <ul>
  *   <li>{@code ADR-D-n} must be a row {@code | D-n |} of the SANGAM.md decision register;</li>
  *   <li>{@code FLOWABLE-INTO-OPERATON D-nn} / {@code FLOWABLE-INTO-OPERATON FC-nn} must be a row of
- *       {@code spike/results/FLOWABLE-INTO-OPERATON.md};</li>
+ *       {@code sangam/docs/records/FLOWABLE-INTO-OPERATON.md};</li>
  *   <li>for both, the lines around the citation must contain a topic keyword of that id
  *       ({@code citations/decision-topics.txt}), so an id that points at the wrong entry fails;</li>
  *   <li>a bare {@code D-nn} / {@code FC-nn} is allowed only as a quoted finding code that exists in the FIO register,
@@ -44,7 +44,7 @@ class DecisionCitationGuardTest {
         Path sangam = Path.of("..").toAbsolutePath().normalize();
         Path repo = sangam.getParent();
         Set<String> adr = ids(Files.readString(repo.resolve("SANGAM.md")), "^\\|\\s*(D-\\d+)\\s*\\|");
-        Set<String> fio = ids(Files.readString(repo.resolve("spike/results/FLOWABLE-INTO-OPERATON.md")),
+        Set<String> fio = ids(Files.readString(repo.resolve("sangam/docs/records/FLOWABLE-INTO-OPERATON.md")),
                 "^\\|\\s*((?:D|FC)-\\d+)\\s*\\|");
         Map<String, List<String>> topics = topics();
         List<String> errors = new ArrayList<>();
