@@ -34,11 +34,12 @@ const RULES: [string[], Status][] = [
   [['IN', 'RUNNING', 'ACTIVE', 'CLAIMED', 'ASSIGNED'], 'inProgress'],
   [['PENDING', 'AWAIT', 'WAITING', 'QUEUED', 'CREATED', 'OPEN', 'NEW'], 'waiting'],
 ];
-const words = (raw: string) => raw.toUpperCase().split(/[^A-Z]+/).filter(Boolean);
+/** A state may be missing in a record (null/undefined at run time): it has no words and no vocabulary entry. */
+const words = (raw: string | null | undefined) => String(raw ?? '').toUpperCase().split(/[^A-Z]+/).filter(Boolean);
 const hits = (w: string[], stems: string[]) => w.some((x) => stems.some((s) => (s === 'IN' ? x === 'IN' : x.startsWith(s))));
 
 /** The vocabulary word of a raw server state, or null when the state is not a progress state (e.g. UP, VALID). */
-export function statusOf(raw: string): Status | null {
+export function statusOf(raw: string | null | undefined): Status | null {
   const w = words(raw);
   if (w[0] === 'IN' && w[1] === 'REVIEW') return null;
   if (w.join('_').includes('SENT_BACK')) return 'sentBack';
@@ -53,7 +54,7 @@ const OTHER: [string[], Tone][] = [
 ];
 
 /** The one colour of a raw state on every screen. */
-export function toneOf(raw: string): Tone {
+export function toneOf(raw: string | null | undefined): Tone {
   const s = statusOf(raw);
   if (s) return STATUS[s].tone;
   const w = words(raw);
