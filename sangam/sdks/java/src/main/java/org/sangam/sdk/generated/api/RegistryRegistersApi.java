@@ -48,15 +48,16 @@ public final class RegistryRegistersApi {
      *
      * <p>RegisterController.define (sangam-rest).
      *
-     * <p>{@code PUT /registry/registers/{registerKey}} (operationId {@code registryRegisterDefine}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param registerKey path parameter {@code registerKey}
+     * <p>{@code PUT /registry/registers/by-register-key} (operationId {@code registryRegisterDefine}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param registerKey query parameter {@code registerKey}. Register key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> registryRegisterDefine(String registerKey, RegistryRegisterDefineBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/registry/registers/" + HttpTransport.seg(String.valueOf(registerKey)));
+    public java.util.Map<String, Object> registryRegisterDefine(RegistryRegisterDefineBody body, String registerKey, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/registry/registers/by-register-key");
         req.body(body);
+        req.query("registerKey", registerKey);
         return call.json(req, options, R_registryRegisterDefine);
     }
 
@@ -65,13 +66,14 @@ public final class RegistryRegistersApi {
      *
      * <p>RegisterController.definition (sangam-rest).
      *
-     * <p>{@code GET /registry/registers/{registerKey}} (operationId {@code registryRegisterDefinition}); permission {@code registry.read}.
-     * @param registerKey path parameter {@code registerKey}
+     * <p>{@code GET /registry/registers/by-register-key} (operationId {@code registryRegisterDefinition}); permission {@code registry.read}.
+     * @param registerKey query parameter {@code registerKey}. Register key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> registryRegisterDefinition(String registerKey, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/registry/registers/" + HttpTransport.seg(String.valueOf(registerKey)));
+        ApiRequest req = ApiRequest.get("/registry/registers/by-register-key");
+        req.query("registerKey", registerKey);
         return call.json(req, options, R_registryRegisterDefinition);
     }
 
@@ -94,15 +96,16 @@ public final class RegistryRegistersApi {
      *
      * <p>RegisterController.append (sangam-rest).
      *
-     * <p>{@code POST /registry/registers/{registerKey}/entries} (operationId {@code registryRegisterAppend}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param registerKey path parameter {@code registerKey}
+     * <p>{@code POST /registry/registers/by-register-key/entries} (operationId {@code registryRegisterAppend}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param registerKey query parameter {@code registerKey}. Register key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
-    public java.util.Map<String, Object> registryRegisterAppend(String registerKey, RegistryRegisterAppendBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/registry/registers/" + HttpTransport.seg(String.valueOf(registerKey)) + "/entries");
+    public java.util.Map<String, Object> registryRegisterAppend(RegistryRegisterAppendBody body, String registerKey, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/registry/registers/by-register-key/entries");
         req.body(body);
+        req.query("registerKey", registerKey);
         return call.json(req, options, R_registryRegisterAppend);
     }
 
@@ -111,8 +114,8 @@ public final class RegistryRegistersApi {
      *
      * <p>RegisterController.books (sangam-rest).
      *
-     * <p>{@code GET /registry/registers/{registerKey}/books} (operationId {@code registryRegisterBooks}); permission {@code registry.read}.
-     * @param registerKey path parameter {@code registerKey}
+     * <p>{@code GET /registry/registers/by-register-key/books} (operationId {@code registryRegisterBooks}); permission {@code registry.read}.
+     * @param registerKey query parameter {@code registerKey}. Register key; may carry '/' or ':'
      * @param scope query parameter {@code scope}, or null
      * @param page query parameter {@code page}, or null
      * @param size query parameter {@code size}, or null
@@ -120,7 +123,8 @@ public final class RegistryRegistersApi {
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<java.util.Map<String, Object>> registryRegisterBooks(String registerKey, String scope, Integer page, Integer size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/registry/registers/" + HttpTransport.seg(String.valueOf(registerKey)) + "/books");
+        ApiRequest req = ApiRequest.get("/registry/registers/by-register-key/books");
+        req.query("registerKey", registerKey);
         req.query("scope", scope);
         req.query("page", page);
         req.query("size", size);
@@ -282,14 +286,15 @@ public final class RegistryRegistersApi {
      *
      * <p>RegisterController.verifyExtract (sangam-rest).
      *
-     * <p>{@code GET /registry/registers/public/{tenant}/extracts/verify} (operationId {@code registryRegisterVerifyExtract}).
-     * @param tenant path parameter {@code tenant}
+     * <p>{@code GET /registry/registers/public/by-tenant/extracts/verify} (operationId {@code registryRegisterVerifyExtract}).
+     * @param tenant query parameter {@code tenant}. Tenant; may carry '/' or ':'
      * @param code query parameter {@code code}
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> registryRegisterVerifyExtract(String tenant, String code, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/registry/registers/public/" + HttpTransport.seg(String.valueOf(tenant)) + "/extracts/verify");
+        ApiRequest req = ApiRequest.get("/registry/registers/public/by-tenant/extracts/verify");
+        req.query("tenant", tenant);
         req.query("code", code);
         return call.json(req, options, R_registryRegisterVerifyExtract);
     }

@@ -170,13 +170,15 @@ final class RegistryInstrumentsApi
      *
      * InstrumentController.transition (sangam-rest).
      *
-     * POST /registry/instruments/{id}/transitions/{name} (operationId registryInstrumentTransition); permission registry.write; result stored atomically with the state change.
+     * POST /registry/instruments/{id}/transitions/by-name (operationId registryInstrumentTransition); permission registry.write; result stored atomically with the state change.
+     * @param string $name query name
      * @param string|null $ifMatch header If-Match
      * @return array<string, mixed>
      */
     public function registryInstrumentTransition(string $id, string $name, Model\RegistryInstrumentTransitionBody|array|null $body = null, ?string $ifMatch = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/registry/instruments/' . HttpTransport::seg((string) $id) . '/transitions/' . HttpTransport::seg((string) $name));
+        $req = ApiRequest::post('/registry/instruments/' . HttpTransport::seg((string) $id) . '/transitions/by-name');
+        $req->query('name', $name);
         $req->header('If-Match', Support::headerValue($ifMatch));
         if ($body !== null) {
             $req->body($body);
@@ -381,13 +383,15 @@ final class RegistryInstrumentsApi
      *
      * InstrumentController.verifyCode (sangam-rest).
      *
-     * GET /registry/instruments/public/{tenant}/verify (operationId registryInstrumentVerifyCode).
+     * GET /registry/instruments/public/by-tenant/verify (operationId registryInstrumentVerifyCode).
+     * @param string $tenant query tenant
      * @param string $code query code
      * @return array<string, mixed>
      */
     public function registryInstrumentVerifyCode(string $tenant, string $code, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/registry/instruments/public/' . HttpTransport::seg((string) $tenant) . '/verify');
+        $req = ApiRequest::get('/registry/instruments/public/by-tenant/verify');
+        $req->query('tenant', $tenant);
         $req->query('code', $code);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }

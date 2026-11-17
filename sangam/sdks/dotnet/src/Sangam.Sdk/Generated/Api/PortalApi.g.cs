@@ -29,22 +29,24 @@ public sealed class PortalApi
     /// <summary>
     /// Application form of a service
     /// The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); versionHash is the form's own. 404 for a service not in the catalogue or without a form.
-    /// GET /portal/services/{key}/form (operationId getPortalServiceForm); permission portal.use.
+    /// GET /portal/services/by-key/form (operationId getPortalServiceForm); permission portal.use.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.FormVersion?> GetPortalServiceFormAsync(string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/portal/services/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/form");
+        var req = ApiRequest.Get($"/portal/services/by-key/form");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         return await _calls.JsonAsync<M.FormVersion?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Consent notice of a service
     /// The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
-    /// GET /portal/services/{key}/notice (operationId getPortalServiceNotice); permission portal.use.
+    /// GET /portal/services/by-key/notice (operationId getPortalServiceNotice); permission portal.use.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.PortalNotice?> GetPortalServiceNoticeAsync(string key, string? lang = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/portal/services/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/notice");
+        var req = ApiRequest.Get($"/portal/services/by-key/notice");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         req.WithQuery("lang", GeneratedCalls.Q(lang));
         return await _calls.JsonAsync<M.PortalNotice?>(req, options, cancellationToken).ConfigureAwait(false);
     }

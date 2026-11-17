@@ -96,14 +96,15 @@ public final class TenantOperationsSecretsApi {
      *
      * <p>The value is write-only.
      *
-     * <p>{@code PUT /ops/secrets/{name}} (operationId {@code uiOpsPutSecret}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param name path parameter {@code name}
+     * <p>{@code PUT /ops/secrets/by-name} (operationId {@code uiOpsPutSecret}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param name query parameter {@code name}. Secret name; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void uiOpsPutSecret(String name, OpsUiSecretRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/ops/secrets/" + HttpTransport.seg(String.valueOf(name)));
+    public void uiOpsPutSecret(OpsUiSecretRequest body, String name, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/ops/secrets/by-name");
         req.body(body);
+        req.query("name", name);
         call.none(req, options);
     }
 
@@ -112,13 +113,14 @@ public final class TenantOperationsSecretsApi {
      *
      * <p>Needs a reason.
      *
-     * <p>{@code DELETE /ops/secrets/{name}} (operationId {@code uiOpsDeleteSecret}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param name path parameter {@code name}
+     * <p>{@code DELETE /ops/secrets/by-name} (operationId {@code uiOpsDeleteSecret}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param name query parameter {@code name}. Secret name; may carry '/' or ':'
      * @param reason query parameter {@code reason}
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void uiOpsDeleteSecret(String name, String reason, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/ops/secrets/" + HttpTransport.seg(String.valueOf(name)));
+        ApiRequest req = ApiRequest.delete("/ops/secrets/by-name");
+        req.query("name", name);
         req.query("reason", reason);
         call.none(req, options);
     }

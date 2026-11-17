@@ -105,12 +105,13 @@ public final class RostersApi {
      *
      * <p>RosterController.deleteShift (sangam-rest).
      *
-     * <p>{@code DELETE /rosters/shifts/{shiftId}} (operationId {@code rostersRosterDeleteShift}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param shiftId path parameter {@code shiftId}
+     * <p>{@code DELETE /rosters/shifts/by-shift-id} (operationId {@code rostersRosterDeleteShift}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param shiftId query parameter {@code shiftId}. Shift id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void rostersRosterDeleteShift(String shiftId, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/rosters/shifts/" + HttpTransport.seg(String.valueOf(shiftId)));
+        ApiRequest req = ApiRequest.delete("/rosters/shifts/by-shift-id");
+        req.query("shiftId", shiftId);
         call.none(req, options);
     }
 
@@ -153,12 +154,13 @@ public final class RostersApi {
      *
      * <p>RosterController.deleteRotation (sangam-rest).
      *
-     * <p>{@code DELETE /rosters/rotations/{rotationId}} (operationId {@code rostersRosterDeleteRotation}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param rotationId path parameter {@code rotationId}
+     * <p>{@code DELETE /rosters/rotations/by-rotation-id} (operationId {@code rostersRosterDeleteRotation}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param rotationId query parameter {@code rotationId}. Rotation id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void rostersRosterDeleteRotation(String rotationId, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/rosters/rotations/" + HttpTransport.seg(String.valueOf(rotationId)));
+        ApiRequest req = ApiRequest.delete("/rosters/rotations/by-rotation-id");
+        req.query("rotationId", rotationId);
         call.none(req, options);
     }
 
@@ -273,16 +275,17 @@ public final class RostersApi {
      *
      * <p>RosterController.setMember (sangam-rest).
      *
-     * <p>{@code PUT /rosters/periods/{periodId}/members/{personId}} (operationId {@code rostersRosterSetMember}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * <p>{@code PUT /rosters/periods/{periodId}/members/by-person-id} (operationId {@code rostersRosterSetMember}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param periodId path parameter {@code periodId}
-     * @param personId path parameter {@code personId}
      * @param body request body
+     * @param personId query parameter {@code personId}. Person id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> rostersRosterSetMember(String periodId, String personId, RosterRestPortMemberRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/rosters/periods/" + HttpTransport.seg(String.valueOf(periodId)) + "/members/" + HttpTransport.seg(String.valueOf(personId)));
+    public java.util.Map<String, Object> rostersRosterSetMember(String periodId, RosterRestPortMemberRequest body, String personId, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/rosters/periods/" + HttpTransport.seg(String.valueOf(periodId)) + "/members/by-person-id");
         req.body(body);
+        req.query("personId", personId);
         return call.json(req, options, R_rostersRosterSetMember);
     }
 
@@ -291,13 +294,14 @@ public final class RostersApi {
      *
      * <p>RosterController.removeMember (sangam-rest).
      *
-     * <p>{@code DELETE /rosters/periods/{periodId}/members/{personId}} (operationId {@code rostersRosterRemoveMember}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * <p>{@code DELETE /rosters/periods/{periodId}/members/by-person-id} (operationId {@code rostersRosterRemoveMember}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param periodId path parameter {@code periodId}
-     * @param personId path parameter {@code personId}
+     * @param personId query parameter {@code personId}. Person id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void rostersRosterRemoveMember(String periodId, String personId, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/rosters/periods/" + HttpTransport.seg(String.valueOf(periodId)) + "/members/" + HttpTransport.seg(String.valueOf(personId)));
+        ApiRequest req = ApiRequest.delete("/rosters/periods/" + HttpTransport.seg(String.valueOf(periodId)) + "/members/by-person-id");
+        req.query("personId", personId);
         call.none(req, options);
     }
 
@@ -342,13 +346,14 @@ public final class RostersApi {
      *
      * <p>RosterController.removeDemand (sangam-rest).
      *
-     * <p>{@code DELETE /rosters/periods/{periodId}/demand/{demandId}} (operationId {@code rostersRosterRemoveDemand}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * <p>{@code DELETE /rosters/periods/{periodId}/demand/by-demand-id} (operationId {@code rostersRosterRemoveDemand}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param periodId path parameter {@code periodId}
-     * @param demandId path parameter {@code demandId}
+     * @param demandId query parameter {@code demandId}. Demand id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void rostersRosterRemoveDemand(String periodId, String demandId, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/rosters/periods/" + HttpTransport.seg(String.valueOf(periodId)) + "/demand/" + HttpTransport.seg(String.valueOf(demandId)));
+        ApiRequest req = ApiRequest.delete("/rosters/periods/" + HttpTransport.seg(String.valueOf(periodId)) + "/demand/by-demand-id");
+        req.query("demandId", demandId);
         call.none(req, options);
     }
 
@@ -581,8 +586,8 @@ public final class RostersApi {
      *
      * <p>RosterController.personalRoster (sangam-rest).
      *
-     * <p>{@code GET /rosters/people/{personId}/duties} (operationId {@code rostersRosterPersonalRoster}); permission {@code resources.read}.
-     * @param personId path parameter {@code personId}
+     * <p>{@code GET /rosters/people/by-person-id/duties} (operationId {@code rostersRosterPersonalRoster}); permission {@code resources.read}.
+     * @param personId query parameter {@code personId}. Person id; may carry '/' or ':'
      * @param from query parameter {@code from}
      * @param to query parameter {@code to}
      * @param page query parameter {@code page}, or null
@@ -591,7 +596,8 @@ public final class RostersApi {
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<java.util.Map<String, Object>> rostersRosterPersonalRoster(String personId, java.time.Instant from, java.time.Instant to, Integer page, Integer size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/rosters/people/" + HttpTransport.seg(String.valueOf(personId)) + "/duties");
+        ApiRequest req = ApiRequest.get("/rosters/people/by-person-id/duties");
+        req.query("personId", personId);
         req.query("from", from);
         req.query("to", to);
         req.query("page", page);

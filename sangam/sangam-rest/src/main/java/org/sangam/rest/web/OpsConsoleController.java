@@ -78,16 +78,18 @@ public class OpsConsoleController {
         return Lists.ok(console.topics(ctx));
     }
 
-    @PostMapping("/topics/{name}/pause")
-    public ResponseEntity<OpsConsolePort.TopicInfo> pauseTopic(RequestContext ctx, @PathVariable String name,
+    /** Decision 393: the value can carry '/' or ':', refused encoded in a path segment, so it is a required query parameter. */
+    @PostMapping("/topics/by-name/pause")
+    public ResponseEntity<OpsConsolePort.TopicInfo> pauseTopic(RequestContext ctx, @RequestParam("name") String name,
                                                                @RequestBody OpsConsolePort.ReasonRequest body) {
         permissions.require(ctx, Permissions.OPS_WRITE);
         ProcessController.requireReason(body == null ? null : body.reason());
         return Lists.okRef(name, console.setTopicPaused(ctx, name, true, body.reason()));
     }
 
-    @PostMapping("/topics/{name}/resume")
-    public ResponseEntity<OpsConsolePort.TopicInfo> resumeTopic(RequestContext ctx, @PathVariable String name,
+    /** Decision 393: the value can carry '/' or ':', refused encoded in a path segment, so it is a required query parameter. */
+    @PostMapping("/topics/by-name/resume")
+    public ResponseEntity<OpsConsolePort.TopicInfo> resumeTopic(RequestContext ctx, @RequestParam("name") String name,
                                                                 @RequestBody OpsConsolePort.ReasonRequest body) {
         permissions.require(ctx, Permissions.OPS_WRITE);
         ProcessController.requireReason(body == null ? null : body.reason());
@@ -138,8 +140,9 @@ public class OpsConsoleController {
         return Lists.created("/api/v1/ops/reconciliation/" + id, e.id(), e);
     }
 
-    @PutMapping("/cleanup/ttl/{key}")
-    public ResponseEntity<OpsPort.CleanupStatus> setTtl(RequestContext ctx, @PathVariable String key,
+    /** Decision 393: the value can carry '/' or ':', refused encoded in a path segment, so it is a required query parameter. */
+    @PutMapping("/cleanup/ttl/by-key")
+    public ResponseEntity<OpsPort.CleanupStatus> setTtl(RequestContext ctx, @RequestParam("key") String key,
                                                         @RequestBody OpsConsolePort.TtlRequest body) {
         permissions.require(ctx, Permissions.OPS_WRITE);
         ProcessController.requireReason(body == null ? null : body.reason());
@@ -153,8 +156,9 @@ public class OpsConsoleController {
         return Lists.ok(console.notificationFailures(ctx, Lists.page(page, size)));
     }
 
-    @PostMapping("/notification-failures/{id}/resend")
-    public ResponseEntity<Void> resend(RequestContext ctx, @PathVariable String id,
+    /** Decision 393: the value can carry '/' or ':', refused encoded in a path segment, so it is a required query parameter. */
+    @PostMapping("/notification-failures/by-id/resend")
+    public ResponseEntity<Void> resend(RequestContext ctx, @RequestParam("id") String id,
                                        @RequestBody OpsConsolePort.ReasonRequest body) {
         permissions.require(ctx, Permissions.OPS_WRITE);
         ProcessController.requireReason(body == null ? null : body.reason());

@@ -299,6 +299,30 @@ public class SecurityWiring {
         return created;
     }
 
+    /** Actor id of the start-time policy split (decision 392), recorded on its audit events and superseded changes. */
+    static final String POLICY_SPLIT_ACTOR = SecurityBootstrap.POLICY_SPLIT_ACTOR;
+
+    /**
+     * Decision 392 data migration (decision 409): at start, every tenant's policies that name several principals are
+     * split into one policy id per principal, audited per split, and pending four-eyes changes they invalidate are
+     * marked SUPERSEDED. Cluster-safe (tenant row lock) and idempotent; a failure stops the start (fail closed) with
+     * the failing tenant's transaction rolled back.
+     */
+    @Bean
+    public org.springframework.boot.ApplicationRunner sangamPolicySplit(SangamSecurity security,
+                                                                        Transactions sangamProductTransactions) {
+        return args -> splitPolicies(security, sangamProductTransactions);
+    }
+
+    static Map<String, org.sangam.security.admin.PolicyAdminService.SplitResult> splitPolicies(SangamSecurity security,
+                                                                                              Transactions tx) {
+        var split = security.policies().splitMultiPrincipalOfEveryTenant(tx, POLICY_SPLIT_ACTOR);
+        if (!split.isEmpty()) {
+            LOG.info("multi-principal policies split at start (decision 392): {}", split);
+        }
+        return split;
+    }
+
     /** Dev only: tenant + administrator grants on an empty database (see {@link SecurityBootstrap}). */
     @Bean
     @ConditionalOnProperty(name = "sangam.security.bootstrap.enabled", havingValue = "true")

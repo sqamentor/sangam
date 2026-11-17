@@ -34,7 +34,7 @@ const resTypes: ScreenDef = {
   // M-051: Map body read by ResourceType.fromMap (ResourceType.java:112-139; bookingMode SLOT | ALLOTMENT | BOTH | NONE, :58-66).
   // Further keys (refundTiers, attributes, decisions, limits) go in "More fields".
   create: { id: 'define', label: 'act.defineType', path: '/resources/types', fields: [f.text('typeId', undefined, true), f.text('name', undefined, true), f.text('kind'), f.select('bookingMode', ['SLOT', 'ALLOTMENT', 'BOTH', 'NONE'], 'fld.bookingMode'), f.num('slotMinutes', 'fld.slotMinutes'), f.num('defaultCapacity', 'fld.defaultCapacity'), f.bool('requiresApproval', 'fld.requiresApproval'), f.text('approvalProcessKey', 'fld.approvalProcessKey'), f.text('currency')] },
-  actions: [{ id: 'retire', label: 'act.retire', method: 'DELETE', path: '/resources/types/{typeId}', reason: 'query', danger: true }],
+  actions: [{ id: 'retire', label: 'act.retire', method: 'DELETE', path: '/resources/types/by-type-id?typeId={typeId}', reason: 'query', danger: true }],
 };
 
 const resItems: ScreenDef = {
@@ -45,12 +45,12 @@ const resItems: ScreenDef = {
   filters: [f.text('typeId'), f.text('orgUnitId'), f.text('locationId'), f.num('minCapacity'), f.text('status'), f.text('text', 'fld.search')],
   columns: [c('name'), c('typeId'), c('capacity'), c('status'), c('locationId'), c('orgUnitId')],
   rowKey: ['resourceId', 'id'],
-  detail: '/resources/items/{resourceId}',
-  sections: [{ id: 'children', label: 'mod.registry.children', path: '/resources/items/{resourceId}/children' }],
+  detail: '/resources/items/by-resource-id?resourceId={resourceId}',
+  sections: [{ id: 'children', label: 'mod.registry.children', path: '/resources/items/by-resource-id/children?resourceId={resourceId}' }],
   create: { id: 'create', label: 'act.create', path: '/resources/items', fields: [f.text('typeId', undefined, true), f.text('name', undefined, true), f.num('capacity'), f.text('parentId'), f.text('orgUnitId'), f.text('locationId'), f.text('calendarId'), f.json('attributes')] },
   toolbar: [
     // M-051: {name, zone, businessCalendarId, closedOnHolidays, hours: {MONDAY: ["09:00-17:00"]}} (AvailabilityCalendar.java:58-79)
-    { id: 'calendar', label: 'act.saveCalendar', method: 'PUT', path: '/resources/calendars/{calendarId}', fields: [f.path(f.text('calendarId', undefined, true)), f.text('name'), f.text('zone', 'fld.zone'), f.json('hours', 'fld.openingHours', true), f.text('businessCalendarId', 'fld.businessCalendarId'), f.bool('closedOnHolidays', 'fld.closedOnHolidays')], hint: 'mod.resources.calendarHint' },
+    { id: 'calendar', label: 'act.saveCalendar', method: 'PUT', path: '/resources/calendars/by-calendar-id?calendarId={calendarId}', fields: [f.path(f.text('calendarId', undefined, true)), f.text('name'), f.text('zone', 'fld.zone'), f.json('hours', 'fld.openingHours', true), f.text('businessCalendarId', 'fld.businessCalendarId'), f.bool('closedOnHolidays', 'fld.closedOnHolidays')], hint: 'mod.resources.calendarHint' },
     { id: 'blackout', label: 'act.addBlackout', path: '/resources/blackouts', fields: [f.text('resourceId', undefined, true), f.dt('from', undefined, true), f.dt('to', undefined, true)], reason: 'body' },
     // M-051: SlotTemplate(templateId, resourceId, weekdays, from, to, slotMinutes, unitsPerSlot, validFrom, validTo, attributes) (CalendarService.java:51-54)
     { id: 'slots', label: 'act.saveSlotTemplate', method: 'PUT', path: '/resources/slot-templates', fields: [f.text('templateId', 'fld.templateId'), f.text('resourceId', undefined, true), f.json('weekdays', 'fld.weekdays', true), f.text('from', 'fld.fromTime', true), f.text('to', 'fld.toTime', true), f.num('slotMinutes', 'fld.slotMinutes', true), f.num('unitsPerSlot', 'fld.unitsPerSlot', true), f.date('validFrom'), f.date('validTo')], hint: 'mod.resources.slotHint' },
@@ -58,9 +58,9 @@ const resItems: ScreenDef = {
     { id: 'search', label: 'act.searchAvailable', path: '/resources/search-available', fields: [f.text('filter.typeId', 'fld.typeId'), f.num('filter.minCapacity', 'fld.minCapacity'), f.dt('from', undefined, true), f.dt('to', undefined, true), f.num('quantity', 'fld.quantity')], showResult: true },
   ],
   actions: [
-    { id: 'status', label: 'act.setStatus', path: '/resources/items/{resourceId}/status', fields: [f.select('status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE'], undefined, true)], reason: 'body' },
+    { id: 'status', label: 'act.setStatus', path: '/resources/items/by-resource-id/status?resourceId={resourceId}', fields: [f.select('status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE'], undefined, true)], reason: 'body' },
     // M-051: MoveRequest(newParentId) (ResourcesController.java:63, :162)
-    { id: 'move', label: 'act.move', path: '/resources/items/{resourceId}/move', fields: [f.text('newParentId', 'fld.newParentId', true)], reason: 'body' },
+    { id: 'move', label: 'act.move', path: '/resources/items/by-resource-id/move?resourceId={resourceId}', fields: [f.text('newParentId', 'fld.newParentId', true)], reason: 'body' },
   ],
 };
 
@@ -72,7 +72,7 @@ const bookings: ScreenDef = {
   columns: [c('bookingRef'), c('resourceId'), c('from'), c('to'), c('state'), c('requesterId')],
   rowKey: ['bookingId', 'id', 'bookingRef'],
   detail: '/resources/bookings/{bookingId}',
-  sections: [{ id: 'history', label: 'mod.common.history', path: '/resources/history/booking/{bookingId}' }],
+  sections: [{ id: 'history', label: 'mod.common.history', path: '/resources/history/booking/by-entity-id?entityId={bookingId}' }],
   toolbar: [
     // M-051: HoldRequest(resourceId, startsAt, endsAt, quantity, requesterId, beneficiaryId, partyRef, purpose, ..., boolean bump, ...,
     // boolean waitlistIfFull, ...) (BookingModel.java:60-63); bump and waitlistIfFull are primitives the screen does not offer, sent false
@@ -160,7 +160,7 @@ export function BookingCalendar() {
   });
   const from = weekStart.toISOString();
   const to = new Date(weekStart.getTime() + 7 * 86400000).toISOString();
-  const slots = useAsync(() => http.get<Slot[] | { items: Slot[] }>(`/resources/items/${encodeURIComponent(active)}/slots`, { from, to }), [active, from], !!active);
+  const slots = useAsync(() => http.get<Slot[] | { items: Slot[] }>('/resources/items/by-resource-id/slots', { resourceId: active, from, to }), [active, from], !!active);
   const books = useAsync(() => http.page<Row>('/resources/bookings', { resourceId: active, from, to, size: 200 }), [active, from], !!active);
   const [hold, setHold] = useState<Act | null>(null);
   const list: Slot[] = Array.isArray(slots.data) ? slots.data : (slots.data as { items?: Slot[] } | undefined)?.items ?? [];
@@ -283,25 +283,25 @@ const servicePoints: ScreenDef = {
   list: '/queues/service-points',
   columns: [c('servicePointId'), c('name'), c('status'), c('waiting'), c('slaMinutes')],
   rowKey: ['servicePointId', 'id'],
-  detail: '/queues/service-points/{servicePointId}',
+  detail: '/queues/service-points/by-service-point-id?servicePointId={servicePointId}',
   sections: [
-    { id: 'counters', label: 'mod.queues.counters', path: '/queues/service-points/{servicePointId}/counters' },
-    { id: 'tokens', label: 'mod.queues.tokens', path: '/queues/service-points/{servicePointId}/tokens' },
-    { id: 'stats', label: 'mod.queues.stats', path: '/queues/service-points/{servicePointId}/stats' },
-    { id: 'sla', label: 'mod.queues.slaBreaches', path: '/queues/service-points/{servicePointId}/sla-breaches' },
+    { id: 'counters', label: 'mod.queues.counters', path: '/queues/service-points/by-service-point-id/counters?servicePointId={servicePointId}' },
+    { id: 'tokens', label: 'mod.queues.tokens', path: '/queues/service-points/by-service-point-id/tokens?servicePointId={servicePointId}' },
+    { id: 'stats', label: 'mod.queues.stats', path: '/queues/service-points/by-service-point-id/stats?servicePointId={servicePointId}' },
+    { id: 'sla', label: 'mod.queues.slaBreaches', path: '/queues/service-points/by-service-point-id/sla-breaches?servicePointId={servicePointId}' },
     // M-039: the call log (GET .../call-events, resources.read, QueueController.java:215-220; after / limit default on the server)
-    { id: 'calls', label: 'mod.queues.callEvents', path: '/queues/service-points/{servicePointId}/call-events', columns: [c('eventId'), c('kind'), c('tokenId'), c('counterId'), c('actorId'), c('at')] },
+    { id: 'calls', label: 'mod.queues.callEvents', path: '/queues/service-points/by-service-point-id/call-events?servicePointId={servicePointId}', columns: [c('eventId'), c('kind'), c('tokenId'), c('counterId'), c('actorId'), c('at')] },
   ],
   // M-051: ServicePointRequest(name, resourceId, calendarId, tokenPrefix, slaMinutes, priorityDecision, routingDecision, config) (QueueRestPort.java:52-54)
-  toolbar: [{ id: 'define', label: 'act.defineServicePoint', method: 'PUT', path: '/queues/service-points/{servicePointId}', fields: [f.path(f.text('servicePointId', undefined, true)), f.text('name', undefined, true), f.text('resourceId'), f.text('calendarId'), f.text('tokenPrefix', 'fld.tokenPrefix'), f.num('slaMinutes', undefined, true), f.text('priorityDecision', 'fld.priorityDecision'), f.text('routingDecision', 'fld.routingDecision'), f.json('config', 'fld.queueConfig')] }],
+  toolbar: [{ id: 'define', label: 'act.defineServicePoint', method: 'PUT', path: '/queues/service-points/by-service-point-id?servicePointId={servicePointId}', fields: [f.path(f.text('servicePointId', undefined, true)), f.text('name', undefined, true), f.text('resourceId'), f.text('calendarId'), f.text('tokenPrefix', 'fld.tokenPrefix'), f.num('slaMinutes', undefined, true), f.text('priorityDecision', 'fld.priorityDecision'), f.text('routingDecision', 'fld.routingDecision'), f.json('config', 'fld.queueConfig')] }],
   actions: [
     // M-051: CounterRequest(name, skills) (QueueRestPort.java:56)
-    { id: 'counter', label: 'act.defineCounter', method: 'PUT', path: '/queues/service-points/{servicePointId}/counters/{counterId}', fields: [f.path(f.text('counterId', undefined, true)), f.text('name', undefined, true), f.json('skills')] },
+    { id: 'counter', label: 'act.defineCounter', method: 'PUT', path: '/queues/service-points/by-service-point-id/counters/by-counter-id?servicePointId={servicePointId}&counterId={counterId}', fields: [f.path(f.text('counterId', undefined, true)), f.text('name', undefined, true), f.json('skills')] },
     // M-051: IssueTokenRequest(channel, bookingId, partyId, priorityClass, skill, routingKey, attributes) (QueueRestPort.java:59-60); channel is
     // QueueModel.Channel (QueueModel.java:28); priority classes are the service point's configuration (QueueService.java:352-361)
-    { id: 'token', label: 'act.issueToken', path: '/queues/service-points/{servicePointId}/tokens', fields: [f.select('channel', ['WALK_IN', 'KIOSK', 'SMS', 'QR', 'APPOINTMENT', 'TRANSFER', 'COUNTER']), f.text('priorityClass', 'fld.priorityClass'), f.text('skill', 'fld.skill'), f.text('routingKey', 'fld.routingKey'), f.text('partyId'), f.text('bookingId', 'fld.bookingId')], showResult: true },
-    { id: 'status', label: 'act.setStatus', path: '/queues/service-points/{servicePointId}/status', fields: [f.select('status', ['OPEN', 'PAUSED', 'CLOSED'], undefined, true)], reason: 'body' },
-    { id: 'sweep', label: 'act.noShowSweep', path: '/queues/service-points/{servicePointId}/no-show-sweep', showResult: true },
+    { id: 'token', label: 'act.issueToken', path: '/queues/service-points/by-service-point-id/tokens?servicePointId={servicePointId}', fields: [f.select('channel', ['WALK_IN', 'KIOSK', 'SMS', 'QR', 'APPOINTMENT', 'TRANSFER', 'COUNTER']), f.text('priorityClass', 'fld.priorityClass'), f.text('skill', 'fld.skill'), f.text('routingKey', 'fld.routingKey'), f.text('partyId'), f.text('bookingId', 'fld.bookingId')], showResult: true },
+    { id: 'status', label: 'act.setStatus', path: '/queues/service-points/by-service-point-id/status?servicePointId={servicePointId}', fields: [f.select('status', ['OPEN', 'PAUSED', 'CLOSED'], undefined, true)], reason: 'body' },
+    { id: 'sweep', label: 'act.noShowSweep', path: '/queues/service-points/by-service-point-id/no-show-sweep?servicePointId={servicePointId}', showResult: true },
   ],
 };
 
@@ -377,7 +377,7 @@ export function CounterConsole() {
 export function QueueDisplay() {
   const { servicePointId = '' } = useParams();
   const { t } = useTranslation();
-  const d = useAsync(() => http.get<Row>(`/queues/service-points/${encodeURIComponent(servicePointId)}/display`, { next: 8 }), [servicePointId]);
+  const d = useAsync(() => http.get<Row>('/queues/service-points/by-service-point-id/display', { servicePointId, next: 8 }), [servicePointId]);
   useInterval(() => d.reload(), 5000);
   const calling = (d.data?.calling ?? d.data?.nowServing ?? []) as Row[];
   const next = (d.data?.next ?? d.data?.waiting ?? []) as Row[];
@@ -427,7 +427,7 @@ const shifts: ScreenDef = {
   rowKey: ['shiftId', 'id'],
   // M-051: ShiftRequest(shiftId, code, name, fromTime, durationMinutes, night, skills, zoneId, attributes) (RosterRestPort.java:72-73)
   create: { id: 'save', label: 'act.saveShift', method: 'PUT', path: '/rosters/shifts', fields: [f.text('shiftId', undefined, true), f.text('code'), f.text('name', undefined, true), f.text('fromTime', 'fld.startTime', true), f.num('durationMinutes', 'fld.durationMinutes', true), f.bool('night', 'fld.nightShift'), f.json('skills'), f.text('zoneId', 'fld.zone')] },
-  actions: [{ id: 'delete', label: 'common.delete', method: 'DELETE', path: '/rosters/shifts/{shiftId}', danger: true }],
+  actions: [{ id: 'delete', label: 'common.delete', method: 'DELETE', path: '/rosters/shifts/by-shift-id?shiftId={shiftId}', danger: true }],
 };
 
 const rotations: ScreenDef = {
@@ -438,7 +438,7 @@ const rotations: ScreenDef = {
   rowKey: ['rotationId', 'id'],
   // M-051: RotationRequest(rotationId, name, cycle) (RosterRestPort.java:76)
   create: { id: 'save', label: 'act.saveRotation', method: 'PUT', path: '/rosters/rotations', fields: [f.text('rotationId', undefined, true), f.text('name', undefined, true), f.json('cycle', undefined, true)] },
-  actions: [{ id: 'delete', label: 'common.delete', method: 'DELETE', path: '/rosters/rotations/{rotationId}', danger: true }],
+  actions: [{ id: 'delete', label: 'common.delete', method: 'DELETE', path: '/rosters/rotations/by-rotation-id?rotationId={rotationId}', danger: true }],
 };
 
 const periods: ScreenDef = {
@@ -458,7 +458,7 @@ const periods: ScreenDef = {
   create: { id: 'create', label: 'act.create', path: '/rosters/periods', fields: [f.text('unitId', undefined, true), f.text('name'), f.date('firstDay', 'fld.firstDay', true), f.date('lastDay', 'fld.lastDay', true), f.json('constraints')] },
   actions: [
     // M-051: MemberRequest(seatId, skills, rotationId, rotationOffset, attributes) (RosterRestPort.java:83-84); personId is the path
-    { id: 'member', label: 'act.setMember', method: 'PUT', path: '/rosters/periods/{periodId}/members/{personId}', fields: [f.path(f.text('personId', undefined, true)), f.text('seatId'), f.json('skills'), f.text('rotationId'), f.num('rotationOffset', 'fld.rotationOffset', true, { defaultValue: 0 })] },
+    { id: 'member', label: 'act.setMember', method: 'PUT', path: '/rosters/periods/{periodId}/members/by-person-id?personId={personId}', fields: [f.path(f.text('personId', undefined, true)), f.text('seatId'), f.json('skills'), f.text('rotationId'), f.num('rotationOffset', 'fld.rotationOffset', true, { defaultValue: 0 })] },
     // M-051: DemandRequest(shiftId, skill, weekdays, dutyDay, requiredCount, dutySeatId, locationId) (RosterRestPort.java:87-88)
     { id: 'demand', label: 'act.addDemand', path: '/rosters/periods/{periodId}/demand', fields: [f.text('shiftId', undefined, true), f.date('dutyDay', 'fld.dutyDay'), f.json('weekdays', 'fld.weekdays'), f.num('requiredCount', 'fld.requiredCount', true), f.text('skill', 'fld.skill'), f.text('dutySeatId', 'fld.dutySeatId'), f.text('locationId')] },
     // M-051: ?version plus the constraints map itself (RosterController.java:116-118), keys read by RosterConstraints.from (RosterModel.java:140-155);
@@ -472,7 +472,7 @@ const periods: ScreenDef = {
   ],
   toolbar: [
     // M-039: one person's duties in a window (GET ?from &to, ISO instants, RosterController.java:257-265)
-    { id: 'duties', label: 'act.personDuties', method: 'GET', path: '/rosters/people/{personId}/duties', fields: [f.path(f.text('personId', undefined, true)), f.dt('from', undefined, true), f.dt('to', undefined, true)], noJson: true, showResult: true },
+    { id: 'duties', label: 'act.personDuties', method: 'GET', path: '/rosters/people/by-person-id/duties?personId={personId}', fields: [f.path(f.text('personId', undefined, true)), f.dt('from', undefined, true), f.dt('to', undefined, true)], noJson: true, showResult: true },
   ],
 };
 

@@ -218,7 +218,7 @@ describe('workers and topics', () => {
     expect(screen.getByText('payments, sms')).toBeTruthy();
     fireEvent.click(within(topic).getByRole('button', { name: T('ops.pauseTopic') }));
     reasonAndConfirm('Bank maintenance window');
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/ops/topics/payments/pause', { reason: 'Bank maintenance window' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/ops/topics/by-name/pause?name=payments', { reason: 'Bank maintenance window' }));
   });
 
   it('no workers says so', async () => {
@@ -250,7 +250,7 @@ describe('event registry', () => {
     fireEvent.click(buttonIn(s, 'common.send'));
     await waitFor(() =>
       expect(api.post).toHaveBeenCalledWith(
-        '/events/grievance-in',
+        '/events/by-channel?channel=grievance-in',
         { specversion: '1.0', id: expect.any(String), source: 'sangam-ui', type: 'sangam.test', datacontenttype: 'application/json', data: { ref: 'G-1' } },
         KEY,
       ),
@@ -279,7 +279,7 @@ describe('event registry', () => {
         ],
       }),
     );
-    expect(api.del).toHaveBeenCalledWith('/events/definitions/paid', { reason: 'definition updated' });
+    expect(api.del).toHaveBeenCalledWith('/events/definitions/by-key?key=paid', { reason: 'definition updated' });
   });
 });
 
@@ -295,7 +295,7 @@ describe('notification failures', () => {
     expect(within(r).getByRole('link', { name: T('ops.fixTemplate') }).getAttribute('href')).toBe('/admin/templates');
     fireEvent.click(within(r).getByRole('button', { name: T('ops.resend') }));
     reasonAndConfirm('Template corrected');
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/ops/notification-failures/n1/resend', { reason: 'Template corrected' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/ops/notification-failures/by-id/resend?id=n1', { reason: 'Template corrected' }));
   });
 
   it('none says so', async () => {
@@ -343,7 +343,7 @@ describe('history cleanup', () => {
     expect((within(d).getByLabelText(L('ops.ttlDays')) as HTMLInputElement).value).toBe('365');
     type(d, 'ops.ttlDays', '730');
     reasonAndConfirm('Records rule 2026');
-    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/ops/cleanup/ttl/grievance', { ttlDays: 730, reason: 'Records rule 2026' }));
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/ops/cleanup/ttl/by-key?key=grievance', { ttlDays: 730, reason: 'Records rule 2026' }));
   });
 
   it('a definition without a TTL starts with an empty box, and confirming it is refused, never sent as 0 days', async () => {

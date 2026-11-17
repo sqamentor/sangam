@@ -21,7 +21,7 @@ import org.sangam.rest.support.Permissions;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
 /**
- * SL-166 f2 / owner decision 63: {@code GET /portal/services/{key}/form} serves, under {@code portal.use}, the merged form
+ * SL-166 f2 / owner decision 63: {@code GET /portal/services/by-key/form?key=} serves, under {@code portal.use}, the merged form
  * ({@link FormPort#effective}) of a service in the caller's own catalogue and nothing else: an unknown service, a service
  * without a form, or a caller without portal.use never reaches the form port.
  */

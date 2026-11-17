@@ -243,9 +243,9 @@ public final class ConfigApi {
      *
      * <p>Codes of a scheme segment valid on the date (optionally children of a parent code).
      *
-     * <p>{@code GET /config/master/{scheme}/{segment}} (operationId {@code listConfigMasterCodes}); permission {@code config.read}.
-     * @param scheme path parameter {@code scheme}
-     * @param segment path parameter {@code segment}
+     * <p>{@code GET /config/master/by-scheme/by-segment} (operationId {@code listConfigMasterCodes}); permission {@code config.read}.
+     * @param scheme query parameter {@code scheme}. Classification scheme; may carry '/' or ':'
+     * @param segment query parameter {@code segment}. Scheme segment; may carry '/' or ':'
      * @param scope query parameter {@code scope}, or null. scope id; default: the caller's tenant
      * @param parent query parameter {@code parent}, or null
      * @param asOf query parameter {@code asOf}, or null
@@ -255,7 +255,9 @@ public final class ConfigApi {
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<ConfigMasterCode> listConfigMasterCodes(String scheme, String segment, String scope, String parent, java.time.LocalDate asOf, Long page, Long size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/config/master/" + HttpTransport.seg(String.valueOf(scheme)) + "/" + HttpTransport.seg(String.valueOf(segment)));
+        ApiRequest req = ApiRequest.get("/config/master/by-scheme/by-segment");
+        req.query("scheme", scheme);
+        req.query("segment", segment);
         req.query("scope", scope);
         req.query("parent", parent);
         req.query("asOf", asOf);
@@ -345,15 +347,16 @@ public final class ConfigApi {
      *
      * <p>Checks a document against its type (required fields, limits, chain).
      *
-     * <p>{@code POST /config/document-types/{id}/check} (operationId {@code checkConfigDocument}); permission {@code config.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code POST /config/document-types/by-id/check} (operationId {@code checkConfigDocument}); permission {@code config.read}.
      * @param body request body
+     * @param id query parameter {@code id}. Document type id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> checkConfigDocument(String id, ConfigDocumentCheckRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/config/document-types/" + HttpTransport.seg(String.valueOf(id)) + "/check");
+    public java.util.Map<String, Object> checkConfigDocument(ConfigDocumentCheckRequest body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/config/document-types/by-id/check");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_checkConfigDocument);
     }
 
@@ -362,15 +365,16 @@ public final class ConfigApi {
      *
      * <p>Maps a code (and amount) to the target classification (e.g. COFOG) with shares.
      *
-     * <p>{@code POST /config/crosswalks/{id}/map} (operationId {@code mapConfigCrosswalk}); permission {@code config.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code POST /config/crosswalks/by-id/map} (operationId {@code mapConfigCrosswalk}); permission {@code config.read}.
      * @param body request body
+     * @param id query parameter {@code id}. Crosswalk id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> mapConfigCrosswalk(String id, ConfigCrosswalkRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/config/crosswalks/" + HttpTransport.seg(String.valueOf(id)) + "/map");
+    public java.util.Map<String, Object> mapConfigCrosswalk(ConfigCrosswalkRequest body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/config/crosswalks/by-id/map");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_mapConfigCrosswalk);
     }
 }

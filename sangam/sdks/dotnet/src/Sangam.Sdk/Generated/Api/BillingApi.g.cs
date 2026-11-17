@@ -18,11 +18,12 @@ public sealed class BillingApi
     /// <summary>
     /// Accounts billed in a cycle
     /// Consumers holding demand accounts in the ledger.
-    /// GET /billing/{ledger}/accounts (operationId listBillingAccounts); permission billing.read.
+    /// GET /billing/by-ledger/accounts (operationId listBillingAccounts); permission billing.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ListBillingAccountsAsync(string ledger, string? cycle = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/billing/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/accounts");
+        var req = ApiRequest.Get($"/billing/by-ledger/accounts");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         req.WithQuery("cycle", GeneratedCalls.Q(cycle));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -30,11 +31,12 @@ public sealed class BillingApi
     /// <summary>
     /// Raise an invoice
     /// Computes the tariff (fixed, per unit, slab, percent, DMN) and raises the demand per head.
-    /// POST /billing/{ledger}/invoices (operationId raiseBillingInvoice); permission billing.write; result stored atomically with the state change.
+    /// POST /billing/by-ledger/invoices (operationId raiseBillingInvoice); permission billing.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RaiseBillingInvoiceAsync(string ledger, M.BillingInvoiceRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RaiseBillingInvoiceAsync(M.BillingInvoiceRequest body, string ledger, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/billing/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/invoices");
+        var req = ApiRequest.Post($"/billing/by-ledger/invoices");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -42,11 +44,12 @@ public sealed class BillingApi
     /// <summary>
     /// Record a collection
     /// Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt. A payment the channel cannot confirm is refused here; staff record it with acceptUnverifiedPayment (decision 141).
-    /// POST /billing/{ledger}/collections (operationId recordBillingCollection); permission billing.write; result stored atomically with the state change.
+    /// POST /billing/by-ledger/collections (operationId recordBillingCollection); permission billing.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RecordBillingCollectionAsync(string ledger, M.BillingCollectionRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RecordBillingCollectionAsync(M.BillingCollectionRequest body, string ledger, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/billing/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/collections");
+        var req = ApiRequest.Post($"/billing/by-ledger/collections");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -54,22 +57,26 @@ public sealed class BillingApi
     /// <summary>
     /// Arrears of a consumer
     /// Outstanding and overdue demand.
-    /// GET /billing/{ledger}/consumers/{consumer}/arrears (operationId getBillingArrears); permission billing.read.
+    /// GET /billing/by-ledger/consumers/by-consumer/arrears (operationId getBillingArrears); permission billing.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GetBillingArrearsAsync(string ledger, string consumer, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/billing/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/consumers/{HttpTransport.Seg(GeneratedCalls.Str(consumer)!)}/arrears");
+        var req = ApiRequest.Get($"/billing/by-ledger/consumers/by-consumer/arrears");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
+        req.WithQuery("consumer", GeneratedCalls.Q(consumer));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Levy penalties
     /// Penalty / interest per the tariff (grace days, rate).
-    /// POST /billing/{ledger}/consumers/{consumer}/penalties (operationId levyBillingPenalties); permission billing.write; result stored atomically with the state change.
+    /// POST /billing/by-ledger/consumers/by-consumer/penalties (operationId levyBillingPenalties); permission billing.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> LevyBillingPenaltiesAsync(string ledger, string consumer, M.BillingPenaltyRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> LevyBillingPenaltiesAsync(M.BillingPenaltyRequest body, string ledger, string consumer, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/billing/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/consumers/{HttpTransport.Seg(GeneratedCalls.Str(consumer)!)}/penalties");
+        var req = ApiRequest.Post($"/billing/by-ledger/consumers/by-consumer/penalties");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
+        req.WithQuery("consumer", GeneratedCalls.Q(consumer));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -77,11 +84,12 @@ public sealed class BillingApi
     /// <summary>
     /// Record a waiver
     /// Writes off outstanding demand under an approved order.
-    /// POST /billing/{ledger}/waivers (operationId recordBillingWaiver); permission billing.admin; result stored atomically with the state change.
+    /// POST /billing/by-ledger/waivers (operationId recordBillingWaiver); permission billing.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RecordBillingWaiverAsync(string ledger, M.BillingWaiverRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RecordBillingWaiverAsync(M.BillingWaiverRequest body, string ledger, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/billing/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/waivers");
+        var req = ApiRequest.Post($"/billing/by-ledger/waivers");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -89,11 +97,12 @@ public sealed class BillingApi
     /// <summary>
     /// Refund a collection
     /// Reverses consumption and calls the payment rail once per operation (the Idempotency-Key).
-    /// POST /billing/{ledger}/refunds (operationId refundBillingCollection); permission billing.admin; result stored atomically with the state change.
+    /// POST /billing/by-ledger/refunds (operationId refundBillingCollection); permission billing.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.BillingRefundResult?> RefundBillingCollectionAsync(string ledger, M.BillingRefundRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.BillingRefundResult?> RefundBillingCollectionAsync(M.BillingRefundRequest body, string ledger, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/billing/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/refunds");
+        var req = ApiRequest.Post($"/billing/by-ledger/refunds");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.BillingRefundResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -101,11 +110,12 @@ public sealed class BillingApi
     /// <summary>
     /// Accept a payment unverified
     /// Records a payment its channel cannot confirm now, in state PAYMENT_ACCEPTED_UNVERIFIED, with an audit record of the same name. Requires the ACCEPT_UNVERIFIED action on this channel, tenant and office (permission billing.accept-unverified, scoped); a generic billing permission is not enough (403 NOT_PERMITTED). Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Nothing is posted to the ledger. 403 CHANNEL_NOT_ENABLED when the channel is not configured for unverified acceptance or its operating policy is unresolved. 400 VALIDATION_FAILED when the currency is not the ledger currency or the amount is not a MoneyAmount of it. 409 DUPLICATE when the channel and paymentRef were already accepted in the tenant, with the existing id (a retry with the same Idempotency-Key returns the stored answer). 422 LIMIT_EXCEEDED when the amount exceeds the policy limit.
-    /// POST /billing/{ledger}/unverified-payments (operationId acceptUnverifiedPayment); permission billing.accept-unverified; result stored atomically with the state change.
+    /// POST /billing/by-ledger/unverified-payments (operationId acceptUnverifiedPayment); permission billing.accept-unverified; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.UnverifiedPayment?> AcceptUnverifiedPaymentAsync(string ledger, M.UnverifiedPaymentRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.UnverifiedPayment?> AcceptUnverifiedPaymentAsync(M.UnverifiedPaymentRequest body, string ledger, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/billing/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/unverified-payments");
+        var req = ApiRequest.Post($"/billing/by-ledger/unverified-payments");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.UnverifiedPayment?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -113,11 +123,12 @@ public sealed class BillingApi
     /// <summary>
     /// Unverified payments
     /// Payments accepted unverified, oldest first, for reconciliation and ageing. Every filter applies before paging (size default 50, at most 500), with X-Total-Count.
-    /// GET /billing/{ledger}/unverified-payments (operationId listUnverifiedPayments); permission billing.read.
+    /// GET /billing/by-ledger/unverified-payments (operationId listUnverifiedPayments); permission billing.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.UnverifiedPayment>> ListUnverifiedPaymentsAsync(string ledger, string? state = null, string? channel = null, string? office = null, int? minAgeDays = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/billing/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/unverified-payments");
+        var req = ApiRequest.Get($"/billing/by-ledger/unverified-payments");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         req.WithQuery("state", GeneratedCalls.Q(state));
         req.WithQuery("channel", GeneratedCalls.Q(channel));
         req.WithQuery("office", GeneratedCalls.Q(office));
@@ -130,22 +141,24 @@ public sealed class BillingApi
     /// <summary>
     /// An unverified payment
     /// One record with its resolution.
-    /// GET /billing/{ledger}/unverified-payments/{id} (operationId getUnverifiedPayment); permission billing.read.
+    /// GET /billing/by-ledger/unverified-payments/{id} (operationId getUnverifiedPayment); permission billing.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.UnverifiedPayment?> GetUnverifiedPaymentAsync(string ledger, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.UnverifiedPayment?> GetUnverifiedPaymentAsync(string id, string ledger, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/billing/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/unverified-payments/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Get($"/billing/by-ledger/unverified-payments/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         return await _calls.JsonAsync<M.UnverifiedPayment?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Resolve an unverified payment
     /// Manual resolution of a pending payment to VERIFIED, REJECTED or REVERSED; rail reconciliation is the normal path to VERIFIED and runs as the system job, not through this operation. Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Maker-checker: the resolver must be a different principal from the acceptor (403 NOT_PERMITTED otherwise, decision 194). The state and the caller's authorisation are rechecked atomically with the transition (403 NOT_PERMITTED). A payment already resolved is 409 INVALID_TRANSITION and changes nothing. A manual VERIFIED needs verificationRef and evidenceRef (400 VALIDATION_FAILED otherwise) and is audited as its own event PAYMENT_UNVERIFIED_MANUALLY_VERIFIED (decision 196); REJECTED and REVERSED are audited as PAYMENT_UNVERIFIED_RESOLVED and post the penalty accrual paused since acceptance (decision 195).
-    /// POST /billing/{ledger}/unverified-payments/{id}/resolution (operationId resolveUnverifiedPayment); permission billing.resolve-unverified; result stored atomically with the state change.
+    /// POST /billing/by-ledger/unverified-payments/{id}/resolution (operationId resolveUnverifiedPayment); permission billing.resolve-unverified; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.UnverifiedPayment?> ResolveUnverifiedPaymentAsync(string ledger, string id, M.UnverifiedPaymentResolveRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.UnverifiedPayment?> ResolveUnverifiedPaymentAsync(string id, M.UnverifiedPaymentResolveRequest body, string ledger, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/billing/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/unverified-payments/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/resolution");
+        var req = ApiRequest.Post($"/billing/by-ledger/unverified-payments/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/resolution");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.UnverifiedPayment?>(req, options, cancellationToken).ConfigureAwait(false);
     }

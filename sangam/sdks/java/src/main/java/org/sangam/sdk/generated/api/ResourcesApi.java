@@ -85,12 +85,13 @@ public final class ResourcesApi {
      *
      * <p>ResourcesController.retireType (sangam-rest).
      *
-     * <p>{@code DELETE /resources/types/{typeId}} (operationId {@code resourcesResourcesRetireType}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param typeId path parameter {@code typeId}
+     * <p>{@code DELETE /resources/types/by-type-id} (operationId {@code resourcesResourcesRetireType}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param typeId query parameter {@code typeId}. Type id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void resourcesResourcesRetireType(String typeId, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/resources/types/" + HttpTransport.seg(String.valueOf(typeId)));
+        ApiRequest req = ApiRequest.delete("/resources/types/by-type-id");
+        req.query("typeId", typeId);
         call.none(req, options);
     }
 
@@ -99,15 +100,16 @@ public final class ResourcesApi {
      *
      * <p>ResourcesController.saveCalendar (sangam-rest).
      *
-     * <p>{@code PUT /resources/calendars/{calendarId}} (operationId {@code resourcesResourcesSaveCalendar}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param calendarId path parameter {@code calendarId}
+     * <p>{@code PUT /resources/calendars/by-calendar-id} (operationId {@code resourcesResourcesSaveCalendar}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param calendarId query parameter {@code calendarId}. Calendar id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> resourcesResourcesSaveCalendar(String calendarId, ResourcesResourcesSaveCalendarBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/resources/calendars/" + HttpTransport.seg(String.valueOf(calendarId)));
+    public java.util.Map<String, Object> resourcesResourcesSaveCalendar(ResourcesResourcesSaveCalendarBody body, String calendarId, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/resources/calendars/by-calendar-id");
         req.body(body);
+        req.query("calendarId", calendarId);
         return call.json(req, options, R_resourcesResourcesSaveCalendar);
     }
 
@@ -116,13 +118,14 @@ public final class ResourcesApi {
      *
      * <p>ResourcesController.calendar (sangam-rest).
      *
-     * <p>{@code GET /resources/calendars/{calendarId}} (operationId {@code resourcesResourcesCalendar}); permission {@code resources.read}.
-     * @param calendarId path parameter {@code calendarId}
+     * <p>{@code GET /resources/calendars/by-calendar-id} (operationId {@code resourcesResourcesCalendar}); permission {@code resources.read}.
+     * @param calendarId query parameter {@code calendarId}. Calendar id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> resourcesResourcesCalendar(String calendarId, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/resources/calendars/" + HttpTransport.seg(String.valueOf(calendarId)));
+        ApiRequest req = ApiRequest.get("/resources/calendars/by-calendar-id");
+        req.query("calendarId", calendarId);
         return call.json(req, options, R_resourcesResourcesCalendar);
     }
 
@@ -179,12 +182,13 @@ public final class ResourcesApi {
      *
      * <p>ResourcesController.deleteSlotTemplate (sangam-rest).
      *
-     * <p>{@code DELETE /resources/slot-templates/{templateId}} (operationId {@code resourcesResourcesDeleteSlotTemplate}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param templateId path parameter {@code templateId}
+     * <p>{@code DELETE /resources/slot-templates/by-template-id} (operationId {@code resourcesResourcesDeleteSlotTemplate}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param templateId query parameter {@code templateId}. Template id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void resourcesResourcesDeleteSlotTemplate(String templateId, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/resources/slot-templates/" + HttpTransport.seg(String.valueOf(templateId)));
+        ApiRequest req = ApiRequest.delete("/resources/slot-templates/by-template-id");
+        req.query("templateId", templateId);
         call.none(req, options);
     }
 
@@ -209,14 +213,15 @@ public final class ResourcesApi {
      *
      * <p>ResourcesController.history (sangam-rest).
      *
-     * <p>{@code GET /resources/history/{entityType}/{entityId}} (operationId {@code resourcesResourcesHistory}); permission {@code resources.read}.
+     * <p>{@code GET /resources/history/{entityType}/by-entity-id} (operationId {@code resourcesResourcesHistory}); permission {@code resources.read}.
      * @param entityType path parameter {@code entityType}
-     * @param entityId path parameter {@code entityId}
+     * @param entityId query parameter {@code entityId}. Entity id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<java.util.Map<String, Object>> resourcesResourcesHistory(String entityType, String entityId, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/resources/history/" + HttpTransport.seg(String.valueOf(entityType)) + "/" + HttpTransport.seg(String.valueOf(entityId)));
+        ApiRequest req = ApiRequest.get("/resources/history/" + HttpTransport.seg(String.valueOf(entityType)) + "/by-entity-id");
+        req.query("entityId", entityId);
         return call.json(req, options, R_resourcesResourcesHistory);
     }
 

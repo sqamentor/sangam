@@ -18,8 +18,8 @@
 # inbox, deduplicated on the event id per channel, and tenant-bound by the channel.
 
 TAGS.append(("EventGridHooks", "Inbound Azure Event Grid deliveries (SL-170, decision 189); off by default"))
-_EG = "/hooks/eventgrid/{tenant}/{channel}"
-_EG_P = [pp("tenant"), pp("channel", "Configured Event Grid inbound channel of the tenant")]
+_EG = "/hooks/eventgrid/{tenant}/by-channel"
+_EG_P = [pp("tenant"), q("channel", desc="Configured Event Grid inbound channel of the tenant (an event channel key); may carry ':'", required=True)]
 _EG_REQ = ["SL-170", "R38"]
 _EG_E = ("BadRequest", "Unauthorized", "NotFound")
 

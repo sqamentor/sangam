@@ -126,7 +126,7 @@ public final class RegistryObjectsApi {
      * <p>RegistryController.byNumber (sangam-rest).
      *
      * <p>{@code GET /registry/objects/by-number} (operationId {@code registryRegistryByNumber}); permission {@code registry.read}.
-     * @param number query parameter {@code number}
+     * @param number query parameter {@code number}. Number; may carry '/' or ':'
      * @param typeKey query parameter {@code typeKey}, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
@@ -143,16 +143,17 @@ public final class RegistryObjectsApi {
      *
      * <p>RegistryController.transition (sangam-rest).
      *
-     * <p>{@code POST /registry/objects/{id}/transitions/{name}} (operationId {@code registryRegistryTransition}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * <p>{@code POST /registry/objects/{id}/transitions/by-name} (operationId {@code registryRegistryTransition}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
-     * @param name path parameter {@code name}
+     * @param name query parameter {@code name}. Name; may carry '/' or ':'
      * @param body request body, or null
      * @param ifMatch header parameter {@code If-Match}, or null. Revision the change is based on (409 on mismatch)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> registryRegistryTransition(String id, String name, RegistryRegistryTransitionBody body, String ifMatch, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/registry/objects/" + HttpTransport.seg(String.valueOf(id)) + "/transitions/" + HttpTransport.seg(String.valueOf(name)));
+        ApiRequest req = ApiRequest.post("/registry/objects/" + HttpTransport.seg(String.valueOf(id)) + "/transitions/by-name");
+        req.query("name", name);
         req.body(body);
         req.header("If-Match", ifMatch == null ? null : String.valueOf(ifMatch));
         return call.json(req, options, R_registryRegistryTransition);

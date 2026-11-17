@@ -77,13 +77,14 @@ public final class EventsApi {
      *
      * <p>One channel.
      *
-     * <p>{@code GET /events/channels/{key}} (operationId {@code getEventChannel}); permission {@code event.admin}.
-     * @param key path parameter {@code key}
+     * <p>{@code GET /events/channels/by-key} (operationId {@code getEventChannel}); permission {@code event.admin}.
+     * @param key query parameter {@code key}. Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public EventChannel getEventChannel(String key, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/events/channels/" + HttpTransport.seg(String.valueOf(key)));
+        ApiRequest req = ApiRequest.get("/events/channels/by-key");
+        req.query("key", key);
         return call.json(req, options, R_getEventChannel);
     }
 
@@ -92,15 +93,16 @@ public final class EventsApi {
      *
      * <p>Updates a channel.
      *
-     * <p>{@code PUT /events/channels/{key}} (operationId {@code updateEventChannel}); permission {@code event.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param key path parameter {@code key}
+     * <p>{@code PUT /events/channels/by-key} (operationId {@code updateEventChannel}); permission {@code event.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param key query parameter {@code key}. Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public EventChannel updateEventChannel(String key, EventChannel body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/events/channels/" + HttpTransport.seg(String.valueOf(key)));
+    public EventChannel updateEventChannel(EventChannel body, String key, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/events/channels/by-key");
         req.body(body);
+        req.query("key", key);
         return call.json(req, options, R_updateEventChannel);
     }
 
@@ -109,13 +111,14 @@ public final class EventsApi {
      *
      * <p>Retires every active version and removes the retired versions. Refused with 409 EVENT_IN_FLIGHT while events on the channel are buffered in the inbox or undelivered in the outbox.
      *
-     * <p>{@code DELETE /events/channels/{key}} (operationId {@code deleteEventChannel}); permission {@code event.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param key path parameter {@code key}
+     * <p>{@code DELETE /events/channels/by-key} (operationId {@code deleteEventChannel}); permission {@code event.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param key query parameter {@code key}. Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
      * @param reason query parameter {@code reason}, or null. Mandatory reason (audited, R42)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void deleteEventChannel(String key, String reason, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/events/channels/" + HttpTransport.seg(String.valueOf(key)));
+        ApiRequest req = ApiRequest.delete("/events/channels/by-key");
+        req.query("key", key);
         req.query("reason", reason);
         call.none(req, options);
     }
@@ -125,15 +128,16 @@ public final class EventsApi {
      *
      * <p>Marks every active version RETIRED: the channel no longer resolves and stops receiving; an older active version, if any, becomes current. Refused with 409 EVENT_IN_FLIGHT while events are in flight. Returns the channel with active=false (or the version that became current).
      *
-     * <p>{@code POST /events/channels/{key}/retire} (operationId {@code retireEventChannel}); permission {@code event.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param key path parameter {@code key}
+     * <p>{@code POST /events/channels/by-key/retire} (operationId {@code retireEventChannel}); permission {@code event.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param key query parameter {@code key}. Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public EventChannel retireEventChannel(String key, ReasonRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/events/channels/" + HttpTransport.seg(String.valueOf(key)) + "/retire");
+    public EventChannel retireEventChannel(ReasonRequest body, String key, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/events/channels/by-key/retire");
         req.body(body);
+        req.query("key", key);
         return call.json(req, options, R_retireEventChannel);
     }
 
@@ -142,15 +146,16 @@ public final class EventsApi {
      *
      * <p>Re-activates the newest retired version (undo of a retire); 409 NOT_RETIRED when there is none.
      *
-     * <p>{@code POST /events/channels/{key}/restore} (operationId {@code restoreEventChannel}); permission {@code event.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param key path parameter {@code key}
+     * <p>{@code POST /events/channels/by-key/restore} (operationId {@code restoreEventChannel}); permission {@code event.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param key query parameter {@code key}. Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public EventChannel restoreEventChannel(String key, ReasonRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/events/channels/" + HttpTransport.seg(String.valueOf(key)) + "/restore");
+    public EventChannel restoreEventChannel(ReasonRequest body, String key, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/events/channels/by-key/restore");
         req.body(body);
+        req.query("key", key);
         return call.json(req, options, R_restoreEventChannel);
     }
 
@@ -193,13 +198,14 @@ public final class EventsApi {
      *
      * <p>One definition.
      *
-     * <p>{@code GET /events/definitions/{key}} (operationId {@code getEventDefinition}); permission {@code event.admin}.
-     * @param key path parameter {@code key}
+     * <p>{@code GET /events/definitions/by-key} (operationId {@code getEventDefinition}); permission {@code event.admin}.
+     * @param key query parameter {@code key}. Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public EventDefinition getEventDefinition(String key, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/events/definitions/" + HttpTransport.seg(String.valueOf(key)));
+        ApiRequest req = ApiRequest.get("/events/definitions/by-key");
+        req.query("key", key);
         return call.json(req, options, R_getEventDefinition);
     }
 
@@ -208,13 +214,14 @@ public final class EventsApi {
      *
      * <p>Retires every active version and removes the retired versions. Refused with 409 EVENT_IN_FLIGHT while events of the key are buffered or undelivered.
      *
-     * <p>{@code DELETE /events/definitions/{key}} (operationId {@code deleteEventDefinition}); permission {@code event.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param key path parameter {@code key}
+     * <p>{@code DELETE /events/definitions/by-key} (operationId {@code deleteEventDefinition}); permission {@code event.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param key query parameter {@code key}. Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
      * @param reason query parameter {@code reason}, or null. Mandatory reason (audited, R42)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void deleteEventDefinition(String key, String reason, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/events/definitions/" + HttpTransport.seg(String.valueOf(key)));
+        ApiRequest req = ApiRequest.delete("/events/definitions/by-key");
+        req.query("key", key);
         req.query("reason", reason);
         call.none(req, options);
     }
@@ -224,15 +231,16 @@ public final class EventsApi {
      *
      * <p>Marks every active version RETIRED; an older active version, if any, becomes current. Refused with 409 EVENT_IN_FLIGHT while events of the key are in flight.
      *
-     * <p>{@code POST /events/definitions/{key}/retire} (operationId {@code retireEventDefinition}); permission {@code event.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param key path parameter {@code key}
+     * <p>{@code POST /events/definitions/by-key/retire} (operationId {@code retireEventDefinition}); permission {@code event.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param key query parameter {@code key}. Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public EventDefinition retireEventDefinition(String key, ReasonRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/events/definitions/" + HttpTransport.seg(String.valueOf(key)) + "/retire");
+    public EventDefinition retireEventDefinition(ReasonRequest body, String key, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/events/definitions/by-key/retire");
         req.body(body);
+        req.query("key", key);
         return call.json(req, options, R_retireEventDefinition);
     }
 
@@ -241,15 +249,16 @@ public final class EventsApi {
      *
      * <p>Re-activates the newest retired version (undo of a retire); 409 NOT_RETIRED when there is none.
      *
-     * <p>{@code POST /events/definitions/{key}/restore} (operationId {@code restoreEventDefinition}); permission {@code event.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param key path parameter {@code key}
+     * <p>{@code POST /events/definitions/by-key/restore} (operationId {@code restoreEventDefinition}); permission {@code event.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param key query parameter {@code key}. Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public EventDefinition restoreEventDefinition(String key, ReasonRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/events/definitions/" + HttpTransport.seg(String.valueOf(key)) + "/restore");
+    public EventDefinition restoreEventDefinition(ReasonRequest body, String key, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/events/definitions/by-key/restore");
         req.body(body);
+        req.query("key", key);
         return call.json(req, options, R_restoreEventDefinition);
     }
 
@@ -258,15 +267,16 @@ public final class EventsApi {
      *
      * <p>Accepts a CloudEvent on an inbound channel; de-duplicated through the inbox by (tenant, source, id) (R38), then starts (uniqueStart) or correlates (R83).
      *
-     * <p>{@code POST /events/{channel}} (operationId {@code publishEvent}); permission {@code event.publish}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param channel path parameter {@code channel}
+     * <p>{@code POST /events/by-channel} (operationId {@code publishEvent}); permission {@code event.publish}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param channel query parameter {@code channel}. Inbound event channel key; may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 202 response
      */
-    public PublishResult publishEvent(String channel, CloudEvent body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/events/" + HttpTransport.seg(String.valueOf(channel)));
+    public PublishResult publishEvent(CloudEvent body, String channel, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/events/by-channel");
         req.body(body);
+        req.query("channel", channel);
         return call.json(req, options, R_publishEvent);
     }
 }

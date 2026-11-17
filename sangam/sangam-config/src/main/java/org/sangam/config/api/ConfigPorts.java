@@ -24,13 +24,13 @@ import java.util.Map;
  * POST   /config/profiles/version/activate?id=&amp;version=  {scopesToCheck[]}
  * GET    /config/profiles/history?id=                       → change register
  * POST   /config/validate                                    {scope, office, asOf} → findings
- * GET    /config/master/{scheme}/{segment}?scope=&amp;asOf=     → codes
+ * GET    /config/master/by-scheme/by-segment?scheme=&amp;segment=&amp;scope=&amp;asOf= → codes
  * POST   /config/master/seed                                 CSV / YAML body → count
  * POST   /config/master/correction-slips                     → findings
  * POST   /config/classification/validate                     {scope, scheme, code} → findings, attributes
  * GET    /config/document-types?scope=&amp;family=             → catalogue
- * POST   /config/document-types/{id}/check                   {document} → findings
- * POST   /config/crosswalks/{id}/map                         {code, amount} → mapped
+ * POST   /config/document-types/by-id/check?id=              {document} → findings
+ * POST   /config/crosswalks/by-id/map?id=                    {code, amount} → mapped
  * </pre>
  */
 public final class ConfigPorts {

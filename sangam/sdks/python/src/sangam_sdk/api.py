@@ -433,9 +433,9 @@ class RepositoryApi(_Api):
 
     def publish_event(self, channel: str, event: CloudEvent | Mapping[str, Any],
                       idempotency_key: str | None = None) -> PublishResult:
-        """``POST /events/{channel}`` (202) with a CloudEvents 1.0 envelope (R16)."""
+        """``POST /events/by-channel?channel=`` (202) with a CloudEvents 1.0 envelope (R16); a channel key may carry ':'."""
         body = event.to_dict() if isinstance(event, CloudEvent) else dict(event)
-        return self._obj(ApiRequest("POST", f"/events/{seg(channel)}", body=body,
+        return self._obj(ApiRequest("POST", "/events/by-channel", query={"channel": channel}, body=body,
                                     idempotency_key=idempotency_key or body.get("id")), PublishResult)
 
     def publish(self, channel: str, source: str, type: str, data: Any = None, *, subject: str | None = None,

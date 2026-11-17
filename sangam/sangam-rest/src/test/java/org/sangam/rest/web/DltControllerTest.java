@@ -154,7 +154,7 @@ class DltControllerTest {
     void theDeliveryReportHookAsksForNoPermissionAndPassesTheRawRequest() {
         Port port = new Port();
         Perms none = new Perms();
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/hooks/sms-dlt/T1/sms-dlt/delivery-reports");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/hooks/sms-dlt/T1/by-connector-id/delivery-reports");
         request.addHeader("X-Sangam-Signature", "t=1,v1=abc");
         byte[] body = "{\"status\":\"DELIVERED\",\"clientRef\":\"op-1\"}".getBytes(StandardCharsets.UTF_8);
 
@@ -177,7 +177,7 @@ class DltControllerTest {
         Perms all = new Perms(Permissions.DLT_REGISTRATION_READ, Permissions.DLT_REGISTRATION_WRITE);
         DltController c = new DltController(absent, all);
         ApiProblem hook = assertThrows(ApiProblem.class, () -> c.deliveryReports("T1", "sms-dlt", new byte[0],
-                new MockHttpServletRequest("POST", "/api/v1/hooks/sms-dlt/T1/sms-dlt/delivery-reports")));
+                new MockHttpServletRequest("POST", "/api/v1/hooks/sms-dlt/T1/by-connector-id/delivery-reports")));
         assertEquals(404, hook.status());
         for (Runnable call : List.<Runnable>of(() -> c.registration(CTX),
                 () -> c.setEntity(CTX, new DltPort.EntityRequest("E1")),

@@ -243,13 +243,15 @@ final class OpsApi
      *
      * Fetch-and-lock stops offering the topic; leases already held continue.
      *
-     * POST /ops/topics/{name}/pause (operationId pauseTopic); permission ops.write; result stored atomically with the state change.
+     * POST /ops/topics/by-name/pause (operationId pauseTopic); permission ops.write; result stored atomically with the state change.
      * @param Model\ReasonRequest|array $body request body
+     * @param string $name query name
      * @return Model\TopicInfo|null
      */
-    public function pauseTopic(string $name, Model\ReasonRequest|array $body, ?RequestOptions $options = null): ?Model\TopicInfo
+    public function pauseTopic(Model\ReasonRequest|array $body, string $name, ?RequestOptions $options = null): ?Model\TopicInfo
     {
-        $req = ApiRequest::post('/ops/topics/' . HttpTransport::seg((string) $name) . '/pause');
+        $req = ApiRequest::post('/ops/topics/by-name/pause');
+        $req->query('name', $name);
         if ($body !== null) {
             $req->body($body);
         }
@@ -261,13 +263,15 @@ final class OpsApi
      *
      * Offers the topic again.
      *
-     * POST /ops/topics/{name}/resume (operationId resumeTopic); permission ops.write; result stored atomically with the state change.
+     * POST /ops/topics/by-name/resume (operationId resumeTopic); permission ops.write; result stored atomically with the state change.
      * @param Model\ReasonRequest|array $body request body
+     * @param string $name query name
      * @return Model\TopicInfo|null
      */
-    public function resumeTopic(string $name, Model\ReasonRequest|array $body, ?RequestOptions $options = null): ?Model\TopicInfo
+    public function resumeTopic(Model\ReasonRequest|array $body, string $name, ?RequestOptions $options = null): ?Model\TopicInfo
     {
-        $req = ApiRequest::post('/ops/topics/' . HttpTransport::seg((string) $name) . '/resume');
+        $req = ApiRequest::post('/ops/topics/by-name/resume');
+        $req->query('name', $name);
         if ($body !== null) {
             $req->body($body);
         }
@@ -279,13 +283,15 @@ final class OpsApi
      *
      * History TTL for a definition key (R29).
      *
-     * PUT /ops/cleanup/ttl/{key} (operationId setHistoryTtl); permission ops.write; result stored atomically with the state change.
+     * PUT /ops/cleanup/ttl/by-key (operationId setHistoryTtl); permission ops.write; result stored atomically with the state change.
      * @param Model\TtlRequest|array $body request body
+     * @param string $key query key
      * @return Model\CleanupStatus|null
      */
-    public function setHistoryTtl(string $key, Model\TtlRequest|array $body, ?RequestOptions $options = null): ?Model\CleanupStatus
+    public function setHistoryTtl(Model\TtlRequest|array $body, string $key, ?RequestOptions $options = null): ?Model\CleanupStatus
     {
-        $req = ApiRequest::put('/ops/cleanup/ttl/' . HttpTransport::seg((string) $key));
+        $req = ApiRequest::put('/ops/cleanup/ttl/by-key');
+        $req->query('key', $key);
         if ($body !== null) {
             $req->body($body);
         }
@@ -315,12 +321,14 @@ final class OpsApi
      *
      * Resends with a reason.
      *
-     * POST /ops/notification-failures/{id}/resend (operationId resendNotification); permission ops.write; result stored atomically with the state change.
+     * POST /ops/notification-failures/by-id/resend (operationId resendNotification); permission ops.write; result stored atomically with the state change.
      * @param Model\ReasonRequest|array $body request body
+     * @param string $id query id
      */
-    public function resendNotification(string $id, Model\ReasonRequest|array $body, ?RequestOptions $options = null): void
+    public function resendNotification(Model\ReasonRequest|array $body, string $id, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/ops/notification-failures/' . HttpTransport::seg((string) $id) . '/resend');
+        $req = ApiRequest::post('/ops/notification-failures/by-id/resend');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }

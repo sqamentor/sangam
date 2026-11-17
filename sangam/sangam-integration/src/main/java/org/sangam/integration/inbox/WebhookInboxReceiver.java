@@ -10,7 +10,7 @@ import java.util.Map;
 
 /**
  * Inbound webhook → inbox (R71 "webhook inbound", R27 "authenticate callbacks", R38). Framework-neutral: the REST layer
- * (WS-REST) maps {@code POST /api/v1/events/{channel}} to {@link #receive} and returns the {@link Reply} status.
+ * (WS-REST) maps {@code POST /api/v1/events/by-channel?channel=} to {@link #receive} and returns the {@link Reply} status.
  *
  * <ul>
  *   <li>Signature {@code X-Sangam-Signature: t=<epochSeconds>,v1=<hex HMAC-SHA256(secret, t + "." + body)>} (the same

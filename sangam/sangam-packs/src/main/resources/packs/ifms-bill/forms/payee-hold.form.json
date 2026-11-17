@@ -1,0 +1,56 @@
+{
+  "key": "ifms-bill/payee-hold",
+  "version": "1.0.4",
+  "pack": "gov.ifms.bill",
+  "title": {
+    "en": "Payee not verified: complete the payee record, then check again",
+    "hi": "आदाता सत्यापित नहीं"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "payeeNotVerifiedReason",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Payee not verified: reason",
+        "hi": "आदाता सत्यापित नहीं: कारण"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "payeeHoldDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "checkAgain",
+        "label": {
+          "en": "Check again",
+          "hi": "फिर से जाँचें"
+        }
+      },
+      {
+        "value": "cancel",
+        "label": {
+          "en": "Cancel",
+          "hi": "रद्द करें"
+        }
+      }
+    ]
+  }
+}

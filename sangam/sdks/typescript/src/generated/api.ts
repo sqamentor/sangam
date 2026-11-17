@@ -164,10 +164,10 @@ export class AIApi {
    *
    * Starts a BUILDING version.
    *
-   * `POST /ai/knowledge-bases/{kb}/versions` (operationId `aiKbNewVersion`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-kb/versions` (operationId `aiKbNewVersion`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiKbNewVersion(kb: string, options?: RequestOptions): Promise<M.AiKbVersion> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/versions` };
+  async aiKbNewVersion(params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.AiKbVersion> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/versions`, query: { kb: params?.kb } };
     return this.calls.json<M.AiKbVersion>(req, options);
   }
 
@@ -176,10 +176,10 @@ export class AIApi {
    *
    * Only a BUILDING version accepts documents.
    *
-   * `POST /ai/knowledge-bases/{kb}/versions/{version}/documents` (operationId `aiKbIngest`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-kb/versions/{version}/documents` (operationId `aiKbIngest`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiKbIngest(kb: string, version: string, body: M.AiIngest, options?: RequestOptions): Promise<M.AiIngestResult> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/versions/${seg(String(version))}/documents` };
+  async aiKbIngest(version: string, body: M.AiIngest, params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.AiIngestResult> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/versions/${seg(String(version))}/documents`, query: { kb: params?.kb } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.AiIngestResult>(req, options);
   }
@@ -189,10 +189,10 @@ export class AIApi {
    *
    * Makes the version the searched one.
    *
-   * `POST /ai/knowledge-bases/{kb}/versions/{version}/activate` (operationId `aiKbActivate`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-kb/versions/{version}/activate` (operationId `aiKbActivate`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiKbActivate(kb: string, version: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/versions/${seg(String(version))}/activate` };
+  async aiKbActivate(version: string, params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/versions/${seg(String(version))}/activate`, query: { kb: params?.kb } };
     await this.calls.none(req, options);
   }
 
@@ -201,10 +201,10 @@ export class AIApi {
    *
    * Results are filtered by what the caller may read.
    *
-   * `POST /ai/knowledge-bases/{kb}/search` (operationId `aiKbSearch`); permission `ai.use`.
+   * `POST /ai/knowledge-bases/by-kb/search` (operationId `aiKbSearch`); permission `ai.use`.
    */
-  async aiKbSearch(kb: string, body: M.AiKbSearch, options?: RequestOptions): Promise<Array<M.AiKbHit>> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/search` };
+  async aiKbSearch(body: M.AiKbSearch, params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.AiKbHit>> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/search`, query: { kb: params?.kb } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Array<M.AiKbHit>>(req, options);
   }
@@ -214,10 +214,10 @@ export class AIApi {
    *
    * M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.
    *
-   * `POST /ai/knowledge-bases/{kb}/versions/{version}/ocr` (operationId `aiKbOcr`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-kb/versions/{version}/ocr` (operationId `aiKbOcr`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiKbOcr(kb: string, version: string, body: FormData, options?: RequestOptions): Promise<M.AiOcrTranscript> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/versions/${seg(String(version))}/ocr` };
+  async aiKbOcr(version: string, body: FormData, params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.AiOcrTranscript> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/versions/${seg(String(version))}/ocr`, query: { kb: params?.kb } };
     if (body !== undefined) req.rawBody = body;
     return this.calls.json<M.AiOcrTranscript>(req, options);
   }
@@ -417,10 +417,10 @@ export class AIApi {
    *
    * Card of a configured inbound agent of the tenant.
    *
-   * `GET /ai/a2a/{agent}/card` (operationId `aiA2aCard`); permission `ai.use`.
+   * `GET /ai/a2a/by-agent/card` (operationId `aiA2aCard`); permission `ai.use`.
    */
-  async aiA2aCard(agent: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/ai/a2a/${seg(String(agent))}/card` };
+  async aiA2aCard(params: { agent: string /* Inbound agent key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/ai/a2a/by-agent/card`, query: { agent: params?.agent } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -429,10 +429,10 @@ export class AIApi {
    *
    * A2A v1.0 JSON-RPC binding (application/json). Methods: SendMessage; GetTask; CancelTask (params id, tenant, metadata; result Task; errors -32001, -32002, -32004); ListTasks (params tenant, contextId, status, pageSize 1 to 100 default 50, pageToken, historyLength, statusTimestampAfter, includeArtifacts; result tasks, nextPageToken (empty on the last page), pageSize, totalSize; -32602 on a bad pageSize; -32004 while the process gateway does not implement it). SendStreamingMessage, SubscribeToTask and GetExtendedAgentCard answer -32004 (unsupported operation) and the four TaskPushNotificationConfig methods -32003 (push notifications not supported); the agent card says extendedAgentCard false. The caller must be on the agent allow-list; a browser Origin must be allow-listed.
    *
-   * `POST /ai/a2a/{agent}` (operationId `aiA2a`); permission `ai.use`.
+   * `POST /ai/a2a/by-agent` (operationId `aiA2a`); permission `ai.use`.
    */
-  async aiA2a(agent: string, body: M.AiMcpBody, params?: { a2AVersion?: string /* Major.Minor protocol version, 1.0 for A2A v1.0.x */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/a2a/${seg(String(agent))}` };
+  async aiA2a(body: M.AiMcpBody, params: { agent: string /* Inbound agent key; may carry '/' or ':' */; a2AVersion?: string /* Major.Minor protocol version, 1.0 for A2A v1.0.x */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/a2a/by-agent`, query: { agent: params?.agent } };
     headersOf(req, { 'A2A-Version': params?.a2AVersion });
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
@@ -542,10 +542,10 @@ export class AIApi {
    *
    * Retrieval stops. Needs a reason; actor and reason are kept.
    *
-   * `POST /ai/knowledge-bases/{key}/retire` (operationId `aiUiRetireKb`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-key/retire` (operationId `aiUiRetireKb`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiUiRetireKb(key: string, body?: M.AiUiDecisionRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(key))}/retire` };
+  async aiUiRetireKb(body: M.AiUiDecisionRequest | undefined, params: { key: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-key/retire`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -1855,10 +1855,10 @@ export class BillingApi {
    *
    * Consumers holding demand accounts in the ledger.
    *
-   * `GET /billing/{ledger}/accounts` (operationId `listBillingAccounts`); permission `billing.read`.
+   * `GET /billing/by-ledger/accounts` (operationId `listBillingAccounts`); permission `billing.read`.
    */
-  async listBillingAccounts(ledger: string, params?: { cycle?: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/billing/${seg(String(ledger))}/accounts`, query: { cycle: params?.cycle } };
+  async listBillingAccounts(params: { ledger: string /* receivable ledger id (e.g. DEMAND); may carry '/' or ':' */; cycle?: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/billing/by-ledger/accounts`, query: { ledger: params?.ledger, cycle: params?.cycle } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -1867,10 +1867,10 @@ export class BillingApi {
    *
    * Computes the tariff (fixed, per unit, slab, percent, DMN) and raises the demand per head.
    *
-   * `POST /billing/{ledger}/invoices` (operationId `raiseBillingInvoice`); permission `billing.write`; result stored atomically with the state change.
+   * `POST /billing/by-ledger/invoices` (operationId `raiseBillingInvoice`); permission `billing.write`; result stored atomically with the state change.
    */
-  async raiseBillingInvoice(ledger: string, body: M.BillingInvoiceRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/billing/${seg(String(ledger))}/invoices` };
+  async raiseBillingInvoice(body: M.BillingInvoiceRequest, params: { ledger: string /* receivable ledger id (e.g. DEMAND); may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/billing/by-ledger/invoices`, query: { ledger: params?.ledger } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -1880,10 +1880,10 @@ export class BillingApi {
    *
    * Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt. A payment the channel cannot confirm is refused here; staff record it with acceptUnverifiedPayment (decision 141).
    *
-   * `POST /billing/{ledger}/collections` (operationId `recordBillingCollection`); permission `billing.write`; result stored atomically with the state change.
+   * `POST /billing/by-ledger/collections` (operationId `recordBillingCollection`); permission `billing.write`; result stored atomically with the state change.
    */
-  async recordBillingCollection(ledger: string, body: M.BillingCollectionRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/billing/${seg(String(ledger))}/collections` };
+  async recordBillingCollection(body: M.BillingCollectionRequest, params: { ledger: string /* receivable ledger id (e.g. DEMAND); may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/billing/by-ledger/collections`, query: { ledger: params?.ledger } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -1893,10 +1893,10 @@ export class BillingApi {
    *
    * Outstanding and overdue demand.
    *
-   * `GET /billing/{ledger}/consumers/{consumer}/arrears` (operationId `getBillingArrears`); permission `billing.read`.
+   * `GET /billing/by-ledger/consumers/by-consumer/arrears` (operationId `getBillingArrears`); permission `billing.read`.
    */
-  async getBillingArrears(ledger: string, consumer: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/billing/${seg(String(ledger))}/consumers/${seg(String(consumer))}/arrears` };
+  async getBillingArrears(params: { ledger: string /* receivable ledger id (e.g. DEMAND); may carry '/' or ':' */; consumer: string /* consumer id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/billing/by-ledger/consumers/by-consumer/arrears`, query: { ledger: params?.ledger, consumer: params?.consumer } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -1905,10 +1905,10 @@ export class BillingApi {
    *
    * Penalty / interest per the tariff (grace days, rate).
    *
-   * `POST /billing/{ledger}/consumers/{consumer}/penalties` (operationId `levyBillingPenalties`); permission `billing.write`; result stored atomically with the state change.
+   * `POST /billing/by-ledger/consumers/by-consumer/penalties` (operationId `levyBillingPenalties`); permission `billing.write`; result stored atomically with the state change.
    */
-  async levyBillingPenalties(ledger: string, consumer: string, body: M.BillingPenaltyRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/billing/${seg(String(ledger))}/consumers/${seg(String(consumer))}/penalties` };
+  async levyBillingPenalties(body: M.BillingPenaltyRequest, params: { ledger: string /* receivable ledger id (e.g. DEMAND); may carry '/' or ':' */; consumer: string /* consumer id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/billing/by-ledger/consumers/by-consumer/penalties`, query: { ledger: params?.ledger, consumer: params?.consumer } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -1918,10 +1918,10 @@ export class BillingApi {
    *
    * Writes off outstanding demand under an approved order.
    *
-   * `POST /billing/{ledger}/waivers` (operationId `recordBillingWaiver`); permission `billing.admin`; result stored atomically with the state change.
+   * `POST /billing/by-ledger/waivers` (operationId `recordBillingWaiver`); permission `billing.admin`; result stored atomically with the state change.
    */
-  async recordBillingWaiver(ledger: string, body: M.BillingWaiverRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/billing/${seg(String(ledger))}/waivers` };
+  async recordBillingWaiver(body: M.BillingWaiverRequest, params: { ledger: string /* receivable ledger id (e.g. DEMAND); may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/billing/by-ledger/waivers`, query: { ledger: params?.ledger } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -1931,10 +1931,10 @@ export class BillingApi {
    *
    * Reverses consumption and calls the payment rail once per operation (the Idempotency-Key).
    *
-   * `POST /billing/{ledger}/refunds` (operationId `refundBillingCollection`); permission `billing.admin`; result stored atomically with the state change.
+   * `POST /billing/by-ledger/refunds` (operationId `refundBillingCollection`); permission `billing.admin`; result stored atomically with the state change.
    */
-  async refundBillingCollection(ledger: string, body: M.BillingRefundRequest, options?: RequestOptions): Promise<M.BillingRefundResult> {
-    const req: ApiRequest = { method: 'POST', path: `/billing/${seg(String(ledger))}/refunds` };
+  async refundBillingCollection(body: M.BillingRefundRequest, params: { ledger: string /* receivable ledger id (e.g. DEMAND); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.BillingRefundResult> {
+    const req: ApiRequest = { method: 'POST', path: `/billing/by-ledger/refunds`, query: { ledger: params?.ledger } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.BillingRefundResult>(req, options);
   }
@@ -1944,10 +1944,10 @@ export class BillingApi {
    *
    * Records a payment its channel cannot confirm now, in state PAYMENT_ACCEPTED_UNVERIFIED, with an audit record of the same name. Requires the ACCEPT_UNVERIFIED action on this channel, tenant and office (permission billing.accept-unverified, scoped); a generic billing permission is not enough (403 NOT_PERMITTED). Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Nothing is posted to the ledger. 403 CHANNEL_NOT_ENABLED when the channel is not configured for unverified acceptance or its operating policy is unresolved. 400 VALIDATION_FAILED when the currency is not the ledger currency or the amount is not a MoneyAmount of it. 409 DUPLICATE when the channel and paymentRef were already accepted in the tenant, with the existing id (a retry with the same Idempotency-Key returns the stored answer). 422 LIMIT_EXCEEDED when the amount exceeds the policy limit.
    *
-   * `POST /billing/{ledger}/unverified-payments` (operationId `acceptUnverifiedPayment`); permission `billing.accept-unverified`; result stored atomically with the state change.
+   * `POST /billing/by-ledger/unverified-payments` (operationId `acceptUnverifiedPayment`); permission `billing.accept-unverified`; result stored atomically with the state change.
    */
-  async acceptUnverifiedPayment(ledger: string, body: M.UnverifiedPaymentRequest, options?: RequestOptions): Promise<M.UnverifiedPayment> {
-    const req: ApiRequest = { method: 'POST', path: `/billing/${seg(String(ledger))}/unverified-payments` };
+  async acceptUnverifiedPayment(body: M.UnverifiedPaymentRequest, params: { ledger: string /* receivable ledger id (e.g. DEMAND); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.UnverifiedPayment> {
+    const req: ApiRequest = { method: 'POST', path: `/billing/by-ledger/unverified-payments`, query: { ledger: params?.ledger } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.UnverifiedPayment>(req, options);
   }
@@ -1957,10 +1957,10 @@ export class BillingApi {
    *
    * Payments accepted unverified, oldest first, for reconciliation and ageing. Every filter applies before paging (size default 50, at most 500), with X-Total-Count.
    *
-   * `GET /billing/{ledger}/unverified-payments` (operationId `listUnverifiedPayments`); permission `billing.read`.
+   * `GET /billing/by-ledger/unverified-payments` (operationId `listUnverifiedPayments`); permission `billing.read`.
    */
-  async listUnverifiedPayments(ledger: string, params?: { state?: 'PAYMENT_ACCEPTED_UNVERIFIED' | 'VERIFIED' | 'REJECTED' | 'REVERSED'; channel?: string; office?: string; minAgeDays?: number /* Only payments pending at least this many days */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.UnverifiedPayment>> {
-    const req: ApiRequest = { method: 'GET', path: `/billing/${seg(String(ledger))}/unverified-payments`, query: { state: params?.state, channel: params?.channel, office: params?.office, minAgeDays: params?.minAgeDays, page: params?.page, size: params?.size } };
+  async listUnverifiedPayments(params: { ledger: string /* receivable ledger id (e.g. DEMAND); may carry '/' or ':' */; state?: 'PAYMENT_ACCEPTED_UNVERIFIED' | 'VERIFIED' | 'REJECTED' | 'REVERSED'; channel?: string; office?: string; minAgeDays?: number /* Only payments pending at least this many days */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.UnverifiedPayment>> {
+    const req: ApiRequest = { method: 'GET', path: `/billing/by-ledger/unverified-payments`, query: { ledger: params?.ledger, state: params?.state, channel: params?.channel, office: params?.office, minAgeDays: params?.minAgeDays, page: params?.page, size: params?.size } };
     return this.calls.page<M.UnverifiedPayment>(req, options, params?.page, params?.size);
   }
 
@@ -1969,10 +1969,10 @@ export class BillingApi {
    *
    * One record with its resolution.
    *
-   * `GET /billing/{ledger}/unverified-payments/{id}` (operationId `getUnverifiedPayment`); permission `billing.read`.
+   * `GET /billing/by-ledger/unverified-payments/{id}` (operationId `getUnverifiedPayment`); permission `billing.read`.
    */
-  async getUnverifiedPayment(ledger: string, id: string, options?: RequestOptions): Promise<M.UnverifiedPayment> {
-    const req: ApiRequest = { method: 'GET', path: `/billing/${seg(String(ledger))}/unverified-payments/${seg(String(id))}` };
+  async getUnverifiedPayment(id: string, params: { ledger: string /* receivable ledger id (e.g. DEMAND); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.UnverifiedPayment> {
+    const req: ApiRequest = { method: 'GET', path: `/billing/by-ledger/unverified-payments/${seg(String(id))}`, query: { ledger: params?.ledger } };
     return this.calls.json<M.UnverifiedPayment>(req, options);
   }
 
@@ -1981,10 +1981,10 @@ export class BillingApi {
    *
    * Manual resolution of a pending payment to VERIFIED, REJECTED or REVERSED; rail reconciliation is the normal path to VERIFIED and runs as the system job, not through this operation. Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Maker-checker: the resolver must be a different principal from the acceptor (403 NOT_PERMITTED otherwise, decision 194). The state and the caller's authorisation are rechecked atomically with the transition (403 NOT_PERMITTED). A payment already resolved is 409 INVALID_TRANSITION and changes nothing. A manual VERIFIED needs verificationRef and evidenceRef (400 VALIDATION_FAILED otherwise) and is audited as its own event PAYMENT_UNVERIFIED_MANUALLY_VERIFIED (decision 196); REJECTED and REVERSED are audited as PAYMENT_UNVERIFIED_RESOLVED and post the penalty accrual paused since acceptance (decision 195).
    *
-   * `POST /billing/{ledger}/unverified-payments/{id}/resolution` (operationId `resolveUnverifiedPayment`); permission `billing.resolve-unverified`; result stored atomically with the state change.
+   * `POST /billing/by-ledger/unverified-payments/{id}/resolution` (operationId `resolveUnverifiedPayment`); permission `billing.resolve-unverified`; result stored atomically with the state change.
    */
-  async resolveUnverifiedPayment(ledger: string, id: string, body: M.UnverifiedPaymentResolveRequest, options?: RequestOptions): Promise<M.UnverifiedPayment> {
-    const req: ApiRequest = { method: 'POST', path: `/billing/${seg(String(ledger))}/unverified-payments/${seg(String(id))}/resolution` };
+  async resolveUnverifiedPayment(id: string, body: M.UnverifiedPaymentResolveRequest, params: { ledger: string /* receivable ledger id (e.g. DEMAND); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.UnverifiedPayment> {
+    const req: ApiRequest = { method: 'POST', path: `/billing/by-ledger/unverified-payments/${seg(String(id))}/resolution`, query: { ledger: params?.ledger } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.UnverifiedPayment>(req, options);
   }
@@ -3844,10 +3844,10 @@ export class ComplianceApi {
    *
    * The notice in the requested language; falls back to the pack default only where the pack allows (DPDP Rules r.3).
    *
-   * `GET /compliance/notices/{key}` (operationId `getComplianceNotice`).
+   * `GET /compliance/notices/by-key` (operationId `getComplianceNotice`).
    */
-  async getComplianceNotice(key: string, params?: { version?: number; lang?: string; tenant?: string /* Tenant of an unauthenticated call (else X-Sangam-Tenant) */; xSangamTenant?: string /* Tenant of an unauthenticated call (else ?tenant=) */ }, options?: RequestOptions): Promise<M.ComplianceRenderedNotice> {
-    const req: ApiRequest = { method: 'GET', path: `/compliance/notices/${seg(String(key))}`, query: { version: params?.version, lang: params?.lang, tenant: params?.tenant } };
+  async getComplianceNotice(params: { key: string /* Consent notice key; may carry '/' or ':' */; version?: number; lang?: string; tenant?: string /* Tenant of an unauthenticated call (else X-Sangam-Tenant) */; xSangamTenant?: string /* Tenant of an unauthenticated call (else ?tenant=) */ }, options?: RequestOptions): Promise<M.ComplianceRenderedNotice> {
+    const req: ApiRequest = { method: 'GET', path: `/compliance/notices/by-key`, query: { key: params?.key, version: params?.version, lang: params?.lang, tenant: params?.tenant } };
     headersOf(req, { 'X-Sangam-Tenant': params?.xSangamTenant });
     return this.calls.json<M.ComplianceRenderedNotice>(req, options);
   }
@@ -3857,10 +3857,10 @@ export class ComplianceApi {
    *
    * Publishes a new version for every enabled language; reports missing translations.
    *
-   * `POST /compliance/notices/{key}/publish` (operationId `publishComplianceNotice`); permission `compliance.admin`; result stored atomically with the state change.
+   * `POST /compliance/notices/by-key/publish` (operationId `publishComplianceNotice`); permission `compliance.admin`; result stored atomically with the state change.
    */
-  async publishComplianceNotice(key: string, body: M.CompliancePublishNoticeRequest, options?: RequestOptions): Promise<M.CompliancePublishResult> {
-    const req: ApiRequest = { method: 'POST', path: `/compliance/notices/${seg(String(key))}/publish` };
+  async publishComplianceNotice(body: M.CompliancePublishNoticeRequest, params: { key: string /* Consent notice key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CompliancePublishResult> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/notices/by-key/publish`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CompliancePublishResult>(req, options);
   }
@@ -3895,10 +3895,10 @@ export class ComplianceApi {
    *
    * Defines or versions a purpose; validated against the jurisdiction pack (legal basis, legitimate uses, retention).
    *
-   * `PUT /compliance/purposes/{code}` (operationId `defineCompliancePurpose`); permission `compliance.admin`; result stored atomically with the state change.
+   * `PUT /compliance/purposes/by-code` (operationId `defineCompliancePurpose`); permission `compliance.admin`; result stored atomically with the state change.
    */
-  async defineCompliancePurpose(code: string, body: M.ComplianceDefinePurposeRequest, options?: RequestOptions): Promise<M.CompliancePurpose> {
-    const req: ApiRequest = { method: 'PUT', path: `/compliance/purposes/${seg(String(code))}` };
+  async defineCompliancePurpose(body: M.ComplianceDefinePurposeRequest, params: { code: string /* Purpose code; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CompliancePurpose> {
+    const req: ApiRequest = { method: 'PUT', path: `/compliance/purposes/by-code`, query: { code: params?.code } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CompliancePurpose>(req, options);
   }
@@ -3959,10 +3959,10 @@ export class ComplianceApi {
    *
    * Called by a registered consent manager (mTLS at the gateway; public at the API).
    *
-   * `POST /compliance/consent-managers/{cm}/artefacts` (operationId `ingestConsentArtefact`); result stored atomically with the state change.
+   * `POST /compliance/consent-managers/by-cm/artefacts` (operationId `ingestConsentArtefact`); result stored atomically with the state change.
    */
-  async ingestConsentArtefact(cm: string, body: M.ComplianceConsentArtefact, params?: { tenant?: string /* Tenant of an unauthenticated call (else X-Sangam-Tenant) */; xSangamTenant?: string /* Tenant of an unauthenticated call (else ?tenant=) */ }, options?: RequestOptions): Promise<M.ComplianceConsent> {
-    const req: ApiRequest = { method: 'POST', path: `/compliance/consent-managers/${seg(String(cm))}/artefacts`, query: { tenant: params?.tenant } };
+  async ingestConsentArtefact(body: M.ComplianceConsentArtefact, params: { cm: string /* Consent manager id; may carry '/' or ':' */; tenant?: string /* Tenant of an unauthenticated call (else X-Sangam-Tenant) */; xSangamTenant?: string /* Tenant of an unauthenticated call (else ?tenant=) */ }, options?: RequestOptions): Promise<M.ComplianceConsent> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/consent-managers/by-cm/artefacts`, query: { cm: params?.cm, tenant: params?.tenant } };
     headersOf(req, { 'X-Sangam-Tenant': params?.xSangamTenant });
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ComplianceConsent>(req, options);
@@ -4175,10 +4175,10 @@ export class ComplianceApi {
    *
    * Sets the effective contact for a role of the jurisdiction pack (residency checked where required).
    *
-   * `POST /compliance/contacts/{role}` (operationId `setComplianceContact`); permission `compliance.admin`; result stored atomically with the state change.
+   * `POST /compliance/contacts/by-role` (operationId `setComplianceContact`); permission `compliance.admin`; result stored atomically with the state change.
    */
-  async setComplianceContact(role: string, body: M.ComplianceContact, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/compliance/contacts/${seg(String(role))}` };
+  async setComplianceContact(body: M.ComplianceContact, params: { role: string /* Contact role of the jurisdiction pack; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/contacts/by-role`, query: { role: params?.role } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -4472,10 +4472,10 @@ export class ConfigApi {
    *
    * Codes of a scheme segment valid on the date (optionally children of a parent code).
    *
-   * `GET /config/master/{scheme}/{segment}` (operationId `listConfigMasterCodes`); permission `config.read`.
+   * `GET /config/master/by-scheme/by-segment` (operationId `listConfigMasterCodes`); permission `config.read`.
    */
-  async listConfigMasterCodes(scheme: string, segment: string, params?: { scope?: string /* scope id; default: the caller's tenant */; parent?: string; asOf?: string; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.ConfigMasterCode>> {
-    const req: ApiRequest = { method: 'GET', path: `/config/master/${seg(String(scheme))}/${seg(String(segment))}`, query: { scope: params?.scope, parent: params?.parent, asOf: params?.asOf, page: params?.page, size: params?.size } };
+  async listConfigMasterCodes(params: { scheme: string /* Classification scheme; may carry '/' or ':' */; segment: string /* Scheme segment; may carry '/' or ':' */; scope?: string /* scope id; default: the caller's tenant */; parent?: string; asOf?: string; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.ConfigMasterCode>> {
+    const req: ApiRequest = { method: 'GET', path: `/config/master/by-scheme/by-segment`, query: { scheme: params?.scheme, segment: params?.segment, scope: params?.scope, parent: params?.parent, asOf: params?.asOf, page: params?.page, size: params?.size } };
     return this.calls.page<M.ConfigMasterCode>(req, options, params?.page, params?.size);
   }
 
@@ -4535,10 +4535,10 @@ export class ConfigApi {
    *
    * Checks a document against its type (required fields, limits, chain).
    *
-   * `POST /config/document-types/{id}/check` (operationId `checkConfigDocument`); permission `config.read`.
+   * `POST /config/document-types/by-id/check` (operationId `checkConfigDocument`); permission `config.read`.
    */
-  async checkConfigDocument(id: string, body: M.ConfigDocumentCheckRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/config/document-types/${seg(String(id))}/check` };
+  async checkConfigDocument(body: M.ConfigDocumentCheckRequest, params: { id: string /* Document type id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/config/document-types/by-id/check`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -4548,10 +4548,10 @@ export class ConfigApi {
    *
    * Maps a code (and amount) to the target classification (e.g. COFOG) with shares.
    *
-   * `POST /config/crosswalks/{id}/map` (operationId `mapConfigCrosswalk`); permission `config.read`.
+   * `POST /config/crosswalks/by-id/map` (operationId `mapConfigCrosswalk`); permission `config.read`.
    */
-  async mapConfigCrosswalk(id: string, body: M.ConfigCrosswalkRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/config/crosswalks/${seg(String(id))}/map` };
+  async mapConfigCrosswalk(body: M.ConfigCrosswalkRequest, params: { id: string /* Crosswalk id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/config/crosswalks/by-id/map`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -4728,10 +4728,10 @@ export class DltHooksApi {
    *
    * Public at the Sangam layer: the X-Sangam-Signature header is the authentication and is checked first. A missing, wrong or stale signature (outside 5 minutes) is 401 WEBHOOK_SIGNATURE_INVALID; a tenant or connector that is not a configured DLT SMS connector is 404. The body is one report or an array of reports; a body that is not, or a report with neither clientRef nor messageId, is 422 DLT_DELIVERY_REPORT_INVALID and nothing is written. Each accepted report updates the message's delivery state; NOTIFICATION_DELIVERED is written once per delivered message (decision 304).
    *
-   * `POST /hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports` (operationId `receiveDltDeliveryReports`).
+   * `POST /hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports` (operationId `receiveDltDeliveryReports`).
    */
-  async receiveDltDeliveryReports(tenant: string, connectorId: string, body: unknown, params: { xSangamSignature: string /* t=<epoch seconds>,v1=<hex HMAC-SHA256(secret, t + '.' + body)>; refused when t is more than 5 minutes from the server clock */ }, options?: RequestOptions): Promise<M.DltDeliveryReportResult> {
-    const req: ApiRequest = { method: 'POST', path: `/hooks/sms-dlt/${seg(String(tenant))}/${seg(String(connectorId))}/delivery-reports` };
+  async receiveDltDeliveryReports(tenant: string, body: unknown, params: { connectorId: string /* The tenant's DLT SMS connector; may carry '/' or ':' */; xSangamSignature: string /* t=<epoch seconds>,v1=<hex HMAC-SHA256(secret, t + '.' + body)>; refused when t is more than 5 minutes from the server clock */ }, options?: RequestOptions): Promise<M.DltDeliveryReportResult> {
+    const req: ApiRequest = { method: 'POST', path: `/hooks/sms-dlt/${seg(String(tenant))}/by-connector-id/delivery-reports`, query: { connectorId: params?.connectorId } };
     headersOf(req, { 'X-Sangam-Signature': params?.xSangamSignature });
     if (body !== undefined) req.body = body;
     return this.calls.json<M.DltDeliveryReportResult>(req, options);
@@ -5051,10 +5051,10 @@ export class EventGridHooksApi {
    *
    * Public at the Sangam layer; the channel's authentication is checked first: a Microsoft Entra ID delivery token (Authorization: Bearer; issuer, audience and signature validated against the channel's configured tenant and application) or the delivery-property secret header, whichever the channel configures (decision 219). A delivery that satisfies no configured method is 401 WEBHOOK_SIGNATURE_INVALID (fail closed), 404 when the channel is not configured or not enabled. CloudEvents structured single or batch, or the Event Grid schema (an array). A Microsoft.EventGrid.SubscriptionValidationEvent is answered with {validationResponse} and writes nothing; other events are written to the inbox (deduplicated by id) and acknowledged. A content type the channel does not accept is 400.
    *
-   * `POST /hooks/eventgrid/{tenant}/{channel}` (operationId `receiveEventGridDelivery`).
+   * `POST /hooks/eventgrid/{tenant}/by-channel` (operationId `receiveEventGridDelivery`).
    */
-  async receiveEventGridDelivery(tenant: string, channel: string, body: Array<Record<string, unknown>>, options?: RequestOptions): Promise<M.EventGridHookResult> {
-    const req: ApiRequest = { method: 'POST', path: `/hooks/eventgrid/${seg(String(tenant))}/${seg(String(channel))}` };
+  async receiveEventGridDelivery(tenant: string, body: Array<Record<string, unknown>>, params: { channel: string /* Configured Event Grid inbound channel of the tenant (an event channel key); may carry ':' */ }, options?: RequestOptions): Promise<M.EventGridHookResult> {
+    const req: ApiRequest = { method: 'POST', path: `/hooks/eventgrid/${seg(String(tenant))}/by-channel`, query: { channel: params?.channel } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.EventGridHookResult>(req, options);
   }
@@ -5094,10 +5094,10 @@ export class EventsApi {
    *
    * One channel.
    *
-   * `GET /events/channels/{key}` (operationId `getEventChannel`); permission `event.admin`.
+   * `GET /events/channels/by-key` (operationId `getEventChannel`); permission `event.admin`.
    */
-  async getEventChannel(key: string, options?: RequestOptions): Promise<M.EventChannel> {
-    const req: ApiRequest = { method: 'GET', path: `/events/channels/${seg(String(key))}` };
+  async getEventChannel(params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */ }, options?: RequestOptions): Promise<M.EventChannel> {
+    const req: ApiRequest = { method: 'GET', path: `/events/channels/by-key`, query: { key: params?.key } };
     return this.calls.json<M.EventChannel>(req, options);
   }
 
@@ -5106,10 +5106,10 @@ export class EventsApi {
    *
    * Updates a channel.
    *
-   * `PUT /events/channels/{key}` (operationId `updateEventChannel`); permission `event.admin`; result stored atomically with the state change.
+   * `PUT /events/channels/by-key` (operationId `updateEventChannel`); permission `event.admin`; result stored atomically with the state change.
    */
-  async updateEventChannel(key: string, body: M.EventChannel, options?: RequestOptions): Promise<M.EventChannel> {
-    const req: ApiRequest = { method: 'PUT', path: `/events/channels/${seg(String(key))}` };
+  async updateEventChannel(body: M.EventChannel, params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */ }, options?: RequestOptions): Promise<M.EventChannel> {
+    const req: ApiRequest = { method: 'PUT', path: `/events/channels/by-key`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.EventChannel>(req, options);
   }
@@ -5119,10 +5119,10 @@ export class EventsApi {
    *
    * Retires every active version and removes the retired versions. Refused with 409 EVENT_IN_FLIGHT while events on the channel are buffered in the inbox or undelivered in the outbox.
    *
-   * `DELETE /events/channels/{key}` (operationId `deleteEventChannel`); permission `event.admin`; result stored atomically with the state change.
+   * `DELETE /events/channels/by-key` (operationId `deleteEventChannel`); permission `event.admin`; result stored atomically with the state change.
    */
-  async deleteEventChannel(key: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/events/channels/${seg(String(key))}`, query: { reason: params?.reason } };
+  async deleteEventChannel(params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/events/channels/by-key`, query: { key: params?.key, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 
@@ -5131,10 +5131,10 @@ export class EventsApi {
    *
    * Marks every active version RETIRED: the channel no longer resolves and stops receiving; an older active version, if any, becomes current. Refused with 409 EVENT_IN_FLIGHT while events are in flight. Returns the channel with active=false (or the version that became current).
    *
-   * `POST /events/channels/{key}/retire` (operationId `retireEventChannel`); permission `event.admin`; result stored atomically with the state change.
+   * `POST /events/channels/by-key/retire` (operationId `retireEventChannel`); permission `event.admin`; result stored atomically with the state change.
    */
-  async retireEventChannel(key: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.EventChannel> {
-    const req: ApiRequest = { method: 'POST', path: `/events/channels/${seg(String(key))}/retire` };
+  async retireEventChannel(body: M.ReasonRequest, params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */ }, options?: RequestOptions): Promise<M.EventChannel> {
+    const req: ApiRequest = { method: 'POST', path: `/events/channels/by-key/retire`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.EventChannel>(req, options);
   }
@@ -5144,10 +5144,10 @@ export class EventsApi {
    *
    * Re-activates the newest retired version (undo of a retire); 409 NOT_RETIRED when there is none.
    *
-   * `POST /events/channels/{key}/restore` (operationId `restoreEventChannel`); permission `event.admin`; result stored atomically with the state change.
+   * `POST /events/channels/by-key/restore` (operationId `restoreEventChannel`); permission `event.admin`; result stored atomically with the state change.
    */
-  async restoreEventChannel(key: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.EventChannel> {
-    const req: ApiRequest = { method: 'POST', path: `/events/channels/${seg(String(key))}/restore` };
+  async restoreEventChannel(body: M.ReasonRequest, params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */ }, options?: RequestOptions): Promise<M.EventChannel> {
+    const req: ApiRequest = { method: 'POST', path: `/events/channels/by-key/restore`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.EventChannel>(req, options);
   }
@@ -5182,10 +5182,10 @@ export class EventsApi {
    *
    * One definition.
    *
-   * `GET /events/definitions/{key}` (operationId `getEventDefinition`); permission `event.admin`.
+   * `GET /events/definitions/by-key` (operationId `getEventDefinition`); permission `event.admin`.
    */
-  async getEventDefinition(key: string, options?: RequestOptions): Promise<M.EventDefinition> {
-    const req: ApiRequest = { method: 'GET', path: `/events/definitions/${seg(String(key))}` };
+  async getEventDefinition(params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */ }, options?: RequestOptions): Promise<M.EventDefinition> {
+    const req: ApiRequest = { method: 'GET', path: `/events/definitions/by-key`, query: { key: params?.key } };
     return this.calls.json<M.EventDefinition>(req, options);
   }
 
@@ -5194,10 +5194,10 @@ export class EventsApi {
    *
    * Retires every active version and removes the retired versions. Refused with 409 EVENT_IN_FLIGHT while events of the key are buffered or undelivered.
    *
-   * `DELETE /events/definitions/{key}` (operationId `deleteEventDefinition`); permission `event.admin`; result stored atomically with the state change.
+   * `DELETE /events/definitions/by-key` (operationId `deleteEventDefinition`); permission `event.admin`; result stored atomically with the state change.
    */
-  async deleteEventDefinition(key: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/events/definitions/${seg(String(key))}`, query: { reason: params?.reason } };
+  async deleteEventDefinition(params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/events/definitions/by-key`, query: { key: params?.key, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 
@@ -5206,10 +5206,10 @@ export class EventsApi {
    *
    * Marks every active version RETIRED; an older active version, if any, becomes current. Refused with 409 EVENT_IN_FLIGHT while events of the key are in flight.
    *
-   * `POST /events/definitions/{key}/retire` (operationId `retireEventDefinition`); permission `event.admin`; result stored atomically with the state change.
+   * `POST /events/definitions/by-key/retire` (operationId `retireEventDefinition`); permission `event.admin`; result stored atomically with the state change.
    */
-  async retireEventDefinition(key: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.EventDefinition> {
-    const req: ApiRequest = { method: 'POST', path: `/events/definitions/${seg(String(key))}/retire` };
+  async retireEventDefinition(body: M.ReasonRequest, params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */ }, options?: RequestOptions): Promise<M.EventDefinition> {
+    const req: ApiRequest = { method: 'POST', path: `/events/definitions/by-key/retire`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.EventDefinition>(req, options);
   }
@@ -5219,10 +5219,10 @@ export class EventsApi {
    *
    * Re-activates the newest retired version (undo of a retire); 409 NOT_RETIRED when there is none.
    *
-   * `POST /events/definitions/{key}/restore` (operationId `restoreEventDefinition`); permission `event.admin`; result stored atomically with the state change.
+   * `POST /events/definitions/by-key/restore` (operationId `restoreEventDefinition`); permission `event.admin`; result stored atomically with the state change.
    */
-  async restoreEventDefinition(key: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.EventDefinition> {
-    const req: ApiRequest = { method: 'POST', path: `/events/definitions/${seg(String(key))}/restore` };
+  async restoreEventDefinition(body: M.ReasonRequest, params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */ }, options?: RequestOptions): Promise<M.EventDefinition> {
+    const req: ApiRequest = { method: 'POST', path: `/events/definitions/by-key/restore`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.EventDefinition>(req, options);
   }
@@ -5232,10 +5232,10 @@ export class EventsApi {
    *
    * Accepts a CloudEvent on an inbound channel; de-duplicated through the inbox by (tenant, source, id) (R38), then starts (uniqueStart) or correlates (R83).
    *
-   * `POST /events/{channel}` (operationId `publishEvent`); permission `event.publish`; result stored atomically with the state change.
+   * `POST /events/by-channel` (operationId `publishEvent`); permission `event.publish`; result stored atomically with the state change.
    */
-  async publishEvent(channel: string, body: M.CloudEvent, options?: RequestOptions): Promise<M.PublishResult> {
-    const req: ApiRequest = { method: 'POST', path: `/events/${seg(String(channel))}` };
+  async publishEvent(body: M.CloudEvent, params: { channel: string /* Inbound event channel key; may carry ':' */ }, options?: RequestOptions): Promise<M.PublishResult> {
+    const req: ApiRequest = { method: 'POST', path: `/events/by-channel`, query: { channel: params?.channel } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.PublishResult>(req, options);
   }
@@ -5354,10 +5354,10 @@ export class FieldApi {
    *
    * A template (latest version, or a given version).
    *
-   * `GET /field/templates/{key}` (operationId `fieldWorkTemplate`); permission `field.capture`.
+   * `GET /field/templates/by-key` (operationId `fieldWorkTemplate`); permission `field.capture`.
    */
-  async fieldWorkTemplate(key: string, params?: { version?: number }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/field/templates/${seg(String(key))}`, query: { version: params?.version } };
+  async fieldWorkTemplate(params: { key: string /* template key; may carry '/' or ':' */; version?: number }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/field/templates/by-key`, query: { key: params?.key, version: params?.version } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -5366,10 +5366,10 @@ export class FieldApi {
    *
    * Retire a template version.
    *
-   * `POST /field/templates/{key}/{version}/retire` (operationId `fieldWorkRetireTemplate`); permission `field.admin`; result stored atomically with the state change.
+   * `POST /field/templates/by-key/{version}/retire` (operationId `fieldWorkRetireTemplate`); permission `field.admin`; result stored atomically with the state change.
    */
-  async fieldWorkRetireTemplate(key: string, version: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/field/templates/${seg(String(key))}/${seg(String(version))}/retire` };
+  async fieldWorkRetireTemplate(version: string, params: { key: string /* template key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/field/templates/by-key/${seg(String(version))}/retire`, query: { key: params?.key } };
     await this.calls.none(req, options);
   }
 
@@ -5403,10 +5403,10 @@ export class FieldApi {
    *
    * Run one schedule now.
    *
-   * `POST /field/schedules/{id}/run` (operationId `fieldWorkRunSchedule`); permission `field.admin`; result stored atomically with the state change.
+   * `POST /field/schedules/by-id/run` (operationId `fieldWorkRunSchedule`); permission `field.admin`; result stored atomically with the state change.
    */
-  async fieldWorkRunSchedule(id: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/field/schedules/${seg(String(id))}/run` };
+  async fieldWorkRunSchedule(params: { id: string /* schedule id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/field/schedules/by-id/run`, query: { id: params?.id } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -5477,10 +5477,10 @@ export class FieldApi {
    *
    * Set a device status (active, lost, revoked: revoke wipes the local queue).
    *
-   * `POST /field/devices/{id}/status` (operationId `fieldWorkDeviceStatus`); permission `field.admin`; result stored atomically with the state change.
+   * `POST /field/devices/by-id/status` (operationId `fieldWorkDeviceStatus`); permission `field.admin`; result stored atomically with the state change.
    */
-  async fieldWorkDeviceStatus(id: string, body: M.FieldWorkDeviceStatusBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/field/devices/${seg(String(id))}/status` };
+  async fieldWorkDeviceStatus(body: M.FieldWorkDeviceStatusBody, params: { id: string /* device id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/field/devices/by-id/status`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -5490,10 +5490,10 @@ export class FieldApi {
    *
    * Set a device's offline queue policy.
    *
-   * `POST /field/devices/{id}/policy` (operationId `fieldWorkDevicePolicy`); permission `field.admin`; result stored atomically with the state change.
+   * `POST /field/devices/by-id/policy` (operationId `fieldWorkDevicePolicy`); permission `field.admin`; result stored atomically with the state change.
    */
-  async fieldWorkDevicePolicy(id: string, body: M.FieldWorkDevicePolicyBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/field/devices/${seg(String(id))}/policy` };
+  async fieldWorkDevicePolicy(body: M.FieldWorkDevicePolicyBody, params: { id: string /* device id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/field/devices/by-id/policy`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -5503,10 +5503,10 @@ export class FieldApi {
    *
    * Verify a device's packet hash chain.
    *
-   * `GET /field/devices/{id}/chain` (operationId `fieldWorkChain`); permission `field.review`.
+   * `GET /field/devices/by-id/chain` (operationId `fieldWorkChain`); permission `field.review`.
    */
-  async fieldWorkChain(id: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/field/devices/${seg(String(id))}/chain` };
+  async fieldWorkChain(params: { id: string /* device id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/field/devices/by-id/chain`, query: { id: params?.id } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -5515,10 +5515,10 @@ export class FieldApi {
    *
    * Upload offline packets from a device (idempotent per packet).
    *
-   * `POST /field/sync/{deviceId}/upload` (operationId `fieldWorkUpload`); permission `field.capture`; result stored atomically with the state change.
+   * `POST /field/sync/by-device-id/upload` (operationId `fieldWorkUpload`); permission `field.capture`; result stored atomically with the state change.
    */
-  async fieldWorkUpload(deviceId: string, body: Array<M.FieldWorkUploadBody>, options?: RequestOptions): Promise<Array<unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/field/sync/${seg(String(deviceId))}/upload` };
+  async fieldWorkUpload(body: Array<M.FieldWorkUploadBody>, params: { deviceId: string /* device id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/field/sync/by-device-id/upload`, query: { deviceId: params?.deviceId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Array<unknown>>(req, options);
   }
@@ -5528,10 +5528,10 @@ export class FieldApi {
    *
    * Pull server changes for a device since a cursor.
    *
-   * `GET /field/sync/{deviceId}/pull` (operationId `fieldWorkPull`); permission `field.capture`.
+   * `GET /field/sync/by-device-id/pull` (operationId `fieldWorkPull`); permission `field.capture`.
    */
-  async fieldWorkPull(deviceId: string, params?: { cursor?: number }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/field/sync/${seg(String(deviceId))}/pull`, query: { cursor: params?.cursor } };
+  async fieldWorkPull(params: { deviceId: string /* device id; may carry '/' or ':' */; cursor?: number }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/field/sync/by-device-id/pull`, query: { deviceId: params?.deviceId, cursor: params?.cursor } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -5590,10 +5590,10 @@ export class FieldApi {
    *
    * Evidence metadata and integrity report.
    *
-   * `GET /field/evidence/{id}` (operationId `fieldWorkEvidence`); permission `field.capture`.
+   * `GET /field/evidence/by-id` (operationId `fieldWorkEvidence`); permission `field.capture`.
    */
-  async fieldWorkEvidence(id: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/field/evidence/${seg(String(id))}` };
+  async fieldWorkEvidence(params: { id: string /* evidence id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/field/evidence/by-id`, query: { id: params?.id } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -5602,10 +5602,10 @@ export class FieldApi {
    *
    * Evidence content (streamed).
    *
-   * `GET /field/evidence/{id}/content` (operationId `fieldWorkEvidenceContent`); permission `field.capture`.
+   * `GET /field/evidence/by-id/content` (operationId `fieldWorkEvidenceContent`); permission `field.capture`.
    */
-  async fieldWorkEvidenceContent(id: string, options?: RequestOptions): Promise<Uint8Array> {
-    const req: ApiRequest = { method: 'GET', path: `/field/evidence/${seg(String(id))}/content` };
+  async fieldWorkEvidenceContent(params: { id: string /* evidence id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Uint8Array> {
+    const req: ApiRequest = { method: 'GET', path: `/field/evidence/by-id/content`, query: { id: params?.id } };
     return this.calls.bytes(req, options, 'application/octet-stream');
   }
 
@@ -5614,10 +5614,10 @@ export class FieldApi {
    *
    * Re-run the integrity checks of an evidence item.
    *
-   * `POST /field/evidence/{id}/reverify` (operationId `fieldWorkReverifyEvidence`); permission `field.review`; result stored atomically with the state change.
+   * `POST /field/evidence/by-id/reverify` (operationId `fieldWorkReverifyEvidence`); permission `field.review`; result stored atomically with the state change.
    */
-  async fieldWorkReverifyEvidence(id: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/field/evidence/${seg(String(id))}/reverify` };
+  async fieldWorkReverifyEvidence(params: { id: string /* evidence id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/field/evidence/by-id/reverify`, query: { id: params?.id } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -5887,10 +5887,10 @@ export class FieldUnitsApi {
    *
    * A field unit.
    *
-   * `GET /field/units/{id}` (operationId `fieldWorkUnit`); permission `dispatch.operate`.
+   * `GET /field/units/by-id` (operationId `fieldWorkUnit`); permission `dispatch.operate`.
    */
-  async fieldWorkUnit(id: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/field/units/${seg(String(id))}` };
+  async fieldWorkUnit(params: { id: string /* unit id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/field/units/by-id`, query: { id: params?.id } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -5899,10 +5899,10 @@ export class FieldUnitsApi {
    *
    * Set a unit status.
    *
-   * `POST /field/units/{id}/status` (operationId `fieldWorkUnitStatus`); permission `dispatch.operate`; result stored atomically with the state change.
+   * `POST /field/units/by-id/status` (operationId `fieldWorkUnitStatus`); permission `dispatch.operate`; result stored atomically with the state change.
    */
-  async fieldWorkUnitStatus(id: string, body: M.FieldWorkUnitStatusBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/field/units/${seg(String(id))}/status` };
+  async fieldWorkUnitStatus(body: M.FieldWorkUnitStatusBody, params: { id: string /* unit id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/field/units/by-id/status`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -5912,10 +5912,10 @@ export class FieldUnitsApi {
    *
    * Position ping from a unit (AVL feed, N12).
    *
-   * `POST /field/units/{id}/pings` (operationId `fieldWorkPing`); permission `dispatch.operate`; result stored atomically with the state change.
+   * `POST /field/units/by-id/pings` (operationId `fieldWorkPing`); permission `dispatch.operate`; result stored atomically with the state change.
    */
-  async fieldWorkPing(id: string, body: M.FieldWorkPingBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/field/units/${seg(String(id))}/pings` };
+  async fieldWorkPing(body: M.FieldWorkPingBody, params: { id: string /* unit id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/field/units/by-id/pings`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -5925,10 +5925,10 @@ export class FieldUnitsApi {
    *
    * Open offers for a unit.
    *
-   * `GET /field/units/{id}/offers` (operationId `fieldWorkUnitOffers`); permission `dispatch.operate`.
+   * `GET /field/units/by-id/offers` (operationId `fieldWorkUnitOffers`); permission `dispatch.operate`.
    */
-  async fieldWorkUnitOffers(id: string, options?: RequestOptions): Promise<Array<unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/field/units/${seg(String(id))}/offers` };
+  async fieldWorkUnitOffers(params: { id: string /* unit id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/field/units/by-id/offers`, query: { id: params?.id } };
     return this.calls.json<Array<unknown>>(req, options);
   }
 
@@ -5937,10 +5937,10 @@ export class FieldUnitsApi {
    *
    * ETA of a unit to a job.
    *
-   * `GET /field/units/{id}/eta` (operationId `fieldWorkEta`); permission `dispatch.operate`.
+   * `GET /field/units/by-id/eta` (operationId `fieldWorkEta`); permission `dispatch.operate`.
    */
-  async fieldWorkEta(id: string, params: { jobId: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/field/units/${seg(String(id))}/eta`, query: { jobId: params?.jobId } };
+  async fieldWorkEta(params: { id: string /* unit id; may carry '/' or ':' */; jobId: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/field/units/by-id/eta`, query: { id: params?.id, jobId: params?.jobId } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -5949,10 +5949,10 @@ export class FieldUnitsApi {
    *
    * Trips of a unit.
    *
-   * `GET /field/units/{id}/trips` (operationId `fieldWorkTrips`); permission `dispatch.operate`.
+   * `GET /field/units/by-id/trips` (operationId `fieldWorkTrips`); permission `dispatch.operate`.
    */
-  async fieldWorkTrips(id: string, options?: RequestOptions): Promise<Array<unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/field/units/${seg(String(id))}/trips` };
+  async fieldWorkTrips(params: { id: string /* unit id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/field/units/by-id/trips`, query: { id: params?.id } };
     return this.calls.json<Array<unknown>>(req, options);
   }
 }
@@ -6134,10 +6134,10 @@ export class GeoApi {
    *
    * GeoController.layer (sangam-rest).
    *
-   * `GET /geo/layers/{layer}` (operationId `geoGeoLayer`); permission `geo.read`.
+   * `GET /geo/layers/by-layer` (operationId `geoGeoLayer`); permission `geo.read`.
    */
-  async geoGeoLayer(layer: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/geo/layers/${seg(String(layer))}` };
+  async geoGeoLayer(params: { layer: string /* Layer; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/geo/layers/by-layer`, query: { layer: params?.layer } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -6146,10 +6146,10 @@ export class GeoApi {
    *
    * GeoController.importBoundaries (sangam-rest).
    *
-   * `POST /geo/layers/{layer}/import` (operationId `geoGeoImportBoundaries`); permission `geo.write`; result stored atomically with the state change.
+   * `POST /geo/layers/by-layer/import` (operationId `geoGeoImportBoundaries`); permission `geo.write`; result stored atomically with the state change.
    */
-  async geoGeoImportBoundaries(layer: string, body: M.GeoGeoImportBoundariesBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/geo/layers/${seg(String(layer))}/import` };
+  async geoGeoImportBoundaries(body: M.GeoGeoImportBoundariesBody, params: { layer: string /* Layer; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/geo/layers/by-layer/import`, query: { layer: params?.layer } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -6159,10 +6159,10 @@ export class GeoApi {
    *
    * GeoController.features (sangam-rest).
    *
-   * `GET /geo/layers/{layer}/features` (operationId `geoGeoFeatures`); permission `geo.read`.
+   * `GET /geo/layers/by-layer/features` (operationId `geoGeoFeatures`); permission `geo.read`.
    */
-  async geoGeoFeatures(layer: string, params?: { level?: string; parentId?: string; history?: boolean; page?: number; size?: number }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/geo/layers/${seg(String(layer))}/features`, query: { level: params?.level, parentId: params?.parentId, history: params?.history, page: params?.page, size: params?.size } };
+  async geoGeoFeatures(params: { layer: string /* Layer; may carry '/' or ':' */; level?: string; parentId?: string; history?: boolean; page?: number; size?: number }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/geo/layers/by-layer/features`, query: { layer: params?.layer, level: params?.level, parentId: params?.parentId, history: params?.history, page: params?.page, size: params?.size } };
     return this.calls.page<Record<string, unknown>>(req, options, params?.page, params?.size);
   }
 
@@ -6171,10 +6171,10 @@ export class GeoApi {
    *
    * GeoController.putFeature (sangam-rest).
    *
-   * `POST /geo/layers/{layer}/features` (operationId `geoGeoPutFeature`); permission `geo.write`; result stored atomically with the state change.
+   * `POST /geo/layers/by-layer/features` (operationId `geoGeoPutFeature`); permission `geo.write`; result stored atomically with the state change.
    */
-  async geoGeoPutFeature(layer: string, body: M.GeoGeoPutFeatureBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/geo/layers/${seg(String(layer))}/features` };
+  async geoGeoPutFeature(body: M.GeoGeoPutFeatureBody, params: { layer: string /* Layer; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/geo/layers/by-layer/features`, query: { layer: params?.layer } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -6184,10 +6184,10 @@ export class GeoApi {
    *
    * GeoController.feature (sangam-rest).
    *
-   * `GET /geo/features/{id}` (operationId `geoGeoFeature`); permission `geo.read`.
+   * `GET /geo/features/by-id` (operationId `geoGeoFeature`); permission `geo.read`.
    */
-  async geoGeoFeature(id: string, params?: { geometry?: boolean }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/geo/features/${seg(String(id))}`, query: { geometry: params?.geometry } };
+  async geoGeoFeature(params: { id: string /* Id; may carry '/' or ':' */; geometry?: boolean }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/geo/features/by-id`, query: { id: params?.id, geometry: params?.geometry } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -6196,10 +6196,10 @@ export class GeoApi {
    *
    * GeoController.retire (sangam-rest).
    *
-   * `DELETE /geo/features/{id}` (operationId `geoGeoRetire`); permission `geo.write`; result stored atomically with the state change.
+   * `DELETE /geo/features/by-id` (operationId `geoGeoRetire`); permission `geo.write`; result stored atomically with the state change.
    */
-  async geoGeoRetire(id: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/geo/features/${seg(String(id))}` };
+  async geoGeoRetire(params: { id: string /* Id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/geo/features/by-id`, query: { id: params?.id } };
     await this.calls.none(req, options);
   }
 
@@ -6208,10 +6208,10 @@ export class GeoApi {
    *
    * GeoController.lineage (sangam-rest).
    *
-   * `GET /geo/features/{id}/lineage` (operationId `geoGeoLineage`); permission `geo.read`.
+   * `GET /geo/features/by-id/lineage` (operationId `geoGeoLineage`); permission `geo.read`.
    */
-  async geoGeoLineage(id: string, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/geo/features/${seg(String(id))}/lineage` };
+  async geoGeoLineage(params: { id: string /* Id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/geo/features/by-id/lineage`, query: { id: params?.id } };
     return this.calls.json<Array<Record<string, unknown>>>(req, options);
   }
 
@@ -6270,10 +6270,10 @@ export class GeoApi {
    *
    * GeoController.fence (sangam-rest).
    *
-   * `GET /geo/fences/{id}` (operationId `geoGeoFence`); permission `geo.read`.
+   * `GET /geo/fences/by-id` (operationId `geoGeoFence`); permission `geo.read`.
    */
-  async geoGeoFence(id: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/geo/fences/${seg(String(id))}` };
+  async geoGeoFence(params: { id: string /* Id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/geo/fences/by-id`, query: { id: params?.id } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -6282,10 +6282,10 @@ export class GeoApi {
    *
    * GeoController.deactivateFence (sangam-rest).
    *
-   * `DELETE /geo/fences/{id}` (operationId `geoGeoDeactivateFence`); permission `geo.write`; result stored atomically with the state change.
+   * `DELETE /geo/fences/by-id` (operationId `geoGeoDeactivateFence`); permission `geo.write`; result stored atomically with the state change.
    */
-  async geoGeoDeactivateFence(id: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/geo/fences/${seg(String(id))}` };
+  async geoGeoDeactivateFence(params: { id: string /* Id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/geo/fences/by-id`, query: { id: params?.id } };
     await this.calls.none(req, options);
   }
 
@@ -6294,10 +6294,10 @@ export class GeoApi {
    *
    * GeoController.checkFence (sangam-rest).
    *
-   * `POST /geo/fences/{id}/check` (operationId `geoGeoCheckFence`); permission `geo.write`.
+   * `POST /geo/fences/by-id/check` (operationId `geoGeoCheckFence`); permission `geo.write`.
    */
-  async geoGeoCheckFence(id: string, body: M.GeoGeoCheckFenceBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/geo/fences/${seg(String(id))}/check` };
+  async geoGeoCheckFence(body: M.GeoGeoCheckFenceBody, params: { id: string /* Id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/geo/fences/by-id/check`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -6307,10 +6307,10 @@ export class GeoApi {
    *
    * GeoController.putObjectGeometry (sangam-rest).
    *
-   * `PUT /geo/objects/{type}/{id}/geometry` (operationId `geoGeoPutObjectGeometry`); permission `geo.write`; result stored atomically with the state change.
+   * `PUT /geo/objects/by-type/by-id/geometry` (operationId `geoGeoPutObjectGeometry`); permission `geo.write`; result stored atomically with the state change.
    */
-  async geoGeoPutObjectGeometry(type: string, id: string, body: M.GeoGeoPutObjectGeometryBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'PUT', path: `/geo/objects/${seg(String(type))}/${seg(String(id))}/geometry` };
+  async geoGeoPutObjectGeometry(body: M.GeoGeoPutObjectGeometryBody, params: { type: string /* Type; may carry '/' or ':' */; id: string /* Id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'PUT', path: `/geo/objects/by-type/by-id/geometry`, query: { type: params?.type, id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -6320,10 +6320,10 @@ export class GeoApi {
    *
    * GeoController.objectGeometry (sangam-rest).
    *
-   * `GET /geo/objects/{type}/{id}/geometry` (operationId `geoGeoObjectGeometry`); permission `geo.read`.
+   * `GET /geo/objects/by-type/by-id/geometry` (operationId `geoGeoObjectGeometry`); permission `geo.read`.
    */
-  async geoGeoObjectGeometry(type: string, id: string, params?: { attribute?: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/geo/objects/${seg(String(type))}/${seg(String(id))}/geometry`, query: { attribute: params?.attribute } };
+  async geoGeoObjectGeometry(params: { type: string /* Type; may carry '/' or ':' */; id: string /* Id; may carry '/' or ':' */; attribute?: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/geo/objects/by-type/by-id/geometry`, query: { type: params?.type, id: params?.id, attribute: params?.attribute } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -6357,10 +6357,10 @@ export class GeoApi {
    *
    * GeoController.queryExternal (sangam-rest).
    *
-   * `POST /geo/external-layers/{ref}/query` (operationId `geoGeoQueryExternal`); permission `geo.write`.
+   * `POST /geo/external-layers/by-ref/query` (operationId `geoGeoQueryExternal`); permission `geo.write`.
    */
-  async geoGeoQueryExternal(ref: string, body?: M.GeoGeoQueryExternalBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/geo/external-layers/${seg(String(ref))}/query` };
+  async geoGeoQueryExternal(body: M.GeoGeoQueryExternalBody | undefined, params: { ref: string /* Ref; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/geo/external-layers/by-ref/query`, query: { ref: params?.ref } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -6370,10 +6370,10 @@ export class GeoApi {
    *
    * GeoController.importExternal (sangam-rest).
    *
-   * `POST /geo/external-layers/{ref}/import` (operationId `geoGeoImportExternal`); permission `geo.write`; result stored atomically with the state change.
+   * `POST /geo/external-layers/by-ref/import` (operationId `geoGeoImportExternal`); permission `geo.write`; result stored atomically with the state change.
    */
-  async geoGeoImportExternal(ref: string, body?: M.GeoGeoImportExternalBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/geo/external-layers/${seg(String(ref))}/import` };
+  async geoGeoImportExternal(body: M.GeoGeoImportExternalBody | undefined, params: { ref: string /* Ref; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/geo/external-layers/by-ref/import`, query: { ref: params?.ref } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -6388,10 +6388,10 @@ export class HealthHooksApi {
    *
    * Public at the Sangam layer: the channel's shared secret header is checked (constant time) and each focus resource is written to the integration inbox (deduplicated, tenant-bound by the channel). ClaimResponse becomes sangam.ushealth.pasUpdate.
    *
-   * `POST /hooks/fhir/{channel}` (operationId `receiveFhirNotification`).
+   * `POST /hooks/fhir/by-channel` (operationId `receiveFhirNotification`).
    */
-  async receiveFhirNotification(channel: string, body: Record<string, unknown>, options?: RequestOptions): Promise<M.HealthHookResult> {
-    const req: ApiRequest = { method: 'POST', path: `/hooks/fhir/${seg(String(channel))}` };
+  async receiveFhirNotification(body: Record<string, unknown>, params: { channel: string /* Configured FHIR subscription channel; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.HealthHookResult> {
+    const req: ApiRequest = { method: 'POST', path: `/hooks/fhir/by-channel`, query: { channel: params?.channel } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.HealthHookResult>(req, options);
   }
@@ -6545,10 +6545,10 @@ export class LedgerApi {
    *
    * Balances of the ledger, filtered by period, line and holder prefixes and stage.
    *
-   * `GET /ledger/{ledger}/accounts` (operationId `listLedgerAccounts`); permission `ledger.read`.
+   * `GET /ledger/by-ledger/accounts` (operationId `listLedgerAccounts`); permission `ledger.read`.
    */
-  async listLedgerAccounts(ledger: string, params?: { period?: string; line?: string /* line (head of account) prefix */; holder?: string /* holder prefix */; stage?: string; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.LedgerAccount>> {
-    const req: ApiRequest = { method: 'GET', path: `/ledger/${seg(String(ledger))}/accounts`, query: { period: params?.period, line: params?.line, holder: params?.holder, stage: params?.stage, page: params?.page, size: params?.size } };
+  async listLedgerAccounts(params: { ledger: string /* ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':' */; period?: string; line?: string /* line (head of account) prefix */; holder?: string /* holder prefix */; stage?: string; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.LedgerAccount>> {
+    const req: ApiRequest = { method: 'GET', path: `/ledger/by-ledger/accounts`, query: { ledger: params?.ledger, period: params?.period, line: params?.line, holder: params?.holder, stage: params?.stage, page: params?.page, size: params?.size } };
     return this.calls.page<M.LedgerAccount>(req, options, params?.page, params?.size);
   }
 
@@ -6569,10 +6569,10 @@ export class LedgerApi {
    *
    * Posts one operation idempotently by reference; insufficient availability refuses (422) or parks the request (holdIfShort).
    *
-   * `POST /ledger/{ledger}/operations` (operationId `applyLedgerOperation`); permission `ledger.write`; result stored atomically with the state change.
+   * `POST /ledger/by-ledger/operations` (operationId `applyLedgerOperation`); permission `ledger.write`; result stored atomically with the state change.
    */
-  async applyLedgerOperation(ledger: string, body: M.LedgerOperationRequest, options?: RequestOptions): Promise<M.LedgerResult> {
-    const req: ApiRequest = { method: 'POST', path: `/ledger/${seg(String(ledger))}/operations` };
+  async applyLedgerOperation(body: M.LedgerOperationRequest, params: { ledger: string /* ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.LedgerResult> {
+    const req: ApiRequest = { method: 'POST', path: `/ledger/by-ledger/operations`, query: { ledger: params?.ledger } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.LedgerResult>(req, options);
   }
@@ -6582,10 +6582,10 @@ export class LedgerApi {
    *
    * Freezes matching accounts until released.
    *
-   * `POST /ledger/{ledger}/freeze-orders` (operationId `createLedgerFreezeOrder`); permission `ledger.admin`; result stored atomically with the state change.
+   * `POST /ledger/by-ledger/freeze-orders` (operationId `createLedgerFreezeOrder`); permission `ledger.admin`; result stored atomically with the state change.
    */
-  async createLedgerFreezeOrder(ledger: string, body: M.LedgerFreezeRequest, options?: RequestOptions): Promise<M.LedgerFreezeOrder> {
-    const req: ApiRequest = { method: 'POST', path: `/ledger/${seg(String(ledger))}/freeze-orders` };
+  async createLedgerFreezeOrder(body: M.LedgerFreezeRequest, params: { ledger: string /* ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.LedgerFreezeOrder> {
+    const req: ApiRequest = { method: 'POST', path: `/ledger/by-ledger/freeze-orders`, query: { ledger: params?.ledger } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.LedgerFreezeOrder>(req, options);
   }
@@ -6595,10 +6595,10 @@ export class LedgerApi {
    *
    * Active freeze orders of the ledger.
    *
-   * `GET /ledger/{ledger}/freeze-orders` (operationId `listLedgerFreezeOrders`); permission `ledger.read`.
+   * `GET /ledger/by-ledger/freeze-orders` (operationId `listLedgerFreezeOrders`); permission `ledger.read`.
    */
-  async listLedgerFreezeOrders(ledger: string, params?: { page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.LedgerFreezeOrder>> {
-    const req: ApiRequest = { method: 'GET', path: `/ledger/${seg(String(ledger))}/freeze-orders`, query: { page: params?.page, size: params?.size } };
+  async listLedgerFreezeOrders(params: { ledger: string /* ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':' */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.LedgerFreezeOrder>> {
+    const req: ApiRequest = { method: 'GET', path: `/ledger/by-ledger/freeze-orders`, query: { ledger: params?.ledger, page: params?.page, size: params?.size } };
     return this.calls.page<M.LedgerFreezeOrder>(req, options, params?.page, params?.size);
   }
 
@@ -6607,10 +6607,10 @@ export class LedgerApi {
    *
    * Releases the order; frozen accounts reopen.
    *
-   * `DELETE /ledger/{ledger}/freeze-orders/{id}` (operationId `releaseLedgerFreezeOrder`); permission `ledger.admin`; result stored atomically with the state change.
+   * `DELETE /ledger/by-ledger/freeze-orders/by-id` (operationId `releaseLedgerFreezeOrder`); permission `ledger.admin`; result stored atomically with the state change.
    */
-  async releaseLedgerFreezeOrder(ledger: string, id: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/ledger/${seg(String(ledger))}/freeze-orders/${seg(String(id))}` };
+  async releaseLedgerFreezeOrder(params: { ledger: string /* ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':' */; id: string /* freeze order id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/ledger/by-ledger/freeze-orders/by-id`, query: { ledger: params?.ledger, id: params?.id } };
     await this.calls.none(req, options);
   }
 
@@ -6619,10 +6619,10 @@ export class LedgerApi {
    *
    * Year-end lapse and carry-forward. The period is a query parameter: a fiscal-year label can carry '/' (2026/2027).
    *
-   * `POST /ledger/{ledger}/periods/close` (operationId `closeLedgerPeriod`); permission `ledger.admin`; result stored atomically with the state change.
+   * `POST /ledger/by-ledger/periods/close` (operationId `closeLedgerPeriod`); permission `ledger.admin`; result stored atomically with the state change.
    */
-  async closeLedgerPeriod(ledger: string, body: M.LedgerCloseRequest | undefined, params: { period: string /* fiscal period label */ }, options?: RequestOptions): Promise<Array<M.LedgerResult>> {
-    const req: ApiRequest = { method: 'POST', path: `/ledger/${seg(String(ledger))}/periods/close`, query: { period: params?.period } };
+  async closeLedgerPeriod(body: M.LedgerCloseRequest | undefined, params: { ledger: string /* ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':' */; period: string /* fiscal period label */ }, options?: RequestOptions): Promise<Array<M.LedgerResult>> {
+    const req: ApiRequest = { method: 'POST', path: `/ledger/by-ledger/periods/close`, query: { ledger: params?.ledger, period: params?.period } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Array<M.LedgerResult>>(req, options);
   }
@@ -6632,10 +6632,10 @@ export class LedgerApi {
    *
    * Requests parked for funds on matching accounts.
    *
-   * `GET /ledger/{ledger}/holds` (operationId `listLedgerHolds`); permission `ledger.read`.
+   * `GET /ledger/by-ledger/holds` (operationId `listLedgerHolds`); permission `ledger.read`.
    */
-  async listLedgerHolds(ledger: string, params?: { period?: string; line?: string /* line (head of account) prefix */; holder?: string /* holder prefix */; stage?: string; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.LedgerHeldRequest>> {
-    const req: ApiRequest = { method: 'GET', path: `/ledger/${seg(String(ledger))}/holds`, query: { period: params?.period, line: params?.line, holder: params?.holder, stage: params?.stage, page: params?.page, size: params?.size } };
+  async listLedgerHolds(params: { ledger: string /* ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':' */; period?: string; line?: string /* line (head of account) prefix */; holder?: string /* holder prefix */; stage?: string; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.LedgerHeldRequest>> {
+    const req: ApiRequest = { method: 'GET', path: `/ledger/by-ledger/holds`, query: { ledger: params?.ledger, period: params?.period, line: params?.line, holder: params?.holder, stage: params?.stage, page: params?.page, size: params?.size } };
     return this.calls.page<M.LedgerHeldRequest>(req, options, params?.page, params?.size);
   }
 
@@ -6644,10 +6644,10 @@ export class LedgerApi {
    *
    * Mirror versus external balances (SHADOW ledgers).
    *
-   * `POST /ledger/{ledger}/reconcile` (operationId `reconcileLedger`); permission `ledger.admin`; result stored atomically with the state change.
+   * `POST /ledger/by-ledger/reconcile` (operationId `reconcileLedger`); permission `ledger.admin`; result stored atomically with the state change.
    */
-  async reconcileLedger(ledger: string, body: M.LedgerReconcileRequest, options?: RequestOptions): Promise<Array<M.LedgerReconcileRow>> {
-    const req: ApiRequest = { method: 'POST', path: `/ledger/${seg(String(ledger))}/reconcile` };
+  async reconcileLedger(body: M.LedgerReconcileRequest, params: { ledger: string /* ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.LedgerReconcileRow>> {
+    const req: ApiRequest = { method: 'POST', path: `/ledger/by-ledger/reconcile`, query: { ledger: params?.ledger } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Array<M.LedgerReconcileRow>>(req, options);
   }
@@ -6754,10 +6754,10 @@ export class LowCodeApi {
    *
    * Named query (R25); further query parameters are passed to the query. Uses the same authorization as the underlying data.
    *
-   * `GET /queries/{name}` (operationId `runNamedQuery`); permission `lowcode.read`.
+   * `GET /queries/by-name` (operationId `runNamedQuery`); permission `lowcode.read`.
    */
-  async runNamedQuery(name: string, params?: { page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/queries/${seg(String(name))}`, query: { page: params?.page, size: params?.size } };
+  async runNamedQuery(params: { name: string /* Named query (tasks.mine, process-instances, or data:<data object key>); may carry ':' */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/queries/by-name`, query: { name: params?.name, page: params?.page, size: params?.size } };
     return this.calls.page<Record<string, unknown>>(req, options, params?.page, params?.size);
   }
 
@@ -7099,10 +7099,10 @@ export class ModellerApi {
    *
    * The lease on a model file.
    *
-   * `GET /models/{file}/lease` (operationId `getModelLease`); permission `package.read`.
+   * `GET /models/by-file/lease` (operationId `getModelLease`); permission `package.read`.
    */
-  async getModelLease(file: string, options?: RequestOptions): Promise<M.ModelEditLease> {
-    const req: ApiRequest = { method: 'GET', path: `/models/${seg(String(file))}/lease` };
+  async getModelLease(params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.ModelEditLease> {
+    const req: ApiRequest = { method: 'GET', path: `/models/by-file/lease`, query: { file: params?.file } };
     return this.calls.json<M.ModelEditLease>(req, options);
   }
 
@@ -7111,10 +7111,10 @@ export class ModellerApi {
    *
    * Saves then send the fence in X-Sangam-Edit-Fence.
    *
-   * `POST /models/{file}/lease` (operationId `acquireModelLease`); permission `package.author`; result stored atomically with the state change.
+   * `POST /models/by-file/lease` (operationId `acquireModelLease`); permission `package.author`; result stored atomically with the state change.
    */
-  async acquireModelLease(file: string, options?: RequestOptions): Promise<M.ModelLeaseOutcome> {
-    const req: ApiRequest = { method: 'POST', path: `/models/${seg(String(file))}/lease` };
+  async acquireModelLease(params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.ModelLeaseOutcome> {
+    const req: ApiRequest = { method: 'POST', path: `/models/by-file/lease`, query: { file: params?.file } };
     return this.calls.json<M.ModelLeaseOutcome>(req, options);
   }
 
@@ -7123,10 +7123,10 @@ export class ModellerApi {
    *
    * Holder only.
    *
-   * `POST /models/{file}/lease/heartbeat` (operationId `heartbeatModelLease`); permission `package.author`; result stored atomically with the state change.
+   * `POST /models/by-file/lease/heartbeat` (operationId `heartbeatModelLease`); permission `package.author`; result stored atomically with the state change.
    */
-  async heartbeatModelLease(file: string, body: M.ModelFenceRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/models/${seg(String(file))}/lease/heartbeat` };
+  async heartbeatModelLease(body: M.ModelFenceRequest, params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/models/by-file/lease/heartbeat`, query: { file: params?.file } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -7136,10 +7136,10 @@ export class ModellerApi {
    *
    * Holder only.
    *
-   * `POST /models/{file}/lease/release` (operationId `releaseModelLease`); permission `package.author`; result stored atomically with the state change.
+   * `POST /models/by-file/lease/release` (operationId `releaseModelLease`); permission `package.author`; result stored atomically with the state change.
    */
-  async releaseModelLease(file: string, body: M.ModelFenceRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/models/${seg(String(file))}/lease/release` };
+  async releaseModelLease(body: M.ModelFenceRequest, params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/models/by-file/lease/release`, query: { file: params?.file } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -7149,10 +7149,10 @@ export class ModellerApi {
    *
    * Tells the holder.
    *
-   * `POST /models/{file}/lease/request-takeover` (operationId `requestModelLeaseTakeover`); permission `package.author`; result stored atomically with the state change.
+   * `POST /models/by-file/lease/request-takeover` (operationId `requestModelLeaseTakeover`); permission `package.author`; result stored atomically with the state change.
    */
-  async requestModelLeaseTakeover(file: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/models/${seg(String(file))}/lease/request-takeover` };
+  async requestModelLeaseTakeover(params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/models/by-file/lease/request-takeover`, query: { file: params?.file } };
     await this.calls.none(req, options);
   }
 
@@ -7161,10 +7161,10 @@ export class ModellerApi {
    *
    * Needs modeller.lease.takeover; audited.
    *
-   * `POST /models/{file}/lease/takeover` (operationId `takeOverModelLease`); permission `package.author`; result stored atomically with the state change.
+   * `POST /models/by-file/lease/takeover` (operationId `takeOverModelLease`); permission `package.author`; result stored atomically with the state change.
    */
-  async takeOverModelLease(file: string, body: M.ModelTakeoverRequest, options?: RequestOptions): Promise<M.ModelEditLease> {
-    const req: ApiRequest = { method: 'POST', path: `/models/${seg(String(file))}/lease/takeover` };
+  async takeOverModelLease(body: M.ModelTakeoverRequest, params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.ModelEditLease> {
+    const req: ApiRequest = { method: 'POST', path: `/models/by-file/lease/takeover`, query: { file: params?.file } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ModelEditLease>(req, options);
   }
@@ -7174,10 +7174,10 @@ export class ModellerApi {
    *
    * Server-sent events, event name 'presence', data = ModelPresence: one event on connect and one on every join, leave or lease change (M-101). The caller is present while the stream is open; closing it leaves. Live across nodes like the conversation stream (M-040).
    *
-   * `GET /models/{file}/presence/stream` (operationId `streamModelPresence`); permission `package.read`.
+   * `GET /models/by-file/presence/stream` (operationId `streamModelPresence`); permission `package.read`.
    */
-  async streamModelPresence(file: string, options?: RequestOptions): Promise<string> {
-    const req: ApiRequest = { method: 'GET', path: `/models/${seg(String(file))}/presence/stream` };
+  async streamModelPresence(params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<string> {
+    const req: ApiRequest = { method: 'GET', path: `/models/by-file/presence/stream`, query: { file: params?.file } };
     return this.calls.text(req, options, 'text/event-stream');
   }
 
@@ -7312,10 +7312,10 @@ export class ModellerApi {
    *
    * Same as POST on the lease.
    *
-   * `POST /models/{file}/lease/acquire` (operationId `acquireModelLeaseUi`); permission `package.author`; result stored atomically with the state change.
+   * `POST /models/by-file/lease/acquire` (operationId `acquireModelLeaseUi`); permission `package.author`; result stored atomically with the state change.
    */
-  async acquireModelLeaseUi(file: string, body?: M.ModellerFenceRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/models/${seg(String(file))}/lease/acquire` };
+  async acquireModelLeaseUi(body: M.ModellerFenceRequest | undefined, params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/models/by-file/lease/acquire`, query: { file: params?.file } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -7388,10 +7388,10 @@ export class ModellerApi {
    *
    * Affects every rule of the service.
    *
-   * `PATCH /service-mocks/{id}` (operationId `toggleServiceMock`); permission `ops.write`; result stored atomically with the state change.
+   * `PATCH /service-mocks/by-id` (operationId `toggleServiceMock`); permission `ops.write`; result stored atomically with the state change.
    */
-  async toggleServiceMock(id: string, body: M.ServiceMocksToggle, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'PATCH', path: `/service-mocks/${seg(String(id))}` };
+  async toggleServiceMock(body: M.ServiceMocksToggle, params: { id: string /* Mock row id (service.operation); may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'PATCH', path: `/service-mocks/by-id`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -7787,10 +7787,10 @@ export class OpsApi {
    *
    * Fetch-and-lock stops offering the topic; leases already held continue.
    *
-   * `POST /ops/topics/{name}/pause` (operationId `pauseTopic`); permission `ops.write`; result stored atomically with the state change.
+   * `POST /ops/topics/by-name/pause` (operationId `pauseTopic`); permission `ops.write`; result stored atomically with the state change.
    */
-  async pauseTopic(name: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.TopicInfo> {
-    const req: ApiRequest = { method: 'POST', path: `/ops/topics/${seg(String(name))}/pause` };
+  async pauseTopic(body: M.ReasonRequest, params: { name: string /* Topic name; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.TopicInfo> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/topics/by-name/pause`, query: { name: params?.name } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.TopicInfo>(req, options);
   }
@@ -7800,10 +7800,10 @@ export class OpsApi {
    *
    * Offers the topic again.
    *
-   * `POST /ops/topics/{name}/resume` (operationId `resumeTopic`); permission `ops.write`; result stored atomically with the state change.
+   * `POST /ops/topics/by-name/resume` (operationId `resumeTopic`); permission `ops.write`; result stored atomically with the state change.
    */
-  async resumeTopic(name: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.TopicInfo> {
-    const req: ApiRequest = { method: 'POST', path: `/ops/topics/${seg(String(name))}/resume` };
+  async resumeTopic(body: M.ReasonRequest, params: { name: string /* Topic name; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.TopicInfo> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/topics/by-name/resume`, query: { name: params?.name } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.TopicInfo>(req, options);
   }
@@ -7813,10 +7813,10 @@ export class OpsApi {
    *
    * History TTL for a definition key (R29).
    *
-   * `PUT /ops/cleanup/ttl/{key}` (operationId `setHistoryTtl`); permission `ops.write`; result stored atomically with the state change.
+   * `PUT /ops/cleanup/ttl/by-key` (operationId `setHistoryTtl`); permission `ops.write`; result stored atomically with the state change.
    */
-  async setHistoryTtl(key: string, body: M.TtlRequest, options?: RequestOptions): Promise<M.CleanupStatus> {
-    const req: ApiRequest = { method: 'PUT', path: `/ops/cleanup/ttl/${seg(String(key))}` };
+  async setHistoryTtl(body: M.TtlRequest, params: { key: string /* Process definition key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CleanupStatus> {
+    const req: ApiRequest = { method: 'PUT', path: `/ops/cleanup/ttl/by-key`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CleanupStatus>(req, options);
   }
@@ -7838,10 +7838,10 @@ export class OpsApi {
    *
    * Resends with a reason.
    *
-   * `POST /ops/notification-failures/{id}/resend` (operationId `resendNotification`); permission `ops.write`; result stored atomically with the state change.
+   * `POST /ops/notification-failures/by-id/resend` (operationId `resendNotification`); permission `ops.write`; result stored atomically with the state change.
    */
-  async resendNotification(id: string, body: M.ReasonRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/ops/notification-failures/${seg(String(id))}/resend` };
+  async resendNotification(body: M.ReasonRequest, params: { id: string /* Notification failure id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/notification-failures/by-id/resend`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -8506,10 +8506,10 @@ export class PacksApi {
    *
    * Removes every version of the pack from the tenant, audited (PACK_UNINSTALLED). 404 PACK_NOT_INSTALLED; 409 PACK_HAS_DEPENDANTS or PACK_HAS_LIVE_INSTANCES with `blockers`; 400 REASON_REQUIRED. 409 PACK_OPERATION_IN_PROGRESS while another operation on the pack runs (SL-116).
    *
-   * `POST /packs/{id}/uninstall` (operationId `uninstallPack`); permission `tenant.admin`; result stored atomically with the state change.
+   * `POST /packs/by-id/uninstall` (operationId `uninstallPack`); permission `tenant.admin`; result stored atomically with the state change.
    */
-  async uninstallPack(id: string, body: M.PackLifecycleRequest, options?: RequestOptions): Promise<M.PackUninstalled> {
-    const req: ApiRequest = { method: 'POST', path: `/packs/${seg(String(id))}/uninstall` };
+  async uninstallPack(body: M.PackLifecycleRequest, params: { id: string /* Pack id, e.g. sec.health.admission-discharge (no pattern, PackDeployer); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.PackUninstalled> {
+    const req: ApiRequest = { method: 'POST', path: `/packs/by-id/uninstall`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.PackUninstalled>(req, options);
   }
@@ -8519,10 +8519,10 @@ export class PacksApi {
    *
    * Roll-forward (SL-54): the resources of the most recent deployment of a different version are read back from the engine and deployed as a NEW version, the next patch above the highest installed version of the pack, with every version-bearing part restated for it; no existing `id@version` is reused or changed. New instances started by key then start on the previous models; running instances keep the definitions they started on. Each further rollback rolls forward again to a new version. Audited (PACK_ROLLED_BACK, with the new version). 404 PACK_NOT_INSTALLED; 409 PACK_NO_PREVIOUS_VERSION; 409 PACK_VERSION_NOT_SEMVER with `blockers` (the installed versions that are not MAJOR.MINOR.PATCH, so the next version cannot be determined); 422 PACK_REJECTED with `violations`; 400 REASON_REQUIRED. 409 PACK_OPERATION_IN_PROGRESS while another operation on the pack runs (SL-116).
    *
-   * `POST /packs/{id}/rollback` (operationId `rollbackPack`); permission `tenant.admin`; result stored atomically with the state change.
+   * `POST /packs/by-id/rollback` (operationId `rollbackPack`); permission `tenant.admin`; result stored atomically with the state change.
    */
-  async rollbackPack(id: string, body: M.PackLifecycleRequest, options?: RequestOptions): Promise<M.PackDeployResult> {
-    const req: ApiRequest = { method: 'POST', path: `/packs/${seg(String(id))}/rollback` };
+  async rollbackPack(body: M.PackLifecycleRequest, params: { id: string /* Pack id, e.g. sec.health.admission-discharge (no pattern, PackDeployer); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.PackDeployResult> {
+    const req: ApiRequest = { method: 'POST', path: `/packs/by-id/rollback`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.PackDeployResult>(req, options);
   }
@@ -8532,10 +8532,10 @@ export class PacksApi {
    *
    * The documentType-to-slot pairs the pack declares for its DSC steps (decision 269), in manifest order; empty when the pack declares none. 404 NOT_FOUND when no pack with this id is registered.
    *
-   * `GET /packs/{id}/document-slots` (operationId `listPackDocumentSlots`); permission `tenant.admin`.
+   * `GET /packs/by-id/document-slots` (operationId `listPackDocumentSlots`); permission `tenant.admin`.
    */
-  async listPackDocumentSlots(id: string, options?: RequestOptions): Promise<Array<M.PackDocumentSlot>> {
-    const req: ApiRequest = { method: 'GET', path: `/packs/${seg(String(id))}/document-slots` };
+  async listPackDocumentSlots(params: { id: string /* Pack id, e.g. sec.health.admission-discharge (no pattern, PackDeployer); may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.PackDocumentSlot>> {
+    const req: ApiRequest = { method: 'GET', path: `/packs/by-id/document-slots`, query: { id: params?.id } };
     return this.calls.json<Array<M.PackDocumentSlot>>(req, options);
   }
 }
@@ -8638,10 +8638,10 @@ export class PortalApi {
    *
    * The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); versionHash is the form's own. 404 for a service not in the catalogue or without a form.
    *
-   * `GET /portal/services/{key}/form` (operationId `getPortalServiceForm`); permission `portal.use`.
+   * `GET /portal/services/by-key/form` (operationId `getPortalServiceForm`); permission `portal.use`.
    */
-  async getPortalServiceForm(key: string, options?: RequestOptions): Promise<M.FormVersion> {
-    const req: ApiRequest = { method: 'GET', path: `/portal/services/${seg(String(key))}/form` };
+  async getPortalServiceForm(params: { key: string /* Service key (the service form key); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.FormVersion> {
+    const req: ApiRequest = { method: 'GET', path: `/portal/services/by-key/form`, query: { key: params?.key } };
     return this.calls.json<M.FormVersion>(req, options);
   }
 
@@ -8650,10 +8650,10 @@ export class PortalApi {
    *
    * The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
    *
-   * `GET /portal/services/{key}/notice` (operationId `getPortalServiceNotice`); permission `portal.use`.
+   * `GET /portal/services/by-key/notice` (operationId `getPortalServiceNotice`); permission `portal.use`.
    */
-  async getPortalServiceNotice(key: string, params?: { lang?: string /* language code of the jurisdiction pack (default: the tenant's) */ }, options?: RequestOptions): Promise<M.PortalNotice> {
-    const req: ApiRequest = { method: 'GET', path: `/portal/services/${seg(String(key))}/notice`, query: { lang: params?.lang } };
+  async getPortalServiceNotice(params: { key: string /* Service key (the service form key); may carry '/' or ':' */; lang?: string /* language code of the jurisdiction pack (default: the tenant's) */ }, options?: RequestOptions): Promise<M.PortalNotice> {
+    const req: ApiRequest = { method: 'GET', path: `/portal/services/by-key/notice`, query: { key: params?.key, lang: params?.lang } };
     return this.calls.json<M.PortalNotice>(req, options);
   }
 
@@ -9831,10 +9831,10 @@ export class QueuesApi {
    *
    * QueueController.defineServicePoint (sangam-rest).
    *
-   * `PUT /queues/service-points/{servicePointId}` (operationId `queuesQueueDefineServicePoint`); permission `resources.admin`; result stored atomically with the state change.
+   * `PUT /queues/service-points/by-service-point-id` (operationId `queuesQueueDefineServicePoint`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async queuesQueueDefineServicePoint(servicePointId: string, body: M.QueueRestPortServicePointRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'PUT', path: `/queues/service-points/${seg(String(servicePointId))}` };
+  async queuesQueueDefineServicePoint(body: M.QueueRestPortServicePointRequest, params: { servicePointId: string /* Service point id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'PUT', path: `/queues/service-points/by-service-point-id`, query: { servicePointId: params?.servicePointId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -9844,10 +9844,10 @@ export class QueuesApi {
    *
    * QueueController.servicePoint (sangam-rest).
    *
-   * `GET /queues/service-points/{servicePointId}` (operationId `queuesQueueServicePoint`); permission `resources.read`.
+   * `GET /queues/service-points/by-service-point-id` (operationId `queuesQueueServicePoint`); permission `resources.read`.
    */
-  async queuesQueueServicePoint(servicePointId: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/queues/service-points/${seg(String(servicePointId))}` };
+  async queuesQueueServicePoint(params: { servicePointId: string /* Service point id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/queues/service-points/by-service-point-id`, query: { servicePointId: params?.servicePointId } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -9856,10 +9856,10 @@ export class QueuesApi {
    *
    * QueueController.setServicePointStatus (sangam-rest).
    *
-   * `POST /queues/service-points/{servicePointId}/status` (operationId `queuesQueueSetServicePointStatus`); permission `resources.admin`; result stored atomically with the state change.
+   * `POST /queues/service-points/by-service-point-id/status` (operationId `queuesQueueSetServicePointStatus`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async queuesQueueSetServicePointStatus(servicePointId: string, body: M.QueueStatusRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/queues/service-points/${seg(String(servicePointId))}/status` };
+  async queuesQueueSetServicePointStatus(body: M.QueueStatusRequest, params: { servicePointId: string /* Service point id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/queues/service-points/by-service-point-id/status`, query: { servicePointId: params?.servicePointId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -9881,10 +9881,10 @@ export class QueuesApi {
    *
    * QueueController.defineCounter (sangam-rest).
    *
-   * `PUT /queues/service-points/{servicePointId}/counters/{counterId}` (operationId `queuesQueueDefineCounter`); permission `resources.admin`; result stored atomically with the state change.
+   * `PUT /queues/service-points/by-service-point-id/counters/by-counter-id` (operationId `queuesQueueDefineCounter`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async queuesQueueDefineCounter(servicePointId: string, counterId: string, body: M.QueueRestPortCounterRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'PUT', path: `/queues/service-points/${seg(String(servicePointId))}/counters/${seg(String(counterId))}` };
+  async queuesQueueDefineCounter(body: M.QueueRestPortCounterRequest, params: { servicePointId: string /* Service point id; may carry '/' or ':' */; counterId: string /* Counter id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'PUT', path: `/queues/service-points/by-service-point-id/counters/by-counter-id`, query: { servicePointId: params?.servicePointId, counterId: params?.counterId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -9894,10 +9894,10 @@ export class QueuesApi {
    *
    * QueueController.counters (sangam-rest).
    *
-   * `GET /queues/service-points/{servicePointId}/counters` (operationId `queuesQueueCounters`); permission `resources.read`.
+   * `GET /queues/service-points/by-service-point-id/counters` (operationId `queuesQueueCounters`); permission `resources.read`.
    */
-  async queuesQueueCounters(servicePointId: string, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/queues/service-points/${seg(String(servicePointId))}/counters` };
+  async queuesQueueCounters(params: { servicePointId: string /* Service point id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/queues/service-points/by-service-point-id/counters`, query: { servicePointId: params?.servicePointId } };
     return this.calls.json<Array<Record<string, unknown>>>(req, options);
   }
 
@@ -9906,10 +9906,10 @@ export class QueuesApi {
    *
    * QueueController.openCounter (sangam-rest).
    *
-   * `POST /queues/counters/{counterId}/open` (operationId `queuesQueueOpenCounter`); permission `resources.write`; result stored atomically with the state change.
+   * `POST /queues/counters/by-counter-id/open` (operationId `queuesQueueOpenCounter`); permission `resources.write`; result stored atomically with the state change.
    */
-  async queuesQueueOpenCounter(counterId: string, body: M.QueueOpenRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/queues/counters/${seg(String(counterId))}/open` };
+  async queuesQueueOpenCounter(body: M.QueueOpenRequest, params: { counterId: string /* Counter id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/queues/counters/by-counter-id/open`, query: { counterId: params?.counterId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -9919,10 +9919,10 @@ export class QueuesApi {
    *
    * QueueController.pauseCounter (sangam-rest).
    *
-   * `POST /queues/counters/{counterId}/pause` (operationId `queuesQueuePauseCounter`); permission `resources.write`; result stored atomically with the state change.
+   * `POST /queues/counters/by-counter-id/pause` (operationId `queuesQueuePauseCounter`); permission `resources.write`; result stored atomically with the state change.
    */
-  async queuesQueuePauseCounter(counterId: string, body: M.QueueReasonRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/queues/counters/${seg(String(counterId))}/pause` };
+  async queuesQueuePauseCounter(body: M.QueueReasonRequest, params: { counterId: string /* Counter id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/queues/counters/by-counter-id/pause`, query: { counterId: params?.counterId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -9932,10 +9932,10 @@ export class QueuesApi {
    *
    * QueueController.closeCounter (sangam-rest).
    *
-   * `POST /queues/counters/{counterId}/close` (operationId `queuesQueueCloseCounter`); permission `resources.write`; result stored atomically with the state change.
+   * `POST /queues/counters/by-counter-id/close` (operationId `queuesQueueCloseCounter`); permission `resources.write`; result stored atomically with the state change.
    */
-  async queuesQueueCloseCounter(counterId: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/queues/counters/${seg(String(counterId))}/close` };
+  async queuesQueueCloseCounter(params: { counterId: string /* Counter id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/queues/counters/by-counter-id/close`, query: { counterId: params?.counterId } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -9944,10 +9944,10 @@ export class QueuesApi {
    *
    * QueueController.issueToken (sangam-rest).
    *
-   * `POST /queues/service-points/{servicePointId}/tokens` (operationId `queuesQueueIssueToken`); permission `resources.write`; result stored atomically with the state change.
+   * `POST /queues/service-points/by-service-point-id/tokens` (operationId `queuesQueueIssueToken`); permission `resources.write`; result stored atomically with the state change.
    */
-  async queuesQueueIssueToken(servicePointId: string, body: M.QueueRestPortIssueTokenRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/queues/service-points/${seg(String(servicePointId))}/tokens` };
+  async queuesQueueIssueToken(body: M.QueueRestPortIssueTokenRequest, params: { servicePointId: string /* Service point id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/queues/service-points/by-service-point-id/tokens`, query: { servicePointId: params?.servicePointId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -9957,10 +9957,10 @@ export class QueuesApi {
    *
    * QueueController.tokens (sangam-rest).
    *
-   * `GET /queues/service-points/{servicePointId}/tokens` (operationId `queuesQueueTokens`); permission `resources.read`.
+   * `GET /queues/service-points/by-service-point-id/tokens` (operationId `queuesQueueTokens`); permission `resources.read`.
    */
-  async queuesQueueTokens(servicePointId: string, params?: { state?: string; page?: number; size?: number }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/queues/service-points/${seg(String(servicePointId))}/tokens`, query: { state: params?.state, page: params?.page, size: params?.size } };
+  async queuesQueueTokens(params: { servicePointId: string /* Service point id; may carry '/' or ':' */; state?: string; page?: number; size?: number }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/queues/service-points/by-service-point-id/tokens`, query: { servicePointId: params?.servicePointId, state: params?.state, page: params?.page, size: params?.size } };
     return this.calls.page<Record<string, unknown>>(req, options, params?.page, params?.size);
   }
 
@@ -10019,10 +10019,10 @@ export class QueuesApi {
    *
    * QueueController.callNext (sangam-rest).
    *
-   * `POST /queues/counters/{counterId}/call-next` (operationId `queuesQueueCallNext`); permission `resources.write`; result stored atomically with the state change.
+   * `POST /queues/counters/by-counter-id/call-next` (operationId `queuesQueueCallNext`); permission `resources.write`; result stored atomically with the state change.
    */
-  async queuesQueueCallNext(counterId: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/queues/counters/${seg(String(counterId))}/call-next` };
+  async queuesQueueCallNext(params: { counterId: string /* Counter id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/queues/counters/by-counter-id/call-next`, query: { counterId: params?.counterId } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -10031,10 +10031,10 @@ export class QueuesApi {
    *
    * QueueController.callToken (sangam-rest).
    *
-   * `POST /queues/counters/{counterId}/call` (operationId `queuesQueueCallToken`); permission `resources.write`; result stored atomically with the state change.
+   * `POST /queues/counters/by-counter-id/call` (operationId `queuesQueueCallToken`); permission `resources.write`; result stored atomically with the state change.
    */
-  async queuesQueueCallToken(counterId: string, body: M.QueueCallRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/queues/counters/${seg(String(counterId))}/call` };
+  async queuesQueueCallToken(body: M.QueueCallRequest, params: { counterId: string /* Counter id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/queues/counters/by-counter-id/call`, query: { counterId: params?.counterId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -10044,10 +10044,10 @@ export class QueuesApi {
    *
    * QueueController.recall (sangam-rest).
    *
-   * `POST /queues/counters/{counterId}/recall` (operationId `queuesQueueRecall`); permission `resources.write`; result stored atomically with the state change.
+   * `POST /queues/counters/by-counter-id/recall` (operationId `queuesQueueRecall`); permission `resources.write`; result stored atomically with the state change.
    */
-  async queuesQueueRecall(counterId: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/queues/counters/${seg(String(counterId))}/recall` };
+  async queuesQueueRecall(params: { counterId: string /* Counter id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/queues/counters/by-counter-id/recall`, query: { counterId: params?.counterId } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -10056,10 +10056,10 @@ export class QueuesApi {
    *
    * QueueController.skip (sangam-rest).
    *
-   * `POST /queues/counters/{counterId}/skip` (operationId `queuesQueueSkip`); permission `resources.write`; result stored atomically with the state change.
+   * `POST /queues/counters/by-counter-id/skip` (operationId `queuesQueueSkip`); permission `resources.write`; result stored atomically with the state change.
    */
-  async queuesQueueSkip(counterId: string, body: M.QueueReasonRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/queues/counters/${seg(String(counterId))}/skip` };
+  async queuesQueueSkip(body: M.QueueReasonRequest, params: { counterId: string /* Counter id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/queues/counters/by-counter-id/skip`, query: { counterId: params?.counterId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -10069,10 +10069,10 @@ export class QueuesApi {
    *
    * QueueController.startServing (sangam-rest).
    *
-   * `POST /queues/counters/{counterId}/start-serving` (operationId `queuesQueueStartServing`); permission `resources.write`; result stored atomically with the state change.
+   * `POST /queues/counters/by-counter-id/start-serving` (operationId `queuesQueueStartServing`); permission `resources.write`; result stored atomically with the state change.
    */
-  async queuesQueueStartServing(counterId: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/queues/counters/${seg(String(counterId))}/start-serving` };
+  async queuesQueueStartServing(params: { counterId: string /* Counter id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/queues/counters/by-counter-id/start-serving`, query: { counterId: params?.counterId } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -10081,10 +10081,10 @@ export class QueuesApi {
    *
    * QueueController.complete (sangam-rest).
    *
-   * `POST /queues/counters/{counterId}/complete` (operationId `queuesQueueComplete`); permission `resources.write`; result stored atomically with the state change.
+   * `POST /queues/counters/by-counter-id/complete` (operationId `queuesQueueComplete`); permission `resources.write`; result stored atomically with the state change.
    */
-  async queuesQueueComplete(counterId: string, body: M.QueueCompleteRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/queues/counters/${seg(String(counterId))}/complete` };
+  async queuesQueueComplete(body: M.QueueCompleteRequest, params: { counterId: string /* Counter id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/queues/counters/by-counter-id/complete`, query: { counterId: params?.counterId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -10094,10 +10094,10 @@ export class QueuesApi {
    *
    * QueueController.noShowSweep (sangam-rest).
    *
-   * `POST /queues/service-points/{servicePointId}/no-show-sweep` (operationId `queuesQueueNoShowSweep`); permission `resources.admin`; result stored atomically with the state change.
+   * `POST /queues/service-points/by-service-point-id/no-show-sweep` (operationId `queuesQueueNoShowSweep`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async queuesQueueNoShowSweep(servicePointId: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/queues/service-points/${seg(String(servicePointId))}/no-show-sweep` };
+  async queuesQueueNoShowSweep(params: { servicePointId: string /* Service point id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/queues/service-points/by-service-point-id/no-show-sweep`, query: { servicePointId: params?.servicePointId } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -10106,10 +10106,10 @@ export class QueuesApi {
    *
    * QueueController.slaBreaches (sangam-rest).
    *
-   * `GET /queues/service-points/{servicePointId}/sla-breaches` (operationId `queuesQueueSlaBreaches`); permission `resources.read`.
+   * `GET /queues/service-points/by-service-point-id/sla-breaches` (operationId `queuesQueueSlaBreaches`); permission `resources.read`.
    */
-  async queuesQueueSlaBreaches(servicePointId: string, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/queues/service-points/${seg(String(servicePointId))}/sla-breaches` };
+  async queuesQueueSlaBreaches(params: { servicePointId: string /* Service point id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/queues/service-points/by-service-point-id/sla-breaches`, query: { servicePointId: params?.servicePointId } };
     return this.calls.json<Array<Record<string, unknown>>>(req, options);
   }
 
@@ -10118,10 +10118,10 @@ export class QueuesApi {
    *
    * QueueController.stats (sangam-rest).
    *
-   * `GET /queues/service-points/{servicePointId}/stats` (operationId `queuesQueueStats`); permission `resources.read`.
+   * `GET /queues/service-points/by-service-point-id/stats` (operationId `queuesQueueStats`); permission `resources.read`.
    */
-  async queuesQueueStats(servicePointId: string, params: { from: string; to: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/queues/service-points/${seg(String(servicePointId))}/stats`, query: { from: params?.from, to: params?.to } };
+  async queuesQueueStats(params: { servicePointId: string /* Service point id; may carry '/' or ':' */; from: string; to: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/queues/service-points/by-service-point-id/stats`, query: { servicePointId: params?.servicePointId, from: params?.from, to: params?.to } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -10130,10 +10130,10 @@ export class QueuesApi {
    *
    * QueueController.display (sangam-rest).
    *
-   * `GET /queues/service-points/{servicePointId}/display` (operationId `queuesQueueDisplay`); permission `resources.read`.
+   * `GET /queues/service-points/by-service-point-id/display` (operationId `queuesQueueDisplay`); permission `resources.read`.
    */
-  async queuesQueueDisplay(servicePointId: string, params?: { next?: number }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/queues/service-points/${seg(String(servicePointId))}/display`, query: { next: params?.next } };
+  async queuesQueueDisplay(params: { servicePointId: string /* Service point id; may carry '/' or ':' */; next?: number }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/queues/service-points/by-service-point-id/display`, query: { servicePointId: params?.servicePointId, next: params?.next } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -10142,10 +10142,10 @@ export class QueuesApi {
    *
    * QueueController.callEvents (sangam-rest).
    *
-   * `GET /queues/service-points/{servicePointId}/call-events` (operationId `queuesQueueCallEvents`); permission `resources.read`.
+   * `GET /queues/service-points/by-service-point-id/call-events` (operationId `queuesQueueCallEvents`); permission `resources.read`.
    */
-  async queuesQueueCallEvents(servicePointId: string, params?: { after?: number; limit?: number }, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/queues/service-points/${seg(String(servicePointId))}/call-events`, query: { after: params?.after, limit: params?.limit } };
+  async queuesQueueCallEvents(params: { servicePointId: string /* Service point id; may carry '/' or ':' */; after?: number; limit?: number }, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/queues/service-points/by-service-point-id/call-events`, query: { servicePointId: params?.servicePointId, after: params?.after, limit: params?.limit } };
     return this.calls.json<Array<Record<string, unknown>>>(req, options);
   }
 }
@@ -10714,10 +10714,10 @@ export class RegistryApi {
    *
    * RegistryController.currentType (sangam-rest).
    *
-   * `GET /registry/types/{typeKey}` (operationId `registryRegistryCurrentType`); permission `registry.read`.
+   * `GET /registry/types/by-type-key` (operationId `registryRegistryCurrentType`); permission `registry.read`.
    */
-  async registryRegistryCurrentType(typeKey: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/registry/types/${seg(String(typeKey))}` };
+  async registryRegistryCurrentType(params: { typeKey: string /* Type key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/registry/types/by-type-key`, query: { typeKey: params?.typeKey } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -10726,10 +10726,10 @@ export class RegistryApi {
    *
    * RegistryController.typeVersion (sangam-rest).
    *
-   * `GET /registry/types/{typeKey}/versions/{version}` (operationId `registryRegistryTypeVersion`); permission `registry.read`.
+   * `GET /registry/types/by-type-key/versions/{version}` (operationId `registryRegistryTypeVersion`); permission `registry.read`.
    */
-  async registryRegistryTypeVersion(typeKey: string, version: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/registry/types/${seg(String(typeKey))}/versions/${seg(String(version))}` };
+  async registryRegistryTypeVersion(version: string, params: { typeKey: string /* Type key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/registry/types/by-type-key/versions/${seg(String(version))}`, query: { typeKey: params?.typeKey } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -10738,10 +10738,10 @@ export class RegistryApi {
    *
    * RegistryController.retireType (sangam-rest).
    *
-   * `POST /registry/types/{typeKey}/versions/{version}/retire` (operationId `registryRegistryRetireType`); permission `registry.write`; result stored atomically with the state change.
+   * `POST /registry/types/by-type-key/versions/{version}/retire` (operationId `registryRegistryRetireType`); permission `registry.write`; result stored atomically with the state change.
    */
-  async registryRegistryRetireType(typeKey: string, version: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/registry/types/${seg(String(typeKey))}/versions/${seg(String(version))}/retire` };
+  async registryRegistryRetireType(version: string, params: { typeKey: string /* Type key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/registry/types/by-type-key/versions/${seg(String(version))}/retire`, query: { typeKey: params?.typeKey } };
     await this.calls.none(req, options);
   }
 }
@@ -10780,10 +10780,10 @@ export class RegistryAssetsApi {
    *
    * AssetController.getClass (sangam-rest).
    *
-   * `GET /registry/assets/classes/{classKey}` (operationId `registryAssetGetClass`); permission `registry.read`.
+   * `GET /registry/assets/classes/by-class-key` (operationId `registryAssetGetClass`); permission `registry.read`.
    */
-  async registryAssetGetClass(classKey: string, params?: { resolved?: boolean }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/registry/assets/classes/${seg(String(classKey))}`, query: { resolved: params?.resolved } };
+  async registryAssetGetClass(params: { classKey: string /* Class key; may carry '/' or ':' */; resolved?: boolean }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/registry/assets/classes/by-class-key`, query: { classKey: params?.classKey, resolved: params?.resolved } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -10842,10 +10842,10 @@ export class RegistryAssetsApi {
    *
    * AssetController.byTag (sangam-rest).
    *
-   * `GET /registry/assets/by-tag/{tag}` (operationId `registryAssetByTag`); permission `registry.read`.
+   * `GET /registry/assets/by-tag` (operationId `registryAssetByTag`); permission `registry.read`.
    */
-  async registryAssetByTag(tag: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/registry/assets/by-tag/${seg(String(tag))}` };
+  async registryAssetByTag(params: { tag: string /* Tag; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/registry/assets/by-tag`, query: { tag: params?.tag } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -10990,10 +10990,10 @@ export class RegistryAssetsApi {
    *
    * AssetController.recordReading (sangam-rest).
    *
-   * `POST /registry/assets/{id}/meters/{meterType}/readings` (operationId `registryAssetRecordReading`); permission `registry.write`; result stored atomically with the state change.
+   * `POST /registry/assets/{id}/meters/by-meter-type/readings` (operationId `registryAssetRecordReading`); permission `registry.write`; result stored atomically with the state change.
    */
-  async registryAssetRecordReading(id: string, meterType: string, body: M.RegistryAssetRecordReadingBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/registry/assets/${seg(String(id))}/meters/${seg(String(meterType))}/readings` };
+  async registryAssetRecordReading(id: string, body: M.RegistryAssetRecordReadingBody, params: { meterType: string /* Meter type; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/registry/assets/${seg(String(id))}/meters/by-meter-type/readings`, query: { meterType: params?.meterType } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -11003,10 +11003,10 @@ export class RegistryAssetsApi {
    *
    * AssetController.readings (sangam-rest).
    *
-   * `GET /registry/assets/{id}/meters/{meterType}/readings` (operationId `registryAssetReadings`); permission `registry.read`.
+   * `GET /registry/assets/{id}/meters/by-meter-type/readings` (operationId `registryAssetReadings`); permission `registry.read`.
    */
-  async registryAssetReadings(id: string, meterType: string, params?: { page?: number; size?: number }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/registry/assets/${seg(String(id))}/meters/${seg(String(meterType))}/readings`, query: { page: params?.page, size: params?.size } };
+  async registryAssetReadings(id: string, params: { meterType: string /* Meter type; may carry '/' or ':' */; page?: number; size?: number }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/registry/assets/${seg(String(id))}/meters/by-meter-type/readings`, query: { meterType: params?.meterType, page: params?.page, size: params?.size } };
     return this.calls.page<Record<string, unknown>>(req, options, params?.page, params?.size);
   }
 
@@ -11222,10 +11222,10 @@ export class RegistryCustodyApi {
    *
    * CustodyController.byLabel (sangam-rest).
    *
-   * `GET /registry/custody/items/by-label/{label}` (operationId `registryCustodyByLabel`); permission `registry.read`.
+   * `GET /registry/custody/items/by-label` (operationId `registryCustodyByLabel`); permission `registry.read`.
    */
-  async registryCustodyByLabel(label: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/registry/custody/items/by-label/${seg(String(label))}` };
+  async registryCustodyByLabel(params: { label: string /* Label; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/registry/custody/items/by-label`, query: { label: params?.label } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -11624,10 +11624,10 @@ export class RegistryInstrumentsApi {
    *
    * InstrumentController.transition (sangam-rest).
    *
-   * `POST /registry/instruments/{id}/transitions/{name}` (operationId `registryInstrumentTransition`); permission `registry.write`; result stored atomically with the state change.
+   * `POST /registry/instruments/{id}/transitions/by-name` (operationId `registryInstrumentTransition`); permission `registry.write`; result stored atomically with the state change.
    */
-  async registryInstrumentTransition(id: string, name: string, body?: M.RegistryInstrumentTransitionBody, params?: { ifMatch?: string /* Revision the change is based on (409 on mismatch) */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/registry/instruments/${seg(String(id))}/transitions/${seg(String(name))}` };
+  async registryInstrumentTransition(id: string, body: M.RegistryInstrumentTransitionBody | undefined, params: { name: string /* Name; may carry '/' or ':' */; ifMatch?: string /* Revision the change is based on (409 on mismatch) */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/registry/instruments/${seg(String(id))}/transitions/by-name`, query: { name: params?.name } };
     headersOf(req, { 'If-Match': params?.ifMatch });
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
@@ -11777,10 +11777,10 @@ export class RegistryInstrumentsApi {
    *
    * InstrumentController.verifyCode (sangam-rest).
    *
-   * `GET /registry/instruments/public/{tenant}/verify` (operationId `registryInstrumentVerifyCode`).
+   * `GET /registry/instruments/public/by-tenant/verify` (operationId `registryInstrumentVerifyCode`).
    */
-  async registryInstrumentVerifyCode(tenant: string, params: { code: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/registry/instruments/public/${seg(String(tenant))}/verify`, query: { code: params?.code } };
+  async registryInstrumentVerifyCode(params: { tenant: string /* Tenant; may carry '/' or ':' */; code: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/registry/instruments/public/by-tenant/verify`, query: { tenant: params?.tenant, code: params?.code } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -11807,10 +11807,10 @@ export class RegistryNumberSeriesApi {
    *
    * RegistryController.defineSeries (sangam-rest).
    *
-   * `PUT /registry/number-series/{seriesKey}` (operationId `registryRegistryDefineSeries`); permission `registry.write`; result stored atomically with the state change.
+   * `PUT /registry/number-series/by-series-key` (operationId `registryRegistryDefineSeries`); permission `registry.write`; result stored atomically with the state change.
    */
-  async registryRegistryDefineSeries(seriesKey: string, body: M.RegistryRegistryDefineSeriesBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'PUT', path: `/registry/number-series/${seg(String(seriesKey))}` };
+  async registryRegistryDefineSeries(body: M.RegistryRegistryDefineSeriesBody, params: { seriesKey: string /* Series key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'PUT', path: `/registry/number-series/by-series-key`, query: { seriesKey: params?.seriesKey } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -11820,10 +11820,10 @@ export class RegistryNumberSeriesApi {
    *
    * RegistryController.series (sangam-rest).
    *
-   * `GET /registry/number-series/{seriesKey}` (operationId `registryRegistrySeries`); permission `registry.read`.
+   * `GET /registry/number-series/by-series-key` (operationId `registryRegistrySeries`); permission `registry.read`.
    */
-  async registryRegistrySeries(seriesKey: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/registry/number-series/${seg(String(seriesKey))}` };
+  async registryRegistrySeries(params: { seriesKey: string /* Series key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/registry/number-series/by-series-key`, query: { seriesKey: params?.seriesKey } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -11844,10 +11844,10 @@ export class RegistryNumberSeriesApi {
    *
    * RegistryController.allocate (sangam-rest).
    *
-   * `POST /registry/number-series/{seriesKey}/allocate` (operationId `registryRegistryAllocate`); permission `registry.write`; result stored atomically with the state change.
+   * `POST /registry/number-series/by-series-key/allocate` (operationId `registryRegistryAllocate`); permission `registry.write`; result stored atomically with the state change.
    */
-  async registryRegistryAllocate(seriesKey: string, body?: M.RegistryRegistryAllocateBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/registry/number-series/${seg(String(seriesKey))}/allocate` };
+  async registryRegistryAllocate(body: M.RegistryRegistryAllocateBody | undefined, params: { seriesKey: string /* Series key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/registry/number-series/by-series-key/allocate`, query: { seriesKey: params?.seriesKey } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -11857,10 +11857,10 @@ export class RegistryNumberSeriesApi {
    *
    * RegistryController.voidNumber (sangam-rest).
    *
-   * `POST /registry/number-series/{seriesKey}/void` (operationId `registryRegistryVoidNumber`); permission `registry.write`; result stored atomically with the state change.
+   * `POST /registry/number-series/by-series-key/void` (operationId `registryRegistryVoidNumber`); permission `registry.write`; result stored atomically with the state change.
    */
-  async registryRegistryVoidNumber(seriesKey: string, body: M.RegistryRegistryVoidNumberBody, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/registry/number-series/${seg(String(seriesKey))}/void` };
+  async registryRegistryVoidNumber(body: M.RegistryRegistryVoidNumberBody, params: { seriesKey: string /* Series key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/registry/number-series/by-series-key/void`, query: { seriesKey: params?.seriesKey } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -11870,10 +11870,10 @@ export class RegistryNumberSeriesApi {
    *
    * RegistryController.markUsed (sangam-rest).
    *
-   * `POST /registry/number-series/{seriesKey}/mark-used` (operationId `registryRegistryMarkUsed`); permission `registry.write`; result stored atomically with the state change.
+   * `POST /registry/number-series/by-series-key/mark-used` (operationId `registryRegistryMarkUsed`); permission `registry.write`; result stored atomically with the state change.
    */
-  async registryRegistryMarkUsed(seriesKey: string, body: M.RegistryRegistryMarkUsedBody, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/registry/number-series/${seg(String(seriesKey))}/mark-used` };
+  async registryRegistryMarkUsed(body: M.RegistryRegistryMarkUsedBody, params: { seriesKey: string /* Series key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/registry/number-series/by-series-key/mark-used`, query: { seriesKey: params?.seriesKey } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -11883,10 +11883,10 @@ export class RegistryNumberSeriesApi {
    *
    * RegistryController.closePeriod (sangam-rest).
    *
-   * `POST /registry/number-series/{seriesKey}/close-period` (operationId `registryRegistryClosePeriod`); permission `registry.write`; result stored atomically with the state change.
+   * `POST /registry/number-series/by-series-key/close-period` (operationId `registryRegistryClosePeriod`); permission `registry.write`; result stored atomically with the state change.
    */
-  async registryRegistryClosePeriod(seriesKey: string, body: M.RegistryRegistryClosePeriodBody, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/registry/number-series/${seg(String(seriesKey))}/close-period` };
+  async registryRegistryClosePeriod(body: M.RegistryRegistryClosePeriodBody, params: { seriesKey: string /* Series key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/registry/number-series/by-series-key/close-period`, query: { seriesKey: params?.seriesKey } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -11896,10 +11896,10 @@ export class RegistryNumberSeriesApi {
    *
    * RegistryController.gaps (sangam-rest).
    *
-   * `GET /registry/number-series/{seriesKey}/gaps` (operationId `registryRegistryGaps`); permission `registry.read`.
+   * `GET /registry/number-series/by-series-key/gaps` (operationId `registryRegistryGaps`); permission `registry.read`.
    */
-  async registryRegistryGaps(seriesKey: string, params: { scope?: string; period: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/registry/number-series/${seg(String(seriesKey))}/gaps`, query: { scope: params?.scope, period: params?.period } };
+  async registryRegistryGaps(params: { seriesKey: string /* Series key; may carry '/' or ':' */; scope?: string; period: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/registry/number-series/by-series-key/gaps`, query: { seriesKey: params?.seriesKey, scope: params?.scope, period: params?.period } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -11908,10 +11908,10 @@ export class RegistryNumberSeriesApi {
    *
    * RegistryController.allocations (sangam-rest).
    *
-   * `GET /registry/number-series/{seriesKey}/allocations` (operationId `registryRegistryAllocations`); permission `registry.read`.
+   * `GET /registry/number-series/by-series-key/allocations` (operationId `registryRegistryAllocations`); permission `registry.read`.
    */
-  async registryRegistryAllocations(seriesKey: string, params: { scope?: string; period: string; page?: number; size?: number }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/registry/number-series/${seg(String(seriesKey))}/allocations`, query: { scope: params?.scope, period: params?.period, page: params?.page, size: params?.size } };
+  async registryRegistryAllocations(params: { seriesKey: string /* Series key; may carry '/' or ':' */; scope?: string; period: string; page?: number; size?: number }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/registry/number-series/by-series-key/allocations`, query: { seriesKey: params?.seriesKey, scope: params?.scope, period: params?.period, page: params?.page, size: params?.size } };
     return this.calls.page<Record<string, unknown>>(req, options, params?.page, params?.size);
   }
 }
@@ -11978,7 +11978,7 @@ export class RegistryObjectsApi {
    *
    * `GET /registry/objects/by-number` (operationId `registryRegistryByNumber`); permission `registry.read`.
    */
-  async registryRegistryByNumber(params: { number: string; typeKey?: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
+  async registryRegistryByNumber(params: { number: string /* Number; may carry '/' or ':' */; typeKey?: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
     const req: ApiRequest = { method: 'GET', path: `/registry/objects/by-number`, query: { number: params?.number, typeKey: params?.typeKey } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -11988,10 +11988,10 @@ export class RegistryObjectsApi {
    *
    * RegistryController.transition (sangam-rest).
    *
-   * `POST /registry/objects/{id}/transitions/{name}` (operationId `registryRegistryTransition`); permission `registry.write`; result stored atomically with the state change.
+   * `POST /registry/objects/{id}/transitions/by-name` (operationId `registryRegistryTransition`); permission `registry.write`; result stored atomically with the state change.
    */
-  async registryRegistryTransition(id: string, name: string, body?: M.RegistryRegistryTransitionBody, params?: { ifMatch?: string /* Revision the change is based on (409 on mismatch) */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/registry/objects/${seg(String(id))}/transitions/${seg(String(name))}` };
+  async registryRegistryTransition(id: string, body: M.RegistryRegistryTransitionBody | undefined, params: { name: string /* Name; may carry '/' or ':' */; ifMatch?: string /* Revision the change is based on (409 on mismatch) */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/registry/objects/${seg(String(id))}/transitions/by-name`, query: { name: params?.name } };
     headersOf(req, { 'If-Match': params?.ifMatch });
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
@@ -12519,10 +12519,10 @@ export class RegistryRegistersApi {
    *
    * RegisterController.define (sangam-rest).
    *
-   * `PUT /registry/registers/{registerKey}` (operationId `registryRegisterDefine`); permission `registry.write`; result stored atomically with the state change.
+   * `PUT /registry/registers/by-register-key` (operationId `registryRegisterDefine`); permission `registry.write`; result stored atomically with the state change.
    */
-  async registryRegisterDefine(registerKey: string, body: M.RegistryRegisterDefineBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'PUT', path: `/registry/registers/${seg(String(registerKey))}` };
+  async registryRegisterDefine(body: M.RegistryRegisterDefineBody, params: { registerKey: string /* Register key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'PUT', path: `/registry/registers/by-register-key`, query: { registerKey: params?.registerKey } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -12532,10 +12532,10 @@ export class RegistryRegistersApi {
    *
    * RegisterController.definition (sangam-rest).
    *
-   * `GET /registry/registers/{registerKey}` (operationId `registryRegisterDefinition`); permission `registry.read`.
+   * `GET /registry/registers/by-register-key` (operationId `registryRegisterDefinition`); permission `registry.read`.
    */
-  async registryRegisterDefinition(registerKey: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/registry/registers/${seg(String(registerKey))}` };
+  async registryRegisterDefinition(params: { registerKey: string /* Register key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/registry/registers/by-register-key`, query: { registerKey: params?.registerKey } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -12556,10 +12556,10 @@ export class RegistryRegistersApi {
    *
    * RegisterController.append (sangam-rest).
    *
-   * `POST /registry/registers/{registerKey}/entries` (operationId `registryRegisterAppend`); permission `registry.write`; result stored atomically with the state change.
+   * `POST /registry/registers/by-register-key/entries` (operationId `registryRegisterAppend`); permission `registry.write`; result stored atomically with the state change.
    */
-  async registryRegisterAppend(registerKey: string, body: M.RegistryRegisterAppendBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/registry/registers/${seg(String(registerKey))}/entries` };
+  async registryRegisterAppend(body: M.RegistryRegisterAppendBody, params: { registerKey: string /* Register key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/registry/registers/by-register-key/entries`, query: { registerKey: params?.registerKey } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -12569,10 +12569,10 @@ export class RegistryRegistersApi {
    *
    * RegisterController.books (sangam-rest).
    *
-   * `GET /registry/registers/{registerKey}/books` (operationId `registryRegisterBooks`); permission `registry.read`.
+   * `GET /registry/registers/by-register-key/books` (operationId `registryRegisterBooks`); permission `registry.read`.
    */
-  async registryRegisterBooks(registerKey: string, params?: { scope?: string; page?: number; size?: number }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/registry/registers/${seg(String(registerKey))}/books`, query: { scope: params?.scope, page: params?.page, size: params?.size } };
+  async registryRegisterBooks(params: { registerKey: string /* Register key; may carry '/' or ':' */; scope?: string; page?: number; size?: number }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/registry/registers/by-register-key/books`, query: { registerKey: params?.registerKey, scope: params?.scope, page: params?.page, size: params?.size } };
     return this.calls.page<Record<string, unknown>>(req, options, params?.page, params?.size);
   }
 
@@ -12692,10 +12692,10 @@ export class RegistryRegistersApi {
    *
    * RegisterController.verifyExtract (sangam-rest).
    *
-   * `GET /registry/registers/public/{tenant}/extracts/verify` (operationId `registryRegisterVerifyExtract`).
+   * `GET /registry/registers/public/by-tenant/extracts/verify` (operationId `registryRegisterVerifyExtract`).
    */
-  async registryRegisterVerifyExtract(tenant: string, params: { code: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/registry/registers/public/${seg(String(tenant))}/extracts/verify`, query: { code: params?.code } };
+  async registryRegisterVerifyExtract(params: { tenant: string /* Tenant; may carry '/' or ':' */; code: string }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/registry/registers/public/by-tenant/extracts/verify`, query: { tenant: params?.tenant, code: params?.code } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 }
@@ -12734,10 +12734,10 @@ export class ResourcesApi {
    *
    * ResourcesController.retireType (sangam-rest).
    *
-   * `DELETE /resources/types/{typeId}` (operationId `resourcesResourcesRetireType`); permission `resources.admin`; result stored atomically with the state change.
+   * `DELETE /resources/types/by-type-id` (operationId `resourcesResourcesRetireType`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async resourcesResourcesRetireType(typeId: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/resources/types/${seg(String(typeId))}` };
+  async resourcesResourcesRetireType(params: { typeId: string /* Type id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/resources/types/by-type-id`, query: { typeId: params?.typeId } };
     await this.calls.none(req, options);
   }
 
@@ -12746,10 +12746,10 @@ export class ResourcesApi {
    *
    * ResourcesController.saveCalendar (sangam-rest).
    *
-   * `PUT /resources/calendars/{calendarId}` (operationId `resourcesResourcesSaveCalendar`); permission `resources.admin`; result stored atomically with the state change.
+   * `PUT /resources/calendars/by-calendar-id` (operationId `resourcesResourcesSaveCalendar`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async resourcesResourcesSaveCalendar(calendarId: string, body: M.ResourcesResourcesSaveCalendarBody, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'PUT', path: `/resources/calendars/${seg(String(calendarId))}` };
+  async resourcesResourcesSaveCalendar(body: M.ResourcesResourcesSaveCalendarBody, params: { calendarId: string /* Calendar id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'PUT', path: `/resources/calendars/by-calendar-id`, query: { calendarId: params?.calendarId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -12759,10 +12759,10 @@ export class ResourcesApi {
    *
    * ResourcesController.calendar (sangam-rest).
    *
-   * `GET /resources/calendars/{calendarId}` (operationId `resourcesResourcesCalendar`); permission `resources.read`.
+   * `GET /resources/calendars/by-calendar-id` (operationId `resourcesResourcesCalendar`); permission `resources.read`.
    */
-  async resourcesResourcesCalendar(calendarId: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/resources/calendars/${seg(String(calendarId))}` };
+  async resourcesResourcesCalendar(params: { calendarId: string /* Calendar id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/resources/calendars/by-calendar-id`, query: { calendarId: params?.calendarId } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -12809,10 +12809,10 @@ export class ResourcesApi {
    *
    * ResourcesController.deleteSlotTemplate (sangam-rest).
    *
-   * `DELETE /resources/slot-templates/{templateId}` (operationId `resourcesResourcesDeleteSlotTemplate`); permission `resources.admin`; result stored atomically with the state change.
+   * `DELETE /resources/slot-templates/by-template-id` (operationId `resourcesResourcesDeleteSlotTemplate`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async resourcesResourcesDeleteSlotTemplate(templateId: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/resources/slot-templates/${seg(String(templateId))}` };
+  async resourcesResourcesDeleteSlotTemplate(params: { templateId: string /* Template id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/resources/slot-templates/by-template-id`, query: { templateId: params?.templateId } };
     await this.calls.none(req, options);
   }
 
@@ -12834,10 +12834,10 @@ export class ResourcesApi {
    *
    * ResourcesController.history (sangam-rest).
    *
-   * `GET /resources/history/{entityType}/{entityId}` (operationId `resourcesResourcesHistory`); permission `resources.read`.
+   * `GET /resources/history/{entityType}/by-entity-id` (operationId `resourcesResourcesHistory`); permission `resources.read`.
    */
-  async resourcesResourcesHistory(entityType: string, entityId: string, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/resources/history/${seg(String(entityType))}/${seg(String(entityId))}` };
+  async resourcesResourcesHistory(entityType: string, params: { entityId: string /* Entity id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/resources/history/${seg(String(entityType))}/by-entity-id`, query: { entityId: params?.entityId } };
     return this.calls.json<Array<Record<string, unknown>>>(req, options);
   }
 
@@ -13157,10 +13157,10 @@ export class ResourcesBookingsApi {
    *
    * ResourcesController.bookingByRef (sangam-rest).
    *
-   * `GET /resources/bookings/by-ref/{bookingRef}` (operationId `resourcesResourcesBookingByRef`); permission `resources.read`.
+   * `GET /resources/bookings/by-ref/by-booking-ref` (operationId `resourcesResourcesBookingByRef`); permission `resources.read`.
    */
-  async resourcesResourcesBookingByRef(bookingRef: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/resources/bookings/by-ref/${seg(String(bookingRef))}` };
+  async resourcesResourcesBookingByRef(params: { bookingRef: string /* Booking ref; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/resources/bookings/by-ref/by-booking-ref`, query: { bookingRef: params?.bookingRef } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -13287,10 +13287,10 @@ export class ResourcesItemsApi {
    *
    * ResourcesController.resource (sangam-rest).
    *
-   * `GET /resources/items/{resourceId}` (operationId `resourcesResourcesResource`); permission `resources.read`.
+   * `GET /resources/items/by-resource-id` (operationId `resourcesResourcesResource`); permission `resources.read`.
    */
-  async resourcesResourcesResource(resourceId: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/resources/items/${seg(String(resourceId))}` };
+  async resourcesResourcesResource(params: { resourceId: string /* Resource id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/resources/items/by-resource-id`, query: { resourceId: params?.resourceId } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -13299,10 +13299,10 @@ export class ResourcesItemsApi {
    *
    * ResourcesController.updateResource (sangam-rest).
    *
-   * `PATCH /resources/items/{resourceId}` (operationId `resourcesResourcesUpdateResource`); permission `resources.admin`; result stored atomically with the state change.
+   * `PATCH /resources/items/by-resource-id` (operationId `resourcesResourcesUpdateResource`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async resourcesResourcesUpdateResource(resourceId: string, body: M.ResourcePatch, params: { version: number }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'PATCH', path: `/resources/items/${seg(String(resourceId))}`, query: { version: params?.version } };
+  async resourcesResourcesUpdateResource(body: M.ResourcePatch, params: { resourceId: string /* Resource id; may carry '/' or ':' */; version: number }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'PATCH', path: `/resources/items/by-resource-id`, query: { resourceId: params?.resourceId, version: params?.version } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -13312,10 +13312,10 @@ export class ResourcesItemsApi {
    *
    * ResourcesController.setStatus (sangam-rest).
    *
-   * `POST /resources/items/{resourceId}/status` (operationId `resourcesResourcesSetStatus`); permission `resources.admin`; result stored atomically with the state change.
+   * `POST /resources/items/by-resource-id/status` (operationId `resourcesResourcesSetStatus`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async resourcesResourcesSetStatus(resourceId: string, body: M.ResourcesStatusRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/resources/items/${seg(String(resourceId))}/status` };
+  async resourcesResourcesSetStatus(body: M.ResourcesStatusRequest, params: { resourceId: string /* Resource id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/resources/items/by-resource-id/status`, query: { resourceId: params?.resourceId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -13325,10 +13325,10 @@ export class ResourcesItemsApi {
    *
    * ResourcesController.move (sangam-rest).
    *
-   * `POST /resources/items/{resourceId}/move` (operationId `resourcesResourcesMove`); permission `resources.admin`; result stored atomically with the state change.
+   * `POST /resources/items/by-resource-id/move` (operationId `resourcesResourcesMove`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async resourcesResourcesMove(resourceId: string, body: M.ResourcesMoveRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/resources/items/${seg(String(resourceId))}/move` };
+  async resourcesResourcesMove(body: M.ResourcesMoveRequest, params: { resourceId: string /* Resource id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/resources/items/by-resource-id/move`, query: { resourceId: params?.resourceId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -13338,10 +13338,10 @@ export class ResourcesItemsApi {
    *
    * ResourcesController.children (sangam-rest).
    *
-   * `GET /resources/items/{resourceId}/children` (operationId `resourcesResourcesChildren`); permission `resources.read`.
+   * `GET /resources/items/by-resource-id/children` (operationId `resourcesResourcesChildren`); permission `resources.read`.
    */
-  async resourcesResourcesChildren(resourceId: string, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/resources/items/${seg(String(resourceId))}/children` };
+  async resourcesResourcesChildren(params: { resourceId: string /* Resource id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/resources/items/by-resource-id/children`, query: { resourceId: params?.resourceId } };
     return this.calls.json<Array<Record<string, unknown>>>(req, options);
   }
 
@@ -13350,10 +13350,10 @@ export class ResourcesItemsApi {
    *
    * ResourcesController.slots (sangam-rest).
    *
-   * `GET /resources/items/{resourceId}/slots` (operationId `resourcesResourcesSlots`); permission `resources.read`.
+   * `GET /resources/items/by-resource-id/slots` (operationId `resourcesResourcesSlots`); permission `resources.read`.
    */
-  async resourcesResourcesSlots(resourceId: string, params: { from: string; to: string }, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/resources/items/${seg(String(resourceId))}/slots`, query: { from: params?.from, to: params?.to } };
+  async resourcesResourcesSlots(params: { resourceId: string /* Resource id; may carry '/' or ':' */; from: string; to: string }, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/resources/items/by-resource-id/slots`, query: { resourceId: params?.resourceId, from: params?.from, to: params?.to } };
     return this.calls.json<Array<Record<string, unknown>>>(req, options);
   }
 
@@ -13362,10 +13362,10 @@ export class ResourcesItemsApi {
    *
    * ResourcesController.availability (sangam-rest).
    *
-   * `GET /resources/items/{resourceId}/availability` (operationId `resourcesResourcesAvailability`); permission `resources.read`.
+   * `GET /resources/items/by-resource-id/availability` (operationId `resourcesResourcesAvailability`); permission `resources.read`.
    */
-  async resourcesResourcesAvailability(resourceId: string, params: { from: string; to: string }, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/resources/items/${seg(String(resourceId))}/availability`, query: { from: params?.from, to: params?.to } };
+  async resourcesResourcesAvailability(params: { resourceId: string /* Resource id; may carry '/' or ':' */; from: string; to: string }, options?: RequestOptions): Promise<Array<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/resources/items/by-resource-id/availability`, query: { resourceId: params?.resourceId, from: params?.from, to: params?.to } };
     return this.calls.json<Array<Record<string, unknown>>>(req, options);
   }
 }
@@ -13404,10 +13404,10 @@ export class RostersApi {
    *
    * RosterController.deleteShift (sangam-rest).
    *
-   * `DELETE /rosters/shifts/{shiftId}` (operationId `rostersRosterDeleteShift`); permission `resources.admin`; result stored atomically with the state change.
+   * `DELETE /rosters/shifts/by-shift-id` (operationId `rostersRosterDeleteShift`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async rostersRosterDeleteShift(shiftId: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/rosters/shifts/${seg(String(shiftId))}` };
+  async rostersRosterDeleteShift(params: { shiftId: string /* Shift id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/rosters/shifts/by-shift-id`, query: { shiftId: params?.shiftId } };
     await this.calls.none(req, options);
   }
 
@@ -13441,10 +13441,10 @@ export class RostersApi {
    *
    * RosterController.deleteRotation (sangam-rest).
    *
-   * `DELETE /rosters/rotations/{rotationId}` (operationId `rostersRosterDeleteRotation`); permission `resources.admin`; result stored atomically with the state change.
+   * `DELETE /rosters/rotations/by-rotation-id` (operationId `rostersRosterDeleteRotation`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async rostersRosterDeleteRotation(rotationId: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/rosters/rotations/${seg(String(rotationId))}` };
+  async rostersRosterDeleteRotation(params: { rotationId: string /* Rotation id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/rosters/rotations/by-rotation-id`, query: { rotationId: params?.rotationId } };
     await this.calls.none(req, options);
   }
 
@@ -13527,10 +13527,10 @@ export class RostersApi {
    *
    * RosterController.setMember (sangam-rest).
    *
-   * `PUT /rosters/periods/{periodId}/members/{personId}` (operationId `rostersRosterSetMember`); permission `resources.admin`; result stored atomically with the state change.
+   * `PUT /rosters/periods/{periodId}/members/by-person-id` (operationId `rostersRosterSetMember`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async rostersRosterSetMember(periodId: string, personId: string, body: M.RosterRestPortMemberRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'PUT', path: `/rosters/periods/${seg(String(periodId))}/members/${seg(String(personId))}` };
+  async rostersRosterSetMember(periodId: string, body: M.RosterRestPortMemberRequest, params: { personId: string /* Person id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'PUT', path: `/rosters/periods/${seg(String(periodId))}/members/by-person-id`, query: { personId: params?.personId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -13540,10 +13540,10 @@ export class RostersApi {
    *
    * RosterController.removeMember (sangam-rest).
    *
-   * `DELETE /rosters/periods/{periodId}/members/{personId}` (operationId `rostersRosterRemoveMember`); permission `resources.admin`; result stored atomically with the state change.
+   * `DELETE /rosters/periods/{periodId}/members/by-person-id` (operationId `rostersRosterRemoveMember`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async rostersRosterRemoveMember(periodId: string, personId: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/rosters/periods/${seg(String(periodId))}/members/${seg(String(personId))}` };
+  async rostersRosterRemoveMember(periodId: string, params: { personId: string /* Person id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/rosters/periods/${seg(String(periodId))}/members/by-person-id`, query: { personId: params?.personId } };
     await this.calls.none(req, options);
   }
 
@@ -13577,10 +13577,10 @@ export class RostersApi {
    *
    * RosterController.removeDemand (sangam-rest).
    *
-   * `DELETE /rosters/periods/{periodId}/demand/{demandId}` (operationId `rostersRosterRemoveDemand`); permission `resources.admin`; result stored atomically with the state change.
+   * `DELETE /rosters/periods/{periodId}/demand/by-demand-id` (operationId `rostersRosterRemoveDemand`); permission `resources.admin`; result stored atomically with the state change.
    */
-  async rostersRosterRemoveDemand(periodId: string, demandId: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/rosters/periods/${seg(String(periodId))}/demand/${seg(String(demandId))}` };
+  async rostersRosterRemoveDemand(periodId: string, params: { demandId: string /* Demand id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/rosters/periods/${seg(String(periodId))}/demand/by-demand-id`, query: { demandId: params?.demandId } };
     await this.calls.none(req, options);
   }
 
@@ -13749,10 +13749,10 @@ export class RostersApi {
    *
    * RosterController.personalRoster (sangam-rest).
    *
-   * `GET /rosters/people/{personId}/duties` (operationId `rostersRosterPersonalRoster`); permission `resources.read`.
+   * `GET /rosters/people/by-person-id/duties` (operationId `rostersRosterPersonalRoster`); permission `resources.read`.
    */
-  async rostersRosterPersonalRoster(personId: string, params: { from: string; to: string; page?: number; size?: number }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/rosters/people/${seg(String(personId))}/duties`, query: { from: params?.from, to: params?.to, page: params?.page, size: params?.size } };
+  async rostersRosterPersonalRoster(params: { personId: string /* Person id; may carry '/' or ':' */; from: string; to: string; page?: number; size?: number }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/rosters/people/by-person-id/duties`, query: { personId: params?.personId, from: params?.from, to: params?.to, page: params?.page, size: params?.size } };
     return this.calls.page<Record<string, unknown>>(req, options, params?.page, params?.size);
   }
 
@@ -14461,10 +14461,10 @@ export class TenantOperationsApi {
    *
    * Forward only.
    *
-   * `POST /ops/sequences/{name}/advance` (operationId `uiOpsAdvance`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   * `POST /ops/sequences/by-name/advance` (operationId `uiOpsAdvance`); permission `ops.tenant.admin`; result stored atomically with the state change.
    */
-  async uiOpsAdvance(name: string, body: M.OpsUiAdvanceRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/ops/sequences/${seg(String(name))}/advance` };
+  async uiOpsAdvance(body: M.OpsUiAdvanceRequest, params: { name: string /* Sequence name (table:series:period); may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/sequences/by-name/advance`, query: { name: params?.name } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -14554,10 +14554,10 @@ export class TenantOperationsFlowableMigrationsApi {
    *
    * The run's report. Tenant administrators only (ops.tenant.admin).
    *
-   * `GET /ops/flowable-migrations/{id}` (operationId `getFlowableMigration`); permission `ops.tenant.admin`.
+   * `GET /ops/flowable-migrations/by-id` (operationId `getFlowableMigration`); permission `ops.tenant.admin`.
    */
-  async getFlowableMigration(id: string, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
-    const req: ApiRequest = { method: 'GET', path: `/ops/flowable-migrations/${seg(String(id))}` };
+  async getFlowableMigration(params: { id: string /* Run id (caller-chosen); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'GET', path: `/ops/flowable-migrations/by-id`, query: { id: params?.id } };
     return this.calls.json<M.FlowableMigrationReport>(req, options);
   }
 
@@ -14566,10 +14566,10 @@ export class TenantOperationsFlowableMigrationsApi {
    *
    * Source instances of the run with status and findings. Tenant administrators only (ops.tenant.admin).
    *
-   * `GET /ops/flowable-migrations/{id}/items` (operationId `listFlowableMigrationItems`); permission `ops.tenant.admin`.
+   * `GET /ops/flowable-migrations/by-id/items` (operationId `listFlowableMigrationItems`); permission `ops.tenant.admin`.
    */
-  async listFlowableMigrationItems(id: string, params?: { status?: 'PLANNED' | 'REJECTED' | 'APPLYING' | 'APPLIED' | 'FAILED' | 'MATCHED' | 'MISMATCHED' | 'ROLLED_BACK' /* Only items in this status */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.FlowableMigrationItem>> {
-    const req: ApiRequest = { method: 'GET', path: `/ops/flowable-migrations/${seg(String(id))}/items`, query: { status: params?.status, page: params?.page, size: params?.size } };
+  async listFlowableMigrationItems(params: { id: string /* Run id (caller-chosen); may carry '/' or ':' */; status?: 'PLANNED' | 'REJECTED' | 'APPLYING' | 'APPLIED' | 'FAILED' | 'MATCHED' | 'MISMATCHED' | 'ROLLED_BACK' /* Only items in this status */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.FlowableMigrationItem>> {
+    const req: ApiRequest = { method: 'GET', path: `/ops/flowable-migrations/by-id/items`, query: { id: params?.id, status: params?.status, page: params?.page, size: params?.size } };
     return this.calls.page<M.FlowableMigrationItem>(req, options, params?.page, params?.size);
   }
 
@@ -14578,10 +14578,10 @@ export class TenantOperationsFlowableMigrationsApi {
    *
    * From DRY_RUN: freezes the Flowable workers and rechecks every planned instance's fingerprint. When the workers are not drained or an instance changed or vanished, the problems are listed and the run stays DRY_RUN; otherwise FROZEN. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
    *
-   * `POST /ops/flowable-migrations/{id}/freeze` (operationId `freezeFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   * `POST /ops/flowable-migrations/by-id/freeze` (operationId `freezeFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
    */
-  async freezeFlowableMigration(id: string, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
-    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/${seg(String(id))}/freeze` };
+  async freezeFlowableMigration(params: { id: string /* Run id (caller-chosen); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/by-id/freeze`, query: { id: params?.id } };
     return this.calls.json<M.FlowableMigrationReport>(req, options);
   }
 
@@ -14590,10 +14590,10 @@ export class TenantOperationsFlowableMigrationsApi {
    *
    * From FROZEN, APPLYING or APPLIED: creates the Sangam instances, idempotent per item (APPLYING, then APPLIED). No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
    *
-   * `POST /ops/flowable-migrations/{id}/apply` (operationId `applyFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   * `POST /ops/flowable-migrations/by-id/apply` (operationId `applyFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
    */
-  async applyFlowableMigration(id: string, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
-    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/${seg(String(id))}/apply` };
+  async applyFlowableMigration(params: { id: string /* Run id (caller-chosen); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/by-id/apply`, query: { id: params?.id } };
     return this.calls.json<M.FlowableMigrationReport>(req, options);
   }
 
@@ -14602,10 +14602,10 @@ export class TenantOperationsFlowableMigrationsApi {
    *
    * Compares every applied instance with its plan (RECONCILED or RECONCILE_FAILED). No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
    *
-   * `POST /ops/flowable-migrations/{id}/reconcile` (operationId `reconcileFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   * `POST /ops/flowable-migrations/by-id/reconcile` (operationId `reconcileFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
    */
-  async reconcileFlowableMigration(id: string, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
-    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/${seg(String(id))}/reconcile` };
+  async reconcileFlowableMigration(params: { id: string /* Run id (caller-chosen); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/by-id/reconcile`, query: { id: params?.id } };
     return this.calls.json<M.FlowableMigrationReport>(req, options);
   }
 
@@ -14614,10 +14614,10 @@ export class TenantOperationsFlowableMigrationsApi {
    *
    * From RECONCILED: CUT_OVER. Then end the migrated instances on Flowable and release; rejected instances stay on Flowable. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
    *
-   * `POST /ops/flowable-migrations/{id}/cut-over` (operationId `cutOverFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   * `POST /ops/flowable-migrations/by-id/cut-over` (operationId `cutOverFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
    */
-  async cutOverFlowableMigration(id: string, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
-    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/${seg(String(id))}/cut-over` };
+  async cutOverFlowableMigration(params: { id: string /* Run id (caller-chosen); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/by-id/cut-over`, query: { id: params?.id } };
     return this.calls.json<M.FlowableMigrationReport>(req, options);
   }
 
@@ -14626,10 +14626,10 @@ export class TenantOperationsFlowableMigrationsApi {
    *
    * From DRY_RUN, FROZEN (back to DRY_RUN), ROLLED_BACK or CUT_OVER: lifts the Flowable freeze. After CUT_OVER it is refused, with a problem, while a migrated instance still exists on Flowable. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
    *
-   * `POST /ops/flowable-migrations/{id}/release` (operationId `releaseFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   * `POST /ops/flowable-migrations/by-id/release` (operationId `releaseFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
    */
-  async releaseFlowableMigration(id: string, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
-    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/${seg(String(id))}/release` };
+  async releaseFlowableMigration(params: { id: string /* Run id (caller-chosen); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/by-id/release`, query: { id: params?.id } };
     return this.calls.json<M.FlowableMigrationReport>(req, options);
   }
 
@@ -14638,10 +14638,10 @@ export class TenantOperationsFlowableMigrationsApi {
    *
    * From APPLYING, APPLIED, RECONCILED or RECONCILE_FAILED, while Flowable is still frozen: deletes the run's Sangam instances (ROLLED_BACK). Refused as a whole, with problems and no change, when Flowable is no longer frozen or a target instance has moved on. 400 REASON_REQUIRED without a reason. Tenant administrators only (ops.tenant.admin).
    *
-   * `POST /ops/flowable-migrations/{id}/rollback` (operationId `rollbackFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   * `POST /ops/flowable-migrations/by-id/rollback` (operationId `rollbackFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
    */
-  async rollbackFlowableMigration(id: string, body: M.FlowableMigrationRollbackRequest, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
-    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/${seg(String(id))}/rollback` };
+  async rollbackFlowableMigration(body: M.FlowableMigrationRollbackRequest, params: { id: string /* Run id (caller-chosen); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/by-id/rollback`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.FlowableMigrationReport>(req, options);
   }
@@ -14784,10 +14784,10 @@ export class TenantOperationsSecretsApi {
    *
    * The value is write-only.
    *
-   * `PUT /ops/secrets/{name}` (operationId `uiOpsPutSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   * `PUT /ops/secrets/by-name` (operationId `uiOpsPutSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
    */
-  async uiOpsPutSecret(name: string, body: M.OpsUiSecretRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'PUT', path: `/ops/secrets/${seg(String(name))}` };
+  async uiOpsPutSecret(body: M.OpsUiSecretRequest, params: { name: string /* Secret name; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'PUT', path: `/ops/secrets/by-name`, query: { name: params?.name } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -14797,10 +14797,10 @@ export class TenantOperationsSecretsApi {
    *
    * Needs a reason.
    *
-   * `DELETE /ops/secrets/{name}` (operationId `uiOpsDeleteSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   * `DELETE /ops/secrets/by-name` (operationId `uiOpsDeleteSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
    */
-  async uiOpsDeleteSecret(name: string, params: { reason: string }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/ops/secrets/${seg(String(name))}`, query: { reason: params?.reason } };
+  async uiOpsDeleteSecret(params: { name: string /* Secret name; may carry '/' or ':' */; reason: string }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/ops/secrets/by-name`, query: { name: params?.name, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 }
@@ -14888,10 +14888,10 @@ export class TenantOperationsVariablesApi {
    *
    * Needs a reason.
    *
-   * `DELETE /ops/variables/{id}` (operationId `uiOpsDeleteVariable`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   * `DELETE /ops/variables/by-id` (operationId `uiOpsDeleteVariable`); permission `ops.tenant.admin`; result stored atomically with the state change.
    */
-  async uiOpsDeleteVariable(id: string, params: { reason: string }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/ops/variables/${seg(String(id))}`, query: { reason: params?.reason } };
+  async uiOpsDeleteVariable(params: { id: string /* Variable name; may carry '/' or ':' */; reason: string }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/ops/variables/by-id`, query: { id: params?.id, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 }

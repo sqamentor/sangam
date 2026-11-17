@@ -59,12 +59,14 @@ final class RegistryApi
      *
      * RegistryController.currentType (sangam-rest).
      *
-     * GET /registry/types/{typeKey} (operationId registryRegistryCurrentType); permission registry.read.
+     * GET /registry/types/by-type-key (operationId registryRegistryCurrentType); permission registry.read.
+     * @param string $typeKey query typeKey
      * @return array<string, mixed>
      */
     public function registryRegistryCurrentType(string $typeKey, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/registry/types/' . HttpTransport::seg((string) $typeKey));
+        $req = ApiRequest::get('/registry/types/by-type-key');
+        $req->query('typeKey', $typeKey);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -73,12 +75,14 @@ final class RegistryApi
      *
      * RegistryController.typeVersion (sangam-rest).
      *
-     * GET /registry/types/{typeKey}/versions/{version} (operationId registryRegistryTypeVersion); permission registry.read.
+     * GET /registry/types/by-type-key/versions/{version} (operationId registryRegistryTypeVersion); permission registry.read.
+     * @param string $typeKey query typeKey
      * @return array<string, mixed>
      */
-    public function registryRegistryTypeVersion(string $typeKey, string $version, ?RequestOptions $options = null): array
+    public function registryRegistryTypeVersion(string $version, string $typeKey, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/registry/types/' . HttpTransport::seg((string) $typeKey) . '/versions/' . HttpTransport::seg((string) $version));
+        $req = ApiRequest::get('/registry/types/by-type-key/versions/' . HttpTransport::seg((string) $version));
+        $req->query('typeKey', $typeKey);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -87,11 +91,13 @@ final class RegistryApi
      *
      * RegistryController.retireType (sangam-rest).
      *
-     * POST /registry/types/{typeKey}/versions/{version}/retire (operationId registryRegistryRetireType); permission registry.write; result stored atomically with the state change.
+     * POST /registry/types/by-type-key/versions/{version}/retire (operationId registryRegistryRetireType); permission registry.write; result stored atomically with the state change.
+     * @param string $typeKey query typeKey
      */
-    public function registryRegistryRetireType(string $typeKey, string $version, ?RequestOptions $options = null): void
+    public function registryRegistryRetireType(string $version, string $typeKey, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/registry/types/' . HttpTransport::seg((string) $typeKey) . '/versions/' . HttpTransport::seg((string) $version) . '/retire');
+        $req = ApiRequest::post('/registry/types/by-type-key/versions/' . HttpTransport::seg((string) $version) . '/retire');
+        $req->query('typeKey', $typeKey);
         $this->calls->none($req, $options);
     }
 }

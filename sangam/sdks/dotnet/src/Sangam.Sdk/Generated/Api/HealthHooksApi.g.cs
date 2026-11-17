@@ -18,11 +18,12 @@ public sealed class HealthHooksApi
     /// <summary>
     /// Receive a FHIR subscription notification
     /// Public at the Sangam layer: the channel's shared secret header is checked (constant time) and each focus resource is written to the integration inbox (deduplicated, tenant-bound by the channel). ClaimResponse becomes sangam.ushealth.pasUpdate.
-    /// POST /hooks/fhir/{channel} (operationId receiveFhirNotification).
+    /// POST /hooks/fhir/by-channel (operationId receiveFhirNotification).
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.HealthHookResult?> ReceiveFhirNotificationAsync(string channel, global::System.Collections.Generic.Dictionary<string, object?> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.HealthHookResult?> ReceiveFhirNotificationAsync(global::System.Collections.Generic.Dictionary<string, object?> body, string channel, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/hooks/fhir/{HttpTransport.Seg(GeneratedCalls.Str(channel)!)}");
+        var req = ApiRequest.Post($"/hooks/fhir/by-channel");
+        req.WithQuery("channel", GeneratedCalls.Q(channel));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.HealthHookResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }

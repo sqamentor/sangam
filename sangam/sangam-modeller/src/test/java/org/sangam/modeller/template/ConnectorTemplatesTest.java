@@ -128,7 +128,7 @@ class ConnectorTemplatesTest {
                         input("body", false, null, null))));
         d.add(doc("sangam.connector.async-serverless", "Serverless function, asynchronous",
                 "Starts a function and continues on its callback: the connector adds the callback (endpoint.callback.url, "
-                        + "a /events/{channel} inbound webhook) and the correlation key (the operation id) to the request. "
+                        + "a /events/by-channel?channel= inbound webhook) and the correlation key (the operation id) to the request. "
                         + "Model a message catch event after this task correlated on the correlation key.",
                 List.of(input("path", false, "/[A-Za-z0-9_./-]{0,200}", null), input("headers", false, null, null),
                         input("body", false, null, null))));

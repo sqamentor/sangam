@@ -115,8 +115,9 @@ public class ResourcesController {
         return Lists.okRef(String.valueOf(definition.getOrDefault("typeId", "")), t);
     }
 
-    @DeleteMapping("/types/{typeId}")
-    public ResponseEntity<Void> retireType(RequestContext ctx, @PathVariable String typeId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @DeleteMapping("/types/by-type-id")
+    public ResponseEntity<Void> retireType(RequestContext ctx, @RequestParam("typeId") String typeId) {
         port.retireType(admin(ctx), typeId);
         return ResponseEntity.noContent().build();
     }
@@ -124,7 +125,8 @@ public class ResourcesController {
     @PostMapping("/items")
     public ResponseEntity<Resource> createResource(RequestContext ctx, @RequestBody Resource.Draft draft) {
         Resource r = port.createResource(admin(ctx), draft);
-        return Lists.created("/api/v1/resources/items/" + r.resourceId(), r.resourceId(), r);
+        return Lists.created("/api/v1/resources/items/by-resource-id?resourceId="
+                + java.net.URLEncoder.encode(r.resourceId(), java.nio.charset.StandardCharsets.UTF_8), r.resourceId(), r);
     }
 
     @GetMapping("/items")
@@ -141,43 +143,50 @@ public class ResourcesController {
         return listed(port.search(id, q), port.countResources(id, q, COUNT_CAP));
     }
 
-    @GetMapping("/items/{resourceId}")
-    public Resource resource(RequestContext ctx, @PathVariable String resourceId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/items/by-resource-id")
+    public Resource resource(RequestContext ctx, @RequestParam("resourceId") String resourceId) {
         return port.resource(read(ctx), resourceId);
     }
 
-    @PatchMapping("/items/{resourceId}")
-    public ResponseEntity<Resource> updateResource(RequestContext ctx, @PathVariable String resourceId,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PatchMapping("/items/by-resource-id")
+    public ResponseEntity<Resource> updateResource(RequestContext ctx, @RequestParam("resourceId") String resourceId,
             @RequestParam long version, @RequestBody Resource.Patch patch) {
         return Lists.okRef(resourceId, port.updateResource(admin(ctx), resourceId, version, patch));
     }
 
-    @PostMapping("/items/{resourceId}/status")
-    public ResponseEntity<Resource> setStatus(RequestContext ctx, @PathVariable String resourceId,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/items/by-resource-id/status")
+    public ResponseEntity<Resource> setStatus(RequestContext ctx, @RequestParam("resourceId") String resourceId,
                                               @RequestBody StatusRequest body) {
         return Lists.okRef(resourceId, port.setStatus(admin(ctx), resourceId, body.status(), body.reason()));
     }
 
-    @PostMapping("/items/{resourceId}/move")
-    public ResponseEntity<Resource> move(RequestContext ctx, @PathVariable String resourceId, @RequestBody MoveRequest body) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/items/by-resource-id/move")
+    public ResponseEntity<Resource> move(RequestContext ctx, @RequestParam("resourceId") String resourceId, @RequestBody MoveRequest body) {
         return Lists.okRef(resourceId, port.move(admin(ctx), resourceId, body.newParentId()));
     }
 
-    @GetMapping("/items/{resourceId}/children")
-    public ResponseEntity<List<Resource>> children(RequestContext ctx, @PathVariable String resourceId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/items/by-resource-id/children")
+    public ResponseEntity<List<Resource>> children(RequestContext ctx, @RequestParam("resourceId") String resourceId) {
         return Lists.ok(port.children(read(ctx), resourceId));
     }
 
     // ---------------------------------------------------------------- calendars, blackouts, slot templates
 
-    @PutMapping("/calendars/{calendarId}")
-    public ResponseEntity<AvailabilityCalendar> saveCalendar(RequestContext ctx, @PathVariable String calendarId,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PutMapping("/calendars/by-calendar-id")
+    public ResponseEntity<AvailabilityCalendar> saveCalendar(RequestContext ctx, @RequestParam("calendarId") String calendarId,
                                                              @RequestBody Map<String, Object> definition) {
         return Lists.okRef(calendarId, port.saveCalendar(admin(ctx), calendarId, definition));
     }
 
-    @GetMapping("/calendars/{calendarId}")
-    public AvailabilityCalendar calendar(RequestContext ctx, @PathVariable String calendarId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/calendars/by-calendar-id")
+    public AvailabilityCalendar calendar(RequestContext ctx, @RequestParam("calendarId") String calendarId) {
         return port.calendar(read(ctx), calendarId);
     }
 
@@ -202,22 +211,25 @@ public class ResourcesController {
         return Lists.okRef(t.templateId(), t);
     }
 
-    @DeleteMapping("/slot-templates/{templateId}")
-    public ResponseEntity<Void> deleteSlotTemplate(RequestContext ctx, @PathVariable String templateId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @DeleteMapping("/slot-templates/by-template-id")
+    public ResponseEntity<Void> deleteSlotTemplate(RequestContext ctx, @RequestParam("templateId") String templateId) {
         port.deleteSlotTemplate(admin(ctx), templateId);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/items/{resourceId}/slots")
-    public ResponseEntity<List<CalendarService.Slot>> slots(RequestContext ctx, @PathVariable String resourceId,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/items/by-resource-id/slots")
+    public ResponseEntity<List<CalendarService.Slot>> slots(RequestContext ctx, @RequestParam("resourceId") String resourceId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
         return Lists.ok(port.slots(read(ctx), resourceId, from, to));
     }
 
-    @GetMapping("/items/{resourceId}/availability")
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/items/by-resource-id/availability")
     public ResponseEntity<List<BookingModel.SlotAvailability>> availability(RequestContext ctx,
-            @PathVariable String resourceId,
+            @RequestParam("resourceId") String resourceId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
         return Lists.ok(port.availability(read(ctx), resourceId, from, to));
@@ -271,8 +283,9 @@ public class ResourcesController {
         return port.booking(read(ctx), bookingId);
     }
 
-    @GetMapping("/bookings/by-ref/{bookingRef}")
-    public BookingModel.Booking bookingByRef(RequestContext ctx, @PathVariable String bookingRef) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/bookings/by-ref/by-booking-ref")
+    public BookingModel.Booking bookingByRef(RequestContext ctx, @RequestParam("bookingRef") String bookingRef) {
         return port.bookingByRef(read(ctx), bookingRef);
     }
 
@@ -315,9 +328,10 @@ public class ResourcesController {
         return Lists.okRef(bookingId, port.bump(admin(ctx), bookingId, body.reason(), body.authorityRef()));
     }
 
-    @GetMapping("/history/{entityType}/{entityId}")
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/history/{entityType}/by-entity-id")
     public ResponseEntity<List<Map<String, Object>>> history(RequestContext ctx, @PathVariable String entityType,
-                                                             @PathVariable String entityId) {
+                                                             @RequestParam("entityId") String entityId) {
         return Lists.ok(port.history(read(ctx), entityType, entityId));
     }
 

@@ -6738,7 +6738,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/channels/{key}:
+  /events/channels/by-key:
     get:
       operationId: getEventChannel
       tags:
@@ -6747,7 +6747,8 @@ paths:
       description: One channel.
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -6777,7 +6778,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -6829,7 +6831,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -6861,7 +6864,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/channels/{key}/retire:
+  /events/channels/by-key/retire:
     post:
       operationId: retireEventChannel
       tags:
@@ -6874,7 +6877,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -6916,7 +6920,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/channels/{key}/restore:
+  /events/channels/by-key/restore:
     post:
       operationId: restoreEventChannel
       tags:
@@ -6927,7 +6931,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7052,7 +7057,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/definitions/{key}:
+  /events/definitions/by-key:
     get:
       operationId: getEventDefinition
       tags:
@@ -7061,7 +7066,8 @@ paths:
       description: One definition.
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7092,7 +7098,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7124,7 +7131,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/definitions/{key}/retire:
+  /events/definitions/by-key/retire:
     post:
       operationId: retireEventDefinition
       tags:
@@ -7136,7 +7143,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7178,7 +7186,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/definitions/{key}/restore:
+  /events/definitions/by-key/restore:
     post:
       operationId: restoreEventDefinition
       tags:
@@ -7189,7 +7197,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7231,7 +7240,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/{channel}:
+  /events/by-channel:
     post:
       operationId: publishEvent
       tags:
@@ -7243,7 +7252,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: channel
-        in: path
+        in: query
+        description: Inbound event channel key; may carry ':'
         required: true
         schema:
           type: string
@@ -9417,7 +9427,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /ops/topics/{name}/pause:
+  /ops/topics/by-name/pause:
     post:
       operationId: pauseTopic
       tags:
@@ -9428,11 +9438,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: name
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: Topic name
+        description: Topic name; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -9471,7 +9481,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ops/topics/{name}/resume:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ops/topics/by-name/resume:
     post:
       operationId: resumeTopic
       tags:
@@ -9482,11 +9496,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: name
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: Topic name
+        description: Topic name; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -9525,6 +9539,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /ops/incidents/{id}/preview:
     get:
       operationId: previewIncidentAction
@@ -9820,7 +9838,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ops/cleanup/ttl/{key}:
+  /ops/cleanup/ttl/by-key:
     put:
       operationId: setHistoryTtl
       tags:
@@ -9831,11 +9849,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: Process definition key
+        description: Process definition key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -9874,6 +9892,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /ops/notification-failures:
     get:
       operationId: listNotificationFailures
@@ -9907,7 +9929,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /ops/notification-failures/{id}/resend:
+  /ops/notification-failures/by-id/resend:
     post:
       operationId: resendNotification
       tags:
@@ -9918,10 +9940,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Notification failure id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -9955,6 +9978,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /debug/status:
     get:
       operationId: getDebugStatus
@@ -14180,7 +14207,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queries/{name}:
+  /queries/by-name:
     get:
       operationId: runNamedQuery
       tags:
@@ -14189,7 +14216,8 @@ paths:
       description: Named query (R25); further query parameters are passed to the query. Uses the same authorization as the underlying data.
       parameters:
       - name: name
-        in: path
+        in: query
+        description: Named query (tasks.mine, process-instances, or data:<data object key>); may carry ':'
         required: true
         schema:
           type: string
@@ -14824,7 +14852,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /compliance/notices/{key}:
+  /compliance/notices/by-key:
     get:
       operationId: getComplianceNotice
       tags:
@@ -14833,7 +14861,8 @@ paths:
       description: The notice in the requested language; falls back to the pack default only where the pack allows (DPDP Rules r.3).
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Consent notice key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -14873,7 +14902,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       security: []
-  /compliance/notices/{key}/publish:
+  /compliance/notices/by-key/publish:
     post:
       operationId: publishComplianceNotice
       tags:
@@ -14884,7 +14913,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Consent notice key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -14992,7 +15022,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /compliance/purposes/{code}:
+  /compliance/purposes/by-code:
     put:
       operationId: defineCompliancePurpose
       tags:
@@ -15003,7 +15033,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: code
-        in: path
+        in: query
+        description: Purpose code; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -15180,7 +15211,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /compliance/consent-managers/{cm}/artefacts:
+  /compliance/consent-managers/by-cm/artefacts:
     post:
       operationId: ingestConsentArtefact
       tags:
@@ -15191,7 +15222,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: cm
-        in: path
+        in: query
+        description: Consent manager id; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -15901,7 +15933,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /compliance/contacts/{role}:
+  /compliance/contacts/by-role:
     post:
       operationId: setComplianceContact
       tags:
@@ -15912,7 +15944,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: role
-        in: path
+        in: query
+        description: Contact role of the jurisdiction pack; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -17067,7 +17100,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ai/knowledge-bases/{kb}/versions:
+  /ai/knowledge-bases/by-kb/versions:
     post:
       operationId: aiKbNewVersion
       tags:
@@ -17078,7 +17111,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: kb
-        in: path
+        in: query
+        description: Knowledge base key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -17113,7 +17147,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ai/knowledge-bases/{kb}/versions/{version}/documents:
+  /ai/knowledge-bases/by-kb/versions/{version}/documents:
     post:
       operationId: aiKbIngest
       tags:
@@ -17124,7 +17158,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: kb
-        in: path
+        in: query
+        description: Knowledge base key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -17170,7 +17205,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ai/knowledge-bases/{kb}/versions/{version}/activate:
+  /ai/knowledge-bases/by-kb/versions/{version}/activate:
     post:
       operationId: aiKbActivate
       tags:
@@ -17181,7 +17216,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: kb
-        in: path
+        in: query
+        description: Knowledge base key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -17217,7 +17253,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ai/knowledge-bases/{kb}/search:
+  /ai/knowledge-bases/by-kb/search:
     post:
       operationId: aiKbSearch
       tags:
@@ -17226,7 +17262,8 @@ paths:
       description: Results are filtered by what the caller may read.
       parameters:
       - name: kb
-        in: path
+        in: query
+        description: Knowledge base key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -17768,7 +17805,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /ai/a2a/{agent}/card:
+  /ai/a2a/by-agent/card:
     get:
       operationId: aiA2aCard
       tags:
@@ -17777,7 +17814,8 @@ paths:
       description: Card of a configured inbound agent of the tenant.
       parameters:
       - name: agent
-        in: path
+        in: query
+        description: Inbound agent key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -17801,7 +17839,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /ai/a2a/{agent}:
+  /ai/a2a/by-agent:
     post:
       operationId: aiA2a
       tags:
@@ -17810,7 +17848,8 @@ paths:
       description: JSON-RPC; the caller must be on the agent allow-list. Honours the A2A-Version header; a browser Origin must be allow-listed.
       parameters:
       - name: agent
-        in: path
+        in: query
+        description: Inbound agent key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -18186,7 +18225,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ai/knowledge-bases/{key}/retire:
+  /ai/knowledge-bases/by-key/retire:
     post:
       operationId: aiUiRetireKb
       tags:
@@ -18197,7 +18236,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Knowledge base key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -18289,7 +18329,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /billing/{ledger}/accounts:
+  /billing/by-ledger/accounts:
     get:
       operationId: listBillingAccounts
       tags:
@@ -18298,11 +18338,11 @@ paths:
       description: Consumers holding demand accounts in the ledger.
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: receivable ledger id (e.g. DEMAND)
+        description: receivable ledger id (e.g. DEMAND); may carry '/' or ':'
+        required: true
       - name: cycle
         in: query
         schema:
@@ -18327,7 +18367,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /billing/{ledger}/invoices:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /billing/by-ledger/invoices:
     post:
       operationId: raiseBillingInvoice
       tags:
@@ -18338,11 +18380,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: receivable ledger id (e.g. DEMAND)
+        description: receivable ledger id (e.g. DEMAND); may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -18381,22 +18423,27 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /billing/{ledger}/collections:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /billing/by-ledger/collections:
     post:
       operationId: recordBillingCollection
       tags:
       - Billing
       summary: Record a collection
-      description: Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt.
+      description: Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt. A payment the
+        channel cannot confirm is refused here; staff record it with acceptUnverifiedPayment (decision 141).
       x-sangam-command-type: billing.collect
       x-sangam-idempotent: true
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: receivable ledger id (e.g. DEMAND)
+        description: receivable ledger id (e.g. DEMAND); may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -18435,7 +18482,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /billing/{ledger}/consumers/{consumer}/arrears:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /billing/by-ledger/consumers/by-consumer/arrears:
     get:
       operationId: getBillingArrears
       tags:
@@ -18444,16 +18495,17 @@ paths:
       description: Outstanding and overdue demand.
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: receivable ledger id (e.g. DEMAND)
+        description: receivable ledger id (e.g. DEMAND); may carry '/' or ':'
+        required: true
       - name: consumer
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: consumer id; may carry '/' or ':'
+        required: true
       x-sangam-permission: billing.read
       x-sangam-requirements:
       - R36
@@ -18474,7 +18526,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /billing/{ledger}/consumers/{consumer}/penalties:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /billing/by-ledger/consumers/by-consumer/penalties:
     post:
       operationId: levyBillingPenalties
       tags:
@@ -18485,16 +18539,17 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: receivable ledger id (e.g. DEMAND)
+        description: receivable ledger id (e.g. DEMAND); may carry '/' or ':'
+        required: true
       - name: consumer
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: consumer id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -18533,7 +18588,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /billing/{ledger}/waivers:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /billing/by-ledger/waivers:
     post:
       operationId: recordBillingWaiver
       tags:
@@ -18544,11 +18603,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: receivable ledger id (e.g. DEMAND)
+        description: receivable ledger id (e.g. DEMAND); may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -18587,7 +18646,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /billing/{ledger}/refunds:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /billing/by-ledger/refunds:
     post:
       operationId: refundBillingCollection
       tags:
@@ -18598,11 +18661,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: receivable ledger id (e.g. DEMAND)
+        description: receivable ledger id (e.g. DEMAND); may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -18641,6 +18704,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /case-config/{kind}:
     put:
       operationId: caseFilePublishConfig
@@ -24483,7 +24550,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /config/master/{scheme}/{segment}:
+  /config/master/by-scheme/by-segment:
     get:
       operationId: listConfigMasterCodes
       tags:
@@ -24492,12 +24559,14 @@ paths:
       description: Codes of a scheme segment valid on the date (optionally children of a parent code).
       parameters:
       - name: scheme
-        in: path
+        in: query
+        description: Classification scheme; may carry '/' or ':'
         required: true
         schema:
           type: string
       - name: segment
-        in: path
+        in: query
+        description: Scheme segment; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -24743,7 +24812,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /config/document-types/{id}/check:
+  /config/document-types/by-id/check:
     post:
       operationId: checkConfigDocument
       tags:
@@ -24752,7 +24821,8 @@ paths:
       description: Checks a document against its type (required fields, limits, chain).
       parameters:
       - name: id
-        in: path
+        in: query
+        description: Document type id; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -24783,7 +24853,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /config/crosswalks/{id}/map:
+  /config/crosswalks/by-id/map:
     post:
       operationId: mapConfigCrosswalk
       tags:
@@ -24792,7 +24862,8 @@ paths:
       description: Maps a code (and amount) to the target classification (e.g. COFOG) with shares.
       parameters:
       - name: id
-        in: path
+        in: query
+        description: Crosswalk id; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -24823,7 +24894,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /hooks/fhir/{channel}:
+  /hooks/fhir/by-channel:
     post:
       operationId: receiveFhirNotification
       tags:
@@ -24833,7 +24904,8 @@ paths:
         to the integration inbox (deduplicated, tenant-bound by the channel). ClaimResponse becomes sangam.ushealth.pasUpdate.'
       parameters:
       - name: channel
-        in: path
+        in: query
+        description: Configured FHIR subscription channel; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -24998,7 +25070,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /field/templates/{key}:
+  /field/templates/by-key:
     get:
       operationId: fieldWorkTemplate
       tags:
@@ -25007,10 +25079,11 @@ paths:
       description: A template (latest version, or a given version).
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: template key; may carry '/' or ':'
+        required: true
       - name: version
         in: query
         schema:
@@ -25039,7 +25112,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /field/templates/{key}/{version}/retire:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /field/templates/by-key/{version}/retire:
     post:
       operationId: fieldWorkRetireTemplate
       tags:
@@ -25050,10 +25125,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: template key; may carry '/' or ':'
+        required: true
       - name: version
         in: path
         required: true
@@ -25089,6 +25165,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /field/assignments:
     get:
       operationId: fieldWorkAssignments
@@ -25604,7 +25684,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /field/schedules/{id}/run:
+  /field/schedules/by-id/run:
     post:
       operationId: fieldWorkRunSchedule
       tags:
@@ -25615,10 +25695,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: schedule id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -25654,6 +25735,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /field/schedules/run-due:
     post:
       operationId: fieldWorkRunDue
@@ -25868,7 +25953,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /field/devices/{id}/status:
+  /field/devices/by-id/status:
     post:
       operationId: fieldWorkDeviceStatus
       tags:
@@ -25879,10 +25964,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: device id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -25898,8 +25984,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/FieldWorkDeviceStatusBody'
       responses:
         '200':
           description: Success
@@ -25925,7 +26010,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /field/devices/{id}/policy:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /field/devices/by-id/policy:
     post:
       operationId: fieldWorkDevicePolicy
       tags:
@@ -25936,10 +26025,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: device id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -25955,8 +26045,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/FieldWorkDevicePolicyBody'
       responses:
         '200':
           description: Success
@@ -25982,7 +26071,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /field/devices/{id}/chain:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /field/devices/by-id/chain:
     get:
       operationId: fieldWorkChain
       tags:
@@ -25991,10 +26084,11 @@ paths:
       description: Verify a device's packet hash chain.
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: device id; may carry '/' or ':'
+        required: true
       x-sangam-permission: field.review
       x-sangam-requirements:
       - N13
@@ -26018,7 +26112,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /field/sync/{deviceId}/upload:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /field/sync/by-device-id/upload:
     post:
       operationId: fieldWorkUpload
       tags:
@@ -26029,10 +26125,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: deviceId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: device id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -26050,8 +26147,7 @@ paths:
             schema:
               type: array
               items:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/FieldWorkUploadBody'
       responses:
         '200':
           description: Success
@@ -26077,7 +26173,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /field/sync/{deviceId}/pull:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /field/sync/by-device-id/pull:
     get:
       operationId: fieldWorkPull
       tags:
@@ -26086,10 +26186,11 @@ paths:
       description: Pull server changes for a device since a cursor.
       parameters:
       - name: deviceId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: device id; may carry '/' or ':'
+        required: true
       - name: cursor
         in: query
         schema:
@@ -26118,6 +26219,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /field/conflicts:
     get:
       operationId: fieldWorkConflicts
@@ -26303,7 +26406,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /field/evidence/{id}:
+  /field/evidence/by-id:
     get:
       operationId: fieldWorkEvidence
       tags:
@@ -26312,10 +26415,11 @@ paths:
       description: Evidence metadata and integrity report.
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: evidence id; may carry '/' or ':'
+        required: true
       x-sangam-permission: field.capture
       x-sangam-requirements:
       - N13
@@ -26339,7 +26443,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /field/evidence/{id}/content:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /field/evidence/by-id/content:
     get:
       operationId: fieldWorkEvidenceContent
       tags:
@@ -26348,10 +26454,11 @@ paths:
       description: Evidence content (streamed).
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: evidence id; may carry '/' or ':'
+        required: true
       x-sangam-permission: field.capture
       x-sangam-requirements:
       - N13
@@ -26375,7 +26482,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /field/evidence/{id}/reverify:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /field/evidence/by-id/reverify:
     post:
       operationId: fieldWorkReverifyEvidence
       tags:
@@ -26386,10 +26495,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: evidence id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -26425,6 +26535,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /field/units:
     post:
       operationId: fieldWorkUpsertUnit
@@ -26511,7 +26625,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /field/units/{id}:
+  /field/units/by-id:
     get:
       operationId: fieldWorkUnit
       tags:
@@ -26520,10 +26634,11 @@ paths:
       description: A field unit.
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: unit id; may carry '/' or ':'
+        required: true
       x-sangam-permission: dispatch.operate
       x-sangam-requirements:
       - N13
@@ -26547,7 +26662,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /field/units/{id}/status:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /field/units/by-id/status:
     post:
       operationId: fieldWorkUnitStatus
       tags:
@@ -26558,10 +26675,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: unit id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -26577,8 +26695,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/FieldWorkUnitStatusBody'
       responses:
         '200':
           description: Success
@@ -26604,7 +26721,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /field/units/{id}/pings:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /field/units/by-id/pings:
     post:
       operationId: fieldWorkPing
       tags:
@@ -26615,10 +26736,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: unit id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -26634,8 +26756,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/FieldWorkPingBody'
       responses:
         '200':
           description: Success
@@ -26661,7 +26782,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /field/units/{id}/offers:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /field/units/by-id/offers:
     get:
       operationId: fieldWorkUnitOffers
       tags:
@@ -26670,10 +26795,11 @@ paths:
       description: Open offers for a unit.
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: unit id; may carry '/' or ':'
+        required: true
       x-sangam-permission: dispatch.operate
       x-sangam-requirements:
       - N13
@@ -26697,7 +26823,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /field/units/{id}/eta:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /field/units/by-id/eta:
     get:
       operationId: fieldWorkEta
       tags:
@@ -26706,10 +26834,11 @@ paths:
       description: ETA of a unit to a job.
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: unit id; may carry '/' or ':'
+        required: true
       - name: jobId
         in: query
         schema:
@@ -26738,7 +26867,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /field/units/{id}/trips:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /field/units/by-id/trips:
     get:
       operationId: fieldWorkTrips
       tags:
@@ -26747,10 +26878,11 @@ paths:
       description: Trips of a unit.
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: unit id; may carry '/' or ':'
+        required: true
       x-sangam-permission: dispatch.operate
       x-sangam-requirements:
       - N13
@@ -26774,6 +26906,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /field/jobs:
     post:
       operationId: fieldWorkCreateJob
@@ -27292,19 +27426,20 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /geo/layers/{layer}:
+  /geo/layers/by-layer:
     get:
       operationId: geoGeoLayer
       tags:
       - Geo
       summary: Layer
-      description: GeoController.layer (sangam-geo).
+      description: GeoController.layer (sangam-rest).
       parameters:
       - name: layer
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Layer; may carry '/' or ':'
+        required: true
       x-sangam-permission: geo.read
       x-sangam-requirements:
       - R19
@@ -27325,21 +27460,24 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /geo/layers/{layer}/import:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /geo/layers/by-layer/import:
     post:
       operationId: geoGeoImportBoundaries
       tags:
       - Geo
       summary: Import boundaries
-      description: GeoController.importBoundaries (sangam-geo).
+      description: GeoController.importBoundaries (sangam-rest).
       x-sangam-command-type: geo.geo.import-boundaries
       x-sangam-idempotent: true
       parameters:
       - name: layer
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Layer; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -27352,8 +27490,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/GeoGeoImportBoundariesBody'
       responses:
         '200':
           description: Success
@@ -27379,19 +27516,24 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /geo/layers/{layer}/features:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /geo/layers/by-layer/features:
     get:
       operationId: geoGeoFeatures
       tags:
       - Geo
       summary: Features
-      description: GeoController.features (sangam-geo).
+      description: GeoController.features (sangam-rest).
       parameters:
       - name: layer
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Layer; may carry '/' or ':'
+        required: true
       - name: level
         in: query
         schema:
@@ -27436,20 +27578,23 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
     post:
       operationId: geoGeoPutFeature
       tags:
       - Geo
       summary: Put feature
-      description: GeoController.putFeature (sangam-geo).
+      description: GeoController.putFeature (sangam-rest).
       x-sangam-command-type: geo.geo.put-feature
       x-sangam-idempotent: true
       parameters:
       - name: layer
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Layer; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -27462,8 +27607,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/GeoGeoPutFeatureBody'
       responses:
         '201':
           description: Success
@@ -27489,19 +27633,24 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /geo/features/{id}:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /geo/features/by-id:
     get:
       operationId: geoGeoFeature
       tags:
       - Geo
       summary: Feature
-      description: GeoController.feature (sangam-geo).
+      description: GeoController.feature (sangam-rest).
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Id; may carry '/' or ':'
+        required: true
       - name: geometry
         in: query
         schema:
@@ -27526,20 +27675,23 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
     delete:
       operationId: geoGeoRetire
       tags:
       - Geo
       summary: Retire
-      description: GeoController.retire (sangam-geo).
+      description: GeoController.retire (sangam-rest).
       x-sangam-command-type: geo.geo.retire
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -27567,19 +27719,24 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /geo/features/{id}/lineage:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /geo/features/by-id/lineage:
     get:
       operationId: geoGeoLineage
       tags:
       - Geo
       summary: Lineage
-      description: GeoController.lineage (sangam-geo).
+      description: GeoController.lineage (sangam-rest).
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Id; may carry '/' or ':'
+        required: true
       x-sangam-permission: geo.read
       x-sangam-requirements:
       - R19
@@ -27602,6 +27759,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /geo/resolve:
     get:
       operationId: geoGeoResolve
@@ -27803,19 +27962,20 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /geo/fences/{id}:
+  /geo/fences/by-id:
     get:
       operationId: geoGeoFence
       tags:
       - Geo
       summary: Fence
-      description: GeoController.fence (sangam-geo).
+      description: GeoController.fence (sangam-rest).
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Id; may carry '/' or ':'
+        required: true
       x-sangam-permission: geo.read
       x-sangam-requirements:
       - R19
@@ -27836,20 +27996,23 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
     delete:
       operationId: geoGeoDeactivateFence
       tags:
       - Geo
       summary: Deactivate fence
-      description: GeoController.deactivateFence (sangam-geo).
+      description: GeoController.deactivateFence (sangam-rest).
       x-sangam-command-type: geo.geo.deactivate-fence
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -27877,19 +28040,24 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /geo/fences/{id}/check:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /geo/fences/by-id/check:
     post:
       operationId: geoGeoCheckFence
       tags:
       - Geo
       summary: Check fence
-      description: GeoController.checkFence (sangam-geo).
+      description: GeoController.checkFence (sangam-rest).
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
       x-sangam-permission: geo.write
@@ -27901,8 +28069,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/GeoGeoCheckFenceBody'
       responses:
         '200':
           description: Success
@@ -27919,26 +28086,30 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /geo/objects/{type}/{id}/geometry:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /geo/objects/by-type/by-id/geometry:
     put:
       operationId: geoGeoPutObjectGeometry
       tags:
       - Geo
       summary: Put object geometry
-      description: GeoController.putObjectGeometry (sangam-geo).
+      description: GeoController.putObjectGeometry (sangam-rest).
       x-sangam-command-type: geo.geo.put-object-geometry
       x-sangam-idempotent: true
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
       - name: type
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Type; may carry '/' or ':'
+        required: true
+      - name: id
+        in: query
+        schema:
+          type: string
+        description: Id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -27951,8 +28122,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/GeoGeoPutObjectGeometryBody'
       responses:
         '200':
           description: Success
@@ -27978,23 +28148,29 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
     get:
       operationId: geoGeoObjectGeometry
       tags:
       - Geo
       summary: Object geometry
-      description: GeoController.objectGeometry (sangam-geo).
+      description: GeoController.objectGeometry (sangam-rest).
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
       - name: type
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Type; may carry '/' or ':'
+        required: true
+      - name: id
+        in: query
+        schema:
+          type: string
+        description: Id; may carry '/' or ':'
+        required: true
       - name: attribute
         in: query
         schema:
@@ -28019,6 +28195,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /geo/external-layers:
     get:
       operationId: geoGeoExternalLayers
@@ -28096,19 +28274,20 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /geo/external-layers/{ref}/query:
+  /geo/external-layers/by-ref/query:
     post:
       operationId: geoGeoQueryExternal
       tags:
       - Geo
       summary: Query external
-      description: GeoController.queryExternal (sangam-geo).
+      description: GeoController.queryExternal (sangam-rest).
       parameters:
       - name: ref
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Ref; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
       x-sangam-permission: geo.write
@@ -28120,8 +28299,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/GeoGeoQueryExternalBody'
       responses:
         '200':
           description: Success
@@ -28138,21 +28316,24 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /geo/external-layers/{ref}/import:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /geo/external-layers/by-ref/import:
     post:
       operationId: geoGeoImportExternal
       tags:
       - Geo
       summary: Import external
-      description: GeoController.importExternal (sangam-geo).
+      description: GeoController.importExternal (sangam-rest).
       x-sangam-command-type: geo.geo.import-external
       x-sangam-idempotent: true
       parameters:
       - name: ref
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Ref; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -28165,8 +28346,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/GeoGeoImportExternalBody'
       responses:
         '200':
           description: Success
@@ -28192,7 +28372,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ledger/{ledger}/accounts:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ledger/by-ledger/accounts:
     get:
       operationId: listLedgerAccounts
       tags:
@@ -28201,11 +28385,11 @@ paths:
       description: Balances of the ledger, filtered by period, line and holder prefixes and stage.
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
+        required: true
       - name: period
         in: query
         schema:
@@ -28253,6 +28437,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /ledger/accounts/{accountId}:
     get:
       operationId: getLedgerAccount
@@ -28290,7 +28476,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /ledger/{ledger}/operations:
+  /ledger/by-ledger/operations:
     post:
       operationId: applyLedgerOperation
       tags:
@@ -28301,11 +28487,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -28344,7 +28530,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ledger/{ledger}/freeze-orders:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ledger/by-ledger/freeze-orders:
     post:
       operationId: createLedgerFreezeOrder
       tags:
@@ -28355,11 +28545,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -28400,6 +28590,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
     get:
       operationId: listLedgerFreezeOrders
       tags:
@@ -28408,11 +28602,11 @@ paths:
       description: Active freeze orders of the ledger.
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/size'
       x-sangam-permission: ledger.read
@@ -28442,7 +28636,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /ledger/{ledger}/freeze-orders/{id}:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ledger/by-ledger/freeze-orders/by-id:
     delete:
       operationId: releaseLedgerFreezeOrder
       tags:
@@ -28453,16 +28649,17 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
+        required: true
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: freeze order id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -28491,22 +28688,26 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ledger/{ledger}/periods/close:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ledger/by-ledger/periods/close:
     post:
       operationId: closeLedgerPeriod
       tags:
       - Ledger
       summary: Close a period
-      description: Year-end lapse and carry-forward.
+      description: 'Year-end lapse and carry-forward. The period is a query parameter: a fiscal-year label can carry ''/'' (2026/2027).'
       x-sangam-command-type: ledger.period.close
       x-sangam-idempotent: true
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
+        required: true
       - name: period
         in: query
         schema:
@@ -28553,7 +28754,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ledger/{ledger}/holds:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ledger/by-ledger/holds:
     get:
       operationId: listLedgerHolds
       tags:
@@ -28562,11 +28767,11 @@ paths:
       description: Requests parked for funds on matching accounts.
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
+        required: true
       - name: period
         in: query
         schema:
@@ -28614,7 +28819,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /ledger/{ledger}/reconcile:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /ledger/by-ledger/reconcile:
     post:
       operationId: reconcileLedger
       tags:
@@ -28625,11 +28832,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: ledger
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+        description: ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -28670,6 +28877,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /landscape:
     get:
       operationId: getProcessLandscape
@@ -28743,7 +28954,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease:
+  /models/by-file/lease:
     get:
       operationId: getModelLease
       tags:
@@ -28752,11 +28963,11 @@ paths:
       description: The lease on a model file.
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       x-sangam-permission: package.read
       x-sangam-requirements:
       - R43
@@ -28786,11 +28997,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -28822,7 +29033,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease/heartbeat:
+  /models/by-file/lease/heartbeat:
     post:
       operationId: heartbeatModelLease
       tags:
@@ -28833,11 +29044,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -28871,7 +29082,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease/release:
+  /models/by-file/lease/release:
     post:
       operationId: releaseModelLease
       tags:
@@ -28882,11 +29093,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -28920,7 +29131,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease/request-takeover:
+  /models/by-file/lease/request-takeover:
     post:
       operationId: requestModelLeaseTakeover
       tags:
@@ -28931,11 +29142,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -28963,7 +29174,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease/takeover:
+  /models/by-file/lease/takeover:
     post:
       operationId: takeOverModelLease
       tags:
@@ -28974,11 +29185,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -29491,7 +29702,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /models/{file}/lease/acquire:
+  /models/by-file/lease/acquire:
     post:
       operationId: acquireModelLeaseUi
       tags:
@@ -29502,7 +29713,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -29777,7 +29989,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /service-mocks/{id}:
+  /service-mocks/by-id:
     patch:
       operationId: toggleServiceMock
       tags:
@@ -29788,7 +30000,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
+        in: query
+        description: Mock row id (service.operation); may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -31568,7 +31781,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ops/variables/{id}:
+  /ops/variables/by-id:
     delete:
       operationId: uiOpsDeleteVariable
       tags:
@@ -31579,10 +31792,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Variable name; may carry '/' or ':'
+        required: true
       - name: reason
         in: query
         schema:
@@ -31615,6 +31829,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /ops/secrets:
     get:
       operationId: uiOpsSecrets
@@ -31653,7 +31871,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /ops/secrets/{name}:
+  /ops/secrets/by-name:
     put:
       operationId: uiOpsPutSecret
       tags:
@@ -31664,10 +31882,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: name
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Secret name; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -31680,8 +31899,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/OpsUiSecretRequest'
       responses:
         '204':
           description: Success
@@ -31702,6 +31920,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
     delete:
       operationId: uiOpsDeleteSecret
       tags:
@@ -31712,10 +31934,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: name
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Secret name; may carry '/' or ':'
+        required: true
       - name: reason
         in: query
         schema:
@@ -31748,6 +31971,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /ops/sequences:
     get:
       operationId: uiOpsSequences
@@ -31775,7 +32002,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /ops/sequences/{name}/advance:
+  /ops/sequences/by-name/advance:
     post:
       operationId: uiOpsAdvance
       tags:
@@ -31786,10 +32013,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: name
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Sequence name (table:series:period); may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -31802,8 +32030,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/OpsUiAdvanceRequest'
       responses:
         '204':
           description: Success
@@ -31824,6 +32051,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /ops/index-jobs:
     get:
       operationId: uiOpsIndexJobs
@@ -34485,19 +34716,20 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /registry/assets/classes/{classKey}:
+  /registry/assets/classes/by-class-key:
     get:
       operationId: registryAssetGetClass
       tags:
       - Registry
       summary: Get class
-      description: AssetController.getClass (sangam-registry).
+      description: AssetController.getClass (sangam-rest).
       parameters:
       - name: classKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Class key; may carry '/' or ':'
+        required: true
       - name: resolved
         in: query
         schema:
@@ -34526,6 +34758,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /registry/assets:
     post:
       operationId: registryAssetRegister
@@ -34741,19 +34975,20 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /registry/assets/by-tag/{tag}:
+  /registry/assets/by-tag:
     get:
       operationId: registryAssetByTag
       tags:
       - Registry
       summary: By tag
-      description: AssetController.byTag (sangam-registry).
+      description: AssetController.byTag (sangam-rest).
       parameters:
       - name: tag
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Tag; may carry '/' or ':'
+        required: true
       x-sangam-permission: registry.read
       x-sangam-requirements:
       - R19
@@ -34778,6 +35013,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /registry/assets/{id}/move:
     post:
       operationId: registryAssetMove
@@ -35284,26 +35521,27 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /registry/assets/{id}/meters/{meterType}/readings:
+  /registry/assets/{id}/meters/by-meter-type/readings:
     post:
       operationId: registryAssetRecordReading
       tags:
       - Registry
       summary: Record reading
-      description: AssetController.recordReading (sangam-registry).
+      description: AssetController.recordReading (sangam-rest).
       x-sangam-command-type: registry.asset.record-reading
       x-sangam-idempotent: true
       parameters:
-      - name: meterType
-        in: path
-        required: true
-        schema:
-          type: string
       - name: id
         in: path
         required: true
         schema:
           type: string
+      - name: meterType
+        in: query
+        schema:
+          type: string
+        description: Meter type; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -35320,8 +35558,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RegistryAssetRecordReadingBody'
       responses:
         '200':
           description: Success
@@ -35347,23 +35584,28 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
     get:
       operationId: registryAssetReadings
       tags:
       - Registry
       summary: Readings
-      description: AssetController.readings (sangam-registry).
+      description: AssetController.readings (sangam-rest).
       parameters:
-      - name: meterType
-        in: path
-        required: true
-        schema:
-          type: string
       - name: id
         in: path
         required: true
         schema:
           type: string
+      - name: meterType
+        in: query
+        schema:
+          type: string
+        description: Meter type; may carry '/' or ':'
+        required: true
       - name: page
         in: query
         schema:
@@ -35400,6 +35642,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /registry/assets/readings/{readingId}/correct:
     post:
       operationId: registryAssetCorrectReading
@@ -36261,19 +36505,20 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /registry/custody/items/by-label/{label}:
+  /registry/custody/items/by-label:
     get:
       operationId: registryCustodyByLabel
       tags:
       - Registry
       summary: By label
-      description: CustodyController.byLabel (sangam-registry).
+      description: CustodyController.byLabel (sangam-rest).
       parameters:
       - name: label
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Label; may carry '/' or ':'
+        required: true
       x-sangam-permission: registry.read
       x-sangam-requirements:
       - R19
@@ -36298,6 +36543,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /registry/custody/items/{id}/events:
     get:
       operationId: registryCustodyEvents
@@ -37877,26 +38124,32 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /registry/instruments/{id}/transitions/{name}:
+  /registry/instruments/{id}/transitions/by-name:
     post:
       operationId: registryInstrumentTransition
       tags:
       - Registry
       summary: Transition
-      description: InstrumentController.transition (sangam-registry).
+      description: InstrumentController.transition (sangam-rest).
       x-sangam-command-type: registry.instrument.transition
       x-sangam-idempotent: true
       parameters:
-      - name: name
-        in: path
-        required: true
-        schema:
-          type: string
       - name: id
         in: path
         required: true
         schema:
           type: string
+      - name: name
+        in: query
+        schema:
+          type: string
+        description: Name; may carry '/' or ':'
+        required: true
+      - name: If-Match
+        in: header
+        schema:
+          type: string
+        description: Revision the change is based on (409 on mismatch)
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -37913,8 +38166,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RegistryInstrumentTransitionBody'
       responses:
         '200':
           description: Success
@@ -37940,6 +38192,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /registry/instruments/{id}/transfer-holder:
     post:
       operationId: registryInstrumentTransferHolder
@@ -38527,19 +38783,20 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /registry/instruments/public/{tenant}/verify:
+  /registry/instruments/public/by-tenant/verify:
     get:
       operationId: registryInstrumentVerifyCode
       tags:
       - Registry
       summary: Verify code
-      description: InstrumentController.verifyCode (sangam-registry).
+      description: InstrumentController.verifyCode (sangam-rest).
       parameters:
       - name: tenant
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Tenant; may carry '/' or ':'
+        required: true
       - name: code
         in: query
         schema:
@@ -38568,6 +38825,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
       security: []
   /registry/instruments/public/verify-qr:
     post:
@@ -40333,21 +40592,22 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /registry/registers/{registerKey}:
+  /registry/registers/by-register-key:
     put:
       operationId: registryRegisterDefine
       tags:
       - Registry
       summary: Define
-      description: RegisterController.define (sangam-registry).
+      description: RegisterController.define (sangam-rest).
       x-sangam-command-type: registry.register.define
       x-sangam-idempotent: true
       parameters:
       - name: registerKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Register key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -40364,8 +40624,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RegistryRegisterDefineBody'
       responses:
         '200':
           description: Success
@@ -40391,18 +40650,23 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
     get:
       operationId: registryRegisterDefinition
       tags:
       - Registry
       summary: Definition
-      description: RegisterController.definition (sangam-registry).
+      description: RegisterController.definition (sangam-rest).
       parameters:
       - name: registerKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Register key; may carry '/' or ':'
+        required: true
       x-sangam-permission: registry.read
       x-sangam-requirements:
       - R19
@@ -40427,6 +40691,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /registry/registers:
     get:
       operationId: registryRegisterDefinitions
@@ -40460,21 +40726,22 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /registry/registers/{registerKey}/entries:
+  /registry/registers/by-register-key/entries:
     post:
       operationId: registryRegisterAppend
       tags:
       - Registry
       summary: Append
-      description: RegisterController.append (sangam-registry).
+      description: RegisterController.append (sangam-rest).
       x-sangam-command-type: registry.register.append
       x-sangam-idempotent: true
       parameters:
       - name: registerKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Register key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -40491,8 +40758,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RegistryRegisterAppendBody'
       responses:
         '201':
           description: Success
@@ -40518,19 +40784,24 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /registry/registers/{registerKey}/books:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /registry/registers/by-register-key/books:
     get:
       operationId: registryRegisterBooks
       tags:
       - Registry
       summary: Books
-      description: RegisterController.books (sangam-registry).
+      description: RegisterController.books (sangam-rest).
       parameters:
       - name: registerKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Register key; may carry '/' or ':'
+        required: true
       - name: scope
         in: query
         schema:
@@ -40571,6 +40842,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /registry/registers/books/{bookId}:
     get:
       operationId: registryRegisterBook
@@ -40996,19 +41269,20 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /registry/registers/public/{tenant}/extracts/verify:
+  /registry/registers/public/by-tenant/extracts/verify:
     get:
       operationId: registryRegisterVerifyExtract
       tags:
       - Registry
       summary: Verify extract
-      description: RegisterController.verifyExtract (sangam-registry).
+      description: RegisterController.verifyExtract (sangam-rest).
       parameters:
       - name: tenant
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Tenant; may carry '/' or ':'
+        required: true
       - name: code
         in: query
         schema:
@@ -41037,6 +41311,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
       security: []
   /registry/types:
     post:
@@ -41128,19 +41404,20 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /registry/types/{typeKey}:
+  /registry/types/by-type-key:
     get:
       operationId: registryRegistryCurrentType
       tags:
       - Registry
       summary: Current type
-      description: RegistryController.currentType (sangam-registry).
+      description: RegistryController.currentType (sangam-rest).
       parameters:
       - name: typeKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Type key; may carry '/' or ':'
+        required: true
       x-sangam-permission: registry.read
       x-sangam-requirements:
       - R19
@@ -41165,13 +41442,15 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /registry/types/{typeKey}/versions/{version}:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /registry/types/by-type-key/versions/{version}:
     get:
       operationId: registryRegistryTypeVersion
       tags:
       - Registry
       summary: Type version
-      description: RegistryController.typeVersion (sangam-registry).
+      description: RegistryController.typeVersion (sangam-rest).
       parameters:
       - name: version
         in: path
@@ -41179,10 +41458,11 @@ paths:
         schema:
           type: string
       - name: typeKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Type key; may carry '/' or ':'
+        required: true
       x-sangam-permission: registry.read
       x-sangam-requirements:
       - R19
@@ -41207,13 +41487,15 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /registry/types/{typeKey}/versions/{version}/retire:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /registry/types/by-type-key/versions/{version}/retire:
     post:
       operationId: registryRegistryRetireType
       tags:
       - Registry
       summary: Retire type
-      description: RegistryController.retireType (sangam-registry).
+      description: RegistryController.retireType (sangam-rest).
       x-sangam-command-type: registry.registry.retire-type
       x-sangam-idempotent: true
       parameters:
@@ -41223,10 +41505,11 @@ paths:
         schema:
           type: string
       - name: typeKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Type key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -41258,6 +41541,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /registry/objects:
     post:
       operationId: registryRegistryCreate
@@ -41517,26 +41804,32 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /registry/objects/{id}/transitions/{name}:
+  /registry/objects/{id}/transitions/by-name:
     post:
       operationId: registryRegistryTransition
       tags:
       - Registry
       summary: Transition
-      description: RegistryController.transition (sangam-registry).
+      description: RegistryController.transition (sangam-rest).
       x-sangam-command-type: registry.registry.transition
       x-sangam-idempotent: true
       parameters:
-      - name: name
-        in: path
-        required: true
-        schema:
-          type: string
       - name: id
         in: path
         required: true
         schema:
           type: string
+      - name: name
+        in: query
+        schema:
+          type: string
+        description: Name; may carry '/' or ':'
+        required: true
+      - name: If-Match
+        in: header
+        schema:
+          type: string
+        description: Revision the change is based on (409 on mismatch)
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -41553,8 +41846,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RegistryRegistryTransitionBody'
       responses:
         '200':
           description: Success
@@ -41580,6 +41872,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /registry/objects/{id}/transitions:
     get:
       operationId: registryRegistryAvailableTransitions
@@ -41790,21 +42086,22 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /registry/number-series/{seriesKey}:
+  /registry/number-series/by-series-key:
     put:
       operationId: registryRegistryDefineSeries
       tags:
       - Registry
       summary: Define series
-      description: RegistryController.defineSeries (sangam-registry).
+      description: RegistryController.defineSeries (sangam-rest).
       x-sangam-command-type: registry.registry.define-series
       x-sangam-idempotent: true
       parameters:
       - name: seriesKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Series key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -41821,8 +42118,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RegistryRegistryDefineSeriesBody'
       responses:
         '200':
           description: Success
@@ -41848,18 +42144,23 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
     get:
       operationId: registryRegistrySeries
       tags:
       - Registry
       summary: Series
-      description: RegistryController.series (sangam-registry).
+      description: RegistryController.series (sangam-rest).
       parameters:
       - name: seriesKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Series key; may carry '/' or ':'
+        required: true
       x-sangam-permission: registry.read
       x-sangam-requirements:
       - R19
@@ -41884,6 +42185,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /registry/number-series:
     get:
       operationId: registryRegistryListSeries
@@ -41917,21 +42220,22 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /registry/number-series/{seriesKey}/allocate:
+  /registry/number-series/by-series-key/allocate:
     post:
       operationId: registryRegistryAllocate
       tags:
       - Registry
       summary: Allocate
-      description: RegistryController.allocate (sangam-registry).
+      description: RegistryController.allocate (sangam-rest).
       x-sangam-command-type: registry.registry.allocate
       x-sangam-idempotent: true
       parameters:
       - name: seriesKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Series key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -41948,8 +42252,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RegistryRegistryAllocateBody'
       responses:
         '201':
           description: Success
@@ -41975,21 +42278,26 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /registry/number-series/{seriesKey}/void:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /registry/number-series/by-series-key/void:
     post:
       operationId: registryRegistryVoidNumber
       tags:
       - Registry
       summary: Void number
-      description: RegistryController.voidNumber (sangam-registry).
+      description: RegistryController.voidNumber (sangam-rest).
       x-sangam-command-type: registry.registry.void-number
       x-sangam-idempotent: true
       parameters:
       - name: seriesKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Series key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -42006,8 +42314,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RegistryRegistryVoidNumberBody'
       responses:
         '204':
           description: Success
@@ -42028,21 +42335,26 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /registry/number-series/{seriesKey}/mark-used:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /registry/number-series/by-series-key/mark-used:
     post:
       operationId: registryRegistryMarkUsed
       tags:
       - Registry
       summary: Mark used
-      description: RegistryController.markUsed (sangam-registry).
+      description: RegistryController.markUsed (sangam-rest).
       x-sangam-command-type: registry.registry.mark-used
       x-sangam-idempotent: true
       parameters:
       - name: seriesKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Series key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -42059,8 +42371,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RegistryRegistryMarkUsedBody'
       responses:
         '204':
           description: Success
@@ -42081,21 +42392,26 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /registry/number-series/{seriesKey}/close-period:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /registry/number-series/by-series-key/close-period:
     post:
       operationId: registryRegistryClosePeriod
       tags:
       - Registry
       summary: Close period
-      description: RegistryController.closePeriod (sangam-registry).
+      description: RegistryController.closePeriod (sangam-rest).
       x-sangam-command-type: registry.registry.close-period
       x-sangam-idempotent: true
       parameters:
       - name: seriesKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Series key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -42112,8 +42428,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RegistryRegistryClosePeriodBody'
       responses:
         '204':
           description: Success
@@ -42134,19 +42449,24 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /registry/number-series/{seriesKey}/gaps:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /registry/number-series/by-series-key/gaps:
     get:
       operationId: registryRegistryGaps
       tags:
       - Registry
       summary: Gaps
-      description: RegistryController.gaps (sangam-registry).
+      description: RegistryController.gaps (sangam-rest).
       parameters:
       - name: seriesKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Series key; may carry '/' or ':'
+        required: true
       - name: scope
         in: query
         schema:
@@ -42180,19 +42500,22 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /registry/number-series/{seriesKey}/allocations:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /registry/number-series/by-series-key/allocations:
     get:
       operationId: registryRegistryAllocations
       tags:
       - Registry
       summary: Allocations
-      description: RegistryController.allocations (sangam-registry).
+      description: RegistryController.allocations (sangam-rest).
       parameters:
       - name: seriesKey
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Series key; may carry '/' or ':'
+        required: true
       - name: scope
         in: query
         schema:
@@ -42238,6 +42561,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /resources/types:
     get:
       operationId: resourcesResourcesTypes
@@ -42319,7 +42644,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /resources/types/{typeId}:
+  /resources/types/by-type-id:
     delete:
       operationId: resourcesResourcesRetireType
       tags:
@@ -42330,14 +42655,15 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: typeId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Type id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -42363,6 +42689,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /resources/items:
     post:
       operationId: resourcesResourcesCreateResource
@@ -42488,7 +42818,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /resources/items/{resourceId}:
+  /resources/items/by-resource-id:
     get:
       operationId: resourcesResourcesResource
       tags:
@@ -42497,10 +42827,11 @@ paths:
       description: ResourcesController.resource (sangam-rest).
       parameters:
       - name: resourceId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Resource id; may carry '/' or ':'
+        required: true
       x-sangam-permission: resources.read
       x-sangam-requirements:
       - R19
@@ -42523,6 +42854,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
     patch:
       operationId: resourcesResourcesUpdateResource
       tags:
@@ -42533,10 +42866,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: resourceId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Resource id; may carry '/' or ':'
+        required: true
       - name: version
         in: query
         schema:
@@ -42546,7 +42880,7 @@ paths:
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -42557,8 +42891,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcePatch'
       responses:
         '200':
           description: Success
@@ -42584,7 +42917,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /resources/items/{resourceId}/status:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /resources/items/by-resource-id/status:
     post:
       operationId: resourcesResourcesSetStatus
       tags:
@@ -42595,14 +42932,15 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: resourceId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Resource id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -42613,8 +42951,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesStatusRequest'
       responses:
         '200':
           description: Success
@@ -42640,7 +42977,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /resources/items/{resourceId}/move:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /resources/items/by-resource-id/move:
     post:
       operationId: resourcesResourcesMove
       tags:
@@ -42651,14 +42992,15 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: resourceId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Resource id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -42669,8 +43011,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesMoveRequest'
       responses:
         '200':
           description: Success
@@ -42696,7 +43037,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /resources/items/{resourceId}/children:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /resources/items/by-resource-id/children:
     get:
       operationId: resourcesResourcesChildren
       tags:
@@ -42705,10 +43050,11 @@ paths:
       description: ResourcesController.children (sangam-rest).
       parameters:
       - name: resourceId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Resource id; may carry '/' or ':'
+        required: true
       x-sangam-permission: resources.read
       x-sangam-requirements:
       - R19
@@ -42733,7 +43079,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /resources/calendars/{calendarId}:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /resources/calendars/by-calendar-id:
     put:
       operationId: resourcesResourcesSaveCalendar
       tags:
@@ -42744,14 +43092,15 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: calendarId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Calendar id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -42762,8 +43111,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesResourcesSaveCalendarBody'
       responses:
         '200':
           description: Success
@@ -42789,6 +43137,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
     get:
       operationId: resourcesResourcesCalendar
       tags:
@@ -42797,10 +43149,11 @@ paths:
       description: ResourcesController.calendar (sangam-rest).
       parameters:
       - name: calendarId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Calendar id; may carry '/' or ':'
+        required: true
       x-sangam-permission: resources.read
       x-sangam-requirements:
       - R19
@@ -42823,6 +43176,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /resources/blackouts:
     post:
       operationId: resourcesResourcesAddBlackout
@@ -42976,7 +43331,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /resources/slot-templates/{templateId}:
+  /resources/slot-templates/by-template-id:
     delete:
       operationId: resourcesResourcesDeleteSlotTemplate
       tags:
@@ -42987,14 +43342,15 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: templateId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Template id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -43020,7 +43376,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /resources/items/{resourceId}/slots:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /resources/items/by-resource-id/slots:
     get:
       operationId: resourcesResourcesSlots
       tags:
@@ -43029,10 +43389,11 @@ paths:
       description: ResourcesController.slots (sangam-rest).
       parameters:
       - name: resourceId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Resource id; may carry '/' or ':'
+        required: true
       - name: from
         in: query
         schema:
@@ -43069,7 +43430,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /resources/items/{resourceId}/availability:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /resources/items/by-resource-id/availability:
     get:
       operationId: resourcesResourcesAvailability
       tags:
@@ -43078,10 +43441,11 @@ paths:
       description: ResourcesController.availability (sangam-rest).
       parameters:
       - name: resourceId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Resource id; may carry '/' or ':'
+        required: true
       - name: from
         in: query
         schema:
@@ -43118,6 +43482,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /resources/search-available:
     post:
       operationId: resourcesResourcesSearchAvailable
@@ -43409,7 +43775,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /resources/bookings/by-ref/{bookingRef}:
+  /resources/bookings/by-ref/by-booking-ref:
     get:
       operationId: resourcesResourcesBookingByRef
       tags:
@@ -43418,10 +43784,11 @@ paths:
       description: ResourcesController.bookingByRef (sangam-rest).
       parameters:
       - name: bookingRef
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Booking ref; may carry '/' or ':'
+        required: true
       x-sangam-permission: resources.read
       x-sangam-requirements:
       - R19
@@ -43444,6 +43811,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /resources/bookings/{bookingId}/confirm:
     post:
       operationId: resourcesResourcesConfirm
@@ -43819,7 +44188,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /resources/history/{entityType}/{entityId}:
+  /resources/history/{entityType}/by-entity-id:
     get:
       operationId: resourcesResourcesHistory
       tags:
@@ -43827,16 +44196,17 @@ paths:
       summary: History
       description: ResourcesController.history (sangam-rest).
       parameters:
-      - name: entityId
-        in: path
-        required: true
-        schema:
-          type: string
       - name: entityType
         in: path
         required: true
         schema:
           type: string
+      - name: entityId
+        in: query
+        schema:
+          type: string
+        description: Entity id; may carry '/' or ':'
+        required: true
       x-sangam-permission: resources.read
       x-sangam-requirements:
       - R19
@@ -43861,6 +44231,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /resources/waitlist:
     post:
       operationId: resourcesResourcesEnqueue
@@ -44779,7 +45151,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queues/service-points/{servicePointId}:
+  /queues/service-points/by-service-point-id:
     put:
       operationId: queuesQueueDefineServicePoint
       tags:
@@ -44790,14 +45162,15 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: servicePointId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Service point id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -44808,10 +45181,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
-              required:
-              - slaMinutes
+              $ref: '#/components/schemas/QueueRestPortServicePointRequest'
       responses:
         '200':
           description: Success
@@ -44837,6 +45207,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
     get:
       operationId: queuesQueueServicePoint
       tags:
@@ -44845,10 +45219,11 @@ paths:
       description: QueueController.servicePoint (sangam-rest).
       parameters:
       - name: servicePointId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Service point id; may carry '/' or ':'
+        required: true
       x-sangam-permission: resources.read
       x-sangam-requirements:
       - R19
@@ -44871,7 +45246,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /queues/service-points/{servicePointId}/status:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/service-points/by-service-point-id/status:
     post:
       operationId: queuesQueueSetServicePointStatus
       tags:
@@ -44882,14 +45259,15 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: servicePointId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Service point id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -44900,8 +45278,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueStatusRequest'
       responses:
         '200':
           description: Success
@@ -44927,6 +45304,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /queues/service-points:
     get:
       operationId: queuesQueueServicePoints
@@ -44969,7 +45350,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /queues/service-points/{servicePointId}/counters/{counterId}:
+  /queues/service-points/by-service-point-id/counters/by-counter-id:
     put:
       operationId: queuesQueueDefineCounter
       tags:
@@ -44979,20 +45360,22 @@ paths:
       x-sangam-command-type: resources.queue.define-counter
       x-sangam-idempotent: true
       parameters:
-      - name: counterId
-        in: path
-        required: true
-        schema:
-          type: string
       - name: servicePointId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Service point id; may carry '/' or ':'
+        required: true
+      - name: counterId
+        in: query
+        schema:
+          type: string
+        description: Counter id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -45003,8 +45386,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueRestPortCounterRequest'
       responses:
         '200':
           description: Success
@@ -45030,7 +45412,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queues/service-points/{servicePointId}/counters:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/service-points/by-service-point-id/counters:
     get:
       operationId: queuesQueueCounters
       tags:
@@ -45039,10 +45425,11 @@ paths:
       description: QueueController.counters (sangam-rest).
       parameters:
       - name: servicePointId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Service point id; may carry '/' or ':'
+        required: true
       x-sangam-permission: resources.read
       x-sangam-requirements:
       - R19
@@ -45067,7 +45454,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /queues/counters/{counterId}/open:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/counters/by-counter-id/open:
     post:
       operationId: queuesQueueOpenCounter
       tags:
@@ -45078,10 +45467,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: counterId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Counter id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -45096,8 +45486,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueOpenRequest'
       responses:
         '200':
           description: Success
@@ -45123,7 +45512,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queues/counters/{counterId}/pause:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/counters/by-counter-id/pause:
     post:
       operationId: queuesQueuePauseCounter
       tags:
@@ -45134,10 +45527,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: counterId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Counter id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -45152,8 +45546,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueReasonRequest'
       responses:
         '200':
           description: Success
@@ -45179,7 +45572,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queues/counters/{counterId}/close:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/counters/by-counter-id/close:
     post:
       operationId: queuesQueueCloseCounter
       tags:
@@ -45190,10 +45587,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: counterId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Counter id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -45228,7 +45626,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queues/service-points/{servicePointId}/tokens:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/service-points/by-service-point-id/tokens:
     post:
       operationId: queuesQueueIssueToken
       tags:
@@ -45239,10 +45641,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: servicePointId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Service point id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -45257,8 +45660,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueRestPortIssueTokenRequest'
       responses:
         '201':
           description: Success
@@ -45284,6 +45686,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
     get:
       operationId: queuesQueueTokens
       tags:
@@ -45292,10 +45698,11 @@ paths:
       description: QueueController.tokens (sangam-rest).
       parameters:
       - name: servicePointId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Service point id; may carry '/' or ':'
+        required: true
       - name: state
         in: query
         schema:
@@ -45334,6 +45741,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /queues/tokens/{tokenId}:
     get:
       operationId: queuesQueueToken
@@ -45516,7 +45925,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queues/counters/{counterId}/call-next:
+  /queues/counters/by-counter-id/call-next:
     post:
       operationId: queuesQueueCallNext
       tags:
@@ -45527,10 +45936,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: counterId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Counter id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -45565,7 +45975,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queues/counters/{counterId}/call:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/counters/by-counter-id/call:
     post:
       operationId: queuesQueueCallToken
       tags:
@@ -45576,10 +45990,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: counterId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Counter id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -45594,8 +46009,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueCallRequest'
       responses:
         '200':
           description: Success
@@ -45621,7 +46035,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queues/counters/{counterId}/recall:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/counters/by-counter-id/recall:
     post:
       operationId: queuesQueueRecall
       tags:
@@ -45632,10 +46050,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: counterId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Counter id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -45670,7 +46089,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queues/counters/{counterId}/skip:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/counters/by-counter-id/skip:
     post:
       operationId: queuesQueueSkip
       tags:
@@ -45681,10 +46104,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: counterId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Counter id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -45699,8 +46123,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueReasonRequest'
       responses:
         '200':
           description: Success
@@ -45726,7 +46149,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queues/counters/{counterId}/start-serving:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/counters/by-counter-id/start-serving:
     post:
       operationId: queuesQueueStartServing
       tags:
@@ -45737,10 +46164,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: counterId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Counter id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -45775,7 +46203,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queues/counters/{counterId}/complete:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/counters/by-counter-id/complete:
     post:
       operationId: queuesQueueComplete
       tags:
@@ -45786,10 +46218,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: counterId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Counter id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -45804,8 +46237,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueCompleteRequest'
       responses:
         '200':
           description: Success
@@ -45831,7 +46263,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queues/service-points/{servicePointId}/no-show-sweep:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/service-points/by-service-point-id/no-show-sweep:
     post:
       operationId: queuesQueueNoShowSweep
       tags:
@@ -45842,14 +46278,15 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: servicePointId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Service point id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -45880,7 +46317,11 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queues/service-points/{servicePointId}/sla-breaches:
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/service-points/by-service-point-id/sla-breaches:
     get:
       operationId: queuesQueueSlaBreaches
       tags:
@@ -45889,10 +46330,11 @@ paths:
       description: QueueController.slaBreaches (sangam-rest).
       parameters:
       - name: servicePointId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Service point id; may carry '/' or ':'
+        required: true
       x-sangam-permission: resources.read
       x-sangam-requirements:
       - R19
@@ -45917,7 +46359,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /queues/service-points/{servicePointId}/stats:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/service-points/by-service-point-id/stats:
     get:
       operationId: queuesQueueStats
       tags:
@@ -45926,10 +46370,11 @@ paths:
       description: QueueController.stats (sangam-rest).
       parameters:
       - name: servicePointId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Service point id; may carry '/' or ':'
+        required: true
       - name: from
         in: query
         schema:
@@ -45964,7 +46409,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /queues/service-points/{servicePointId}/display:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/service-points/by-service-point-id/display:
     get:
       operationId: queuesQueueDisplay
       tags:
@@ -45973,10 +46420,11 @@ paths:
       description: QueueController.display (sangam-rest).
       parameters:
       - name: servicePointId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Service point id; may carry '/' or ':'
+        required: true
       - name: next
         in: query
         schema:
@@ -46004,7 +46452,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /queues/service-points/{servicePointId}/call-events:
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /queues/service-points/by-service-point-id/call-events:
     get:
       operationId: queuesQueueCallEvents
       tags:
@@ -46013,10 +46463,11 @@ paths:
       description: QueueController.callEvents (sangam-rest).
       parameters:
       - name: servicePointId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Service point id; may carry '/' or ':'
+        required: true
       - name: after
         in: query
         schema:
@@ -46051,6 +46502,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /rosters/shifts:
     get:
       operationId: rostersRosterListShifts
@@ -46146,7 +46599,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /rosters/shifts/{shiftId}:
+  /rosters/shifts/by-shift-id:
     delete:
       operationId: rostersRosterDeleteShift
       tags:
@@ -46157,14 +46610,15 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: shiftId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Shift id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -46190,6 +46644,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /rosters/rotations:
     get:
       operationId: rostersRosterListRotations
@@ -46282,7 +46740,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /rosters/rotations/{rotationId}:
+  /rosters/rotations/by-rotation-id:
     delete:
       operationId: rostersRosterDeleteRotation
       tags:
@@ -46293,14 +46751,15 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: rotationId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Rotation id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -46326,6 +46785,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /rosters/periods:
     post:
       operationId: rostersRosterCreatePeriod
@@ -46621,7 +47084,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /rosters/periods/{periodId}/members/{personId}:
+  /rosters/periods/{periodId}/members/by-person-id:
     put:
       operationId: rostersRosterSetMember
       tags:
@@ -46631,20 +47094,21 @@ paths:
       x-sangam-command-type: resources.roster.set-member
       x-sangam-idempotent: true
       parameters:
-      - name: personId
-        in: path
-        required: true
-        schema:
-          type: string
       - name: periodId
         in: path
         required: true
         schema:
           type: string
+      - name: personId
+        in: query
+        schema:
+          type: string
+        description: Person id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -46655,10 +47119,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
-              required:
-              - rotationOffset
+              $ref: '#/components/schemas/RosterRestPortMemberRequest'
       responses:
         '200':
           description: Success
@@ -46684,6 +47145,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
     delete:
       operationId: rostersRosterRemoveMember
       tags:
@@ -46693,20 +47158,21 @@ paths:
       x-sangam-command-type: resources.roster.remove-member
       x-sangam-idempotent: true
       parameters:
-      - name: personId
-        in: path
-        required: true
-        schema:
-          type: string
       - name: periodId
         in: path
         required: true
         schema:
           type: string
+      - name: personId
+        in: query
+        schema:
+          type: string
+        description: Person id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -46732,6 +47198,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /rosters/periods/{periodId}/demand:
     get:
       operationId: rostersRosterListDemand
@@ -46836,7 +47306,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /rosters/periods/{periodId}/demand/{demandId}:
+  /rosters/periods/{periodId}/demand/by-demand-id:
     delete:
       operationId: rostersRosterRemoveDemand
       tags:
@@ -46846,20 +47316,21 @@ paths:
       x-sangam-command-type: resources.roster.remove-demand
       x-sangam-idempotent: true
       parameters:
-      - name: demandId
-        in: path
-        required: true
-        schema:
-          type: string
       - name: periodId
         in: path
         required: true
         schema:
           type: string
+      - name: demandId
+        in: query
+        schema:
+          type: string
+        description: Demand id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
-      x-sangam-permission: resources.write
+      x-sangam-permission: resources.admin
       x-sangam-requirements:
       - R19
       - R28
@@ -46885,6 +47356,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /rosters/periods/{periodId}/generate:
     post:
       operationId: rostersRosterGenerate
@@ -47566,7 +48041,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /rosters/people/{personId}/duties:
+  /rosters/people/by-person-id/duties:
     get:
       operationId: rostersRosterPersonalRoster
       tags:
@@ -47575,10 +48050,11 @@ paths:
       description: RosterController.personalRoster (sangam-rest).
       parameters:
       - name: personId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Person id; may carry '/' or ':'
+        required: true
       - name: from
         in: query
         schema:
@@ -47625,6 +48101,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /rosters/swaps:
     post:
       operationId: rostersRosterRequestSwap
@@ -48135,6 +48613,1015 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
   schemas:
+    GeoGeoCheckFenceBody:
+      type: object
+      description: Request body of GeoController.checkFence, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        lat:
+          type: number
+          format: double
+        lon:
+          type: number
+          format: double
+        accuracyM:
+          type: number
+          format: double
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/geo/web/GeoController.java#GeoController.checkFence
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.checkFence
+        var: body
+        node: ''
+    ResourcePatch:
+      type: object
+      description: Request record ResourcePatch (sangam-resources/src/main/java/org/sangam/resources/catalogue/Resource.java), typed from its
+        source.
+      properties:
+        name:
+          type: string
+        orgUnitId:
+          type: string
+        locationId:
+          type: string
+        geoLat:
+          type: string
+        geoLon:
+          type: string
+        capacity:
+          type: integer
+          format: int32
+        unitLabel:
+          type: string
+        calendarId:
+          type: string
+        attributes:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/catalogue/Resource.java
+    GeoGeoPutFeatureBody:
+      type: object
+      description: Request body of GeoController.putFeature, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        code:
+          type: string
+        geometry: {}
+        names:
+          type: object
+          additionalProperties: true
+        properties:
+          type: object
+          additionalProperties: true
+        level:
+          type: string
+        parentCode:
+          type: string
+        orgUnitRef:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/geo/web/GeoController.java#GeoController.putFeature
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.putFeature
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.putFeature
+        var: names
+        node: names
+        declaration: 1
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.putFeature
+        var: props
+        node: properties
+        declaration: 1
+      x-sangam-body-opaque:
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.putFeature
+        use: new BoundaryDataLoader.FeatureInput
+        reason: names by language and free-form feature properties, stored as given
+    FieldWorkUploadBody:
+      type: object
+      description: Request body of FieldWorkController.upload, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        packetId:
+          type: string
+        type:
+          type: string
+        operationId:
+          type: string
+        deviceId:
+          type: string
+        deviceSeq:
+          type: integer
+          format: int64
+        appVersion:
+          type: string
+        assignmentId:
+          type: string
+        baseVersion:
+          type: integer
+          format: int32
+        deviceTime:
+          type: string
+          format: date-time
+        answers:
+          type: object
+          additionalProperties: true
+        notes:
+          type: string
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/CapturePacketMediaRef'
+        fix:
+          $ref: '#/components/schemas/CapturePacketGpsFix'
+        payload:
+          type: object
+          additionalProperties: true
+        prevHash:
+          type: string
+        packetHash:
+          type: string
+        signature:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/field/FieldWorkController.java#FieldWorkController.upload
+        var: packets
+        node: ''
+      - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.upload
+        var: packets
+        node: ''
+      - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.upload
+        var: p
+        node: ''
+        declaration: 1
+      x-sangam-body-records:
+      - class: org.sangam.field.evidence.CapturePacket
+        schema: CapturePacket
+        node: ''
+    RegistryAssetRecordReadingBody:
+      type: object
+      description: Request body of AssetController.recordReading, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        reading:
+          type: string
+          description: Decimal number as a string
+        readAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+        note:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/AssetController.java#AssetController.recordReading
+        var: body
+        node: ''
+    QueueRestPortServicePointRequest:
+      type: object
+      description: Request record QueueRestPortServicePointRequest (sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java),
+        typed from its source.
+      properties:
+        name:
+          type: string
+        resourceId:
+          type: string
+        calendarId:
+          type: string
+        tokenPrefix:
+          type: string
+        slaMinutes:
+          type: integer
+          format: int32
+        priorityDecision:
+          type: string
+        routingDecision:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java
+      required:
+      - slaMinutes
+    RegistryRegistryClosePeriodBody:
+      type: object
+      description: Request body of RegistryController.closePeriod, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        scope:
+          type: string
+        period:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.closePeriod
+        var: body
+        node: ''
+    CapturePacketGpsFix:
+      type: object
+      description: Request record CapturePacketGpsFix (sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java), typed from its
+        source.
+      properties:
+        lat:
+          type: number
+          format: double
+        lon:
+          type: number
+          format: double
+        accuracyM:
+          type: number
+          format: double
+        altitudeM:
+          type: number
+          format: double
+        provider:
+          type: string
+        mockLocation:
+          type: boolean
+        fixTime:
+          type: string
+          format: date-time
+      additionalProperties: true
+      x-sangam-record: sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java
+    QueueRestPortCounterRequest:
+      type: object
+      description: Request record QueueRestPortCounterRequest (sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java), typed
+        from its source.
+      properties:
+        name:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java
+    QueueReasonRequest:
+      type: object
+      description: Request record QueueReasonRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed
+        from its source.
+      properties:
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    FieldWorkPingBody:
+      type: object
+      description: Request body of FieldWorkController.ping, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        at:
+          type: string
+          format: date-time
+        lat:
+          type: number
+          format: double
+        lon:
+          type: number
+          format: double
+        accuracyM:
+          type: number
+          format: double
+        speedMps:
+          type: number
+          format: double
+        headingDeg:
+          type: number
+          format: double
+        source:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/field/FieldWorkController.java#FieldWorkController.ping
+        var: body
+        node: ''
+      - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.ping
+        var: b
+        node: ''
+    RegistryRegisterAppendBody:
+      type: object
+      description: Request body of RegisterController.append, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        scope:
+          type: string
+        date:
+          type: string
+          format: date
+        columns:
+          type: object
+          additionalProperties: true
+        refType:
+          type: string
+        refId:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegisterController.java#RegisterController.append
+        var: body
+        node: ''
+      - method: sangam-registry/src/main/java/org/sangam/registry/register/RegisterBookService.java#RegisterBookService.append
+        var: columns
+        node: columns
+      x-sangam-body-opaque:
+      - method: sangam-registry/src/main/java/org/sangam/registry/register/RegisterBookService.java#RegisterBookService.append
+        use: validate
+        reason: register columns validated against the register's column definitions (tenant-defined)
+    FieldWorkUnitStatusBody:
+      type: object
+      description: Request body of FieldWorkController.unitStatus, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        status:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/field/FieldWorkController.java#FieldWorkController.unitStatus
+        var: body
+        node: ''
+      - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.setUnitStatus
+        var: b
+        node: ''
+    QueueStatusRequest:
+      type: object
+      description: Request record QueueStatusRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed
+        from its source.
+      properties:
+        status:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    OpsUiAdvanceRequest:
+      type: object
+      description: Request record OpsUiAdvanceRequest (sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java), typed from
+        its source.
+      properties:
+        to:
+          type: integer
+          format: int64
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java
+    FieldWorkDevicePolicyBody:
+      type: object
+      description: Request body of FieldWorkController.devicePolicy, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        maxItems:
+          type: integer
+          format: int32
+        maxAgeHours:
+          type: integer
+          format: int32
+        wipeOnRevoke:
+          type: boolean
+        requireSignature:
+          type: boolean
+        maxOfflineHours:
+          type: integer
+          format: int32
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/field/FieldWorkController.java#FieldWorkController.devicePolicy
+        var: body
+        node: ''
+      - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.setDevicePolicy
+        var: b
+        node: ''
+      x-sangam-body-records:
+      - class: org.sangam.field.sync.QueuePolicy
+        schema: QueuePolicy
+        node: ''
+    ResourcesMoveRequest:
+      type: object
+      description: Request record ResourcesMoveRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        newParentId:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    RegistryRegistryTransitionBody:
+      type: object
+      description: Request body of RegistryController.transition, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        expectedVersion:
+          type: integer
+          format: int64
+        reason:
+          type: string
+        until:
+          type: string
+          format: date-time
+        countersignedBy:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.transition
+        var: body
+        node: ''
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.transition
+        var: b
+        node: ''
+        declaration: 1
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.version
+        var: body
+        node: ''
+    RegistryRegistryAllocateBody:
+      type: object
+      description: Request body of RegistryController.allocate, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        date:
+          type: string
+          format: date
+        scope:
+          type: string
+        attributes:
+          type: object
+          additionalProperties: true
+        refType:
+          type: string
+        refId:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.allocate
+        var: body
+        node: ''
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.allocate
+        var: b
+        node: ''
+        declaration: 1
+      - method: sangam-registry/src/main/java/org/sangam/registry/numbering/NumberingService.java#NumberingService.allocate
+        var: attrs
+        node: attributes
+      - method: sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java#NumberSeriesDefinition.format
+        var: attrs
+        node: attributes
+      x-sangam-body-opaque:
+      - method: sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java#NumberSeriesDefinition.format
+        use: attrs.get
+        reason: the attribute a {attr:<name>} token of the series pattern names
+    GeoGeoQueryExternalBody:
+      type: object
+      description: Request body of GeoController.queryExternal, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        operation: {}
+        baseUrl: {}
+        typeName: {}
+        outputFormat: {}
+        layers: {}
+        format: {}
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/geo/web/GeoController.java#GeoController.queryExternal
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.queryExternalLayer
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.queryExternalLayer
+        var: in
+        node: ''
+        declaration: 1
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.query
+        var: input
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.requestInput
+        var: input
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.requestInput
+        var: in
+        node: ''
+        declaration: 1
+      x-sangam-body-opaque:
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.requestInput
+        use: in
+        reason: returned to ExternalLayerGateway.query, which hashes the whole input into the connector operation id and forwards it as the input
+          of the external layer's connector (WFS/WMS parameters such as bbox, count, styles); the connector is chosen per layer, so its parameters
+          are not fixed here, and a caller's baseUrl is always replaced
+    QueueCallRequest:
+      type: object
+      description: Request record QueueCallRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed from
+        its source.
+      properties:
+        tokenId:
+          type: string
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    GeoGeoImportExternalBody:
+      type: object
+      description: Request body of GeoController.importExternal, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        baseUrl: {}
+        typeName: {}
+        outputFormat: {}
+        layers: {}
+        format: {}
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/geo/web/GeoController.java#GeoController.importExternal
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.importExternalLayer
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.importExternalLayer
+        var: in
+        node: ''
+        declaration: 1
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.importFeatures
+        var: input
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.query
+        var: input
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.requestInput
+        var: input
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.requestInput
+        var: in
+        node: ''
+        declaration: 1
+      x-sangam-body-opaque:
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.requestInput
+        use: in
+        reason: returned to ExternalLayerGateway.query, which hashes the whole input into the connector operation id and forwards it as the input
+          of the external layer's connector (WFS/WMS parameters such as bbox, count, styles); the connector is chosen per layer, so its parameters
+          are not fixed here, and a caller's baseUrl is always replaced
+    RegistryInstrumentTransitionBody:
+      type: object
+      description: Request body of InstrumentController.transition, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        expectedVersion:
+          type: integer
+          format: int64
+        reason:
+          type: string
+        until:
+          type: string
+          format: date-time
+        countersignedBy:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/InstrumentController.java#InstrumentController.transition
+        var: body
+        node: ''
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/InstrumentController.java#InstrumentController.transition
+        var: b
+        node: ''
+        declaration: 1
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.version
+        var: body
+        node: ''
+    RosterRestPortMemberRequest:
+      type: object
+      description: Request record RosterRestPortMemberRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java),
+        typed from its source.
+      properties:
+        seatId:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        rotationId:
+          type: string
+        rotationOffset:
+          type: integer
+          format: int32
+        attributes:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java
+      required:
+      - rotationOffset
+    ResourcesResourcesSaveCalendarBody:
+      type: object
+      description: Request body of ResourcesController.saveCalendar, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        hours:
+          type: object
+          additionalProperties: true
+        zone: {}
+        name:
+          type: string
+        businessCalendarId:
+          type: string
+        closedOnHolidays:
+          type: boolean
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java#ResourcesController.saveCalendar
+        var: definition
+        node: ''
+      - method: sangam-resources/src/main/java/org/sangam/resources/rest/ResourcesRestAdapter.java#ResourcesRestAdapter.saveCalendar
+        var: definition
+        node: ''
+      - method: sangam-resources/src/main/java/org/sangam/resources/calendar/AvailabilityCalendar.java#AvailabilityCalendar.fromMap
+        var: m
+        node: ''
+      - method: sangam-resources/src/main/java/org/sangam/resources/calendar/AvailabilityCalendar.java#AvailabilityCalendar.fromMap
+        var: hm
+        node: hours
+        declaration: 1
+      x-sangam-body-opaque:
+      - method: sangam-resources/src/main/java/org/sangam/resources/calendar/AvailabilityCalendar.java#AvailabilityCalendar.fromMap
+        use: hm.entrySet
+        reason: opening hours keyed by day (MONDAY ... SUNDAY, ALL or DAILY), each a list of HH:mm-HH:mm windows
+    GeoGeoPutObjectGeometryBody:
+      type: object
+      description: Request body of GeoController.putObjectGeometry, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        geometry: {}
+        tags:
+          type: array
+          items: {}
+        attribute:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/geo/web/GeoController.java#GeoController.putObjectGeometry
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.putObjectGeometry
+        var: body
+        node: ''
+    QueueRestPortIssueTokenRequest:
+      type: object
+      description: Request record QueueRestPortIssueTokenRequest (sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java),
+        typed from its source.
+      properties:
+        channel:
+          type: string
+        bookingId:
+          type: string
+        partyId:
+          type: string
+        priorityClass:
+          type: string
+        skill:
+          type: string
+        routingKey:
+          type: string
+        attributes:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java
+    QueueOpenRequest:
+      type: object
+      description: Request record QueueOpenRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed from
+        its source.
+      properties:
+        operatorId:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    RegistryRegistryVoidNumberBody:
+      type: object
+      description: Request body of RegistryController.voidNumber, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        number:
+          type: string
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.voidNumber
+        var: body
+        node: ''
+    FieldWorkDeviceStatusBody:
+      type: object
+      description: Request body of FieldWorkController.deviceStatus, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        status:
+          type: string
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/field/FieldWorkController.java#FieldWorkController.deviceStatus
+        var: body
+        node: ''
+      - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.setDeviceStatus
+        var: b
+        node: ''
+    RegistryRegistryMarkUsedBody:
+      type: object
+      description: Request body of RegistryController.markUsed, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        number:
+          type: string
+        refType:
+          type: string
+        refId:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.markUsed
+        var: body
+        node: ''
+    GeoGeoImportBoundariesBody:
+      type: object
+      description: Request body of GeoController.importBoundaries, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        layer:
+          type: object
+          properties:
+            levels:
+              type: array
+              items:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  names:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+            names:
+              type: object
+              additionalProperties: true
+            attributes:
+              type: object
+              additionalProperties: true
+            code:
+              type: string
+            kind:
+              type: string
+            orgUnitLinked:
+              type: boolean
+            indexPrecision:
+              type: integer
+              format: int32
+          additionalProperties: true
+        codeProperty:
+          type: string
+        levelProperty:
+          type: string
+        parentProperty:
+          type: string
+        orgUnitProperty:
+          type: string
+        nameProperties:
+          type: object
+          additionalProperties: true
+        features: {}
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/geo/web/GeoController.java#GeoController.importBoundaries
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.importBoundaries
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java#BoundaryDataLoader.read
+        var: root
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java#BoundaryDataLoader.read
+        var: fc
+        node: features
+        declaration: 1
+      - method: sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java#BoundaryDataLoader.read
+        var: fc
+        node: ''
+        declaration: 1
+      - method: sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java#BoundaryDataLoader.layer
+        var: n
+        node: layer
+      - method: sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java#BoundaryDataLoader.layer
+        var: ls
+        node: layer.levels
+        declaration: 1
+      - method: sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java#BoundaryDataLoader.layer
+        var: l
+        node: layer.levels.[]
+        declaration: 1
+      x-sangam-body-opaque:
+      - method: sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java#BoundaryDataLoader.read
+        use: features
+        reason: a GeoJSON FeatureCollection or Feature (RFC 7946), parsed by GeoJson.features
+    CapturePacketMediaRef:
+      type: object
+      description: Request record CapturePacketMediaRef (sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java), typed from
+        its source.
+      properties:
+        evidenceId:
+          type: string
+        itemId:
+          type: string
+        sha256:
+          type: string
+        mediaType:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        capturedAt:
+          type: string
+          format: date-time
+        fix:
+          $ref: '#/components/schemas/CapturePacketGpsFix'
+      additionalProperties: true
+      x-sangam-record: sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java
+    RegistryRegisterDefineBody:
+      type: object
+      description: Request body of RegisterController.define, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        registerKey:
+          type: string
+        title:
+          type: string
+        series:
+          type: string
+        scopeRequired:
+          type: boolean
+        correctionCountersign:
+          type: boolean
+        extractTemplate:
+          type: string
+        columns:
+          type: object
+          properties:
+            fields:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  type:
+                    type: string
+                  required:
+                    type: boolean
+                  pattern:
+                    type: string
+                  min:
+                    type: string
+                    description: Decimal number as a string
+                  max:
+                    type: string
+                    description: Decimal number as a string
+                  maxLength:
+                    type: integer
+                    format: int32
+                  values:
+                    type: array
+                    items:
+                      type: string
+                    description: A JSON array of strings; a comma-separated string is also read
+                  codeList:
+                    type: string
+                  sensitive:
+                    type: boolean
+                  public:
+                    type: boolean
+                  immutable:
+                    type: boolean
+                  label:
+                    type: string
+                additionalProperties: true
+            additionalAllowed:
+              type: boolean
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegisterController.java#RegisterController.define
+        var: body
+        node: ''
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegisterController.java#RegisterController.define
+        var: def
+        node: ''
+        declaration: 1
+      - method: sangam-registry/src/main/java/org/sangam/registry/register/RegisterBookService.java#RegisterBookService.define
+        var: definition
+        node: ''
+      - method: sangam-registry/src/main/java/org/sangam/registry/register/RegisterDefinition.java#RegisterDefinition.from
+        var: m
+        node: ''
+      - method: sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectSchema.java#ObjectSchema.from
+        var: m
+        node: columns
+      - method: sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectSchema.java#ObjectSchema.from
+        var: fm
+        node: columns.fields.[]
+        declaration: 1
+      - method: sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java#FieldDefinition.from
+        var: m
+        node: columns.fields.[]
+    OpsUiSecretRequest:
+      type: object
+      description: Request record OpsUiSecretRequest (sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java), typed from
+        its source.
+      properties:
+        name:
+          type: string
+        scope:
+          type: string
+        value:
+          type: string
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java
+    ResourcesStatusRequest:
+      type: object
+      description: Request record ResourcesStatusRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          - UNDER_MAINTENANCE
+          - RETIRED
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    QueueCompleteRequest:
+      type: object
+      description: Request record QueueCompleteRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed
+        from its source.
+      properties:
+        outcome:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    RegistryRegistryDefineSeriesBody:
+      type: object
+      description: Request body of RegistryController.defineSeries, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        seriesKey:
+          type: string
+        gapPolicy:
+          type: string
+        reset:
+          type: string
+        pattern:
+          type: string
+        fiscalStartMonth:
+          type: integer
+          format: int32
+        prefix:
+          type: string
+        start:
+          type: integer
+          format: int64
+        blockSize:
+          type: integer
+          format: int32
+        check:
+          type: string
+        maxValue:
+          type: integer
+          format: int64
+        fiscalStartDay:
+          type: integer
+          format: int32
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.defineSeries
+        var: body
+        node: ''
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.defineSeries
+        var: def
+        node: ''
+        declaration: 1
+      - method: sangam-registry/src/main/java/org/sangam/registry/numbering/NumberingService.java#NumberingService.define
+        var: definition
+        node: ''
+      - method: sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java#NumberSeriesDefinition.from
+        var: m
+        node: ''
     Problem:
       type: object
       description: RFC 9457 problem details. `type` is derived from `code` (https://sangam.dev/problems/<code-in-kebab-case>).

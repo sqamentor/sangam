@@ -268,15 +268,16 @@ public final class OpsApi {
      *
      * <p>Fetch-and-lock stops offering the topic; leases already held continue.
      *
-     * <p>{@code POST /ops/topics/{name}/pause} (operationId {@code pauseTopic}); permission {@code ops.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param name path parameter {@code name}. Topic name
+     * <p>{@code POST /ops/topics/by-name/pause} (operationId {@code pauseTopic}); permission {@code ops.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param name query parameter {@code name}. Topic name; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public TopicInfo pauseTopic(String name, ReasonRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ops/topics/" + HttpTransport.seg(String.valueOf(name)) + "/pause");
+    public TopicInfo pauseTopic(ReasonRequest body, String name, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ops/topics/by-name/pause");
         req.body(body);
+        req.query("name", name);
         return call.json(req, options, R_pauseTopic);
     }
 
@@ -285,15 +286,16 @@ public final class OpsApi {
      *
      * <p>Offers the topic again.
      *
-     * <p>{@code POST /ops/topics/{name}/resume} (operationId {@code resumeTopic}); permission {@code ops.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param name path parameter {@code name}. Topic name
+     * <p>{@code POST /ops/topics/by-name/resume} (operationId {@code resumeTopic}); permission {@code ops.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param name query parameter {@code name}. Topic name; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public TopicInfo resumeTopic(String name, ReasonRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ops/topics/" + HttpTransport.seg(String.valueOf(name)) + "/resume");
+    public TopicInfo resumeTopic(ReasonRequest body, String name, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ops/topics/by-name/resume");
         req.body(body);
+        req.query("name", name);
         return call.json(req, options, R_resumeTopic);
     }
 
@@ -302,15 +304,16 @@ public final class OpsApi {
      *
      * <p>History TTL for a definition key (R29).
      *
-     * <p>{@code PUT /ops/cleanup/ttl/{key}} (operationId {@code setHistoryTtl}); permission {@code ops.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param key path parameter {@code key}. Process definition key
+     * <p>{@code PUT /ops/cleanup/ttl/by-key} (operationId {@code setHistoryTtl}); permission {@code ops.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param key query parameter {@code key}. Process definition key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public CleanupStatus setHistoryTtl(String key, TtlRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/ops/cleanup/ttl/" + HttpTransport.seg(String.valueOf(key)));
+    public CleanupStatus setHistoryTtl(TtlRequest body, String key, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/ops/cleanup/ttl/by-key");
         req.body(body);
+        req.query("key", key);
         return call.json(req, options, R_setHistoryTtl);
     }
 
@@ -337,14 +340,15 @@ public final class OpsApi {
      *
      * <p>Resends with a reason.
      *
-     * <p>{@code POST /ops/notification-failures/{id}/resend} (operationId {@code resendNotification}); permission {@code ops.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /ops/notification-failures/by-id/resend} (operationId {@code resendNotification}); permission {@code ops.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. Notification failure id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void resendNotification(String id, ReasonRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ops/notification-failures/" + HttpTransport.seg(String.valueOf(id)) + "/resend");
+    public void resendNotification(ReasonRequest body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ops/notification-failures/by-id/resend");
         req.body(body);
+        req.query("id", id);
         call.none(req, options);
     }
 }

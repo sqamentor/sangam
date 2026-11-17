@@ -42,22 +42,24 @@ public sealed class FieldUnitsApi
     /// <summary>
     /// A field unit
     /// A field unit.
-    /// GET /field/units/{id} (operationId fieldWorkUnit); permission dispatch.operate.
+    /// GET /field/units/by-id (operationId fieldWorkUnit); permission dispatch.operate.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkUnitAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/field/units/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Get($"/field/units/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Set a unit status
     /// Set a unit status.
-    /// POST /field/units/{id}/status (operationId fieldWorkUnitStatus); permission dispatch.operate; result stored atomically with the state change.
+    /// POST /field/units/by-id/status (operationId fieldWorkUnitStatus); permission dispatch.operate; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkUnitStatusAsync(string id, M.FieldWorkUnitStatusBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkUnitStatusAsync(M.FieldWorkUnitStatusBody body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/field/units/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/status");
+        var req = ApiRequest.Post($"/field/units/by-id/status");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -65,11 +67,12 @@ public sealed class FieldUnitsApi
     /// <summary>
     /// Position ping from a unit (AVL feed, N12)
     /// Position ping from a unit (AVL feed, N12).
-    /// POST /field/units/{id}/pings (operationId fieldWorkPing); permission dispatch.operate; result stored atomically with the state change.
+    /// POST /field/units/by-id/pings (operationId fieldWorkPing); permission dispatch.operate; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkPingAsync(string id, M.FieldWorkPingBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkPingAsync(M.FieldWorkPingBody body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/field/units/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/pings");
+        var req = ApiRequest.Post($"/field/units/by-id/pings");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -77,22 +80,24 @@ public sealed class FieldUnitsApi
     /// <summary>
     /// Open offers for a unit
     /// Open offers for a unit.
-    /// GET /field/units/{id}/offers (operationId fieldWorkUnitOffers); permission dispatch.operate.
+    /// GET /field/units/by-id/offers (operationId fieldWorkUnitOffers); permission dispatch.operate.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<object>?> FieldWorkUnitOffersAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/field/units/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/offers");
+        var req = ApiRequest.Get($"/field/units/by-id/offers");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<object>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// ETA of a unit to a job
     /// ETA of a unit to a job.
-    /// GET /field/units/{id}/eta (operationId fieldWorkEta); permission dispatch.operate.
+    /// GET /field/units/by-id/eta (operationId fieldWorkEta); permission dispatch.operate.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkEtaAsync(string id, string jobId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/field/units/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/eta");
+        var req = ApiRequest.Get($"/field/units/by-id/eta");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         req.WithQuery("jobId", GeneratedCalls.Q(jobId));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -100,11 +105,12 @@ public sealed class FieldUnitsApi
     /// <summary>
     /// Trips of a unit
     /// Trips of a unit.
-    /// GET /field/units/{id}/trips (operationId fieldWorkTrips); permission dispatch.operate.
+    /// GET /field/units/by-id/trips (operationId fieldWorkTrips); permission dispatch.operate.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<object>?> FieldWorkTripsAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/field/units/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/trips");
+        var req = ApiRequest.Get($"/field/units/by-id/trips");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<object>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 }

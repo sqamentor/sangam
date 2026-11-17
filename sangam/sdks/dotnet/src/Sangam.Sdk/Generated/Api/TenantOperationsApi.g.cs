@@ -214,11 +214,12 @@ public sealed class TenantOperationsApi
     /// <summary>
     /// Advance a sequence
     /// Forward only.
-    /// POST /ops/sequences/{name}/advance (operationId uiOpsAdvance); permission ops.tenant.admin; result stored atomically with the state change.
+    /// POST /ops/sequences/by-name/advance (operationId uiOpsAdvance); permission ops.tenant.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task UiOpsAdvanceAsync(string name, M.OpsUiAdvanceRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task UiOpsAdvanceAsync(M.OpsUiAdvanceRequest body, string name, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ops/sequences/{HttpTransport.Seg(GeneratedCalls.Str(name)!)}/advance");
+        var req = ApiRequest.Post($"/ops/sequences/by-name/advance");
+        req.WithQuery("name", GeneratedCalls.Q(name));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }

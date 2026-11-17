@@ -373,7 +373,7 @@ class T35RestoreIT {
             ce.put("type", definition);
             ce.put("specversion", "1.0");
             ce.put("data", Map.of("billId", m.billId(), "amount", 50_000));
-            JsonNode r = http.call("POST", "/api/v1/events/" + channel, ce);
+            JsonNode r = http.call("POST", "/api/v1/events/by-channel?channel=" + java.net.URLEncoder.encode(channel, java.nio.charset.StandardCharsets.UTF_8), ce);
             result.merge(r.path("status").asText(), 1, Integer::sum);
             consumerOffset = o + 1;
         }

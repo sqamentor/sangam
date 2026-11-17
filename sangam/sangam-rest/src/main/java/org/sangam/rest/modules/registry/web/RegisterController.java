@@ -37,8 +37,9 @@ public class RegisterController {
         this.support = support;
     }
 
-    @PutMapping("/{registerKey}")
-    public Map<String, Object> define(@PathVariable String registerKey, @RequestBody Map<String, Object> body) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PutMapping("/by-register-key")
+    public Map<String, Object> define(@RequestParam("registerKey") String registerKey, @RequestBody Map<String, Object> body) {
         Map<String, Object> def = new LinkedHashMap<>(body);
         def.put("registerKey", registerKey);
         return support.tx((c, ctx) -> registers.define(c, ctx, def).toMap());
@@ -49,13 +50,15 @@ public class RegisterController {
         return support.tx((c, ctx) -> registers.definitions(c, ctx.tenant()).stream().map(RegisterDefinition::toMap).toList());
     }
 
-    @GetMapping("/{registerKey}")
-    public Map<String, Object> definition(@PathVariable String registerKey) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/by-register-key")
+    public Map<String, Object> definition(@RequestParam("registerKey") String registerKey) {
         return support.tx((c, ctx) -> registers.definition(c, ctx.tenant(), registerKey).toMap());
     }
 
-    @PostMapping("/{registerKey}/entries")
-    public ResponseEntity<Map<String, Object>> append(@PathVariable String registerKey,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/by-register-key/entries")
+    public ResponseEntity<Map<String, Object>> append(@RequestParam("registerKey") String registerKey,
                                                       @RequestHeader(value = IDEM, required = false) String idem,
                                                       @RequestBody Map<String, Object> body) {
         RegisterBookService.Entry e = support.txOp(idem, (c, ctx) -> registers.append(c, ctx, registerKey,
@@ -64,8 +67,9 @@ public class RegisterController {
         return ResponseEntity.status(201).body(e.toMap());
     }
 
-    @GetMapping("/{registerKey}/books")
-    public List<Map<String, Object>> books(@PathVariable String registerKey, @RequestParam(required = false) String scope,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/by-register-key/books")
+    public List<Map<String, Object>> books(@RequestParam("registerKey") String registerKey, @RequestParam(required = false) String scope,
                                            @RequestParam(defaultValue = "0") int page,
                                            @RequestParam(defaultValue = "50") int size) {
         return support.tx((c, ctx) -> registers.books(c, ctx, registerKey, scope, page, size).stream()
@@ -144,9 +148,9 @@ public class RegisterController {
         return support.tx((c, ctx) -> registers.extract(c, ctx, extractId).toMap());
     }
 
-    /** Public verification of a certified extract (tenant in the path; no authentication). */
-    @GetMapping("/public/{tenant}/extracts/verify")
-    public RegisterBookService.ExtractVerification verifyExtract(@PathVariable String tenant, @RequestParam String code) {
+    /** Public verification of a certified extract (tenant as a query parameter; no authentication). Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/public/by-tenant/extracts/verify")
+    public RegisterBookService.ExtractVerification verifyExtract(@RequestParam("tenant") String tenant, @RequestParam String code) {
         return support.publicTx(tenant, (c, ctx) -> registers.verifyExtract(c, ctx, code));
     }
 }

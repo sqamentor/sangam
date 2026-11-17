@@ -91,12 +91,14 @@ final class TenantOperationsSecretsApi
      *
      * The value is write-only.
      *
-     * PUT /ops/secrets/{name} (operationId uiOpsPutSecret); permission ops.tenant.admin; result stored atomically with the state change.
+     * PUT /ops/secrets/by-name (operationId uiOpsPutSecret); permission ops.tenant.admin; result stored atomically with the state change.
      * @param Model\OpsUiSecretRequest|array $body request body
+     * @param string $name query name
      */
-    public function uiOpsPutSecret(string $name, Model\OpsUiSecretRequest|array $body, ?RequestOptions $options = null): void
+    public function uiOpsPutSecret(Model\OpsUiSecretRequest|array $body, string $name, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::put('/ops/secrets/' . HttpTransport::seg((string) $name));
+        $req = ApiRequest::put('/ops/secrets/by-name');
+        $req->query('name', $name);
         if ($body !== null) {
             $req->body($body);
         }
@@ -108,12 +110,14 @@ final class TenantOperationsSecretsApi
      *
      * Needs a reason.
      *
-     * DELETE /ops/secrets/{name} (operationId uiOpsDeleteSecret); permission ops.tenant.admin; result stored atomically with the state change.
+     * DELETE /ops/secrets/by-name (operationId uiOpsDeleteSecret); permission ops.tenant.admin; result stored atomically with the state change.
+     * @param string $name query name
      * @param string $reason query reason
      */
     public function uiOpsDeleteSecret(string $name, string $reason, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/ops/secrets/' . HttpTransport::seg((string) $name));
+        $req = ApiRequest::delete('/ops/secrets/by-name');
+        $req->query('name', $name);
         $req->query('reason', $reason);
         $this->calls->none($req, $options);
     }

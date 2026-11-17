@@ -39,7 +39,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 /**
- * D6 (lane R7-sweep, M-103): {@code POST /api/v1/ai/knowledge-bases/{kb}/versions/{version}/ocr} over real HTTP on the
+ * D6 (lane R7-sweep, M-103): {@code POST /api/v1/ai/knowledge-bases/by-kb/versions/{version}/ocr?kb=} over real HTTP on the
  * real server (Tomcat multipart parsing, the security chain, the argument resolvers, the problem advices and the error
  * dispatch), where {@code AiOcrControllerTest} calls the controller methods directly. Only the OCR engine is a stub
  * (the {@link OcrPort} bean the server takes in place of the sidecar client), so the test sees exactly which bytes,
@@ -135,10 +135,10 @@ class AiOcrMultipartHttpH2Test {
     /** A new building version of a fresh knowledge base, created over HTTP. */
     String newVersionPath() throws Exception {
         String kb = "ocr-" + UUID.randomUUID().toString().substring(0, 8);
-        HttpResponse<String> r = send(at("/api/v1/ai/knowledge-bases/" + kb + "/versions")
+        HttpResponse<String> r = send(at("/api/v1/ai/knowledge-bases/by-kb/versions?kb=" + kb)
                 .header("Authorization", bearer(admin())).POST(HttpRequest.BodyPublishers.noBody()));
         assertEquals(200, r.statusCode(), r.body());
-        return "/api/v1/ai/knowledge-bases/" + kb + "/versions/" + JSON.readTree(r.body()).path("version").asInt() + "/ocr";
+        return "/api/v1/ai/knowledge-bases/by-kb/versions/" + JSON.readTree(r.body()).path("version").asInt() + "/ocr?kb=" + kb;
     }
 
     /** One multipart/form-data body: text fields, then an optional file part named {@code file}. */

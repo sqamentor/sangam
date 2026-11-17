@@ -734,6 +734,7 @@ corrections:
     to: "RosterRestPortDecisionRequest: approved required"
     reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
     decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
     path: /compliance/lawful-requests/{id}/verify
     corrected: 2026-11-15
     baseline: baseline/sangam-api-0.1.0.yaml
@@ -981,6 +982,1230 @@ corrections:
     to: "query parameter periodId required"
     reason: "UI-DEMO sweep S5: the swaps of a roster are listed per period (RosterService.swaps looks the period up first), so a call without periodId always answered 404 'roster period not found: null'; no working client can omit it. It is now a 400 VALIDATION_FAILED naming periodId"
     decision: "integrator R7-ui brief 2026-11-16 (0.1.0 unreleased)"
+  - method: POST
+    path: /ai/knowledge-bases/{kb}/versions
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ai/knowledge-bases/{kb}/versions: the value as a path parameter"
+    to: "/ai/knowledge-bases/by-kb/versions?kb= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: knowledge base keys are client-chosen and unvalidated (KnowledgeBaseService.java:102), so a key with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /ai/knowledge-bases/{kb}/versions/{version}/documents
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ai/knowledge-bases/{kb}/versions/{version}/documents: the value as a path parameter"
+    to: "/ai/knowledge-bases/by-kb/versions/{version}/documents?kb= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: knowledge base keys are client-chosen and unvalidated (KnowledgeBaseService.java:102), so a key with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /ai/knowledge-bases/{kb}/versions/{version}/activate
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ai/knowledge-bases/{kb}/versions/{version}/activate: the value as a path parameter"
+    to: "/ai/knowledge-bases/by-kb/versions/{version}/activate?kb= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: knowledge base keys are client-chosen and unvalidated (KnowledgeBaseService.java:102), so a key with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /ai/knowledge-bases/{kb}/search
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ai/knowledge-bases/{kb}/search: the value as a path parameter"
+    to: "/ai/knowledge-bases/by-kb/search?kb= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: knowledge base keys are client-chosen and unvalidated (KnowledgeBaseService.java:102), so a key with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /ai/knowledge-bases/{key}/retire
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ai/knowledge-bases/{key}/retire: the value as a path parameter"
+    to: "/ai/knowledge-bases/by-key/retire?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: knowledge base keys are client-chosen and unvalidated (KnowledgeBaseService.java:102), so a key with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: GET
+    path: /ai/a2a/{agent}/card
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ai/a2a/{agent}/card: the value as a path parameter"
+    to: "/ai/a2a/by-agent/card?agent= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: inbound agent keys are configuration names with no pattern (AgentDefinition.java:17, example gov:clerk-bot), so a key with '/' or ':' could never reach its route"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /ai/a2a/{agent}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ai/a2a/{agent}: the value as a path parameter"
+    to: "/ai/a2a/by-agent?agent= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: inbound agent keys are configuration names with no pattern (AgentDefinition.java:17, example gov:clerk-bot), so a key with '/' or ':' could never reach its route"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: GET
+    path: /compliance/notices/{key}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/compliance/notices/{key}: the value as a path parameter"
+    to: "/compliance/notices/by-key?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the value is client-chosen with no pattern on create (ConsentNoticeService, no key rule; R7UI-S14), so a value with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /compliance/notices/{key}/publish
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/compliance/notices/{key}/publish: the value as a path parameter"
+    to: "/compliance/notices/by-key/publish?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the value is client-chosen with no pattern on create (ConsentNoticeService, no key rule; R7UI-S14), so a value with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: PUT
+    path: /compliance/purposes/{code}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/compliance/purposes/{code}: the value as a path parameter"
+    to: "/compliance/purposes/by-code?code= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the value is client-chosen with no pattern on create (LegitimateUseRegistry.java:96), so a value with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /compliance/consent-managers/{cm}/artefacts
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/compliance/consent-managers/{cm}/artefacts: the value as a path parameter"
+    to: "/compliance/consent-managers/by-cm/artefacts?cm= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the value is client-chosen with no pattern on create (ConsentService.java:114), so a value with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /compliance/contacts/{role}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/compliance/contacts/{role}: the value as a path parameter"
+    to: "/compliance/contacts/by-role?role= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the value is client-chosen with no pattern on create (ContactDirectory.java:49), so a value with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: GET
+    path: /models/{file}/lease
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/models/{file}/lease: the value as a path parameter"
+    to: "/models/by-file/lease?file= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: model file ids are client-chosen with no rule (EditLeases.java:47, example pkg/main.bpmn), so a file id with '/' never reached its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /models/{file}/lease
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/models/{file}/lease: the value as a path parameter"
+    to: "/models/by-file/lease?file= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: model file ids are client-chosen with no rule (EditLeases.java:47, example pkg/main.bpmn), so a file id with '/' never reached its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /models/{file}/lease/acquire
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/models/{file}/lease/acquire: the value as a path parameter"
+    to: "/models/by-file/lease/acquire?file= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: model file ids are client-chosen with no rule (EditLeases.java:47, example pkg/main.bpmn), so a file id with '/' never reached its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /models/{file}/lease/heartbeat
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/models/{file}/lease/heartbeat: the value as a path parameter"
+    to: "/models/by-file/lease/heartbeat?file= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: model file ids are client-chosen with no rule (EditLeases.java:47, example pkg/main.bpmn), so a file id with '/' never reached its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /models/{file}/lease/release
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/models/{file}/lease/release: the value as a path parameter"
+    to: "/models/by-file/lease/release?file= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: model file ids are client-chosen with no rule (EditLeases.java:47, example pkg/main.bpmn), so a file id with '/' never reached its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /models/{file}/lease/request-takeover
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/models/{file}/lease/request-takeover: the value as a path parameter"
+    to: "/models/by-file/lease/request-takeover?file= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: model file ids are client-chosen with no rule (EditLeases.java:47, example pkg/main.bpmn), so a file id with '/' never reached its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /models/{file}/lease/takeover
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/models/{file}/lease/takeover: the value as a path parameter"
+    to: "/models/by-file/lease/takeover?file= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: model file ids are client-chosen with no rule (EditLeases.java:47, example pkg/main.bpmn), so a file id with '/' never reached its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: GET
+    path: /events/channels/{key}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/channels/{key}: the value as a path parameter"
+    to: "/events/channels/by-key?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the server's event registry accepts channel keys of [A-Za-z0-9_.:-] (EventRegistry.java:316, deployed through PortsEventBridge), so a key with ':' is valid and is moved as decision 393 requires"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: PUT
+    path: /events/channels/{key}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/channels/{key}: the value as a path parameter"
+    to: "/events/channels/by-key?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the server's event registry accepts channel keys of [A-Za-z0-9_.:-] (EventRegistry.java:316, deployed through PortsEventBridge), so a key with ':' is valid and is moved as decision 393 requires"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /events/channels/{key}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/channels/{key}: the value as a path parameter"
+    to: "/events/channels/by-key?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the server's event registry accepts channel keys of [A-Za-z0-9_.:-] (EventRegistry.java:316, deployed through PortsEventBridge), so a key with ':' is valid and is moved as decision 393 requires"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /events/channels/{key}/retire
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/channels/{key}/retire: the value as a path parameter"
+    to: "/events/channels/by-key/retire?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the server's event registry accepts channel keys of [A-Za-z0-9_.:-] (EventRegistry.java:316, deployed through PortsEventBridge), so a key with ':' is valid and is moved as decision 393 requires"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /events/channels/{key}/restore
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/channels/{key}/restore: the value as a path parameter"
+    to: "/events/channels/by-key/restore?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the server's event registry accepts channel keys of [A-Za-z0-9_.:-] (EventRegistry.java:316, deployed through PortsEventBridge), so a key with ':' is valid and is moved as decision 393 requires"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: GET
+    path: /events/definitions/{key}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/definitions/{key}: the value as a path parameter"
+    to: "/events/definitions/by-key?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: event definition keys are checked only against reserved words (JdbcEventAdapter.java:411) and the registry pattern [A-Za-z0-9_.:-] (EventRegistry.java:316), so a key may carry ':'"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /events/definitions/{key}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/definitions/{key}: the value as a path parameter"
+    to: "/events/definitions/by-key?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: event definition keys are checked only against reserved words (JdbcEventAdapter.java:411) and the registry pattern [A-Za-z0-9_.:-] (EventRegistry.java:316), so a key may carry ':'"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /events/definitions/{key}/retire
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/definitions/{key}/retire: the value as a path parameter"
+    to: "/events/definitions/by-key/retire?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: event definition keys are checked only against reserved words (JdbcEventAdapter.java:411) and the registry pattern [A-Za-z0-9_.:-] (EventRegistry.java:316), so a key may carry ':'"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /events/definitions/{key}/restore
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/definitions/{key}/restore: the value as a path parameter"
+    to: "/events/definitions/by-key/restore?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: event definition keys are checked only against reserved words (JdbcEventAdapter.java:411) and the registry pattern [A-Za-z0-9_.:-] (EventRegistry.java:316), so a key may carry ':'"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /events/{channel}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/events/{channel}: the value as a path parameter"
+    to: "/events/by-channel?channel= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the server's event registry accepts channel keys of [A-Za-z0-9_.:-] (EventRegistry.java:316, deployed through PortsEventBridge), so a key with ':' is valid and is moved as decision 393 requires"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: GET
+    path: /queries/{name}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queries/{name}: the value as a path parameter"
+    to: "/queries/by-name?name= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a named query of a data object is data:<key> (JdbcLowCodeAdapter.java:209), so the name carries ':' by design"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: PATCH
+    path: /service-mocks/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/service-mocks/{id}: the value as a path parameter"
+    to: "/service-mocks/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a mock row id is service + '.' + operation (ServiceMocksController id()), both free text, so it may carry '/' or ':'"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: GET
+    path: /config/master/{scheme}/{segment}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/config/master/{scheme}/{segment}: the value as a path parameter"
+    to: "/config/master/by-scheme/by-segment?scheme=&segment= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: scheme and segment names have no pattern (ClassificationScheme.java:56), so a value with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /config/document-types/{id}/check
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/config/document-types/{id}/check: the value as a path parameter"
+    to: "/config/document-types/by-id/check?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: document type ids are catalogue entries with no pattern (DocumentTypeCatalogue.java:89), so an id with '/' or ':' could never reach its route"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /config/crosswalks/{id}/map
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/config/crosswalks/{id}/map: the value as a path parameter"
+    to: "/config/crosswalks/by-id/map?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: crosswalk ids are configuration names with no pattern (ConfigConnector.java:279), so an id with '/' or ':' could never reach its route"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /hooks/fhir/{channel}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/hooks/fhir/{channel}: the value as a path parameter"
+    to: "/hooks/fhir/by-channel?channel= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: FHIR channels are configuration keys with no pattern (HealthHooksBridge.java:38); the callback URL is configured on the FHIR Subscription and no released configuration exists (0.1.0 unreleased; no IFMS callback in JOINT-LEDGER-SANGAM-IFMS.md)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /ops/variables/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ops/variables/{id}: the value as a path parameter"
+    to: "/ops/variables/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (variable names are free text (ScopedVariables)); batch M1 ops (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: PUT
+    path: /ops/secrets/{name}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ops/secrets/{name}: the value as a path parameter"
+    to: "/ops/secrets/by-name?name= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (secret names are free text (R7UI-S13)); batch M1 ops (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /ops/secrets/{name}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ops/secrets/{name}: the value as a path parameter"
+    to: "/ops/secrets/by-name?name= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (secret names are free text (R7UI-S13)); batch M1 ops (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /ops/sequences/{name}/advance
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ops/sequences/{name}/advance: the value as a path parameter"
+    to: "/ops/sequences/by-name/advance?name= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sequence names are table:series:period (OpsUiController sequenceRows)); batch M1 ops (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /ops/topics/{name}/pause
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ops/topics/{name}/pause: the value as a path parameter"
+    to: "/ops/topics/by-name/pause?name= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (external-task topic names are free text); batch M1 ops (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /ops/topics/{name}/resume
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ops/topics/{name}/resume: the value as a path parameter"
+    to: "/ops/topics/by-name/resume?name= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (external-task topic names are free text); batch M1 ops (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: PUT
+    path: /ops/cleanup/ttl/{key}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ops/cleanup/ttl/{key}: the value as a path parameter"
+    to: "/ops/cleanup/ttl/by-key?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (a definition key is not checked against a pattern); batch M1 ops (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /ops/notification-failures/{id}/resend
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ops/notification-failures/{id}/resend: the value as a path parameter"
+    to: "/ops/notification-failures/by-id/resend?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (the recorder keeps a caller-supplied failure id (OperatonOpsConsoleAdapter.record)); batch M1 ops (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /registry/assets/by-tag/{tag}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/assets/by-tag/{tag}: the value as a path parameter"
+    to: "/registry/assets/by-tag?tag= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:144 tag = Maps.required (any non-blank string) on asset register); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /registry/assets/classes/{classKey}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/assets/classes/{classKey}: the value as a path parameter"
+    to: "/registry/assets/classes/by-class-key?classKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:76-78 classKey = Maps.required, only length<=64 checked); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /registry/assets/{id}/meters/{meterType}/readings
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/assets/{id}/meters/{meterType}/readings: the value as a path parameter"
+    to: "/registry/assets/{id}/meters/by-meter-type/readings?meterType= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:36 meterType = Maps.required (free string) in class meter spec); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /registry/assets/{id}/meters/{meterType}/readings
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/assets/{id}/meters/{meterType}/readings: the value as a path parameter"
+    to: "/registry/assets/{id}/meters/by-meter-type/readings?meterType= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:36 meterType = Maps.required (free string) in class meter spec); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /registry/custody/items/by-label/{label}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/custody/items/by-label/{label}: the value as a path parameter"
+    to: "/registry/custody/items/by-label?label= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/custody/CustodyService.java:209-213 label stored as given by client on register (no pattern)); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /registry/instruments/public/{tenant}/verify
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/instruments/public/{tenant}/verify: the value as a path parameter"
+    to: "/registry/instruments/public/by-tenant/verify?tenant= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/InstrumentController.java:180 / RegisterController.java:149 public route passes path tenant unchecked to RegistryRestSupport.publicTx (rest/RegistryRestSupport.java:53); identity tenant ids only checked for reserved prefix (sangam-core .); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /registry/instruments/{id}/transitions/{name}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/instruments/{id}/transitions/{name}: the value as a path parameter"
+    to: "/registry/instruments/{id}/transitions/by-name?name= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:46 transition name = Maps.required (free string) in type definition); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: PUT
+    path: /registry/number-series/{seriesKey}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/number-series/{seriesKey}: the value as a path parameter"
+    to: "/registry/number-series/by-series-key?seriesKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:76-78 seriesKey = Maps.required, only length<=64 checked); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /registry/number-series/{seriesKey}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/number-series/{seriesKey}: the value as a path parameter"
+    to: "/registry/number-series/by-series-key?seriesKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:76-78 seriesKey = Maps.required, only length<=64 checked); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /registry/number-series/{seriesKey}/allocate
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/number-series/{seriesKey}/allocate: the value as a path parameter"
+    to: "/registry/number-series/by-series-key/allocate?seriesKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:76-78 seriesKey = Maps.required, only length<=64 checked); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /registry/number-series/{seriesKey}/allocations
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/number-series/{seriesKey}/allocations: the value as a path parameter"
+    to: "/registry/number-series/by-series-key/allocations?seriesKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:76-78 seriesKey = Maps.required, only length<=64 checked); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /registry/number-series/{seriesKey}/close-period
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/number-series/{seriesKey}/close-period: the value as a path parameter"
+    to: "/registry/number-series/by-series-key/close-period?seriesKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:76-78 seriesKey = Maps.required, only length<=64 checked); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /registry/number-series/{seriesKey}/gaps
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/number-series/{seriesKey}/gaps: the value as a path parameter"
+    to: "/registry/number-series/by-series-key/gaps?seriesKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:76-78 seriesKey = Maps.required, only length<=64 checked); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /registry/number-series/{seriesKey}/mark-used
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/number-series/{seriesKey}/mark-used: the value as a path parameter"
+    to: "/registry/number-series/by-series-key/mark-used?seriesKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:76-78 seriesKey = Maps.required, only length<=64 checked); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /registry/number-series/{seriesKey}/void
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/number-series/{seriesKey}/void: the value as a path parameter"
+    to: "/registry/number-series/by-series-key/void?seriesKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:76-78 seriesKey = Maps.required, only length<=64 checked); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /registry/objects/{id}/transitions/{name}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/objects/{id}/transitions/{name}: the value as a path parameter"
+    to: "/registry/objects/{id}/transitions/by-name?name= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:46 transition name = Maps.required (free string) in type definition); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /registry/registers/public/{tenant}/extracts/verify
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/registers/public/{tenant}/extracts/verify: the value as a path parameter"
+    to: "/registry/registers/public/by-tenant/extracts/verify?tenant= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/InstrumentController.java:180 / RegisterController.java:149 public route passes path tenant unchecked to RegistryRestSupport.publicTx (rest/RegistryRestSupport.java:53); identity tenant ids only checked for reserved prefix (sangam-core .); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: PUT
+    path: /registry/registers/{registerKey}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/registers/{registerKey}: the value as a path parameter"
+    to: "/registry/registers/by-register-key?registerKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/register/RegisterDefinition.java:26-28 registerKey = Maps.required, only length<=64 checked); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /registry/registers/{registerKey}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/registers/{registerKey}: the value as a path parameter"
+    to: "/registry/registers/by-register-key?registerKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/register/RegisterDefinition.java:26-28 registerKey = Maps.required, only length<=64 checked); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /registry/registers/{registerKey}/books
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/registers/{registerKey}/books: the value as a path parameter"
+    to: "/registry/registers/by-register-key/books?registerKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/register/RegisterDefinition.java:26-28 registerKey = Maps.required, only length<=64 checked); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /registry/registers/{registerKey}/entries
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/registers/{registerKey}/entries: the value as a path parameter"
+    to: "/registry/registers/by-register-key/entries?registerKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/register/RegisterDefinition.java:26-28 registerKey = Maps.required, only length<=64 checked); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /registry/types/{typeKey}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/types/{typeKey}: the value as a path parameter"
+    to: "/registry/types/by-type-key?typeKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:62 typeKey pattern [A-Za-z0-9._:-]+ allows ':'); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /registry/types/{typeKey}/versions/{version}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/types/{typeKey}/versions/{version}: the value as a path parameter"
+    to: "/registry/types/by-type-key/versions/{version}?typeKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:62 typeKey pattern [A-Za-z0-9._:-]+ allows ':'); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /registry/types/{typeKey}/versions/{version}/retire
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/registry/types/{typeKey}/versions/{version}/retire: the value as a path parameter"
+    to: "/registry/types/by-type-key/versions/{version}/retire?typeKey= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:62 typeKey pattern [A-Za-z0-9._:-]+ allows ':'); batch M2 registry (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /billing/{ledger}/accounts
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/billing/{ledger}/accounts: the value as a path parameter"
+    to: "/billing/by-ledger/accounts?ledger= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /billing/{ledger}/collections
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/billing/{ledger}/collections: the value as a path parameter"
+    to: "/billing/by-ledger/collections?ledger= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /billing/{ledger}/consumers/{consumer}/arrears
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/billing/{ledger}/consumers/{consumer}/arrears: the value as a path parameter"
+    to: "/billing/by-ledger/consumers/by-consumer/arrears?ledger=&consumer= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern; sangam-billing/src/main/java/org/sangam/billing/BillingService.java:122 client consumer id, no pattern); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /billing/{ledger}/consumers/{consumer}/penalties
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/billing/{ledger}/consumers/{consumer}/penalties: the value as a path parameter"
+    to: "/billing/by-ledger/consumers/by-consumer/penalties?ledger=&consumer= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern; sangam-billing/src/main/java/org/sangam/billing/BillingService.java:122 client consumer id, no pattern); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /billing/{ledger}/invoices
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/billing/{ledger}/invoices: the value as a path parameter"
+    to: "/billing/by-ledger/invoices?ledger= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /billing/{ledger}/refunds
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/billing/{ledger}/refunds: the value as a path parameter"
+    to: "/billing/by-ledger/refunds?ledger= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /billing/{ledger}/waivers
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/billing/{ledger}/waivers: the value as a path parameter"
+    to: "/billing/by-ledger/waivers?ledger= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /ledger/{ledger}/accounts
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ledger/{ledger}/accounts: the value as a path parameter"
+    to: "/ledger/by-ledger/accounts?ledger= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /ledger/{ledger}/freeze-orders
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ledger/{ledger}/freeze-orders: the value as a path parameter"
+    to: "/ledger/by-ledger/freeze-orders?ledger= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /ledger/{ledger}/freeze-orders
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ledger/{ledger}/freeze-orders: the value as a path parameter"
+    to: "/ledger/by-ledger/freeze-orders?ledger= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /ledger/{ledger}/freeze-orders/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ledger/{ledger}/freeze-orders/{id}: the value as a path parameter"
+    to: "/ledger/by-ledger/freeze-orders/by-id?ledger=&id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern; sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /ledger/{ledger}/holds
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ledger/{ledger}/holds: the value as a path parameter"
+    to: "/ledger/by-ledger/holds?ledger= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /ledger/{ledger}/operations
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ledger/{ledger}/operations: the value as a path parameter"
+    to: "/ledger/by-ledger/operations?ledger= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /ledger/{ledger}/periods/close
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ledger/{ledger}/periods/close: the value as a path parameter"
+    to: "/ledger/by-ledger/periods/close?ledger= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /ledger/{ledger}/reconcile
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ledger/{ledger}/reconcile: the value as a path parameter"
+    to: "/ledger/by-ledger/reconcile?ledger= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-ledger/src/main/java/org/sangam/ledger/LedgerDefinition.java:47 ledger id from config, no pattern); batch M3 ledger and billing (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /queues/counters/{counterId}/call
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/counters/{counterId}/call: the value as a path parameter"
+    to: "/queues/counters/by-counter-id/call?counterId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:166 counter id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /queues/counters/{counterId}/call-next
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/counters/{counterId}/call-next: the value as a path parameter"
+    to: "/queues/counters/by-counter-id/call-next?counterId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:166 counter id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /queues/counters/{counterId}/close
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/counters/{counterId}/close: the value as a path parameter"
+    to: "/queues/counters/by-counter-id/close?counterId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:166 counter id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /queues/counters/{counterId}/complete
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/counters/{counterId}/complete: the value as a path parameter"
+    to: "/queues/counters/by-counter-id/complete?counterId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:166 counter id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /queues/counters/{counterId}/open
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/counters/{counterId}/open: the value as a path parameter"
+    to: "/queues/counters/by-counter-id/open?counterId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:166 counter id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /queues/counters/{counterId}/pause
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/counters/{counterId}/pause: the value as a path parameter"
+    to: "/queues/counters/by-counter-id/pause?counterId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:166 counter id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /queues/counters/{counterId}/recall
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/counters/{counterId}/recall: the value as a path parameter"
+    to: "/queues/counters/by-counter-id/recall?counterId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:166 counter id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /queues/counters/{counterId}/skip
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/counters/{counterId}/skip: the value as a path parameter"
+    to: "/queues/counters/by-counter-id/skip?counterId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:166 counter id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /queues/counters/{counterId}/start-serving
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/counters/{counterId}/start-serving: the value as a path parameter"
+    to: "/queues/counters/by-counter-id/start-serving?counterId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:166 counter id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: PUT
+    path: /queues/service-points/{servicePointId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/service-points/{servicePointId}: the value as a path parameter"
+    to: "/queues/service-points/by-service-point-id?servicePointId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:84 service point id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /queues/service-points/{servicePointId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/service-points/{servicePointId}: the value as a path parameter"
+    to: "/queues/service-points/by-service-point-id?servicePointId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:84 service point id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /queues/service-points/{servicePointId}/call-events
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/service-points/{servicePointId}/call-events: the value as a path parameter"
+    to: "/queues/service-points/by-service-point-id/call-events?servicePointId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:84 service point id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /queues/service-points/{servicePointId}/counters
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/service-points/{servicePointId}/counters: the value as a path parameter"
+    to: "/queues/service-points/by-service-point-id/counters?servicePointId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:84 service point id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: PUT
+    path: /queues/service-points/{servicePointId}/counters/{counterId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/service-points/{servicePointId}/counters/{counterId}: the value as a path parameter"
+    to: "/queues/service-points/by-service-point-id/counters/by-counter-id?servicePointId=&counterId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:84 service point id non-blank only; sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:166 counter id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /queues/service-points/{servicePointId}/display
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/service-points/{servicePointId}/display: the value as a path parameter"
+    to: "/queues/service-points/by-service-point-id/display?servicePointId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:84 service point id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /queues/service-points/{servicePointId}/no-show-sweep
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/service-points/{servicePointId}/no-show-sweep: the value as a path parameter"
+    to: "/queues/service-points/by-service-point-id/no-show-sweep?servicePointId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:84 service point id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /queues/service-points/{servicePointId}/sla-breaches
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/service-points/{servicePointId}/sla-breaches: the value as a path parameter"
+    to: "/queues/service-points/by-service-point-id/sla-breaches?servicePointId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:84 service point id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /queues/service-points/{servicePointId}/stats
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/service-points/{servicePointId}/stats: the value as a path parameter"
+    to: "/queues/service-points/by-service-point-id/stats?servicePointId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:84 service point id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /queues/service-points/{servicePointId}/status
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/service-points/{servicePointId}/status: the value as a path parameter"
+    to: "/queues/service-points/by-service-point-id/status?servicePointId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:84 service point id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /queues/service-points/{servicePointId}/tokens
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/service-points/{servicePointId}/tokens: the value as a path parameter"
+    to: "/queues/service-points/by-service-point-id/tokens?servicePointId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:84 service point id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /queues/service-points/{servicePointId}/tokens
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/queues/service-points/{servicePointId}/tokens: the value as a path parameter"
+    to: "/queues/service-points/by-service-point-id/tokens?servicePointId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java:84 service point id non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /resources/bookings/by-ref/{bookingRef}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/resources/bookings/by-ref/{bookingRef}: the value as a path parameter"
+    to: "/resources/bookings/by-ref/by-booking-ref?bookingRef= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/booking/BookingService.java:838 prefix from type refPrefix/typeId, unvalidated); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: PUT
+    path: /resources/calendars/{calendarId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/resources/calendars/{calendarId}: the value as a path parameter"
+    to: "/resources/calendars/by-calendar-id?calendarId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/calendar/CalendarService.java:70 client calendarId, no check (AvailabilityCalendar.java:45)); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /resources/calendars/{calendarId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/resources/calendars/{calendarId}: the value as a path parameter"
+    to: "/resources/calendars/by-calendar-id?calendarId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/calendar/CalendarService.java:70 client calendarId, no check (AvailabilityCalendar.java:45)); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /resources/history/{entityType}/{entityId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/resources/history/{entityType}/{entityId}: the value as a path parameter"
+    to: "/resources/history/{entityType}/by-entity-id?entityId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/ResourcesContext.java:251 entity ids incl. client ids (typeId, resourceId, servicePointId)); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /resources/items/{resourceId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/resources/items/{resourceId}: the value as a path parameter"
+    to: "/resources/items/by-resource-id?resourceId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceCatalogue.java:105 client id; only / refused (:106), : allowed); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: PATCH
+    path: /resources/items/{resourceId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/resources/items/{resourceId}: the value as a path parameter"
+    to: "/resources/items/by-resource-id?resourceId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceCatalogue.java:105 client id; only / refused (:106), : allowed); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /resources/items/{resourceId}/availability
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/resources/items/{resourceId}/availability: the value as a path parameter"
+    to: "/resources/items/by-resource-id/availability?resourceId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceCatalogue.java:105 client id; only / refused (:106), : allowed); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /resources/items/{resourceId}/children
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/resources/items/{resourceId}/children: the value as a path parameter"
+    to: "/resources/items/by-resource-id/children?resourceId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceCatalogue.java:105 client id; only / refused (:106), : allowed); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /resources/items/{resourceId}/move
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/resources/items/{resourceId}/move: the value as a path parameter"
+    to: "/resources/items/by-resource-id/move?resourceId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceCatalogue.java:105 client id; only / refused (:106), : allowed); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /resources/items/{resourceId}/slots
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/resources/items/{resourceId}/slots: the value as a path parameter"
+    to: "/resources/items/by-resource-id/slots?resourceId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceCatalogue.java:105 client id; only / refused (:106), : allowed); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /resources/items/{resourceId}/status
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/resources/items/{resourceId}/status: the value as a path parameter"
+    to: "/resources/items/by-resource-id/status?resourceId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceCatalogue.java:105 client id; only / refused (:106), : allowed); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /resources/slot-templates/{templateId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/resources/slot-templates/{templateId}: the value as a path parameter"
+    to: "/resources/slot-templates/by-template-id?templateId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/calendar/CalendarService.java:216 client templateId kept); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /resources/types/{typeId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/resources/types/{typeId}: the value as a path parameter"
+    to: "/resources/types/by-type-id?typeId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:80 typeId non-blank only); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /rosters/people/{personId}/duties
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/rosters/people/{personId}/duties: the value as a path parameter"
+    to: "/rosters/people/by-person-id/duties?personId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/roster/RosterService.java:233 client personId, no check); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /rosters/periods/{periodId}/demand/{demandId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/rosters/periods/{periodId}/demand/{demandId}: the value as a path parameter"
+    to: "/rosters/periods/{periodId}/demand/by-demand-id?demandId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/roster/RosterService.java:262 client demandId kept); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: PUT
+    path: /rosters/periods/{periodId}/members/{personId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/rosters/periods/{periodId}/members/{personId}: the value as a path parameter"
+    to: "/rosters/periods/{periodId}/members/by-person-id?personId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/roster/RosterService.java:233 client personId, no check); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /rosters/periods/{periodId}/members/{personId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/rosters/periods/{periodId}/members/{personId}: the value as a path parameter"
+    to: "/rosters/periods/{periodId}/members/by-person-id?personId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/roster/RosterService.java:233 client personId, no check); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /rosters/rotations/{rotationId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/rosters/rotations/{rotationId}: the value as a path parameter"
+    to: "/rosters/rotations/by-rotation-id?rotationId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/roster/RosterService.java:141 client rotationId kept); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /rosters/shifts/{shiftId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/rosters/shifts/{shiftId}: the value as a path parameter"
+    to: "/rosters/shifts/by-shift-id?shiftId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-resources/src/main/java/org/sangam/resources/roster/RosterService.java:93 client shiftId kept); batch M4 resources, rosters and queues (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /field/devices/{id}/chain
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/devices/{id}/chain: the value as a path parameter"
+    to: "/field/devices/by-id/chain?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /field/devices/{id}/policy
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/devices/{id}/policy: the value as a path parameter"
+    to: "/field/devices/by-id/policy?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /field/devices/{id}/status
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/devices/{id}/status: the value as a path parameter"
+    to: "/field/devices/by-id/status?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /field/evidence/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/evidence/{id}: the value as a path parameter"
+    to: "/field/evidence/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /field/evidence/{id}/content
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/evidence/{id}/content: the value as a path parameter"
+    to: "/field/evidence/by-id/content?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /field/evidence/{id}/reverify
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/evidence/{id}/reverify: the value as a path parameter"
+    to: "/field/evidence/by-id/reverify?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /field/schedules/{id}/run
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/schedules/{id}/run: the value as a path parameter"
+    to: "/field/schedules/by-id/run?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /field/sync/{deviceId}/pull
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/sync/{deviceId}/pull: the value as a path parameter"
+    to: "/field/sync/by-device-id/pull?deviceId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /field/sync/{deviceId}/upload
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/sync/{deviceId}/upload: the value as a path parameter"
+    to: "/field/sync/by-device-id/upload?deviceId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /field/templates/{key}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/templates/{key}: the value as a path parameter"
+    to: "/field/templates/by-key?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/template/FieldTemplate.java:205 key non-blank only); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /field/templates/{key}/{version}/retire
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/templates/{key}/{version}/retire: the value as a path parameter"
+    to: "/field/templates/by-key/{version}/retire?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/template/FieldTemplate.java:205 key non-blank only); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /field/units/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/units/{id}: the value as a path parameter"
+    to: "/field/units/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /field/units/{id}/eta
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/units/{id}/eta: the value as a path parameter"
+    to: "/field/units/by-id/eta?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /field/units/{id}/offers
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/units/{id}/offers: the value as a path parameter"
+    to: "/field/units/by-id/offers?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /field/units/{id}/pings
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/units/{id}/pings: the value as a path parameter"
+    to: "/field/units/by-id/pings?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /field/units/{id}/status
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/units/{id}/status: the value as a path parameter"
+    to: "/field/units/by-id/status?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /field/units/{id}/trips
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/field/units/{id}/trips: the value as a path parameter"
+    to: "/field/units/by-id/trips?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /geo/external-layers/{ref}/import
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/geo/external-layers/{ref}/import: the value as a path parameter"
+    to: "/geo/external-layers/by-ref/import?ref= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayer.java:22 ref non-blank only); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /geo/external-layers/{ref}/query
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/geo/external-layers/{ref}/query: the value as a path parameter"
+    to: "/geo/external-layers/by-ref/query?ref= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayer.java:22 ref non-blank only); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /geo/features/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/geo/features/{id}: the value as a path parameter"
+    to: "/geo/features/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /geo/features/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/geo/features/{id}: the value as a path parameter"
+    to: "/geo/features/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /geo/features/{id}/lineage
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/geo/features/{id}/lineage: the value as a path parameter"
+    to: "/geo/features/by-id/lineage?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /geo/fences/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/geo/fences/{id}: the value as a path parameter"
+    to: "/geo/fences/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /geo/fences/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/geo/fences/{id}: the value as a path parameter"
+    to: "/geo/fences/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /geo/fences/{id}/check
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/geo/fences/{id}/check: the value as a path parameter"
+    to: "/geo/fences/by-id/check?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /geo/layers/{layer}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/geo/layers/{layer}: the value as a path parameter"
+    to: "/geo/layers/by-layer?layer= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-geo/src/main/java/org/sangam/geo/boundary/JurisdictionLayer.java:24 code pattern allows :); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /geo/layers/{layer}/features
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/geo/layers/{layer}/features: the value as a path parameter"
+    to: "/geo/layers/by-layer/features?layer= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-geo/src/main/java/org/sangam/geo/boundary/JurisdictionLayer.java:24 code pattern allows :); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /geo/layers/{layer}/features
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/geo/layers/{layer}/features: the value as a path parameter"
+    to: "/geo/layers/by-layer/features?layer= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-geo/src/main/java/org/sangam/geo/boundary/JurisdictionLayer.java:24 code pattern allows :); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /geo/layers/{layer}/import
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/geo/layers/{layer}/import: the value as a path parameter"
+    to: "/geo/layers/by-layer/import?layer= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-geo/src/main/java/org/sangam/geo/boundary/JurisdictionLayer.java:24 code pattern allows :); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: PUT
+    path: /geo/objects/{type}/{id}/geometry
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/geo/objects/{type}/{id}/geometry: the value as a path parameter"
+    to: "/geo/objects/by-type/by-id/geometry?type=&id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:315 client objectType, no check; sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /geo/objects/{type}/{id}/geometry
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/geo/objects/{type}/{id}/geometry: the value as a path parameter"
+    to: "/geo/objects/by-type/by-id/geometry?type=&id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:315 client objectType, no check; sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
   - method: GET
     path: /process-definitions/{id}
     corrected: 2026-11-17

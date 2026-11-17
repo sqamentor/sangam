@@ -408,9 +408,9 @@ export class RepositoryApi extends ApiGroup {
     return (await this.listPage<JsonObject>('/events/definitions', undefined, o)).items;
   }
 
-  /** `POST /events/{channel}` with a CloudEvents 1.0 envelope; 202. Build one with `cloudEvent()`. */
+  /** `POST /events/by-channel?channel=` with a CloudEvents 1.0 envelope; 202. Build one with `cloudEvent()`. A channel key may carry ':' (decision 393). */
   publishEvent(channel: string, event: CloudEvent, o?: CallOptions): Promise<PublishResult> {
-    return this.postObj<PublishResult>(`/events/${seg(channel)}`, event, o);
+    return this.http.callReplayable<PublishResult>(this.req('POST', '/events/by-channel', event, o, { channel }));
   }
 
   form(formKey: string, o?: CallOptions): Promise<JsonObject> {

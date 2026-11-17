@@ -227,37 +227,37 @@ public class ModellerController {
         return bytes;
     }
 
-    @GetMapping("/models/{file}/lease")
-    public ResponseEntity<EditLeases.Lease> lease(RequestContext ctx, @PathVariable String file) {
+    @GetMapping("/models/by-file/lease")
+    public ResponseEntity<EditLeases.Lease> lease(RequestContext ctx, @RequestParam("file") String file) {
         permissions.require(ctx, Permissions.PACKAGE_READ);
         return leases.current(ctx.tenantId(), file).map(ResponseEntity::ok)
                 .orElseThrow(() -> ApiProblem.notFound("edit lease", file));
     }
 
-    @PostMapping("/models/{file}/lease")
-    public EditLeases.Outcome acquire(RequestContext ctx, @PathVariable String file) {
+    @PostMapping("/models/by-file/lease")
+    public EditLeases.Outcome acquire(RequestContext ctx, @RequestParam("file") String file) {
         permissions.require(ctx, Permissions.PACKAGE_AUTHOR);
         return leases.acquire(ctx.tenantId(), file, ctx.principalId());
     }
 
     /** The console's name for {@link #acquire}; a model file is its package id, so a body {@code packageId} is not needed. */
-    @PostMapping("/models/{file}/lease/acquire")
-    public LeaseView acquireView(RequestContext ctx, @PathVariable String file, @RequestBody(required = false) FenceRequest b) {
+    @PostMapping("/models/by-file/lease/acquire")
+    public LeaseView acquireView(RequestContext ctx, @RequestParam("file") String file, @RequestBody(required = false) FenceRequest b) {
         permissions.require(ctx, Permissions.PACKAGE_AUTHOR);
         EditLeases.Outcome o = leases.acquire(ctx.tenantId(), file, ctx.principalId());
         return view(ctx, o.lease(), o.editable());
     }
 
-    @PostMapping("/models/{file}/lease/heartbeat")
-    public LeaseView heartbeat(RequestContext ctx, @PathVariable String file, @RequestBody(required = false) FenceRequest b) {
+    @PostMapping("/models/by-file/lease/heartbeat")
+    public LeaseView heartbeat(RequestContext ctx, @RequestParam("file") String file, @RequestBody(required = false) FenceRequest b) {
         permissions.require(ctx, Permissions.PACKAGE_AUTHOR);
         leases.heartbeat(ctx.tenantId(), file, ctx.principalId(), fence(ctx, file, b));
         EditLeases.Lease l = leases.current(ctx.tenantId(), file).orElse(null);
         return view(ctx, l, l != null && ctx.principalId().equals(l.holder()));
     }
 
-    @PostMapping("/models/{file}/lease/release")
-    public ResponseEntity<Void> release(RequestContext ctx, @PathVariable String file, @RequestBody(required = false) FenceRequest b) {
+    @PostMapping("/models/by-file/lease/release")
+    public ResponseEntity<Void> release(RequestContext ctx, @RequestParam("file") String file, @RequestBody(required = false) FenceRequest b) {
         permissions.require(ctx, Permissions.PACKAGE_AUTHOR);
         leases.release(ctx.tenantId(), file, ctx.principalId(), fence(ctx, file, b));
         return ResponseEntity.noContent().build();
@@ -277,15 +277,15 @@ public class ModellerController {
                 : new LeaseView(l.fileId(), l.holder(), l.fence(), l.expiresAt(), l.requestedBy(), ctx.principalId().equals(l.holder()), editable);
     }
 
-    @PostMapping("/models/{file}/lease/request-takeover")
-    public ResponseEntity<Void> requestTakeover(RequestContext ctx, @PathVariable String file) {
+    @PostMapping("/models/by-file/lease/request-takeover")
+    public ResponseEntity<Void> requestTakeover(RequestContext ctx, @RequestParam("file") String file) {
         permissions.require(ctx, Permissions.PACKAGE_AUTHOR);
         leases.requestTakeover(ctx.tenantId(), file, ctx.principalId());
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/models/{file}/lease/takeover")
-    public EditLeases.Lease takeover(RequestContext ctx, @PathVariable String file, @RequestBody TakeoverRequest b) {
+    @PostMapping("/models/by-file/lease/takeover")
+    public EditLeases.Lease takeover(RequestContext ctx, @RequestParam("file") String file, @RequestBody TakeoverRequest b) {
         permissions.require(ctx, Permissions.PACKAGE_AUTHOR);
         return leases.takeover(ctx.tenantId(), file, ctx.principalId(), permissions.has(ctx, LEASE_TAKEOVER), b.formerDraft(), b.reason());
     }

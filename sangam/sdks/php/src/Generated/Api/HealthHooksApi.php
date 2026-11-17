@@ -25,13 +25,15 @@ final class HealthHooksApi
      *
      * Public at the Sangam layer: the channel's shared secret header is checked (constant time) and each focus resource is written to the integration inbox (deduplicated, tenant-bound by the channel). ClaimResponse becomes sangam.ushealth.pasUpdate.
      *
-     * POST /hooks/fhir/{channel} (operationId receiveFhirNotification).
+     * POST /hooks/fhir/by-channel (operationId receiveFhirNotification).
      * @param array $body request body
+     * @param string $channel query channel
      * @return Model\HealthHookResult|null
      */
-    public function receiveFhirNotification(string $channel, array $body, ?RequestOptions $options = null): ?Model\HealthHookResult
+    public function receiveFhirNotification(array $body, string $channel, ?RequestOptions $options = null): ?Model\HealthHookResult
     {
-        $req = ApiRequest::post('/hooks/fhir/' . HttpTransport::seg((string) $channel));
+        $req = ApiRequest::post('/hooks/fhir/by-channel');
+        $req->query('channel', $channel);
         if ($body !== null) {
             $req->body($body);
         }

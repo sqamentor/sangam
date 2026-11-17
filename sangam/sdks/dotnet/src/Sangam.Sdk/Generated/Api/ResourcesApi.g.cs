@@ -41,22 +41,24 @@ public sealed class ResourcesApi
     /// <summary>
     /// Retire type
     /// ResourcesController.retireType (sangam-rest).
-    /// DELETE /resources/types/{typeId} (operationId resourcesResourcesRetireType); permission resources.admin; result stored atomically with the state change.
+    /// DELETE /resources/types/by-type-id (operationId resourcesResourcesRetireType); permission resources.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task ResourcesResourcesRetireTypeAsync(string typeId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/resources/types/{HttpTransport.Seg(GeneratedCalls.Str(typeId)!)}");
+        var req = ApiRequest.Delete($"/resources/types/by-type-id");
+        req.WithQuery("typeId", GeneratedCalls.Q(typeId));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Save calendar
     /// ResourcesController.saveCalendar (sangam-rest).
-    /// PUT /resources/calendars/{calendarId} (operationId resourcesResourcesSaveCalendar); permission resources.admin; result stored atomically with the state change.
+    /// PUT /resources/calendars/by-calendar-id (operationId resourcesResourcesSaveCalendar); permission resources.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesSaveCalendarAsync(string calendarId, M.ResourcesResourcesSaveCalendarBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesSaveCalendarAsync(M.ResourcesResourcesSaveCalendarBody body, string calendarId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/resources/calendars/{HttpTransport.Seg(GeneratedCalls.Str(calendarId)!)}");
+        var req = ApiRequest.Put($"/resources/calendars/by-calendar-id");
+        req.WithQuery("calendarId", GeneratedCalls.Q(calendarId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -64,11 +66,12 @@ public sealed class ResourcesApi
     /// <summary>
     /// Calendar
     /// ResourcesController.calendar (sangam-rest).
-    /// GET /resources/calendars/{calendarId} (operationId resourcesResourcesCalendar); permission resources.read.
+    /// GET /resources/calendars/by-calendar-id (operationId resourcesResourcesCalendar); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesCalendarAsync(string calendarId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/resources/calendars/{HttpTransport.Seg(GeneratedCalls.Str(calendarId)!)}");
+        var req = ApiRequest.Get($"/resources/calendars/by-calendar-id");
+        req.WithQuery("calendarId", GeneratedCalls.Q(calendarId));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -111,11 +114,12 @@ public sealed class ResourcesApi
     /// <summary>
     /// Delete slot template
     /// ResourcesController.deleteSlotTemplate (sangam-rest).
-    /// DELETE /resources/slot-templates/{templateId} (operationId resourcesResourcesDeleteSlotTemplate); permission resources.admin; result stored atomically with the state change.
+    /// DELETE /resources/slot-templates/by-template-id (operationId resourcesResourcesDeleteSlotTemplate); permission resources.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task ResourcesResourcesDeleteSlotTemplateAsync(string templateId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/resources/slot-templates/{HttpTransport.Seg(GeneratedCalls.Str(templateId)!)}");
+        var req = ApiRequest.Delete($"/resources/slot-templates/by-template-id");
+        req.WithQuery("templateId", GeneratedCalls.Q(templateId));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -134,11 +138,12 @@ public sealed class ResourcesApi
     /// <summary>
     /// History
     /// ResourcesController.history (sangam-rest).
-    /// GET /resources/history/{entityType}/{entityId} (operationId resourcesResourcesHistory); permission resources.read.
+    /// GET /resources/history/{entityType}/by-entity-id (operationId resourcesResourcesHistory); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> ResourcesResourcesHistoryAsync(string entityType, string entityId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/resources/history/{HttpTransport.Seg(GeneratedCalls.Str(entityType)!)}/{HttpTransport.Seg(GeneratedCalls.Str(entityId)!)}");
+        var req = ApiRequest.Get($"/resources/history/{HttpTransport.Seg(GeneratedCalls.Str(entityType)!)}/by-entity-id");
+        req.WithQuery("entityId", GeneratedCalls.Q(entityId));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 

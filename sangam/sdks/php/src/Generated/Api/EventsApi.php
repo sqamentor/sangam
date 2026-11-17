@@ -61,12 +61,14 @@ final class EventsApi
      *
      * One channel.
      *
-     * GET /events/channels/{key} (operationId getEventChannel); permission event.admin.
+     * GET /events/channels/by-key (operationId getEventChannel); permission event.admin.
+     * @param string $key query key
      * @return Model\EventChannel|null
      */
     public function getEventChannel(string $key, ?RequestOptions $options = null): ?Model\EventChannel
     {
-        $req = ApiRequest::get('/events/channels/' . HttpTransport::seg((string) $key));
+        $req = ApiRequest::get('/events/channels/by-key');
+        $req->query('key', $key);
         return $this->calls->model($req, $options, Model\EventChannel::class);
     }
 
@@ -75,13 +77,15 @@ final class EventsApi
      *
      * Updates a channel.
      *
-     * PUT /events/channels/{key} (operationId updateEventChannel); permission event.admin; result stored atomically with the state change.
+     * PUT /events/channels/by-key (operationId updateEventChannel); permission event.admin; result stored atomically with the state change.
      * @param Model\EventChannel|array $body request body
+     * @param string $key query key
      * @return Model\EventChannel|null
      */
-    public function updateEventChannel(string $key, Model\EventChannel|array $body, ?RequestOptions $options = null): ?Model\EventChannel
+    public function updateEventChannel(Model\EventChannel|array $body, string $key, ?RequestOptions $options = null): ?Model\EventChannel
     {
-        $req = ApiRequest::put('/events/channels/' . HttpTransport::seg((string) $key));
+        $req = ApiRequest::put('/events/channels/by-key');
+        $req->query('key', $key);
         if ($body !== null) {
             $req->body($body);
         }
@@ -93,12 +97,14 @@ final class EventsApi
      *
      * Retires every active version and removes the retired versions. Refused with 409 EVENT_IN_FLIGHT while events on the channel are buffered in the inbox or undelivered in the outbox.
      *
-     * DELETE /events/channels/{key} (operationId deleteEventChannel); permission event.admin; result stored atomically with the state change.
+     * DELETE /events/channels/by-key (operationId deleteEventChannel); permission event.admin; result stored atomically with the state change.
+     * @param string $key query key
      * @param string|null $reason query reason
      */
     public function deleteEventChannel(string $key, ?string $reason = null, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/events/channels/' . HttpTransport::seg((string) $key));
+        $req = ApiRequest::delete('/events/channels/by-key');
+        $req->query('key', $key);
         $req->query('reason', $reason);
         $this->calls->none($req, $options);
     }
@@ -108,13 +114,15 @@ final class EventsApi
      *
      * Marks every active version RETIRED: the channel no longer resolves and stops receiving; an older active version, if any, becomes current. Refused with 409 EVENT_IN_FLIGHT while events are in flight. Returns the channel with active=false (or the version that became current).
      *
-     * POST /events/channels/{key}/retire (operationId retireEventChannel); permission event.admin; result stored atomically with the state change.
+     * POST /events/channels/by-key/retire (operationId retireEventChannel); permission event.admin; result stored atomically with the state change.
      * @param Model\ReasonRequest|array $body request body
+     * @param string $key query key
      * @return Model\EventChannel|null
      */
-    public function retireEventChannel(string $key, Model\ReasonRequest|array $body, ?RequestOptions $options = null): ?Model\EventChannel
+    public function retireEventChannel(Model\ReasonRequest|array $body, string $key, ?RequestOptions $options = null): ?Model\EventChannel
     {
-        $req = ApiRequest::post('/events/channels/' . HttpTransport::seg((string) $key) . '/retire');
+        $req = ApiRequest::post('/events/channels/by-key/retire');
+        $req->query('key', $key);
         if ($body !== null) {
             $req->body($body);
         }
@@ -126,13 +134,15 @@ final class EventsApi
      *
      * Re-activates the newest retired version (undo of a retire); 409 NOT_RETIRED when there is none.
      *
-     * POST /events/channels/{key}/restore (operationId restoreEventChannel); permission event.admin; result stored atomically with the state change.
+     * POST /events/channels/by-key/restore (operationId restoreEventChannel); permission event.admin; result stored atomically with the state change.
      * @param Model\ReasonRequest|array $body request body
+     * @param string $key query key
      * @return Model\EventChannel|null
      */
-    public function restoreEventChannel(string $key, Model\ReasonRequest|array $body, ?RequestOptions $options = null): ?Model\EventChannel
+    public function restoreEventChannel(Model\ReasonRequest|array $body, string $key, ?RequestOptions $options = null): ?Model\EventChannel
     {
-        $req = ApiRequest::post('/events/channels/' . HttpTransport::seg((string) $key) . '/restore');
+        $req = ApiRequest::post('/events/channels/by-key/restore');
+        $req->query('key', $key);
         if ($body !== null) {
             $req->body($body);
         }
@@ -180,12 +190,14 @@ final class EventsApi
      *
      * One definition.
      *
-     * GET /events/definitions/{key} (operationId getEventDefinition); permission event.admin.
+     * GET /events/definitions/by-key (operationId getEventDefinition); permission event.admin.
+     * @param string $key query key
      * @return Model\EventDefinition|null
      */
     public function getEventDefinition(string $key, ?RequestOptions $options = null): ?Model\EventDefinition
     {
-        $req = ApiRequest::get('/events/definitions/' . HttpTransport::seg((string) $key));
+        $req = ApiRequest::get('/events/definitions/by-key');
+        $req->query('key', $key);
         return $this->calls->model($req, $options, Model\EventDefinition::class);
     }
 
@@ -194,12 +206,14 @@ final class EventsApi
      *
      * Retires every active version and removes the retired versions. Refused with 409 EVENT_IN_FLIGHT while events of the key are buffered or undelivered.
      *
-     * DELETE /events/definitions/{key} (operationId deleteEventDefinition); permission event.admin; result stored atomically with the state change.
+     * DELETE /events/definitions/by-key (operationId deleteEventDefinition); permission event.admin; result stored atomically with the state change.
+     * @param string $key query key
      * @param string|null $reason query reason
      */
     public function deleteEventDefinition(string $key, ?string $reason = null, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/events/definitions/' . HttpTransport::seg((string) $key));
+        $req = ApiRequest::delete('/events/definitions/by-key');
+        $req->query('key', $key);
         $req->query('reason', $reason);
         $this->calls->none($req, $options);
     }
@@ -209,13 +223,15 @@ final class EventsApi
      *
      * Marks every active version RETIRED; an older active version, if any, becomes current. Refused with 409 EVENT_IN_FLIGHT while events of the key are in flight.
      *
-     * POST /events/definitions/{key}/retire (operationId retireEventDefinition); permission event.admin; result stored atomically with the state change.
+     * POST /events/definitions/by-key/retire (operationId retireEventDefinition); permission event.admin; result stored atomically with the state change.
      * @param Model\ReasonRequest|array $body request body
+     * @param string $key query key
      * @return Model\EventDefinition|null
      */
-    public function retireEventDefinition(string $key, Model\ReasonRequest|array $body, ?RequestOptions $options = null): ?Model\EventDefinition
+    public function retireEventDefinition(Model\ReasonRequest|array $body, string $key, ?RequestOptions $options = null): ?Model\EventDefinition
     {
-        $req = ApiRequest::post('/events/definitions/' . HttpTransport::seg((string) $key) . '/retire');
+        $req = ApiRequest::post('/events/definitions/by-key/retire');
+        $req->query('key', $key);
         if ($body !== null) {
             $req->body($body);
         }
@@ -227,13 +243,15 @@ final class EventsApi
      *
      * Re-activates the newest retired version (undo of a retire); 409 NOT_RETIRED when there is none.
      *
-     * POST /events/definitions/{key}/restore (operationId restoreEventDefinition); permission event.admin; result stored atomically with the state change.
+     * POST /events/definitions/by-key/restore (operationId restoreEventDefinition); permission event.admin; result stored atomically with the state change.
      * @param Model\ReasonRequest|array $body request body
+     * @param string $key query key
      * @return Model\EventDefinition|null
      */
-    public function restoreEventDefinition(string $key, Model\ReasonRequest|array $body, ?RequestOptions $options = null): ?Model\EventDefinition
+    public function restoreEventDefinition(Model\ReasonRequest|array $body, string $key, ?RequestOptions $options = null): ?Model\EventDefinition
     {
-        $req = ApiRequest::post('/events/definitions/' . HttpTransport::seg((string) $key) . '/restore');
+        $req = ApiRequest::post('/events/definitions/by-key/restore');
+        $req->query('key', $key);
         if ($body !== null) {
             $req->body($body);
         }
@@ -245,13 +263,15 @@ final class EventsApi
      *
      * Accepts a CloudEvent on an inbound channel; de-duplicated through the inbox by (tenant, source, id) (R38), then starts (uniqueStart) or correlates (R83).
      *
-     * POST /events/{channel} (operationId publishEvent); permission event.publish; result stored atomically with the state change.
+     * POST /events/by-channel (operationId publishEvent); permission event.publish; result stored atomically with the state change.
      * @param Model\CloudEvent|array $body request body
+     * @param string $channel query channel
      * @return Model\PublishResult|null
      */
-    public function publishEvent(string $channel, Model\CloudEvent|array $body, ?RequestOptions $options = null): ?Model\PublishResult
+    public function publishEvent(Model\CloudEvent|array $body, string $channel, ?RequestOptions $options = null): ?Model\PublishResult
     {
-        $req = ApiRequest::post('/events/' . HttpTransport::seg((string) $channel));
+        $req = ApiRequest::post('/events/by-channel');
+        $req->query('channel', $channel);
         if ($body !== null) {
             $req->body($body);
         }

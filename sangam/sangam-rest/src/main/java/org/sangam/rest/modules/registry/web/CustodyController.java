@@ -66,8 +66,9 @@ public class CustodyController {
         return support.tx((c, ctx) -> custody.get(c, ctx, id));
     }
 
-    @GetMapping("/items/by-label/{label}")
-    public CustodyItem byLabel(@PathVariable String label) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/items/by-label")
+    public CustodyItem byLabel(@RequestParam("label") String label) {
         return support.tx((c, ctx) -> custody.byLabel(c, ctx, label));
     }
 

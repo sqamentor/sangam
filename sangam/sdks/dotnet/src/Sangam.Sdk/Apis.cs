@@ -361,9 +361,9 @@ public sealed class RepositoryApi : ApiBase
     public async Task<IReadOnlyList<JsonObject>> EventDefinitionsAsync(CancellationToken ct = default) =>
         (await ReadPageAsync<JsonObject>(ApiRequest.Get("/events/definitions"), ct).ConfigureAwait(false)).Items;
 
-    /// <summary><c>POST /events/{channel}</c> with a CloudEvent (202). Status ACCEPTED, DUPLICATE or BUFFERED.</summary>
+    /// <summary><c>POST /events/by-channel?channel=</c> with a CloudEvent (202); a channel key may carry ':'. Status ACCEPTED, DUPLICATE or BUFFERED.</summary>
     public Task<PublishResult?> PublishEventAsync(string channel, CloudEvent @event, string? idempotencyKey = null, CancellationToken ct = default) =>
-        CallAsync<PublishResult>(ApiRequest.Post("/events/" + Seg(channel)).WithBody(@event).WithIdempotencyKey(idempotencyKey ?? @event.Id), ct);
+        CallAsync<PublishResult>(ApiRequest.Post("/events/by-channel").WithQuery("channel", channel).WithBody(@event).WithIdempotencyKey(idempotencyKey ?? @event.Id), ct);
 
     /// <summary><c>GET /forms/by-key?key=</c> (a form key may carry '/').</summary>
     public Task<JsonObject?> FormAsync(string formKey, CancellationToken ct = default) =>

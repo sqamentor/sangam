@@ -130,13 +130,14 @@ public final class RegistryCustodyApi {
      *
      * <p>CustodyController.byLabel (sangam-rest).
      *
-     * <p>{@code GET /registry/custody/items/by-label/{label}} (operationId {@code registryCustodyByLabel}); permission {@code registry.read}.
-     * @param label path parameter {@code label}
+     * <p>{@code GET /registry/custody/items/by-label} (operationId {@code registryCustodyByLabel}); permission {@code registry.read}.
+     * @param label query parameter {@code label}. Label; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> registryCustodyByLabel(String label, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/registry/custody/items/by-label/" + HttpTransport.seg(String.valueOf(label)));
+        ApiRequest req = ApiRequest.get("/registry/custody/items/by-label");
+        req.query("label", label);
         return call.json(req, options, R_registryCustodyByLabel);
     }
 

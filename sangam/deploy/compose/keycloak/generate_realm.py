@@ -372,40 +372,46 @@ def platform_realm(tenant_realm):
 # the environment (SANGAM_PRESENTATION_PASSWORD_<USERNAME>, upper case, "." and "-" as "_") or from the git-ignored
 # file deploy/presentation/presentation-users.local.json ({"<username>": "<password>"}); a missing one is generated
 # (secrets module) and stored in that file. Seats and roles follow the IFMS pack seeds (ifms-gpf, ifms-bill,
-# ifms-budget-allocation: seats DDO-1, HOO-1, BD-1, DH-1, AAO-1, PAO-1, SS-1 in office PAO-OFFICE). No visible name uses a word barred by
-# IFMS SD-544. deploy/presentation/seed_presentation.py reads these same lists (one source).
+# ifms-budget-allocation, office PAO-OFFICE). No visible name uses a word barred by IFMS SD-544. deploy/presentation/seed_presentation.py reads these same lists (one source).
 PRESENTATION_TENANT = os.environ.get("SANGAM_PRESENTATION_TENANT", "GOI.FIN")
 PRESENTATION_OFFICE = "PAO-OFFICE"
 PRESENTATION_ROLES = [
     ("DDO", "Drawing and disbursing officer (IFMS pack role)"),
     ("HOO", "Head of Office (IFMS pack role)"),
-    ("PAO", "Pay and accounts officer (IFMS pack role)"),
-    ("BILL_DISTRIBUTOR", "Bill distributor (IFMS pack role)"),
     ("DEALING_HAND", "Dealing hand (IFMS pack role)"),
+    ("PAO", "Pay and accounts officer (IFMS pack role)"),
+    ("FA", "Financial adviser (IFMS pack role)"),
+    ("BILL_DISTRIBUTOR", "Bill distributor (IFMS pack role)"),
     ("AAO", "Assistant accounts officer (IFMS pack role)"),
     ("SECOND_SIGNATORY", "Second signatory (IFMS pack role)"),
     ("sangam-tenant-admin", "Department (organisation) administrator"),
-    ("sangam-supervisor", "Supervisor: team workload (team.read)"),
+    ("sangam-auditor", "Read audit timelines and verify audit chains (READ_AUDIT)"),
 ]
-# (username, first name, last name, realm roles, seats) in the tenant realm
+# Owner 2026-11-17: the Jaipur personas of IFMS E-67 (persona table, PRS-RJ-00xx; Kishangarh left out until seats are
+# picked per office, a gap after 0.1.0), so one login in realm oneifms works in both systems. Every seat is a real
+# seat of the ifms-gpf / ifms-bill / ifms-pao-chain / ifms-budget-allocation seed; personas IFMS has no Sangam seat for
+# are not seeded (joint ledger [ANSWER] SANGAM-PERSONA-SEATS lists them).
+# (username, first name, last name, realm roles, seats, E-67 person id) in the tenant realm
 PRESENTATION_USERS = [
-    ("ddo.maker", "Rakesh", "Sharma", ["DDO", "sangam-user"], ["DDO-1"]),
-    ("hoo.office", "Anita", "Verma", ["HOO", "sangam-user"], ["HOO-1"]),
-    ("pao.accounts", "Suresh", "Iyer", ["PAO", "sangam-user"], ["PAO-1"]),
-    # the PAO chain of a bill (ifms-pao-chain: distribute, dealing hand, AAO, PAO, second signature)
-    ("bill.distributor", "Farhan", "Qureshi", ["BILL_DISTRIBUTOR", "sangam-user"], ["BD-1"]),
-    ("dealing.hand", "Lakshmi", "Menon", ["DEALING_HAND", "sangam-user"], ["DH-1"]),
-    ("aao.accounts", "Harpreet", "Singh", ["AAO", "sangam-user"], ["AAO-1"]),
-    ("second.signatory", "Deepa", "Kulkarni", ["SECOND_SIGNATORY", "sangam-user"], ["SS-1"]),
-    # the GPF subscriber: starts a GPF application as an employee, with no seat (IfmsPacksIT employee()); a person
-    # distinct from the DDO who scrutinises it (SoD, IX.5 rule 5)
-    ("gpf.subscriber", "Pooja", "Nair", ["sangam-user"], []),
-    ("org.admin", "Kavita", "Rao", ["sangam-tenant-admin", "sangam-user"], []),
-    ("section.supervisor", "Manoj", "Gupta", ["sangam-supervisor", "sangam-user"], []),
+    ("kavita.sharma", "Kavita", "Sharma", ["DDO", "sangam-user"], ["DDO-1"], "PRS-RJ-0005"),
+    ("ramesh.meena", "Ramesh", "Meena", ["HOO", "sangam-user"], ["HOO-1"], "PRS-RJ-0006"),
+    ("deepak.saini", "Deepak", "Saini", ["DEALING_HAND", "sangam-user"], ["DH-1"], "PRS-RJ-0012"),
+    ("sunita.rathore", "Sunita", "Rathore", ["PAO", "sangam-user"], ["PAO-1"], "PRS-RJ-0013"),
+    ("harish.mathur", "Harish", "Mathur", ["FA", "sangam-user"], ["FA-1"], "PRS-RJ-0001"),
+    # joint ledger [ANSWER] SANGAM-PERSONA-ADD: IFMS office TR-JPR-01 (Treasury Jaipur City); in Sangam these seats
+    # belong to the pack seed's org unit PAO-OFFICE (ifms-gpf seed.json), which packs define and this seed does not change
+    ("govind.khandelwal", "Govind", "Khandelwal", ["BILL_DISTRIBUTOR", "sangam-user"], ["BD-1"], "PRS-RJ-0024"),
+    ("mukesh.swami", "Mukesh", "Swami", ["AAO", "sangam-user"], ["AAO-1"], "PRS-RJ-0025"),
+    ("sarita.champawat", "Sarita", "Champawat", ["SECOND_SIGNATORY", "sangam-user"], ["SS-1"], "PRS-RJ-0026"),
+    # GPF subscriber: starts a GPF application as an employee, no seat (IfmsPacksIT employee()); not the DDO (SoD)
+    ("anil.choudhary", "Anil", "Choudhary", ["sangam-user"], [], "PRS-RJ-0019"),
+    ("pradeep.saxena", "Pradeep", "Saxena", ["sangam-auditor", "sangam-user"], [], "PRS-RJ-0007"),
+    ("rajendra.sharma", "Rajendra Prasad", "Sharma", ["sangam-tenant-admin", "sangam-user"], [], "PRS-RJ-0022"),
+    ("meenakshi.kanwar", "Meenakshi", "Kanwar", ["sangam-tenant-admin", "sangam-user"], [], "PRS-RJ-0023"),
 ]
 # in the platform realm (SL-70: only its sangam-admin is a platform administrator)
 PRESENTATION_PLATFORM_USERS = [
-    ("platform.admin", "Neelam", "Joshi", ["sangam-admin", "sangam-user"], []),
+    ("platform.admin", "Neelam", "Joshi", ["sangam-admin", "sangam-user"], [], None),
 ]
 PRESENTATION_PW_FILE = os.path.join(os.path.dirname(COMPOSE), "presentation", "presentation-users.local.json")
 
@@ -439,7 +445,7 @@ def presentation_passwords(usernames, generate):
 
 
 def presentation_user(entry, tenant, password):
-    uname, first, last, roles, seats = entry
+    uname, first, last, roles, seats = entry[:5]
     u = user(uname, first, last, roles, [], tenant, seats, {"office": [PRESENTATION_OFFICE]} if seats else None)
     u["credentials"] = [{"type": "password", "value": password, "temporary": False}] if password else []
     return u

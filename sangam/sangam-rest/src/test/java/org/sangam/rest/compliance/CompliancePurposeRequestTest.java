@@ -16,7 +16,7 @@ import org.sangam.rest.port.ApiProblem;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Integrator finding on CI ui e2e run 43717963671 (main 209d2765): {@code PUT /compliance/purposes/{code}} bound its body
+ * Integrator finding on CI ui e2e run 43717963671 (main 209d2765): {@code PUT /compliance/purposes/by-code?code=} bound its body
  * to {@code PurposeDefinition}, whose {@code standardsAttested}, {@code version}, {@code active} and
  * {@code DataItem.sensitive} are primitives, so the server's JSON binding (Jackson 3 refuses a missing primitive)
  * answered 400 to every body without them, while the contract required only {@code basis}: the e2e seed and the

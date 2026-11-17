@@ -24,10 +24,10 @@ import java.util.Set;
  */
 public interface ComplianceApi {
 
-    /** GET /notices/{key}?version=&lang= (public) */
+    /** GET /notices/by-key?key=&version=&lang= (public) */
     ConsentNoticeService.RenderedNotice notice(String tenantId, String key, Integer version, String language);
 
-    /** POST /notices/{key}:publish {purposes} — ADMIN */
+    /** POST /notices/by-key/publish?key= {purposes} — ADMIN */
     ConsentNoticeService.PublishResult publishNotice(SecurityIdentity id, String key, Set<String> purposeCodes);
 
     /** GET /privacy-policy?lang= (public) */
@@ -45,7 +45,7 @@ public interface ComplianceApi {
     /** GET /consents (own) and POST /consents/search {subject} (owner decision 338); a read of another principal's consents writes PERSONAL_DATA_READ (decision 348) */
     List<ConsentService.Consent> consents(SecurityIdentity id, String principalRef);
 
-    /** POST /consent-managers/{cm}/artefacts — mTLS from the consent manager */
+    /** POST /consent-managers/by-cm/artefacts?cm= — mTLS from the consent manager */
     ConsentService.Consent ingestArtefact(String tenantId, org.sangam.compliance.consent.ConsentManagerPort.ConsentArtefact artefact);
 
     /** POST /rights-requests (public, authenticated by the published identifier) */
