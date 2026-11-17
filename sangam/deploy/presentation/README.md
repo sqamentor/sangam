@@ -148,4 +148,4 @@ in the bill is at the dealing hand DH-1 (69ccc49e).
   `DDO-1` (pack setting `scrutinySeat=DDO-1`), sanction by the role `HOO` (`ifms-gpf-authority.dmn` competentRole),
   i.e. `HOO-1`; a return goes to `DDO-1` (`ifms-gpf-return-target.dmn`).
 - Bill, PAO chain: `BD-1` distributes, `DH-1` checks, `AAO-1` checks, `PAO-1` passes, objects or returns, `SS-1`
-  second signature; payee confirmation at `PAO-1`; reply to an objection at the initiator seat.
+  second signature; payee confirmation at the dealing hand `DH-1` (69ccc49e); reply to an objection at the initiator seat.
