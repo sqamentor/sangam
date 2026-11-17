@@ -13,12 +13,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
+ * The nginx configurations of the UI build (docker/ui/default.conf.template, presentation/sangam-path.conf.template).
+ * <p>
  * Owner decisions 120, 121: the approved Noto TTFs are served by the UI image as font/ttf (e2e shell.e2e.ts "fonts").
  * The stock nginx mime.types has no ttf entry, so without an explicit map nginx answered application/octet-stream
  * (ui.yml run 44124788893). Both nginx configurations of the UI build must map ttf in their fonts location, the same
  * type the Vite dev server sends (scripts/deploy-fonts.mjs contentType), and must never fall back to index.html there.
+ * <p>
+ * The API proxy passes the browser's Host with its port ($http_host). With $host the port was dropped: the server saw
+ * http://127.0.0.1 while the UI's writes carried Origin http://127.0.0.1:8080, and with CORS origins configured
+ * (sangam.security.cors.allowed-origins) Spring refused the UI's own requests as cross-origin (403, ui.yml run
+ * 44135232064: every grievance, application, claim and completion from the browser).
  */
-class UiNginxFontTypesTest {
+class UiNginxConfTest {
 
     private static final Path DEPLOY = Path.of("..", "deploy");
 
@@ -68,5 +75,24 @@ class UiNginxFontTypesTest {
         Matcher m = Pattern.compile("name\\.endsWith\\('\\.ttf'\\) \\? '([^']+)'").matcher(script);
         assertTrue(m.find(), "deploy-fonts.mjs contentType");
         assertEquals("font/ttf", m.group(1));
+    }
+
+    /** The API location's {@code proxy_set_header Host} value. */
+    private static String proxiedHost(String conf) {
+        Matcher m = Pattern.compile("(?m)^\\s*proxy_set_header\\s+Host\\s+(\\S+);").matcher(conf);
+        assertTrue(m.find(), "the API proxy sets Host");
+        String host = m.group(1);
+        assertTrue(!m.find(), "one Host header only");
+        return host;
+    }
+
+    @Test
+    void theUiImagePassesTheHostWithItsPort() throws IOException {
+        assertEquals("$http_host", proxiedHost(read(DEPLOY.resolve("docker/ui/default.conf.template"))));
+    }
+
+    @Test
+    void thePresentationPathPassesTheHostWithItsPort() throws IOException {
+        assertEquals("$http_host", proxiedHost(read(DEPLOY.resolve("presentation/sangam-path.conf.template"))));
     }
 }

@@ -49,7 +49,11 @@ server {
         rewrite ^/sangam/(.*)$ /$1 break;
         proxy_pass              ${SANGAM_API_UPSTREAM};
         proxy_http_version      1.1;
-        proxy_set_header        Host              $host;
+        # $http_host, not $host: the browser's Host with its port. $host drops the port, so the server saw
+        # http://<host> (port 80) while a write from the UI carried Origin http://<host>:<port>; with CORS origins
+        # configured, Spring took the UI's own requests for cross-origin ones and refused them (403 "Invalid CORS
+        # request", ui.yml e2e run 44135232064). The UI and the API are one origin, so the server must see it.
+        proxy_set_header        Host              $http_host;
         proxy_set_header        X-Real-IP         $remote_addr;
         proxy_set_header        X-Forwarded-For   $proxy_add_x_forwarded_for;
         proxy_set_header        X-Forwarded-Proto $scheme;
