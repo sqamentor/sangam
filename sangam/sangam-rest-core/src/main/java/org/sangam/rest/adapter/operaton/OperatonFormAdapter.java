@@ -237,6 +237,20 @@ public final class OperatonFormAdapter implements FormPort {
     private Optional<FormVersion> load(Deployment d, String key) {
         return cache.computeIfAbsent(d.getId() + "|" + key, k -> OperatonSupport.call(() -> {
             List<String> names = repository.getDeploymentResourceNames(d.getId());
+            // UI-DEMO-1 / decision 400 (3): a pack form, sangam:<key> (TaskFormRequirements' rule), is a *.form.json
+            // resource of the deployment whose top-level key is <key>; it is served as its layout (the Sangam form
+            // document: fields, decision, title), so the start screen renders the form the model names.
+            String packKey = TaskFormRequirements.formKeyOf(key);
+            if (packKey != null) {
+                byte[] pack = packForm(d, names, packKey);
+                if (pack != null) {
+                    String lh = hash(pack);
+                    String versionHash = Hashes.hex(Hashes.sha256(NONE + "|" + lh + "|" + NONE));
+                    return Optional.of(new FormVersion(key, versionHash, NONE, lh, NONE, null,
+                            parse(pack, new TypeReference<Object>() {
+                            }, key), null, Map.of(), d.getId(), "ACTIVE"));
+                }
+            }
             byte[] layout = resource(d, names, key + ".form");
             byte[] schema = resource(d, names, key + ".schema.json");
             byte[] policy = resource(d, names, key + ".policy.json");
@@ -267,6 +281,27 @@ public final class OperatonFormAdapter implements FormPort {
                     }, key + ".policy.json"),
                     Map.copyOf(i18n), d.getId(), "ACTIVE"));
         }));
+    }
+
+    /** The *.form.json resource of {@code d} whose top-level {@code key} is {@code packKey}; two such fail closed. */
+    private byte[] packForm(Deployment d, List<String> names, String packKey) {
+        byte[] found = null;
+        for (String n : names) {
+            if (!n.endsWith(".form.json")) {
+                continue;
+            }
+            byte[] b = read(d, n);
+            JsonNode k = parse(b, new TypeReference<JsonNode>() {
+            }, n).get("key");
+            if (k != null && k.isTextual() && packKey.equals(k.asText())) {
+                if (found != null) {
+                    throw ApiProblem.unprocessable("FORM_AMBIGUOUS",
+                            "Deployment " + d.getId() + " holds more than one form with key " + packKey);
+                }
+                found = b;
+            }
+        }
+        return found;
     }
 
     private byte[] resource(Deployment d, List<String> names, String fileName) {

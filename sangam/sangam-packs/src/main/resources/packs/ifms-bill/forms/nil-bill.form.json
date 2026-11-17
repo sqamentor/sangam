@@ -1,6 +1,6 @@
 {
   "key": "ifms-bill/nil-bill",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.ifms.bill",
   "title": {
     "en": "Nil bill (adjustment)",

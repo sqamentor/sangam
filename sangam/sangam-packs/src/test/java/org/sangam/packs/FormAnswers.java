@@ -71,6 +71,7 @@ final class FormAnswers {
             case "boolean" -> true;
             case "date", "datetime" -> new Date(System.currentTimeMillis() + 86_400_000L);
             case "json" -> "[]";
+            case "duration" -> "P15D"; // decision 394: an ISO-8601 duration
             case "readonly", "hidden" -> null;
             default -> "X-" + fld.path("id").asText();
         };

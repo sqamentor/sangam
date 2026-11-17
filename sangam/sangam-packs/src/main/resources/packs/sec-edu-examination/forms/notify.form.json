@@ -1,6 +1,6 @@
 {
   "key": "sec-edu-examination/notify",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.edu.examination",
   "title": {
     "en": "Examination notification",
@@ -34,11 +34,11 @@
     },
     {
       "id": "registrationWindow",
-      "type": "string",
+      "type": "duration",
       "required": false,
       "label": {
-        "en": "Registration window",
-        "hi": "पंजीकरण अवधि"
+        "en": "Registration window (ISO-8601 duration from the cycle start, e.g. P15D)",
+        "hi": "पंजीकरण अवधि (चक्र के आरंभ से ISO-8601 अवधि, जैसे P15D)"
       }
     }
   ]
