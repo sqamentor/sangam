@@ -391,12 +391,26 @@ class EngineRestUiParityTest {
 
     @Test
     void p35ToP39FiltersCardVariablesAndGlobalRead() throws Exception {
-        start("p35");
+        // The "clerks" filter is shared: other tests (and other classes on the same engine) leave clerks tasks. A
+        // decoy instance without "amount" makes that explicit; the card variables are read from p35's own task only.
+        ok("POST", "/engine-rest/process-definition/" + definitionId + "/start", map("businessKey", "p35-decoy"));
+        String pi = start("p35");
         String fid = ok("POST", "/engine-rest/filter/create", map("resourceType", "Task", "name", "Clerks", "query", map("candidateGroup", "clerks"),
                 "properties", map("priority", 3, "refresh", true, "variables", new Object[] {map("name", "amount", "label", "Amount")}))).get("id").asText();
-        HttpResponse<String> hal = call("GET", "/engine-rest/filter/" + fid + "/list?maxResults=100", null, "application/hal+json");
+        HttpResponse<String> all = call("GET", "/engine-rest/filter/" + fid + "/list?maxResults=1000", null, "application/hal+json");
+        assertEquals(200, all.statusCode(), all.body());
+        boolean foreign = false;
+        for (JsonNode t : JSON.readTree(all.body()).get("_embedded").get("task")) {
+            foreign |= !pi.equals(t.get("processInstanceId").asText());
+        }
+        assertTrue(foreign, "the shared filter also lists tasks of other instances (why .get(0) of it was order-dependent)");
+        HttpResponse<String> hal = call("POST", "/engine-rest/filter/" + fid + "/list?maxResults=100", map("processInstanceId", pi),
+                "application/hal+json");
         assertEquals(200, hal.statusCode(), hal.body());
-        JsonNode task = JSON.readTree(hal.body()).get("_embedded").get("task").get(0);
+        JsonNode tasks = JSON.readTree(hal.body()).get("_embedded").get("task");
+        assertEquals(1, tasks.size(), hal.body());
+        JsonNode task = tasks.get(0);
+        assertEquals(pi, task.get("processInstanceId").asText());
         assertTrue(task.get("_embedded").get("variable").toString().contains("\"amount\""), task.toString());
         Map<String, Object> global = map("type", 0, "resourceType", 5, "resourceId", fid, "userId", "*", "permissions", new String[] {"READ"});
         String aid = ok("POST", "/engine-rest/authorization/create", global).get("id").asText();
