@@ -57,6 +57,8 @@ class PackVersionImmutabilityTest {
         if (engine != null) {
             engine.close();
         }
+        // R8-heap2: a test class stays loaded for the whole run; its statics must not keep a closed engine
+        engine = null;
     }
 
     /** Deployment times order versions; advance the engine clock so two deployments never share a millisecond. */
