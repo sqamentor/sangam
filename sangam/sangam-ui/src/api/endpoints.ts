@@ -157,7 +157,7 @@ export const api = {
      * `currency` (ISO 4217) keeps only tasks whose indexed amount is in that currency; the server requires it with
      * sortBy=amount (400 VALIDATION_FAILED otherwise), and the inbox only offers the amount sort once one is chosen.
      */
-    list: async (q: ListQuery & { section?: T.TaskSection; packKey?: string; slaState?: string; seatId?: string; variableNames?: string[]; currency?: string; filterId?: string }) => {
+    list: async (q: ListQuery & { section?: T.TaskSection; packKey?: string; slaState?: string; seatId?: string; variableNames?: string[]; currency?: string; filterId?: string; minPriority?: number; maxPriority?: number; overdue?: boolean; dueBefore?: string; dueAfter?: string }) => {
       const s = q.section;
       const mapped: Query = {
         page: q.page,
@@ -173,6 +173,12 @@ export const api = {
         variableNames: q.variableNames?.length ? q.variableNames : undefined, // P45 card variables
         currency: q.currency || undefined,
         filterId: q.filterId || undefined, // decision 404: a shared list of the organisation; the server only narrows
+        // R9-filters: priority and due date (ISO-8601 date-times); the server keeps the caller's tenant and visibility
+        minPriority: q.minPriority,
+        maxPriority: q.maxPriority,
+        overdue: q.overdue || undefined,
+        dueBefore: q.dueBefore || undefined,
+        dueAfter: q.dueAfter || undefined,
         ...sortParams(taskSort(q.sort)),
       };
       return A.mapPage(await http.page<Record<string, unknown>>('/tasks', mapped), A.normTask);

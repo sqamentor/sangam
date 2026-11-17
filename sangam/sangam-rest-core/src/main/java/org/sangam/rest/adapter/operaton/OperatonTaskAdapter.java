@@ -154,6 +154,27 @@ public class OperatonTaskAdapter implements TaskPort {
             } else if ("ACTIVE".equalsIgnoreCase(f.state())) {
                 q.active();
             }
+            if (f.priority() != null) {
+                q.taskPriority(f.priority());
+            }
+            if (f.minPriority() != null) {
+                q.taskMinPriority(f.minPriority());
+            }
+            if (f.maxPriority() != null) {
+                q.taskMaxPriority(f.maxPriority());
+            }
+            // One upper bound: the earlier of dueBefore and (overdue) the engine's now; the engine keeps one dueBefore.
+            java.time.Instant before = f.dueBefore();
+            if (Boolean.TRUE.equals(f.overdue())) {
+                java.time.Instant now = org.operaton.bpm.engine.impl.util.ClockUtil.getCurrentTime().toInstant();
+                before = before == null || now.isBefore(before) ? now : before;
+            }
+            if (before != null) {
+                q.dueBefore(java.util.Date.from(before));
+            }
+            if (f.dueAfter() != null) {
+                q.dueAfter(java.util.Date.from(f.dueAfter()));
+            }
             sort(TaskIndex.filter(q, f), f.sortBy(), f.sortOrder());
         } else {
             q.orderByTaskCreateTime().desc();

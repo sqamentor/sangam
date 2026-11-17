@@ -53,11 +53,15 @@ public class TaskController {
             @RequestParam(required = false) String sortBy, @RequestParam(required = false) String sortOrder,
             @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
             @RequestParam(required = false) List<String> variableNames,
-            @RequestParam(required = false) String currency, @RequestParam(required = false) String filterId) {
+            @RequestParam(required = false) String currency, @RequestParam(required = false) String filterId,
+            @RequestParam(required = false) Integer priority, @RequestParam(required = false) Integer minPriority,
+            @RequestParam(required = false) Integer maxPriority, @RequestParam(required = false) String dueBefore,
+            @RequestParam(required = false) String dueAfter, @RequestParam(required = false) Boolean overdue) {
         permissions.require(ctx, Permissions.TASK_READ);
         var filter = new TaskPort.TaskFilter(assignee, mine, unassigned, candidateGroup, seatId, processInstanceId,
                 caseInstanceId, businessKey, processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder,
-                variableNames, currency);
+                variableNames, currency, priority, minPriority, maxPriority, instant("dueBefore", dueBefore),
+                instant("dueAfter", dueAfter), overdue);
         if (filterId != null) {
             // Owner decision 406: a saved list of the caller's tenant adds its criteria; tenant and visibility of the
             // task list below still apply, so a list only narrows what the caller sees.
@@ -68,6 +72,19 @@ public class TaskController {
             filter = SavedTaskQuery.combine(saved.query(), filter);
         }
         return Lists.ok(tasks.list(ctx, filter, Lists.page(page, size)));
+    }
+
+    /** An ISO-8601 date-time with offset (e.g. 2026-11-17T10:00:00Z); 400 VALIDATION_FAILED otherwise. */
+    static java.time.Instant instant(String name, String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return java.time.OffsetDateTime.parse(value.trim()).toInstant();
+        } catch (java.time.format.DateTimeParseException e) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED",
+                    name + " must be an ISO-8601 date-time with offset, such as 2026-11-17T10:00:00Z");
+        }
     }
 
     @GetMapping("/{id}")

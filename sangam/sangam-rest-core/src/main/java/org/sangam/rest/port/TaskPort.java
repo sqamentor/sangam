@@ -19,13 +19,35 @@ public interface TaskPort {
      *                      already; at most {@link #MAX_CARD_VARIABLES} names
      * @param currency      M-042: only tasks whose indexed amount is in this ISO 4217 currency; required with
      *                      {@code sortBy=amount} (amounts in different currencies do not compare)
+     * @param priority      only tasks of exactly this priority
+     * @param minPriority   only tasks of at least this priority
+     * @param maxPriority   only tasks of at most this priority
+     * @param dueBefore     only tasks due strictly before this instant (tasks without a due date never match)
+     * @param dueAfter      only tasks due strictly after this instant (tasks without a due date never match)
+     * @param overdue       true: only tasks due strictly before the engine's current time; false or null: no condition
      */
     record TaskFilter(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId,
                       String processInstanceId, String caseInstanceId, String businessKey, String processDefinitionKey,
                       String taskDefinitionKey, String state, String sortBy, String sortOrder,
-                      List<String> variableNames, String currency) {
+                      List<String> variableNames, String currency, Integer priority, Integer minPriority,
+                      Integer maxPriority, Instant dueBefore, Instant dueAfter, Boolean overdue) {
+
+        public TaskFilter(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId,
+                          String processInstanceId, String caseInstanceId, String businessKey,
+                          String processDefinitionKey, String taskDefinitionKey, String state, String sortBy,
+                          String sortOrder, List<String> variableNames, String currency) {
+            this(assignee, mine, unassigned, candidateGroup, seatId, processInstanceId, caseInstanceId, businessKey,
+                    processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder, variableNames, currency, null,
+                    null, null, null, null, null);
+        }
 
         public TaskFilter {
+            if (minPriority != null && maxPriority != null && minPriority > maxPriority) {
+                throw ApiProblem.badRequest("VALIDATION_FAILED", "minPriority must not be greater than maxPriority");
+            }
+            if (dueAfter != null && dueBefore != null && !dueAfter.isBefore(dueBefore)) {
+                throw ApiProblem.badRequest("VALIDATION_FAILED", "dueAfter must be before dueBefore");
+            }
             variableNames = variableNames == null ? List.of() : variableNames.stream()
                     .flatMap(n -> java.util.Arrays.stream(n.split(","))).map(String::trim).filter(n -> !n.isEmpty())
                     .distinct().toList();

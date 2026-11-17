@@ -659,6 +659,42 @@ paths:
           request''s, and the caller''s tenant and task visibility still apply, so a list only narrows what the caller sees. 404 NOT_FOUND for
           a list that is not the caller''s tenant''s, 403 TENANT_REQUIRED without a tenant, 422 TASK_FILTER_CONFLICT when a request criterion
           differs from the list''s (sortBy, sortOrder and variableNames are taken from the request, variable names merged)'
+      - name: priority
+        in: query
+        schema:
+          type: integer
+          format: int32
+        description: Only tasks of exactly this priority
+      - name: minPriority
+        in: query
+        schema:
+          type: integer
+          format: int32
+        description: Only tasks of at least this priority; 400 VALIDATION_FAILED when greater than maxPriority
+      - name: maxPriority
+        in: query
+        schema:
+          type: integer
+          format: int32
+        description: Only tasks of at most this priority
+      - name: dueBefore
+        in: query
+        schema:
+          type: string
+          format: date-time
+        description: Only tasks due strictly before this ISO-8601 date-time with offset (tasks without a due date never match); 400 VALIDATION_FAILED
+          when malformed or not after dueAfter
+      - name: dueAfter
+        in: query
+        schema:
+          type: string
+          format: date-time
+        description: Only tasks due strictly after this ISO-8601 date-time with offset (tasks without a due date never match)
+      - name: overdue
+        in: query
+        schema:
+          type: boolean
+        description: 'true: only tasks due before the server''s current time (combined with dueBefore, the earlier bound applies); false: no condition'
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/size'
       x-sangam-permission: task.read
@@ -60652,8 +60688,9 @@ components:
           additionalProperties: true
           description: 'JSON object, at most 16384 characters as JSON. Owner decision 406: only the criteria of GET /tasks by the same names:
             assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy,
-            sortOrder, currency (ISO 4217) and variableNames (list of 1 to 20 names); strings 1 to 255 characters, mine and unassigned booleans.
-            Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID'
+            sortOrder, currency (ISO 4217), variableNames (list of 1 to 20 names), priority, minPriority and maxPriority (whole numbers, minPriority
+            not above maxPriority), dueBefore and dueAfter (ISO-8601 date-times with offset, dueAfter before dueBefore) and overdue; strings 1
+            to 255 characters, mine, unassigned and overdue booleans. Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID'
         properties:
           type: object
           additionalProperties: true

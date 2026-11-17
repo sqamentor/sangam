@@ -81,7 +81,7 @@ class SavedTaskListRunH2Test {
 
     private static List<String> run(RequestContext ctx, String filterId, String candidateGroup) {
         return controller.list(ctx, null, null, null, candidateGroup, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, filterId).getBody().stream().map(TaskPort.Task::id).sorted()
+                null, null, null, null, null, null, filterId, null, null, null, null, null, null).getBody().stream().map(TaskPort.Task::id).sorted()
                 .toList();
     }
 

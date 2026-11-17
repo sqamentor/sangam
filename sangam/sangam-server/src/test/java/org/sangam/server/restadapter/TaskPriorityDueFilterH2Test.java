@@ -2,6 +2,7 @@
 package org.sangam.server.restadapter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -19,6 +20,7 @@ import org.sangam.rest.adapter.jdbc.JdbcAuditAdapter;
 import org.sangam.rest.adapter.jdbc.JdbcTaskFilterAdapter;
 import org.sangam.rest.adapter.memory.GroupPermissionAdapter;
 import org.sangam.rest.adapter.operaton.OperatonTaskAdapter;
+import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.port.TaskFilterPort;
 import org.sangam.rest.port.TaskPort;
@@ -83,7 +85,7 @@ class TaskPriorityDueFilterH2Test {
 
     private static List<String> run(String filterId) {
         return controller.list(ANIL, null, null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, filterId).getBody().stream().map(TaskPort.Task::id).sorted()
+                null, null, null, null, null, null, filterId, null, null, null, null, null, null).getBody().stream().map(TaskPort.Task::id).sorted()
                 .toList();
     }
 
@@ -97,6 +99,45 @@ class TaskPriorityDueFilterH2Test {
         assertEquals(List.of("a-p50-future", "a-p90-nodue"), saved(Map.of("minPriority", 50)));
         assertEquals(List.of("a-p10-past", "a-p50-future"), saved(Map.of("maxPriority", 50)));
         assertEquals(List.of("a-p50-future"), saved(Map.of("minPriority", 20, "maxPriority", 60)));
+    }
+
+    private static List<String> direct(Integer priority, Integer min, Integer max, String before, String after,
+                                       Boolean overdue) {
+        return controller.list(ANIL, null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, priority, min, max, before, after, overdue).getBody()
+                .stream().map(TaskPort.Task::id).sorted().toList();
+    }
+
+    @Test
+    void getTasksFiltersByPriorityAndDueDateInsideTheCallersVisibility() {
+        assertEquals(List.of("a-p90-nodue"), direct(90, null, null, null, null, null),
+                "priority 90: never the desk, tenant B or tenant-less p90 tasks");
+        assertEquals(List.of("a-p50-future", "a-p90-nodue"), direct(null, 50, null, null, null, null));
+        assertEquals(List.of("a-p10-past"), direct(null, null, 49, null, null, null));
+        assertEquals(List.of("a-p10-past"), direct(null, null, null, null, null, true));
+        assertEquals(List.of("a-p10-past"), direct(null, null, null, FUTURE.toString(), null, true),
+                "overdue with a later dueBefore: the earlier bound (now) applies");
+        assertEquals(List.of("a-p10-past", "a-p50-future"), direct(null, null, null, null,
+                PAST.minus(Duration.ofDays(1)).toString(), null));
+        assertEquals(List.of("a-p10-past", "a-p50-future", "a-p90-nodue"), direct(null, null, null, null, null,
+                false), "overdue=false is no condition");
+        ApiProblem bad = assertThrows(ApiProblem.class, () -> direct(null, null, null, "2026-11-17", null, null));
+        assertEquals(400, bad.status());
+        assertEquals(400, assertThrows(ApiProblem.class, () -> direct(null, 9, 1, null, null, null)).status());
+        assertEquals(400, assertThrows(ApiProblem.class,
+                () -> direct(null, null, null, PAST.toString(), FUTURE.toString(), null)).status());
+    }
+
+    @Test
+    void aRequestCriterionThatDiffersFromTheListIsAConflict() {
+        String id = lists.create("tenant-a", "sup", "list", null, Map.of("minPriority", 50), null).id();
+        ApiProblem p = assertThrows(ApiProblem.class, () -> controller.list(ANIL, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null, null, id, null, 60, null, null, null,
+                null));
+        assertEquals("TASK_FILTER_CONFLICT", p.code());
+        assertEquals(List.of("a-p90-nodue"), controller.list(ANIL, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, id, 90, 50, null, null, null, null).getBody()
+                .stream().map(TaskPort.Task::id).toList(), "the list's minPriority and the request's priority");
     }
 
     @Test

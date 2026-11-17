@@ -29,7 +29,11 @@ final class SavedTaskQuery {
 
     static final Set<String> STRING_KEYS = Set.of("assignee", "candidateGroup", "processDefinitionKey",
             "taskDefinitionKey", "businessKey", "state", "sortBy", "sortOrder", "currency");
-    static final Set<String> BOOLEAN_KEYS = Set.of("mine", "unassigned");
+    static final Set<String> BOOLEAN_KEYS = Set.of("mine", "unassigned", "overdue");
+    /** Lane R9-filters: whole numbers (JSON integers in the int range). */
+    static final Set<String> INT_KEYS = Set.of("priority", "minPriority", "maxPriority");
+    /** Lane R9-filters: ISO-8601 date-times with offset, as GET /tasks takes them. */
+    static final Set<String> DATE_KEYS = Set.of("dueBefore", "dueAfter");
     static final String VARIABLE_NAMES = "variableNames";
     static final Set<String> KEYS;
     private static final int MAX_VALUE = 255;
@@ -38,6 +42,8 @@ final class SavedTaskQuery {
     static {
         Set<String> all = new java.util.TreeSet<>(STRING_KEYS);
         all.addAll(BOOLEAN_KEYS);
+        all.addAll(INT_KEYS);
+        all.addAll(DATE_KEYS);
         all.add(VARIABLE_NAMES);
         KEYS = java.util.Collections.unmodifiableSet(all);
     }
@@ -62,6 +68,15 @@ final class SavedTaskQuery {
                 if (!(v instanceof Boolean)) {
                     throw invalid("query criterion '" + key + "' must be true or false");
                 }
+            } else if (INT_KEYS.contains(key)) {
+                if (integer(v) == null) {
+                    throw invalid("query criterion '" + key + "' must be a whole number");
+                }
+            } else if (DATE_KEYS.contains(key)) {
+                if (!(v instanceof String s) || date(s) == null) {
+                    throw invalid("query criterion '" + key
+                            + "' must be an ISO-8601 date-time with offset, such as 2026-11-17T10:00:00Z");
+                }
             } else if (VARIABLE_NAMES.equals(key)) {
                 if (!(v instanceof List<?> l) || l.isEmpty() || l.size() > TaskPort.MAX_CARD_VARIABLES
                         || l.stream().anyMatch(x -> !(x instanceof String s) || s.isBlank() || s.length() > MAX_VALUE)) {
@@ -80,6 +95,35 @@ final class SavedTaskQuery {
                     throw invalid("query criterion 'currency' must be an ISO 4217 code (three capital letters)");
                 }
             }
+        }
+        Integer min = integer(query.get("minPriority"));
+        Integer max = integer(query.get("maxPriority"));
+        if (min != null && max != null && min > max) {
+            throw invalid("query criterion 'minPriority' must not be greater than 'maxPriority'");
+        }
+        java.time.Instant after = query.get("dueAfter") instanceof String s ? date(s) : null;
+        java.time.Instant before = query.get("dueBefore") instanceof String s ? date(s) : null;
+        if (after != null && before != null && !after.isBefore(before)) {
+            throw invalid("query criterion 'dueAfter' must be before 'dueBefore'");
+        }
+    }
+
+    /** The int value of a JSON whole number (Integer, Long or Short in the int range), else null. */
+    private static Integer integer(Object v) {
+        if (v instanceof Integer i) {
+            return i;
+        }
+        if ((v instanceof Long || v instanceof Short) && ((Number) v).longValue() == ((Number) v).intValue()) {
+            return ((Number) v).intValue();
+        }
+        return null;
+    }
+
+    private static java.time.Instant date(String s) {
+        try {
+            return java.time.OffsetDateTime.parse(s).toInstant();
+        } catch (java.time.format.DateTimeParseException e) {
+            return null;
         }
     }
 
@@ -106,9 +150,34 @@ final class SavedTaskQuery {
             l.forEach(x -> names.add((String) x));
         }
         names.addAll(req.variableNames());
+        Boolean overdue = bool(q, "overdue", req.overdue());
         return new TaskPort.TaskFilter(assignee, mine, unassigned, candidateGroup, req.seatId(),
                 req.processInstanceId(), req.caseInstanceId(), businessKey, processDefinitionKey, taskDefinitionKey,
-                state, sortBy, sortOrder, new ArrayList<>(names), currency);
+                state, sortBy, sortOrder, new ArrayList<>(names), currency, num(q, "priority", req.priority()),
+                num(q, "minPriority", req.minPriority()), num(q, "maxPriority", req.maxPriority()),
+                when(q, "dueBefore", req.dueBefore()), when(q, "dueAfter", req.dueAfter()), overdue);
+    }
+
+    private static Integer num(Map<String, Object> saved, String key, Integer requested) {
+        Integer s = integer(saved.get(key));
+        if (s == null) {
+            return requested;
+        }
+        if (requested != null && !requested.equals(s)) {
+            throw conflict(key);
+        }
+        return s;
+    }
+
+    private static java.time.Instant when(Map<String, Object> saved, String key, java.time.Instant requested) {
+        java.time.Instant s = saved.get(key) instanceof String v ? date(v) : null;
+        if (s == null) {
+            return requested;
+        }
+        if (requested != null && !requested.equals(s)) {
+            throw conflict(key);
+        }
+        return s;
     }
 
     private static String str(Map<String, Object> saved, String key, String requested) {

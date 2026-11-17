@@ -34,6 +34,18 @@ export const isAmountSort = (key: string) => key.replace(/^-/, '') === 'amount';
  * different currencies are never compared). Without a valid currency an amount key falls back: the primary sort to
  * the SLA due date, the secondary to none.
  */
+/** R9-filters: a whole number typed in a priority field, or undefined (empty or not a whole number). */
+export function wholeNumber(v: string): number | undefined {
+  return /^-?\d{1,9}$/.test(v) ? Number(v) : undefined;
+}
+
+/** R9-filters: the start of a calendar day (uuuu-MM-dd, the browser's zone) as an ISO-8601 instant, or undefined. */
+export function dayStart(d: string): string | undefined {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return undefined;
+  const at = new Date(`${d}T00:00`);
+  return Number.isNaN(at.getTime()) ? undefined : at.toISOString();
+}
+
 export function inboxSorts(sort: string, sort2: string, currency?: string): { sort: string; sort2: string } {
   if (isCurrencyCode(currency)) return { sort, sort2 };
   return { sort: isAmountSort(sort) ? 'slaDue' : sort, sort2: isAmountSort(sort2) ? '' : sort2 };
@@ -63,6 +75,16 @@ export function TaskInbox() {
   const [sla, setSla] = useState('');
   const [packKey, setPackKey] = useState('');
   const [currency, setCurrency] = useState('');
+  // R9-filters: priority and due date, applied by GET /tasks inside the caller's tenant and visibility.
+  const [minPriority, setMinPriority] = useState('');
+  const [maxPriority, setMaxPriority] = useState('');
+  const [overdue, setOverdue] = useState('');
+  const [dueAfter, setDueAfter] = useState('');
+  const [dueBefore, setDueBefore] = useState('');
+  const minP = wholeNumber(minPriority);
+  const maxP = wholeNumber(maxPriority);
+  const dueAfterAt = dayStart(dueAfter);
+  const dueBeforeAt = dayStart(dueBefore);
   // Decision 404: a shared task list of the organisation, run by the server (GET /tasks?filterId=). Choosing one needs
   // team.read; the server keeps the caller's tenant and visibility, so a list only narrows what this person may see.
   const [teamListId, setTeamListId] = useState('');
@@ -107,8 +129,8 @@ export function TaskInbox() {
   const variableNames = cardVars.map((v) => v.name);
   const counts = useAsync(() => api.tasks.counts(), [seat?.seatId]);
   const list = usePaged(
-    (p) => api.tasks.list({ ...p, section, q, slaState: sla || undefined, packKey: packKey || undefined, currency: cur, filterId: teamListId || undefined, variableNames, sort: sort2 ? `${sort},${sort2}` : sort }),
-    [section, q, sla, packKey, cur, teamListId, sort, sort2, seat?.seatId, variableNames.join(',')],
+    (p) => api.tasks.list({ ...p, section, q, slaState: sla || undefined, packKey: packKey || undefined, currency: cur, filterId: teamListId || undefined, minPriority: minP, maxPriority: maxP, overdue: overdue === 'true' || undefined, dueAfter: dueAfterAt, dueBefore: dueBeforeAt, variableNames, sort: sort2 ? `${sort},${sort2}` : sort }),
+    [section, q, sla, packKey, cur, teamListId, minP, maxP, overdue, dueAfterAt, dueBeforeAt, sort, sort2, seat?.seatId, variableNames.join(',')],
   );
   // Leaving the currency drops an amount sort for good, so it does not come back silently with the next currency.
   useEffect(() => {
@@ -319,6 +341,31 @@ export function TaskInbox() {
             maxLength={3}
             autoComplete="off"
           />
+          <TextField
+            label={t('task.minPriority')}
+            error={minPriority && minP === undefined ? t('task.priorityInvalid') : undefined}
+            value={minPriority}
+            onChange={(v) => setMinPriority(v.trim())}
+            inputMode="numeric"
+            autoComplete="off"
+          />
+          <TextField
+            label={t('task.maxPriority')}
+            error={maxPriority && maxP === undefined ? t('task.priorityInvalid') : undefined}
+            value={maxPriority}
+            onChange={(v) => setMaxPriority(v.trim())}
+            inputMode="numeric"
+            autoComplete="off"
+          />
+          <SelectField
+            label={t('task.overdueOnly')}
+            value={overdue}
+            onChange={setOverdue}
+            placeholder={t('common.no')}
+            options={[{ value: 'true', label: t('common.yes') }]}
+          />
+          <TextField label={t('task.dueAfter')} type="date" value={dueAfter} onChange={setDueAfter} />
+          <TextField label={t('task.dueBefore')} type="date" value={dueBefore} onChange={setDueBefore} />
         </div>
         <SelectField
           label={t('task.thenSortBy')}

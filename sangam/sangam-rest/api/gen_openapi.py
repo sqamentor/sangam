@@ -219,7 +219,7 @@ schema("TeamTaskFilterCreateRequest", "Owner decisions 404 and 406: a new shared
        required=("name", "query"),
        descs={"name": "1 to 255 characters after trimming", "owner": "Optional, at most 255 characters",
               "query": "JSON object, at most 16384 characters as JSON. Owner decision 406: only the criteria of GET /tasks "
-                       "by the same names: assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy, sortOrder, currency (ISO 4217) and variableNames (list of 1 to 20 names); strings 1 to 255 characters, mine and unassigned "
+                       "by the same names: assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy, sortOrder, currency (ISO 4217), variableNames (list of 1 to 20 names), priority, minPriority and maxPriority (whole numbers, minPriority not above maxPriority), dueBefore and dueAfter (ISO-8601 date-times with offset, dueAfter before dueBefore) and overdue; strings 1 to 255 characters, mine, unassigned and overdue "
                        "booleans. Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID",
               "properties": "Optional JSON object, at most 16384 characters as JSON"})
 schema("Me", "The authenticated caller: identity, tenant, personas (roles), seats held, current seat context and permissions (K1, S02).",
@@ -942,7 +942,13 @@ op("get", "/tasks", "listTasks", "Tasks", "List tasks",
            q("taskDefinitionKey"), q("state"), q("sortBy", desc="created, due, priority, name, amount or reference (M-042 task index); a comma-separated list sorts by several keys. amount sorts within the currency filter and needs currency (400 VALIDATION_FAILED otherwise), so only tasks with an amount in that currency are listed; reference sorts by the indexed reference, tasks without one placed by the database's NULL ordering"),
            dict(q("currency", desc="M-042: only tasks whose indexed amount is in this ISO 4217 currency; required when sortBy contains amount"), schema={"type": "string", "pattern": "^[A-Z]{3}$"}), q("sortOrder", desc="asc or desc per key, comma-separated"),
              q("variableNames", "list:s", "P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at most 20 names, repeated or comma-separated"),
-           q("filterId", desc="Owner decision 406: runs a saved task list of the caller's tenant (GET /team/task-filters): its criteria are added to this request's, and the caller's tenant and task visibility still apply, so a list only narrows what the caller sees. 404 NOT_FOUND for a list that is not the caller's tenant's, 403 TENANT_REQUIRED without a tenant, 422 TASK_FILTER_CONFLICT when a request criterion differs from the list's (sortBy, sortOrder and variableNames are taken from the request, variable names merged)")])
+           q("filterId", desc="Owner decision 406: runs a saved task list of the caller's tenant (GET /team/task-filters): its criteria are added to this request's, and the caller's tenant and task visibility still apply, so a list only narrows what the caller sees. 404 NOT_FOUND for a list that is not the caller's tenant's, 403 TENANT_REQUIRED without a tenant, 422 TASK_FILTER_CONFLICT when a request criterion differs from the list's (sortBy, sortOrder and variableNames are taken from the request, variable names merged)"),
+           q("priority", "int", "Only tasks of exactly this priority"),
+           q("minPriority", "int", "Only tasks of at least this priority; 400 VALIDATION_FAILED when greater than maxPriority"),
+           q("maxPriority", "int", "Only tasks of at most this priority"),
+           q("dueBefore", "dt", "Only tasks due strictly before this ISO-8601 date-time with offset (tasks without a due date never match); 400 VALIDATION_FAILED when malformed or not after dueAfter"),
+           q("dueAfter", "dt", "Only tasks due strictly after this ISO-8601 date-time with offset (tasks without a due date never match)"),
+           q("overdue", "bool", "true: only tasks due before the server's current time (combined with dueBefore, the earlier bound applies); false: no condition")])
 op("get", "/tasks/{id}", "getTask", "Tasks", "Get a task", "Task with variables (field masks applied, K11), the material payload hash and case version (VI.4 rule 5).",
    ["VI.4", "R47"], params=[ID], resp=(200, "TaskDetail"), perm="task.read", errors=GET_E)
 op("get", "/tasks/{id}/variables", "getTaskVariables", "Tasks", "Task variables", "Variables visible on the task (K11).", ["VI.4"],
