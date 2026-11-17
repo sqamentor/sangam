@@ -630,3 +630,7 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - Decision 392, the full decision 393 change and decision 402(2) (plain-Java host and four-eyes port) are listed in the release notes as known limitations and land in 0.1.1. Work on them continues.
   - The other limitations named in IFMS-FIT-AUDIT.md are also listed in the release notes.
   - Release path: merge the PNP and UX branches and test them; code SL-180; full verify; IfmsPacksIT on Oracle and SQL Server; refresh the IFMS guide and post the contract-change list; owner-signed push; SANGAM-GREEN-SHA.
+
+- **406 (owner chat 2026-11-17, supersedes 405)**: The owner answered the release-scope question with "I need release with all today any how any way at any cost". So 0.1.0 includes decision 392, the full decision 393 change and decision 402(2); none is deferred to 0.1.1.
+  - Maximum parallel lanes are put on them.
+  - The owner's 98% confidence floor (decision 403) and the shared heavy-lock rules still apply. A piece that cannot reach 98% is reported to the owner, not shipped.
