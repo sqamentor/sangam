@@ -1,6 +1,6 @@
 {
   "key": "leave/joining",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.leave",
   "title": {
     "en": "Submit joining report",

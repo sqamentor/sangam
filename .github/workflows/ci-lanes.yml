@@ -76,6 +76,15 @@ jobs:
           java-version: "25.0.1"
           cache: maven
           cache-dependency-path: sangam/**/pom.xml
+      - name: Fetch the Maven distribution (retries on rate limits)
+        # Parallel lane runs hit HTTP 429 from Maven Central on the wrapper download (run 44021442186), which
+        # failed the build before compiling anything. Fetch it once with back-off before the real build.
+        run: |
+          for i in 1 2 3 4 5 6; do
+            if bash ./mvnw -B -ntp -v >/dev/null 2>/tmp/mvnw-fetch.err; then echo "maven ready (attempt $i)"; exit 0; fi
+            tail -3 /tmp/mvnw-fetch.err; s=$(( i * 20 )); echo "maven fetch failed, retry in ${s}s"; sleep $s
+          done
+          echo "maven distribution could not be fetched after 6 attempts"; exit 1
       - name: Maven verify (unit tests on H2)
         env:
           IN_MODULES: ${{ inputs.modules }}
@@ -86,6 +95,7 @@ jobs:
           set -euo pipefail
           mapfile -t args < <(python3 -I tools/ci/ci_plan.py --modules "$IN_MODULES" --dbs "$IN_DBS" \
             --chunks "$IN_CHUNKS" --ui "$IN_UI" --file ../ci-lane.json --print-build-args)
+          [ "${#args[@]}" -gt 0 ] || { echo "ci_plan refused the selection (see its message above); nothing built"; exit 2; }
           echo "mvnw ${args[*]}"
           bash ./mvnw $MAVEN_ARGS "${args[@]}"
       - name: Reports
@@ -133,6 +143,15 @@ jobs:
           java-version: "25.0.1"
           cache: maven
           cache-dependency-path: sangam/**/pom.xml
+      - name: Fetch the Maven distribution (retries on rate limits)
+        # Parallel lane runs hit HTTP 429 from Maven Central on the wrapper download (run 44021442186), which
+        # failed the build before compiling anything. Fetch it once with back-off before the real build.
+        run: |
+          for i in 1 2 3 4 5 6; do
+            if bash ./mvnw -B -ntp -v >/dev/null 2>/tmp/mvnw-fetch.err; then echo "maven ready (attempt $i)"; exit 0; fi
+            tail -3 /tmp/mvnw-fetch.err; s=$(( i * 20 )); echo "maven fetch failed, retry in ${s}s"; sleep $s
+          done
+          echo "maven distribution could not be fetched after 6 attempts"; exit 1
       - name: Free disk space for large DB images
         if: matrix.db == 'oracle' || matrix.db == 'sqlserver' || matrix.db == 'sqlserver2025'
         run: |
@@ -156,6 +175,7 @@ jobs:
           set -euo pipefail
           mapfile -t args < <(python3 -I tools/ci/ci_plan.py --modules "$IN_MODULES" --dbs "$IN_DBS" \
             --chunks "$IN_CHUNKS" --ui "$IN_UI" --file ../ci-lane.json --db "${{ matrix.db }}" --print-it-args)
+          [ "${#args[@]}" -gt 0 ] || { echo "ci_plan refused the selection (see its message above); nothing built"; exit 2; }
           echo "mvnw ${args[*]}"
           bash ./mvnw $MAVEN_ARGS "${args[@]}"
       - name: Reports
