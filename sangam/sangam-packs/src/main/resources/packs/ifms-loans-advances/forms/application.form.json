@@ -1,6 +1,6 @@
 {
   "key": "ifms-loans-advances/application",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "pack": "gov.ifms.loans-advances",
   "title": {
     "en": "Advance application",
