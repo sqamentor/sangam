@@ -123,12 +123,14 @@ final class ResourcesBookingsApi
      *
      * ResourcesController.bookingByRef (sangam-rest).
      *
-     * GET /resources/bookings/by-ref/{bookingRef} (operationId resourcesResourcesBookingByRef); permission resources.read.
+     * GET /resources/bookings/by-ref/by-booking-ref (operationId resourcesResourcesBookingByRef); permission resources.read.
+     * @param string $bookingRef query bookingRef
      * @return array<string, mixed>
      */
     public function resourcesResourcesBookingByRef(string $bookingRef, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/resources/bookings/by-ref/' . HttpTransport::seg((string) $bookingRef));
+        $req = ApiRequest::get('/resources/bookings/by-ref/by-booking-ref');
+        $req->query('bookingRef', $bookingRef);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 

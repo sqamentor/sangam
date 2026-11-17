@@ -77,12 +77,14 @@ final class ResourcesItemsApi
      *
      * ResourcesController.resource (sangam-rest).
      *
-     * GET /resources/items/{resourceId} (operationId resourcesResourcesResource); permission resources.read.
+     * GET /resources/items/by-resource-id (operationId resourcesResourcesResource); permission resources.read.
+     * @param string $resourceId query resourceId
      * @return array<string, mixed>
      */
     public function resourcesResourcesResource(string $resourceId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/resources/items/' . HttpTransport::seg((string) $resourceId));
+        $req = ApiRequest::get('/resources/items/by-resource-id');
+        $req->query('resourceId', $resourceId);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -91,14 +93,16 @@ final class ResourcesItemsApi
      *
      * ResourcesController.updateResource (sangam-rest).
      *
-     * PATCH /resources/items/{resourceId} (operationId resourcesResourcesUpdateResource); permission resources.admin; result stored atomically with the state change.
+     * PATCH /resources/items/by-resource-id (operationId resourcesResourcesUpdateResource); permission resources.admin; result stored atomically with the state change.
      * @param Model\ResourcePatch|array $body request body
+     * @param string $resourceId query resourceId
      * @param int $version query version
      * @return array<string, mixed>
      */
-    public function resourcesResourcesUpdateResource(string $resourceId, Model\ResourcePatch|array $body, int $version, ?RequestOptions $options = null): array
+    public function resourcesResourcesUpdateResource(Model\ResourcePatch|array $body, string $resourceId, int $version, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::patch('/resources/items/' . HttpTransport::seg((string) $resourceId));
+        $req = ApiRequest::patch('/resources/items/by-resource-id');
+        $req->query('resourceId', $resourceId);
         $req->query('version', $version);
         if ($body !== null) {
             $req->body($body);
@@ -111,13 +115,15 @@ final class ResourcesItemsApi
      *
      * ResourcesController.setStatus (sangam-rest).
      *
-     * POST /resources/items/{resourceId}/status (operationId resourcesResourcesSetStatus); permission resources.admin; result stored atomically with the state change.
+     * POST /resources/items/by-resource-id/status (operationId resourcesResourcesSetStatus); permission resources.admin; result stored atomically with the state change.
      * @param Model\ResourcesStatusRequest|array $body request body
+     * @param string $resourceId query resourceId
      * @return array<string, mixed>
      */
-    public function resourcesResourcesSetStatus(string $resourceId, Model\ResourcesStatusRequest|array $body, ?RequestOptions $options = null): array
+    public function resourcesResourcesSetStatus(Model\ResourcesStatusRequest|array $body, string $resourceId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/resources/items/' . HttpTransport::seg((string) $resourceId) . '/status');
+        $req = ApiRequest::post('/resources/items/by-resource-id/status');
+        $req->query('resourceId', $resourceId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -129,13 +135,15 @@ final class ResourcesItemsApi
      *
      * ResourcesController.move (sangam-rest).
      *
-     * POST /resources/items/{resourceId}/move (operationId resourcesResourcesMove); permission resources.admin; result stored atomically with the state change.
+     * POST /resources/items/by-resource-id/move (operationId resourcesResourcesMove); permission resources.admin; result stored atomically with the state change.
      * @param Model\ResourcesMoveRequest|array $body request body
+     * @param string $resourceId query resourceId
      * @return array<string, mixed>
      */
-    public function resourcesResourcesMove(string $resourceId, Model\ResourcesMoveRequest|array $body, ?RequestOptions $options = null): array
+    public function resourcesResourcesMove(Model\ResourcesMoveRequest|array $body, string $resourceId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/resources/items/' . HttpTransport::seg((string) $resourceId) . '/move');
+        $req = ApiRequest::post('/resources/items/by-resource-id/move');
+        $req->query('resourceId', $resourceId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -147,12 +155,14 @@ final class ResourcesItemsApi
      *
      * ResourcesController.children (sangam-rest).
      *
-     * GET /resources/items/{resourceId}/children (operationId resourcesResourcesChildren); permission resources.read.
+     * GET /resources/items/by-resource-id/children (operationId resourcesResourcesChildren); permission resources.read.
+     * @param string $resourceId query resourceId
      * @return list<array<string, mixed>>
      */
     public function resourcesResourcesChildren(string $resourceId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/resources/items/' . HttpTransport::seg((string) $resourceId) . '/children');
+        $req = ApiRequest::get('/resources/items/by-resource-id/children');
+        $req->query('resourceId', $resourceId);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -161,14 +171,16 @@ final class ResourcesItemsApi
      *
      * ResourcesController.slots (sangam-rest).
      *
-     * GET /resources/items/{resourceId}/slots (operationId resourcesResourcesSlots); permission resources.read.
+     * GET /resources/items/by-resource-id/slots (operationId resourcesResourcesSlots); permission resources.read.
+     * @param string $resourceId query resourceId
      * @param string $from query from
      * @param string $to query to
      * @return list<array<string, mixed>>
      */
     public function resourcesResourcesSlots(string $resourceId, string $from, string $to, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/resources/items/' . HttpTransport::seg((string) $resourceId) . '/slots');
+        $req = ApiRequest::get('/resources/items/by-resource-id/slots');
+        $req->query('resourceId', $resourceId);
         $req->query('from', $from);
         $req->query('to', $to);
         return Support::arr($this->calls->json($req, $options)) ?? [];
@@ -179,14 +191,16 @@ final class ResourcesItemsApi
      *
      * ResourcesController.availability (sangam-rest).
      *
-     * GET /resources/items/{resourceId}/availability (operationId resourcesResourcesAvailability); permission resources.read.
+     * GET /resources/items/by-resource-id/availability (operationId resourcesResourcesAvailability); permission resources.read.
+     * @param string $resourceId query resourceId
      * @param string $from query from
      * @param string $to query to
      * @return list<array<string, mixed>>
      */
     public function resourcesResourcesAvailability(string $resourceId, string $from, string $to, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/resources/items/' . HttpTransport::seg((string) $resourceId) . '/availability');
+        $req = ApiRequest::get('/resources/items/by-resource-id/availability');
+        $req->query('resourceId', $resourceId);
         $req->query('from', $from);
         $req->query('to', $to);
         return Support::arr($this->calls->json($req, $options)) ?? [];

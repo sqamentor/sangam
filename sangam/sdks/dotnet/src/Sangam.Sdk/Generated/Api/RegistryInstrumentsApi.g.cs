@@ -117,11 +117,12 @@ public sealed class RegistryInstrumentsApi
     /// <summary>
     /// Transition
     /// InstrumentController.transition (sangam-rest).
-    /// POST /registry/instruments/{id}/transitions/{name} (operationId registryInstrumentTransition); permission registry.write; result stored atomically with the state change.
+    /// POST /registry/instruments/{id}/transitions/by-name (operationId registryInstrumentTransition); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentTransitionAsync(string id, string name, M.RegistryInstrumentTransitionBody? body = null, string? ifMatch = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/registry/instruments/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/transitions/{HttpTransport.Seg(GeneratedCalls.Str(name)!)}");
+        var req = ApiRequest.Post($"/registry/instruments/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/transitions/by-name");
+        req.WithQuery("name", GeneratedCalls.Q(name));
         req.WithHeader("If-Match", GeneratedCalls.Str(ifMatch));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
@@ -265,11 +266,12 @@ public sealed class RegistryInstrumentsApi
     /// <summary>
     /// Verify code
     /// InstrumentController.verifyCode (sangam-rest).
-    /// GET /registry/instruments/public/{tenant}/verify (operationId registryInstrumentVerifyCode).
+    /// GET /registry/instruments/public/by-tenant/verify (operationId registryInstrumentVerifyCode).
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentVerifyCodeAsync(string tenant, string code, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/registry/instruments/public/{HttpTransport.Seg(GeneratedCalls.Str(tenant)!)}/verify");
+        var req = ApiRequest.Get($"/registry/instruments/public/by-tenant/verify");
+        req.WithQuery("tenant", GeneratedCalls.Q(tenant));
         req.WithQuery("code", GeneratedCalls.Q(code));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }

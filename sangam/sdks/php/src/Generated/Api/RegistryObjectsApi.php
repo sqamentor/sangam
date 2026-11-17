@@ -127,13 +127,15 @@ final class RegistryObjectsApi
      *
      * RegistryController.transition (sangam-rest).
      *
-     * POST /registry/objects/{id}/transitions/{name} (operationId registryRegistryTransition); permission registry.write; result stored atomically with the state change.
+     * POST /registry/objects/{id}/transitions/by-name (operationId registryRegistryTransition); permission registry.write; result stored atomically with the state change.
+     * @param string $name query name
      * @param string|null $ifMatch header If-Match
      * @return array<string, mixed>
      */
     public function registryRegistryTransition(string $id, string $name, Model\RegistryRegistryTransitionBody|array|null $body = null, ?string $ifMatch = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/registry/objects/' . HttpTransport::seg((string) $id) . '/transitions/' . HttpTransport::seg((string) $name));
+        $req = ApiRequest::post('/registry/objects/' . HttpTransport::seg((string) $id) . '/transitions/by-name');
+        $req->query('name', $name);
         $req->header('If-Match', Support::headerValue($ifMatch));
         if ($body !== null) {
             $req->body($body);

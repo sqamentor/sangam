@@ -18,11 +18,12 @@ public sealed class QueuesApi
     /// <summary>
     /// Define service point
     /// QueueController.defineServicePoint (sangam-rest).
-    /// PUT /queues/service-points/{servicePointId} (operationId queuesQueueDefineServicePoint); permission resources.admin; result stored atomically with the state change.
+    /// PUT /queues/service-points/by-service-point-id (operationId queuesQueueDefineServicePoint); permission resources.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueDefineServicePointAsync(string servicePointId, M.QueueRestPortServicePointRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueDefineServicePointAsync(M.QueueRestPortServicePointRequest body, string servicePointId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/queues/service-points/{HttpTransport.Seg(GeneratedCalls.Str(servicePointId)!)}");
+        var req = ApiRequest.Put($"/queues/service-points/by-service-point-id");
+        req.WithQuery("servicePointId", GeneratedCalls.Q(servicePointId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -30,22 +31,24 @@ public sealed class QueuesApi
     /// <summary>
     /// Service point
     /// QueueController.servicePoint (sangam-rest).
-    /// GET /queues/service-points/{servicePointId} (operationId queuesQueueServicePoint); permission resources.read.
+    /// GET /queues/service-points/by-service-point-id (operationId queuesQueueServicePoint); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueServicePointAsync(string servicePointId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/queues/service-points/{HttpTransport.Seg(GeneratedCalls.Str(servicePointId)!)}");
+        var req = ApiRequest.Get($"/queues/service-points/by-service-point-id");
+        req.WithQuery("servicePointId", GeneratedCalls.Q(servicePointId));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Set service point status
     /// QueueController.setServicePointStatus (sangam-rest).
-    /// POST /queues/service-points/{servicePointId}/status (operationId queuesQueueSetServicePointStatus); permission resources.admin; result stored atomically with the state change.
+    /// POST /queues/service-points/by-service-point-id/status (operationId queuesQueueSetServicePointStatus); permission resources.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueSetServicePointStatusAsync(string servicePointId, M.QueueStatusRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueSetServicePointStatusAsync(M.QueueStatusRequest body, string servicePointId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/queues/service-points/{HttpTransport.Seg(GeneratedCalls.Str(servicePointId)!)}/status");
+        var req = ApiRequest.Post($"/queues/service-points/by-service-point-id/status");
+        req.WithQuery("servicePointId", GeneratedCalls.Q(servicePointId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -66,11 +69,13 @@ public sealed class QueuesApi
     /// <summary>
     /// Define counter
     /// QueueController.defineCounter (sangam-rest).
-    /// PUT /queues/service-points/{servicePointId}/counters/{counterId} (operationId queuesQueueDefineCounter); permission resources.admin; result stored atomically with the state change.
+    /// PUT /queues/service-points/by-service-point-id/counters/by-counter-id (operationId queuesQueueDefineCounter); permission resources.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueDefineCounterAsync(string servicePointId, string counterId, M.QueueRestPortCounterRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueDefineCounterAsync(M.QueueRestPortCounterRequest body, string servicePointId, string counterId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/queues/service-points/{HttpTransport.Seg(GeneratedCalls.Str(servicePointId)!)}/counters/{HttpTransport.Seg(GeneratedCalls.Str(counterId)!)}");
+        var req = ApiRequest.Put($"/queues/service-points/by-service-point-id/counters/by-counter-id");
+        req.WithQuery("servicePointId", GeneratedCalls.Q(servicePointId));
+        req.WithQuery("counterId", GeneratedCalls.Q(counterId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -78,22 +83,24 @@ public sealed class QueuesApi
     /// <summary>
     /// Counters
     /// QueueController.counters (sangam-rest).
-    /// GET /queues/service-points/{servicePointId}/counters (operationId queuesQueueCounters); permission resources.read.
+    /// GET /queues/service-points/by-service-point-id/counters (operationId queuesQueueCounters); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> QueuesQueueCountersAsync(string servicePointId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/queues/service-points/{HttpTransport.Seg(GeneratedCalls.Str(servicePointId)!)}/counters");
+        var req = ApiRequest.Get($"/queues/service-points/by-service-point-id/counters");
+        req.WithQuery("servicePointId", GeneratedCalls.Q(servicePointId));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Open counter
     /// QueueController.openCounter (sangam-rest).
-    /// POST /queues/counters/{counterId}/open (operationId queuesQueueOpenCounter); permission resources.write; result stored atomically with the state change.
+    /// POST /queues/counters/by-counter-id/open (operationId queuesQueueOpenCounter); permission resources.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueOpenCounterAsync(string counterId, M.QueueOpenRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueOpenCounterAsync(M.QueueOpenRequest body, string counterId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/queues/counters/{HttpTransport.Seg(GeneratedCalls.Str(counterId)!)}/open");
+        var req = ApiRequest.Post($"/queues/counters/by-counter-id/open");
+        req.WithQuery("counterId", GeneratedCalls.Q(counterId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -101,11 +108,12 @@ public sealed class QueuesApi
     /// <summary>
     /// Pause counter
     /// QueueController.pauseCounter (sangam-rest).
-    /// POST /queues/counters/{counterId}/pause (operationId queuesQueuePauseCounter); permission resources.write; result stored atomically with the state change.
+    /// POST /queues/counters/by-counter-id/pause (operationId queuesQueuePauseCounter); permission resources.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueuePauseCounterAsync(string counterId, M.QueueReasonRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueuePauseCounterAsync(M.QueueReasonRequest body, string counterId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/queues/counters/{HttpTransport.Seg(GeneratedCalls.Str(counterId)!)}/pause");
+        var req = ApiRequest.Post($"/queues/counters/by-counter-id/pause");
+        req.WithQuery("counterId", GeneratedCalls.Q(counterId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -113,22 +121,24 @@ public sealed class QueuesApi
     /// <summary>
     /// Close counter
     /// QueueController.closeCounter (sangam-rest).
-    /// POST /queues/counters/{counterId}/close (operationId queuesQueueCloseCounter); permission resources.write; result stored atomically with the state change.
+    /// POST /queues/counters/by-counter-id/close (operationId queuesQueueCloseCounter); permission resources.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueCloseCounterAsync(string counterId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/queues/counters/{HttpTransport.Seg(GeneratedCalls.Str(counterId)!)}/close");
+        var req = ApiRequest.Post($"/queues/counters/by-counter-id/close");
+        req.WithQuery("counterId", GeneratedCalls.Q(counterId));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Issue token
     /// QueueController.issueToken (sangam-rest).
-    /// POST /queues/service-points/{servicePointId}/tokens (operationId queuesQueueIssueToken); permission resources.write; result stored atomically with the state change.
+    /// POST /queues/service-points/by-service-point-id/tokens (operationId queuesQueueIssueToken); permission resources.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueIssueTokenAsync(string servicePointId, M.QueueRestPortIssueTokenRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueIssueTokenAsync(M.QueueRestPortIssueTokenRequest body, string servicePointId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/queues/service-points/{HttpTransport.Seg(GeneratedCalls.Str(servicePointId)!)}/tokens");
+        var req = ApiRequest.Post($"/queues/service-points/by-service-point-id/tokens");
+        req.WithQuery("servicePointId", GeneratedCalls.Q(servicePointId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -136,11 +146,12 @@ public sealed class QueuesApi
     /// <summary>
     /// Tokens
     /// QueueController.tokens (sangam-rest).
-    /// GET /queues/service-points/{servicePointId}/tokens (operationId queuesQueueTokens); permission resources.read.
+    /// GET /queues/service-points/by-service-point-id/tokens (operationId queuesQueueTokens); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> QueuesQueueTokensAsync(string servicePointId, string? state = null, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/queues/service-points/{HttpTransport.Seg(GeneratedCalls.Str(servicePointId)!)}/tokens");
+        var req = ApiRequest.Get($"/queues/service-points/by-service-point-id/tokens");
+        req.WithQuery("servicePointId", GeneratedCalls.Q(servicePointId));
         req.WithQuery("state", GeneratedCalls.Q(state));
         req.WithQuery("page", GeneratedCalls.Q(page));
         req.WithQuery("size", GeneratedCalls.Q(size));
@@ -196,22 +207,24 @@ public sealed class QueuesApi
     /// <summary>
     /// Call next
     /// QueueController.callNext (sangam-rest).
-    /// POST /queues/counters/{counterId}/call-next (operationId queuesQueueCallNext); permission resources.write; result stored atomically with the state change.
+    /// POST /queues/counters/by-counter-id/call-next (operationId queuesQueueCallNext); permission resources.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueCallNextAsync(string counterId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/queues/counters/{HttpTransport.Seg(GeneratedCalls.Str(counterId)!)}/call-next");
+        var req = ApiRequest.Post($"/queues/counters/by-counter-id/call-next");
+        req.WithQuery("counterId", GeneratedCalls.Q(counterId));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Call token
     /// QueueController.callToken (sangam-rest).
-    /// POST /queues/counters/{counterId}/call (operationId queuesQueueCallToken); permission resources.write; result stored atomically with the state change.
+    /// POST /queues/counters/by-counter-id/call (operationId queuesQueueCallToken); permission resources.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueCallTokenAsync(string counterId, M.QueueCallRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueCallTokenAsync(M.QueueCallRequest body, string counterId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/queues/counters/{HttpTransport.Seg(GeneratedCalls.Str(counterId)!)}/call");
+        var req = ApiRequest.Post($"/queues/counters/by-counter-id/call");
+        req.WithQuery("counterId", GeneratedCalls.Q(counterId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -219,22 +232,24 @@ public sealed class QueuesApi
     /// <summary>
     /// Recall
     /// QueueController.recall (sangam-rest).
-    /// POST /queues/counters/{counterId}/recall (operationId queuesQueueRecall); permission resources.write; result stored atomically with the state change.
+    /// POST /queues/counters/by-counter-id/recall (operationId queuesQueueRecall); permission resources.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueRecallAsync(string counterId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/queues/counters/{HttpTransport.Seg(GeneratedCalls.Str(counterId)!)}/recall");
+        var req = ApiRequest.Post($"/queues/counters/by-counter-id/recall");
+        req.WithQuery("counterId", GeneratedCalls.Q(counterId));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Skip
     /// QueueController.skip (sangam-rest).
-    /// POST /queues/counters/{counterId}/skip (operationId queuesQueueSkip); permission resources.write; result stored atomically with the state change.
+    /// POST /queues/counters/by-counter-id/skip (operationId queuesQueueSkip); permission resources.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueSkipAsync(string counterId, M.QueueReasonRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueSkipAsync(M.QueueReasonRequest body, string counterId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/queues/counters/{HttpTransport.Seg(GeneratedCalls.Str(counterId)!)}/skip");
+        var req = ApiRequest.Post($"/queues/counters/by-counter-id/skip");
+        req.WithQuery("counterId", GeneratedCalls.Q(counterId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -242,22 +257,24 @@ public sealed class QueuesApi
     /// <summary>
     /// Start serving
     /// QueueController.startServing (sangam-rest).
-    /// POST /queues/counters/{counterId}/start-serving (operationId queuesQueueStartServing); permission resources.write; result stored atomically with the state change.
+    /// POST /queues/counters/by-counter-id/start-serving (operationId queuesQueueStartServing); permission resources.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueStartServingAsync(string counterId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/queues/counters/{HttpTransport.Seg(GeneratedCalls.Str(counterId)!)}/start-serving");
+        var req = ApiRequest.Post($"/queues/counters/by-counter-id/start-serving");
+        req.WithQuery("counterId", GeneratedCalls.Q(counterId));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Complete
     /// QueueController.complete (sangam-rest).
-    /// POST /queues/counters/{counterId}/complete (operationId queuesQueueComplete); permission resources.write; result stored atomically with the state change.
+    /// POST /queues/counters/by-counter-id/complete (operationId queuesQueueComplete); permission resources.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueCompleteAsync(string counterId, M.QueueCompleteRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueCompleteAsync(M.QueueCompleteRequest body, string counterId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/queues/counters/{HttpTransport.Seg(GeneratedCalls.Str(counterId)!)}/complete");
+        var req = ApiRequest.Post($"/queues/counters/by-counter-id/complete");
+        req.WithQuery("counterId", GeneratedCalls.Q(counterId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -265,33 +282,36 @@ public sealed class QueuesApi
     /// <summary>
     /// No show sweep
     /// QueueController.noShowSweep (sangam-rest).
-    /// POST /queues/service-points/{servicePointId}/no-show-sweep (operationId queuesQueueNoShowSweep); permission resources.admin; result stored atomically with the state change.
+    /// POST /queues/service-points/by-service-point-id/no-show-sweep (operationId queuesQueueNoShowSweep); permission resources.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueNoShowSweepAsync(string servicePointId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/queues/service-points/{HttpTransport.Seg(GeneratedCalls.Str(servicePointId)!)}/no-show-sweep");
+        var req = ApiRequest.Post($"/queues/service-points/by-service-point-id/no-show-sweep");
+        req.WithQuery("servicePointId", GeneratedCalls.Q(servicePointId));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Sla breaches
     /// QueueController.slaBreaches (sangam-rest).
-    /// GET /queues/service-points/{servicePointId}/sla-breaches (operationId queuesQueueSlaBreaches); permission resources.read.
+    /// GET /queues/service-points/by-service-point-id/sla-breaches (operationId queuesQueueSlaBreaches); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> QueuesQueueSlaBreachesAsync(string servicePointId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/queues/service-points/{HttpTransport.Seg(GeneratedCalls.Str(servicePointId)!)}/sla-breaches");
+        var req = ApiRequest.Get($"/queues/service-points/by-service-point-id/sla-breaches");
+        req.WithQuery("servicePointId", GeneratedCalls.Q(servicePointId));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Stats
     /// QueueController.stats (sangam-rest).
-    /// GET /queues/service-points/{servicePointId}/stats (operationId queuesQueueStats); permission resources.read.
+    /// GET /queues/service-points/by-service-point-id/stats (operationId queuesQueueStats); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueStatsAsync(string servicePointId, global::System.DateTimeOffset from, global::System.DateTimeOffset to, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/queues/service-points/{HttpTransport.Seg(GeneratedCalls.Str(servicePointId)!)}/stats");
+        var req = ApiRequest.Get($"/queues/service-points/by-service-point-id/stats");
+        req.WithQuery("servicePointId", GeneratedCalls.Q(servicePointId));
         req.WithQuery("from", GeneratedCalls.Q(from));
         req.WithQuery("to", GeneratedCalls.Q(to));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
@@ -300,11 +320,12 @@ public sealed class QueuesApi
     /// <summary>
     /// Display
     /// QueueController.display (sangam-rest).
-    /// GET /queues/service-points/{servicePointId}/display (operationId queuesQueueDisplay); permission resources.read.
+    /// GET /queues/service-points/by-service-point-id/display (operationId queuesQueueDisplay); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> QueuesQueueDisplayAsync(string servicePointId, int? next = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/queues/service-points/{HttpTransport.Seg(GeneratedCalls.Str(servicePointId)!)}/display");
+        var req = ApiRequest.Get($"/queues/service-points/by-service-point-id/display");
+        req.WithQuery("servicePointId", GeneratedCalls.Q(servicePointId));
         req.WithQuery("next", GeneratedCalls.Q(next));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -312,11 +333,12 @@ public sealed class QueuesApi
     /// <summary>
     /// Call events
     /// QueueController.callEvents (sangam-rest).
-    /// GET /queues/service-points/{servicePointId}/call-events (operationId queuesQueueCallEvents); permission resources.read.
+    /// GET /queues/service-points/by-service-point-id/call-events (operationId queuesQueueCallEvents); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> QueuesQueueCallEventsAsync(string servicePointId, long? after = null, int? limit = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/queues/service-points/{HttpTransport.Seg(GeneratedCalls.Str(servicePointId)!)}/call-events");
+        var req = ApiRequest.Get($"/queues/service-points/by-service-point-id/call-events");
+        req.WithQuery("servicePointId", GeneratedCalls.Q(servicePointId));
         req.WithQuery("after", GeneratedCalls.Q(after));
         req.WithQuery("limit", GeneratedCalls.Q(limit));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?>(req, options, cancellationToken).ConfigureAwait(false);

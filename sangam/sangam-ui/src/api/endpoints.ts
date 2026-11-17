@@ -545,15 +545,15 @@ export const api = {
         .then((r) => ({ state: String(r.state ?? ''), fourEyesPending: r.state === 'OPEN' })),
     workers: () => http.get<T.WorkerInfo[]>('/ops/workers'),
     topics: () => http.get<T.TopicInfo[]>('/ops/topics'),
-    topicPause: (name: string, paused: boolean, reason: string) => http.post<void>(`/ops/topics/${enc(name)}/${paused ? 'pause' : 'resume'}`, { reason }),
+    topicPause: (name: string, paused: boolean, reason: string) => http.post<void>(`/ops/topics/by-name/${paused ? 'pause' : 'resume'}?name=${enc(name)}`, { reason }),
     cleanup: async () => A.normCleanup(await http.get<Record<string, unknown>>('/ops/cleanup')),
     cleanupRun: (reason: string) => http.post<void>(`/ops/cleanup?reason=${enc(reason)}`),
-    cleanupTtl: (key: string, ttlDays: number, reason: string) => http.put<void>(`/ops/cleanup/ttl/${enc(key)}`, { ttlDays, reason }),
+    cleanupTtl: (key: string, ttlDays: number, reason: string) => http.put<void>(`/ops/cleanup/ttl/by-key?key=${enc(key)}`, { ttlDays, reason }),
     auditLog: async (q: ListQuery & { actor?: string; operation?: string }) =>
       A.mapPage(await http.page<Record<string, unknown>>('/history/operation-log', { page: q.page, size: q.size, assignee: q.actor, operation: q.operation }), (r) => A.normHistory('audit', r)),
     notificationFailures: (q: ListQuery) =>
       http.page<{ id: string; at: string; channel: string; reason: string; templateId?: string; businessKey?: string; recipientMasked: string }>('/ops/notification-failures', q),
-    resendNotification: (id: string, reason: string) => http.post<void>(`/ops/notification-failures/${enc(id)}/resend`, { reason }),
+    resendNotification: (id: string, reason: string) => http.post<void>(`/ops/notification-failures/by-id/resend?id=${enc(id)}`, { reason }),
   },
   migration: {
     generate: (sourceDefinitionId: string, targetDefinitionId: string) =>
@@ -833,9 +833,9 @@ export const api = {
     record: (id: string, body: { answers: Record<string, boolean | string>; notes: string; recordedAt: string }, key: string) => http.post<void>(`/field/visits/${enc(id)}/record`, body, key),
     // M-001: device registration and the offline sync protocol (FieldWorkController.java:191-232, field.capture)
     registerDevice: (body: { deviceId: string; platform: string; appVersion?: string; publicKey?: string; keyAlg?: string }) => http.post<FieldDeviceView>('/field/devices', body),
-    syncUpload: (deviceId: string, packets: CapturePacket[]) => http.post<SyncOutcome[]>(`/field/sync/${enc(deviceId)}/upload`, packets),
-    syncPull: (deviceId: string, cursor: number) => http.get<PullResult>(`/field/sync/${enc(deviceId)}/pull`, { cursor }),
-    template: (key: string, version?: number) => http.get<PulledTemplate>(`/field/templates/${enc(key)}`, { version }),
+    syncUpload: (deviceId: string, packets: CapturePacket[]) => http.post<SyncOutcome[]>(`/field/sync/by-device-id/upload?deviceId=${enc(deviceId)}`, packets),
+    syncPull: (deviceId: string, cursor: number) => http.get<PullResult>('/field/sync/by-device-id/pull', { deviceId, cursor }),
+    template: (key: string, version?: number) => http.get<PulledTemplate>('/field/templates/by-key', { key, version }),
   },
 };
 

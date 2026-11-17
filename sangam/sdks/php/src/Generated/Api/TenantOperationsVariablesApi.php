@@ -122,12 +122,14 @@ final class TenantOperationsVariablesApi
      *
      * Needs a reason.
      *
-     * DELETE /ops/variables/{id} (operationId uiOpsDeleteVariable); permission ops.tenant.admin; result stored atomically with the state change.
+     * DELETE /ops/variables/by-id (operationId uiOpsDeleteVariable); permission ops.tenant.admin; result stored atomically with the state change.
+     * @param string $id query id
      * @param string $reason query reason
      */
     public function uiOpsDeleteVariable(string $id, string $reason, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/ops/variables/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::delete('/ops/variables/by-id');
+        $req->query('id', $id);
         $req->query('reason', $reason);
         $this->calls->none($req, $options);
     }

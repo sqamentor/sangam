@@ -2,7 +2,7 @@
 /**
  * Owner decision 2026-11-12 (X1-03b): the optional day of the month the financial year starts on, 1..28, absent = the
  * 1st. One field definition for every form that sends it:
- * - PUT /registry/number-series/{seriesKey} (RegistryRegistryDefineSeriesBody.fiscalStartDay; NumberSeriesDefinition);
+ * - PUT /registry/number-series/by-series-key?seriesKey= (RegistryRegistryDefineSeriesBody.fiscalStartDay; NumberSeriesDefinition);
  * - PUT /programme-config (ProgrammePublishConfigBody.fiscalStartDay; ProgrammeConfig, default 1).
  * The validity block of POST /registry/types (ValidityRule.fiscalStartDay) has no form: it is part of the JSON type
  * definition, so its publish dialog says so in its hint (mod.registry.publishTypeHintFiscal).

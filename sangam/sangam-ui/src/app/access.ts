@@ -75,9 +75,9 @@ export const ROUTE_ACCESS: Record<string, Access> = {
   '/m/committees': moduleRead('case.read'),
   // GET /references: ReferenceController.java:54,63 → case.read
   '/m/references': moduleRead('case.read'),
-  // GET /ledger/{ledger}/accounts: LedgerController.java:118,122 → ledger.read (:40)
+  // GET /ledger/by-ledger/accounts?ledger=: LedgerController.java:118,122 → ledger.read (:40)
   '/m/ledger': moduleRead('ledger.read'),
-  // GET /billing/{ledger}/accounts: BillingController.java:79,82 → billing.read (:39)
+  // GET /billing/by-ledger/accounts?ledger=: BillingController.java:79,82 → billing.read (:39)
   '/m/billing': moduleRead('billing.read'),
   // GET /programmes: ProgrammeController.java:170,175,480 → programme.read (:54)
   '/m/programmes': moduleRead('programme.read'),

@@ -322,14 +322,15 @@ public final class TenantOperationsApi {
      *
      * <p>Forward only.
      *
-     * <p>{@code POST /ops/sequences/{name}/advance} (operationId {@code uiOpsAdvance}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param name path parameter {@code name}
+     * <p>{@code POST /ops/sequences/by-name/advance} (operationId {@code uiOpsAdvance}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param name query parameter {@code name}. Sequence name (table:series:period); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void uiOpsAdvance(String name, OpsUiAdvanceRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ops/sequences/" + HttpTransport.seg(String.valueOf(name)) + "/advance");
+    public void uiOpsAdvance(OpsUiAdvanceRequest body, String name, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ops/sequences/by-name/advance");
         req.body(body);
+        req.query("name", name);
         call.none(req, options);
     }
 
