@@ -89,5 +89,11 @@
     "variables": [
       "compensationAmount"
     ]
-  }
+  },
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ]
 }

@@ -105,5 +105,11 @@
       "fnfAmount",
       "gratuityAmount"
     ]
-  }
+  },
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ]
 }

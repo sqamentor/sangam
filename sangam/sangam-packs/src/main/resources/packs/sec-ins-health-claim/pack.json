@@ -108,5 +108,11 @@
       "approvedAmount",
       "estimatedCost"
     ]
-  }
+  },
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ]
 }

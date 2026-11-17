@@ -105,5 +105,11 @@
       "premiumAmount",
       "sumAssured"
     ]
-  }
+  },
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ]
 }
