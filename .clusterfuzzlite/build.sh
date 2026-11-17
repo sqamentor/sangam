@@ -12,6 +12,13 @@ bash ./mvnw -B -ntp -q -pl sangam-packs -DskipTests test-compile dependency:buil
 
 mkdir -p "$OUT/lib"
 cp -r sangam-packs/target/test-classes "$OUT/lib/test-classes"
+# The committed seed inputs go to ClusterFuzzLite as <target>_seed_corpus.zip, not on the classpath: Jazzer's JUnit
+# mode would add them as an extra corpus, and the build check's "-runs=4" then counts more runs than it expects.
+seeds="$OUT/lib/test-classes/org/sangam/packs/PackParserFuzzTestInputs"
+for method in packManifest bpmnModel dmnModel acceptanceSteps; do
+  if [ -d "$seeds/$method" ]; then (cd "$seeds/$method" && zip -q -j "$OUT/PackParserFuzzTest_${method}_seed_corpus.zip" ./*); fi
+done
+rm -rf "$seeds"
 cp -r sangam-packs/target/classes "$OUT/lib/classes"
 tr ':' '\n' < "$WORK/cp.txt" | while read -r jar; do [ -f "$jar" ] && cp "$jar" "$OUT/lib/"; done
 cp -r /opt/jdk25 "$OUT/jdk"
