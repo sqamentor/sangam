@@ -644,6 +644,7 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
         Map<String, Object> vars = employee("gpfAccount", "GPF-124", "gpfPurpose", "ADVANCE",
                 "amount", 5_000_000L, "gpfBalance", 40_000_000L, "qualifyingService", new BigDecimal("12.0"), "employeeId", EMPLOYEE,
                 "payee", LATE_PAYEE, "payeeAccount", "XXXX1002", "ifsc", "SBIN0000001");
+        vars.put("reconRetry", "PT2S");
         Run r = drive("sangam-ifms-gpf", gpf, vars);
         assertClosed("GPF advance, statement line arrives late", r);
         assertThat(statement.asked.stream().filter(payment::equals).count())
