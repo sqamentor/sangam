@@ -40,7 +40,7 @@ import org.eclipse.jgit.transport.URIish;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
-import org.sangam.engine.tx.LockScope;
+import org.sangam.core.engine.RemoteCalls;
 import org.sangam.integration.connector.EgressPolicy;
 import org.sangam.integration.connector.SecretResolver;
 import org.slf4j.Logger;
@@ -214,7 +214,7 @@ public final class PackageGitSync {
     }
 
     private <T> T withRepository(String tenantId, Remote remote, RepoWork<T> work) {
-        LockScope.assertNoLockHeld("Git " + remote.uri().getHost());
+        RemoteCalls.assertNoLockHeld("Git " + remote.uri().getHost());
         checkRemote(tenantId, remote);
         UsernamePasswordCredentialsProvider creds = credentials(remote);
         Path dir;
