@@ -69,6 +69,7 @@ class CallerVariableWritePathsTest {
             Map.entry("../sangam-engine/src/main/java/org/sangam/engine/OperatonEngineAdapter.java", guarded(19)),
             Map.entry("../sangam-engine/src/main/java/org/sangam/engine/RouteCorrection.java", guarded(2)),
             Map.entry("../sangam-engine/src/main/java/org/sangam/engine/continuation/ProcessContinuations.java", reason(2, "a resubmission successor takes the predecessor's own variables; a DSC binding is per instance, so a copied slot is unbound on the successor (layer 1)")),
+            Map.entry("../sangam-engine/src/main/java/org/sangam/engine/state/EngineOwnedServices.java", reason(79, "the engine's own service and builder subclasses (B-49): each override refuses engine-owned names and passes the caller's call on to Operaton unchanged; the slot-name guard stays with the callers listed here")),
             Map.entry("../sangam-engine/src/main/java/org/sangam/engine/deploy/MultiInstanceCompensationContext.java", reason(1, "compensation restores a branch's own snapshot of its local variables")),
             Map.entry("../sangam-flowable-ports/src/main/java/org/sangam/ports/batch/StandardBatchHandlers.java", guarded(5)),
             Map.entry("../sangam-flowable-ports/src/main/java/org/sangam/ports/bpmn/SkipExpressionSupport.java", reason(1, "an activity behaviour passing a signal on, no variables")),
