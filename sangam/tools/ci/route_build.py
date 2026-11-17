@@ -169,9 +169,21 @@ def github(selection, lane, out_dir):
         time.sleep(5)
     if not run_id:
         raise SystemExit(f"no {WORKFLOW} run appeared for {branch} at {commit}")
-    run(["gh", "run", "watch", run_id, "--interval", "30"], check=False, capture=False)
-    view = json.loads(run(["gh", "run", "view", run_id, "--json",
-                           "url,conclusion,createdAt,updatedAt,jobs"]).stdout)
+    # `gh run watch` returns early on a network error (a TLS handshake timeout ended a watch on 2026-11-17 while
+    # the run kept going), so wait until the run reports `completed`, tolerating failed polls.
+    view, fails = None, 0
+    while True:
+        run(["gh", "run", "watch", run_id, "--interval", "30"], check=False, capture=False)
+        r = run(["gh", "run", "view", run_id, "--json", "url,status,conclusion,createdAt,updatedAt,jobs"], check=False)
+        if r.returncode == 0:
+            view, fails = json.loads(r.stdout), 0
+            if view.get("status") == "completed":
+                break
+        else:
+            fails += 1
+            if fails > 20:
+                raise SystemExit(f"gave up reading run {run_id} after 20 failed polls: {(r.stderr or '')[-500:]}")
+        time.sleep(30)
     dest = os.path.join(out_dir, f"gh-{run_id}")
     os.makedirs(dest, exist_ok=True)
     run(["gh", "run", "download", run_id, "-D", dest], check=False)
