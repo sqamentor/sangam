@@ -61,7 +61,6 @@ Paths under `src/main/java/org/sangam/ports/`.
 | `bpmn/BpmnExtensionsParseListener.java`, `TriggerableServiceTaskBehavior.java`, `SkipExpressionSupport.java`, `TerminateExtendedBehavior.java`, `SangamBpmn.java` | **FC-12, FC-13, FC-22** (handed over by WS-ENGINE) |
 | `bpmn/SangamModelValidator.java` | **FC-46** pluggable pre-deploy validator (D-09, D-51, D-52, FC-13 rules, Flowable leftovers, custom rules; R44) |
 | `dmn/PriorityHitPolicies.java` | **FC-54** PRIORITY and OUTPUT ORDER (handed over by WS-ENGINE) |
-| `dmn/DecisionServiceEvaluator.java` | **FC-53** DMN decision services, native on Operaton's DMN engine |
 | `content/FileSystemDocumentStore.java`, `S3DocumentStore.java`, `ContentService.java`, `OutputTemplateRenderer.java` | **FC-40, EC-18, R74** versioned documents, SHA-256, scan hook, S3-compatible (SigV4, no SDK), output templates |
 | `forms/FormDefinition.java`, `FormValidator.java`, `FormJsConverter.java`, `SangamFormService.java` | **FC-39, EC-02 (runtime), R47** versioned forms, server-side validation, outcomes, variable-scoped task forms, start forms, form-js/Flowable import |
 | `app/AppBundle.java`, `AppDeploymentService.java` | **FC-41, R43** app bundles (zip-slip/bomb guarded), hash-pinned, all-or-nothing deployment incl. forms/events/channels |
@@ -153,7 +152,7 @@ Status: **Done** (implemented here, compiles), **Owned** (other workstream), **X
 
 | ID | Item | Status | Where |
 |---|---|---|---|
-| FC-53 | Decision services | Done (native, no second DMN engine) | `dmn/DecisionServiceEvaluator` |
+| FC-53 | Decision services | Not supported (owner decision D2, 2026-11-18); the unwired evaluator was removed (D3) | none |
 | FC-54 | PRIORITY, OUTPUT ORDER | Done | `dmn/PriorityHitPolicies` |
 | FC-55 | CMMN event listeners (timer fix) | Done (P-2); requires WS-ENGINE `rejectCmmnEventListeners=false` | `cmmn/*` |
 | FC-56 | Plan-item lifecycle extensions | Partial: lifecycle listeners Done; state-machine extensions = Gap P-4 (stage E) | `cmmn/PortsCmmnTransformListener` |

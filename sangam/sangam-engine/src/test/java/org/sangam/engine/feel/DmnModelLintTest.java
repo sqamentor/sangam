@@ -84,6 +84,41 @@ class DmnModelLintTest {
         assertTrue(f.stream().noneMatch(DmnModelLint.Finding::error), "a warning, never a refusal");
     }
 
+    /** Owner DEC-5 (2026-11-18): DMN never rounds money; rounding belongs to the financial core (A2). */
+    @Test
+    void decimalOnAMoneyOutputIsAnError() {
+        String rule = "<decision id=\"x\" name=\"x\"><decisionTable id=\"xt\"><input id=\"i\"><inputExpression id=\"ie\" "
+                + "typeRef=\"number\"><text>basic</text></inputExpression></input><output id=\"o\" name=\"%s\" "
+                + "typeRef=\"number\"/><rule id=\"r\"><inputEntry id=\"re\"><text>-</text></inputEntry><outputEntry "
+                + "id=\"ro\"><text>%s</text></outputEntry></rule></decisionTable></decision>";
+        List<DmnModelLint.Finding> f = lint(rule.formatted("feeAmount", "decimal(basic * 0.1, 2)"));
+        assertEquals(1, f.size(), f.toString());
+        assertTrue(f.get(0).error() && "SANGAM-DMN-MONEY-ROUNDING".equals(f.get(0).code()), f.toString());
+        assertTrue(lint(rule.formatted("feeAmount", "basic * 0.1")).isEmpty(), "unrounded money is fine");
+        assertTrue(lint(rule.formatted("ratio", "decimal(basic / 3, 4)")).isEmpty(), "non-money rounding is fine");
+        List<DmnModelLint.Finding> lit = lint("<decision id=\"l\" name=\"l\"><variable name=\"pensionAmount\" "
+                + "typeRef=\"number\"/><literalExpression id=\"le\"><text>decimal(basic / 2, 0)</text>"
+                + "</literalExpression></decision>");
+        assertTrue(lit.stream().anyMatch(x -> x.error() && "SANGAM-DMN-MONEY-ROUNDING".equals(x.code())), lit.toString());
+    }
+
+    /** Owner D2 (2026-11-18): BKM, boxed context, relation, invocation, function and decision services are not supported. */
+    @Test
+    void unsupportedDmnElementsAreRefused() {
+        String[] bodies = {
+            "<businessKnowledgeModel id=\"b\" name=\"b\"/>",
+            "<decisionService id=\"s\" name=\"s\"/>",
+            "<decision id=\"c\" name=\"c\"><context id=\"cx\"/></decision>",
+            "<decision id=\"r\" name=\"r\"><relation id=\"rl\"/></decision>",
+            "<decision id=\"v\" name=\"v\"><invocation id=\"iv\"/></decision>",
+            "<decision id=\"f\" name=\"f\"><functionDefinition id=\"fd\"/></decision>",
+        };
+        for (String b : bodies) {
+            List<DmnModelLint.Finding> f = lint(b);
+            assertTrue(f.stream().anyMatch(x -> x.error() && "SANGAM-DMN-UNSUPPORTED".equals(x.code())), b + " " + f);
+        }
+    }
+
     /** Every shipped pack/corpus DMN passes the deploy rule (176 files migrated from double to number). */
     @Test
     void shippedModelsHaveNoMoneyDoubles() throws IOException {
