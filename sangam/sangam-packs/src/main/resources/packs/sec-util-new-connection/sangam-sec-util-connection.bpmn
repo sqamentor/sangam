@@ -34,6 +34,13 @@
     <intermediateCatchEvent id="uc_noBill" name="No bill in time"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P60D</timeDuration></timerEventDefinition></intermediateCatchEvent>
     <serviceTask id="uc_compCfg" name="Compensation credit inputs" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>amount=@compensationAmount</operaton:string></operaton:field></extensionElements></serviceTask>
     <serviceTask id="uc_comp" name="Credit compensation in the next bill" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>billing.credit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>consumer,amount,head,cycle</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>comp</operaton:string></operaton:field><operaton:field name="step"><operaton:string>compensation</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="uc_comp_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="uc_comp_sgw" name="Sanctioned?" default="uc_comp_sgw_no"></exclusiveGateway>
+    <endEvent id="uc_comp_notReleased" name="Not released"></endEvent>
+    <sequenceFlow id="uc_comp_sanction_f" sourceRef="uc_comp_sanction" targetRef="uc_comp_sgw"/>
+    <sequenceFlow id="uc_comp_sgw_yes" name="sanctioned" sourceRef="uc_comp_sgw" targetRef="uc_comp"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="uc_comp_sgw_no" name="not sanctioned" sourceRef="uc_comp_sgw" targetRef="uc_comp_notReleased"/>
+
     <exclusiveGateway id="uc_compRes" name="Credited?" default="sec_util_connection_f29"></exclusiveGateway>
     <userTask id="uc_compManual" name="Compensation not credited: credit by hand" operaton:candidateGroups="AE-SUBDIV" operaton:formKey="sangam:sec-util-new-connection/compensation-manual"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <exclusiveGateway id="uc_compJoin" name=""></exclusiveGateway>
@@ -67,7 +74,7 @@
     <sequenceFlow id="sec_util_connection_f23" sourceRef="uc_compWait" targetRef="uc_firstBill"/>
     <sequenceFlow id="sec_util_connection_f24" sourceRef="uc_compWait" targetRef="uc_noBill"/>
     <sequenceFlow id="sec_util_connection_f25" sourceRef="uc_firstBill" targetRef="uc_compCfg"/>
-    <sequenceFlow id="sec_util_connection_f26" sourceRef="uc_compCfg" targetRef="uc_comp"/>
+    <sequenceFlow id="sec_util_connection_f26" sourceRef="uc_compCfg" targetRef="uc_comp_sanction"/>
     <sequenceFlow id="sec_util_connection_f27" sourceRef="uc_comp" targetRef="uc_compRes"/>
     <sequenceFlow id="sec_util_connection_f28" name="refused (no demand in that cycle yet)" sourceRef="uc_compRes" targetRef="uc_compManual"><conditionExpression xsi:type="tFormalExpression">${compStatus == 'FAILED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_util_connection_f29" name="credited" sourceRef="uc_compRes" targetRef="uc_compJoin"/>
@@ -126,7 +133,7 @@
       <bpmndi:BPMNShape id="uc_firstBill_di" bpmnElement="uc_firstBill"><dc:Bounds x="2362" y="427" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="uc_noBill_di" bpmnElement="uc_noBill"><dc:Bounds x="2362" y="302" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="uc_compCfg_di" bpmnElement="uc_compCfg"><dc:Bounds x="2495" y="405" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="uc_comp_di" bpmnElement="uc_comp"><dc:Bounds x="2660" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_comp_sanction_di" bpmnElement="uc_comp_sanction"><dc:Bounds x="2480" y="275" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="uc_comp_sgw_di" bpmnElement="uc_comp_sgw" isMarkerVisible="true"><dc:Bounds x="2610" y="285" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="uc_comp_notReleased_di" bpmnElement="uc_comp_notReleased"><dc:Bounds x="2617" y="195" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="uc_comp_sanction_f_di" bpmnElement="uc_comp_sanction_f"><di:waypoint x="2580" y="310"/><di:waypoint x="2610" y="310"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="uc_comp_sgw_yes_di" bpmnElement="uc_comp_sgw_yes"><di:waypoint x="2635" y="335"/><di:waypoint x="2635" y="405"/><di:waypoint x="2660" y="405"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="uc_comp_sgw_no_di" bpmnElement="uc_comp_sgw_no"><di:waypoint x="2635" y="285"/><di:waypoint x="2635" y="231"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="uc_comp_di" bpmnElement="uc_comp"><dc:Bounds x="2660" y="405" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="uc_compRes_di" bpmnElement="uc_compRes"><dc:Bounds x="2850" y="420" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="uc_compManual_di" bpmnElement="uc_compManual"><dc:Bounds x="2990" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="uc_compJoin_di" bpmnElement="uc_compJoin"><dc:Bounds x="3180" y="295" width="50" height="50"/></bpmndi:BPMNShape>

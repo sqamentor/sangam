@@ -17,6 +17,13 @@
     <serviceTask id="u13_calc" name="Refund on accepted quantity (decision 139 policy)" operaton:class="org.sangam.packs.core.MoneyCalculationDelegate"><extensionElements><operaton:field name="result"><operaton:string>refundDue</operaton:string></operaton:field><operaton:field name="formula"><operaton:string>refundAmount * acceptedQty / returnQty * (1 - restockingFeePct / 100)</operaton:string></operaton:field><operaton:field name="policy"><operaton:string>up13-refund-rounding</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="u13_endRejected" name="Return rejected"></endEvent>
     <callActivity id="u13_refund" name="Refund once (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="u13_refund_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="u13_refund_sgw" name="Sanctioned?" default="u13_refund_sgw_no"></exclusiveGateway>
+    <endEvent id="u13_refund_notReleased" name="Not released"></endEvent>
+    <sequenceFlow id="u13_refund_sanction_f" sourceRef="u13_refund_sanction" targetRef="u13_refund_sgw"/>
+    <sequenceFlow id="u13_refund_sgw_yes" name="sanctioned" sourceRef="u13_refund_sgw" targetRef="u13_refund"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="u13_refund_sgw_no" name="not sanctioned" sourceRef="u13_refund_sgw" targetRef="u13_refund_notReleased"/>
+
     <endEvent id="u13_end" name="Refunded"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <sequenceFlow id="up13_returns_f1" sourceRef="u13_start" targetRef="u13_defaults"/>
     <sequenceFlow id="up13_returns_f2" sourceRef="u13_defaults" targetRef="u13_policy"/>
@@ -28,7 +35,7 @@
     <sequenceFlow id="up13_returns_f8" sourceRef="u13_inspect" targetRef="u13_ig"/>
     <sequenceFlow id="up13_returns_f9" name="accept" sourceRef="u13_ig" targetRef="u13_calc"><conditionExpression xsi:type="tFormalExpression">${returnDecision == 'accept'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="up13_returns_f10" name="reject" sourceRef="u13_ig" targetRef="u13_endRejected"/>
-    <sequenceFlow id="up13_returns_f11" sourceRef="u13_calc" targetRef="u13_refund"/>
+    <sequenceFlow id="up13_returns_f11" sourceRef="u13_calc" targetRef="u13_refund_sanction"/>
     <sequenceFlow id="up13_returns_f12" sourceRef="u13_refund" targetRef="u13_end"/>
   </process>
   <bpmndi:BPMNDiagram id="up13_returns_diagram">
@@ -44,7 +51,7 @@
       <bpmndi:BPMNShape id="u13_ig_di" bpmnElement="u13_ig"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u13_calc_di" bpmnElement="u13_calc"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u13_endRejected_di" bpmnElement="u13_endRejected"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="u13_refund_di" bpmnElement="u13_refund"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u13_refund_sanction_di" bpmnElement="u13_refund_sanction"><dc:Bounds x="1325" y="25" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="u13_refund_sgw_di" bpmnElement="u13_refund_sgw" isMarkerVisible="true"><dc:Bounds x="1455" y="35" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="u13_refund_notReleased_di" bpmnElement="u13_refund_notReleased"><dc:Bounds x="1462" y="-55" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="u13_refund_sanction_f_di" bpmnElement="u13_refund_sanction_f"><di:waypoint x="1425" y="60"/><di:waypoint x="1455" y="60"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="u13_refund_sgw_yes_di" bpmnElement="u13_refund_sgw_yes"><di:waypoint x="1480" y="85"/><di:waypoint x="1480" y="155"/><di:waypoint x="1505" y="155"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="u13_refund_sgw_no_di" bpmnElement="u13_refund_sgw_no"><di:waypoint x="1480" y="35"/><di:waypoint x="1480" y="-19"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="u13_refund_di" bpmnElement="u13_refund"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u13_end_di" bpmnElement="u13_end"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="up13_returns_f1_di" bpmnElement="up13_returns_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="up13_returns_f2_di" bpmnElement="up13_returns_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
