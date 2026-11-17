@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.adapter.operaton;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.time.Duration;
 import java.time.Instant;
@@ -46,7 +43,8 @@ import org.sangam.rest.support.TxSupport;
 import org.sangam.rest.support.TypedVariables;
 
 /**
- * Process instances, definitions, messages and signals on the Operaton {@link RuntimeService}.
+ * Process instances, messages and signals on the Operaton {@link RuntimeService}; definition reads are
+ * {@link OperatonProcessDefinitions}.
  * <ul>
  *   <li><b>Business cancel</b> (VI.5): every locked external task gets a CANCEL_REQUESTED tombstone, then the instance
  *       is deleted as externally terminated <em>with</em> custom listeners. Operaton has no separate cancel path: a
@@ -70,6 +68,7 @@ public class OperatonProcessAdapter implements ProcessPort {
     private final Tombstones tombstones;
     private final AtomicBoolean leaseTableReady = new AtomicBoolean();
     private final OperatonOperationIds operationIds;
+    private final OperatonProcessDefinitions definitions;
 
     public OperatonProcessAdapter(RuntimeService runtime, RepositoryService repository, HistoryService history,
                                   ExternalTaskService externalTasks, TxSupport tx, AuditPort audit,
@@ -82,6 +81,7 @@ public class OperatonProcessAdapter implements ProcessPort {
         this.tx = tx;
         this.audit = audit;
         this.props = props;
+        this.definitions = new OperatonProcessDefinitions(runtime, repository, props);
         AuditChain chain = new AuditChain(tx.dialect());
         this.tombstones = new Tombstones(tx.dialect(), new ReconciliationQueue(tx.dialect(), chain), chain);
     }
@@ -641,78 +641,21 @@ public class OperatonProcessAdapter implements ProcessPort {
         });
     }
 
-    // ------------------------------------------------------------------ definitions
+    // ------------------------------------------------------------------ definitions (OperatonProcessDefinitions)
 
     @Override
     public Page<ProcessDefinition> definitions(RequestContext ctx, DefinitionFilter f, Page.PageRequest page) {
-        ProcessDefinitionQuery q = repository.createProcessDefinitionQuery();
-        if (ctx.tenantId() != null) {
-            q.tenantIdIn(ctx.tenantId()).includeProcessDefinitionsWithoutTenantId();
-        }
-        if (f != null) {
-            if (f.key() != null) {
-                q.processDefinitionKey(f.key());
-            }
-            if (Boolean.TRUE.equals(f.latest())) {
-                q.latestVersion();
-            }
-            if (f.deploymentId() != null) {
-                q.deploymentId(f.deploymentId());
-            }
-        }
-        q.orderByProcessDefinitionKey().asc().orderByProcessDefinitionVersion().desc();
-        return OperatonSupport.page(q, page, props.getCountCap(), d -> mapDefinition(ctx, d));
+        return definitions.list(ctx, f, page);
     }
 
     @Override
     public ProcessDefinition definition(RequestContext ctx, String definitionId) {
-        return mapDefinition(ctx, requireDefinition(ctx, definitionId));
+        return definitions.get(ctx, definitionId);
     }
 
     @Override
     public String definitionXml(RequestContext ctx, String definitionId) {
-        requireDefinition(ctx, definitionId);
-        try (InputStream in = OperatonSupport.call(() -> repository.getProcessModel(definitionId))) {
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new ApiProblem(500, "RESOURCE_READ_FAILED", e.getMessage());
-        }
-    }
-
-    private org.operaton.bpm.engine.repository.ProcessDefinition requireDefinition(RequestContext ctx, String id) {
-        org.operaton.bpm.engine.repository.ProcessDefinition d = OperatonSupport.call(() ->
-                repository.createProcessDefinitionQuery().processDefinitionId(id).singleResult());
-        if (d == null) {
-            throw ApiProblem.notFound("process definition", id);
-        }
-        if (d.getTenantId() != null) {
-            OperatonSupport.checkTenant(ctx, d.getTenantId(), "process definition", id);
-        }
-        return d;
-    }
-
-    /**
-     * UI-DEMO-5: a definition carries its running instance and open incident counts, scoped like every instance read
-     * (the caller's tenant; a shared definition counts only this tenant's instances).
-     */
-    private ProcessDefinition mapDefinition(RequestContext ctx, org.operaton.bpm.engine.repository.ProcessDefinition d) {
-        long running = OperatonSupport.call(() -> {
-            var iq = runtime.createProcessInstanceQuery().processDefinitionId(d.getId());
-            if (ctx.tenantId() != null) {
-                iq.tenantIdIn(ctx.tenantId());
-            }
-            return iq.count();
-        });
-        long incidents = OperatonSupport.call(() -> {
-            var nq = runtime.createIncidentQuery().processDefinitionId(d.getId());
-            if (ctx.tenantId() != null) {
-                nq.tenantIdIn(ctx.tenantId());
-            }
-            return nq.count();
-        });
-        return new ProcessDefinition(d.getId(), d.getKey(), d.getName(), d.getVersion(), d.getDeploymentId(),
-                d.getTenantId(), d.getVersionTag(), d.isSuspended(), d.getResourceName(), d.isStartableInTasklist(),
-                running, incidents);
+        return definitions.xml(ctx, definitionId);
     }
 
     // ------------------------------------------------------------------ messages / signals
