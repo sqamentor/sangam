@@ -74,14 +74,14 @@ public class OperatonInstanceControlAdapter implements InstanceControlPort {
             return new ConsequencePreview(List.of("The instance has already ended; nothing will change"), List.of(),
                     List.of(), 0, true, "INSTANCE_ENDED", false, 0L, false);
         }
-        List<ExternalTask> open = OperatonSupport.call(() ->
+        List<ExternalTask> open = OperatonSupport.readCall(() ->
                 externalTasks.createExternalTaskQuery().processInstanceId(processInstanceId).list());
         long now = System.currentTimeMillis();
         long locked = open.stream().filter(t -> t.getLockExpirationTime() != null
                 && t.getLockExpirationTime().getTime() > now).count();
         long offered = open.size() - locked;
         List<String> ops = open.stream().map(t -> operationIds.of(t).toString()).toList();
-        long openTasks = OperatonSupport.call(() -> tasks.createTaskQuery().processInstanceId(processInstanceId).count());
+        long openTasks = OperatonSupport.readCall(() -> tasks.createTaskQuery().processInstanceId(processInstanceId).count());
         boolean technical = "TECHNICAL".equals(mode);
         long reconOpen = openReconciliation(ctx, processInstanceId);
         List<String> summary = new ArrayList<>();

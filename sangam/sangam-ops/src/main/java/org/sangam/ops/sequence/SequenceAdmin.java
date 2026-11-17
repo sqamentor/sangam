@@ -42,7 +42,7 @@ public final class SequenceAdmin {
 
     public List<Value> list(String tenantId, String tableName) {
         Table t = table(tableName);
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT " + t.seriesColumn() + "," + t.periodColumn() + "," + t.valueColumn() + " FROM " + t.name() + " WHERE " + t.tenantColumn() + "=? ORDER BY 1,2",
+        return tx.read(c -> Jdbc.query(c, "SELECT " + t.seriesColumn() + "," + t.periodColumn() + "," + t.valueColumn() + " FROM " + t.name() + " WHERE " + t.tenantColumn() + "=? ORDER BY 1,2",
                 rs -> new Value(t.name(), rs.getString(1), rs.getString(2), rs.getLong(3)), tenantId));
     }
 

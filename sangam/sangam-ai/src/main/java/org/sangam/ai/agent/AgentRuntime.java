@@ -375,7 +375,7 @@ public final class AgentRuntime {
     }
 
     public List<Approval> pendingApprovals(String tenantId) {
-        return tx.inTransaction(c -> Jdbc.query(c, APPROVAL_SELECT + " WHERE tenant_id=? AND state='PENDING' ORDER BY created_at",
+        return tx.read(c -> Jdbc.query(c, APPROVAL_SELECT + " WHERE tenant_id=? AND state='PENDING' ORDER BY created_at",
                 AgentRuntime::mapApproval, tenantId));
     }
 
@@ -457,7 +457,7 @@ public final class AgentRuntime {
     }
 
     public Optional<Run> find(String runId) {
-        return tx.inTransaction(c -> Jdbc.one(c, "SELECT run_id,tenant_id,agent_key,state,lock_version,depth,steps_used,tokens_used,root_id,"
+        return tx.read(c -> Jdbc.one(c, "SELECT run_id,tenant_id,agent_key,state,lock_version,depth,steps_used,tokens_used,root_id,"
                 + "business_key,principal_id,definition_json,input_text,result_text FROM AI_AGENT_RUN WHERE run_id=?", rs -> new Run(rs.getString(1), rs.getString(2),
                 rs.getString(3), State.valueOf(rs.getString(4)), rs.getLong(5), rs.getInt(6), rs.getInt(7), rs.getLong(8), rs.getString(9),
                 rs.getString(10), rs.getString(11), readDef(rs.getString(12)), rs.getString(13) == null ? "" : rs.getString(13),
@@ -539,12 +539,12 @@ public final class AgentRuntime {
     }
 
     public List<StepView> stepViews(String runId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT step_no,kind,payload_json,created_at FROM AI_AGENT_STEP WHERE run_id=? ORDER BY step_no",
+        return tx.read(c -> Jdbc.query(c, "SELECT step_no,kind,payload_json,created_at FROM AI_AGENT_STEP WHERE run_id=? ORDER BY step_no",
                 rs -> new StepView(rs.getInt(1), rs.getString(2), Json.readMap(rs.getString(3)), rs.getTimestamp(4).toInstant()), runId));
     }
 
     public Optional<java.time.Instant> startedAt(String runId) {
-        return tx.inTransaction(c -> Jdbc.one(c, "SELECT created_at FROM AI_AGENT_RUN WHERE run_id=?", rs -> rs.getTimestamp(1).toInstant(), runId));
+        return tx.read(c -> Jdbc.one(c, "SELECT created_at FROM AI_AGENT_RUN WHERE run_id=?", rs -> rs.getTimestamp(1).toInstant(), runId));
     }
 
     /** Approvals of a tenant, newest first; {@code stateOrNull} filters by PENDING, APPROVED or REJECTED. */
@@ -552,6 +552,6 @@ public final class AgentRuntime {
         String sql = "SELECT approval_id,tenant_id,run_id,tool_call_id,tool_name,args_json,args_hash,state,requested_by,decided_by,reason,created_at "
                 + "FROM AI_AGENT_APPROVAL WHERE tenant_id=?" + (stateOrNull == null ? "" : " AND state=?") + " ORDER BY created_at DESC";
         Object[] params = stateOrNull == null ? new Object[]{tenantId} : new Object[]{tenantId, stateOrNull};
-        return tx.inTransaction(c -> Jdbc.query(c, sql, rs -> new ApprovalView(mapApproval(rs), rs.getTimestamp(12).toInstant()), params));
+        return tx.read(c -> Jdbc.query(c, sql, rs -> new ApprovalView(mapApproval(rs), rs.getTimestamp(12).toInstant()), params));
     }
 }

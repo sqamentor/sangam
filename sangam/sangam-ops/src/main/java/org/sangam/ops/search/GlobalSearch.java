@@ -92,7 +92,7 @@ public final class GlobalSearch {
         for (String col : s.matchColumns()) {
             match.append(match.isEmpty() ? "" : " OR ").append("LOWER(").append(col).append(") LIKE ? ESCAPE '\\'");
         }
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             SqlPredicate visible = s.visibility().visible(c, who);
             String sql = "SELECT " + s.idColumn() + ", " + s.titleColumn() + " FROM " + s.from() + " WHERE (" + visible.sql() + ") AND (" + match + ") ORDER BY " + s.idColumn();
             try (PreparedStatement ps = c.prepareStatement(sql)) {

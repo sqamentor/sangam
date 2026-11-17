@@ -331,7 +331,7 @@ public final class JdbcPackageAdapter implements PackagePort {
         permissions.require(ctx, Permissions.PACKAGE_READ);
         Package p = entry(ctx, packageId).pkg;
         return p.packageHash() == null ? List.of()
-                : tx.withConnection(c -> JdbcPackageSignatures.load(c, JdbcSupport.tenant(ctx), p.packageHash()));
+                : tx.withReadConnection(c -> JdbcPackageSignatures.load(c, JdbcSupport.tenant(ctx), p.packageHash()));
     }
 
     @Override
@@ -354,7 +354,7 @@ public final class JdbcPackageAdapter implements PackagePort {
         Map<String, String> artifacts = new TreeMap<>();
         e.resources.forEach((k, v) -> artifacts.put(k, PackageManifests.encode(k, v)));
         String tenant = JdbcSupport.tenant(ctx);
-        List<PackageSignature> sigs = tx.withConnection(c -> JdbcPackageSignatures.load(c, tenant, p.packageHash()));
+        List<PackageSignature> sigs = tx.withReadConnection(c -> JdbcPackageSignatures.load(c, tenant, p.packageHash()));
         Instant now = Instant.now();
         audit.record(ctx, chain(e), "PACKAGE_EXPORTED", payload("packageId", p.id(), "key", p.key(),
                 "package_hash", p.packageHash(), "sourceEnvironment", signing.environment(), "signatures", sigs.size(),
@@ -695,13 +695,13 @@ public final class JdbcPackageAdapter implements PackagePort {
     }
 
     private Entry find(String tenant, String id) {
-        return tx.withConnection(c -> Jdbc.one(c, "SELECT " + COLS + " FROM PACKAGE_VERSION WHERE tenant_id=?"
+        return tx.withReadConnection(c -> Jdbc.one(c, "SELECT " + COLS + " FROM PACKAGE_VERSION WHERE tenant_id=?"
                 + " AND package_id=?", JdbcPackageAdapter::row, tenant, id)).orElse(null);
     }
 
     /** Every package of the tenant, or of one key. */
     private List<Entry> load(String tenant, String key) {
-        return tx.withConnection(c -> Jdbc.query(c, "SELECT " + COLS + " FROM PACKAGE_VERSION WHERE tenant_id=?"
+        return tx.withReadConnection(c -> Jdbc.query(c, "SELECT " + COLS + " FROM PACKAGE_VERSION WHERE tenant_id=?"
                         + " AND package_id IS NOT NULL" + (key == null ? "" : " AND package_key=?")
                         + " ORDER BY package_key, version", JdbcPackageAdapter::row,
                 key == null ? new Object[]{tenant} : new Object[]{tenant, key}));

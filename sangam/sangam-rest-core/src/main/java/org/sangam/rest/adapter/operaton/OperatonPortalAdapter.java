@@ -219,7 +219,7 @@ public class OperatonPortalAdapter implements PortalPort {
         if (ctx.tenantId() != null) {
             q.tenantIdIn(ctx.tenantId());
         }
-        for (HistoricProcessInstance h : OperatonSupport.call(() -> q.listPage(0, LIMIT))) {
+        for (HistoricProcessInstance h : OperatonSupport.readCall(() -> q.listPage(0, LIMIT))) {
             all.add(map(ctx, h));
         }
         return Page.slice(all, page, props.getCountCap());
@@ -236,7 +236,7 @@ public class OperatonPortalAdapter implements PortalPort {
 
     /** The application's process instance, if it belongs to the caller; 404 otherwise (no existence leak). */
     private HistoricProcessInstance requireOwn(RequestContext ctx, String id) {
-        HistoricProcessInstance h = OperatonSupport.call(() ->
+        HistoricProcessInstance h = OperatonSupport.readCall(() ->
                 history.createHistoricProcessInstanceQuery().processInstanceId(id).singleResult());
         if (h == null) {
             throw ApiProblem.notFound("application", id);

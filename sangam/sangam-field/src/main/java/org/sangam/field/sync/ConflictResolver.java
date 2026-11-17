@@ -99,13 +99,13 @@ public final class ConflictResolver {
     }
 
     public List<Conflict> list(String tenantId, String status, int limit) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT * FROM FLD_CONFLICT WHERE tenant_id = ?" + (status == null ? "" : " AND status = ?")
+        return tx.read(c -> Jdbc.query(c, "SELECT * FROM FLD_CONFLICT WHERE tenant_id = ?" + (status == null ? "" : " AND status = ?")
                         + " ORDER BY created_at DESC", ConflictResolver::map, status == null ? new Object[]{tenantId} : new Object[]{tenantId, status}))
                 .stream().limit(Math.max(1, Math.min(500, limit <= 0 ? 100 : limit))).toList();
     }
 
     public Conflict get(String tenantId, String id) {
-        return tx.inTransaction(c -> require(c, tenantId, id));
+        return tx.read(c -> require(c, tenantId, id));
     }
 
     public Conflict require(Connection c, String tenantId, String id) {

@@ -81,7 +81,7 @@ public final class ScheduleService {
     }
 
     public List<Schedule> list(String tenantId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT * FROM FLD_SCHEDULE WHERE tenant_id = ? ORDER BY schedule_id",
+        return tx.read(c -> Jdbc.query(c, "SELECT * FROM FLD_SCHEDULE WHERE tenant_id = ? ORDER BY schedule_id",
                 ScheduleService::map, tenantId));
     }
 

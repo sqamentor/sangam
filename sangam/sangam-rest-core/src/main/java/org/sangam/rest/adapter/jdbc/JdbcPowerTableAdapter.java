@@ -344,7 +344,7 @@ public final class JdbcPowerTableAdapter implements PowerTablePort {
 
     /** Every version of the tenant, or of one key. */
     private List<Entry> load(String tenant, String key) {
-        return tx.withConnection(c -> Jdbc.query(c, "SELECT " + COLS + " FROM SEC_POWER_TABLE WHERE tenant_id=?"
+        return tx.withReadConnection(c -> Jdbc.query(c, "SELECT " + COLS + " FROM SEC_POWER_TABLE WHERE tenant_id=?"
                         + (key == null ? "" : " AND table_key=?") + " ORDER BY table_key, version",
                 JdbcPowerTableAdapter::row, key == null ? new Object[]{tenant} : new Object[]{tenant, key}));
     }

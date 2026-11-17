@@ -233,7 +233,7 @@ public final class KnowledgeBaseService {
     }
 
     public List<KbInfo> list(String tenantId) {
-        List<KbInfo> all = tx.inTransaction(c -> Jdbc.query(c, "SELECT v.kb_key,v.version,v.state,v.created_at,(SELECT COUNT(*) FROM AI_KB_CHUNK k "
+        List<KbInfo> all = tx.read(c -> Jdbc.query(c, "SELECT v.kb_key,v.version,v.state,v.created_at,(SELECT COUNT(*) FROM AI_KB_CHUNK k "
                 + "WHERE k.tenant_id=v.tenant_id AND k.kb_key=v.kb_key AND k.version=v.version),v.metadata_json,v.retire_reason,v.retired_by"
                 + " FROM AI_KB_VERSION v WHERE v.tenant_id=? ORDER BY v.kb_key, v.version DESC",
                 rs -> new KbInfo(rs.getString(1), rs.getInt(2), rs.getString(3), rs.getLong(5), rs.getTimestamp(4).toInstant(),

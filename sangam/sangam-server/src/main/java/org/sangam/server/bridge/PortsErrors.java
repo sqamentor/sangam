@@ -19,7 +19,7 @@ final class PortsErrors {
 
     static <T> T call(Supplier<T> work) {
         try {
-            return OperatonSupport.call(work);
+            return OperatonSupport.readCall(work);
         } catch (ApiProblem p) {
             throw p;
         } catch (org.sangam.ports.events.EventRegistry.InFlightException e) {

@@ -160,7 +160,7 @@ public final class CellTenantMover {
     // ------------------------------------------------------------------ drain status
 
     public DrainStatus drainStatus(String tenant) {
-        return tx.withConnection(c -> {
+        return tx.withReadConnection(c -> {
             Timestamp now = Timestamp.from(Jdbc.dbNow(c, tx.dialect()));
             return new DrainStatus(
                     count(c, "SELECT COUNT(*) FROM IDEMPOTENCY_RECORD WHERE tenant_id=? AND state='IN_PROGRESS'", tenant),
@@ -550,7 +550,7 @@ public final class CellTenantMover {
     // ------------------------------------------------------------------ checksum
 
     public TenantChecksum checksum(String tenant) {
-        return tx.withConnection(c -> {
+        return tx.withReadConnection(c -> {
             Map<String, Long> counts = new TreeMap<>();
             List<String> lines = new ArrayList<>();
             try {

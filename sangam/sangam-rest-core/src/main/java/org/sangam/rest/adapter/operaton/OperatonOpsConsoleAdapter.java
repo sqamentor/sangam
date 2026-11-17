@@ -201,7 +201,7 @@ public class OperatonOpsConsoleAdapter implements OpsConsolePort {
     }
 
     private List<TopicBacklog> backlog(String tenant, Instant now) {
-        List<ExternalTask> open = OperatonSupport.call(() ->
+        List<ExternalTask> open = OperatonSupport.readCall(() ->
                 externalTasks.createExternalTaskQuery().tenantIdIn(tenant).notLocked().listPage(0, SAMPLE));
         Map<String, long[]> byTopic = new TreeMap<>();
         for (ExternalTask e : open) {
@@ -236,9 +236,9 @@ public class OperatonOpsConsoleAdapter implements OpsConsolePort {
     public JobSummary jobSummary(RequestContext ctx) {
         String t = ctx.tenantId();
         Date now = new Date();
-        long executable = OperatonSupport.call(() -> management.createJobQuery().tenantIdIn(t).executable().count());
-        long failed = OperatonSupport.call(() -> management.createJobQuery().tenantIdIn(t).withException().count());
-        long timersDue = OperatonSupport.call(() ->
+        long executable = OperatonSupport.readCall(() -> management.createJobQuery().tenantIdIn(t).executable().count());
+        long failed = OperatonSupport.readCall(() -> management.createJobQuery().tenantIdIn(t).withException().count());
+        long timersDue = OperatonSupport.readCall(() ->
                 management.createJobQuery().tenantIdIn(t).timers().duedateLowerThan(now).count());
         long locked = lockedJobs(t);
         return new JobSummary(executable, failed, timersDue, locked, List.of());
@@ -265,12 +265,12 @@ public class OperatonOpsConsoleAdapter implements OpsConsolePort {
 
     @Override
     public String jobStacktrace(RequestContext ctx, String jobId) {
-        var job = OperatonSupport.call(() -> management.createJobQuery().jobId(jobId).singleResult());
+        var job = OperatonSupport.readCall(() -> management.createJobQuery().jobId(jobId).singleResult());
         if (job == null) {
             throw ApiProblem.notFound("job", jobId);
         }
         OperatonSupport.checkTenant(ctx, job.getTenantId(), "job", jobId);
-        String trace = OperatonSupport.call(() -> management.getJobExceptionStacktrace(jobId));
+        String trace = OperatonSupport.readCall(() -> management.getJobExceptionStacktrace(jobId));
         return trace == null ? "" : trace;
     }
 
@@ -287,7 +287,7 @@ public class OperatonOpsConsoleAdapter implements OpsConsolePort {
         String where = " WHERE tenant_id=?" + (state == null ? "" : " AND state=?");
         Object[] params = state == null ? new Object[]{ctx.tenantId()} : new Object[]{ctx.tenantId(), state};
         long cap = props.getCountCap();
-        return tx.withConnection(c -> {
+        return tx.withReadConnection(c -> {
             List<InboxEntry> rows = limited(c, "SELECT source, message_id, state, received_at, correlation_key FROM INBOX"
                             + where + " ORDER BY received_at DESC", page.firstResult() + page.size(),
                     rs -> new InboxEntry(rs.getString(1) + ":" + rs.getString(2), rs.getString(1), rs.getString(2),
@@ -433,7 +433,7 @@ public class OperatonOpsConsoleAdapter implements OpsConsolePort {
     }
 
     private Incident incident(RequestContext ctx, String id) {
-        Incident i = OperatonSupport.call(() -> runtime.createIncidentQuery().incidentId(id).singleResult());
+        Incident i = OperatonSupport.readCall(() -> runtime.createIncidentQuery().incidentId(id).singleResult());
         if (i == null) {
             throw ApiProblem.notFound("incident", id);
         }

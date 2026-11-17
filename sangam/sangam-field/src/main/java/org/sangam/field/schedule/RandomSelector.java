@@ -121,7 +121,7 @@ public final class RandomSelector {
 
     /** Re-runs a stored draw from its recorded seed and weights; true when the stored sample is reproduced. */
     public boolean verify(String tenantId, String selectionId) {
-        return tx.inTransaction(c -> Jdbc.one(c, "SELECT seed, sample_size, weights_json, selected_json FROM FLD_SELECTION "
+        return tx.read(c -> Jdbc.one(c, "SELECT seed, sample_size, weights_json, selected_json FROM FLD_SELECTION "
                 + "WHERE tenant_id = ? AND selection_id = ?", rs -> {
                     Map<String, Object> w = FieldJson.map(rs.getString("weights_json"));
                     List<Candidate> pop = new ArrayList<>();

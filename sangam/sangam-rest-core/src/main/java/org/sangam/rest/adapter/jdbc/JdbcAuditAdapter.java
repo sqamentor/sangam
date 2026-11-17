@@ -128,7 +128,7 @@ public class JdbcAuditAdapter implements AuditPort, ChainViews {
         roots.add(businessKey);
         Set<String> chains = withDenialChains(ctx.tenantId(), roots);
         int limit = (int) Math.min(Integer.MAX_VALUE, Math.max(props.getCountCap(), page.firstResult() + page.size()) + 1);
-        List<AuditEntry> all = new ArrayList<>(tx.withConnection(c -> readChains(c, ctx.tenantId(), chains, limit)));
+        List<AuditEntry> all = new ArrayList<>(tx.withReadConnection(c -> readChains(c, ctx.tenantId(), chains, limit)));
         if (includeHistory) {
             for (String root : rootIds) {
                 List<HistoricActivityInstance> acts = historyService.createHistoricActivityInstanceQuery()
@@ -178,7 +178,7 @@ public class JdbcAuditAdapter implements AuditPort, ChainViews {
         String sql = "SELECT e.chain_id, e.seq, e.event_id, e.event_type, e.occurred_at, e.hash, e.prev_hash, e.envelope, p.payload, p.erased_at"
                 + from + where + " ORDER BY e.occurred_at DESC, e.seq DESC";
         long cap = props.getCountCap();
-        Page<AuditEntry> result = tx.withConnection(c -> {
+        Page<AuditEntry> result = tx.withReadConnection(c -> {
             List<AuditEntry> rows = limited(c, sql, page.firstResult() + page.size(), JdbcAuditAdapter::auditRow,
                     params.toArray());
             List<AuditEntry> items = rows.subList(Math.min(rows.size(), page.firstResult()), rows.size());
@@ -200,7 +200,7 @@ public class JdbcAuditAdapter implements AuditPort, ChainViews {
     public VerifyResult verify(RequestContext ctx, String chainId, String businessKey) {
         String tenant = ctx.tenantId();
         Instant now = Instant.now();
-        List<ChainVerification> results = tx.withConnection(c -> {
+        List<ChainVerification> results = tx.withReadConnection(c -> {
             Set<String> chains = new LinkedHashSet<>();
             Set<String> denialChains = Set.of();
             if (chainId != null) {
@@ -268,7 +268,7 @@ public class JdbcAuditAdapter implements AuditPort, ChainViews {
         roots.add(businessKey);
         Set<String> chains = withDenialChains(ctx.tenantId(), roots);
         int limit = (int) Math.min(Integer.MAX_VALUE, props.getCountCap());
-        List<AuditEntry> entries = tx.withConnection(c -> readChains(c, ctx.tenantId(), chains, limit));
+        List<AuditEntry> entries = tx.withReadConnection(c -> readChains(c, ctx.tenantId(), chains, limit));
         byte[] content = fmt.equals("json") ? json(entries) : csv(entries);
         Map<String, Object> p = new LinkedHashMap<>();
         p.put("businessKey", businessKey);

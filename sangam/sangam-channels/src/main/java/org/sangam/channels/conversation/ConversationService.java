@@ -182,7 +182,7 @@ public final class ConversationService {
     }
 
     public List<Message> history(String tenantId, String conversationId, String actor, int limit) {
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             requireParticipant(c, tenantId, conversationId, actor);
             List<Message> all = Jdbc.query(c, SELECT + " WHERE conversation_id=? ORDER BY created_at DESC, id", ConversationService::map, conversationId);
             return List.copyOf(all.subList(0, Math.min(limit, all.size())));
@@ -253,7 +253,7 @@ public final class ConversationService {
             params.add(grams.size());
         }
         sql.append(" ORDER BY created_at DESC, id");
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             List<Message> all = Jdbc.query(c, sql.toString(), ConversationService::map, params.toArray());
             return List.copyOf(all.subList(0, Math.min(limit, all.size())));
         });
@@ -311,7 +311,7 @@ public final class ConversationService {
         String sql = "SELECT k.id,k.tenant_id,k.title,k.case_ref,k.retention_class FROM CH_CONVERSATION k JOIN CH_PARTICIPANT p ON p.conversation_id=k.id "
                 + "WHERE k.tenant_id=? AND p.principal_id=?" + (caseRefOrNull == null ? "" : " AND k.case_ref=?") + " ORDER BY k.created_at DESC";
         Object[] params = caseRefOrNull == null ? new Object[]{tenantId, actor} : new Object[]{tenantId, actor, caseRefOrNull};
-        List<Conversation> all = tx.inTransaction(c -> Jdbc.query(c, sql, rs -> new Conversation(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)), params));
+        List<Conversation> all = tx.read(c -> Jdbc.query(c, sql, rs -> new Conversation(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)), params));
         return all.size() > limit ? List.copyOf(all.subList(0, limit)) : all;
     }
 }

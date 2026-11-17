@@ -54,6 +54,11 @@ public final class SpringTxSupport extends TxSupport {
     }
 
     @Override
+    public <T> T inReadTx(org.sangam.core.api.ReadSupplier<T> work) {
+        return required.execute(status -> work.read());
+    }
+
+    @Override
     public <T> T inNewReadTx(ReadWork<T> work) {
         return requiresNew.execute(status -> work.read(connection()));
     }

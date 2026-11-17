@@ -87,14 +87,14 @@ public final class JdbcDscCertificateEnrolments implements DscCertificateEnrolme
 
     @Override
     public List<Enrolment> ofPrincipal(String tenantId, String principalId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT " + COLUMNS + " FROM " + TABLE
+        return tx.read(c -> Jdbc.query(c, "SELECT " + COLUMNS + " FROM " + TABLE
                         + " WHERE tenant_id = ? AND principal_id = ? ORDER BY enrolled_at DESC, enrolment_id",
                 JdbcDscCertificateEnrolments::row, tenantId, principalId));
     }
 
     @Override
     public List<Enrolment> withStatus(String tenantId, Status status, int limit) {
-        List<Enrolment> all = tx.inTransaction(c -> Jdbc.query(c, "SELECT " + COLUMNS + " FROM " + TABLE
+        List<Enrolment> all = tx.read(c -> Jdbc.query(c, "SELECT " + COLUMNS + " FROM " + TABLE
                         + " WHERE tenant_id = ? AND status = ? ORDER BY enrolled_at, enrolment_id",
                 JdbcDscCertificateEnrolments::row, tenantId, status.name()));
         return all.size() <= limit ? all : new ArrayList<>(all.subList(0, Math.max(0, limit)));

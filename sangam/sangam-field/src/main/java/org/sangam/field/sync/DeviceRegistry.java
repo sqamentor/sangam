@@ -130,7 +130,7 @@ public final class DeviceRegistry {
     }
 
     public List<Device> listForPrincipal(String tenantId, String principalId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT * FROM FLD_DEVICE WHERE tenant_id = ? AND principal_id = ? ORDER BY registered_at",
+        return tx.read(c -> Jdbc.query(c, "SELECT * FROM FLD_DEVICE WHERE tenant_id = ? AND principal_id = ? ORDER BY registered_at",
                 DeviceRegistry::map, tenantId, principalId));
     }
 

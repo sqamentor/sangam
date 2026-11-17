@@ -57,7 +57,7 @@ final class OperatonProcessDefinitions {
 
     String xml(RequestContext ctx, String definitionId) {
         requireDefinition(ctx, definitionId);
-        try (InputStream in = OperatonSupport.call(() -> repository.getProcessModel(definitionId))) {
+        try (InputStream in = OperatonSupport.readCall(() -> repository.getProcessModel(definitionId))) {
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new ApiProblem(500, "RESOURCE_READ_FAILED", e.getMessage());
@@ -65,7 +65,7 @@ final class OperatonProcessDefinitions {
     }
 
     private org.operaton.bpm.engine.repository.ProcessDefinition requireDefinition(RequestContext ctx, String id) {
-        org.operaton.bpm.engine.repository.ProcessDefinition d = OperatonSupport.call(() ->
+        org.operaton.bpm.engine.repository.ProcessDefinition d = OperatonSupport.readCall(() ->
                 repository.createProcessDefinitionQuery().processDefinitionId(id).singleResult());
         if (d == null) {
             throw ApiProblem.notFound("process definition", id);
