@@ -878,6 +878,25 @@ Sangam supports **N → N+1 rolling upgrades**. During the rollout, pods of N an
 
 **Rollback.** `helm rollback sangam <rev>` restores the N pods, which work on the expanded schema. Database downgrades are **not** supported. If a migration damaged data, restore (§3) and reconcile (§4.3).
 
+### Tenant-owned connector and send-event work (decision 145)
+
+From this release, BPMN connector tasks (`SangamConnectorDelegate`, the connector external-task worker) and send-event tasks (`SendEventDelegate`) take their tenant from the **engine tenant of the process instance only**. The `sangamTenantId` and `tenantId` process variables are treated as untrusted claims. There is no configured default tenant for this work any more:
+
+- an instance without an engine tenant is refused with `TENANT_CONTEXT_MISSING` before any connector call or outbox write;
+- an instance whose `sangamTenantId` or `tenantId` variable names a different tenant is refused with `TENANT_CONTEXT_CONFLICT`.
+
+Process definitions deployed **without a tenant id** (older installs, or packs deployed by hand) therefore stop at their first connector or send-event task after the upgrade. Before you upgrade:
+
+1. **Redeploy each tenant's packs with that tenant's id.** Use the normal per-tenant pack deployment, not a shared deployment: shared deployments run with system scope, which never grants a tenant connector binding.
+2. **List the instances that still run without a matching engine tenant:**
+
+   ```bash
+   curl -H "Authorization: Bearer $PLATFORM_ADMIN_TOKEN" https://<host>/api/v1/admin/tenant-migration/instances
+   ```
+
+   This needs the platform-only permission `platform.tenant-migration.admin`. The call is a read-only scan and changes nothing. It lists running root instances that have no engine tenant (with or without a tenant variable), and instances whose tenant variable contradicts the engine tenant.
+3. **Finish or migrate every listed instance** before the upgrade. Listed instances that reach a connector or send-event task on the new release are refused (the call fails, or the job or external task becomes an incident), not run under a default tenant. Upgrade when the list is empty.
+
 ### Knowledge-base vector index and the Oracle vector column (decision 247)
 
 `SANGAM_AI_KB_VECTOR_INDEX` (`sangam.ai.kb.vector-index`; Helm `server.aiKbVectorIndex`, schema enum) picks the

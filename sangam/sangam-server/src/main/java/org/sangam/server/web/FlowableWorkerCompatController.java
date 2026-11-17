@@ -181,7 +181,7 @@ public class FlowableWorkerCompatController {
     private static EngineAdapter.ExternalWork toCore(WorkPort.ExternalWork w) {
         return new EngineAdapter.ExternalWork(w.id(), w.topic(), w.processInstanceId(), w.activityId(),
                 w.activityInstanceId(), w.retries() == null ? 0 : w.retries(), w.lockExpiresAt(), w.lockVersion(),
-                w.attemptId(), w.variables(), w.operationId());
+                w.attemptId(), w.variables(), w.operationId(), java.util.Map.of(), w.tenantId());
     }
 
     private static String worker(Map<String, Object> m) {

@@ -147,28 +147,41 @@ public interface EngineAdapter extends AutoCloseable {
      *                           {@code arazzo.outputs}) plus the adapter's keys {@code sangamOperationRef} (pinned
      *                           {@code contractId@version#operationId}), {@code sangam.processDefinitionId} and
      *                           {@code sangam.deploymentId}; never null, unmodifiable, empty where the adapter has none
+     * @param tenantId           DEC-145: the engine tenant of the work as the engine stores it (Operaton
+     *                           {@code LockedExternalTask.getTenantId()}), null when the engine has none or the adapter
+     *                           does not know it. The only tenant source of tenant-owned work: a tenant in
+     *                           {@code variables} is an untrusted claim ({@code ExecutionTenantPolicy})
      */
     record ExternalWork(String id, String topic, String processInstanceId, String activityId,
                         String activityInstanceId, int retries, java.time.Instant lockExpiresAt,
                         long lockVersion, String attemptId, Map<String, Object> variables, String operationId,
-                        Map<String, String> properties) {
+                        Map<String, String> properties, String tenantId) {
 
         public ExternalWork {
             properties = properties == null ? Map.of() : Map.copyOf(properties);
+        }
+
+        /** Work whose engine tenant the adapter does not report ({@code tenantId} null: tenant-owned use fails closed). */
+        public ExternalWork(String id, String topic, String processInstanceId, String activityId,
+                            String activityInstanceId, int retries, java.time.Instant lockExpiresAt,
+                            long lockVersion, String attemptId, Map<String, Object> variables, String operationId,
+                            Map<String, String> properties) {
+            this(id, topic, processInstanceId, activityId, activityInstanceId, retries, lockExpiresAt, lockVersion,
+                    attemptId, variables, operationId, properties, null);
         }
 
         public ExternalWork(String id, String topic, String processInstanceId, String activityId,
                             String activityInstanceId, int retries, java.time.Instant lockExpiresAt,
                             long lockVersion, String attemptId, Map<String, Object> variables, String operationId) {
             this(id, topic, processInstanceId, activityId, activityInstanceId, retries, lockExpiresAt, lockVersion,
-                    attemptId, variables, operationId, Map.of());
+                    attemptId, variables, operationId, Map.of(), null);
         }
 
         public ExternalWork(String id, String topic, String processInstanceId, String activityId,
                             String activityInstanceId, int retries, java.time.Instant lockExpiresAt,
                             long lockVersion, String attemptId, Map<String, Object> variables) {
             this(id, topic, processInstanceId, activityId, activityInstanceId, retries, lockExpiresAt, lockVersion,
-                    attemptId, variables, null, Map.of());
+                    attemptId, variables, null, Map.of(), null);
         }
     }
 
