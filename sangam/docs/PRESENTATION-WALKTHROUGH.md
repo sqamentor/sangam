@@ -20,6 +20,12 @@ screen you should see and the expected result. Steps that a known open defect af
   tenant, person id = username), then run the seed again so the seat holders get their postings (README section 5).
 - After sign-in a seat holder lands on Tasks, the inbox of their seat; a person without a seat lands on Welcome.
 - Jaipur only: Kishangarh personas wait until seats are picked per office (a gap after 0.1.0).
+- Seats without a person: PRAO-1 (role PR_AO) and SECY-1 (role CAA). IFMS E-67 (persons.csv, PRS-RJ-0001..0026)
+  has nobody for either, so Sangam does not make one up; the joint ledger asks IFMS for them. Their tasks are outside
+  this walkthrough: PRAO-1 consolidates monthly accounts and authorises SNA-SPARSH payments, SECY-1 signs the
+  year-end Appropriation Accounts and is the budget formulation authority seat (accounts and payment batch stay out,
+  owner). In the PAO chain, PAO-1 and SS-1 report to PRAO-1, so an SLA breach there escalates to an empty seat.
+  BCO, payment batch and accounts personas also stay out (owner).
 
 | Person (E-67 id) | Username | Sangam role | Seat |
 |---|---|---|---|
@@ -92,7 +98,7 @@ Unblocked: IFT-4 is merged (005d726d, `gov.ifms.gpf` 1.0.3). Reject stays final.
 | # | Action | Expected screen and result |
 |---|---|---|
 | 6.1 | As `kavita.sharma`: Start, "Bill" (`sangam-ifms-bill`), choose a bill type, head of account, payee, amount. Submit. | The checks run: bill type, head of account, duplicate claim, payee record. A failed check ends with a stated reason (for example BILL_INVALID). |
-| 6.2 | If asked "Confirm payee: account held by several parties": confirm the payee (PAO-1, `sunita.rathore`; INFERRED, the pack hard-codes this seat). | The bill continues. **BLOCKED (pack defect, fix in progress in L-packs):** payee review and the PAO pass in 6.3 are both on seat PAO-1, and the PAO pass guard refuses the same seat (422 SOD_VIOLATION) every time payee review has happened. |
+| 6.2 | If asked "Confirm payee: account held by several parties": as `deepak.saini` (DH-1, dealing hand), confirm the payee. | The bill continues to the PAO chain. Payee review sits on the bill's dealing seat (`dealingSeat=DH-1`, owner decision option A; `gov.ifms.bill` 1.0.5, integration 69ccc49e), so the PAO pass in 6.3 is no longer refused with 422 SOD_VIOLATION. Payee review at the dealing hand is a Sangam owner decision, INFERRED against IFMS E-67 (not confirmed by IFMS). |
 | 6.3 | PAO chain: "Assign bill in FIFO order" (BD-1); `deepak.saini` "Dealing hand check" (DH-1); "AAO check" (AAO-1); `sunita.rathore` "PAO pass, object or return" (PAO-1): Pass. | Each task appears for the next seat in turn. On pass, the approval is bound at the PAO pass (IFT-5) and execution starts. BD-1 `govind.khandelwal`, AAO-1 `mukesh.swami` (joint ledger SANGAM-PERSONA-ADD). |
 | 6.3a | If asked: as `sarita.champawat`, "Second signature (DSC)" (SS-1). | Needs the DSC agent on the presenting machine. |
 | 6.4 | Alternative: at 6.3 the PAO objects or returns. As `kavita.sharma` (the initiator seat): "Reply to objection / correct", correct, resubmit. | The bill returns to the PAO chain; on the next pass the approval is bound and execution runs. Unblocked: IFT-1/IFT-5 merged (9b73a430, `gov.ifms.pao-chain` 1.0.3). |
@@ -122,7 +128,8 @@ FA-1 as the starting seat is INFERRED in the pack (SL-57, IFMS R-99 v0.2 s6.1); 
 |---|---|---|
 | Hosting under `/sangam/` | UI base path (config.json, router, fonts) | unblocked (`basePath.ts`) |
 | 5.1 GPF return and rework | IFT-4 | unblocked (005d726d) |
-| 6.4 bill PAO return | IFT-1/IFT-5 fixed (9b73a430); reached only through 6.3 | waits on the 6.3 persona gap |
+| 6.4 bill PAO return | IFT-1/IFT-5 fixed (9b73a430); reached only through 6.3 | unblocked (BD-1, AAO-1 held since PRS-RJ-0024/0025) |
 | 6.5 payment | payment loop, PFMS field mapping | BLOCKED: L-packs payment-loop work |
-| 6.2 payee review then 6.3 PAO pass | both on seat PAO-1; the PAO pass guard refuses the same seat | BLOCKED: pack defect, fix in progress in L-packs |
+| 6.2 payee review then 6.3 PAO pass | were both on seat PAO-1; payee review now at DH-1 (69ccc49e, bill 1.0.5) | unblocked |
+| SLA escalation above PAO-1 or SS-1 | PRAO-1 and SECY-1 have no persona (no IFMS E-67 person for these seats) | gap: do not let a PAO chain task breach its SLA live |
 | 2.2 GPF start inputs | payment-loop work moves them to `employeeId` | at risk: check the deployed form |
