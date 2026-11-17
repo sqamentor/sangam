@@ -68,7 +68,21 @@ server {
         include /etc/nginx/conf.d/security-headers.inc;
     }
 
-    # Every other file of the build (fonts, icons), then the single-page fallback.
+    # The approved Noto fonts and their OFL texts (owner decisions 120, 121), as in docker/ui/default.conf.template:
+    # the stock mime.types has no ttf entry, and a types block replaces the inherited map for its location.
+    location ^~ /sangam/fonts/ {
+        alias /usr/share/nginx/html/fonts/;
+        types {
+            font/ttf    ttf;
+            text/plain  txt;
+        }
+        default_type application/octet-stream;
+        try_files $uri =404;
+        add_header Cache-Control "no-cache" always;
+        include /etc/nginx/conf.d/security-headers.inc;
+    }
+
+    # Every other file of the build (icons), then the single-page fallback.
     location /sangam/ {
         alias /usr/share/nginx/html/;
         try_files $uri $uri/ /sangam/index.html;

@@ -76,6 +76,21 @@ server {
         include /etc/nginx/conf.d/security-headers.inc;
     }
 
+    # The approved Noto fonts and their OFL texts (owner decisions 120, 121; scripts/deploy-fonts.mjs). The stock
+    # nginx mime.types has no ttf entry, so they went out as application/octet-stream. A types block replaces the
+    # inherited map for its location, so it names every file type served here; a missing file is a 404, never the
+    # single-page index.html.
+    location ^~ /fonts/ {
+        types {
+            font/ttf    ttf;
+            text/plain  txt;
+        }
+        default_type application/octet-stream;
+        try_files $uri =404;
+        add_header Cache-Control "no-cache" always;
+        include /etc/nginx/conf.d/security-headers.inc;
+    }
+
     # SPA fallback.
     location / {
         try_files $uri $uri/ /index.html;
