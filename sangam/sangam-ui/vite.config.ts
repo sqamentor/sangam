@@ -30,7 +30,9 @@ export default defineConfig(({ mode }) => {
       // (this package only); nothing else outside the package is opened. UI-DEMO sweep S7: the policy editor's action list is
       // checked against the server's Permission enum, so that enum's source folder is readable under Vitest too.
       ...(mode === 'test'
-        ? { fs: { allow: [root, resolve(root, '../sangam-rest/api'), resolve(root, '../sangam-security/src/main/java/org/sangam/security/policy')] } }
+        ? { fs: { allow: [root, resolve(root, '../sangam-rest/api'), resolve(root, '../sangam-security/src/main/java/org/sangam/security/policy'),
+            // R10-bpmn: the MIWG reference models for the modeller round trip (src/modeller/miwgRoundTrip.test.ts)
+            resolve(root, '../sangam-flowable-ports/src/test/resources/miwg/reference')] } }
         : {}),
       proxy: {
         '/api': { target: backend, changeOrigin: true },
