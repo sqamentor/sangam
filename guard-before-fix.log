@@ -1,0 +1,1272 @@
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.fusesource.jansi.internal.JansiLoader in an unnamed module (file:/C:/Users/Lokendra%20Singh/.m2/wrapper/dists/apache-maven-3.9.9-bin/33b4b2b4/apache-maven-3.9.9/lib/jansi-2.4.1.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/C:/Users/Lokendra%20Singh/.m2/wrapper/dists/apache-maven-3.9.9-bin/33b4b2b4/apache-maven-3.9.9/lib/guava-33.2.1-jre.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] Sangam                                                             [pom]
+[INFO] Sangam core (engine-neutral contracts and product-layer primitives) [jar]
+[INFO] Liquibase changelogs and dialect SQL for product tables (4 Tier-1 DBs + H2) [jar]
+[INFO] Sangam FEEL and DMN policies (ADR-D-26: exact numbers, strict evaluation, strict null input, DMN 1.6) [jar]
+[INFO] Government and universal workflow packs                            [jar]
+[INFO] Operaton process-engine plugins (fencing, L2, DST guard, expiry, MySQL, history) [jar]
+[INFO] Flowable strengths ported onto Operaton                            [jar]
+[INFO] Outbox, inbox, idempotency, reconciliation, connectors             [jar]
+[INFO] Authorization (deny-wins), OIDC, seats, delegation, maker-checker  [jar]
+[INFO] Sangam operations: migrators, usage metrics, global search, outlier analysis, index, variables, secrets, sequences, retention [jar]
+[INFO] Sangam assembly layer and host SPI (plain Java)                    [jar]
+[INFO] Generic health connectors: FHIR R4, SMART Backend Services, X12 005010, Da Vinci PAS, CDS Hooks [jar]
+[INFO] Sangam Kubernetes REST client                                      [jar]
+[INFO] Sangam backup console                                              [jar]
+[INFO] Sangam config (profile hierarchy, master data, document-type catalogue, locale) [jar]
+[INFO] Sangam modeller back ends: landscape, templates, edit leases, token walk, mocks, bulk tests, actions, catalogue [jar]
+[INFO] Sangam service ports and default adapters (plain Java)             [jar]
+[INFO] Sangam security bridges for the service ports (plain Java)         [jar]
+[INFO] Sangam ledger (generic limit / fund-control ledger)                [jar]
+[INFO] Sangam registry (registered-object kernel: numbering, registers, instruments, parties, assets, custody) [jar]
+[INFO] Sangam billing (tariffs, invoices, collection, receipts, refunds, penalties) [jar]
+[INFO] Sangam resources (booking, allotment, queue/token, rostering)      [jar]
+[INFO] Sangam case file, meetings and references                          [jar]
+[INFO] Sangam programmes, targets, indicators and returns                 [jar]
+[INFO] Sangam geo (geometry, jurisdiction layers, geofences, GIS connectors) [jar]
+[INFO] Sangam field (inspection, offline capture, evidence, dispatch)     [jar]
+[INFO] Sangam AI: provider-neutral LLM port, agent runtime, RAG, MCP, A2A, reviewed drafts [jar]
+[INFO] Indian data-protection and cyber-security compliance (DPDP, CERT-In, IT Act) [jar]
+[INFO] Sangam channels: conversations, bots, messenger adapters, inbound mail and polled channels; SAP and ServiceNow connectors [jar]
+[INFO] Sangam REST API (OpenAPI 3.1)                                      [jar]
+[INFO] Sangam host conformance and cross-host equivalence kit             [jar]
+[INFO] Sangam onboarding (plug-and-play tenant onboarding, pack resolution, readiness, bundles) [jar]
+[INFO] Sangam cell-side scale ports (SCALE)                               [jar]
+[INFO] Sangam server (Spring Boot assembly)                               [jar]
+[INFO] 
+[INFO] -----------------< io.github.sqamentor:sangam-parent >------------------
+[INFO] Building Sangam 0.1.0-SNAPSHOT                                    [1/34]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-parent ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] ------------------< io.github.sqamentor:sangam-core >-------------------
+[INFO] Building Sangam core (engine-neutral contracts and product-layer primitives) 0.1.0-SNAPSHOT [2/34]
+[INFO]   from sangam-core\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-core ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-core ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-core\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-core ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-core ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-core\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-core ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 56 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-core ---
+[INFO] 
+[INFO] ---------------< io.github.sqamentor:sangam-persistence >---------------
+[INFO] Building Liquibase changelogs and dialect SQL for product tables (4 Tier-1 DBs + H2) 0.1.0-SNAPSHOT [3/34]
+[INFO]   from sangam-persistence\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-persistence ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-persistence ---
+[INFO] Copying 16 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-persistence ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-persistence ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-persistence\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-persistence ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 16 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-persistence ---
+[INFO] 
+[INFO] ------------------< io.github.sqamentor:sangam-feel >-------------------
+[INFO] Building Sangam FEEL and DMN policies (ADR-D-26: exact numbers, strict evaluation, strict null input, DMN 1.6) 0.1.0-SNAPSHOT [4/34]
+[INFO]   from sangam-feel\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-feel ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-feel ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-feel\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-feel ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-feel ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-feel\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-feel ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 5 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-feel ---
+[INFO] 
+[INFO] ------------------< io.github.sqamentor:sangam-packs >------------------
+[INFO] Building Government and universal workflow packs 0.1.0-SNAPSHOT   [5/34]
+[INFO]   from sangam-packs\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-packs ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-packs ---
+[INFO] Copying 1466 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-packs ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-packs ---
+[INFO] Copying 14 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-packs ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 88 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-packs/src/test/java/org/sangam/packs/PackAcceptanceTest.java: D:\sgw\r9-secjava\sangam\sangam-packs\src\test\java\org\sangam\packs\PackAcceptanceTest.java uses or overrides a deprecated API.
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-packs/src/test/java/org/sangam/packs/PackAcceptanceTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-packs/src/test/java/org/sangam/packs/PackAcceptanceTest.java: D:\sgw\r9-secjava\sangam\sangam-packs\src\test\java\org\sangam\packs\PackAcceptanceTest.java uses unchecked or unsafe operations.
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-packs/src/test/java/org/sangam/packs/PackAcceptanceTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-packs ---
+[INFO] 
+[INFO] -----------------< io.github.sqamentor:sangam-engine >------------------
+[INFO] Building Operaton process-engine plugins (fencing, L2, DST guard, expiry, MySQL, history) 0.1.0-SNAPSHOT [6/34]
+[INFO]   from sangam-engine\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-engine ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-engine ---
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-engine ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-engine ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-engine\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-engine ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 95 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-engine/src/test/java/org/sangam/engine/trace/TracingCommandInterceptorTest.java: D:\sgw\r9-secjava\sangam\sangam-engine\src\test\java\org\sangam\engine\trace\TracingCommandInterceptorTest.java uses unchecked or unsafe operations.
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-engine/src/test/java/org/sangam/engine/trace/TracingCommandInterceptorTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-engine ---
+[INFO] 
+[INFO] -------------< io.github.sqamentor:sangam-flowable-ports >--------------
+[INFO] Building Flowable strengths ported onto Operaton 0.1.0-SNAPSHOT   [7/34]
+[INFO]   from sangam-flowable-ports\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-flowable-ports ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-flowable-ports ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-flowable-ports\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-flowable-ports ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-flowable-ports ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-flowable-ports\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-flowable-ports ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 75 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-flowable-ports ---
+[INFO] 
+[INFO] ---------------< io.github.sqamentor:sangam-integration >---------------
+[INFO] Building Outbox, inbox, idempotency, reconciliation, connectors 0.1.0-SNAPSHOT [8/34]
+[INFO]   from sangam-integration\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-integration ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-integration ---
+[INFO] Copying 4 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-integration ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-integration ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-integration ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 89 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-integration ---
+[INFO] 
+[INFO] ----------------< io.github.sqamentor:sangam-security >-----------------
+[INFO] Building Authorization (deny-wins), OIDC, seats, delegation, maker-checker 0.1.0-SNAPSHOT [9/34]
+[INFO]   from sangam-security\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-security ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-security ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-security ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-security ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-security\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-security ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 28 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-security ---
+[INFO] 
+[INFO] -------------------< io.github.sqamentor:sangam-ops >-------------------
+[INFO] Building Sangam operations: migrators, usage metrics, global search, outlier analysis, index, variables, secrets, sequences, retention 0.1.0-SNAPSHOT [10/34]
+[INFO]   from sangam-ops\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-ops ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-ops ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-ops\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-ops ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-ops ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-ops ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 19 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-ops ---
+[INFO] 
+[INFO] ----------------< io.github.sqamentor:sangam-assembly >-----------------
+[INFO] Building Sangam assembly layer and host SPI (plain Java) 0.1.0-SNAPSHOT [11/34]
+[INFO]   from sangam-assembly\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-assembly ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-assembly ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-assembly\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-assembly ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-assembly ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-assembly\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-assembly ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 16 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-assembly ---
+[INFO] 
+[INFO] ------------< io.github.sqamentor:sangam-connectors-health >------------
+[INFO] Building Generic health connectors: FHIR R4, SMART Backend Services, X12 005010, Da Vinci PAS, CDS Hooks 0.1.0-SNAPSHOT [12/34]
+[INFO]   from sangam-connectors-health\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-connectors-health ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-connectors-health ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-connectors-health\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-connectors-health ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-connectors-health ---
+[INFO] Copying 3 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-connectors-health ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 4 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-connectors-health ---
+[INFO] 
+[INFO] ------------------< io.github.sqamentor:sangam-kube >-------------------
+[INFO] Building Sangam Kubernetes REST client 0.1.0-SNAPSHOT            [13/34]
+[INFO]   from sangam-kube\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-kube ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-kube ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-kube\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-kube ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-kube ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-kube\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-kube ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 1 source file with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-kube ---
+[INFO] 
+[INFO] -----------------< io.github.sqamentor:sangam-backup >------------------
+[INFO] Building Sangam backup console 0.1.0-SNAPSHOT                    [14/34]
+[INFO]   from sangam-backup\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-backup ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-backup ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-backup\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-backup ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-backup ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-backup\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-backup ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-backup ---
+[INFO] 
+[INFO] -----------------< io.github.sqamentor:sangam-config >------------------
+[INFO] Building Sangam config (profile hierarchy, master data, document-type catalogue, locale) 0.1.0-SNAPSHOT [15/34]
+[INFO]   from sangam-config\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-config ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-config ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-config\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-config ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-config ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-config\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-config ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 24 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-config ---
+[INFO] 
+[INFO] ----------------< io.github.sqamentor:sangam-modeller >-----------------
+[INFO] Building Sangam modeller back ends: landscape, templates, edit leases, token walk, mocks, bulk tests, actions, catalogue 0.1.0-SNAPSHOT [16/34]
+[INFO]   from sangam-modeller\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-modeller ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-modeller ---
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-modeller ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-modeller ---
+[INFO] Copying 3 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-modeller ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 17 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-modeller ---
+[INFO] 
+[INFO] ----------------< io.github.sqamentor:sangam-rest-core >----------------
+[INFO] Building Sangam service ports and default adapters (plain Java) 0.1.0-SNAPSHOT [17/34]
+[INFO]   from sangam-rest-core\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-rest-core ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-rest-core ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-rest-core\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-rest-core ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-rest-core ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-rest-core ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 37 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-rest-core ---
+[INFO] 
+[INFO] -------------< io.github.sqamentor:sangam-security-bridge >-------------
+[INFO] Building Sangam security bridges for the service ports (plain Java) 0.1.0-SNAPSHOT [18/34]
+[INFO]   from sangam-security-bridge\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-security-bridge ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-security-bridge ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-security-bridge\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-security-bridge ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-security-bridge ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-security-bridge\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-security-bridge ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-security-bridge ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] -----------------< io.github.sqamentor:sangam-ledger >------------------
+[INFO] Building Sangam ledger (generic limit / fund-control ledger) 0.1.0-SNAPSHOT [19/34]
+[INFO]   from sangam-ledger\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-ledger ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-ledger ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-ledger\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-ledger ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-ledger ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-ledger\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-ledger ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 9 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-ledger ---
+[INFO] 
+[INFO] ----------------< io.github.sqamentor:sangam-registry >-----------------
+[INFO] Building Sangam registry (registered-object kernel: numbering, registers, instruments, parties, assets, custody) 0.1.0-SNAPSHOT [20/34]
+[INFO]   from sangam-registry\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-registry ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-registry ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-registry\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-registry ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-registry ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-registry\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-registry ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 5 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-registry ---
+[INFO] 
+[INFO] -----------------< io.github.sqamentor:sangam-billing >-----------------
+[INFO] Building Sangam billing (tariffs, invoices, collection, receipts, refunds, penalties) 0.1.0-SNAPSHOT [21/34]
+[INFO]   from sangam-billing\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-billing ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-billing ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-billing\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-billing ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-billing ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-billing\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-billing ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 13 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-billing ---
+[INFO] 
+[INFO] ----------------< io.github.sqamentor:sangam-resources >----------------
+[INFO] Building Sangam resources (booking, allotment, queue/token, rostering) 0.1.0-SNAPSHOT [22/34]
+[INFO]   from sangam-resources\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-resources ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-resources ---
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-resources ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-resources ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-resources\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-resources ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 7 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-resources ---
+[INFO] 
+[INFO] ------------------< io.github.sqamentor:sangam-case >-------------------
+[INFO] Building Sangam case file, meetings and references 0.1.0-SNAPSHOT [23/34]
+[INFO]   from sangam-case\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-case ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-case ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-case\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-case ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-case ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-case\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-case ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 3 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-case ---
+[INFO] 
+[INFO] ----------------< io.github.sqamentor:sangam-programme >----------------
+[INFO] Building Sangam programmes, targets, indicators and returns 0.1.0-SNAPSHOT [24/34]
+[INFO]   from sangam-programme\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-programme ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-programme ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-programme\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-programme ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-programme ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-programme\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-programme ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 8 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-programme ---
+[INFO] 
+[INFO] -------------------< io.github.sqamentor:sangam-geo >-------------------
+[INFO] Building Sangam geo (geometry, jurisdiction layers, geofences, GIS connectors) 0.1.0-SNAPSHOT [25/34]
+[INFO]   from sangam-geo\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-geo ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-geo ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-geo\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-geo ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-geo ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-geo\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-geo ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 4 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-geo ---
+[INFO] 
+[INFO] ------------------< io.github.sqamentor:sangam-field >------------------
+[INFO] Building Sangam field (inspection, offline capture, evidence, dispatch) 0.1.0-SNAPSHOT [26/34]
+[INFO]   from sangam-field\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-field ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-field ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-field\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-field ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-field ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-field\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-field ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 8 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-field/src/test/java/org/sangam/field/template/ChecklistValidatorNumberTest.java: D:\sgw\r9-secjava\sangam\sangam-field\src\test\java\org\sangam\field\template\ChecklistValidatorNumberTest.java uses unchecked or unsafe operations.
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-field/src/test/java/org/sangam/field/template/ChecklistValidatorNumberTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-field ---
+[INFO] 
+[INFO] -------------------< io.github.sqamentor:sangam-ai >--------------------
+[INFO] Building Sangam AI: provider-neutral LLM port, agent runtime, RAG, MCP, A2A, reviewed drafts 0.1.0-SNAPSHOT [27/34]
+[INFO]   from sangam-ai\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-ai ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-ai ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-ai\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-ai ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-ai ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-ai\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-ai ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 10 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-ai/src/test/java/org/sangam/ai/AiRuntimeTest.java: Some input files use or override a deprecated API.
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-ai/src/test/java/org/sangam/ai/AiRuntimeTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-ai ---
+[INFO] 
+[INFO] ---------------< io.github.sqamentor:sangam-compliance >----------------
+[INFO] Building Indian data-protection and cyber-security compliance (DPDP, CERT-In, IT Act) 0.1.0-SNAPSHOT [28/34]
+[INFO]   from sangam-compliance\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-compliance ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-compliance ---
+[INFO] Copying 48 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-compliance ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-compliance ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-compliance\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-compliance ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 18 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-compliance ---
+[INFO] 
+[INFO] ----------------< io.github.sqamentor:sangam-channels >-----------------
+[INFO] Building Sangam channels: conversations, bots, messenger adapters, inbound mail and polled channels; SAP and ServiceNow connectors 0.1.0-SNAPSHOT [29/34]
+[INFO]   from sangam-channels\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-channels ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-channels ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-channels ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-channels ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-channels\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-channels ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 8 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-channels ---
+[INFO] 
+[INFO] ------------------< io.github.sqamentor:sangam-rest >-------------------
+[INFO] Building Sangam REST API (OpenAPI 3.1) 0.1.0-SNAPSHOT            [30/34]
+[INFO]   from sangam-rest\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-rest ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-rest ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 2 resources from api to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-rest ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-rest ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-rest\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-rest ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 60 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-rest ---
+[INFO] 
+[INFO] ------------< io.github.sqamentor:sangam-host-conformance >-------------
+[INFO] Building Sangam host conformance and cross-host equivalence kit 0.1.0-SNAPSHOT [31/34]
+[INFO]   from sangam-host-conformance\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-host-conformance ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-host-conformance ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-host-conformance ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-host-conformance ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-host-conformance\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-host-conformance ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 4 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-host-conformance ---
+[INFO] 
+[INFO] ---------------< io.github.sqamentor:sangam-onboarding >----------------
+[INFO] Building Sangam onboarding (plug-and-play tenant onboarding, pack resolution, readiness, bundles) 0.1.0-SNAPSHOT [32/34]
+[INFO]   from sangam-onboarding\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-onboarding ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-onboarding ---
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-onboarding ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-onboarding ---
+[INFO] Copying 7 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-onboarding ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 7 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-onboarding/src/test/java/org/sangam/onboarding/acceptance/PlugAndPlayAcceptanceTest.java: D:\sgw\r9-secjava\sangam\sangam-onboarding\src\test\java\org\sangam\onboarding\acceptance\PlugAndPlayAcceptanceTest.java uses unchecked or unsafe operations.
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-onboarding/src/test/java/org/sangam/onboarding/acceptance/PlugAndPlayAcceptanceTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-onboarding ---
+[INFO] 
+[INFO] ------------------< io.github.sqamentor:sangam-cell >-------------------
+[INFO] Building Sangam cell-side scale ports (SCALE) 0.1.0-SNAPSHOT     [33/34]
+[INFO]   from sangam-cell\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-cell ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-cell ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-cell\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-cell ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-cell ---
+[INFO] skip non existing resourceDirectory D:\sgw\r9-secjava\sangam\sangam-cell\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-cell ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-cell ---
+[INFO] No tests to run.
+[INFO] 
+[INFO] -----------------< io.github.sqamentor:sangam-server >------------------
+[INFO] Building Sangam server (Spring Boot assembly) 0.1.0-SNAPSHOT     [34/34]
+[INFO]   from sangam-server\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (sangam-banned-dependencies) @ sangam-server ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sangam-server ---
+[INFO] Copying 8 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sangam-server ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 265 source files with javac [debug parameters release 21] to target\classes
+[WARNING] /D:/sgw/r9-secjava/sangam/sangam-server/src/main/java/org/sangam/server/bridge/CompliancePurposePlugin.java:[68,39] org.operaton.bpm.engine.impl.bpmn.parser.AbstractBpmnParseListener in org.operaton.bpm.engine.impl.bpmn.parser has been deprecated and marked for removal
+[WARNING] /D:/sgw/r9-secjava/sangam/sangam-server/src/main/java/org/sangam/server/bridge/ConfigCaseBindingPlugin.java:[60,22] org.operaton.bpm.engine.impl.bpmn.parser.AbstractBpmnParseListener in org.operaton.bpm.engine.impl.bpmn.parser has been deprecated and marked for removal
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-server/src/main/java/org/sangam/server/bridge/PortsOpsBridge.java: Some input files use or override a deprecated API.
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-server/src/main/java/org/sangam/server/bridge/PortsOpsBridge.java: Recompile with -Xlint:deprecation for details.
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-server/src/main/java/org/sangam/server/bridge/ResourcesPortBridges.java: D:\sgw\r9-secjava\sangam\sangam-server\src\main\java\org\sangam\server\bridge\ResourcesPortBridges.java uses unchecked or unsafe operations.
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-server/src/main/java/org/sangam/server/bridge/ResourcesPortBridges.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sangam-server ---
+[INFO] Copying 98 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ sangam-server ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 378 source files with javac [debug parameters release 21] to target\test-classes
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-server/src/test/java/org/sangam/server/acceptance/gov/GovAKit.java: Some input files use or override a deprecated API.
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-server/src/test/java/org/sangam/server/acceptance/gov/GovAKit.java: Recompile with -Xlint:deprecation for details.
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-server/src/test/java/org/sangam/server/bridge/MixedRemittanceTest.java: Some input files use unchecked or unsafe operations.
+[INFO] /D:/sgw/r9-secjava/sangam/sangam-server/src/test/java/org/sangam/server/bridge/MixedRemittanceTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ sangam-server ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running org.sangam.server.arch.GetHandlersNeverWriteTest
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 111.6 s <<< FAILURE! -- in org.sangam.server.arch.GetHandlersNeverWriteTest
+[ERROR] org.sangam.server.arch.GetHandlersNeverWriteTest.noGetHandlerReachesAWriteCallbackOrAJdbcWrite -- Time elapsed: 111.5 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+463 of 470 GET handlers reach a write (Transactions.inTransaction, EngineAdapter.inEngineTransaction or a JDBC update); read through Transactions.read / inEngineReadTransaction instead:
+  org.sangam.rest.compliance.ComplianceController.breach
+      -> org.sangam.rest.compliance.ComplianceApiImpl.breach
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.consents
+      -> org.sangam.rest.compliance.ComplianceApiImpl.consents
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.contacts
+      -> org.sangam.rest.compliance.ComplianceApiImpl.contacts
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.incident
+      -> org.sangam.rest.compliance.ComplianceApiImpl.incident
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.lawfulRequest
+      -> org.sangam.rest.compliance.ComplianceApiImpl.lawfulRequest
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.legalHolds
+      -> org.sangam.rest.compliance.ComplianceApiImpl.legalHolds
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.notice
+      -> org.sangam.rest.compliance.ComplianceApiImpl.notice
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.privacyPolicy
+      -> org.sangam.rest.compliance.ComplianceApiImpl.privacyPolicy
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.purposes
+      -> org.sangam.rest.compliance.ComplianceApiImpl.purposes
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.report
+      -> org.sangam.rest.compliance.ComplianceApiImpl.report
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.rightsRequest
+      -> org.sangam.rest.compliance.ComplianceApiImpl.rightsRequest
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.rightsRequests
+      -> org.sangam.rest.compliance.ComplianceApiImpl.rightsRequestsOf
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.verifyLogs
+      -> org.sangam.rest.compliance.ComplianceApiImpl.verifyAudit
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.modules.ai.AiController.approvals
+      -> org.sangam.ai.agent.AgentRuntime.pendingApprovals
+  org.sangam.rest.modules.ai.AiController.card
+      -> org.sangam.rest.modules.ai.AiController.server
+      -> org.sangam.server.config.AiWiring.lambda$identityOf$0
+  org.sangam.rest.modules.ai.AiController.draft
+      -> org.sangam.ai.draft.DraftService.find
+  org.sangam.rest.modules.ai.AiController.evaluation
+      -> org.sangam.ai.classify.DocumentClassifier.evaluate
+  org.sangam.rest.modules.ai.AiController.ocrTranscript
+      -> org.sangam.ai.rag.OcrIngestion.find
+  org.sangam.rest.modules.ai.AiController.ocrTranscripts
+      -> org.sangam.ai.rag.OcrIngestion.list
+  org.sangam.rest.modules.ai.AiController.run
+      -> org.sangam.rest.modules.ai.AiController.visibleRun
+      -> org.sangam.ai.agent.AgentRuntime.find
+  org.sangam.rest.modules.ai.AiController.runs
+      -> org.sangam.server.config.AiWiring.lambda$sangamAiApi$1
+      -> org.sangam.server.bridge.AiBindings.runs
+  org.sangam.rest.modules.ai.AiUiController.approvals
+      -> org.sangam.ai.agent.AgentRuntime.approvals
+  org.sangam.rest.modules.ai.AiUiController.classifications
+      -> org.sangam.ai.classify.DocumentClassifier.list
+  org.sangam.rest.modules.ai.AiUiController.drafts
+      -> org.sangam.ai.draft.DraftService.list
+  org.sangam.rest.modules.ai.AiUiController.knowledgeBases
+      -> org.sangam.ai.rag.KnowledgeBaseService.list
+  org.sangam.rest.modules.ai.AiUiController.run
+      -> org.sangam.rest.modules.ai.AiUiController.view
+      -> org.sangam.ai.agent.AgentRuntime.startedAt
+  org.sangam.rest.modules.ai.AiUiController.runs
+      -> org.sangam.server.config.AiWiring.lambda$sangamAiApi$1
+      -> org.sangam.server.bridge.AiBindings.runs
+  org.sangam.rest.modules.ai.AiUiController.steps
+      -> org.sangam.ai.agent.AgentRuntime.stepViews
+  org.sangam.rest.modules.billing.BillingController.accounts
+      -> org.sangam.rest.modules.billing.BillingController.read
+      -> org.sangam.rest.modules.config.ModuleConnectors.read
+      -> org.sangam.rest.modules.config.ModuleConnectors.call
+      -> org.sangam.channels.messenger.MessengerConnectors$Base.invoke
+      -> org.sangam.server.bridge.JitProvisioningRaceH2Test.lambda$aPersonOfAnotherSubjectWithTheSameIdIsStillAConflict$0
+  org.sangam.rest.modules.billing.BillingController.arrears
+      -> org.sangam.rest.modules.billing.BillingController.read
+      -> org.sangam.rest.modules.config.ModuleConnectors.read
+      -> org.sangam.rest.modules.config.ModuleConnectors.call
+      -> org.sangam.channels.messenger.MessengerConnectors$Base.invoke
+      -> org.sangam.server.bridge.JitProvisioningRaceH2Test.lambda$aPersonOfAnotherSubjectWithTheSameIdIsStillAConflict$0
+  org.sangam.rest.modules.billing.UnverifiedPaymentController.get
+      -> org.sangam.billing.UnverifiedPayments.find
+      -> org.sangam.billing.JdbcUnverifiedPaymentStore.find
+  org.sangam.rest.modules.billing.UnverifiedPaymentController.list
+      -> org.sangam.billing.UnverifiedPayments.list
+      -> org.sangam.billing.JdbcUnverifiedPaymentStore.query
+  org.sangam.rest.modules.cases.CaseFileController.byNumber
+      -> org.sangam.casefile.rest.CaseRestAdapter.byNumber
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.casesOfParty
+      -> org.sangam.casefile.rest.CaseRestAdapter.casesOfParty
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.causeList
+      -> org.sangam.casefile.rest.CaseRestAdapter.causeList
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.configs
+      -> org.sangam.casefile.rest.CaseRestAdapter.configs
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.conflicts
+      -> org.sangam.casefile.rest.CaseRestAdapter.conflicts
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.documentContent
+      -> org.sangam.casefile.rest.CaseRestAdapter.openDocument
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.dueBefore
+      -> org.sangam.casefile.rest.CaseRestAdapter.dueBefore
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.duplicates
+      -> org.sangam.casefile.rest.CaseRestAdapter.duplicates
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.get
+      -> org.sangam.casefile.rest.CaseRestAdapter.get
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.list
+      -> org.sangam.casefile.rest.CaseRestAdapter.list
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.notes
+      -> org.sangam.casefile.rest.CaseRestAdapter.notes
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.partyCandidates
+      -> org.sangam.casefile.rest.CaseRestAdapter.partyCandidates
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.timeline
+      -> org.sangam.casefile.rest.CaseRestAdapter.timeline
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.actions
+      -> org.sangam.casefile.rest.CaseRestAdapter.actions
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.atrReport
+      -> org.sangam.casefile.rest.CaseRestAdapter.atrReport
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.committee
+      -> org.sangam.casefile.rest.CaseRestAdapter.committee
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.committees
+      -> org.sangam.casefile.rest.CaseRestAdapter.committees
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.meeting
+      -> org.sangam.casefile.rest.CaseRestAdapter.meeting
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.meetings
+      -> org.sangam.casefile.rest.CaseRestAdapter.meetings
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.pendency
+      -> org.sangam.casefile.rest.CaseRestAdapter.pendency
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.quorum
+      -> org.sangam.casefile.rest.CaseRestAdapter.quorum
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.ReferenceController.pendency
+      -> org.sangam.casefile.rest.CaseRestAdapter.pendency
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.ReferenceController.reference
+      -> org.sangam.casefile.rest.CaseRestAdapter.reference
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.ReferenceController.references
+      -> org.sangam.casefile.rest.CaseRestAdapter.references
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.channels.ChannelHooksController.weChatVerify
+      -> org.sangam.rest.modules.channels.ChannelHooksController.verifyWeChat
+      -> org.sangam.integration.connector.SecretResolver.require
+      -> org.sangam.ops.secrets.SecretAdmin.lambda$resolver$0
+  org.sangam.rest.modules.channels.ChannelHooksController.whatsAppVerify
+      -> org.sangam.integration.connector.SecretResolver.require
+      -> org.sangam.ops.secrets.SecretAdmin.lambda$resolver$0
+  org.sangam.rest.modules.channels.ChannelsController.history
+      -> org.sangam.channels.conversation.ConversationService.history
+  org.sangam.rest.modules.channels.ChannelsController.list
+      -> org.sangam.channels.conversation.ConversationService.list
+ ==> expected: <true> but was: <false>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertTrue.failNotTrue(AssertTrue.java:69)
+	at org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:41)
+	at org.junit.jupiter.api.Assertions.assertTrue(Assertions.java:228)
+	at org.sangam.server.arch.GetHandlersNeverWriteTest.noGetHandlerReachesAWriteCallbackOrAJdbcWrite(GetHandlersNeverWriteTest.java:198)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   GetHandlersNeverWriteTest.noGetHandlerReachesAWriteCallbackOrAJdbcWrite:198 463 of 470 GET handlers reach a write (Transactions.inTransaction, EngineAdapter.inEngineTransaction or a JDBC update); read through Transactions.read / inEngineReadTransaction instead:
+  org.sangam.rest.compliance.ComplianceController.breach
+      -> org.sangam.rest.compliance.ComplianceApiImpl.breach
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.consents
+      -> org.sangam.rest.compliance.ComplianceApiImpl.consents
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.contacts
+      -> org.sangam.rest.compliance.ComplianceApiImpl.contacts
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.incident
+      -> org.sangam.rest.compliance.ComplianceApiImpl.incident
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.lawfulRequest
+      -> org.sangam.rest.compliance.ComplianceApiImpl.lawfulRequest
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.legalHolds
+      -> org.sangam.rest.compliance.ComplianceApiImpl.legalHolds
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.notice
+      -> org.sangam.rest.compliance.ComplianceApiImpl.notice
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.privacyPolicy
+      -> org.sangam.rest.compliance.ComplianceApiImpl.privacyPolicy
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.purposes
+      -> org.sangam.rest.compliance.ComplianceApiImpl.purposes
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.report
+      -> org.sangam.rest.compliance.ComplianceApiImpl.report
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.rightsRequest
+      -> org.sangam.rest.compliance.ComplianceApiImpl.rightsRequest
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.rightsRequests
+      -> org.sangam.rest.compliance.ComplianceApiImpl.rightsRequestsOf
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.compliance.ComplianceController.verifyLogs
+      -> org.sangam.rest.compliance.ComplianceApiImpl.verifyAudit
+      -> org.sangam.rest.compliance.ComplianceApiImpl.tx
+  org.sangam.rest.modules.ai.AiController.approvals
+      -> org.sangam.ai.agent.AgentRuntime.pendingApprovals
+  org.sangam.rest.modules.ai.AiController.card
+      -> org.sangam.rest.modules.ai.AiController.server
+      -> org.sangam.server.config.AiWiring.lambda$identityOf$0
+  org.sangam.rest.modules.ai.AiController.draft
+      -> org.sangam.ai.draft.DraftService.find
+  org.sangam.rest.modules.ai.AiController.evaluation
+      -> org.sangam.ai.classify.DocumentClassifier.evaluate
+  org.sangam.rest.modules.ai.AiController.ocrTranscript
+      -> org.sangam.ai.rag.OcrIngestion.find
+  org.sangam.rest.modules.ai.AiController.ocrTranscripts
+      -> org.sangam.ai.rag.OcrIngestion.list
+  org.sangam.rest.modules.ai.AiController.run
+      -> org.sangam.rest.modules.ai.AiController.visibleRun
+      -> org.sangam.ai.agent.AgentRuntime.find
+  org.sangam.rest.modules.ai.AiController.runs
+      -> org.sangam.server.config.AiWiring.lambda$sangamAiApi$1
+      -> org.sangam.server.bridge.AiBindings.runs
+  org.sangam.rest.modules.ai.AiUiController.approvals
+      -> org.sangam.ai.agent.AgentRuntime.approvals
+  org.sangam.rest.modules.ai.AiUiController.classifications
+      -> org.sangam.ai.classify.DocumentClassifier.list
+  org.sangam.rest.modules.ai.AiUiController.drafts
+      -> org.sangam.ai.draft.DraftService.list
+  org.sangam.rest.modules.ai.AiUiController.knowledgeBases
+      -> org.sangam.ai.rag.KnowledgeBaseService.list
+  org.sangam.rest.modules.ai.AiUiController.run
+      -> org.sangam.rest.modules.ai.AiUiController.view
+      -> org.sangam.ai.agent.AgentRuntime.startedAt
+  org.sangam.rest.modules.ai.AiUiController.runs
+      -> org.sangam.server.config.AiWiring.lambda$sangamAiApi$1
+      -> org.sangam.server.bridge.AiBindings.runs
+  org.sangam.rest.modules.ai.AiUiController.steps
+      -> org.sangam.ai.agent.AgentRuntime.stepViews
+  org.sangam.rest.modules.billing.BillingController.accounts
+      -> org.sangam.rest.modules.billing.BillingController.read
+      -> org.sangam.rest.modules.config.ModuleConnectors.read
+      -> org.sangam.rest.modules.config.ModuleConnectors.call
+      -> org.sangam.channels.messenger.MessengerConnectors$Base.invoke
+      -> org.sangam.server.bridge.JitProvisioningRaceH2Test.lambda$aPersonOfAnotherSubjectWithTheSameIdIsStillAConflict$0
+  org.sangam.rest.modules.billing.BillingController.arrears
+      -> org.sangam.rest.modules.billing.BillingController.read
+      -> org.sangam.rest.modules.config.ModuleConnectors.read
+      -> org.sangam.rest.modules.config.ModuleConnectors.call
+      -> org.sangam.channels.messenger.MessengerConnectors$Base.invoke
+      -> org.sangam.server.bridge.JitProvisioningRaceH2Test.lambda$aPersonOfAnotherSubjectWithTheSameIdIsStillAConflict$0
+  org.sangam.rest.modules.billing.UnverifiedPaymentController.get
+      -> org.sangam.billing.UnverifiedPayments.find
+      -> org.sangam.billing.JdbcUnverifiedPaymentStore.find
+  org.sangam.rest.modules.billing.UnverifiedPaymentController.list
+      -> org.sangam.billing.UnverifiedPayments.list
+      -> org.sangam.billing.JdbcUnverifiedPaymentStore.query
+  org.sangam.rest.modules.cases.CaseFileController.byNumber
+      -> org.sangam.casefile.rest.CaseRestAdapter.byNumber
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.casesOfParty
+      -> org.sangam.casefile.rest.CaseRestAdapter.casesOfParty
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.causeList
+      -> org.sangam.casefile.rest.CaseRestAdapter.causeList
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.configs
+      -> org.sangam.casefile.rest.CaseRestAdapter.configs
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.conflicts
+      -> org.sangam.casefile.rest.CaseRestAdapter.conflicts
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.documentContent
+      -> org.sangam.casefile.rest.CaseRestAdapter.openDocument
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.dueBefore
+      -> org.sangam.casefile.rest.CaseRestAdapter.dueBefore
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.duplicates
+      -> org.sangam.casefile.rest.CaseRestAdapter.duplicates
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.get
+      -> org.sangam.casefile.rest.CaseRestAdapter.get
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.list
+      -> org.sangam.casefile.rest.CaseRestAdapter.list
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.notes
+      -> org.sangam.casefile.rest.CaseRestAdapter.notes
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.partyCandidates
+      -> org.sangam.casefile.rest.CaseRestAdapter.partyCandidates
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.CaseFileController.timeline
+      -> org.sangam.casefile.rest.CaseRestAdapter.timeline
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.actions
+      -> org.sangam.casefile.rest.CaseRestAdapter.actions
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.atrReport
+      -> org.sangam.casefile.rest.CaseRestAdapter.atrReport
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.committee
+      -> org.sangam.casefile.rest.CaseRestAdapter.committee
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.committees
+      -> org.sangam.casefile.rest.CaseRestAdapter.committees
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.meeting
+      -> org.sangam.casefile.rest.CaseRestAdapter.meeting
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.meetings
+      -> org.sangam.casefile.rest.CaseRestAdapter.meetings
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.pendency
+      -> org.sangam.casefile.rest.CaseRestAdapter.pendency
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.MeetingController.quorum
+      -> org.sangam.casefile.rest.CaseRestAdapter.quorum
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.ReferenceController.pendency
+      -> org.sangam.casefile.rest.CaseRestAdapter.pendency
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.ReferenceController.reference
+      -> org.sangam.casefile.rest.CaseRestAdapter.reference
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.cases.ReferenceController.references
+      -> org.sangam.casefile.rest.CaseRestAdapter.references
+      -> org.sangam.casefile.rest.CaseRestAdapter.tx
+  org.sangam.rest.modules.channels.ChannelHooksController.weChatVerify
+      -> org.sangam.rest.modules.channels.ChannelHooksController.verifyWeChat
+      -> org.sangam.integration.connector.SecretResolver.require
+      -> org.sangam.ops.secrets.SecretAdmin.lambda$resolver$0
+  org.sangam.rest.modules.channels.ChannelHooksController.whatsAppVerify
+      -> org.sangam.integration.connector.SecretResolver.require
+      -> org.sangam.ops.secrets.SecretAdmin.lambda$resolver$0
+  org.sangam.rest.modules.channels.ChannelsController.history
+      -> org.sangam.channels.conversation.ConversationService.history
+  org.sangam.rest.modules.channels.ChannelsController.list
+      -> org.sangam.channels.conversation.ConversationService.list
+ ==> expected: <true> but was: <false>
+[INFO] 
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for Sangam 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] Sangam ............................................. SUCCESS [  2.427 s]
+[INFO] Sangam core (engine-neutral contracts and product-layer primitives) SUCCESS [ 19.489 s]
+[INFO] Liquibase changelogs and dialect SQL for product tables (4 Tier-1 DBs + H2) SUCCESS [  3.038 s]
+[INFO] Sangam FEEL and DMN policies (ADR-D-26: exact numbers, strict evaluation, strict null input, DMN 1.6) SUCCESS [  3.846 s]
+[INFO] Government and universal workflow packs ............ SUCCESS [ 22.915 s]
+[INFO] Operaton process-engine plugins (fencing, L2, DST guard, expiry, MySQL, history) SUCCESS [ 17.633 s]
+[INFO] Flowable strengths ported onto Operaton ............ SUCCESS [ 15.668 s]
+[INFO] Outbox, inbox, idempotency, reconciliation, connectors SUCCESS [ 23.315 s]
+[INFO] Authorization (deny-wins), OIDC, seats, delegation, maker-checker SUCCESS [  9.404 s]
+[INFO] Sangam operations: migrators, usage metrics, global search, outlier analysis, index, variables, secrets, sequences, retention SUCCESS [  8.196 s]
+[INFO] Sangam assembly layer and host SPI (plain Java) .... SUCCESS [  3.961 s]
+[INFO] Generic health connectors: FHIR R4, SMART Backend Services, X12 005010, Da Vinci PAS, CDS Hooks SUCCESS [ 11.368 s]
+[INFO] Sangam Kubernetes REST client ...................... SUCCESS [  0.595 s]
+[INFO] Sangam backup console .............................. SUCCESS [  0.944 s]
+[INFO] Sangam config (profile hierarchy, master data, document-type catalogue, locale) SUCCESS [  4.026 s]
+[INFO] Sangam modeller back ends: landscape, templates, edit leases, token walk, mocks, bulk tests, actions, catalogue SUCCESS [  6.959 s]
+[INFO] Sangam service ports and default adapters (plain Java) SUCCESS [  9.569 s]
+[INFO] Sangam security bridges for the service ports (plain Java) SUCCESS [  0.265 s]
+[INFO] Sangam ledger (generic limit / fund-control ledger)  SUCCESS [  2.293 s]
+[INFO] Sangam registry (registered-object kernel: numbering, registers, instruments, parties, assets, custody) SUCCESS [  1.576 s]
+[INFO] Sangam billing (tariffs, invoices, collection, receipts, refunds, penalties) SUCCESS [  3.141 s]
+[INFO] Sangam resources (booking, allotment, queue/token, rostering) SUCCESS [  2.874 s]
+[INFO] Sangam case file, meetings and references .......... SUCCESS [  2.712 s]
+[INFO] Sangam programmes, targets, indicators and returns . SUCCESS [  3.352 s]
+[INFO] Sangam geo (geometry, jurisdiction layers, geofences, GIS connectors) SUCCESS [  2.413 s]
+[INFO] Sangam field (inspection, offline capture, evidence, dispatch) SUCCESS [  3.741 s]
+[INFO] Sangam AI: provider-neutral LLM port, agent runtime, RAG, MCP, A2A, reviewed drafts SUCCESS [  6.156 s]
+[INFO] Indian data-protection and cyber-security compliance (DPDP, CERT-In, IT Act) SUCCESS [  6.431 s]
+[INFO] Sangam channels: conversations, bots, messenger adapters, inbound mail and polled channels; SAP and ServiceNow connectors SUCCESS [  5.481 s]
+[INFO] Sangam REST API (OpenAPI 3.1) ...................... SUCCESS [ 16.253 s]
+[INFO] Sangam host conformance and cross-host equivalence kit SUCCESS [  2.247 s]
+[INFO] Sangam onboarding (plug-and-play tenant onboarding, pack resolution, readiness, bundles) SUCCESS [  3.986 s]
+[INFO] Sangam cell-side scale ports (SCALE) ............... SUCCESS [  0.193 s]
+[INFO] Sangam server (Spring Boot assembly) ............... FAILURE [03:40 min]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  07:33 min
+[INFO] Finished at: 2026-11-17T21:41:32+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.3:test (default-test) on project sangam-server: There are test failures.
+[ERROR] 
+[ERROR] See D:\sgw\r9-secjava\sangam\sangam-server\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :sangam-server
