@@ -204,7 +204,7 @@ def pao_chain():
                   ('aaoDecision', ['forwardNext', 'object']), ['tokenNo', 'objectionCodes', 'remarks'], '1WD', sod=True)
     e4, x4 = task(s, 'pc_pao', 'PAO pass, object or return | पीएओ: पारित, आपत्ति या वापसी', 'paoSeat', 'ifms-pao-chain/pao',
                   ('paoDecision', ['passBill', 'object', 'returnBill']), ['tokenNo', 'objectionCodes', 'objectionMemo', 'dscSerial'],
-                  '1WD', sod=True)
+                  '1WD', sod=True, bind='passBill')
     s.flow(sig, e1)
     s.seq(x1, e2)
     s.seq(x2, e3)
@@ -901,7 +901,7 @@ def sna_sparsh():
     e2, x2 = task(s, 'ss_prao', 'Payment authorisation (DSC) | भुगतान प्राधिकार', 'prAoSeat', 'ifms-sna-sparsh/authorise',
                   ('praoDecision', ['signed', 'returnBill']), ['dscSerial', 'remarks'], '1WD', sod=True)
     e3, x3 = task(s, 'ss_pao', 'PAO pre-check and pass | पीएओ पूर्व-जाँच', 'paoSeat', 'ifms-sna-sparsh/pao',
-                  ('paoDecision', ['passBill', 'returnBill']), ['dscSerial', 'remarks'], '1WD', sod=True)
+                  ('paoDecision', ['passBill', 'returnBill']), ['dscSerial', 'remarks'], '1WD', sod=True, bind='passBill')
     pg = s.xgw('ss_pdGw')
     s.flow(x1, pg)
     s.flow(pg, e2, "pdDecision == 'signed'", 'signed')
