@@ -66,8 +66,9 @@ public class RosterController {
         return Lists.okRef(body.shiftId(), s);
     }
 
-    @DeleteMapping("/shifts/{shiftId}")
-    public ResponseEntity<Void> deleteShift(RequestContext ctx, @PathVariable String shiftId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @DeleteMapping("/shifts/by-shift-id")
+    public ResponseEntity<Void> deleteShift(RequestContext ctx, @RequestParam("shiftId") String shiftId) {
         port.deleteShift(admin(ctx), shiftId);
         return ResponseEntity.noContent().build();
     }
@@ -85,8 +86,9 @@ public class RosterController {
         return Lists.okRef(body.rotationId(), port.saveRotation(admin(ctx), body));
     }
 
-    @DeleteMapping("/rotations/{rotationId}")
-    public ResponseEntity<Void> deleteRotation(RequestContext ctx, @PathVariable String rotationId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @DeleteMapping("/rotations/by-rotation-id")
+    public ResponseEntity<Void> deleteRotation(RequestContext ctx, @RequestParam("rotationId") String rotationId) {
         port.deleteRotation(admin(ctx), rotationId);
         return ResponseEntity.noContent().build();
     }
@@ -132,15 +134,17 @@ public class RosterController {
         return Lists.ok(port.listMembers(read(ctx), periodId, pr.firstResult(), pr.size()));
     }
 
-    @PutMapping("/periods/{periodId}/members/{personId}")
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PutMapping("/periods/{periodId}/members/by-person-id")
     public ResponseEntity<RosterModel.RosterMember> setMember(RequestContext ctx, @PathVariable String periodId,
-            @PathVariable String personId, @RequestBody RosterRestPort.MemberRequest body) {
+            @RequestParam("personId") String personId, @RequestBody RosterRestPort.MemberRequest body) {
         return Lists.okRef(personId, port.setMember(admin(ctx), periodId, personId, body));
     }
 
-    @DeleteMapping("/periods/{periodId}/members/{personId}")
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @DeleteMapping("/periods/{periodId}/members/by-person-id")
     public ResponseEntity<Void> removeMember(RequestContext ctx, @PathVariable String periodId,
-                                             @PathVariable String personId) {
+                                             @RequestParam("personId") String personId) {
         port.removeMember(admin(ctx), periodId, personId);
         return ResponseEntity.noContent().build();
     }
@@ -159,9 +163,10 @@ public class RosterController {
         return ResponseEntity.status(201).header(Lists.RESOURCE_REF, d.demandId()).body(d);
     }
 
-    @DeleteMapping("/periods/{periodId}/demand/{demandId}")
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @DeleteMapping("/periods/{periodId}/demand/by-demand-id")
     public ResponseEntity<Void> removeDemand(RequestContext ctx, @PathVariable String periodId,
-                                             @PathVariable String demandId) {
+                                             @RequestParam("demandId") String demandId) {
         port.removeDemand(admin(ctx), periodId, demandId);
         return ResponseEntity.noContent().build();
     }
@@ -254,9 +259,10 @@ public class RosterController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/people/{personId}/duties")
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/people/by-person-id/duties")
     public ResponseEntity<List<RosterModel.RosterAssignment>> personalRoster(RequestContext ctx,
-            @PathVariable String personId,
+            @RequestParam("personId") String personId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {

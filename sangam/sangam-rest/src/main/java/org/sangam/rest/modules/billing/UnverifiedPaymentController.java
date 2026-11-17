@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * {@code /api/v1/billing/{ledger}/unverified-payments} (RM-03, owner decisions 141 and 193-201; contract
+ * {@code /api/v1/billing/by-ledger/unverified-payments?ledger=} (RM-03, owner decisions 141 and 193-201; contract
  * {@code sangam-rest/api/routes/billing.py}). A thin adapter over {@link UnverifiedPayments}, which enforces every rule
  * itself; the endpoint permissions here are the extra REST layer. The caller is built only from the authenticated
  * request context: no request field names an actor, and its kind of sign-in decides its actor type (decision 201:
@@ -39,7 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
  * the store before paging ({@code page}, {@code size}, {@code X-Total-Count}).
  */
 @RestController
-@RequestMapping("/api/v1/billing/{ledger}/unverified-payments")
+@RequestMapping("/api/v1/billing/by-ledger/unverified-payments")
 public class UnverifiedPaymentController {
 
     public static final String ACCEPT = "billing.accept-unverified";
@@ -66,8 +66,9 @@ public class UnverifiedPaymentController {
                                                   String evidenceRef) {
     }
 
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @PostMapping
-    public ResponseEntity<Map<String, Object>> accept(RequestContext ctx, @PathVariable String ledger,
+    public ResponseEntity<Map<String, Object>> accept(RequestContext ctx, @RequestParam("ledger") String ledger,
                                                       @RequestBody UnverifiedPaymentRequest body) {
         permissions.require(ctx, ACCEPT);
         if (body == null) {
@@ -92,8 +93,9 @@ public class UnverifiedPaymentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(view(p));
     }
 
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @GetMapping
-    public ResponseEntity<List<Map<String, Object>>> list(RequestContext ctx, @PathVariable String ledger,
+    public ResponseEntity<List<Map<String, Object>>> list(RequestContext ctx, @RequestParam("ledger") String ledger,
                                                           @RequestParam(required = false) String state,
                                                           @RequestParam(required = false) String channel,
                                                           @RequestParam(required = false) String office,
@@ -120,15 +122,17 @@ public class UnverifiedPaymentController {
         return Lists.ok(Page.of(slice.items().stream().map(this::view).toList(), slice.total(), false));
     }
 
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @GetMapping("/{id}")
-    public Map<String, Object> get(RequestContext ctx, @PathVariable String ledger, @PathVariable String id) {
+    public Map<String, Object> get(RequestContext ctx, @RequestParam("ledger") String ledger, @PathVariable String id) {
         permissions.require(ctx, BillingController.READ);
         return payments.find(ctx.tenantId(), id).filter(p -> p.ledgerId().equals(ledger)).map(this::view)
                 .orElseThrow(() -> ApiProblem.notFound("unverified payment", id));
     }
 
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @PostMapping("/{id}/resolution")
-    public Map<String, Object> resolve(RequestContext ctx, @PathVariable String ledger, @PathVariable String id,
+    public Map<String, Object> resolve(RequestContext ctx, @RequestParam("ledger") String ledger, @PathVariable String id,
                                        @RequestBody UnverifiedPaymentResolveRequest body) {
         permissions.require(ctx, RESOLVE);
         if (body == null || body.outcome() == null) {

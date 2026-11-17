@@ -33,7 +33,7 @@ const objects: ScreenDef = {
   create: { id: 'create', label: 'act.create', path: '/registry/objects', fields: [f.text('typeKey', undefined, true), f.text('holderPartyId'), f.text('subjectRef'), f.text('parentId'), f.json('attributes')] },
   actions: [
     // M-051: the transition reads {reason, until, countersignedBy, expectedVersion} (RegistryController.java:129-133, :238-243); the name is the path
-    { id: 'transition', label: 'act.transition', path: '/registry/objects/{id}/transitions/{name}', fields: [f.path(f.text('name', 'fld.transition', true)), f.dt('until', 'fld.until'), f.text('countersignedBy', 'fld.countersignedBy'), f.num('expectedVersion', 'fld.version')], reason: 'body' },
+    { id: 'transition', label: 'act.transition', path: '/registry/objects/{id}/transitions/by-name?name={name}', fields: [f.path(f.text('name', 'fld.transition', true)), f.dt('until', 'fld.until'), f.text('countersignedBy', 'fld.countersignedBy'), f.num('expectedVersion', 'fld.version')], reason: 'body' },
     { id: 'update', label: 'act.update', method: 'PATCH', path: '/registry/objects/{id}', fields: [f.json('attributes', undefined, true)] },
     // M-039: the version in force at an instant (GET /registry/objects/{id}/as-of ?at, Instant.parse, RegistryController.java:151-154)
     { id: 'asOf', label: 'act.asOf', method: 'GET', path: '/registry/objects/{id}/as-of', fields: [f.dt('at', 'fld.asOfInstant', true)], noJson: true, showResult: true },
@@ -49,9 +49,9 @@ const types: ScreenDef = {
   filters: [f.select('kind', ['OBJECT', 'INSTRUMENT', 'REGISTER', 'PARTY', 'ASSET', 'CUSTODY'])],
   columns: [c('typeKey'), c('kind'), c('version'), c('state')],
   rowKey: ['typeKey', 'key'],
-  detail: '/registry/types/{typeKey}',
+  detail: '/registry/types/by-type-key?typeKey={typeKey}',
   create: { id: 'publish', label: 'act.publishType', path: '/registry/types', fields: [f.json('definition', 'fld.definition', true)], noJson: true, hint: 'mod.registry.publishTypeHintFiscal' },
-  actions: [{ id: 'retire', label: 'act.retire', path: '/registry/types/{typeKey}/versions/{version}/retire', reason: 'body', danger: true }],
+  actions: [{ id: 'retire', label: 'act.retire', path: '/registry/types/by-type-key/versions/{version}/retire?typeKey={typeKey}', reason: 'body', danger: true }],
 };
 
 const numbering: ScreenDef = {
@@ -62,19 +62,19 @@ const numbering: ScreenDef = {
   unpaged: true,
   columns: [c('seriesKey'), c('pattern'), c('reset', 'fld.resetPolicy'), c('fiscalStartMonth'), c('scope'), c('state')],
   rowKey: ['seriesKey', 'key'],
-  detail: '/registry/number-series/{seriesKey}',
+  detail: '/registry/number-series/by-series-key?seriesKey={seriesKey}',
   sections: [
-    { id: 'gaps', label: 'mod.registry.gaps', path: '/registry/number-series/{seriesKey}/gaps' },
-    { id: 'allocations', label: 'mod.registry.allocations', path: '/registry/number-series/{seriesKey}/allocations' },
+    { id: 'gaps', label: 'mod.registry.gaps', path: '/registry/number-series/by-series-key/gaps?seriesKey={seriesKey}' },
+    { id: 'allocations', label: 'mod.registry.allocations', path: '/registry/number-series/by-series-key/allocations?seriesKey={seriesKey}' },
   ],
   // SL-126: the API's own field names (reset, fiscalStartMonth), one name end to end; see registryNumbering.ts
-  toolbar: [{ id: 'define', label: 'act.defineSeries', method: 'PUT', path: '/registry/number-series/{seriesKey}', fields: numberSeriesFields(), hint: 'mod.registry.patternHint', dynamicValues: { fiscalStartMonth: fiscalStartMonthOptions } }],
+  toolbar: [{ id: 'define', label: 'act.defineSeries', method: 'PUT', path: '/registry/number-series/by-series-key?seriesKey={seriesKey}', fields: numberSeriesFields(), hint: 'mod.registry.patternHint', dynamicValues: { fiscalStartMonth: fiscalStartMonthOptions } }],
   actions: [
     // M-051: allocate {scope, date, attributes, refType, refId} (RegistryController.java:186-191); mark-used {number, refType, refId} (:206-208)
-    { id: 'allocate', label: 'act.allocate', path: '/registry/number-series/{seriesKey}/allocate', fields: [f.text('scope'), f.date('date'), f.text('refType'), f.text('refId', 'fld.reference')], showResult: true },
-    { id: 'void', label: 'act.voidNumber', path: '/registry/number-series/{seriesKey}/void', fields: [f.text('number', undefined, true)], reason: 'body', danger: true },
-    { id: 'used', label: 'act.markUsed', path: '/registry/number-series/{seriesKey}/mark-used', fields: [f.text('number', undefined, true), f.text('refType'), f.text('refId', 'fld.reference')] },
-    { id: 'close', label: 'act.closePeriod', path: '/registry/number-series/{seriesKey}/close-period', fields: [f.text('scope'), f.text('period', undefined, true)], reason: 'body' },
+    { id: 'allocate', label: 'act.allocate', path: '/registry/number-series/by-series-key/allocate?seriesKey={seriesKey}', fields: [f.text('scope'), f.date('date'), f.text('refType'), f.text('refId', 'fld.reference')], showResult: true },
+    { id: 'void', label: 'act.voidNumber', path: '/registry/number-series/by-series-key/void?seriesKey={seriesKey}', fields: [f.text('number', undefined, true)], reason: 'body', danger: true },
+    { id: 'used', label: 'act.markUsed', path: '/registry/number-series/by-series-key/mark-used?seriesKey={seriesKey}', fields: [f.text('number', undefined, true), f.text('refType'), f.text('refId', 'fld.reference')] },
+    { id: 'close', label: 'act.closePeriod', path: '/registry/number-series/by-series-key/close-period?seriesKey={seriesKey}', fields: [f.text('scope'), f.text('period', undefined, true)], reason: 'body' },
   ],
 };
 
@@ -86,19 +86,19 @@ const registers: ScreenDef = {
   unpaged: true,
   columns: [c('registerKey'), c('name'), c('scope'), c('state')],
   rowKey: ['registerKey', 'key'],
-  detail: '/registry/registers/{registerKey}',
-  sections: [{ id: 'books', label: 'mod.registry.books', path: '/registry/registers/{registerKey}/books' }],
+  detail: '/registry/registers/by-register-key?registerKey={registerKey}',
+  sections: [{ id: 'books', label: 'mod.registry.books', path: '/registry/registers/by-register-key/books?registerKey={registerKey}' }],
   // M-051: RegisterDefinition {registerKey (path), title, series (GAP_FREE, required), scopeRequired, correctionCountersign, extractTemplate,
   // columns} (RegisterDefinition.java:25-31; RegisterController.java:38-41); append {scope, date, columns, refType, refId} (:55-59)
-  toolbar: [{ id: 'define', label: 'act.defineRegister', method: 'PUT', path: '/registry/registers/{registerKey}', fields: [f.path(f.text('registerKey', undefined, true)), f.text('title', 'fld.name', true), f.text('series', 'fld.series', true), f.json('columns'), f.bool('scopeRequired', 'fld.scopeRequired')] }],
-  actions: [{ id: 'append', label: 'act.appendEntry', path: '/registry/registers/{registerKey}/entries', fields: [f.text('scope'), f.date('date'), f.text('refType'), f.text('refId'), f.json('columns', 'fld.values', true)] }],
+  toolbar: [{ id: 'define', label: 'act.defineRegister', method: 'PUT', path: '/registry/registers/by-register-key?registerKey={registerKey}', fields: [f.path(f.text('registerKey', undefined, true)), f.text('title', 'fld.name', true), f.text('series', 'fld.series', true), f.json('columns'), f.bool('scopeRequired', 'fld.scopeRequired')] }],
+  actions: [{ id: 'append', label: 'act.appendEntry', path: '/registry/registers/by-register-key/entries?registerKey={registerKey}', fields: [f.text('scope'), f.date('date'), f.text('refType'), f.text('refId'), f.json('columns', 'fld.values', true)] }],
 };
 
 const books: ScreenDef = {
   id: 'books',
   title: 'mod.registry.bookEntries',
   description: 'mod.registry.booksDesc',
-  list: '/registry/registers/{registerKey}/books',
+  list: '/registry/registers/by-register-key/books?registerKey={registerKey}',
   filters: [f.text('registerKey', undefined, true), f.text('scope')],
   requireFilters: ['registerKey'],
   columns: [c('bookId'), c('scope'), c('period'), c('state'), c('entries')],
@@ -242,7 +242,7 @@ const assets: ScreenDef = {
     // M-051: reading {reading, readAt, source, note} (AssetController.java:174-177), meter type in the path; plan = PlanSpec {planKey
     // (required), trigger TIME | METER | CONDITION, intervalDays, meterType, meterInterval, leadDays, workType, tasks} (AssetClassDefinition.java:31,
     // :49-62); dispose {date, method, reason, transition} (AssetController.java:138-140)
-    { id: 'reading', label: 'act.recordReading', path: '/registry/assets/{id}/meters/{meterType}/readings', fields: [f.path(f.text('meterType', undefined, true)), f.money('reading', 'fld.reading', true), f.dt('readAt'), f.text('note')] },
+    { id: 'reading', label: 'act.recordReading', path: '/registry/assets/{id}/meters/by-meter-type/readings?meterType={meterType}', fields: [f.path(f.text('meterType', undefined, true)), f.money('reading', 'fld.reading', true), f.dt('readAt'), f.text('note')] },
     { id: 'plan', label: 'act.addPlan', path: '/registry/assets/{id}/plans', fields: [f.text('planKey', 'fld.planKey', true), f.select('trigger', ['TIME', 'METER', 'CONDITION'], 'fld.trigger', true), f.num('intervalDays', 'fld.interval'), f.text('meterType'), f.money('meterInterval', 'fld.meterInterval'), f.num('leadDays', 'fld.leadDays'), f.text('workType'), f.json('tasks', 'fld.tasks')] },
     { id: 'dispose', label: 'act.dispose', path: '/registry/assets/{id}/dispose', fields: [f.text('method'), f.date('date')], reason: 'body', danger: true },
   ],
@@ -340,8 +340,8 @@ export function PublicVerify() {
     void act
       .run(() =>
         http.get<Record<string, unknown>>(
-          kind === 'instrument' ? `/registry/instruments/public/${encodeURIComponent(tenant)}/verify` : `/registry/registers/public/${encodeURIComponent(tenant)}/extracts/verify`,
-          { code },
+          kind === 'instrument' ? '/registry/instruments/public/by-tenant/verify' : '/registry/registers/public/by-tenant/extracts/verify',
+          { tenant, code },
         ),
       )
       .then((r) => r && setResult(r));

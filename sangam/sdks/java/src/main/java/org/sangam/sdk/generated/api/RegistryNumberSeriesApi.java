@@ -39,15 +39,16 @@ public final class RegistryNumberSeriesApi {
      *
      * <p>RegistryController.defineSeries (sangam-rest).
      *
-     * <p>{@code PUT /registry/number-series/{seriesKey}} (operationId {@code registryRegistryDefineSeries}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param seriesKey path parameter {@code seriesKey}
+     * <p>{@code PUT /registry/number-series/by-series-key} (operationId {@code registryRegistryDefineSeries}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param seriesKey query parameter {@code seriesKey}. Series key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> registryRegistryDefineSeries(String seriesKey, RegistryRegistryDefineSeriesBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/registry/number-series/" + HttpTransport.seg(String.valueOf(seriesKey)));
+    public java.util.Map<String, Object> registryRegistryDefineSeries(RegistryRegistryDefineSeriesBody body, String seriesKey, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/registry/number-series/by-series-key");
         req.body(body);
+        req.query("seriesKey", seriesKey);
         return call.json(req, options, R_registryRegistryDefineSeries);
     }
 
@@ -56,13 +57,14 @@ public final class RegistryNumberSeriesApi {
      *
      * <p>RegistryController.series (sangam-rest).
      *
-     * <p>{@code GET /registry/number-series/{seriesKey}} (operationId {@code registryRegistrySeries}); permission {@code registry.read}.
-     * @param seriesKey path parameter {@code seriesKey}
+     * <p>{@code GET /registry/number-series/by-series-key} (operationId {@code registryRegistrySeries}); permission {@code registry.read}.
+     * @param seriesKey query parameter {@code seriesKey}. Series key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> registryRegistrySeries(String seriesKey, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/registry/number-series/" + HttpTransport.seg(String.valueOf(seriesKey)));
+        ApiRequest req = ApiRequest.get("/registry/number-series/by-series-key");
+        req.query("seriesKey", seriesKey);
         return call.json(req, options, R_registryRegistrySeries);
     }
 
@@ -85,14 +87,15 @@ public final class RegistryNumberSeriesApi {
      *
      * <p>RegistryController.allocate (sangam-rest).
      *
-     * <p>{@code POST /registry/number-series/{seriesKey}/allocate} (operationId {@code registryRegistryAllocate}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param seriesKey path parameter {@code seriesKey}
+     * <p>{@code POST /registry/number-series/by-series-key/allocate} (operationId {@code registryRegistryAllocate}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param seriesKey query parameter {@code seriesKey}. Series key; may carry '/' or ':'
      * @param body request body, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
     public java.util.Map<String, Object> registryRegistryAllocate(String seriesKey, RegistryRegistryAllocateBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/registry/number-series/" + HttpTransport.seg(String.valueOf(seriesKey)) + "/allocate");
+        ApiRequest req = ApiRequest.post("/registry/number-series/by-series-key/allocate");
+        req.query("seriesKey", seriesKey);
         req.body(body);
         return call.json(req, options, R_registryRegistryAllocate);
     }
@@ -102,14 +105,15 @@ public final class RegistryNumberSeriesApi {
      *
      * <p>RegistryController.voidNumber (sangam-rest).
      *
-     * <p>{@code POST /registry/number-series/{seriesKey}/void} (operationId {@code registryRegistryVoidNumber}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param seriesKey path parameter {@code seriesKey}
+     * <p>{@code POST /registry/number-series/by-series-key/void} (operationId {@code registryRegistryVoidNumber}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param seriesKey query parameter {@code seriesKey}. Series key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void registryRegistryVoidNumber(String seriesKey, RegistryRegistryVoidNumberBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/registry/number-series/" + HttpTransport.seg(String.valueOf(seriesKey)) + "/void");
+    public void registryRegistryVoidNumber(RegistryRegistryVoidNumberBody body, String seriesKey, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/registry/number-series/by-series-key/void");
         req.body(body);
+        req.query("seriesKey", seriesKey);
         call.none(req, options);
     }
 
@@ -118,14 +122,15 @@ public final class RegistryNumberSeriesApi {
      *
      * <p>RegistryController.markUsed (sangam-rest).
      *
-     * <p>{@code POST /registry/number-series/{seriesKey}/mark-used} (operationId {@code registryRegistryMarkUsed}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param seriesKey path parameter {@code seriesKey}
+     * <p>{@code POST /registry/number-series/by-series-key/mark-used} (operationId {@code registryRegistryMarkUsed}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param seriesKey query parameter {@code seriesKey}. Series key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void registryRegistryMarkUsed(String seriesKey, RegistryRegistryMarkUsedBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/registry/number-series/" + HttpTransport.seg(String.valueOf(seriesKey)) + "/mark-used");
+    public void registryRegistryMarkUsed(RegistryRegistryMarkUsedBody body, String seriesKey, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/registry/number-series/by-series-key/mark-used");
         req.body(body);
+        req.query("seriesKey", seriesKey);
         call.none(req, options);
     }
 
@@ -134,14 +139,15 @@ public final class RegistryNumberSeriesApi {
      *
      * <p>RegistryController.closePeriod (sangam-rest).
      *
-     * <p>{@code POST /registry/number-series/{seriesKey}/close-period} (operationId {@code registryRegistryClosePeriod}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param seriesKey path parameter {@code seriesKey}
+     * <p>{@code POST /registry/number-series/by-series-key/close-period} (operationId {@code registryRegistryClosePeriod}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param seriesKey query parameter {@code seriesKey}. Series key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void registryRegistryClosePeriod(String seriesKey, RegistryRegistryClosePeriodBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/registry/number-series/" + HttpTransport.seg(String.valueOf(seriesKey)) + "/close-period");
+    public void registryRegistryClosePeriod(RegistryRegistryClosePeriodBody body, String seriesKey, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/registry/number-series/by-series-key/close-period");
         req.body(body);
+        req.query("seriesKey", seriesKey);
         call.none(req, options);
     }
 
@@ -150,15 +156,16 @@ public final class RegistryNumberSeriesApi {
      *
      * <p>RegistryController.gaps (sangam-rest).
      *
-     * <p>{@code GET /registry/number-series/{seriesKey}/gaps} (operationId {@code registryRegistryGaps}); permission {@code registry.read}.
-     * @param seriesKey path parameter {@code seriesKey}
+     * <p>{@code GET /registry/number-series/by-series-key/gaps} (operationId {@code registryRegistryGaps}); permission {@code registry.read}.
+     * @param seriesKey query parameter {@code seriesKey}. Series key; may carry '/' or ':'
      * @param period query parameter {@code period}
      * @param scope query parameter {@code scope}, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> registryRegistryGaps(String seriesKey, String period, String scope, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/registry/number-series/" + HttpTransport.seg(String.valueOf(seriesKey)) + "/gaps");
+        ApiRequest req = ApiRequest.get("/registry/number-series/by-series-key/gaps");
+        req.query("seriesKey", seriesKey);
         req.query("period", period);
         req.query("scope", scope);
         return call.json(req, options, R_registryRegistryGaps);
@@ -169,8 +176,8 @@ public final class RegistryNumberSeriesApi {
      *
      * <p>RegistryController.allocations (sangam-rest).
      *
-     * <p>{@code GET /registry/number-series/{seriesKey}/allocations} (operationId {@code registryRegistryAllocations}); permission {@code registry.read}.
-     * @param seriesKey path parameter {@code seriesKey}
+     * <p>{@code GET /registry/number-series/by-series-key/allocations} (operationId {@code registryRegistryAllocations}); permission {@code registry.read}.
+     * @param seriesKey query parameter {@code seriesKey}. Series key; may carry '/' or ':'
      * @param period query parameter {@code period}
      * @param scope query parameter {@code scope}, or null
      * @param page query parameter {@code page}, or null
@@ -179,7 +186,8 @@ public final class RegistryNumberSeriesApi {
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<java.util.Map<String, Object>> registryRegistryAllocations(String seriesKey, String period, String scope, Integer page, Integer size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/registry/number-series/" + HttpTransport.seg(String.valueOf(seriesKey)) + "/allocations");
+        ApiRequest req = ApiRequest.get("/registry/number-series/by-series-key/allocations");
+        req.query("seriesKey", seriesKey);
         req.query("period", period);
         req.query("scope", scope);
         req.query("page", page);

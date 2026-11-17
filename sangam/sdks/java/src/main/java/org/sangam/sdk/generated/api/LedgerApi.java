@@ -42,8 +42,8 @@ public final class LedgerApi {
      *
      * <p>Balances of the ledger, filtered by period, line and holder prefixes and stage.
      *
-     * <p>{@code GET /ledger/{ledger}/accounts} (operationId {@code listLedgerAccounts}); permission {@code ledger.read}.
-     * @param ledger path parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+     * <p>{@code GET /ledger/by-ledger/accounts} (operationId {@code listLedgerAccounts}); permission {@code ledger.read}.
+     * @param ledger query parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
      * @param period query parameter {@code period}, or null
      * @param line query parameter {@code line}, or null. line (head of account) prefix
      * @param holder query parameter {@code holder}, or null. holder prefix
@@ -54,7 +54,8 @@ public final class LedgerApi {
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<LedgerAccount> listLedgerAccounts(String ledger, String period, String line, String holder, String stage, Long page, Long size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ledger/" + HttpTransport.seg(String.valueOf(ledger)) + "/accounts");
+        ApiRequest req = ApiRequest.get("/ledger/by-ledger/accounts");
+        req.query("ledger", ledger);
         req.query("period", period);
         req.query("line", line);
         req.query("holder", holder);
@@ -86,15 +87,16 @@ public final class LedgerApi {
      *
      * <p>Posts one operation idempotently by reference; insufficient availability refuses (422) or parks the request (holdIfShort).
      *
-     * <p>{@code POST /ledger/{ledger}/operations} (operationId {@code applyLedgerOperation}); permission {@code ledger.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ledger path parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+     * <p>{@code POST /ledger/by-ledger/operations} (operationId {@code applyLedgerOperation}); permission {@code ledger.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param ledger query parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public LedgerResult applyLedgerOperation(String ledger, LedgerOperationRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ledger/" + HttpTransport.seg(String.valueOf(ledger)) + "/operations");
+    public LedgerResult applyLedgerOperation(LedgerOperationRequest body, String ledger, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ledger/by-ledger/operations");
         req.body(body);
+        req.query("ledger", ledger);
         return call.json(req, options, R_applyLedgerOperation);
     }
 
@@ -103,15 +105,16 @@ public final class LedgerApi {
      *
      * <p>Freezes matching accounts until released.
      *
-     * <p>{@code POST /ledger/{ledger}/freeze-orders} (operationId {@code createLedgerFreezeOrder}); permission {@code ledger.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ledger path parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+     * <p>{@code POST /ledger/by-ledger/freeze-orders} (operationId {@code createLedgerFreezeOrder}); permission {@code ledger.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param ledger query parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
-    public LedgerFreezeOrder createLedgerFreezeOrder(String ledger, LedgerFreezeRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ledger/" + HttpTransport.seg(String.valueOf(ledger)) + "/freeze-orders");
+    public LedgerFreezeOrder createLedgerFreezeOrder(LedgerFreezeRequest body, String ledger, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ledger/by-ledger/freeze-orders");
         req.body(body);
+        req.query("ledger", ledger);
         return call.json(req, options, R_createLedgerFreezeOrder);
     }
 
@@ -120,15 +123,16 @@ public final class LedgerApi {
      *
      * <p>Active freeze orders of the ledger.
      *
-     * <p>{@code GET /ledger/{ledger}/freeze-orders} (operationId {@code listLedgerFreezeOrders}); permission {@code ledger.read}.
-     * @param ledger path parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+     * <p>{@code GET /ledger/by-ledger/freeze-orders} (operationId {@code listLedgerFreezeOrders}); permission {@code ledger.read}.
+     * @param ledger query parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
      * @param page query parameter {@code page}, or null. 0-based page index
      * @param size query parameter {@code size}, or null. Page size
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<LedgerFreezeOrder> listLedgerFreezeOrders(String ledger, Long page, Long size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ledger/" + HttpTransport.seg(String.valueOf(ledger)) + "/freeze-orders");
+        ApiRequest req = ApiRequest.get("/ledger/by-ledger/freeze-orders");
+        req.query("ledger", ledger);
         req.query("page", page);
         req.query("size", size);
         return call.page(req, options, LedgerFreezeOrder.class, page, size);
@@ -139,13 +143,15 @@ public final class LedgerApi {
      *
      * <p>Releases the order; frozen accounts reopen.
      *
-     * <p>{@code DELETE /ledger/{ledger}/freeze-orders/{id}} (operationId {@code releaseLedgerFreezeOrder}); permission {@code ledger.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ledger path parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
-     * @param id path parameter {@code id}
+     * <p>{@code DELETE /ledger/by-ledger/freeze-orders/by-id} (operationId {@code releaseLedgerFreezeOrder}); permission {@code ledger.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param ledger query parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
+     * @param id query parameter {@code id}. freeze order id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void releaseLedgerFreezeOrder(String ledger, String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/ledger/" + HttpTransport.seg(String.valueOf(ledger)) + "/freeze-orders/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.delete("/ledger/by-ledger/freeze-orders/by-id");
+        req.query("ledger", ledger);
+        req.query("id", id);
         call.none(req, options);
     }
 
@@ -154,15 +160,16 @@ public final class LedgerApi {
      *
      * <p>Year-end lapse and carry-forward. The period is a query parameter: a fiscal-year label can carry '/' (2026/2027).
      *
-     * <p>{@code POST /ledger/{ledger}/periods/close} (operationId {@code closeLedgerPeriod}); permission {@code ledger.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ledger path parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+     * <p>{@code POST /ledger/by-ledger/periods/close} (operationId {@code closeLedgerPeriod}); permission {@code ledger.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param ledger query parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
      * @param period query parameter {@code period}. fiscal period label
      * @param body request body, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<LedgerResult> closeLedgerPeriod(String ledger, String period, LedgerCloseRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ledger/" + HttpTransport.seg(String.valueOf(ledger)) + "/periods/close");
+        ApiRequest req = ApiRequest.post("/ledger/by-ledger/periods/close");
+        req.query("ledger", ledger);
         req.query("period", period);
         req.body(body);
         return call.json(req, options, R_closeLedgerPeriod);
@@ -173,8 +180,8 @@ public final class LedgerApi {
      *
      * <p>Requests parked for funds on matching accounts.
      *
-     * <p>{@code GET /ledger/{ledger}/holds} (operationId {@code listLedgerHolds}); permission {@code ledger.read}.
-     * @param ledger path parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+     * <p>{@code GET /ledger/by-ledger/holds} (operationId {@code listLedgerHolds}); permission {@code ledger.read}.
+     * @param ledger query parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
      * @param period query parameter {@code period}, or null
      * @param line query parameter {@code line}, or null. line (head of account) prefix
      * @param holder query parameter {@code holder}, or null. holder prefix
@@ -185,7 +192,8 @@ public final class LedgerApi {
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<LedgerHeldRequest> listLedgerHolds(String ledger, String period, String line, String holder, String stage, Long page, Long size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ledger/" + HttpTransport.seg(String.valueOf(ledger)) + "/holds");
+        ApiRequest req = ApiRequest.get("/ledger/by-ledger/holds");
+        req.query("ledger", ledger);
         req.query("period", period);
         req.query("line", line);
         req.query("holder", holder);
@@ -200,15 +208,16 @@ public final class LedgerApi {
      *
      * <p>Mirror versus external balances (SHADOW ledgers).
      *
-     * <p>{@code POST /ledger/{ledger}/reconcile} (operationId {@code reconcileLedger}); permission {@code ledger.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ledger path parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND)
+     * <p>{@code POST /ledger/by-ledger/reconcile} (operationId {@code reconcileLedger}); permission {@code ledger.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param ledger query parameter {@code ledger}. ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.List<LedgerReconcileRow> reconcileLedger(String ledger, LedgerReconcileRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ledger/" + HttpTransport.seg(String.valueOf(ledger)) + "/reconcile");
+    public java.util.List<LedgerReconcileRow> reconcileLedger(LedgerReconcileRequest body, String ledger, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ledger/by-ledger/reconcile");
         req.body(body);
+        req.query("ledger", ledger);
         return call.json(req, options, R_reconcileLedger);
     }
 }

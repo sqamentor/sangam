@@ -25,13 +25,15 @@ final class RegistryRegistersApi
      *
      * RegisterController.define (sangam-rest).
      *
-     * PUT /registry/registers/{registerKey} (operationId registryRegisterDefine); permission registry.write; result stored atomically with the state change.
+     * PUT /registry/registers/by-register-key (operationId registryRegisterDefine); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegisterDefineBody|array $body request body
+     * @param string $registerKey query registerKey
      * @return array<string, mixed>
      */
-    public function registryRegisterDefine(string $registerKey, Model\RegistryRegisterDefineBody|array $body, ?RequestOptions $options = null): array
+    public function registryRegisterDefine(Model\RegistryRegisterDefineBody|array $body, string $registerKey, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::put('/registry/registers/' . HttpTransport::seg((string) $registerKey));
+        $req = ApiRequest::put('/registry/registers/by-register-key');
+        $req->query('registerKey', $registerKey);
         if ($body !== null) {
             $req->body($body);
         }
@@ -43,12 +45,14 @@ final class RegistryRegistersApi
      *
      * RegisterController.definition (sangam-rest).
      *
-     * GET /registry/registers/{registerKey} (operationId registryRegisterDefinition); permission registry.read.
+     * GET /registry/registers/by-register-key (operationId registryRegisterDefinition); permission registry.read.
+     * @param string $registerKey query registerKey
      * @return array<string, mixed>
      */
     public function registryRegisterDefinition(string $registerKey, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/registry/registers/' . HttpTransport::seg((string) $registerKey));
+        $req = ApiRequest::get('/registry/registers/by-register-key');
+        $req->query('registerKey', $registerKey);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -71,13 +75,15 @@ final class RegistryRegistersApi
      *
      * RegisterController.append (sangam-rest).
      *
-     * POST /registry/registers/{registerKey}/entries (operationId registryRegisterAppend); permission registry.write; result stored atomically with the state change.
+     * POST /registry/registers/by-register-key/entries (operationId registryRegisterAppend); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegisterAppendBody|array $body request body
+     * @param string $registerKey query registerKey
      * @return array<string, mixed>
      */
-    public function registryRegisterAppend(string $registerKey, Model\RegistryRegisterAppendBody|array $body, ?RequestOptions $options = null): array
+    public function registryRegisterAppend(Model\RegistryRegisterAppendBody|array $body, string $registerKey, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/registry/registers/' . HttpTransport::seg((string) $registerKey) . '/entries');
+        $req = ApiRequest::post('/registry/registers/by-register-key/entries');
+        $req->query('registerKey', $registerKey);
         if ($body !== null) {
             $req->body($body);
         }
@@ -89,7 +95,8 @@ final class RegistryRegistersApi
      *
      * RegisterController.books (sangam-rest).
      *
-     * GET /registry/registers/{registerKey}/books (operationId registryRegisterBooks); permission registry.read.
+     * GET /registry/registers/by-register-key/books (operationId registryRegisterBooks); permission registry.read.
+     * @param string $registerKey query registerKey
      * @param string|null $scope query scope
      * @param int|null $page query page
      * @param int|null $size query size
@@ -97,7 +104,8 @@ final class RegistryRegistersApi
      */
     public function registryRegisterBooks(string $registerKey, ?string $scope = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/registry/registers/' . HttpTransport::seg((string) $registerKey) . '/books');
+        $req = ApiRequest::get('/registry/registers/by-register-key/books');
+        $req->query('registerKey', $registerKey);
         $req->query('scope', $scope);
         $req->query('page', $page);
         $req->query('size', $size);
@@ -254,13 +262,15 @@ final class RegistryRegistersApi
      *
      * RegisterController.verifyExtract (sangam-rest).
      *
-     * GET /registry/registers/public/{tenant}/extracts/verify (operationId registryRegisterVerifyExtract).
+     * GET /registry/registers/public/by-tenant/extracts/verify (operationId registryRegisterVerifyExtract).
+     * @param string $tenant query tenant
      * @param string $code query code
      * @return array<string, mixed>
      */
     public function registryRegisterVerifyExtract(string $tenant, string $code, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/registry/registers/public/' . HttpTransport::seg((string) $tenant) . '/extracts/verify');
+        $req = ApiRequest::get('/registry/registers/public/by-tenant/extracts/verify');
+        $req->query('tenant', $tenant);
         $req->query('code', $code);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }

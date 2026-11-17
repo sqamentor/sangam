@@ -1,6 +1,6 @@
 {
   "key": "ifms-bill/bindingHold",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "pack": "gov.ifms.bill",
   "title": {
     "en": "Profile binding missing: bind the bill type in the profile, then check again",

@@ -95,8 +95,9 @@ public class InstrumentController {
         return support.tx((c, ctx) -> instruments.expire(c, ctx, id).toMap());
     }
 
-    @PostMapping("/{id}/transitions/{name}")
-    public Map<String, Object> transition(@PathVariable String id, @PathVariable String name,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/{id}/transitions/by-name")
+    public Map<String, Object> transition(@PathVariable String id, @RequestParam("name") String name,
                                           @RequestHeader(value = IDEM, required = false) String idem,
                                           @RequestHeader(value = IF_MATCH, required = false) String ifMatch,
                                           @RequestBody(required = false) Map<String, Object> body) {
@@ -175,9 +176,9 @@ public class InstrumentController {
 
     // ---------------------------------------------------------------------------------- public verification
 
-    /** Public verification by code (tenant in the path; no authentication; masked minimal view). */
-    @GetMapping("/public/{tenant}/verify")
-    public VerificationService.Result verifyCode(@PathVariable String tenant, @RequestParam String code) {
+    /** Public verification by code (tenant as a query parameter; no authentication; masked minimal view). Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/public/by-tenant/verify")
+    public VerificationService.Result verifyCode(@RequestParam("tenant") String tenant, @RequestParam String code) {
         return support.publicTx(tenant, (c, ctx) -> verification.verifyCode(c, ctx, code));
     }
 

@@ -64,11 +64,12 @@ public sealed class FieldApi
     /// <summary>
     /// A template (latest version, or a given version)
     /// A template (latest version, or a given version).
-    /// GET /field/templates/{key} (operationId fieldWorkTemplate); permission field.capture.
+    /// GET /field/templates/by-key (operationId fieldWorkTemplate); permission field.capture.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkTemplateAsync(string key, int? version = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/field/templates/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}");
+        var req = ApiRequest.Get($"/field/templates/by-key");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         req.WithQuery("version", GeneratedCalls.Q(version));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -76,11 +77,12 @@ public sealed class FieldApi
     /// <summary>
     /// Retire a template version
     /// Retire a template version.
-    /// POST /field/templates/{key}/{version}/retire (operationId fieldWorkRetireTemplate); permission field.admin; result stored atomically with the state change.
+    /// POST /field/templates/by-key/{version}/retire (operationId fieldWorkRetireTemplate); permission field.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task FieldWorkRetireTemplateAsync(string key, string version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task FieldWorkRetireTemplateAsync(string version, string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/field/templates/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/retire");
+        var req = ApiRequest.Post($"/field/templates/by-key/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/retire");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -110,11 +112,12 @@ public sealed class FieldApi
     /// <summary>
     /// Run one schedule now
     /// Run one schedule now.
-    /// POST /field/schedules/{id}/run (operationId fieldWorkRunSchedule); permission field.admin; result stored atomically with the state change.
+    /// POST /field/schedules/by-id/run (operationId fieldWorkRunSchedule); permission field.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkRunScheduleAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/field/schedules/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/run");
+        var req = ApiRequest.Post($"/field/schedules/by-id/run");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -178,11 +181,12 @@ public sealed class FieldApi
     /// <summary>
     /// Set a device status (active, lost, revoked: revoke wipes the local queue)
     /// Set a device status (active, lost, revoked: revoke wipes the local queue).
-    /// POST /field/devices/{id}/status (operationId fieldWorkDeviceStatus); permission field.admin; result stored atomically with the state change.
+    /// POST /field/devices/by-id/status (operationId fieldWorkDeviceStatus); permission field.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkDeviceStatusAsync(string id, M.FieldWorkDeviceStatusBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkDeviceStatusAsync(M.FieldWorkDeviceStatusBody body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/field/devices/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/status");
+        var req = ApiRequest.Post($"/field/devices/by-id/status");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -190,11 +194,12 @@ public sealed class FieldApi
     /// <summary>
     /// Set a device's offline queue policy
     /// Set a device's offline queue policy.
-    /// POST /field/devices/{id}/policy (operationId fieldWorkDevicePolicy); permission field.admin; result stored atomically with the state change.
+    /// POST /field/devices/by-id/policy (operationId fieldWorkDevicePolicy); permission field.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkDevicePolicyAsync(string id, M.FieldWorkDevicePolicyBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkDevicePolicyAsync(M.FieldWorkDevicePolicyBody body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/field/devices/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/policy");
+        var req = ApiRequest.Post($"/field/devices/by-id/policy");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -202,22 +207,24 @@ public sealed class FieldApi
     /// <summary>
     /// Verify a device's packet hash chain
     /// Verify a device's packet hash chain.
-    /// GET /field/devices/{id}/chain (operationId fieldWorkChain); permission field.review.
+    /// GET /field/devices/by-id/chain (operationId fieldWorkChain); permission field.review.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkChainAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/field/devices/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/chain");
+        var req = ApiRequest.Get($"/field/devices/by-id/chain");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Upload offline packets from a device (idempotent per packet)
     /// Upload offline packets from a device (idempotent per packet).
-    /// POST /field/sync/{deviceId}/upload (operationId fieldWorkUpload); permission field.capture; result stored atomically with the state change.
+    /// POST /field/sync/by-device-id/upload (operationId fieldWorkUpload); permission field.capture; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<object>?> FieldWorkUploadAsync(string deviceId, global::System.Collections.Generic.List<M.FieldWorkUploadBody> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<object>?> FieldWorkUploadAsync(global::System.Collections.Generic.List<M.FieldWorkUploadBody> body, string deviceId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/field/sync/{HttpTransport.Seg(GeneratedCalls.Str(deviceId)!)}/upload");
+        var req = ApiRequest.Post($"/field/sync/by-device-id/upload");
+        req.WithQuery("deviceId", GeneratedCalls.Q(deviceId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.List<object>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -225,11 +232,12 @@ public sealed class FieldApi
     /// <summary>
     /// Pull server changes for a device since a cursor
     /// Pull server changes for a device since a cursor.
-    /// GET /field/sync/{deviceId}/pull (operationId fieldWorkPull); permission field.capture.
+    /// GET /field/sync/by-device-id/pull (operationId fieldWorkPull); permission field.capture.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkPullAsync(string deviceId, long? cursor = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/field/sync/{HttpTransport.Seg(GeneratedCalls.Str(deviceId)!)}/pull");
+        var req = ApiRequest.Get($"/field/sync/by-device-id/pull");
+        req.WithQuery("deviceId", GeneratedCalls.Q(deviceId));
         req.WithQuery("cursor", GeneratedCalls.Q(cursor));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -284,33 +292,36 @@ public sealed class FieldApi
     /// <summary>
     /// Evidence metadata and integrity report
     /// Evidence metadata and integrity report.
-    /// GET /field/evidence/{id} (operationId fieldWorkEvidence); permission field.capture.
+    /// GET /field/evidence/by-id (operationId fieldWorkEvidence); permission field.capture.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkEvidenceAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/field/evidence/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Get($"/field/evidence/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Evidence content (streamed)
     /// Evidence content (streamed).
-    /// GET /field/evidence/{id}/content (operationId fieldWorkEvidenceContent); permission field.capture.
+    /// GET /field/evidence/by-id/content (operationId fieldWorkEvidenceContent); permission field.capture.
     /// </summary>
     public async global::System.Threading.Tasks.Task<byte[]> FieldWorkEvidenceContentAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/field/evidence/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/content");
+        var req = ApiRequest.Get($"/field/evidence/by-id/content");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.BytesAsync(req, options, "application/octet-stream", cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Re-run the integrity checks of an evidence item
     /// Re-run the integrity checks of an evidence item.
-    /// POST /field/evidence/{id}/reverify (operationId fieldWorkReverifyEvidence); permission field.review; result stored atomically with the state change.
+    /// POST /field/evidence/by-id/reverify (operationId fieldWorkReverifyEvidence); permission field.review; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> FieldWorkReverifyEvidenceAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/field/evidence/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/reverify");
+        var req = ApiRequest.Post($"/field/evidence/by-id/reverify");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 

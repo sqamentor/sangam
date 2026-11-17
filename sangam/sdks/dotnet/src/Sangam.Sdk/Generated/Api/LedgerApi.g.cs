@@ -18,11 +18,12 @@ public sealed class LedgerApi
     /// <summary>
     /// List accounts
     /// Balances of the ledger, filtered by period, line and holder prefixes and stage.
-    /// GET /ledger/{ledger}/accounts (operationId listLedgerAccounts); permission ledger.read.
+    /// GET /ledger/by-ledger/accounts (operationId listLedgerAccounts); permission ledger.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.LedgerAccount>> ListLedgerAccountsAsync(string ledger, string? period = null, string? line = null, string? holder = null, string? stage = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/ledger/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/accounts");
+        var req = ApiRequest.Get($"/ledger/by-ledger/accounts");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         req.WithQuery("period", GeneratedCalls.Q(period));
         req.WithQuery("line", GeneratedCalls.Q(line));
         req.WithQuery("holder", GeneratedCalls.Q(holder));
@@ -47,11 +48,12 @@ public sealed class LedgerApi
     /// <summary>
     /// Apply an operation
     /// Posts one operation idempotently by reference; insufficient availability refuses (422) or parks the request (holdIfShort).
-    /// POST /ledger/{ledger}/operations (operationId applyLedgerOperation); permission ledger.write; result stored atomically with the state change.
+    /// POST /ledger/by-ledger/operations (operationId applyLedgerOperation); permission ledger.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.LedgerResult?> ApplyLedgerOperationAsync(string ledger, M.LedgerOperationRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.LedgerResult?> ApplyLedgerOperationAsync(M.LedgerOperationRequest body, string ledger, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ledger/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/operations");
+        var req = ApiRequest.Post($"/ledger/by-ledger/operations");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.LedgerResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -59,11 +61,12 @@ public sealed class LedgerApi
     /// <summary>
     /// Create a freeze order
     /// Freezes matching accounts until released.
-    /// POST /ledger/{ledger}/freeze-orders (operationId createLedgerFreezeOrder); permission ledger.admin; result stored atomically with the state change.
+    /// POST /ledger/by-ledger/freeze-orders (operationId createLedgerFreezeOrder); permission ledger.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.LedgerFreezeOrder?> CreateLedgerFreezeOrderAsync(string ledger, M.LedgerFreezeRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.LedgerFreezeOrder?> CreateLedgerFreezeOrderAsync(M.LedgerFreezeRequest body, string ledger, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ledger/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/freeze-orders");
+        var req = ApiRequest.Post($"/ledger/by-ledger/freeze-orders");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.LedgerFreezeOrder?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -71,11 +74,12 @@ public sealed class LedgerApi
     /// <summary>
     /// List freeze orders
     /// Active freeze orders of the ledger.
-    /// GET /ledger/{ledger}/freeze-orders (operationId listLedgerFreezeOrders); permission ledger.read.
+    /// GET /ledger/by-ledger/freeze-orders (operationId listLedgerFreezeOrders); permission ledger.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.LedgerFreezeOrder>> ListLedgerFreezeOrdersAsync(string ledger, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/ledger/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/freeze-orders");
+        var req = ApiRequest.Get($"/ledger/by-ledger/freeze-orders");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         req.WithQuery("page", GeneratedCalls.Q(page));
         req.WithQuery("size", GeneratedCalls.Q(size));
         return await _calls.PageAsync<M.LedgerFreezeOrder>(req, options, page, size, cancellationToken).ConfigureAwait(false);
@@ -84,22 +88,25 @@ public sealed class LedgerApi
     /// <summary>
     /// Release a freeze order
     /// Releases the order; frozen accounts reopen.
-    /// DELETE /ledger/{ledger}/freeze-orders/{id} (operationId releaseLedgerFreezeOrder); permission ledger.admin; result stored atomically with the state change.
+    /// DELETE /ledger/by-ledger/freeze-orders/by-id (operationId releaseLedgerFreezeOrder); permission ledger.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task ReleaseLedgerFreezeOrderAsync(string ledger, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/ledger/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/freeze-orders/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Delete($"/ledger/by-ledger/freeze-orders/by-id");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
+        req.WithQuery("id", GeneratedCalls.Q(id));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Close a period
     /// Year-end lapse and carry-forward. The period is a query parameter: a fiscal-year label can carry '/' (2026/2027).
-    /// POST /ledger/{ledger}/periods/close (operationId closeLedgerPeriod); permission ledger.admin; result stored atomically with the state change.
+    /// POST /ledger/by-ledger/periods/close (operationId closeLedgerPeriod); permission ledger.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.LedgerResult>?> CloseLedgerPeriodAsync(string ledger, string period, M.LedgerCloseRequest? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ledger/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/periods/close");
+        var req = ApiRequest.Post($"/ledger/by-ledger/periods/close");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         req.WithQuery("period", GeneratedCalls.Q(period));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.LedgerResult>?>(req, options, cancellationToken).ConfigureAwait(false);
@@ -108,11 +115,12 @@ public sealed class LedgerApi
     /// <summary>
     /// List held requests
     /// Requests parked for funds on matching accounts.
-    /// GET /ledger/{ledger}/holds (operationId listLedgerHolds); permission ledger.read.
+    /// GET /ledger/by-ledger/holds (operationId listLedgerHolds); permission ledger.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.LedgerHeldRequest>> ListLedgerHoldsAsync(string ledger, string? period = null, string? line = null, string? holder = null, string? stage = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/ledger/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/holds");
+        var req = ApiRequest.Get($"/ledger/by-ledger/holds");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         req.WithQuery("period", GeneratedCalls.Q(period));
         req.WithQuery("line", GeneratedCalls.Q(line));
         req.WithQuery("holder", GeneratedCalls.Q(holder));
@@ -125,11 +133,12 @@ public sealed class LedgerApi
     /// <summary>
     /// Reconcile a period
     /// Mirror versus external balances (SHADOW ledgers).
-    /// POST /ledger/{ledger}/reconcile (operationId reconcileLedger); permission ledger.admin; result stored atomically with the state change.
+    /// POST /ledger/by-ledger/reconcile (operationId reconcileLedger); permission ledger.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.LedgerReconcileRow>?> ReconcileLedgerAsync(string ledger, M.LedgerReconcileRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.LedgerReconcileRow>?> ReconcileLedgerAsync(M.LedgerReconcileRequest body, string ledger, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ledger/{HttpTransport.Seg(GeneratedCalls.Str(ledger)!)}/reconcile");
+        var req = ApiRequest.Post($"/ledger/by-ledger/reconcile");
+        req.WithQuery("ledger", GeneratedCalls.Q(ledger));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.LedgerReconcileRow>?>(req, options, cancellationToken).ConfigureAwait(false);
     }

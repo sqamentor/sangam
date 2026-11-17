@@ -59,12 +59,14 @@ final class FieldUnitsApi
      *
      * A field unit.
      *
-     * GET /field/units/{id} (operationId fieldWorkUnit); permission dispatch.operate.
+     * GET /field/units/by-id (operationId fieldWorkUnit); permission dispatch.operate.
+     * @param string $id query id
      * @return array<string, mixed>
      */
     public function fieldWorkUnit(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/field/units/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::get('/field/units/by-id');
+        $req->query('id', $id);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -73,13 +75,15 @@ final class FieldUnitsApi
      *
      * Set a unit status.
      *
-     * POST /field/units/{id}/status (operationId fieldWorkUnitStatus); permission dispatch.operate; result stored atomically with the state change.
+     * POST /field/units/by-id/status (operationId fieldWorkUnitStatus); permission dispatch.operate; result stored atomically with the state change.
      * @param Model\FieldWorkUnitStatusBody|array $body request body
+     * @param string $id query id
      * @return array<string, mixed>
      */
-    public function fieldWorkUnitStatus(string $id, Model\FieldWorkUnitStatusBody|array $body, ?RequestOptions $options = null): array
+    public function fieldWorkUnitStatus(Model\FieldWorkUnitStatusBody|array $body, string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/field/units/' . HttpTransport::seg((string) $id) . '/status');
+        $req = ApiRequest::post('/field/units/by-id/status');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -91,13 +95,15 @@ final class FieldUnitsApi
      *
      * Position ping from a unit (AVL feed, N12).
      *
-     * POST /field/units/{id}/pings (operationId fieldWorkPing); permission dispatch.operate; result stored atomically with the state change.
+     * POST /field/units/by-id/pings (operationId fieldWorkPing); permission dispatch.operate; result stored atomically with the state change.
      * @param Model\FieldWorkPingBody|array $body request body
+     * @param string $id query id
      * @return array<string, mixed>
      */
-    public function fieldWorkPing(string $id, Model\FieldWorkPingBody|array $body, ?RequestOptions $options = null): array
+    public function fieldWorkPing(Model\FieldWorkPingBody|array $body, string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/field/units/' . HttpTransport::seg((string) $id) . '/pings');
+        $req = ApiRequest::post('/field/units/by-id/pings');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -109,12 +115,14 @@ final class FieldUnitsApi
      *
      * Open offers for a unit.
      *
-     * GET /field/units/{id}/offers (operationId fieldWorkUnitOffers); permission dispatch.operate.
+     * GET /field/units/by-id/offers (operationId fieldWorkUnitOffers); permission dispatch.operate.
+     * @param string $id query id
      * @return list<mixed>
      */
     public function fieldWorkUnitOffers(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/field/units/' . HttpTransport::seg((string) $id) . '/offers');
+        $req = ApiRequest::get('/field/units/by-id/offers');
+        $req->query('id', $id);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -123,13 +131,15 @@ final class FieldUnitsApi
      *
      * ETA of a unit to a job.
      *
-     * GET /field/units/{id}/eta (operationId fieldWorkEta); permission dispatch.operate.
+     * GET /field/units/by-id/eta (operationId fieldWorkEta); permission dispatch.operate.
+     * @param string $id query id
      * @param string $jobId query jobId
      * @return array<string, mixed>
      */
     public function fieldWorkEta(string $id, string $jobId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/field/units/' . HttpTransport::seg((string) $id) . '/eta');
+        $req = ApiRequest::get('/field/units/by-id/eta');
+        $req->query('id', $id);
         $req->query('jobId', $jobId);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
@@ -139,12 +149,14 @@ final class FieldUnitsApi
      *
      * Trips of a unit.
      *
-     * GET /field/units/{id}/trips (operationId fieldWorkTrips); permission dispatch.operate.
+     * GET /field/units/by-id/trips (operationId fieldWorkTrips); permission dispatch.operate.
+     * @param string $id query id
      * @return list<mixed>
      */
     public function fieldWorkTrips(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/field/units/' . HttpTransport::seg((string) $id) . '/trips');
+        $req = ApiRequest::get('/field/units/by-id/trips');
+        $req->query('id', $id);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 }

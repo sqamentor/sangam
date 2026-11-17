@@ -18,28 +18,28 @@ schema("BillingRefundRequest", "Refund a collection.", "consumer head cycle peri
        ["consumer", "channel", "paymentRef", "amount"])
 schema("BillingRefundResult", "The payment rail reference of a refund.", "railReference operationId")
 
-BL = pp("ledger", "receivable ledger id (e.g. DEMAND)")
+BL = q("ledger", desc="receivable ledger id (e.g. DEMAND); may carry '/' or ':'", required=True)
 
-op("get", "/billing/{ledger}/accounts", "listBillingAccounts", "Billing", "Accounts billed in a cycle",
+op("get", "/billing/by-ledger/accounts", "listBillingAccounts", "Billing", "Accounts billed in a cycle",
    "Consumers holding demand accounts in the ledger.", BR, params=[BL, q("cycle")], resp=(200, "object"),
    perm="billing.read")
-op("post", "/billing/{ledger}/invoices", "raiseBillingInvoice", "Billing", "Raise an invoice",
+op("post", "/billing/by-ledger/invoices", "raiseBillingInvoice", "Billing", "Raise an invoice",
    "Computes the tariff (fixed, per unit, slab, percent, DMN) and raises the demand per head.", BR, params=[BL],
    body="BillingInvoiceRequest", resp=(200, "object"), cmd="billing.invoice", perm="billing.write")
-op("post", "/billing/{ledger}/collections", "recordBillingCollection", "Billing", "Record a collection",
+op("post", "/billing/by-ledger/collections", "recordBillingCollection", "Billing", "Record a collection",
    "Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt. A "
    "payment the channel cannot confirm is refused here; staff record it with acceptUnverifiedPayment (decision 141).",
    BR, params=[BL], body="BillingCollectionRequest", resp=(200, "object"), cmd="billing.collect",
    perm="billing.write")
-op("get", "/billing/{ledger}/consumers/{consumer}/arrears", "getBillingArrears", "Billing", "Arrears of a consumer",
-   "Outstanding and overdue demand.", BR, params=[BL, pp("consumer")], resp=(200, "object"), perm="billing.read")
-op("post", "/billing/{ledger}/consumers/{consumer}/penalties", "levyBillingPenalties", "Billing", "Levy penalties",
-   "Penalty / interest per the tariff (grace days, rate).", BR, params=[BL, pp("consumer")],
+op("get", "/billing/by-ledger/consumers/by-consumer/arrears", "getBillingArrears", "Billing", "Arrears of a consumer",
+   "Outstanding and overdue demand.", BR, params=[BL, q("consumer", desc="consumer id; may carry '/' or ':'", required=True)], resp=(200, "object"), perm="billing.read")
+op("post", "/billing/by-ledger/consumers/by-consumer/penalties", "levyBillingPenalties", "Billing", "Levy penalties",
+   "Penalty / interest per the tariff (grace days, rate).", BR, params=[BL, q("consumer", desc="consumer id; may carry '/' or ':'", required=True)],
    body="BillingPenaltyRequest", resp=(200, "object"), cmd="billing.penalty", perm="billing.write")
-op("post", "/billing/{ledger}/waivers", "recordBillingWaiver", "Billing", "Record a waiver",
+op("post", "/billing/by-ledger/waivers", "recordBillingWaiver", "Billing", "Record a waiver",
    "Writes off outstanding demand under an approved order.", BR, params=[BL], body="BillingWaiverRequest",
    resp=(200, "object"), cmd="billing.waive", perm="billing.admin")
-op("post", "/billing/{ledger}/refunds", "refundBillingCollection", "Billing", "Refund a collection",
+op("post", "/billing/by-ledger/refunds", "refundBillingCollection", "Billing", "Refund a collection",
    "Reverses consumption and calls the payment rail once per operation (the Idempotency-Key).", BR, params=[BL],
    body="BillingRefundRequest", resp=(200, "BillingRefundResult"), cmd="billing.refund", perm="billing.admin")
 
@@ -116,7 +116,7 @@ schema("UnverifiedPaymentResolveRequest", "Resolve a pending unverified payment.
                              "of the evidence"})
 SCHEMAS["UnverifiedPaymentResolveRequest"]["properties"]["evidenceRef"]["minLength"] = 1
 SCHEMAS["UnverifiedPaymentResolveRequest"]["properties"]["reason"]["minLength"] = 1
-_UP = "/billing/{ledger}/unverified-payments"
+_UP = "/billing/by-ledger/unverified-payments"
 _UP_REQ = BR + ["RM-03", "R42"]
 op("post", _UP, "acceptUnverifiedPayment", "Billing", "Accept a payment unverified",
    "Records a payment its channel cannot confirm now, in state PAYMENT_ACCEPTED_UNVERIFIED, with an audit record of "

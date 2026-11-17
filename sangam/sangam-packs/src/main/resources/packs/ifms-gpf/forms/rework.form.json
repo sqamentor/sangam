@@ -1,6 +1,6 @@
 {
   "key": "ifms-gpf/rework",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "pack": "gov.ifms.gpf",
   "title": {
     "en": "Rework and resubmit",

@@ -84,11 +84,12 @@ public sealed class ResourcesBookingsApi
     /// <summary>
     /// Booking by ref
     /// ResourcesController.bookingByRef (sangam-rest).
-    /// GET /resources/bookings/by-ref/{bookingRef} (operationId resourcesResourcesBookingByRef); permission resources.read.
+    /// GET /resources/bookings/by-ref/by-booking-ref (operationId resourcesResourcesBookingByRef); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesBookingByRefAsync(string bookingRef, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/resources/bookings/by-ref/{HttpTransport.Seg(GeneratedCalls.Str(bookingRef)!)}");
+        var req = ApiRequest.Get($"/resources/bookings/by-ref/by-booking-ref");
+        req.WithQuery("bookingRef", GeneratedCalls.Q(bookingRef));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 

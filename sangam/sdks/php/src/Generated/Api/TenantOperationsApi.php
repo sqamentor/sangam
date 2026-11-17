@@ -294,12 +294,14 @@ final class TenantOperationsApi
      *
      * Forward only.
      *
-     * POST /ops/sequences/{name}/advance (operationId uiOpsAdvance); permission ops.tenant.admin; result stored atomically with the state change.
+     * POST /ops/sequences/by-name/advance (operationId uiOpsAdvance); permission ops.tenant.admin; result stored atomically with the state change.
      * @param Model\OpsUiAdvanceRequest|array $body request body
+     * @param string $name query name
      */
-    public function uiOpsAdvance(string $name, Model\OpsUiAdvanceRequest|array $body, ?RequestOptions $options = null): void
+    public function uiOpsAdvance(Model\OpsUiAdvanceRequest|array $body, string $name, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/ops/sequences/' . HttpTransport::seg((string) $name) . '/advance');
+        $req = ApiRequest::post('/ops/sequences/by-name/advance');
+        $req->query('name', $name);
         if ($body !== null) {
             $req->body($body);
         }

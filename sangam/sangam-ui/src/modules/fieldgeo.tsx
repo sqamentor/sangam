@@ -27,11 +27,11 @@ const templates: ScreenDef = {
   unpaged: true,
   columns: [c('key'), c('version'), c('name'), c('state')],
   rowKey: ['key'],
-  detail: '/field/templates/{key}',
+  detail: '/field/templates/by-key?key={key}',
   // M-051: the body is a FieldTemplate(key, version, title {lang: text}, offlineCapable, sections, scoring, geofence, evidence, attributes)
   // (FieldTemplate.java:29; FieldRestService.java:176-178)
   create: { id: 'publish', label: 'act.publishTemplate', path: '/field/templates', fields: [f.text('key', undefined, true), f.json('title', 'fld.title', true), f.bool('offlineCapable', 'fld.offlineCapable'), f.json('sections', 'fld.checklistSections', true)], hint: 'mod.field.templateHint', check: (body, t) => checkTemplateSections(body.sections, t) },
-  actions: [{ id: 'retire', label: 'act.retire', path: '/field/templates/{key}/{version}/retire', reason: 'body', danger: true }],
+  actions: [{ id: 'retire', label: 'act.retire', path: '/field/templates/by-key/{version}/retire?key={key}', reason: 'body', danger: true }],
 };
 
 const assignments: ScreenDef = {
@@ -79,7 +79,7 @@ const schedules: ScreenDef = {
     { id: 'select', label: 'act.randomSelection', path: '/field/selections', fields: [f.json('population', 'fld.population', true), f.num('sampleSize', 'fld.count', true), f.text('seed', 'fld.seedCommitment', true), f.text('riskDecisionKey', 'fld.riskDecisionKey')], showResult: true, hint: 'mod.field.selectionHint' },
     { id: 'verify', label: 'act.verifySelection', method: 'GET', path: '/field/selections/{selectionId}/verify', fields: [f.text('selectionId', undefined, true)], showResult: true, noJson: true },
   ],
-  actions: [{ id: 'run', label: 'act.runNow', path: '/field/schedules/{id}/run', showResult: true, noJson: true }],
+  actions: [{ id: 'run', label: 'act.runNow', path: '/field/schedules/by-id/run?id={id}', showResult: true, noJson: true }],
 };
 
 const devices: ScreenDef = {
@@ -89,13 +89,13 @@ const devices: ScreenDef = {
   unpaged: true,
   columns: [c('id'), c('owner'), c('model'), c('status'), c('lastSyncAt'), c('queued')],
   rowKey: ['id', 'deviceId'],
-  sections: [{ id: 'chain', label: 'mod.field.chain', path: '/field/devices/{id}/chain' }],
+  sections: [{ id: 'chain', label: 'mod.field.chain', path: '/field/devices/by-id/chain?id={id}' }],
   // M-051: DeviceRegistry.Registration(deviceId, unitId, platform, appVersion, publicKey, keyAlg) (DeviceRegistry.java:55)
   create: { id: 'register', label: 'act.registerDevice', path: '/field/devices', fields: [f.text('deviceId'), f.text('unitId'), f.text('platform', 'fld.model'), f.text('appVersion', 'fld.appVersion'), f.text('publicKey', undefined, true), f.text('keyAlg', 'fld.keyAlg')] },
   actions: [
-    { id: 'status', label: 'act.setStatus', path: '/field/devices/{id}/status', fields: [f.select('status', ['ACTIVE', 'LOST', 'REVOKED'], undefined, true)], reason: 'body', hint: 'mod.field.revokeHint' },
+    { id: 'status', label: 'act.setStatus', path: '/field/devices/by-id/status?id={id}', fields: [f.select('status', ['ACTIVE', 'LOST', 'REVOKED'], undefined, true)], reason: 'body', hint: 'mod.field.revokeHint' },
     // M-051: QueuePolicy(maxItems, maxAgeHours, wipeOnRevoke, requireSignature, maxOfflineHours) (QueuePolicy.java:13; FieldRestService.java:310-312)
-    { id: 'policy', label: 'act.queuePolicy', path: '/field/devices/{id}/policy', fields: [f.num('maxItems', 'fld.maxPackets'), f.num('maxAgeHours'), f.num('maxOfflineHours', 'fld.maxOfflineHours'), f.bool('requireSignature', 'fld.requireSignature'), f.bool('wipeOnRevoke', 'fld.wipeOnRevoke')] },
+    { id: 'policy', label: 'act.queuePolicy', path: '/field/devices/by-id/policy?id={id}', fields: [f.num('maxItems', 'fld.maxPackets'), f.num('maxAgeHours'), f.num('maxOfflineHours', 'fld.maxOfflineHours'), f.bool('requireSignature', 'fld.requireSignature'), f.bool('wipeOnRevoke', 'fld.wipeOnRevoke')] },
   ],
 };
 
@@ -112,7 +112,7 @@ const conflicts: ScreenDef = {
     // M-051: {resolution: ACCEPT_CLIENT | KEEP_SERVER | DISCARD, note} (FieldRestService.java:338-340; ConflictResolver.java:38)
     { id: 'resolve', label: 'act.resolve', path: '/field/conflicts/{id}/resolve', fields: [f.select('resolution', ['ACCEPT_CLIENT', 'KEEP_SERVER', 'DISCARD'], 'fld.choice', true), f.area('note')] },
     // M-039: re-check an evidence item's hash chain (field.review, FieldWorkController.java:281-284) → {evidenceId, intact}
-    { id: 'reverify', label: 'act.reverify', path: '/field/evidence/{evidenceId}/reverify', fields: [f.path(f.text('evidenceId', 'fld.evidenceId', true))], noJson: true, showResult: true },
+    { id: 'reverify', label: 'act.reverify', path: '/field/evidence/by-id/reverify?id={evidenceId}', fields: [f.path(f.text('evidenceId', 'fld.evidenceId', true))], noJson: true, showResult: true },
   ],
 };
 
@@ -125,17 +125,17 @@ const units: ScreenDef = {
   columns: [c('id'), c('name'), c('kind'), c('status'), c('lastPingAt')],
   rowKey: ['id', 'unitId'],
   sections: [
-    { id: 'offers', label: 'mod.field.offers', path: '/field/units/{id}/offers' },
-    { id: 'trips', label: 'mod.field.trips', path: '/field/units/{id}/trips' },
+    { id: 'offers', label: 'mod.field.offers', path: '/field/units/by-id/offers?id={id}' },
+    { id: 'trips', label: 'mod.field.trips', path: '/field/units/by-id/trips?id={id}' },
   ],
   // M-051: DispatchService.UnitInput(id, kind, label, skills, homeLat, homeLon, orgUnitRef, attributes) (DispatchService.java:53)
   create: { id: 'save', label: 'act.saveUnit', path: '/field/units', fields: [f.text('id', 'fld.unitId', true), f.text('label', 'fld.name', true), f.text('kind'), f.json('skills'), f.num('homeLat', 'fld.homeLat'), f.num('homeLon', 'fld.homeLon'), f.text('orgUnitRef', 'fld.orgUnit')] },
   actions: [
-    { id: 'status', label: 'act.setStatus', path: '/field/units/{id}/status', fields: [f.select('status', ['AVAILABLE', 'BUSY', 'OFF_DUTY', 'OUT_OF_SERVICE'], undefined, true)] },
+    { id: 'status', label: 'act.setStatus', path: '/field/units/by-id/status?id={id}', fields: [f.select('status', ['AVAILABLE', 'BUSY', 'OFF_DUTY', 'OUT_OF_SERVICE'], undefined, true)] },
     // M-039 (dispatch.operate, FieldWorkController.java:40-43): ETA to a job (GET ?jobId, :325-328) and a position ping
     // {lat, lon, at?, accuracyM?, speedMps?, headingDeg?, source?} (:313-316; keys read at FieldRestService.java:404-409)
-    { id: 'eta', label: 'act.eta', method: 'GET', path: '/field/units/{id}/eta', fields: [f.text('jobId', 'fld.jobId', true)], noJson: true, showResult: true },
-    { id: 'ping', label: 'act.ping', path: '/field/units/{id}/pings', fields: [f.num('lat', undefined, true), f.num('lon', undefined, true), f.dt('at'), f.num('accuracyM', 'fld.accuracyM'), f.num('speedMps', 'fld.speedMps'), f.num('headingDeg', 'fld.headingDeg'), f.text('source')], noJson: true },
+    { id: 'eta', label: 'act.eta', method: 'GET', path: '/field/units/by-id/eta?id={id}', fields: [f.text('jobId', 'fld.jobId', true)], noJson: true, showResult: true },
+    { id: 'ping', label: 'act.ping', path: '/field/units/by-id/pings?id={id}', fields: [f.num('lat', undefined, true), f.num('lon', undefined, true), f.dt('at'), f.num('accuracyM', 'fld.accuracyM'), f.num('speedMps', 'fld.speedMps'), f.num('headingDeg', 'fld.headingDeg'), f.text('source')], noJson: true },
   ],
 };
 
@@ -269,33 +269,33 @@ const layers: ScreenDef = {
   unpaged: true,
   columns: [c('layer'), c('name'), c('levels'), c('srid'), c('featureCount')],
   rowKey: ['layer', 'key'],
-  detail: '/geo/layers/{layer}',
+  detail: '/geo/layers/by-layer?layer={layer}',
   // M-051: a layer is {code, names {lang: text}, levels [{code, names}], attributes, ...} (BoundaryDataLoader.layer, BoundaryDataLoader.java:104)
   create: { id: 'define', label: 'act.defineLayer', path: '/geo/layers', fields: [f.text('code', 'fld.layer', true), f.json('names', 'fld.names', true), f.json('levels', 'fld.levels', true)] },
   // M-051: a boundary package {features (GeoJSON), codeProperty, levelProperty, parentProperty, orgUnitProperty, nameProperties, layer?}
   // (BoundaryDataLoader.read, BoundaryDataLoader.java:57-66)
-  actions: [{ id: 'import', label: 'act.importBoundaries', path: '/geo/layers/{layer}/import', fields: [f.json('features', 'fld.geojson', true), f.text('codeProperty', 'fld.codeProperty'), f.text('levelProperty', 'fld.levelProperty'), f.text('parentProperty', 'fld.parentProperty'), f.json('nameProperties', 'fld.nameProperties')], noJson: true, hint: 'mod.geo.importHint' }],
+  actions: [{ id: 'import', label: 'act.importBoundaries', path: '/geo/layers/by-layer/import?layer={layer}', fields: [f.json('features', 'fld.geojson', true), f.text('codeProperty', 'fld.codeProperty'), f.text('levelProperty', 'fld.levelProperty'), f.text('parentProperty', 'fld.parentProperty'), f.json('nameProperties', 'fld.nameProperties')], noJson: true, hint: 'mod.geo.importHint' }],
 };
 
 const features: ScreenDef = {
   id: 'features',
   title: 'mod.geo.features',
-  list: '/geo/layers/{layer}/features',
+  list: '/geo/layers/by-layer/features?layer={layer}',
   filters: [f.text('layer', undefined, true), f.text('level'), f.text('parentId'), f.bool('history')],
   requireFilters: ['layer'],
   columns: [c('id'), c('name'), c('level'), c('code'), c('parentId'), c('validFrom')],
   rowKey: ['id', 'featureId'],
-  detail: '/geo/features/{id}',
-  sections: [{ id: 'lineage', label: 'mod.geo.lineage', path: '/geo/features/{id}/lineage' }],
+  detail: '/geo/features/by-id?id={id}',
+  sections: [{ id: 'lineage', label: 'mod.geo.lineage', path: '/geo/features/by-id/lineage?id={id}' }],
   // M-051: {code, level, parentCode, names, properties, geometry, orgUnitRef} (GeoRestService.java:127-135)
-  create: { id: 'put', label: 'act.putFeature', path: '/geo/layers/{layer}/features', fields: [f.text('code', undefined, true), f.json('names', 'fld.names', true), f.text('level', undefined, true), f.text('parentCode', 'fld.parentCode'), f.json('geometry', 'fld.geometry', true)] },
+  create: { id: 'put', label: 'act.putFeature', path: '/geo/layers/by-layer/features?layer={layer}', fields: [f.text('code', undefined, true), f.json('names', 'fld.names', true), f.text('level', undefined, true), f.text('parentCode', 'fld.parentCode'), f.json('geometry', 'fld.geometry', true)] },
   toolbar: [
     { id: 'resolve', label: 'act.resolvePoint', method: 'GET', path: '/geo/resolve', fields: [f.text('layer', undefined, true), f.text('level'), f.text('lat', undefined, true), f.text('lon', undefined, true)], showResult: true, noJson: true },
     { id: 'nearest', label: 'act.nearest', method: 'GET', path: '/geo/nearest', fields: [f.text('layer', undefined, true), f.text('objectType'), f.text('lat', undefined, true), f.text('lon', undefined, true), f.num('n'), f.num('maxKm')], showResult: true, noJson: true },
     // M-051: {layer, geometry} (GeoRestService.java:204-209)
     { id: 'overlaps', label: 'act.overlaps', path: '/geo/overlaps', fields: [f.text('layer', undefined, true), f.json('geometry', 'fld.geometry', true)], showResult: true },
   ],
-  actions: [{ id: 'retire', label: 'act.retire', method: 'DELETE', path: '/geo/features/{id}', reason: 'query', danger: true }],
+  actions: [{ id: 'retire', label: 'act.retire', method: 'DELETE', path: '/geo/features/by-id?id={id}', reason: 'query', danger: true }],
 };
 
 type Coord = [number, number];
@@ -330,10 +330,10 @@ export function GeofenceViewer() {
   const [fenceIds, setFenceIds] = useState('');
   const [q, setQ] = useState<{ layer: string; level: string; fences: string[] } | null>(null);
   const feats = useAsync(async () => {
-    const page = await http.page<Row>(`/geo/layers/${encodeURIComponent(q!.layer)}/features`, { level: q!.level || undefined, size: 100 });
-    return Promise.all(page.items.map(async (x) => (geomOf(x) ? x : { ...x, ...(await http.get<Row>(`/geo/features/${encodeURIComponent(String(x.id))}`, { geometry: true }).catch(() => ({}))) })));
+    const page = await http.page<Row>('/geo/layers/by-layer/features', { layer: q!.layer, level: q!.level || undefined, size: 100 });
+    return Promise.all(page.items.map(async (x) => (geomOf(x) ? x : { ...x, ...(await http.get<Row>('/geo/features/by-id', { id: String(x.id), geometry: true }).catch(() => ({}))) })));
   }, [JSON.stringify(q)], !!q && !!q.layer);
-  const fences = useAsync(() => Promise.all((q?.fences ?? []).map((id) => http.get<Row>(`/geo/fences/${encodeURIComponent(id)}`))), [JSON.stringify(q?.fences)], !!q && q.fences.length > 0);
+  const fences = useAsync(() => Promise.all((q?.fences ?? []).map((id) => http.get<Row>('/geo/fences/by-id', { id }))), [JSON.stringify(q?.fences)], !!q && q.fences.length > 0);
   const [point, setPoint] = useState<{ lat: number; lon: number } | null>(null);
   const [checks, setChecks] = useState<unknown>();
   const act = useAction();
@@ -358,7 +358,7 @@ export function GeofenceViewer() {
     void act
       .run(async () => {
         const resolved = q?.layer ? await http.get<unknown>('/geo/resolve', { layer: q.layer, level: q.level || undefined, lat: p.lat, lon: p.lon }).catch((er: Error) => ({ error: er.message })) : undefined;
-        const fenceResults = await Promise.all((q?.fences ?? []).map(async (id) => ({ fence: id, result: await http.post<unknown>(`/geo/fences/${encodeURIComponent(id)}/check`, p).catch((er: Error) => ({ error: er.message })) })));
+        const fenceResults = await Promise.all((q?.fences ?? []).map(async (id) => ({ fence: id, result: await http.post<unknown>(`/geo/fences/by-id/check?id=${encodeURIComponent(id)}`, p).catch((er: Error) => ({ error: er.message })) })));
         return { point: p, resolved, fences: fenceResults };
       })
       .then((r) => r && setChecks(r));
@@ -414,7 +414,7 @@ const fencesScreen: ScreenDef = {
   id: 'fences',
   title: 'mod.geo.fences',
   description: 'mod.geo.fencesDesc',
-  list: '/geo/fences/{id}',
+  list: '/geo/fences/by-id?id={id}',
   unpaged: true,
   filters: [f.text('id', 'fld.fenceId', true)],
   requireFilters: ['id'],
@@ -424,8 +424,8 @@ const fencesScreen: ScreenDef = {
   // (GeoRestService.java:216-224; Geofence.java:24)
   create: { id: 'define', label: 'act.defineFence', path: '/geo/fences', fields: [f.text('id', 'fld.fenceId', true), f.select('kind', ['POLYGON', 'CIRCLE', 'FEATURE'], undefined, true), f.json('geometry', 'fld.geometry'), f.json('center', 'fld.center'), f.num('radiusM', 'fld.radiusM'), f.text('featureRef', 'fld.featureId'), f.num('toleranceM', 'fld.bufferMeters'), f.json('attributes')], showResult: true },
   toolbar: [
-    { id: 'check', label: 'act.checkPoint', path: '/geo/fences/{id}/check', fields: [f.text('lat', undefined, true), f.text('lon', undefined, true)], showResult: true },
-    { id: 'deactivate', label: 'act.deactivate', method: 'DELETE', path: '/geo/fences/{id}', reason: 'query', danger: true },
+    { id: 'check', label: 'act.checkPoint', path: '/geo/fences/by-id/check?id={id}', fields: [f.text('lat', undefined, true), f.text('lon', undefined, true)], showResult: true },
+    { id: 'deactivate', label: 'act.deactivate', method: 'DELETE', path: '/geo/fences/by-id?id={id}', reason: 'query', danger: true },
   ],
 };
 
@@ -441,8 +441,8 @@ const external: ScreenDef = {
   // attributes, active) (GeoRestService.java:305-310; ExternalLayer.java:19-23: ref, protocol and remoteName required)
   create: { id: 'register', label: 'act.registerExternal', path: '/geo/external-layers', fields: [f.text('ref', undefined, true), f.select('protocol', ['WMS', 'WFS'], 'fld.kind', true), f.text('remoteName', 'fld.name', true), f.text('baseUrl', 'fld.url', true, { description: 'admin.egressHint' }), f.text('importLayer', 'fld.layer'), f.json('attributes')] },
   actions: [
-    { id: 'query', label: 'act.query', path: '/geo/external-layers/{ref}/query', fields: [f.json('filter')], showResult: true },
-    { id: 'import', label: 'act.import', path: '/geo/external-layers/{ref}/import', fields: [f.text('layer', undefined, true), f.text('level')], showResult: true },
+    { id: 'query', label: 'act.query', path: '/geo/external-layers/by-ref/query?ref={ref}', fields: [f.json('filter')], showResult: true },
+    { id: 'import', label: 'act.import', path: '/geo/external-layers/by-ref/import?ref={ref}', fields: [f.text('layer', undefined, true), f.text('level')], showResult: true },
   ],
 };
 
