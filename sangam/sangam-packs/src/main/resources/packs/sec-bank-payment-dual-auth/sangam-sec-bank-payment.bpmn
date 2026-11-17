@@ -112,9 +112,16 @@
     <subProcess id="py_return" name="Payment returned by the beneficiary bank" triggeredByEvent="true">
       <startEvent id="py_retStart" name="Return received" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_payment_returned"/></startEvent>
       <serviceTask id="py_retCredit" name="Credit back the remitter" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cbs.credit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>account,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>retCredit</operaton:string></operaton:field><operaton:field name="step"><operaton:string>return-credit</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="py_retCredit_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="py_retCredit_sgw" name="Sanctioned?" default="py_retCredit_sgw_no"></exclusiveGateway>
+    <endEvent id="py_retCredit_notReleased" name="Not released"></endEvent>
+    <sequenceFlow id="py_retCredit_sanction_f" sourceRef="py_retCredit_sanction" targetRef="py_retCredit_sgw"/>
+    <sequenceFlow id="py_retCredit_sgw_yes" name="sanctioned" sourceRef="py_retCredit_sgw" targetRef="py_retCredit"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="py_retCredit_sgw_no" name="not sanctioned" sourceRef="py_retCredit_sgw" targetRef="py_retCredit_notReleased"/>
+
       <serviceTask id="py_retNotify" name="Tell the maker" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>payment-returned</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>initiatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
       <endEvent id="py_retEnd" name="Credited back"></endEvent>
-      <sequenceFlow id="sec_bank_payment_f50" sourceRef="py_retStart" targetRef="py_retCredit"/>
+      <sequenceFlow id="sec_bank_payment_f50" sourceRef="py_retStart" targetRef="py_retCredit_sanction"/>
       <sequenceFlow id="sec_bank_payment_f51" sourceRef="py_retCredit" targetRef="py_retNotify"/>
       <sequenceFlow id="sec_bank_payment_f52" sourceRef="py_retNotify" targetRef="py_retEnd"/>
     </subProcess>
@@ -187,7 +194,7 @@
       <bpmndi:BPMNShape id="py_inv_di" bpmnElement="py_inv"><dc:Bounds x="3823" y="342" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_return_di" bpmnElement="py_return" isExpanded="true"><dc:Bounds x="30" y="535" width="623" height="150"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_retStart_di" bpmnElement="py_retStart"><dc:Bounds x="92" y="597" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="py_retCredit_di" bpmnElement="py_retCredit"><dc:Bounds x="225" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="py_retCredit_sanction_di" bpmnElement="py_retCredit_sanction"><dc:Bounds x="45" y="445" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="py_retCredit_sgw_di" bpmnElement="py_retCredit_sgw" isMarkerVisible="true"><dc:Bounds x="175" y="455" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="py_retCredit_notReleased_di" bpmnElement="py_retCredit_notReleased"><dc:Bounds x="182" y="365" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="py_retCredit_sanction_f_di" bpmnElement="py_retCredit_sanction_f"><di:waypoint x="145" y="480"/><di:waypoint x="175" y="480"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="py_retCredit_sgw_yes_di" bpmnElement="py_retCredit_sgw_yes"><di:waypoint x="200" y="505"/><di:waypoint x="200" y="575"/><di:waypoint x="225" y="575"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="py_retCredit_sgw_no_di" bpmnElement="py_retCredit_sgw_no"><di:waypoint x="200" y="455"/><di:waypoint x="200" y="401"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="py_retCredit_di" bpmnElement="py_retCredit"><dc:Bounds x="225" y="575" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_retNotify_di" bpmnElement="py_retNotify"><dc:Bounds x="390" y="575" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_retEnd_di" bpmnElement="py_retEnd"><dc:Bounds x="587" y="597" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="py_withdraw_di" bpmnElement="py_withdraw" isExpanded="true"><dc:Bounds x="30" y="725" width="623" height="150"/></bpmndi:BPMNShape>

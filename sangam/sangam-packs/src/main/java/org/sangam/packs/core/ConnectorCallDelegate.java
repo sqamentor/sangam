@@ -63,6 +63,11 @@ public class ConnectorCallDelegate implements JavaDelegate {
         String bk = ex.getProcessBusinessKey() == null ? ex.getProcessInstanceId() : ex.getProcessBusinessKey();
         ConnectorResult r;
         if ("submit".equalsIgnoreCase(Vars.field(mode, ex, "query"))) {
+            String held = MoneyOutApproval.refusal(c, ex::getVariable);
+            if (held != null) {
+                Vars.audit(ex, MoneyOutApproval.ERROR, Vars.map("reason", held, "connector", c));
+                throw new org.operaton.bpm.engine.delegate.BpmnError(MoneyOutApproval.ERROR, held);
+            }
             String s = Vars.field(step, ex, c + ":" + opName);
             int attempt = Vars.intVal(ex, prefix + "Attempt", 1);
             if ("FAILED".equals(Vars.str(ex, prefix + "Status"))) {
