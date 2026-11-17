@@ -94,5 +94,11 @@
     "sangam-core-execution",
     "sangam-core-rejection",
     "sangam-core-scrutiny"
+  ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
   ]
 }

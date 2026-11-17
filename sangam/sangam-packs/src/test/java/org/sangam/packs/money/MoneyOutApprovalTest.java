@@ -201,11 +201,13 @@ class MoneyOutApprovalTest {
                 + flow("f1", "s", "prep") + flow("f2", "prep", "paid") + flow("f3", "refused", "held")
                 + flow("f4", "held", "e2")
                 + "</process><error id=\"err\" errorCode=\"APPROVAL_INVALIDATED\"/></definitions>";
-        engine.getRepositoryService().createDeployment().addString("t-money-out.bpmn", bpmn).deploy();
+        engine.getRepositoryService().createDeployment().addString("t-money-out.bpmn", bpmn)
+                .tenantId(org.sangam.packs.PackTestTenant.ID).deploy();
         Map<String, Object> v = new HashMap<>();
         v.put("verifyApproval", false);
         v.put("amount", 100);
-        String id = engine.getRuntimeService().startProcessInstanceByKey("t-money-out", "MO-1", v).getId();
+        String id = engine.getRuntimeService().createProcessInstanceByKey("t-money-out").businessKey("MO-1")
+                .setVariables(v).processDefinitionTenantId(org.sangam.packs.PackTestTenant.ID).execute().getId();
         assertNotNull(engine.getTaskService().createTaskQuery().processInstanceId(id).taskDefinitionKey("held")
                 .singleResult(), "an OUT connector without a recorded approval is held with APPROVAL_INVALIDATED");
     }
