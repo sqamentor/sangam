@@ -12,7 +12,7 @@
 # the GET, dlt.registration.write for the four mutations, both tenant-scoped (tenant administration).
 
 TAGS.append(("DltHooks", "Inbound India DLT SMS delivery reports (decision 304)"))
-_DLT = "/hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports"
+_DLT = "/hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports"
 
 schema("DltDeliveryReport", "One SMS delivery report from the provider.",
        "reportId clientRef messageId status reason reportedAt:dt", required=["status"],
@@ -37,7 +37,7 @@ op("post", _DLT, "receiveDltDeliveryReports", "DltHooks", "Receive SMS delivery 
    "report with neither clientRef nor messageId, is 422 DLT_DELIVERY_REPORT_INVALID and nothing is written. Each "
    "accepted report updates the message's delivery state; NOTIFICATION_DELIVERED is written once per delivered message "
    "(decision 304).", ["R60", "decision 304"],
-   params=[pp("tenant"), pp("connectorId", "The tenant's DLT SMS connector"),
+   params=[pp("tenant"), q("connectorId", desc="The tenant's DLT SMS connector; may carry '/' or ':'", required=True),
            {"name": "X-Sangam-Signature", "in": "header", "required": True, "schema": {"type": "string"},
             "description": "t=<epoch seconds>,v1=<hex HMAC-SHA256(secret, t + '.' + body)>; refused when t is more "
                            "than 5 minutes from the server clock"}],

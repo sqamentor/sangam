@@ -18,11 +18,12 @@ public sealed class DltHooksApi
     /// <summary>
     /// Receive SMS delivery reports
     /// Public at the Sangam layer: the X-Sangam-Signature header is the authentication and is checked first. A missing, wrong or stale signature (outside 5 minutes) is 401 WEBHOOK_SIGNATURE_INVALID; a tenant or connector that is not a configured DLT SMS connector is 404. The body is one report or an array of reports; a body that is not, or a report with neither clientRef nor messageId, is 422 DLT_DELIVERY_REPORT_INVALID and nothing is written. Each accepted report updates the message's delivery state; NOTIFICATION_DELIVERED is written once per delivered message (decision 304).
-    /// POST /hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports (operationId receiveDltDeliveryReports).
+    /// POST /hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports (operationId receiveDltDeliveryReports).
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.DltDeliveryReportResult?> ReceiveDltDeliveryReportsAsync(string tenant, string connectorId, object body, string xSangamSignature, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.DltDeliveryReportResult?> ReceiveDltDeliveryReportsAsync(string tenant, object body, string connectorId, string xSangamSignature, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/hooks/sms-dlt/{HttpTransport.Seg(GeneratedCalls.Str(tenant)!)}/{HttpTransport.Seg(GeneratedCalls.Str(connectorId)!)}/delivery-reports");
+        var req = ApiRequest.Post($"/hooks/sms-dlt/{HttpTransport.Seg(GeneratedCalls.Str(tenant)!)}/by-connector-id/delivery-reports");
+        req.WithQuery("connectorId", GeneratedCalls.Q(connectorId));
         req.WithHeader("X-Sangam-Signature", GeneratedCalls.Str(xSangamSignature));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.DltDeliveryReportResult?>(req, options, cancellationToken).ConfigureAwait(false);

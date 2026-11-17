@@ -4472,10 +4472,10 @@ export class ConfigApi {
    *
    * Codes of a scheme segment valid on the date (optionally children of a parent code).
    *
-   * `GET /config/master/{scheme}/{segment}` (operationId `listConfigMasterCodes`); permission `config.read`.
+   * `GET /config/master/by-scheme/by-segment` (operationId `listConfigMasterCodes`); permission `config.read`.
    */
-  async listConfigMasterCodes(scheme: string, segment: string, params?: { scope?: string /* scope id; default: the caller's tenant */; parent?: string; asOf?: string; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.ConfigMasterCode>> {
-    const req: ApiRequest = { method: 'GET', path: `/config/master/${seg(String(scheme))}/${seg(String(segment))}`, query: { scope: params?.scope, parent: params?.parent, asOf: params?.asOf, page: params?.page, size: params?.size } };
+  async listConfigMasterCodes(params: { scheme: string /* Classification scheme; may carry '/' or ':' */; segment: string /* Scheme segment; may carry '/' or ':' */; scope?: string /* scope id; default: the caller's tenant */; parent?: string; asOf?: string; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.ConfigMasterCode>> {
+    const req: ApiRequest = { method: 'GET', path: `/config/master/by-scheme/by-segment`, query: { scheme: params?.scheme, segment: params?.segment, scope: params?.scope, parent: params?.parent, asOf: params?.asOf, page: params?.page, size: params?.size } };
     return this.calls.page<M.ConfigMasterCode>(req, options, params?.page, params?.size);
   }
 
@@ -4535,10 +4535,10 @@ export class ConfigApi {
    *
    * Checks a document against its type (required fields, limits, chain).
    *
-   * `POST /config/document-types/{id}/check` (operationId `checkConfigDocument`); permission `config.read`.
+   * `POST /config/document-types/by-id/check` (operationId `checkConfigDocument`); permission `config.read`.
    */
-  async checkConfigDocument(id: string, body: M.ConfigDocumentCheckRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/config/document-types/${seg(String(id))}/check` };
+  async checkConfigDocument(body: M.ConfigDocumentCheckRequest, params: { id: string /* Document type id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/config/document-types/by-id/check`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -4548,10 +4548,10 @@ export class ConfigApi {
    *
    * Maps a code (and amount) to the target classification (e.g. COFOG) with shares.
    *
-   * `POST /config/crosswalks/{id}/map` (operationId `mapConfigCrosswalk`); permission `config.read`.
+   * `POST /config/crosswalks/by-id/map` (operationId `mapConfigCrosswalk`); permission `config.read`.
    */
-  async mapConfigCrosswalk(id: string, body: M.ConfigCrosswalkRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/config/crosswalks/${seg(String(id))}/map` };
+  async mapConfigCrosswalk(body: M.ConfigCrosswalkRequest, params: { id: string /* Crosswalk id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/config/crosswalks/by-id/map`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -4728,10 +4728,10 @@ export class DltHooksApi {
    *
    * Public at the Sangam layer: the X-Sangam-Signature header is the authentication and is checked first. A missing, wrong or stale signature (outside 5 minutes) is 401 WEBHOOK_SIGNATURE_INVALID; a tenant or connector that is not a configured DLT SMS connector is 404. The body is one report or an array of reports; a body that is not, or a report with neither clientRef nor messageId, is 422 DLT_DELIVERY_REPORT_INVALID and nothing is written. Each accepted report updates the message's delivery state; NOTIFICATION_DELIVERED is written once per delivered message (decision 304).
    *
-   * `POST /hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports` (operationId `receiveDltDeliveryReports`).
+   * `POST /hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports` (operationId `receiveDltDeliveryReports`).
    */
-  async receiveDltDeliveryReports(tenant: string, connectorId: string, body: unknown, params: { xSangamSignature: string /* t=<epoch seconds>,v1=<hex HMAC-SHA256(secret, t + '.' + body)>; refused when t is more than 5 minutes from the server clock */ }, options?: RequestOptions): Promise<M.DltDeliveryReportResult> {
-    const req: ApiRequest = { method: 'POST', path: `/hooks/sms-dlt/${seg(String(tenant))}/${seg(String(connectorId))}/delivery-reports` };
+  async receiveDltDeliveryReports(tenant: string, body: unknown, params: { connectorId: string /* The tenant's DLT SMS connector; may carry '/' or ':' */; xSangamSignature: string /* t=<epoch seconds>,v1=<hex HMAC-SHA256(secret, t + '.' + body)>; refused when t is more than 5 minutes from the server clock */ }, options?: RequestOptions): Promise<M.DltDeliveryReportResult> {
+    const req: ApiRequest = { method: 'POST', path: `/hooks/sms-dlt/${seg(String(tenant))}/by-connector-id/delivery-reports`, query: { connectorId: params?.connectorId } };
     headersOf(req, { 'X-Sangam-Signature': params?.xSangamSignature });
     if (body !== undefined) req.body = body;
     return this.calls.json<M.DltDeliveryReportResult>(req, options);
@@ -6388,10 +6388,10 @@ export class HealthHooksApi {
    *
    * Public at the Sangam layer: the channel's shared secret header is checked (constant time) and each focus resource is written to the integration inbox (deduplicated, tenant-bound by the channel). ClaimResponse becomes sangam.ushealth.pasUpdate.
    *
-   * `POST /hooks/fhir/{channel}` (operationId `receiveFhirNotification`).
+   * `POST /hooks/fhir/by-channel` (operationId `receiveFhirNotification`).
    */
-  async receiveFhirNotification(channel: string, body: Record<string, unknown>, options?: RequestOptions): Promise<M.HealthHookResult> {
-    const req: ApiRequest = { method: 'POST', path: `/hooks/fhir/${seg(String(channel))}` };
+  async receiveFhirNotification(body: Record<string, unknown>, params: { channel: string /* Configured FHIR subscription channel; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.HealthHookResult> {
+    const req: ApiRequest = { method: 'POST', path: `/hooks/fhir/by-channel`, query: { channel: params?.channel } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.HealthHookResult>(req, options);
   }

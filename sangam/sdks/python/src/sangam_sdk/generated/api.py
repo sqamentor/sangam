@@ -3858,14 +3858,14 @@ class ConfigApi:
         req.body = body
         return cast("M.ConfigFindingsResult", self._c.json(req, options))
 
-    def list_config_master_codes(self, scheme: str, segment: str, *, scope: Optional[str] = None, parent: Optional[str] = None, as_of: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.ConfigMasterCode]:
+    def list_config_master_codes(self, *, scheme: str, segment: str, scope: Optional[str] = None, parent: Optional[str] = None, as_of: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.ConfigMasterCode]:
         """List master codes
 
         Codes of a scheme segment valid on the date (optionally children of a parent code).
 
-        ``GET /config/master/{scheme}/{segment}`` (operationId ``listConfigMasterCodes``); permission ``config.read``.
+        ``GET /config/master/by-scheme/by-segment`` (operationId ``listConfigMasterCodes``); permission ``config.read``.
         """
-        req = ApiRequest("GET", f"/config/master/{seg(str(scheme))}/{seg(str(segment))}", query={"scope": scope, "parent": parent, "asOf": as_of, "page": page, "size": size})
+        req = ApiRequest("GET", f"/config/master/by-scheme/by-segment", query={"scheme": scheme, "segment": segment, "scope": scope, "parent": parent, "asOf": as_of, "page": page, "size": size})
         return cast("Page[M.ConfigMasterCode]", self._c.page(req, options, page, size))
 
     def seed_config_master_codes(self, body: Union[bytes, str], *, scope: Optional[str] = None, format: Optional[Literal["csv", "yaml"]] = None, options: Optional[RequestOptions] = None) -> M.ConfigSeedResult:
@@ -3911,25 +3911,25 @@ class ConfigApi:
         req = ApiRequest("GET", f"/config/document-types", query={"scope": scope, "family": family, "asOf": as_of, "page": page, "size": size})
         return cast("Page[dict[str, Any]]", self._c.page(req, options, page, size))
 
-    def check_config_document(self, id: str, body: M.ConfigDocumentCheckRequest, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
+    def check_config_document(self, body: M.ConfigDocumentCheckRequest, *, id: str, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Check a document
 
         Checks a document against its type (required fields, limits, chain).
 
-        ``POST /config/document-types/{id}/check`` (operationId ``checkConfigDocument``); permission ``config.read``.
+        ``POST /config/document-types/by-id/check`` (operationId ``checkConfigDocument``); permission ``config.read``.
         """
-        req = ApiRequest("POST", f"/config/document-types/{seg(str(id))}/check")
+        req = ApiRequest("POST", f"/config/document-types/by-id/check", query={"id": id})
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
 
-    def map_config_crosswalk(self, id: str, body: M.ConfigCrosswalkRequest, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
+    def map_config_crosswalk(self, body: M.ConfigCrosswalkRequest, *, id: str, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Map through a crosswalk
 
         Maps a code (and amount) to the target classification (e.g. COFOG) with shares.
 
-        ``POST /config/crosswalks/{id}/map`` (operationId ``mapConfigCrosswalk``); permission ``config.read``.
+        ``POST /config/crosswalks/by-id/map`` (operationId ``mapConfigCrosswalk``); permission ``config.read``.
         """
-        req = ApiRequest("POST", f"/config/crosswalks/{seg(str(id))}/map")
+        req = ApiRequest("POST", f"/config/crosswalks/by-id/map", query={"id": id})
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
 
@@ -4080,14 +4080,14 @@ class DltHooksApi:
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
 
-    def receive_dlt_delivery_reports(self, tenant: str, connector_id: str, body: Any, *, x_sangam_signature: str, options: Optional[RequestOptions] = None) -> M.DltDeliveryReportResult:
+    def receive_dlt_delivery_reports(self, tenant: str, body: Any, *, connector_id: str, x_sangam_signature: str, options: Optional[RequestOptions] = None) -> M.DltDeliveryReportResult:
         """Receive SMS delivery reports
 
         Public at the Sangam layer: the X-Sangam-Signature header is the authentication and is checked first. A missing, wrong or stale signature (outside 5 minutes) is 401 WEBHOOK_SIGNATURE_INVALID; a tenant or connector that is not a configured DLT SMS connector is 404. The body is one report or an array of reports; a body that is not, or a report with neither clientRef nor messageId, is 422 DLT_DELIVERY_REPORT_INVALID and nothing is written. Each accepted report updates the message's delivery state; NOTIFICATION_DELIVERED is written once per delivered message (decision 304).
 
-        ``POST /hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports`` (operationId ``receiveDltDeliveryReports``).
+        ``POST /hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports`` (operationId ``receiveDltDeliveryReports``).
         """
-        req = ApiRequest("POST", f"/hooks/sms-dlt/{seg(str(tenant))}/{seg(str(connector_id))}/delivery-reports")
+        req = ApiRequest("POST", f"/hooks/sms-dlt/{seg(str(tenant))}/by-connector-id/delivery-reports", query={"connectorId": connector_id})
         _headers(req, {"X-Sangam-Signature": x_sangam_signature})
         req.body = body
         return cast("M.DltDeliveryReportResult", self._c.json(req, options))
@@ -5496,14 +5496,14 @@ class HealthHooksApi:
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
 
-    def receive_fhir_notification(self, channel: str, body: dict[str, Any], *, options: Optional[RequestOptions] = None) -> M.HealthHookResult:
+    def receive_fhir_notification(self, body: dict[str, Any], *, channel: str, options: Optional[RequestOptions] = None) -> M.HealthHookResult:
         """Receive a FHIR subscription notification
 
         Public at the Sangam layer: the channel's shared secret header is checked (constant time) and each focus resource is written to the integration inbox (deduplicated, tenant-bound by the channel). ClaimResponse becomes sangam.ushealth.pasUpdate.
 
-        ``POST /hooks/fhir/{channel}`` (operationId ``receiveFhirNotification``).
+        ``POST /hooks/fhir/by-channel`` (operationId ``receiveFhirNotification``).
         """
-        req = ApiRequest("POST", f"/hooks/fhir/{seg(str(channel))}")
+        req = ApiRequest("POST", f"/hooks/fhir/by-channel", query={"channel": channel})
         req.body = body
         return cast("M.HealthHookResult", self._c.json(req, options))
 

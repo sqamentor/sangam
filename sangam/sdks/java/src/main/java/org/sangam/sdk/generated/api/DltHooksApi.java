@@ -30,17 +30,18 @@ public final class DltHooksApi {
      *
      * <p>Public at the Sangam layer: the X-Sangam-Signature header is the authentication and is checked first. A missing, wrong or stale signature (outside 5 minutes) is 401 WEBHOOK_SIGNATURE_INVALID; a tenant or connector that is not a configured DLT SMS connector is 404. The body is one report or an array of reports; a body that is not, or a report with neither clientRef nor messageId, is 422 DLT_DELIVERY_REPORT_INVALID and nothing is written. Each accepted report updates the message's delivery state; NOTIFICATION_DELIVERED is written once per delivered message (decision 304).
      *
-     * <p>{@code POST /hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports} (operationId {@code receiveDltDeliveryReports}).
+     * <p>{@code POST /hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports} (operationId {@code receiveDltDeliveryReports}).
      * @param tenant path parameter {@code tenant}
-     * @param connectorId path parameter {@code connectorId}. The tenant's DLT SMS connector
      * @param body request body
+     * @param connectorId query parameter {@code connectorId}. The tenant's DLT SMS connector; may carry '/' or ':'
      * @param xSangamSignature header parameter {@code X-Sangam-Signature}. t=&lt;epoch seconds&gt;,v1=&lt;hex HMAC-SHA256(secret, t + '.' + body)&gt;; refused when t is more than 5 minutes from the server clock
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public DltDeliveryReportResult receiveDltDeliveryReports(String tenant, String connectorId, Object body, String xSangamSignature, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/hooks/sms-dlt/" + HttpTransport.seg(String.valueOf(tenant)) + "/" + HttpTransport.seg(String.valueOf(connectorId)) + "/delivery-reports");
+    public DltDeliveryReportResult receiveDltDeliveryReports(String tenant, Object body, String connectorId, String xSangamSignature, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/hooks/sms-dlt/" + HttpTransport.seg(String.valueOf(tenant)) + "/by-connector-id/delivery-reports");
         req.body(body);
+        req.query("connectorId", connectorId);
         req.header("X-Sangam-Signature", xSangamSignature == null ? null : String.valueOf(xSangamSignature));
         return call.json(req, options, R_receiveDltDeliveryReports);
     }

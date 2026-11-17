@@ -248,7 +248,7 @@ sangam:
     # India DLT SMS (decisions 304, 305; DltProperties, DltWiring).
     dlt:
       # Decision 304: the provider posts signed delivery reports to
-      # POST /api/v1/hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports (X-Sangam-Signature t=,v1= HMAC-SHA256).
+      # POST /api/v1/hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports?connectorId= (X-Sangam-Signature t=,v1= HMAC-SHA256).
       # The signing secret of a connector is a reference, never a value:
       #   delivery-reports.secrets.<name>.connector / .tenant (optional) / .secret-ref (secret://...)
       # A connector without one refuses every report (401).

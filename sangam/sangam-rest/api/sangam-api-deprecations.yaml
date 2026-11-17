@@ -1229,3 +1229,35 @@ corrections:
     to: "/service-mocks/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
     reason: "decision 393: a mock row id is service + '.' + operation (ServiceMocksController id()), both free text, so it may carry '/' or ':'"
     decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: GET
+    path: /config/master/{scheme}/{segment}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/config/master/{scheme}/{segment}: the value as a path parameter"
+    to: "/config/master/by-scheme/by-segment?scheme=&segment= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: scheme and segment names have no pattern (ClassificationScheme.java:56), so a value with '/' or ':' could never reach its route (the servlet connector refuses an encoded '/' with an HTML 400)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /config/document-types/{id}/check
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/config/document-types/{id}/check: the value as a path parameter"
+    to: "/config/document-types/by-id/check?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: document type ids are catalogue entries with no pattern (DocumentTypeCatalogue.java:89), so an id with '/' or ':' could never reach its route"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /config/crosswalks/{id}/map
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/config/crosswalks/{id}/map: the value as a path parameter"
+    to: "/config/crosswalks/by-id/map?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: crosswalk ids are configuration names with no pattern (ConfigConnector.java:279), so an id with '/' or ':' could never reach its route"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"
+  - method: POST
+    path: /hooks/fhir/{channel}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/hooks/fhir/{channel}: the value as a path parameter"
+    to: "/hooks/fhir/by-channel?channel= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: FHIR channels are configuration keys with no pattern (HealthHooksBridge.java:38); the callback URL is configured on the FHIR Subscription and no released configuration exists (0.1.0 unreleased; no IFMS callback in JOINT-LEDGER-SANGAM-IFMS.md)"
+    decision: "owner 393 / 406 (0.1.0 unreleased)"

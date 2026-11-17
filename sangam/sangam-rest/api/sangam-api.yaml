@@ -29068,7 +29068,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /config/master/{scheme}/{segment}:
+  /config/master/by-scheme/by-segment:
     get:
       operationId: listConfigMasterCodes
       tags:
@@ -29077,15 +29077,17 @@ paths:
       description: Codes of a scheme segment valid on the date (optionally children of a parent code).
       parameters:
       - name: scheme
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Classification scheme; may carry '/' or ':'
+        required: true
       - name: segment
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Scheme segment; may carry '/' or ':'
+        required: true
       - name: scope
         in: query
         schema:
@@ -29342,7 +29344,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /config/document-types/{id}/check:
+  /config/document-types/by-id/check:
     post:
       operationId: checkConfigDocument
       tags:
@@ -29351,10 +29353,11 @@ paths:
       description: Checks a document against its type (required fields, limits, chain).
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Document type id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
       x-sangam-permission: config.read
@@ -29384,7 +29387,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /config/crosswalks/{id}/map:
+  /config/crosswalks/by-id/map:
     post:
       operationId: mapConfigCrosswalk
       tags:
@@ -29393,10 +29396,11 @@ paths:
       description: Maps a code (and amount) to the target classification (e.g. COFOG) with shares.
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Crosswalk id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
       x-sangam-permission: config.read
@@ -29426,7 +29430,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /hooks/fhir/{channel}:
+  /hooks/fhir/by-channel:
     post:
       operationId: receiveFhirNotification
       tags:
@@ -29436,10 +29440,11 @@ paths:
         to the integration inbox (deduplicated, tenant-bound by the channel). ClaimResponse becomes sangam.ushealth.pasUpdate.'
       parameters:
       - name: channel
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Configured FHIR subscription channel; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
       x-sangam-requirements:
@@ -29861,7 +29866,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports:
+  /hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports:
     post:
       operationId: receiveDltDeliveryReports
       tags:
@@ -29879,11 +29884,11 @@ paths:
         schema:
           type: string
       - name: connectorId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: The tenant's DLT SMS connector
+        description: The tenant's DLT SMS connector; may carry '/' or ':'
+        required: true
       - name: X-Sangam-Signature
         in: header
         required: true

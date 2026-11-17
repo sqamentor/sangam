@@ -206,7 +206,7 @@
    "tag": "Config",
    "pathPrefix": "",
    "operations": 17,
-   "maxLines": 376
+   "maxLines": 380
   },
   {
    "class": "DebugApi",
@@ -234,7 +234,7 @@
    "tag": "DltHooks",
    "pathPrefix": "",
    "operations": 1,
-   "maxLines": 47
+   "maxLines": 48
   },
   {
    "class": "DltRegistrationApi",
@@ -318,7 +318,7 @@
    "tag": "HealthHooks",
    "pathPrefix": "",
    "operations": 2,
-   "maxLines": 61
+   "maxLines": 62
   },
   {
    "class": "HistoryApi",
@@ -8515,7 +8515,7 @@
   {
    "operationId": "listConfigMasterCodes",
    "method": "GET",
-   "path": "/config/master/{scheme}/{segment}",
+   "path": "/config/master/by-scheme/by-segment",
    "tag": "Config",
    "apiClass": "ConfigApi",
    "java": "ConfigApi#listConfigMasterCodes",
@@ -8575,7 +8575,7 @@
   {
    "operationId": "checkConfigDocument",
    "method": "POST",
-   "path": "/config/document-types/{id}/check",
+   "path": "/config/document-types/by-id/check",
    "tag": "Config",
    "apiClass": "ConfigApi",
    "java": "ConfigApi#checkConfigDocument",
@@ -8587,7 +8587,7 @@
   {
    "operationId": "mapConfigCrosswalk",
    "method": "POST",
-   "path": "/config/crosswalks/{id}/map",
+   "path": "/config/crosswalks/by-id/map",
    "tag": "Config",
    "apiClass": "ConfigApi",
    "java": "ConfigApi#mapConfigCrosswalk",
@@ -8599,7 +8599,7 @@
   {
    "operationId": "receiveFhirNotification",
    "method": "POST",
-   "path": "/hooks/fhir/{channel}",
+   "path": "/hooks/fhir/by-channel",
    "tag": "HealthHooks",
    "apiClass": "HealthHooksApi",
    "java": "HealthHooksApi#receiveFhirNotification",
@@ -8695,7 +8695,7 @@
   {
    "operationId": "receiveDltDeliveryReports",
    "method": "POST",
-   "path": "/hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports",
+   "path": "/hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports",
    "tag": "DltHooks",
    "apiClass": "DltHooksApi",
    "java": "DltHooksApi#receiveDltDeliveryReports",

@@ -25,14 +25,16 @@ final class DltHooksApi
      *
      * Public at the Sangam layer: the X-Sangam-Signature header is the authentication and is checked first. A missing, wrong or stale signature (outside 5 minutes) is 401 WEBHOOK_SIGNATURE_INVALID; a tenant or connector that is not a configured DLT SMS connector is 404. The body is one report or an array of reports; a body that is not, or a report with neither clientRef nor messageId, is 422 DLT_DELIVERY_REPORT_INVALID and nothing is written. Each accepted report updates the message's delivery state; NOTIFICATION_DELIVERED is written once per delivered message (decision 304).
      *
-     * POST /hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports (operationId receiveDltDeliveryReports).
+     * POST /hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports (operationId receiveDltDeliveryReports).
      * @param mixed $body request body
+     * @param string $connectorId query connectorId
      * @param string $xSangamSignature header X-Sangam-Signature
      * @return Model\DltDeliveryReportResult|null
      */
-    public function receiveDltDeliveryReports(string $tenant, string $connectorId, mixed $body, string $xSangamSignature, ?RequestOptions $options = null): ?Model\DltDeliveryReportResult
+    public function receiveDltDeliveryReports(string $tenant, mixed $body, string $connectorId, string $xSangamSignature, ?RequestOptions $options = null): ?Model\DltDeliveryReportResult
     {
-        $req = ApiRequest::post('/hooks/sms-dlt/' . HttpTransport::seg((string) $tenant) . '/' . HttpTransport::seg((string) $connectorId) . '/delivery-reports');
+        $req = ApiRequest::post('/hooks/sms-dlt/' . HttpTransport::seg((string) $tenant) . '/by-connector-id/delivery-reports');
+        $req->query('connectorId', $connectorId);
         $req->header('X-Sangam-Signature', Support::headerValue($xSangamSignature));
         if ($body !== null) {
             $req->body($body);

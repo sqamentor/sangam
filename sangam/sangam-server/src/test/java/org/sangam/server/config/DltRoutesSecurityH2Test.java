@@ -64,7 +64,7 @@ class DltRoutesSecurityH2Test {
     static final String CONNECTOR = "sms-dlt-sim";
     static final String SECRET_REF = "secret://dlt/sim-webhook";
     static final String SECRET = "delivery-report-signing-value-of-this-test";
-    static final String HOOK = "/api/v1/hooks/sms-dlt/" + TENANT + "/" + CONNECTOR + "/delivery-reports";
+    static final String HOOK = "/api/v1/hooks/sms-dlt/" + TENANT + "/by-connector-id/delivery-reports?connectorId=" + CONNECTOR;
     static final String REGISTRATION = "/api/v1/admin/dlt-registration";
     static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10))
             .followRedirects(HttpClient.Redirect.NEVER).build();
@@ -178,7 +178,7 @@ class DltRoutesSecurityH2Test {
                 WebhookSignature.HEADER, signature);
         assertEquals(401, otherPath.statusCode(), otherPath.body());
         assertNotEquals("WEBHOOK_SIGNATURE_INVALID", code(otherPath), "refused by the filter chain: a Sangam token is needed");
-        HttpResponse<String> deeper = send("POST", HOOK + "/more", body, WebhookSignature.HEADER, signature);
+        HttpResponse<String> deeper = send("POST", "/api/v1/hooks/sms-dlt/" + TENANT + "/by-connector-id/delivery-reports/more?connectorId=" + CONNECTOR, body, WebhookSignature.HEADER, signature);
         assertEquals(401, deeper.statusCode(), deeper.body());
         HttpResponse<String> otherMethod = send("GET", HOOK, null, WebhookSignature.HEADER, signature);
         assertEquals(401, otherMethod.statusCode(), "only POST is public: " + otherMethod.body());

@@ -61,7 +61,7 @@ import org.springframework.core.env.Environment;
  *       tenant's egress rules, secrets and keys by reference ({@link SecretResolver}).</li>
  *   <li>Pack bindings ({@code HealthConnectors.packBindings()} re-targeted to the neutral ids, plus the
  *       {@code fhir.*} pack ids with the request's own operation).</li>
- *   <li>{@code POST /api/v1/hooks/fhir/{channel}}: one {@link FhirSubscriptionReceiver} per
+ *   <li>{@code POST /api/v1/hooks/fhir/by-channel?channel=}: one {@link FhirSubscriptionReceiver} per
  *       {@code sangam.connectors-health.fhir-channels.<channel>} (sink {@code inboxService::receive}; default event type
  *       {@code ClaimResponse} → {@code sangam.ushealth.pasUpdate}); {@code /cds-services/**} on the shared
  *       {@link CdsHooksService} (packs register their hook services on that bean).</li>

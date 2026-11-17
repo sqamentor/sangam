@@ -221,7 +221,9 @@ final class ConfigApi
      *
      * Codes of a scheme segment valid on the date (optionally children of a parent code).
      *
-     * GET /config/master/{scheme}/{segment} (operationId listConfigMasterCodes); permission config.read.
+     * GET /config/master/by-scheme/by-segment (operationId listConfigMasterCodes); permission config.read.
+     * @param string $scheme query scheme
+     * @param string $segment query segment
      * @param string|null $scope query scope
      * @param string|null $parent query parent
      * @param string|null $asOf query asOf
@@ -231,7 +233,9 @@ final class ConfigApi
      */
     public function listConfigMasterCodes(string $scheme, string $segment, ?string $scope = null, ?string $parent = null, ?string $asOf = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/config/master/' . HttpTransport::seg((string) $scheme) . '/' . HttpTransport::seg((string) $segment));
+        $req = ApiRequest::get('/config/master/by-scheme/by-segment');
+        $req->query('scheme', $scheme);
+        $req->query('segment', $segment);
         $req->query('scope', $scope);
         $req->query('parent', $parent);
         $req->query('asOf', $asOf);
@@ -325,13 +329,15 @@ final class ConfigApi
      *
      * Checks a document against its type (required fields, limits, chain).
      *
-     * POST /config/document-types/{id}/check (operationId checkConfigDocument); permission config.read.
+     * POST /config/document-types/by-id/check (operationId checkConfigDocument); permission config.read.
      * @param Model\ConfigDocumentCheckRequest|array $body request body
+     * @param string $id query id
      * @return array<string, mixed>
      */
-    public function checkConfigDocument(string $id, Model\ConfigDocumentCheckRequest|array $body, ?RequestOptions $options = null): array
+    public function checkConfigDocument(Model\ConfigDocumentCheckRequest|array $body, string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/config/document-types/' . HttpTransport::seg((string) $id) . '/check');
+        $req = ApiRequest::post('/config/document-types/by-id/check');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -343,13 +349,15 @@ final class ConfigApi
      *
      * Maps a code (and amount) to the target classification (e.g. COFOG) with shares.
      *
-     * POST /config/crosswalks/{id}/map (operationId mapConfigCrosswalk); permission config.read.
+     * POST /config/crosswalks/by-id/map (operationId mapConfigCrosswalk); permission config.read.
      * @param Model\ConfigCrosswalkRequest|array $body request body
+     * @param string $id query id
      * @return array<string, mixed>
      */
-    public function mapConfigCrosswalk(string $id, Model\ConfigCrosswalkRequest|array $body, ?RequestOptions $options = null): array
+    public function mapConfigCrosswalk(Model\ConfigCrosswalkRequest|array $body, string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/config/crosswalks/' . HttpTransport::seg((string) $id) . '/map');
+        $req = ApiRequest::post('/config/crosswalks/by-id/map');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
