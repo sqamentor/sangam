@@ -15,6 +15,7 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 import org.sangam.core.history.HistoryArchiveGate;
+import org.sangam.core.layer.SqlIdentifier;
 
 /**
  * RM-52, decision 386(3): a history partition (IR-8: the {@code ACT_HI_*} tables range-partitioned by
@@ -42,7 +43,7 @@ public final class PartitionDropGuard {
 
     public PartitionDropGuard(HistoryArchiveGate gate, String tablePrefix) {
         this.gate = Objects.requireNonNull(gate, "gate");
-        this.prefix = tablePrefix == null ? "" : tablePrefix;
+        this.prefix = SqlIdentifier.tablePrefix(tablePrefix); // vetted: the only text put into SQL besides constants
     }
 
     /**
@@ -59,6 +60,8 @@ public final class PartitionDropGuard {
                 if (HistoryArchiveExporter.columns(c, prefix + t).isEmpty()) {
                     continue;
                 }
+                // Identifiers cannot be bound: prefix is SqlIdentifier.tablePrefix, t one of the PARTITIONED constants; the range is bound.
+                // nosemgrep: sangam-jdbc-sql-concat
                 try (PreparedStatement ps = c.prepareStatement("SELECT DISTINCT h.ROOT_PROC_INST_ID_, h.TENANT_ID_ FROM "
                         + prefix + t + " h WHERE h.REMOVAL_TIME_ >= ? AND h.REMOVAL_TIME_ < ?"
                         + " AND h.ROOT_PROC_INST_ID_ IS NOT NULL")) {

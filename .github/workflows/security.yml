@@ -283,6 +283,10 @@ jobs:
           $RL run --check semgrep-report --report-only --ledger-dir "$LEDGER" -- \
             semgrep scan --metrics=off --config semgrep/ --sarif --output semgrep.sarif --error \
               --exclude spike --exclude reference --exclude handoff --exclude node_modules --exclude 'target*' sangam
+      - name: Leave reviewed in-source suppressions (nosemgrep with a reason) out of the uploaded SARIF
+        # GitHub keeps a SARIF result with suppressions kind inSource as an open alert; the review is the comment.
+        if: always() && hashFiles('semgrep.sarif') != ''
+        run: python -I .github/scripts/sarif_drop_suppressed.py semgrep.sarif semgrep.sarif
       - name: Gate - Semgrep errors in the authorisation, money and audit paths (decision 133)
         run: |
           for p in $SEMGREP_GATE_PATHS; do

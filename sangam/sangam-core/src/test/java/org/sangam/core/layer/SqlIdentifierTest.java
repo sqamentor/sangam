@@ -48,6 +48,19 @@ class SqlIdentifierTest {
     }
 
     @Test
+    void aTablePrefixIsASchemaAndOrANamePartAndNothingElse() {
+        assertEquals("", SqlIdentifier.tablePrefix(null));
+        assertEquals("", SqlIdentifier.tablePrefix(""));
+        for (String ok : List.of("SANGAM_", "ops.", "ops.SG_", "db.ops.")) {
+            assertEquals(ok, SqlIdentifier.tablePrefix(ok));
+        }
+        for (String bad : List.of("x; DROP TABLE ACT_HI_PROCINST --", "ops..", ".", "a b", "o'", "\"ops\".", "ops.--",
+                "1ops.", "a.b.c.d.")) {
+            assertThrows(IllegalArgumentException.class, () -> SqlIdentifier.tablePrefix(bad), bad);
+        }
+    }
+
+    @Test
     void theLengthIsBounded() {
         String longest = "a".repeat(SqlIdentifier.MAX_LENGTH);
         assertEquals(longest, SqlIdentifier.of(longest).sql());

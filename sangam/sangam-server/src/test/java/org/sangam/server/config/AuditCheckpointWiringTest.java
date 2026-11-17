@@ -66,7 +66,7 @@ class AuditCheckpointWiringTest {
         assertEquals("PKCS8", AuditCheckpointWiring.key(secrets, env().withProperty(
                 "sangam.audit.checkpoint.private-key-ref", "secret://audit/checkpoint-private"), "private-key-ref"));
         IllegalStateException literal = assertThrows(IllegalStateException.class, () -> AuditCheckpointWiring.key(secrets,
-                env().withProperty("sangam.audit.checkpoint.private-key-ref", "MC4CAQAwBQYDK2VwBCIEI"), "private-key-ref"));
+                env().withProperty("sangam.audit.checkpoint.private-key-ref", "literal-key-material-not-a-secret-ref"), "private-key-ref"));
         assertTrue(literal.getMessage().contains("secret reference"), literal.getMessage());
         assertThrows(IllegalStateException.class, () -> AuditCheckpointWiring.key(secrets, env(), "public-key-ref"),
                 "the public key reference is required too");

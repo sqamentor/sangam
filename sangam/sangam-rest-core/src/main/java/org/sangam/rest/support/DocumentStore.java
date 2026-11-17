@@ -233,6 +233,8 @@ public final class DocumentStore {
         String where = where(tenant, kind, filter, params);
         int max = limit <= 0 ? 100_000 : Math.addExact(offset, limit);
         return tx.withConnection(c -> {
+            // where() appends only constant column predicates with ? marks; every value is in params and bound below.
+            // nosemgrep: sangam-jdbc-sql-concat
             String sql = "SELECT " + COLS + " FROM REST_DOCUMENT WHERE " + where + " ORDER BY created_at, doc_id";
             try (PreparedStatement ps = c.prepareStatement(sql)) {
                 ps.setMaxRows(max);
@@ -262,6 +264,8 @@ public final class DocumentStore {
         List<Object> params = new ArrayList<>();
         String where = where(tenant, kind, filter, params);
         return tx.withConnection(c -> {
+            // where() appends only constant column predicates with ? marks; every value is in params and bound below.
+            // nosemgrep: sangam-jdbc-sql-concat
             String sql = "SELECT doc_id FROM REST_DOCUMENT WHERE " + where;
             try (PreparedStatement ps = c.prepareStatement(sql)) {
                 ps.setMaxRows((int) Math.min(Integer.MAX_VALUE, cap + 1));

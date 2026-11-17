@@ -209,6 +209,10 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm test
       - name: Playwright Chromium (browser install + spec listing; the full stack e2e runs in ui.yml)
+        # The lockfile's @playwright/test binary, as in ui.yml (no npm command that could fetch a package: Scorecard
+        # PinnedDependencies, round 9).
         run: |
-          npm exec --no -- playwright install --with-deps chromium
-          npm exec --no -- playwright test --config playwright.config.ts --project=chromium --list
+          set -euo pipefail
+          test -f node_modules/@playwright/test/package.json || { echo "::error::@playwright/test is not installed from package-lock.json"; exit 1; }
+          ./node_modules/.bin/playwright install --with-deps chromium
+          ./node_modules/.bin/playwright test --config playwright.config.ts --project=chromium --list
