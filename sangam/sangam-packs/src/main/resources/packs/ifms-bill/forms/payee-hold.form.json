@@ -1,6 +1,6 @@
 {
   "key": "ifms-bill/payee-hold",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "pack": "gov.ifms.bill",
   "title": {
     "en": "Payee not verified: complete the payee record, then check again",
