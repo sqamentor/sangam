@@ -36,13 +36,7 @@ test('claim, then complete through the decision dialog', async ({ signedIn: page
 
   await page.getByRole('group', { name: t('task.decisions') }).getByRole('button', { name: t('task.action.COMPLETE') }).click();
   const dialog = page.locator('dialog[open]');
-  // DIAG-TEMP
-  page.on('response', async (r) => { if (/\/tasks\//.test(r.url()) && r.request().method() !== 'GET') console.log('DIAG', r.request().method(), r.url(), r.status(), (await r.text().catch(() => '')).slice(0, 600)); });
-  page.on('console', (m) => console.log('DIAG console', m.type(), m.text().slice(0, 400)));
-  page.on('pageerror', (e) => console.log('DIAG pageerror', String(e).slice(0, 600)));
   await dialog.getByRole('button', { name: t('common.confirm') }).click();
-  await page.waitForTimeout(4000);
-  console.log('DIAG body', (await page.locator('body').innerText().catch((e) => String(e))).slice(0, 2500));
   await expect(page.getByText(t('task.doneTitle'))).toBeVisible();
 
   await expect

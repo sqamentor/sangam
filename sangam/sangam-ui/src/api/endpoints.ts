@@ -208,7 +208,7 @@ export const api = {
           nextSeatReason: b.nextSeatReason,
         },
         key,
-      ),
+      ).then(A.normCompleteResult),
     /** ReturnTaskRequest {reason, reasonCode, targetActivityId, variables}; level/seat are UI proposals. */
     return: (id: string, b: T.ReturnTaskRequest & { targetActivityId?: string }, key?: string) =>
       http.post<T.CompleteTaskResult>(
@@ -223,7 +223,7 @@ export const api = {
           caseVersion: b.version,
         },
         key,
-      ),
+      ).then(A.normCompleteResult),
     delegate: (id: string, body: T.DelegateTaskRequest, key?: string) => http.post<void>(`/tasks/${enc(id)}/delegate`, body, key),
     /** Form drafts: POST /forms/drafts, then PUT /forms/drafts/{id} with If-Match. */
     saveDraft: async (taskId: string, variables: Record<string, unknown>, formKey: string | undefined, formVersion: string | undefined, key?: string) => {
