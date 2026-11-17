@@ -80,7 +80,7 @@ test('same origin: the task form completes a claimed task and the diagram keeps 
     .toBe('Review');
 });
 
-test('cross origin: the same page on another origin reaches the API through CORS', async ({ page, api }) => {
+test('cross origin: the same page on another origin reaches the API through CORS', async ({ page, api, browserName }) => {
   const hostOrigin = process.env.SANGAM_E2E_CORS_ORIGIN;
   test.skip(!hostOrigin, 'SANGAM_E2E_CORS_ORIGIN is not set: the server has no CORS origin for an embedding host in this run');
   const { taskId } = await api.newTask();
@@ -88,6 +88,11 @@ test('cross origin: the same page on another origin reaches the API through CORS
   expect(claimed.ok(), await claimed.text()).toBe(true);
 
   const absoluteApi = new URL(API_BASE).href.replace(/\/$/, '');
+  // The run's API is on the loopback address. Chromium's Local Network Access blocks a page of a public origin from
+  // reaching it unless the user allows it ("Failed to fetch" before any request, run 44135232064; Firefox has no such
+  // gate and passed): the host origin gets that permission, as a user would grant it. A deployed API is not on the
+  // loopback, so this is about the test bed, not about CORS, which the server still decides.
+  if (browserName === 'chromium') await page.context().grantPermissions(['local-network-access'], { origin: new URL(hostOrigin!).origin });
   const url = await serveHost(page, new URL(hostOrigin!).origin, hostPage(absoluteApi, taskId));
   await completeThroughEmbed(page, url, taskId);
 });

@@ -49,7 +49,8 @@ test('the compliance officer records a consent on the published notice and withd
   await give.getByLabel(t('fld.noticeKey')).fill(seed.compliance.noticeKey);
   await give.getByLabel(t('fld.noticeVersion')).fill(String(seed.compliance.noticeVersion));
   await give.getByLabel(t('fld.purposeCodes')).fill(JSON.stringify([seed.compliance.purposeCode]));
-  await give.getByLabel(t('fld.affirmativeAction')).check();
+  // decision 369 (h): the affirmative action is a required Yes / No choice with no default (compliance.tsx yesNo)
+  await give.getByLabel(t('fld.affirmativeAction')).selectOption({ label: t('common.yes') });
   await give.getByLabel(t('fld.channel')).fill('e2e-assisted');
   // owner decision 365: the declared category is a required choice (an adult needs no guardian verification)
   await give.getByLabel(t('fld.declaredCategory')).selectOption('ADULT');
@@ -127,7 +128,8 @@ test('citizen: a consent given on the portal is withdrawn from "My consents" wit
 
     await signInAs(page, citizen.token);
     await page.goto('/portal');
-    await page.getByRole('link', { name: t('nav.myConsents') }).click();
+    // decision 397: the citizen's menu entry is "My data and consent" (nav.ts services.consent, /portal/consents)
+    await page.getByRole('navigation', { name: t('nav.primary') }).getByRole('link', { name: t('menu.services.consent.label'), exact: true }).click();
     await expect(page.getByRole('heading', { name: t('portal.myConsents') })).toBeVisible();
     // one click: the purpose's own button, no dialog and no reason (as easy as the one box that gave it)
     await page.getByRole('button', { name: t('portal.withdrawPurpose', { purpose: 'E2E service delivery' }) }).click();

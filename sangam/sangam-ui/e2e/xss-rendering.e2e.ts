@@ -35,7 +35,8 @@ async function watch(page: Page, probe: string): Promise<() => Promise<void>> {
   await page.addInitScript(() => {
     const seen: string[] = [];
     (window as unknown as { __e2eCsp: string[] }).__e2eCsp = seen;
-    document.addEventListener('securitypolicyviolation', (e) => seen.push(e.violatedDirective));
+    // the directive with where it happened, so a failure names the sink (report-only Trusted Types included)
+    document.addEventListener('securitypolicyviolation', (e) => seen.push(`${e.violatedDirective} ${e.disposition} ${e.sourceFile}:${e.lineNumber}:${e.columnNumber} ${e.sample}`));
   });
   return async () => {
     const dom = await page.evaluate((p) => ({
