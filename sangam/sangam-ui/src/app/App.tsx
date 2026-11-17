@@ -83,6 +83,7 @@ const PluginsPage = named(mOp2, 'PluginsPage');
 const pl = () => import('../plugins/host');
 const PluginPage = named(pl, 'PluginPage');
 const TeamWorkload = named(() => import('../areas/tasklist/TeamWorkload'), 'TeamWorkload');
+const TeamTaskLists = named(() => import('../areas/tasklist/TeamTaskLists'), 'TeamTaskLists');
 
 const TaskInbox = named(tl, 'TaskInbox');
 const TaskDetail = named(td, 'TaskDetail');
@@ -206,7 +207,9 @@ function AuthedRoutes() {
           <Route path="/tasks" element={g(WORK, <TaskInbox />)} />
           {/* the menu calls the task list Inbox (nav.inbox): /inbox is the same screen */}
           <Route path="/inbox" element={<Navigate to="/tasks" replace />} />
-          <Route path="/tasks/filters" element={g(['PLATFORM_OPERATOR', 'PLATFORM_ADMIN'], <TaskFiltersPage />)} />
+          {/* decision 404: shared task lists are Sangam-kept, per organisation; the engine's own filters stay a platform screen */}
+          <Route path="/tasks/filters" element={<Guard access={TEAM_READ}>{<TeamTaskLists />}</Guard>} />
+          <Route path="/ops/engine/filters" element={g(['PLATFORM_OPERATOR', 'PLATFORM_ADMIN'], <TaskFiltersPage />)} />
           <Route path="/tasks/:id" element={g(WORK, <TaskDetail />)} />
           <Route path="/welcome" element={<Welcome />} />
           {m('/m/ai', <AiPage />)}

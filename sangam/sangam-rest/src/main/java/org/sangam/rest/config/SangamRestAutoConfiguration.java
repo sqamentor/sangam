@@ -437,6 +437,13 @@ public class SangamRestAutoConfiguration {
         return new org.sangam.rest.adapter.operaton.OperatonTeamAdapter(engine.getTaskService());
     }
 
+    /** Owner decision 404: the tenant's shared saved task lists (TEAM_TASK_FILTER, /team/task-filters). */
+    @Bean
+    @ConditionalOnMissingBean
+    public org.sangam.rest.port.TaskFilterPort sangamTaskFilterPort(TxSupport tx) {
+        return new org.sangam.rest.adapter.jdbc.JdbcTaskFilterAdapter(tx);
+    }
+
     @Bean
     @ConditionalOnMissingBean
     public org.sangam.rest.port.WorkspacePort sangamWorkspacePort(TaskPort tasks, ProcessEngine engine,

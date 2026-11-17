@@ -6338,6 +6338,23 @@ CREATE TABLE AI_OCR_TRANSCRIPT (
 CREATE INDEX AI_OCR_TRANSCRIPT_STATE ON AI_OCR_TRANSCRIPT (tenant_id, state, created_at);
 --rollback DROP TABLE AI_OCR_TRANSCRIPT;
 
+--changeset sangam:0047-01-team_task_filter dbms:oracle
+--comment: decision 404 shared saved task lists of a tenant
+CREATE TABLE TEAM_TASK_FILTER (
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  filter_id VARCHAR2(64 CHAR) NOT NULL,
+  name VARCHAR2(255 CHAR) NOT NULL,
+  owner_id VARCHAR2(255 CHAR),
+  query_json CLOB NOT NULL,
+  properties_json CLOB,
+  row_version NUMBER(10) NOT NULL,
+  created_by VARCHAR2(255 CHAR) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_TEAM_TASK_FILTER PRIMARY KEY (tenant_id, filter_id)
+);
+CREATE INDEX TEAM_TASK_FILTER_NAME ON TEAM_TASK_FILTER (tenant_id, name);
+--rollback DROP TABLE TEAM_TASK_FILTER;
+
 --changeset sangam:0016-03-form_draft-alter dbms:oracle
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD (form_version_hash VARCHAR2(64 CHAR));

@@ -53,10 +53,12 @@ const moduleRead = (perm: string): Access => ({ roles: MODULE_READERS, perms: [p
 export const PLATFORM_ADMIN_ONLY: Access = { roles: ['PLATFORM_ADMIN'], perms: [] };
 
 /**
- * Decision 401: GET /team/task-groups needs team.read (TeamController), held by sangam-supervisor, sangam-operator and
- * sangam-admin ("*"). No role stands in for it: an engine administrator without the permission is refused.
+ * Decision 401: GET /team/task-groups needs team.read (TeamController), held by sangam-supervisor, sangam-operator,
+ * sangam-tenant-admin (decision 404) and sangam-admin ("*"). No role stands in for it: an engine administrator without the permission is refused.
  */
 export const TEAM_READ: Access = { roles: [], perms: ['team.read'] };
+/** Decision 404: POST /team/task-filters needs team.write (TaskFilterController), held by the same groups as team.read. */
+export const TEAM_WRITE: Access = { roles: [], perms: ['team.write'] };
 
 /**
  * Route → requirement, for the routes whose screens call module APIs. The permission is the one the server checks

@@ -208,6 +208,18 @@ schema("TeamTaskGroupReport", "Owner decision 401: the team workload of the call
        "open:long assigned:long unassigned:long withoutCandidateGroup:long groups:list:TeamGroupCount",
        required=("open", "assigned", "unassigned", "withoutCandidateGroup", "groups"),
        descs={"groups": "Sorted by group id"})
+schema("TeamTaskFilter", "Owner decision 404: one shared saved task list of the caller's tenant.",
+       "id name owner query:obj properties:obj createdBy createdAt:dt version:int",
+       required=("id", "name", "query", "properties", "createdBy", "createdAt", "version"),
+       descs={"owner": "Optional user or group the list is meant for (informational); absent or null when not set",
+              "query": "Task query criteria as a JSON object (as the shared task list screen sends them)",
+              "properties": "Display properties as a JSON object (priority, description, refresh, variables); {} when none",
+              "version": "Row version, 1 on creation"})
+schema("TeamTaskFilterCreateRequest", "Owner decision 404: a new shared task list.", "name owner query:obj properties:obj",
+       required=("name", "query"),
+       descs={"name": "1 to 255 characters after trimming", "owner": "Optional, at most 255 characters",
+              "query": "JSON object, at most 16384 characters as JSON; no tenant* or withoutTenant* criterion",
+              "properties": "Optional JSON object, at most 16384 characters as JSON"})
 schema("Me", "The authenticated caller: identity, tenant, personas (roles), seats held, current seat context and permissions (K1, S02).",
        "tenantId tenantName principalId userId displayName groups:list:s roles:list:s seats:list:SeatHolding seatId actingForSeatId "
        "authMethod permissions:list:s preferredLanguage locale:MeLocale",
@@ -1427,6 +1439,21 @@ op("get", "/team/task-groups", "getTeamTaskGroups", "Me", "Team workload of my t
    "open unassigned tasks (groups without one are left out), plus the unassigned tasks that offer no candidate group. "
    "Only tasks of the caller's tenant are counted, never another tenant's or a task without a tenant. Read-only.",
    ["R76"], resp=(200, "TeamTaskGroupReport"), perm="team.read", errors=("Unauthorized", "Forbidden"))
+TF_NOTE = ("Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton "
+           "filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 "
+           "TENANT_REQUIRED. ")
+op("get", "/team/task-filters", "listTeamTaskFilters", "Me", "Shared task lists of my tenant",
+   TF_NOTE + "Ordered by name.", ["R76"], list_=True, resp=(200, "array:TeamTaskFilter"), perm="team.read",
+   errors=("Unauthorized", "Forbidden"))
+op("get", "/team/task-filters/{id}", "getTeamTaskFilter", "Me", "One shared task list of my tenant",
+   TF_NOTE + "404 NOT_FOUND for an id that is not a list of the caller's tenant.", ["R76"], params=[ID],
+   resp=(200, "TeamTaskFilter"), perm="team.read", errors=("Unauthorized", "Forbidden", "NotFound"))
+op("post", "/team/task-filters", "createTeamTaskFilter", "Me", "Create a shared task list in my tenant",
+   TF_NOTE + "Audited TASK_FILTER_CREATED on the tenant's security chain. 400 VALIDATION_FAILED (name missing or over "
+   "255 characters, owner over 255, query missing, query or properties over 16384 characters as JSON); 422 "
+   "TASK_FILTER_INVALID for a query criterion naming tenants (tenant*, withoutTenant*).", ["R76", "R41"],
+   body="TeamTaskFilterCreateRequest", resp=(201, "TeamTaskFilter"), cmd="team.task-filter.create",
+   perm="team.write", created=True, errors=("BadRequest", "Unauthorized", "Forbidden", "Unprocessable"))
 op("get", "/me/notifications", "listMyNotifications", "Me", "My notifications", "In-app notifications of the caller (R60).",
    ["R60", "R76"], list_=True, resp=(200, "array:Notification"), errors=WS_E)
 op("post", "/me/notifications/{id}/read", "markNotificationRead", "Me", "Mark a notification read", "Marks one notification read.",

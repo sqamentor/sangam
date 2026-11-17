@@ -6338,6 +6338,23 @@ CREATE TABLE AI_OCR_TRANSCRIPT (
 CREATE INDEX AI_OCR_TRANSCRIPT_STATE ON AI_OCR_TRANSCRIPT (tenant_id, state, created_at);
 --rollback DROP TABLE AI_OCR_TRANSCRIPT;
 
+--changeset sangam:0047-01-team_task_filter dbms:mysql,mariadb
+--comment: decision 404 shared saved task lists of a tenant
+CREATE TABLE TEAM_TASK_FILTER (
+  tenant_id VARCHAR(64) NOT NULL,
+  filter_id VARCHAR(64) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  owner_id VARCHAR(255),
+  query_json LONGTEXT NOT NULL,
+  properties_json LONGTEXT,
+  row_version INT NOT NULL,
+  created_by VARCHAR(255) NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_TEAM_TASK_FILTER PRIMARY KEY (tenant_id, filter_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX TEAM_TASK_FILTER_NAME ON TEAM_TASK_FILTER (tenant_id, name);
+--rollback DROP TABLE TEAM_TASK_FILTER;
+
 --changeset sangam:0016-03-form_draft-alter dbms:mysql,mariadb
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD COLUMN form_version_hash VARCHAR(64);

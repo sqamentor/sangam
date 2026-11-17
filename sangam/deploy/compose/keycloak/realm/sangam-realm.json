@@ -38,6 +38,10 @@
         "description": "Read audit timelines and verify audit chains (READ_AUDIT)"
       },
       {
+        "name": "sangam-supervisor",
+        "description": "Team workload and shared task lists of the tenant (team.read, team.write; decisions 401, 404)"
+      },
+      {
         "name": "sangam-modeller",
         "description": "Author BPMN/DMN/forms packages"
       },

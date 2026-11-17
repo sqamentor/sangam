@@ -6837,7 +6837,7 @@ export class LowCodeApi {
   }
 }
 
-/** Typed operations of `Me` (7 operations). */
+/** Typed operations of `Me` (10 operations). */
 export class MeApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -6875,6 +6875,43 @@ export class MeApi {
   async getTeamTaskGroups(options?: RequestOptions): Promise<M.TeamTaskGroupReport> {
     const req: ApiRequest = { method: 'GET', path: `/team/task-groups` };
     return this.calls.json<M.TeamTaskGroupReport>(req, options);
+  }
+
+  /**
+   * Shared task lists of my tenant
+   *
+   * Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Ordered by name.
+   *
+   * `GET /team/task-filters` (operationId `listTeamTaskFilters`); permission `team.read`.
+   */
+  async listTeamTaskFilters(params?: { page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.TeamTaskFilter>> {
+    const req: ApiRequest = { method: 'GET', path: `/team/task-filters`, query: { page: params?.page, size: params?.size } };
+    return this.calls.page<M.TeamTaskFilter>(req, options, params?.page, params?.size);
+  }
+
+  /**
+   * Create a shared task list in my tenant
+   *
+   * Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Audited TASK_FILTER_CREATED on the tenant's security chain. 400 VALIDATION_FAILED (name missing or over 255 characters, owner over 255, query missing, query or properties over 16384 characters as JSON); 422 TASK_FILTER_INVALID for a query criterion naming tenants (tenant*, withoutTenant*).
+   *
+   * `POST /team/task-filters` (operationId `createTeamTaskFilter`); permission `team.write`; result stored atomically with the state change.
+   */
+  async createTeamTaskFilter(body: M.TeamTaskFilterCreateRequest, options?: RequestOptions): Promise<M.TeamTaskFilter> {
+    const req: ApiRequest = { method: 'POST', path: `/team/task-filters` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.TeamTaskFilter>(req, options);
+  }
+
+  /**
+   * One shared task list of my tenant
+   *
+   * Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. 404 NOT_FOUND for an id that is not a list of the caller's tenant.
+   *
+   * `GET /team/task-filters/{id}` (operationId `getTeamTaskFilter`); permission `team.read`.
+   */
+  async getTeamTaskFilter(id: string, options?: RequestOptions): Promise<M.TeamTaskFilter> {
+    const req: ApiRequest = { method: 'GET', path: `/team/task-filters/${seg(String(id))}` };
+    return this.calls.json<M.TeamTaskFilter>(req, options);
   }
 
   /**
@@ -15193,7 +15230,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1175 operations on 990 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1178 operations on 992 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;

@@ -102,10 +102,17 @@ public final class Permissions {
     public static final String COMPLIANCE_ADMIN = "compliance.admin";
     /**
      * Owner decision 401: read the team workload of the caller's tenant (GET /team/task-groups). Tenant-scoped,
-     * read-only; held by {@link #GROUP_SUPERVISOR} and {@link #GROUP_OPERATOR} (who already sees every task of the
-     * tenant, OperatonWorkspaceAdapter#involved), and by {@code sangam-admin} through {@code *}.
+     * read-only; held by {@link #GROUP_SUPERVISOR}, {@link #GROUP_OPERATOR} (who already sees every task of the
+     * tenant, OperatonWorkspaceAdapter#involved), {@link #GROUP_TENANT_ADMIN} (decision 404) and by {@code sangam-admin}
+     * through {@code *}. Also lists and reads the tenant's shared task lists (GET /team/task-filters).
      */
     public static final String TEAM_READ = "team.read";
+    /**
+     * Owner decision 404: create a shared task list of the caller's tenant (POST /team/task-filters). A list is
+     * tenant configuration that every team.read holder sees, so reading the workload alone does not create one; held
+     * by the same groups as {@link #TEAM_READ}.
+     */
+    public static final String TEAM_WRITE = "team.write";
 
     /** Data protection officer / grievance officer: all compliance permissions plus audit read. */
     public static final String GROUP_DPO = "sangam-dpo";
@@ -171,8 +178,8 @@ public final class Permissions {
                     PROCESS_READ, DEPLOYMENT_READ)),
             Map.entry(GROUP_OPERATOR, union(union(USER, MODULE_WRITE), Set.of(OPS_READ, OPS_WRITE, RECON_RESOLVE, BATCH_ADMIN,
                     PROCESS_DELETE, PROCESS_MODIFY, HISTORY_READ, ANALYTICS_READ, ANALYTICS_ADMIN, DEPLOYMENT_READ,
-                    DEBUG_USE, COMPLIANCE_READ, COMPLIANCE_MODIFY, TEAM_READ))),
-            Map.entry(GROUP_SUPERVISOR, Set.of(TEAM_READ)),
+                    DEBUG_USE, COMPLIANCE_READ, COMPLIANCE_MODIFY, TEAM_READ, TEAM_WRITE))),
+            Map.entry(GROUP_SUPERVISOR, Set.of(TEAM_READ, TEAM_WRITE)),
             Map.entry(GROUP_AUDITOR, union(MODULE_READ, Set.of(AUDIT_READ, AUDIT_EXPORT, HISTORY_READ, ANALYTICS_READ, PROCESS_READ,
                     TASK_READ, CASE_READ, DOCUMENT_READ, PACKAGE_READ, DOCUMENT_LEGAL_HOLD, COMPLIANCE_READ))),
             Map.entry(GROUP_TENANT_ADMIN, union(union(union(MODULE_READ, MODULE_WRITE), MODULE_ADMIN), Set.of(ADMIN_READ, ADMIN_WRITE, POLICY_ADMIN, TENANT_ADMIN, EVENT_ADMIN,
@@ -186,7 +193,9 @@ public final class Permissions {
                     // decision 258: FLOWABLE-INTO-OPERATON FC-18 historic instance migration
                     HISTORY_MIGRATE,
                     // decision 305: the tenant's DLT registration (entity, headers, templates, URL prefixes)
-                    DLT_REGISTRATION_READ, DLT_REGISTRATION_WRITE))),
+                    DLT_REGISTRATION_READ, DLT_REGISTRATION_WRITE,
+                    // decision 404: the organisation admin sees and keeps the team workload and shared task lists
+                    TEAM_READ, TEAM_WRITE))),
             Map.entry(GROUP_DPO, Set.of(COMPLIANCE_READ, COMPLIANCE_MODIFY, COMPLIANCE_ADMIN, AUDIT_READ, AUDIT_EXPORT,
                     HISTORY_READ, DOCUMENT_READ, DOCUMENT_LEGAL_HOLD)),
             Map.entry(GROUP_MODEL_AUTHOR, Set.of(PACKAGE_READ, PACKAGE_AUTHOR, DEPLOYMENT_READ, FORM_READ, DEBUG_USE,

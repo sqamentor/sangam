@@ -1344,3 +1344,15 @@ export interface TeamTaskGroupReport {
   withoutCandidateGroup: number;
   groups: { group: string; unassignedTasks: number }[];
 }
+
+/** A saved task list of the caller's organisation (decision 404, /team/task-filters). */
+export interface TeamTaskFilter {
+  id: string;
+  name: string;
+  owner: string | null;
+  query: Record<string, unknown>;
+  properties: Record<string, unknown>;
+  createdBy: string;
+  createdAt: string;
+  version: number;
+}

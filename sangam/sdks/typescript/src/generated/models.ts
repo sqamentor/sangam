@@ -12522,6 +12522,42 @@ export interface TeamGroupCount {
 }
 
 /**
+ * Owner decision 404: one shared saved task list of the caller's tenant.
+ *
+ * Schema `TeamTaskFilter`.
+ */
+export interface TeamTaskFilter {
+  id: string;
+  name: string;
+  /** Optional user or group the list is meant for (informational); absent or null when not set */
+  owner?: string;
+  /** Task query criteria as a JSON object (as the shared task list screen sends them) */
+  query: Record<string, unknown>;
+  /** Display properties as a JSON object (priority, description, refresh, variables); {} when none */
+  properties: Record<string, unknown>;
+  createdBy: string;
+  createdAt: string;
+  /** Row version, 1 on creation */
+  version: number;
+}
+
+/**
+ * Owner decision 404: a new shared task list.
+ *
+ * Schema `TeamTaskFilterCreateRequest`.
+ */
+export interface TeamTaskFilterCreateRequest {
+  /** 1 to 255 characters after trimming */
+  name: string;
+  /** Optional, at most 255 characters */
+  owner?: string;
+  /** JSON object, at most 16384 characters as JSON; no tenant* or withoutTenant* criterion */
+  query: Record<string, unknown>;
+  /** Optional JSON object, at most 16384 characters as JSON */
+  properties?: Record<string, unknown>;
+}
+
+/**
  * Owner decision 401: the team workload of the caller's tenant (GET /team/task-groups).
  *
  * Schema `TeamTaskGroupReport`.

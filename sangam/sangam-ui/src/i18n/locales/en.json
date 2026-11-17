@@ -4510,6 +4510,10 @@
       "operatorLog": {
         "label": "Operator action log",
         "help": "What operators did, and when."
+      },
+      "engineFilters": {
+        "label": "Engine task filters",
+        "help": "Advanced: saved filters kept by the process engine itself."
       }
     },
     "setup": {
@@ -5071,5 +5075,21 @@
     "group": "Team list",
     "unassignedTasks": "Tasks not picked up",
     "noGroups": "No team list has tasks waiting to be picked up."
+  },
+  "teamLists": {
+    "saved": "Saved lists",
+    "none": "Your organisation has no saved task lists yet.",
+    "name": "Name",
+    "query": "Which tasks (query)",
+    "queryHint": "A JSON object of task conditions, for example {\"candidateGroup\": \"accounts\"}. Your organisation is added by the system.",
+    "createdBy": "Created by",
+    "createdAt": "Created",
+    "create": "New shared list",
+    "createButton": "Save list",
+    "created": "List {{name}} saved",
+    "nameRequired": "Enter a name.",
+    "nameTooLong": "Use at most 255 characters.",
+    "queryNotJson": "This is not valid JSON.",
+    "queryNotObject": "Enter a JSON object, in curly brackets."
   }
 }

@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Me (7 operations).
+/// Typed operations of Me (10 operations).
 /// </summary>
 public sealed class MeApi
 {
@@ -46,6 +46,42 @@ public sealed class MeApi
     {
         var req = ApiRequest.Get($"/team/task-groups");
         return await _calls.JsonAsync<M.TeamTaskGroupReport?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Shared task lists of my tenant
+    /// Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Ordered by name.
+    /// GET /team/task-filters (operationId listTeamTaskFilters); permission team.read.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.TeamTaskFilter>> ListTeamTaskFiltersAsync(long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/team/task-filters");
+        req.WithQuery("page", GeneratedCalls.Q(page));
+        req.WithQuery("size", GeneratedCalls.Q(size));
+        return await _calls.PageAsync<M.TeamTaskFilter>(req, options, page, size, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Create a shared task list in my tenant
+    /// Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Audited TASK_FILTER_CREATED on the tenant's security chain. 400 VALIDATION_FAILED (name missing or over 255 characters, owner over 255, query missing, query or properties over 16384 characters as JSON); 422 TASK_FILTER_INVALID for a query criterion naming tenants (tenant*, withoutTenant*).
+    /// POST /team/task-filters (operationId createTeamTaskFilter); permission team.write; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.TeamTaskFilter?> CreateTeamTaskFilterAsync(M.TeamTaskFilterCreateRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/team/task-filters");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.TeamTaskFilter?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// One shared task list of my tenant
+    /// Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. 404 NOT_FOUND for an id that is not a list of the caller's tenant.
+    /// GET /team/task-filters/{id} (operationId getTeamTaskFilter); permission team.read.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.TeamTaskFilter?> GetTeamTaskFilterAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/team/task-filters/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        return await _calls.JsonAsync<M.TeamTaskFilter?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Me (7 operations). */
+/** Typed operations of Me (10 operations). */
 final class MeApi
 {
     public function __construct(private readonly Calls $calls)
@@ -60,6 +60,56 @@ final class MeApi
     {
         $req = ApiRequest::get('/team/task-groups');
         return $this->calls->model($req, $options, Model\TeamTaskGroupReport::class);
+    }
+
+    /**
+     * Shared task lists of my tenant
+     *
+     * Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Ordered by name.
+     *
+     * GET /team/task-filters (operationId listTeamTaskFilters); permission team.read.
+     * @param int|null $page query page
+     * @param int|null $size query size
+     * @return Page<Model\TeamTaskFilter>
+     */
+    public function listTeamTaskFilters(?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
+    {
+        $req = ApiRequest::get('/team/task-filters');
+        $req->query('page', $page);
+        $req->query('size', $size);
+        return $this->calls->page($req, $options, Model\TeamTaskFilter::class, $page, $size);
+    }
+
+    /**
+     * Create a shared task list in my tenant
+     *
+     * Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Audited TASK_FILTER_CREATED on the tenant's security chain. 400 VALIDATION_FAILED (name missing or over 255 characters, owner over 255, query missing, query or properties over 16384 characters as JSON); 422 TASK_FILTER_INVALID for a query criterion naming tenants (tenant*, withoutTenant*).
+     *
+     * POST /team/task-filters (operationId createTeamTaskFilter); permission team.write; result stored atomically with the state change.
+     * @param Model\TeamTaskFilterCreateRequest|array $body request body
+     * @return Model\TeamTaskFilter|null
+     */
+    public function createTeamTaskFilter(Model\TeamTaskFilterCreateRequest|array $body, ?RequestOptions $options = null): ?Model\TeamTaskFilter
+    {
+        $req = ApiRequest::post('/team/task-filters');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\TeamTaskFilter::class);
+    }
+
+    /**
+     * One shared task list of my tenant
+     *
+     * Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. 404 NOT_FOUND for an id that is not a list of the caller's tenant.
+     *
+     * GET /team/task-filters/{id} (operationId getTeamTaskFilter); permission team.read.
+     * @return Model\TeamTaskFilter|null
+     */
+    public function getTeamTaskFilter(string $id, ?RequestOptions $options = null): ?Model\TeamTaskFilter
+    {
+        $req = ApiRequest::get('/team/task-filters/' . HttpTransport::seg((string) $id));
+        return $this->calls->model($req, $options, Model\TeamTaskFilter::class);
     }
 
     /**

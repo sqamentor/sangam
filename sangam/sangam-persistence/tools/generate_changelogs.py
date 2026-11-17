@@ -1400,6 +1400,14 @@ TABLES = [
         ("created_at", "{ts}", "NOT NULL"), ("reviewed_by", "{str}", ""), ("reviewed_at", "{ts}", ""),
         ("review_note", "{text}", ""),
     ], ["tenant_id", "transcript_id"], [("AI_OCR_TRANSCRIPT_STATE", False, ["tenant_id", "state", "created_at"])]),
+    # Owner decision 404: shared saved task lists of one tenant (sangam-rest JdbcTaskFilterAdapter, /team/task-filters).
+    # Operaton's ACT_RU_FILTER has no tenant (SL-73), so the tenant's lists live here; every statement carries
+    # tenant_id. query_json / properties_json are JSON objects; rows are only inserted (row_version 1).
+    ("0047-01", "decision 404 shared saved task lists of a tenant", "TEAM_TASK_FILTER", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("filter_id", "{str64}", "NOT NULL"), ("name", "{str}", "NOT NULL"),
+        ("owner_id", "{str}", ""), ("query_json", "{text}", "NOT NULL"), ("properties_json", "{text}", ""),
+        ("row_version", "{int}", "NOT NULL"), ("created_by", "{str}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"),
+    ], ["tenant_id", "filter_id"], [("TEAM_TASK_FILTER_NAME", False, ["tenant_id", "name"])]),
 ]
 
 # Column additions to tables created above, each its own changeset (applied changesets are never edited).

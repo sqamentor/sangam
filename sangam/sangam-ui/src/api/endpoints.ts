@@ -126,6 +126,10 @@ export const api = {
   team: {
     /** Open, assigned and unassigned tasks of the caller's organisation, and unassigned tasks per team list. */
     taskGroups: () => http.get<T.TeamTaskGroupReport>('/team/task-groups'),
+    /** Decision 404: saved task lists of the caller's organisation (team.read); creating needs team.write. */
+    taskFilters: () => http.get<T.TeamTaskFilter[]>('/team/task-filters'),
+    createTaskFilter: (body: { name: string; owner?: string; query: Record<string, unknown>; properties?: Record<string, unknown> }, idempotencyKey?: string) =>
+      http.post<T.TeamTaskFilter>('/team/task-filters', body, idempotencyKey),
   },
 
   // ------------------------------------------------------------ tasks

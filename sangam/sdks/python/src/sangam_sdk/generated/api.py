@@ -5884,7 +5884,7 @@ class LowCodeApi:
         return cast("M.DataObjectRecordOperation", self._c.json(req, options))
 
 class MeApi:
-    """``Me`` (7 operations)."""
+    """``Me`` (10 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -5918,6 +5918,37 @@ class MeApi:
         """
         req = ApiRequest("GET", f"/team/task-groups")
         return cast("M.TeamTaskGroupReport", self._c.json(req, options))
+
+    def list_team_task_filters(self, *, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.TeamTaskFilter]:
+        """Shared task lists of my tenant
+
+        Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Ordered by name.
+
+        ``GET /team/task-filters`` (operationId ``listTeamTaskFilters``); permission ``team.read``.
+        """
+        req = ApiRequest("GET", f"/team/task-filters", query={"page": page, "size": size})
+        return cast("Page[M.TeamTaskFilter]", self._c.page(req, options, page, size))
+
+    def create_team_task_filter(self, body: M.TeamTaskFilterCreateRequest, *, options: Optional[RequestOptions] = None) -> M.TeamTaskFilter:
+        """Create a shared task list in my tenant
+
+        Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Audited TASK_FILTER_CREATED on the tenant's security chain. 400 VALIDATION_FAILED (name missing or over 255 characters, owner over 255, query missing, query or properties over 16384 characters as JSON); 422 TASK_FILTER_INVALID for a query criterion naming tenants (tenant*, withoutTenant*).
+
+        ``POST /team/task-filters`` (operationId ``createTeamTaskFilter``); permission ``team.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/team/task-filters")
+        req.body = body
+        return cast("M.TeamTaskFilter", self._c.json(req, options))
+
+    def get_team_task_filter(self, id: str, *, options: Optional[RequestOptions] = None) -> M.TeamTaskFilter:
+        """One shared task list of my tenant
+
+        Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. 404 NOT_FOUND for an id that is not a list of the caller's tenant.
+
+        ``GET /team/task-filters/{id}`` (operationId ``getTeamTaskFilter``); permission ``team.read``.
+        """
+        req = ApiRequest("GET", f"/team/task-filters/{seg(str(id))}")
+        return cast("M.TeamTaskFilter", self._c.json(req, options))
 
     def list_my_notifications(self, *, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Notification]:
         """My notifications
@@ -12979,7 +13010,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1175 operations on 990 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1178 operations on 992 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)

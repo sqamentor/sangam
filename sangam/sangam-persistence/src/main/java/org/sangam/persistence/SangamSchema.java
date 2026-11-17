@@ -178,7 +178,9 @@ public final class SangamSchema {
             // OTP challenges of the rights intake (decision 360; 0045-21), sangam-compliance
             "CMP_OTP_CHALLENGE",
             // M-103 OCR transcripts reviewed before knowledge-base ingest (decision 378; 0045-23), sangam-ai AiSchema
-            "AI_OCR_TRANSCRIPT");
+            "AI_OCR_TRANSCRIPT",
+            // shared saved task lists of a tenant (owner decision 404; 0047-01), sangam-rest JdbcTaskFilterAdapter
+            "TEAM_TASK_FILTER");
 
     /**
      * Changesets that alter a table created earlier (generator {@code ALTERS}): FORM_DRAFT.form_version_hash,

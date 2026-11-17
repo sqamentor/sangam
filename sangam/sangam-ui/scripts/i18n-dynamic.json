@@ -825,5 +825,9 @@
     "auditor.timeline",
     "auditor.tamper",
     "auditor.export"
+  ],
+  "teamLists.": [
+    "queryNotJson",
+    "queryNotObject"
   ]
 }

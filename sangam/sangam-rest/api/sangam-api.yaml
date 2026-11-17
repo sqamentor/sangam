@@ -8588,6 +8588,126 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
+  /team/task-filters:
+    get:
+      operationId: listTeamTaskFilters
+      tags:
+      - Me
+      summary: Shared task lists of my tenant
+      description: 'Owner decision 404: shared saved task lists of the caller''s tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have
+        no tenant). Only the caller''s tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Ordered by name.'
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      x-sangam-permission: team.read
+      x-sangam-requirements:
+      - R76
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamTaskFilter'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/X-Total-Count'
+            X-Total-Count-Capped:
+              $ref: '#/components/headers/X-Total-Count-Capped'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+    post:
+      operationId: createTeamTaskFilter
+      tags:
+      - Me
+      summary: Create a shared task list in my tenant
+      description: 'Owner decision 404: shared saved task lists of the caller''s tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have
+        no tenant). Only the caller''s tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Audited TASK_FILTER_CREATED
+        on the tenant''s security chain. 400 VALIDATION_FAILED (name missing or over 255 characters, owner over 255, query missing, query or properties
+        over 16384 characters as JSON); 422 TASK_FILTER_INVALID for a query criterion naming tenants (tenant*, withoutTenant*).'
+      x-sangam-command-type: team.task-filter.create
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: team.write
+      x-sangam-requirements:
+      - R76
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamTaskFilterCreateRequest'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamTaskFilter'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /team/task-filters/{id}:
+    get:
+      operationId: getTeamTaskFilter
+      tags:
+      - Me
+      summary: One shared task list of my tenant
+      description: 'Owner decision 404: shared saved task lists of the caller''s tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have
+        no tenant). Only the caller''s tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. 404 NOT_FOUND for an
+        id that is not a list of the caller''s tenant.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: team.read
+      x-sangam-requirements:
+      - R76
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamTaskFilter'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /me/notifications:
     get:
       operationId: listMyNotifications
@@ -60160,6 +60280,63 @@ components:
       - unassigned
       - withoutCandidateGroup
       - groups
+    TeamTaskFilter:
+      type: object
+      description: 'Owner decision 404: one shared saved task list of the caller''s tenant.'
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        owner:
+          type: string
+          description: Optional user or group the list is meant for (informational); absent or null when not set
+        query:
+          type: object
+          additionalProperties: true
+          description: Task query criteria as a JSON object (as the shared task list screen sends them)
+        properties:
+          type: object
+          additionalProperties: true
+          description: Display properties as a JSON object (priority, description, refresh, variables); {} when none
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          format: int32
+          description: Row version, 1 on creation
+      required:
+      - id
+      - name
+      - query
+      - properties
+      - createdBy
+      - createdAt
+      - version
+    TeamTaskFilterCreateRequest:
+      type: object
+      description: 'Owner decision 404: a new shared task list.'
+      properties:
+        name:
+          type: string
+          description: 1 to 255 characters after trimming
+        owner:
+          type: string
+          description: Optional, at most 255 characters
+        query:
+          type: object
+          additionalProperties: true
+          description: JSON object, at most 16384 characters as JSON; no tenant* or withoutTenant* criterion
+        properties:
+          type: object
+          additionalProperties: true
+          description: Optional JSON object, at most 16384 characters as JSON
+      required:
+      - name
+      - query
     Me:
       type: object
       description: 'The authenticated caller: identity, tenant, personas (roles), seats held, current seat context and permissions (K1, S02).'

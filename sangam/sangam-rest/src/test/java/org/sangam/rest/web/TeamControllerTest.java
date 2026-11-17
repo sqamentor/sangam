@@ -50,8 +50,10 @@ class TeamControllerTest {
         assertTrue(g.permissions(ctx(Permissions.GROUP_SUPERVISOR)).contains(Permissions.TEAM_READ));
         assertTrue(g.has(ctx(Permissions.GROUP_OPERATOR), Permissions.TEAM_READ));
         assertTrue(g.has(ctx(Permissions.GROUP_ADMIN), Permissions.TEAM_READ));
+        // decision 404: the organisation admin holds it too
+        assertTrue(g.has(ctx(Permissions.GROUP_TENANT_ADMIN), Permissions.TEAM_READ));
         for (String no : new String[] {Permissions.GROUP_USER, Permissions.GROUP_WORKER, Permissions.GROUP_AUDITOR,
-                Permissions.GROUP_CITIZEN, Permissions.GROUP_ENGINE_ADMIN, Permissions.GROUP_TENANT_ADMIN}) {
+                Permissions.GROUP_CITIZEN, Permissions.GROUP_ENGINE_ADMIN}) {
             assertFalse(g.has(ctx(no), Permissions.TEAM_READ), no);
         }
     }
