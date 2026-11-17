@@ -36,6 +36,11 @@ WORKFLOW = "ci-lanes.yml"
 HEAVY_LOCK = r"C:\Users\Lokendra Singh\AppData\Local\Temp\claude\D--GITHUB--Project-IFMS" \
              r"\ff9f2caf-1246-4228-ae70-82a16cf209ae\scratchpad\heavy_lock.py"
 BRANCH_RX = re.compile(r"^ci/[a-z0-9][a-z0-9._-]{0,80}$")
+# --main-workflows: the workflows main runs on push. ci-lanes alone never ran them, so main went red after the
+# 2026-11-17 push on breaks no lane saw (runner Maven vs wrapper, governance tests, ui e2e, sdks native; R9-mainci).
+MAIN_WORKFLOWS = ("ci-build.yml", "governance.yml", "ui.yml", "sdks.yml", "security.yml", "licence-check.yml")
+# Jobs that cannot pass on a ci/* branch by design: Scorecard supports only the default branch. Reported, not gating.
+MAIN_ONLY_JOBS = ("OpenSSF Scorecard",)
 AWS_PROJECT = "sangam-ci-lanes"
 AWS_REGION = "ap-south-1"
 
@@ -180,7 +185,53 @@ def write_state(out_dir, **kw):
         f.write(json.dumps(dict(kw, at=dt.datetime.now(dt.timezone.utc).isoformat())) + "\n")
 
 
-def github(selection, lane, out_dir, attach=None):
+def main_verdict(runs):
+    """runs: {workflow: {"conclusion": str, "jobs": [{"name", "conclusion"}]}} -> list of failure lines (empty = green).
+    A run is green when it succeeded, or when its only failed jobs are MAIN_ONLY_JOBS (continue-on-error report jobs)."""
+    bad = []
+    for wf, r in sorted(runs.items()):
+        if r.get("conclusion") == "success":
+            continue
+        failed = [j["name"] for j in r.get("jobs", []) if j.get("conclusion") not in ("success", "skipped", "neutral")]
+        real = [n for n in failed if not n.startswith(MAIN_ONLY_JOBS)]
+        if real or not failed:
+            bad.append(f"{wf}: {r.get('conclusion')} ({', '.join(real) or 'no job detail'})")
+    return bad
+
+
+def main_workflows(branch, commit):
+    """Dispatch MAIN_WORKFLOWS on the ci/* branch, wait for each, print and return the failure lines."""
+    for wf in MAIN_WORKFLOWS:
+        run(["gh", "workflow", "run", wf, "--ref", branch])
+    ids = {}
+    for _ in range(60):
+        for wf in MAIN_WORKFLOWS:
+            if wf in ids:
+                continue
+            r = run(["gh", "run", "list", "--workflow", wf, "--branch", branch, "--event", "workflow_dispatch",
+                     "--json", "databaseId,headSha", "-L", "5"], check=False)
+            hit = [x for x in json.loads(r.stdout or "[]") if x["headSha"] == commit] if r.returncode == 0 else []
+            if hit:
+                ids[wf] = str(hit[0]["databaseId"])
+        if len(ids) == len(MAIN_WORKFLOWS):
+            break
+        time.sleep(5)
+    runs = {wf: {"conclusion": "not dispatched"} for wf in MAIN_WORKFLOWS if wf not in ids}
+    for wf, rid in ids.items():
+        while True:
+            r = run(["gh", "run", "view", rid, "--json", "status,conclusion,jobs"], check=False)
+            if r.returncode == 0 and json.loads(r.stdout).get("status") == "completed":
+                runs[wf] = json.loads(r.stdout)
+                break
+            time.sleep(60)
+        print(f"  main workflow {wf:20s} run {rid} {runs[wf]['conclusion']}", flush=True)
+    bad = main_verdict(runs)
+    for line in bad:
+        print(f"  MAIN WORKFLOW FAILED {line}")
+    return bad
+
+
+def github(selection, lane, out_dir, attach=None, with_main=False):
     if attach:
         run_id, branch, commit, head = str(attach), "?", "?", "?"
     else:
@@ -233,7 +284,8 @@ def github(selection, lane, out_dir, attach=None):
     bad = print_counts(count_reports(dest))
     print(f"  reports in {dest}")
     write_state(out_dir, run_id=run_id, conclusion=view["conclusion"], reports=dest)
-    return 0 if view["conclusion"] == "success" and not bad else 1
+    main_bad = main_workflows(branch, commit) if with_main and not attach else []
+    return 0 if view["conclusion"] == "success" and not bad and not main_bad else 1
 
 
 # ---------------------------------------------------------------- level 3
@@ -291,7 +343,12 @@ def main(argv=None):
     ap.add_argument("--heavy-lock", default=HEAVY_LOCK)
     ap.add_argument("--out", default=os.path.join(os.getcwd(), "ci-reports"))
     ap.add_argument("--attach", metavar="RUN_ID", help="level 2: no push; wait for this run and download its reports")
+    ap.add_argument("--main-workflows", action="store_true",
+                    help="level 2: also dispatch the six main workflows (" + ", ".join(MAIN_WORKFLOWS) + ") on the "
+                         "ci/* branch and fail unless all are green; use before a merge to main")
     a = ap.parse_args(argv)
+    if a.main_workflows and a.level not in ("github", "auto"):
+        raise SystemExit("refused: --main-workflows needs level 2 (GitHub)")
     # Output goes to a file or pipe in lanes; line buffering keeps every line on disk if the host kills us.
     for stream in (sys.stdout, sys.stderr):
         try:
@@ -313,11 +370,15 @@ def main(argv=None):
         gw = github_queue_minutes()
         level = decide(a.expected_min, lw, gw, a.github_exhausted)
         print(f"expected {a.expected_min:.0f} min, heavy-lock wait ~{lw:.0f} min, GitHub queue {gw:.0f} min -> {level}")
+    if a.main_workflows and level != "github":
+        raise SystemExit(f"refused: --main-workflows needs level 2 (GitHub); auto chose {level}")
     if level == "local":
         print("level 1: run locally under the heavy lock (the lane's own script); nothing pushed")
         return 0
     os.makedirs(a.out, exist_ok=True)
-    return github(selection, a.lane, a.out) if level == "github" else aws_level(selection, a.lane, a.out)
+    if level == "github":
+        return github(selection, a.lane, a.out, with_main=a.main_workflows)
+    return aws_level(selection, a.lane, a.out)
 
 
 if __name__ == "__main__":

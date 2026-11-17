@@ -12,6 +12,11 @@ ROOT_POM = os.path.normpath(os.path.join(HERE, "..", "..", "pom.xml"))
 NS = {"m": "http://maven.apache.org/POM/4.0.0"}
 
 
+def root_properties(pom_path):
+    root = ET.parse(pom_path).getroot()
+    return {el.tag.split("}", 1)[1]: (el.text or "").strip() for el in (root.find("m:properties", NS) or [])}
+
+
 def managed_plugins(pom_path):
     """{groupId:artifactId: version text} of the root pom's build/pluginManagement."""
     root = ET.parse(pom_path).getroot()
@@ -27,6 +32,11 @@ class PluginPins(unittest.TestCase):
     def test_rm45_the_site_plugin_is_pinned_to_a_literal_version(self):
         version = managed_plugins(ROOT_POM).get("org.apache.maven.plugins:maven-site-plugin")
         self.assertIsNotNone(version, "maven-site-plugin is not in the root pom pluginManagement (RM-45)")
+        # The root pom pins every managed plugin through a <version.x> property (one declaration, decision 185 style);
+        # the property must hold a literal version, never a range or another property.
+        m = re.fullmatch(r"\$\{([^}]+)\}", version)
+        if m:
+            version = root_properties(ROOT_POM).get(m.group(1), version)
         self.assertRegex(version, r"^\d+\.\d+(\.\d+)?$", "an exact version, never a range or a property left empty")
 
     def test_every_managed_plugin_has_a_version(self):
