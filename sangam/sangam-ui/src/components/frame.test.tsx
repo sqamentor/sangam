@@ -123,7 +123,7 @@ describe('first-run checklists', () => {
       const open = new Set(['/account', ...visibleNav(me(p.roles, p.perms)).flatMap((a) => a.sections.flatMap((s) => s.items.map((i) => i.to)))]);
       for (const s of p.steps) {
         expect(T(`checklist.${p.id}.${s.id}`)).toBeTruthy();
-        if (p.id !== 'admin' && !(p.id === 'supervisor' && s.to === '/tasks/filters')) expect(open.has(s.to), `${p.id} ${s.to}`).toBe(true);
+        if (p.id !== 'admin') expect(open.has(s.to), `${p.id} ${s.to}`).toBe(true);
       }
     }
   });

@@ -77,13 +77,14 @@ describe('persona menus', () => {
     expect(r).toEqual(expect.arrayContaining(['/tasks', '/start', '/cases', '/my/delegations', '/documents', '/m/ledger']));
     for (const no of ['/audit', '/audit/exports', '/tasks/filters', '/team']) expect(r).not.toContain(no);
   });
-  it('a platform operator sees Shared task lists without TASK_USER; Team workload needs team.read (decision 401)', () => {
-    expect(routesOf(['PLATFORM_OPERATOR'])).toEqual(expect.arrayContaining(['/tasks/filters', '/ops/engine', '/design/test']));
+  it('a platform operator sees the engine filters; Team workload and Shared task lists need team.read (decisions 401, 404)', () => {
+    expect(routesOf(['PLATFORM_OPERATOR'])).toEqual(expect.arrayContaining(['/ops/engine/filters', '/ops/engine', '/design/test']));
     expect(routesOf(['PLATFORM_OPERATOR'])).not.toContain('/team');
+    expect(routesOf(['PLATFORM_OPERATOR'])).not.toContain('/tasks/filters');
   });
-  it('a supervisor (team.read) sees Team workload, and only that from My work', () => {
+  it('a supervisor (team.read) sees Team workload and Shared task lists, and only those from My work', () => {
     const r = visibleNav(me([], ['team.read'])).flatMap((a) => a.sections.flatMap((s) => s.items.map((i) => i.to)));
-    expect(r.filter((x) => !x.startsWith('/help') && x !== '/verify')).toEqual(['/team']);
+    expect(r.filter((x) => !x.startsWith('/help') && x !== '/verify')).toEqual(['/team', '/tasks/filters']);
     expect(visibleNav(me([], ['*'])).flatMap((a) => a.sections.flatMap((s) => s.items.map((i) => i.to)))).toContain('/team');
   });
   it('an operator sees Monitor and fix, Reports and audit, but not engine screens', () => {

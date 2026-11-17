@@ -84,8 +84,8 @@ export const NAV: NavArea[] = [
           e('work', 'requests', '/cases'),
           // Decision 401: a Sangam read limited to the caller's organisation, for holders of team.read.
           e('work', 'team', '/team', { access: TEAM_READ }),
-          // Saved filters live only in the engine, with no organisation of their own: platform screens still (401 open item).
-          e('work', 'taskLists', '/tasks/filters', { access: { roles: ['PLATFORM_OPERATOR', 'PLATFORM_ADMIN'], perms: [] } }),
+          // Decision 404: Sangam-kept saved lists of the caller's organisation (team.read).
+          e('work', 'taskLists', '/tasks/filters', { access: TEAM_READ }),
           e('work', 'field', '/field'),
           e('work', 'away', '/my/delegations'),
           mod('work', 'signature', '/my/dsc-certificates'),
@@ -195,6 +195,8 @@ export const NAV: NavArea[] = [
           e('monitor', 'cleanup', '/ops/cleanup'),
           e('monitor', 'tools', '/ops/tools'),
           e('monitor', 'engine', '/ops/engine', { only: ['PLATFORM_OPERATOR'] }),
+          // The engine's own saved filters (no organisation of their own): platform identities only, as before.
+          e('monitor', 'engineFilters', '/ops/engine/filters', { access: { roles: ['PLATFORM_OPERATOR', 'PLATFORM_ADMIN'], perms: [] } }),
           e('monitor', 'operatorLog', '/ops/audit-log'),
         ],
       },

@@ -72,6 +72,7 @@ PLATFORM_ROLES = [
                      "platform realm)"),
     ("sangam-operator", "Operations: incidents, jobs, outbox, reconciliation console"),
     ("sangam-auditor", "Read audit timelines and verify audit chains (READ_AUDIT)"),
+    ("sangam-supervisor", "Team workload and shared task lists of the tenant (team.read, team.write; decisions 401, 404)"),
     ("sangam-modeller", "Author BPMN/DMN/forms packages"),
     ("MODEL_REVIEWER", "Review a model package (reviewer != author, by person and seat)"),
     ("MODEL_APPROVER", "Approve a model package for deployment"),

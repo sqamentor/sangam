@@ -135,6 +135,19 @@ export const api = {
   team: {
     /** Open, assigned and unassigned tasks of the caller's organisation, and unassigned tasks per team list. */
     taskGroups: () => http.get<T.TeamTaskGroupReport>('/team/task-groups'),
+    /** Decision 404: saved task lists of the caller's organisation (team.read); creating needs team.write. */
+    taskFilters: () => http.get<T.TeamTaskFilter[]>('/team/task-filters'),
+    createTaskFilter: (body: { name: string; owner?: string; query: Record<string, unknown>; properties?: Record<string, unknown> }, idempotencyKey?: string) =>
+      http.post<T.TeamTaskFilter>('/team/task-filters', body, idempotencyKey),
+    /** PUT /team/task-filters/{id} (team.write) against the version read (If-Match; 409 REVISION_CONFLICT when stale). */
+    updateTaskFilter: async (id: string, version: number, body: { name: string; owner?: string; query: Record<string, unknown>; properties?: Record<string, unknown> }, idempotencyKey?: string) => {
+      const res = await raw('PUT', `/team/task-filters/${enc(id)}`, { body, idempotencyKey, headers: { 'If-Match': `"${version}"` } });
+      return (await res.json()) as T.TeamTaskFilter;
+    },
+    /** DELETE /team/task-filters/{id}?reason= (team.write, audited with the reason) against the version read. */
+    deleteTaskFilter: async (id: string, version: number, reason: string, idempotencyKey?: string) => {
+      await raw('DELETE', `/team/task-filters/${enc(id)}`, { query: { reason }, idempotencyKey, headers: { 'If-Match': `"${version}"` } });
+    },
   },
 
   // ------------------------------------------------------------ tasks
@@ -144,7 +157,7 @@ export const api = {
      * `currency` (ISO 4217) keeps only tasks whose indexed amount is in that currency; the server requires it with
      * sortBy=amount (400 VALIDATION_FAILED otherwise), and the inbox only offers the amount sort once one is chosen.
      */
-    list: async (q: ListQuery & { section?: T.TaskSection; packKey?: string; slaState?: string; seatId?: string; variableNames?: string[]; currency?: string }) => {
+    list: async (q: ListQuery & { section?: T.TaskSection; packKey?: string; slaState?: string; seatId?: string; variableNames?: string[]; currency?: string; filterId?: string }) => {
       const s = q.section;
       const mapped: Query = {
         page: q.page,
@@ -159,6 +172,7 @@ export const api = {
         seatId: q.seatId,
         variableNames: q.variableNames?.length ? q.variableNames : undefined, // P45 card variables
         currency: q.currency || undefined,
+        filterId: q.filterId || undefined, // decision 404: a shared list of the organisation; the server only narrows
         ...sortParams(taskSort(q.sort)),
       };
       return A.mapPage(await http.page<Record<string, unknown>>('/tasks', mapped), A.normTask);

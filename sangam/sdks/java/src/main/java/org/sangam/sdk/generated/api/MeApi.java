@@ -11,10 +11,12 @@ import org.sangam.sdk.generated.model.LeaveRequest;
 import org.sangam.sdk.generated.model.Me;
 import org.sangam.sdk.generated.model.MeCapabilities;
 import org.sangam.sdk.generated.model.Notification;
+import org.sangam.sdk.generated.model.TeamTaskFilter;
+import org.sangam.sdk.generated.model.TeamTaskFilterCreateRequest;
 import org.sangam.sdk.generated.model.TeamTaskGroupReport;
 
 /**
- * Typed operations of {@code Me} (7 operations), generated from
+ * Typed operations of {@code Me} (12 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -25,6 +27,9 @@ public final class MeApi {
     private static final TypeReference<Me> R_getMe = new TypeReference<>() { };
     private static final TypeReference<MeCapabilities> R_getMyCapabilities = new TypeReference<>() { };
     private static final TypeReference<TeamTaskGroupReport> R_getTeamTaskGroups = new TypeReference<>() { };
+    private static final TypeReference<TeamTaskFilter> R_createTeamTaskFilter = new TypeReference<>() { };
+    private static final TypeReference<TeamTaskFilter> R_getTeamTaskFilter = new TypeReference<>() { };
+    private static final TypeReference<TeamTaskFilter> R_updateTeamTaskFilter = new TypeReference<>() { };
     private static final TypeReference<java.util.List<Assignment>> R_listMyDelegations = new TypeReference<>() { };
     private static final TypeReference<Assignment> R_requestLeave = new TypeReference<>() { };
 
@@ -74,6 +79,92 @@ public final class MeApi {
     public TeamTaskGroupReport getTeamTaskGroups(RequestOptions options) {
         ApiRequest req = ApiRequest.get("/team/task-groups");
         return call.json(req, options, R_getTeamTaskGroups);
+    }
+
+    /**
+     * Shared task lists of my tenant
+     *
+     * <p>Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Ordered by name.
+     *
+     * <p>{@code GET /team/task-filters} (operationId {@code listTeamTaskFilters}); permission {@code team.read}.
+     * @param page query parameter {@code page}, or null. 0-based page index
+     * @param size query parameter {@code size}, or null. Page size
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response with the A-16 count headers
+     */
+    public org.sangam.sdk.model.Page<TeamTaskFilter> listTeamTaskFilters(Long page, Long size, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/team/task-filters");
+        req.query("page", page);
+        req.query("size", size);
+        return call.page(req, options, TeamTaskFilter.class, page, size);
+    }
+
+    /**
+     * Create a shared task list in my tenant
+     *
+     * <p>Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Audited TASK_FILTER_CREATED on the tenant's security chain. 400 VALIDATION_FAILED (name missing or over 255 characters, owner over 255, query missing, query or properties over 16384 characters as JSON); 422 TASK_FILTER_INVALID for a query criterion naming tenants (tenant*, withoutTenant*).
+     *
+     * <p>{@code POST /team/task-filters} (operationId {@code createTeamTaskFilter}); permission {@code team.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 201 response
+     */
+    public TeamTaskFilter createTeamTaskFilter(TeamTaskFilterCreateRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/team/task-filters");
+        req.body(body);
+        return call.json(req, options, R_createTeamTaskFilter);
+    }
+
+    /**
+     * One shared task list of my tenant
+     *
+     * <p>Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. 404 NOT_FOUND for an id that is not a list of the caller's tenant.
+     *
+     * <p>{@code GET /team/task-filters/{id}} (operationId {@code getTeamTaskFilter}); permission {@code team.read}.
+     * @param id path parameter {@code id}
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public TeamTaskFilter getTeamTaskFilter(String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/team/task-filters/" + HttpTransport.seg(String.valueOf(id)));
+        return call.json(req, options, R_getTeamTaskFilter);
+    }
+
+    /**
+     * Replace a shared task list of my tenant
+     *
+     * <p>Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Owner decision 406: same body and validation as create; If-Match with the list's version (ETag) is required (428 PRECONDITION_REQUIRED without it, 409 REVISION_CONFLICT with currentVersion when stale). 404 NOT_FOUND for a list that is not the caller's tenant's (never changed). Audited TASK_FILTER_UPDATED on the tenant's security chain.
+     *
+     * <p>{@code PUT /team/task-filters/{id}} (operationId {@code updateTeamTaskFilter}); permission {@code team.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}
+     * @param body request body
+     * @param ifMatch header parameter {@code If-Match}. Revision the edit is based on (409 on mismatch)
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public TeamTaskFilter updateTeamTaskFilter(String id, TeamTaskFilterCreateRequest body, String ifMatch, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/team/task-filters/" + HttpTransport.seg(String.valueOf(id)));
+        req.body(body);
+        req.header("If-Match", ifMatch == null ? null : String.valueOf(ifMatch));
+        return call.json(req, options, R_updateTeamTaskFilter);
+    }
+
+    /**
+     * Delete a shared task list of my tenant
+     *
+     * <p>Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Owner decision 406: If-Match with the list's version is required (428 / 409 REVISION_CONFLICT as for update) and a reason (400 REASON_REQUIRED, at most 1000 characters). 404 NOT_FOUND for a list that is not the caller's tenant's (never deleted). Audited TASK_FILTER_DELETED with the reason.
+     *
+     * <p>{@code DELETE /team/task-filters/{id}} (operationId {@code deleteTeamTaskFilter}); permission {@code team.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}
+     * @param reason query parameter {@code reason}
+     * @param ifMatch header parameter {@code If-Match}. Revision the edit is based on (409 on mismatch)
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     */
+    public void deleteTeamTaskFilter(String id, String reason, String ifMatch, RequestOptions options) {
+        ApiRequest req = ApiRequest.delete("/team/task-filters/" + HttpTransport.seg(String.valueOf(id)));
+        req.query("reason", reason);
+        req.header("If-Match", ifMatch == null ? null : String.valueOf(ifMatch));
+        call.none(req, options);
     }
 
     /**

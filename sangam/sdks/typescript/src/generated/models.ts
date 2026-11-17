@@ -12522,6 +12522,42 @@ export interface TeamGroupCount {
 }
 
 /**
+ * Owner decision 404: one shared saved task list of the caller's tenant.
+ *
+ * Schema `TeamTaskFilter`.
+ */
+export interface TeamTaskFilter {
+  id: string;
+  name: string;
+  /** Optional user or group the list is meant for (informational); absent or null when not set */
+  owner?: string;
+  /** Task query criteria as a JSON object (as the shared task list screen sends them) */
+  query: Record<string, unknown>;
+  /** Display properties as a JSON object (priority, description, refresh, variables); {} when none */
+  properties: Record<string, unknown>;
+  createdBy: string;
+  createdAt: string;
+  /** Row version, 1 on creation, +1 per update; the ETag and the If-Match of update and delete */
+  version: number;
+}
+
+/**
+ * Owner decisions 404 and 406: a new shared task list, or its replacement (PUT).
+ *
+ * Schema `TeamTaskFilterCreateRequest`.
+ */
+export interface TeamTaskFilterCreateRequest {
+  /** 1 to 255 characters after trimming */
+  name: string;
+  /** Optional, at most 255 characters */
+  owner?: string;
+  /** JSON object, at most 16384 characters as JSON. Owner decision 406: only the criteria of GET /tasks by the same names: assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy, sortOrder, currency (ISO 4217) and variableNames (list of 1 to 20 names); strings 1 to 255 characters, mine and unassigned booleans. Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID */
+  query: Record<string, unknown>;
+  /** Optional JSON object, at most 16384 characters as JSON */
+  properties?: Record<string, unknown>;
+}
+
+/**
  * Owner decision 401: the team workload of the caller's tenant (GET /team/task-groups).
  *
  * Schema `TeamTaskGroupReport`.

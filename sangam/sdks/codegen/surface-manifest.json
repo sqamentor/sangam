@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 990,
- "operations": 1175,
- "schemas": 897,
+ "paths": 992,
+ "operations": 1180,
+ "schemas": 899,
  "tags": [
   "AI",
   "Admin",
@@ -352,8 +352,8 @@
    "class": "MeApi",
    "tag": "Me",
    "pathPrefix": "",
-   "operations": 7,
-   "maxLines": 140
+   "operations": 12,
+   "maxLines": 231
   },
   {
    "class": "ModellerApi",
@@ -577,7 +577,7 @@
    "tag": "Tasks",
    "pathPrefix": "",
    "operations": 15,
-   "maxLines": 319
+   "maxLines": 321
   },
   {
    "class": "TenantOperationsApi",
@@ -1496,6 +1496,8 @@
   "TaskForm",
   "TaskStat",
   "TeamGroupCount",
+  "TeamTaskFilter",
+  "TeamTaskFilterCreateRequest",
   "TeamTaskGroupReport",
   "Tenant",
   "TenantBundle",
@@ -3570,6 +3572,66 @@
    "python": "me.get_team_task_groups",
    "dotnet": "MeApi#GetTeamTaskGroupsAsync",
    "php": "MeApi#getTeamTaskGroups"
+  },
+  {
+   "operationId": "listTeamTaskFilters",
+   "method": "GET",
+   "path": "/team/task-filters",
+   "tag": "Me",
+   "apiClass": "MeApi",
+   "java": "MeApi#listTeamTaskFilters",
+   "typescript": "me.listTeamTaskFilters",
+   "python": "me.list_team_task_filters",
+   "dotnet": "MeApi#ListTeamTaskFiltersAsync",
+   "php": "MeApi#listTeamTaskFilters"
+  },
+  {
+   "operationId": "createTeamTaskFilter",
+   "method": "POST",
+   "path": "/team/task-filters",
+   "tag": "Me",
+   "apiClass": "MeApi",
+   "java": "MeApi#createTeamTaskFilter",
+   "typescript": "me.createTeamTaskFilter",
+   "python": "me.create_team_task_filter",
+   "dotnet": "MeApi#CreateTeamTaskFilterAsync",
+   "php": "MeApi#createTeamTaskFilter"
+  },
+  {
+   "operationId": "getTeamTaskFilter",
+   "method": "GET",
+   "path": "/team/task-filters/{id}",
+   "tag": "Me",
+   "apiClass": "MeApi",
+   "java": "MeApi#getTeamTaskFilter",
+   "typescript": "me.getTeamTaskFilter",
+   "python": "me.get_team_task_filter",
+   "dotnet": "MeApi#GetTeamTaskFilterAsync",
+   "php": "MeApi#getTeamTaskFilter"
+  },
+  {
+   "operationId": "updateTeamTaskFilter",
+   "method": "PUT",
+   "path": "/team/task-filters/{id}",
+   "tag": "Me",
+   "apiClass": "MeApi",
+   "java": "MeApi#updateTeamTaskFilter",
+   "typescript": "me.updateTeamTaskFilter",
+   "python": "me.update_team_task_filter",
+   "dotnet": "MeApi#UpdateTeamTaskFilterAsync",
+   "php": "MeApi#updateTeamTaskFilter"
+  },
+  {
+   "operationId": "deleteTeamTaskFilter",
+   "method": "DELETE",
+   "path": "/team/task-filters/{id}",
+   "tag": "Me",
+   "apiClass": "MeApi",
+   "java": "MeApi#deleteTeamTaskFilter",
+   "typescript": "me.deleteTeamTaskFilter",
+   "python": "me.delete_team_task_filter",
+   "dotnet": "MeApi#DeleteTeamTaskFilterAsync",
+   "php": "MeApi#deleteTeamTaskFilter"
   },
   {
    "operationId": "listMyNotifications",

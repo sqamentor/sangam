@@ -531,6 +531,8 @@
     "allWork": "All my work",
     "deleteFilter": "Delete filter {{name}}",
     "saveFilter": "Save as filter",
+    "teamList": "Shared task list",
+    "teamListHint": "A list your organisation saved. It only narrows the tasks you may already see.",
     "filterStoredHint": "Saved filters are kept in this browser, without the search text. The server applies every criterion, so a filter never shows more than you may see."
   },
   "sod": {
@@ -4510,6 +4512,10 @@
       "operatorLog": {
         "label": "Operator action log",
         "help": "What operators did, and when."
+      },
+      "engineFilters": {
+        "label": "Engine task filters",
+        "help": "Advanced: saved filters kept by the process engine itself."
       }
     },
     "setup": {
@@ -5071,5 +5077,32 @@
     "group": "Team list",
     "unassignedTasks": "Tasks not picked up",
     "noGroups": "No team list has tasks waiting to be picked up."
+  },
+  "teamLists": {
+    "saved": "Saved lists",
+    "none": "Your organisation has no saved task lists yet.",
+    "name": "Name",
+    "query": "Which tasks (query)",
+    "queryHint": "A JSON object of task conditions, for example {\"candidateGroup\": \"accounts\"}. Your organisation is added by the system.",
+    "createdBy": "Created by",
+    "createdAt": "Created",
+    "create": "New shared list",
+    "createButton": "Save list",
+    "created": "List {{name}} saved",
+    "nameRequired": "Enter a name.",
+    "nameTooLong": "Use at most 255 characters.",
+    "queryNotJson": "This is not valid JSON.",
+    "queryNotObject": "Enter a JSON object, in curly brackets.",
+    "actions": "Actions",
+    "editNamed": "Change {{name}}",
+    "deleteNamed": "Delete {{name}}",
+    "edit": "Change list {{name}}",
+    "saveButton": "Save changes",
+    "cancelEdit": "Stop changing",
+    "updated": "List {{name}} changed",
+    "deleteTitle": "Delete list {{name}}",
+    "deleteBody": "The list is removed for everyone in your organisation. Tasks are not changed.",
+    "deleteButton": "Delete list",
+    "deleted": "List {{name}} deleted"
   }
 }
