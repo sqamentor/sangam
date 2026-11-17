@@ -24,7 +24,7 @@ import org.sangam.core.api.EngineAdapter.TaskQuery;
  */
 class DueJobPagingH2Test {
 
-    private static final int FLOOD = 3 * OperatonEngineAdapter.DUE_JOB_PAGE;
+    private static final int FLOOD = 3 * DueJobRunner.PAGE;
     private static final int TARGETS = 20;
 
     private OperatonEngineAdapter a;
