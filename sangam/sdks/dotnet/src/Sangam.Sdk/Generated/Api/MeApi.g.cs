@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Me (10 operations).
+/// Typed operations of Me (12 operations).
 /// </summary>
 public sealed class MeApi
 {
@@ -82,6 +82,32 @@ public sealed class MeApi
     {
         var req = ApiRequest.Get($"/team/task-filters/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
         return await _calls.JsonAsync<M.TeamTaskFilter?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Replace a shared task list of my tenant
+    /// Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Owner decision 406: same body and validation as create; If-Match with the list's version (ETag) is required (428 PRECONDITION_REQUIRED without it, 409 REVISION_CONFLICT with currentVersion when stale). 404 NOT_FOUND for a list that is not the caller's tenant's (never changed). Audited TASK_FILTER_UPDATED on the tenant's security chain.
+    /// PUT /team/task-filters/{id} (operationId updateTeamTaskFilter); permission team.write; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.TeamTaskFilter?> UpdateTeamTaskFilterAsync(string id, M.TeamTaskFilterCreateRequest body, string ifMatch, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Put($"/team/task-filters/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        req.WithHeader("If-Match", GeneratedCalls.Str(ifMatch));
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.TeamTaskFilter?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Delete a shared task list of my tenant
+    /// Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Owner decision 406: If-Match with the list's version is required (428 / 409 REVISION_CONFLICT as for update) and a reason (400 REASON_REQUIRED, at most 1000 characters). 404 NOT_FOUND for a list that is not the caller's tenant's (never deleted). Audited TASK_FILTER_DELETED with the reason.
+    /// DELETE /team/task-filters/{id} (operationId deleteTeamTaskFilter); permission team.write; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task DeleteTeamTaskFilterAsync(string id, string reason, string ifMatch, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Delete($"/team/task-filters/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        req.WithQuery("reason", GeneratedCalls.Q(reason));
+        req.WithHeader("If-Match", GeneratedCalls.Str(ifMatch));
+        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

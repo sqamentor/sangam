@@ -41,11 +41,12 @@ final class TasksApi
      * @param string|null $currency query currency
      * @param string|null $sortOrder query sortOrder
      * @param list<string>|null $variableNames query variableNames
+     * @param string|null $filterId query filterId
      * @param int|null $page query page
      * @param int|null $size query size
      * @return Page<Model\Task>
      */
-    public function listTasks(?string $assignee = null, ?bool $mine = null, ?bool $unassigned = null, ?string $candidateGroup = null, ?string $seatId = null, ?string $processInstanceId = null, ?string $caseInstanceId = null, ?string $businessKey = null, ?string $processDefinitionKey = null, ?string $taskDefinitionKey = null, ?string $state = null, ?string $sortBy = null, ?string $currency = null, ?string $sortOrder = null, ?array $variableNames = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
+    public function listTasks(?string $assignee = null, ?bool $mine = null, ?bool $unassigned = null, ?string $candidateGroup = null, ?string $seatId = null, ?string $processInstanceId = null, ?string $caseInstanceId = null, ?string $businessKey = null, ?string $processDefinitionKey = null, ?string $taskDefinitionKey = null, ?string $state = null, ?string $sortBy = null, ?string $currency = null, ?string $sortOrder = null, ?array $variableNames = null, ?string $filterId = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
         $req = ApiRequest::get('/tasks');
         $req->query('assignee', $assignee);
@@ -63,6 +64,7 @@ final class TasksApi
         $req->query('currency', $currency);
         $req->query('sortOrder', $sortOrder);
         $req->query('variableNames', $variableNames);
+        $req->query('filterId', $filterId);
         $req->query('page', $page);
         $req->query('size', $size);
         return $this->calls->page($req, $options, Model\Task::class, $page, $size);

@@ -12537,12 +12537,12 @@ export interface TeamTaskFilter {
   properties: Record<string, unknown>;
   createdBy: string;
   createdAt: string;
-  /** Row version, 1 on creation */
+  /** Row version, 1 on creation, +1 per update; the ETag and the If-Match of update and delete */
   version: number;
 }
 
 /**
- * Owner decision 404: a new shared task list.
+ * Owner decisions 404 and 406: a new shared task list, or its replacement (PUT).
  *
  * Schema `TeamTaskFilterCreateRequest`.
  */
@@ -12551,7 +12551,7 @@ export interface TeamTaskFilterCreateRequest {
   name: string;
   /** Optional, at most 255 characters */
   owner?: string;
-  /** JSON object, at most 16384 characters as JSON; no tenant* or withoutTenant* criterion */
+  /** JSON object, at most 16384 characters as JSON. Owner decision 406: only the criteria of GET /tasks by the same names: assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy, sortOrder, currency (ISO 4217) and variableNames (list of 1 to 20 names); strings 1 to 255 characters, mine and unassigned booleans. Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID */
   query: Record<string, unknown>;
   /** Optional JSON object, at most 16384 characters as JSON */
   properties?: Record<string, unknown>;

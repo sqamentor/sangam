@@ -38,4 +38,18 @@ public interface TaskFilterPort {
     /** Stores a new list of the tenant and returns it as stored. */
     TaskFilter create(String tenantId, String actor, String name, String owner, Map<String, Object> query,
                       Map<String, Object> properties);
+
+    /**
+     * Replaces name, owner, query and properties of a list of the tenant when its row version is still
+     * {@code expectedVersion}, and returns it with the next version. Empty when the list does not exist in that tenant
+     * (nothing of another tenant is touched); 409 REVISION_CONFLICT when it exists at another version.
+     */
+    Optional<TaskFilter> update(String tenantId, String id, int expectedVersion, String name, String owner,
+                                Map<String, Object> query, Map<String, Object> properties);
+
+    /**
+     * Deletes a list of the tenant at {@code expectedVersion} and returns what was deleted. Empty when it does not exist
+     * in that tenant; 409 REVISION_CONFLICT when it exists at another version.
+     */
+    Optional<TaskFilter> delete(String tenantId, String id, int expectedVersion);
 }

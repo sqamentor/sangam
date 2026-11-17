@@ -6837,7 +6837,7 @@ export class LowCodeApi {
   }
 }
 
-/** Typed operations of `Me` (10 operations). */
+/** Typed operations of `Me` (12 operations). */
 export class MeApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -6912,6 +6912,33 @@ export class MeApi {
   async getTeamTaskFilter(id: string, options?: RequestOptions): Promise<M.TeamTaskFilter> {
     const req: ApiRequest = { method: 'GET', path: `/team/task-filters/${seg(String(id))}` };
     return this.calls.json<M.TeamTaskFilter>(req, options);
+  }
+
+  /**
+   * Replace a shared task list of my tenant
+   *
+   * Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Owner decision 406: same body and validation as create; If-Match with the list's version (ETag) is required (428 PRECONDITION_REQUIRED without it, 409 REVISION_CONFLICT with currentVersion when stale). 404 NOT_FOUND for a list that is not the caller's tenant's (never changed). Audited TASK_FILTER_UPDATED on the tenant's security chain.
+   *
+   * `PUT /team/task-filters/{id}` (operationId `updateTeamTaskFilter`); permission `team.write`; result stored atomically with the state change.
+   */
+  async updateTeamTaskFilter(id: string, body: M.TeamTaskFilterCreateRequest, params: { ifMatch: string /* Revision the edit is based on (409 on mismatch) */ }, options?: RequestOptions): Promise<M.TeamTaskFilter> {
+    const req: ApiRequest = { method: 'PUT', path: `/team/task-filters/${seg(String(id))}` };
+    headersOf(req, { 'If-Match': params?.ifMatch });
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.TeamTaskFilter>(req, options);
+  }
+
+  /**
+   * Delete a shared task list of my tenant
+   *
+   * Owner decision 404: shared saved task lists of the caller's tenant (Sangam table TEAM_TASK_FILTER; Operaton filters have no tenant). Only the caller's tenant is ever listed or read; an identity without a tenant is 403 TENANT_REQUIRED. Owner decision 406: If-Match with the list's version is required (428 / 409 REVISION_CONFLICT as for update) and a reason (400 REASON_REQUIRED, at most 1000 characters). 404 NOT_FOUND for a list that is not the caller's tenant's (never deleted). Audited TASK_FILTER_DELETED with the reason.
+   *
+   * `DELETE /team/task-filters/{id}` (operationId `deleteTeamTaskFilter`); permission `team.write`; result stored atomically with the state change.
+   */
+  async deleteTeamTaskFilter(id: string, params: { reason: string; ifMatch: string /* Revision the edit is based on (409 on mismatch) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/team/task-filters/${seg(String(id))}`, query: { reason: params?.reason } };
+    headersOf(req, { 'If-Match': params?.ifMatch });
+    await this.calls.none(req, options);
   }
 
   /**
@@ -14113,8 +14140,8 @@ export class TasksApi {
    *
    * `GET /tasks` (operationId `listTasks`); permission `task.read`.
    */
-  async listTasks(params?: { assignee?: string; mine?: boolean /* Assigned to me or I am a candidate */; unassigned?: boolean; candidateGroup?: string; seatId?: string; processInstanceId?: string; caseInstanceId?: string; businessKey?: string; processDefinitionKey?: string; taskDefinitionKey?: string; state?: string; sortBy?: string /* created, due, priority, name, amount or reference (M-042 task index); a comma-separated list sorts by several keys. amount sorts within the currency filter and needs currency (400 VALIDATION_FAILED otherwise), so only tasks with an amount in that currency are listed; reference sorts by the indexed reference, tasks without one placed by the database's NULL ordering */; currency?: string /* M-042: only tasks whose indexed amount is in this ISO 4217 currency; required when sortBy contains amount */; sortOrder?: string /* asc or desc per key, comma-separated */; variableNames?: Array<string> /* P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at most 20 names, repeated or comma-separated */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.Task>> {
-    const req: ApiRequest = { method: 'GET', path: `/tasks`, query: { assignee: params?.assignee, mine: params?.mine, unassigned: params?.unassigned, candidateGroup: params?.candidateGroup, seatId: params?.seatId, processInstanceId: params?.processInstanceId, caseInstanceId: params?.caseInstanceId, businessKey: params?.businessKey, processDefinitionKey: params?.processDefinitionKey, taskDefinitionKey: params?.taskDefinitionKey, state: params?.state, sortBy: params?.sortBy, currency: params?.currency, sortOrder: params?.sortOrder, variableNames: params?.variableNames, page: params?.page, size: params?.size } };
+  async listTasks(params?: { assignee?: string; mine?: boolean /* Assigned to me or I am a candidate */; unassigned?: boolean; candidateGroup?: string; seatId?: string; processInstanceId?: string; caseInstanceId?: string; businessKey?: string; processDefinitionKey?: string; taskDefinitionKey?: string; state?: string; sortBy?: string /* created, due, priority, name, amount or reference (M-042 task index); a comma-separated list sorts by several keys. amount sorts within the currency filter and needs currency (400 VALIDATION_FAILED otherwise), so only tasks with an amount in that currency are listed; reference sorts by the indexed reference, tasks without one placed by the database's NULL ordering */; currency?: string /* M-042: only tasks whose indexed amount is in this ISO 4217 currency; required when sortBy contains amount */; sortOrder?: string /* asc or desc per key, comma-separated */; variableNames?: Array<string> /* P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at most 20 names, repeated or comma-separated */; filterId?: string /* Owner decision 406: runs a saved task list of the caller's tenant (GET /team/task-filters): its criteria are added to this request's, and the caller's tenant and task visibility still apply, so a list only narrows what the caller sees. 404 NOT_FOUND for a list that is not the caller's tenant's, 403 TENANT_REQUIRED without a tenant, 422 TASK_FILTER_CONFLICT when a request criterion differs from the list's (sortBy, sortOrder and variableNames are taken from the request, variable names merged) */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.Task>> {
+    const req: ApiRequest = { method: 'GET', path: `/tasks`, query: { assignee: params?.assignee, mine: params?.mine, unassigned: params?.unassigned, candidateGroup: params?.candidateGroup, seatId: params?.seatId, processInstanceId: params?.processInstanceId, caseInstanceId: params?.caseInstanceId, businessKey: params?.businessKey, processDefinitionKey: params?.processDefinitionKey, taskDefinitionKey: params?.taskDefinitionKey, state: params?.state, sortBy: params?.sortBy, currency: params?.currency, sortOrder: params?.sortOrder, variableNames: params?.variableNames, filterId: params?.filterId, page: params?.page, size: params?.size } };
     return this.calls.page<M.Task>(req, options, params?.page, params?.size);
   }
 
@@ -15230,7 +15257,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1178 operations on 992 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1180 operations on 992 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;

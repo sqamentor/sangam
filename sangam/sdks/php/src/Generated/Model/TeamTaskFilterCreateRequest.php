@@ -8,13 +8,13 @@ namespace Sangam\Sdk\Generated\Model;
 use Sangam\Sdk\Generated\Support;
 
 /**
- * Owner decision 404: a new shared task list.
+ * Owner decisions 404 and 406: a new shared task list, or its replacement (PUT).
  *
  * Schema TeamTaskFilterCreateRequest of sangam-api.yaml 0.1.0.
  *
  * @property-read string|null $name (required) 1 to 255 characters after trimming
  * @property-read string|null $owner Optional, at most 255 characters
- * @property-read array<string, mixed>|null $query (required) JSON object, at most 16384 characters as JSON; no tenant* or withoutTenant* criterion
+ * @property-read array<string, mixed>|null $query (required) JSON object, at most 16384 characters as JSON. Owner decision 406: only the criteria of GET /tasks by the same names: assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy, sortOrder, currency (ISO 4217) and variableNames (list of 1 to 20 names); strings 1 to 255 characters, mine and unassigned booleans. Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID
  * @property-read array<string, mixed>|null $properties Optional JSON object, at most 16384 characters as JSON
  */
 final class TeamTaskFilterCreateRequest implements \JsonSerializable

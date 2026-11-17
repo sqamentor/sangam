@@ -4,7 +4,7 @@
 namespace Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Owner decision 404: a new shared task list.
+/// Owner decisions 404 and 406: a new shared task list, or its replacement (PUT).
 /// Schema TeamTaskFilterCreateRequest.
 /// </summary>
 public sealed record TeamTaskFilterCreateRequest
@@ -22,7 +22,7 @@ public sealed record TeamTaskFilterCreateRequest
     public string? Owner { get; init; }
 
     /// <summary>
-    /// JSON object, at most 16384 characters as JSON; no tenant* or withoutTenant* criterion Required.
+    /// JSON object, at most 16384 characters as JSON. Owner decision 406: only the criteria of GET /tasks by the same names: assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy, sortOrder, currency (ISO 4217) and variableNames (list of 1 to 20 names); strings 1 to 255 characters, mine and unassigned booleans. Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID Required.
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("query")]
     public global::System.Collections.Generic.Dictionary<string, object?>? Query { get; init; }
