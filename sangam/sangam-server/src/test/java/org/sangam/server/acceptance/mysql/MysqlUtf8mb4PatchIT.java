@@ -148,7 +148,7 @@ class MysqlUtf8mb4PatchIT {
     private static Connection freshOperatonDatabase() throws SQLException, IOException {
         JdbcDatabaseContainer<?> ct = AcceptanceDatabase.container();
         String base = "jdbc:mariadb://" + ct.getHost() + ":" + ct.getMappedPort(3306) + "/";
-        String opts = "?permitMysqlScheme&connectionCollation=utf8mb4_bin";
+        String opts = "?permitMysqlScheme&connectionCollation=utf8mb4_bin" + AcceptanceDatabase.MYSQL_TLS; // root is never cached: TLS
         String db = ("sl94_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12)).toLowerCase(Locale.ROOT);
         // Testcontainers' MySQL image: root has the container password; the lane user owns only its own database
         try (Connection root = DriverManager.getConnection(base + opts, "root", AcceptanceDatabase.password())) {
