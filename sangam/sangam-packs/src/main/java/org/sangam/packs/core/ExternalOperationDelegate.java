@@ -97,7 +97,11 @@ public class ExternalOperationDelegate implements JavaDelegate {
         if (suffix != null && !suffix.isBlank()) {
             s = s + ":" + suffix; // one operation per instalment / item of the same step
         }
-        if (Vars.fieldBool(verifyApproval, ex, true)) {
+        // owner decision A1: money out (and an undeclared connector) always needs the bound approval; the
+        // verifyApproval field may only relax the check for IN / NONE connectors
+        boolean moneyOut = org.sangam.packs.spi.ConnectorMoneyMovements.enforced(conn(ex))
+                == org.sangam.packs.spi.MoneyMovement.OUT;
+        if (moneyOut || Vars.fieldBool(verifyApproval, ex, true)) {
             String approved = Vars.str(ex, Vars.APPROVED_HASH);
             if (approved == null) {
                 Vars.audit(ex, "APPROVAL_INVALIDATED", Vars.map("reason", "no approval recorded", "step", s));
