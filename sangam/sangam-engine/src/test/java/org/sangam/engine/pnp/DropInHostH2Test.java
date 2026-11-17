@@ -188,6 +188,38 @@ class DropInHostH2Test {
         }
     }
 
+    /** Decision 404 (5): a deployment that uses a host approval is on the class-B audit chain; one that does not, is not. */
+    @Test
+    void deploymentUsingAHostApprovalIsAudited() throws Exception {
+        String name = name();
+        ProcessEngine e = host(name, new Recorder(), config(true));
+        try {
+            String used = e.getRepositoryService().createDeployment().name("uses-host-bean")
+                    .addString("s.bpmn", compensation("PROBE_A")).deploy().getId();
+            e.getRepositoryService().createDeployment().name("sangam-only")
+                    .addString("routing.bpmn", ROUTING).deploy();
+            org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
+            ds.setURL("jdbc:h2:mem:" + name + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
+            ds.setUser("sa");
+            try (java.sql.Connection c = ds.getConnection();
+                 java.sql.PreparedStatement q = c.prepareStatement(
+                         "SELECT tenant_id, chain_id FROM AUDIT_EVENT WHERE event_type = ?")) {
+                q.setString(1, org.sangam.engine.deploy.ModelCodeAllowList.HOST_APPROVAL_USED);
+                List<String> rows = new ArrayList<>();
+                try (java.sql.ResultSet rs = q.executeQuery()) {
+                    while (rs.next()) {
+                        rows.add(rs.getString(1) + "|" + rs.getString(2));
+                    }
+                }
+                assertEquals(1, rows.size(), String.valueOf(rows));
+                assertTrue(rows.get(0).startsWith("system:host|"), rows.get(0));
+            }
+            assertNotNull(used);
+        } finally {
+            e.close();
+        }
+    }
+
     @Test
     void hostBeanIsRefusedWithoutApproval() {
         ProcessEngine e = host(name(), new Recorder(), config(false));

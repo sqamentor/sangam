@@ -58,6 +58,8 @@ public final class ModelCodeAllowList {
     public static final String ALLOW_ENTRY = "SL160-ALLOW-ENTRY";
     /** R8-pnp PNP-2: the start-up record of every host approval in force. */
     public static final String HOST_APPROVAL = "SL160-HOST-APPROVAL";
+    /** Decision 404 (5): audit event of a new deployment that uses a host approval. */
+    public static final String HOST_APPROVAL_USED = "SL160_HOST_APPROVAL_USED";
 
     private static final Pattern IDENT = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
     private static final Pattern BEAN_ENTRY = Pattern.compile("(" + IDENT + ")(?:\\.(" + IDENT + "))?");
@@ -381,6 +383,17 @@ public final class ModelCodeAllowList {
          * @param allowedClasses tenant id or {@code *} -> extra allowed classes ({@code sangam.engine.deploy-allowed-classes})
          * @param allowedBeans   tenant id or {@code *} -> extra allowed beans ({@code sangam.engine.deploy-allowed-beans})
          */
+        private org.sangam.core.engine.AuditSink audit;
+        private java.util.function.Supplier<String> systemScope;
+
+        /** Decision 404 (5): audits deployments that use a host approval (untenanted: the system audit scope). */
+        public DeployRule(Map<String, Set<String>> allowedClasses, Map<String, Set<String>> allowedBeans,
+                          org.sangam.core.engine.AuditSink audit, java.util.function.Supplier<String> systemScope) {
+            this(allowedClasses, allowedBeans);
+            this.audit = audit;
+            this.systemScope = systemScope;
+        }
+
         public DeployRule(Map<String, Set<String>> allowedClasses, Map<String, Set<String>> allowedBeans) {
             List<String> bad = invalidEntries(allowedClasses, allowedBeans);
             if (!bad.isEmpty()) {
@@ -422,6 +435,41 @@ public final class ModelCodeAllowList {
             if (!findings.isEmpty()) {
                 throw new ProcessEngineException("SL-160: deployment '" + deployment.getName() + "' refused: " + findings);
             }
+            if (audit != null) {
+                auditHostApprovals(deployment);
+            }
+        }
+
+        /**
+         * Decision 404 (5): a new deployment that needs a host approval is written to the class-B audit chain
+         * ({@value #HOST_APPROVAL_USED}), in the deploy command. "Needs" is exact: the findings the deployment would
+         * have against Sangam's own lists alone, each naming the host-approved class, bean or member it uses.
+         */
+        private void auditHostApprovals(DeploymentEntity deployment) {
+            List<String> used = new ArrayList<>();
+            List<String> resources = new ArrayList<>();
+            for (ResourceEntity r : deployment.getResources().values()) {
+                if (isModel(r.getName()) && r.getBytes() != null) {
+                    List<Finding> own = check(r.getName(), r.getBytes(), SANGAM_CLASSES, SANGAM_BEANS);
+                    if (!own.isEmpty()) {
+                        resources.add(r.getName());
+                        own.forEach(f -> used.add(f.toString()));
+                    }
+                }
+            }
+            if (used.isEmpty()) {
+                return;
+            }
+            String tenant = deployment.getTenantId();
+            Map<String, Object> payload = new java.util.LinkedHashMap<>();
+            payload.put("deploymentId", deployment.getId());
+            payload.put("deploymentName", deployment.getName());
+            payload.put("tenantId", tenant);
+            payload.put("resources", List.copyOf(resources));
+            payload.put("approvalsUsed", List.copyOf(used));
+            audit.append(org.sangam.engine.tx.CommandState.currentConnection(),
+                    tenant != null ? tenant : systemScope.get(), "platform:deployment:" + deployment.getId(),
+                    HOST_APPROVAL_USED, payload);
         }
     }
 }
