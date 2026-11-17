@@ -252,14 +252,14 @@ class IfmsPackScenariosTest {
         v.put("competentRole", level);
         return String.valueOf(engine.getDecisionService().evaluateDecisionTableByKey("ifms-gpf-return-target")
                 .decisionDefinitionTenantId(PackTestTenant.ID).variables(v).evaluate().getSingleResult()
-                .getEntry("gpfReturnSeat"));
+                .<Object>getEntry("gpfReturnSeat"));
     }
 
     /** IFT-4 follow-up: the return target by returning level (Odisha FD 19582 p.15; the fallback is inferred). */
     @Test
     void gpfReturnTargetFollowsTheReturningLevel() {
         assertEquals("DDO-1", returnTarget("HOO"), "Head of Office returns to the Operator");
-        assertEquals("DDO-2", returnTarget("AG"), "the A.G. returns to the HoO approver");
+        assertEquals("HOO-1", returnTarget("AG"), "the A.G. returns to the HoO approver (unused in 0.1.0)");
         assertEquals("DDO-1", returnTarget("FA"), "any other internal level returns to the Operator (inferred)");
     }
 

@@ -13,8 +13,8 @@
       </rule>
       <rule id="ifms-gpf-return-target_r1">
         <inputEntry id="ifms-gpf-return-target_r1_i0"><text>"AG"</text></inputEntry>
-        <outputEntry id="ifms-gpf-return-target_r1_o0"><text>"DDO-2"</text></outputEntry>
-        <outputEntry id="ifms-gpf-return-target_r1_o1"><text>"Odisha FD 19582 (11-07-2023) p.15: A.G. returns to the HoO approver"</text></outputEntry>
+        <outputEntry id="ifms-gpf-return-target_r1_o0"><text>"HOO-1"</text></outputEntry>
+        <outputEntry id="ifms-gpf-return-target_r1_o1"><text>"Odisha FD 19582 (11-07-2023) p.15: A.G. returns to the HoO approver (unused in 0.1.0)"</text></outputEntry>
       </rule>
       <rule id="ifms-gpf-return-target_r2"><description>inferred</description>
         <inputEntry id="ifms-gpf-return-target_r2_i0"><text>-</text></inputEntry>

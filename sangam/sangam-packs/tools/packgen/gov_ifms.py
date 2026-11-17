@@ -1037,13 +1037,14 @@ def gpf_advances():
             (['-', '-', '-', '-'], ['true', q('GPF (CS) Rules 1960 [U: purpose-wise limits to load]')], 'placeholder limits')])
     # IFT-4 follow-up (IFMS answer, Odisha FD revised procedure 19582 of 11-07-2023 p.15): the return target depends on
     # the level that returns; the Head of Office returns to the Operator (DDO-1), the external authoriser (A.G.) to the
-    # HoO approver (DDO-2), verified; DDO-1 for any other internal level is INFERRED. A tenant overrides this DMN
+    # HoO approver (HOO-1), verified; the 0.1.0 pack has no A.G. level (a later State-pack extension, OQ-276), so that
+    # row is unused; DDO-1 for any other internal level is INFERRED. A tenant overrides this DMN
     # (Rajasthan seats open, IFMS OQ-276).
     pk.dmn('ifms-gpf-return-target', 'GPF return target by returning level', 'FIRST',
            [('Returning level', 'competentRole', 'string')],
            [('gpfReturnSeat', 'Return to seat', 'string'), ('ruleRef', 'Rule', 'string')],
            [([q('HOO')], [q('DDO-1'), q('Odisha FD 19582 (11-07-2023) p.15: HoO returns to the Operator')], ''),
-            ([q('AG')], [q('DDO-2'), q('Odisha FD 19582 (11-07-2023) p.15: A.G. returns to the HoO approver')], ''),
+            ([q('AG')], [q('HOO-1'), q('Odisha FD 19582 (11-07-2023) p.15: A.G. returns to the HoO approver (unused in 0.1.0)')], ''),
             (['-'], [q('DDO-1'), q('[INFERRED] other internal levels return to the Operator')], 'inferred')])
     authority(pk, 'ifms-gpf-authority', [('-', 'HOO', 'Head of Office sanctions GPF withdrawals [U: department order]')], '')
     ifms_powers(pk, 'ifms-gpf-powers', 'GPF',
