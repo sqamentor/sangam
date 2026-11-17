@@ -114,7 +114,10 @@ public class SangamPortsPlugin implements ProcessEnginePlugin {
             TaskEventDispatcher taskEvents = new TaskEventDispatcher(bus, taskLifecycle);
             bpmn.add(taskEvents.parseListener());
             // SG-03(c): suspensions reach the tasks only through bulk updates; sangam-engine's TaskManager reports them
-            org.sangam.core.engine.TaskSuspensionEvents.register(cfg.getProcessEngineName(), taskEvents::suspensionChanged);
+            // Held weakly: the configuration keeps taskEvents alive (its parse listener), and a closed engine must not stay
+            // reachable from this static registry (R8-heap)
+            org.sangam.core.engine.TaskSuspensionEvents.registerWeakly(cfg.getProcessEngineName(), taskEvents,
+                    TaskEventDispatcher::suspensionChanged);
         }
         if (debuggerOrNull != null) {
             bpmn.add(debuggerOrNull.parseListener());

@@ -1,6 +1,6 @@
 {
   "key": "ifms-year-end-closing/sign",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.ifms.year-end-closing",
   "title": {
     "en": "Sign Appropriation Accounts (CAA)",

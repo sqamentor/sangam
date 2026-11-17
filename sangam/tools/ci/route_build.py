@@ -154,35 +154,85 @@ def print_counts(counts):
 
 
 # ---------------------------------------------------------------- level 2
-def github(selection, lane, out_dir):
-    head, commit = lane_commit(selection, lane)
-    branch = ci_branch(lane, head, commit)
-    push_ci(commit, branch)
-    run_id = None
-    for _ in range(60):
-        r = run(["gh", "run", "list", "--workflow", WORKFLOW, "--branch", branch, "--json", "databaseId,headSha",
-                 "-L", "20"])
-        hit = [x for x in json.loads(r.stdout) if x["headSha"] == commit]
-        if hit:
-            run_id = str(hit[0]["databaseId"])
-            break
-        time.sleep(5)
-    if not run_id:
-        raise SystemExit(f"no {WORKFLOW} run appeared for {branch} at {commit}")
-    run(["gh", "run", "watch", run_id, "--interval", "30"], check=False, capture=False)
-    view = json.loads(run(["gh", "run", "view", run_id, "--json",
-                           "url,conclusion,createdAt,updatedAt,jobs"]).stdout)
-    dest = os.path.join(out_dir, f"gh-{run_id}")
-    os.makedirs(dest, exist_ok=True)
-    run(["gh", "run", "download", run_id, "-D", dest], check=False)
+def download_reports(run_id, out_dir, attempts=3):
+    """Every artifact of the run into a fresh folder. `gh run download` refuses to overwrite ("The file exists")
+    and stops at the first existing file, so a second download into the same folder (a rerun or an --attach after
+    a killed watcher) saved nothing. Each attempt goes into its own new empty staging folder; the first complete one
+    is renamed into place. Returns (dest, ok)."""
+    for i in range(1, attempts + 1):
+        stage = tempfile.mkdtemp(prefix=f"gh-{run_id}-", dir=out_dir)
+        r = run(["gh", "run", "download", run_id, "-D", stage], check=False)
+        if r.returncode == 0:
+            dest = os.path.join(out_dir, f"gh-{run_id}")
+            if os.path.exists(dest):
+                dest = f"{dest}-{dt.datetime.now().strftime('%Y%m%d%H%M%S')}"
+            os.replace(stage, dest)
+            return dest, True
+        print(f"  download attempt {i} failed: {(r.stderr or '').strip()[-400:]}", flush=True)
+        shutil.rmtree(stage, ignore_errors=True)
+        time.sleep(10)
+    return None, False
+
+
+def write_state(out_dir, **kw):
+    """Progress on disk, so a watcher killed by its host (exit 255 when the session restarts) can be resumed."""
+    with open(os.path.join(out_dir, "route_build-state.json"), "a", encoding="utf-8") as f:
+        f.write(json.dumps(dict(kw, at=dt.datetime.now(dt.timezone.utc).isoformat())) + "\n")
+
+
+def github(selection, lane, out_dir, attach=None):
+    if attach:
+        run_id, branch, commit, head = str(attach), "?", "?", "?"
+    else:
+        head, commit = lane_commit(selection, lane)
+        branch = ci_branch(lane, head, commit)
+        push_ci(commit, branch)
+        print(f"pushed {branch} at {commit}", flush=True)
+        write_state(out_dir, lane=lane, branch=branch, commit=commit, head=head)
+        run_id = None
+        for _ in range(60):
+            r = run(["gh", "run", "list", "--workflow", WORKFLOW, "--branch", branch, "--json", "databaseId,headSha",
+                     "-L", "20"])
+            hit = [x for x in json.loads(r.stdout) if x["headSha"] == commit]
+            if hit:
+                run_id = str(hit[0]["databaseId"])
+                break
+            time.sleep(5)
+        if not run_id:
+            raise SystemExit(f"no {WORKFLOW} run appeared for {branch} at {commit}")
+        print(f"run id {run_id} (resume with --attach {run_id})", flush=True)
+        write_state(out_dir, lane=lane, branch=branch, commit=commit, run_id=run_id)
+    # `gh run watch` returns early on a network error (a TLS handshake timeout ended a watch on 2026-11-17 while
+    # the run kept going), so wait until the run reports `completed`, tolerating failed polls.
+    view, fails = None, 0
+    while True:
+        run(["gh", "run", "watch", run_id, "--interval", "30"], check=False, capture=False)
+        r = run(["gh", "run", "view", run_id, "--json", "url,status,conclusion,createdAt,updatedAt,jobs,headBranch,headSha"],
+                check=False)
+        if r.returncode == 0:
+            view, fails = json.loads(r.stdout), 0
+            if view.get("status") == "completed":
+                break
+        else:
+            fails += 1
+            if fails > 20:
+                raise SystemExit(f"gave up reading run {run_id} after 20 failed polls: {(r.stderr or '')[-500:]}")
+        time.sleep(30)
+    if attach:
+        branch, commit = view.get("headBranch", "?"), view.get("headSha", "?")
+    dest, ok = download_reports(run_id, out_dir)
     print(f"\nlevel 2 GitHub: {view['url']}\n  branch {branch} commit {commit} (HEAD {head})")
     print(f"  conclusion {view['conclusion']}, {view['createdAt']} -> {view['updatedAt']}")
     for j in view["jobs"]:
         mins = (parse_ts(j["completedAt"]) - parse_ts(j["startedAt"])).total_seconds() / 60 \
             if j.get("completedAt") and j.get("startedAt") else 0
         print(f"  job {j['name']:40s} {j['conclusion']:10s} {mins:5.1f} min")
+    if not ok:
+        print(f"  reports NOT downloaded (gh run download failed 3 times); counts unknown")
+        return 2
     bad = print_counts(count_reports(dest))
     print(f"  reports in {dest}")
+    write_state(out_dir, run_id=run_id, conclusion=view["conclusion"], reports=dest)
     return 0 if view["conclusion"] == "success" and not bad else 1
 
 
@@ -240,7 +290,19 @@ def main(argv=None):
     ap.add_argument("--github-exhausted", action="store_true", help="GitHub Actions minutes are used up")
     ap.add_argument("--heavy-lock", default=HEAVY_LOCK)
     ap.add_argument("--out", default=os.path.join(os.getcwd(), "ci-reports"))
+    ap.add_argument("--attach", metavar="RUN_ID", help="level 2: no push; wait for this run and download its reports")
     a = ap.parse_args(argv)
+    # Output goes to a file or pipe in lanes; line buffering keeps every line on disk if the host kills us.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(line_buffering=True)
+        except (AttributeError, ValueError):
+            pass
+    if a.attach:
+        if not a.attach.isdigit():
+            raise SystemExit("refused: --attach takes a numeric run id")
+        os.makedirs(a.out, exist_ok=True)
+        return github(None, a.lane, a.out, attach=a.attach)
     if not re.match(r"^[a-z0-9][a-z0-9._-]{0,40}$", a.lane.lower()):
         raise SystemExit("refused: --lane must be a short lowercase name")
     selection = {"modules": a.modules, "dbs": a.dbs, "chunks": a.chunks, "ui": a.ui}
