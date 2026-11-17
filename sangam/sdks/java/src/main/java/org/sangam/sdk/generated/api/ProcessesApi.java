@@ -430,13 +430,14 @@ public final class ProcessesApi {
      *
      * <p>One definition.
      *
-     * <p>{@code GET /process-definitions/{id}} (operationId {@code getProcessDefinition}); permission {@code process.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /process-definitions/by-id} (operationId {@code getProcessDefinition}); permission {@code process.read}.
+     * @param id query parameter {@code id}. Process definition id (key:version:uuid); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public ProcessDefinition getProcessDefinition(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/process-definitions/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.get("/process-definitions/by-id");
+        req.query("id", id);
         return call.json(req, options, R_getProcessDefinition);
     }
 
@@ -445,13 +446,14 @@ public final class ProcessesApi {
      *
      * <p>The deployed BPMN 2.0 XML.
      *
-     * <p>{@code GET /process-definitions/{id}/xml} (operationId {@code getProcessDefinitionXml}); permission {@code process.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /process-definitions/by-id/xml} (operationId {@code getProcessDefinitionXml}); permission {@code process.read}.
+     * @param id query parameter {@code id}. Process definition id (key:version:uuid); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public byte[] getProcessDefinitionXml(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/process-definitions/" + HttpTransport.seg(String.valueOf(id)) + "/xml");
+        ApiRequest req = ApiRequest.get("/process-definitions/by-id/xml");
+        req.query("id", id);
         return call.bytes(req, options, "application/xml");
     }
 
@@ -525,15 +527,16 @@ public final class ProcessesApi {
      *
      * <p>No new starts while suspended; includeInstances suspends running instances too (R63).
      *
-     * <p>{@code POST /process-definitions/{id}/suspension} (operationId {@code setProcessDefinitionSuspension}); permission {@code process.modify}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /process-definitions/by-id/suspension} (operationId {@code setProcessDefinitionSuspension}); permission {@code process.modify}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. Process definition id (key:version:uuid); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public ProcessDefinition setProcessDefinitionSuspension(String id, SuspensionRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/process-definitions/" + HttpTransport.seg(String.valueOf(id)) + "/suspension");
+    public ProcessDefinition setProcessDefinitionSuspension(SuspensionRequest body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/process-definitions/by-id/suspension");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_setProcessDefinitionSuspension);
     }
 
@@ -608,13 +611,14 @@ public final class ProcessesApi {
      *
      * <p>The sangam:query and sangam:update handlers the deployed model declares.
      *
-     * <p>{@code GET /process-definitions/{id}/handlers} (operationId {@code listInstanceHandlers}); permission {@code process.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /process-definitions/by-id/handlers} (operationId {@code listInstanceHandlers}); permission {@code process.read}.
+     * @param id query parameter {@code id}. Process definition id (key:version:uuid); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<InstanceHandler> listInstanceHandlers(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/process-definitions/" + HttpTransport.seg(String.valueOf(id)) + "/handlers");
+        ApiRequest req = ApiRequest.get("/process-definitions/by-id/handlers");
+        req.query("id", id);
         return call.json(req, options, R_listInstanceHandlers);
     }
 

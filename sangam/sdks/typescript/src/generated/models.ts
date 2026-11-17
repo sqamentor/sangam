@@ -6329,8 +6329,8 @@ export interface Group {
  */
 export interface HandlerParameter {
   name?: string;
-  /**  One of: string, number, integer, boolean, date, date-time, decimal, object, array. */
-  type?: 'string' | 'number' | 'integer' | 'boolean' | 'date' | 'date-time' | 'decimal' | 'object' | 'array';
+  /** The model's sangam:argument type; any accepts every JSON value One of: string, number, integer, boolean, date, date-time, decimal, object, array, any. */
+  type?: 'string' | 'number' | 'integer' | 'boolean' | 'date' | 'date-time' | 'decimal' | 'object' | 'array' | 'any';
   required?: boolean;
   description?: string;
 }

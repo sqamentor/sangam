@@ -2414,3 +2414,147 @@ corrections:
     to: "/programme-periods/by-id/state?id= (literal route, the value as a query parameter; the old route is removed)"
     reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (period ids are <frequency>:<start> (PeriodService.java:45)); batch C5 (lane R8-393mc)"
     decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /process-definitions/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/process-definitions/{id}: the value as a path parameter"
+    to: "/process-definitions/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a process definition id is key:version:uuid; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1 lane R7-ui (0.1.0 unreleased)"
+  - method: GET
+    path: /process-definitions/{id}/xml
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/process-definitions/{id}/xml: the value as a path parameter"
+    to: "/process-definitions/by-id/xml?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a process definition id is key:version:uuid; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1 lane R7-ui (0.1.0 unreleased)"
+  - method: GET
+    path: /decision-definitions/{id}/xml
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/decision-definitions/{id}/xml: the value as a path parameter"
+    to: "/decision-definitions/by-id/xml?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a decision definition id is key:version:uuid; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1 lane R7-ui (0.1.0 unreleased)"
+  - method: POST
+    path: /process-definitions/{id}/suspension
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/process-definitions/{id}/suspension: the value as a path parameter"
+    to: "/process-definitions/by-id/suspension?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a process definition id is key:version:uuid; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1 lane R7-ui (0.1.0 unreleased)"
+  - method: GET
+    path: /admin/groups/{id}/members
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/admin/groups/{id}/members: the value as a path parameter"
+    to: "/admin/groups/by-id/members?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a group id is an IdP group path such as /staff/clerks; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1 lane R7-ui (0.1.0 unreleased)"
+  - method: POST
+    path: /admin/groups/{id}/members/{userId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/admin/groups/{id}/members/{userId}: the value as a path parameter"
+    to: "/admin/groups/by-id/members/by-user-id?id=&userId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a group id is an IdP group path; a user id is an IdP principal id; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1 lane R7-ui (0.1.0 unreleased)"
+  - method: DELETE
+    path: /admin/groups/{id}/members/{userId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/admin/groups/{id}/members/{userId}: the value as a path parameter"
+    to: "/admin/groups/by-id/members/by-user-id?id=&userId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a group id is an IdP group path; a user id is an IdP principal id; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1 lane R7-ui (0.1.0 unreleased)"
+  - method: PUT
+    path: /ops-admin/secrets/{ref}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ops-admin/secrets/{ref}: the value as a path parameter"
+    to: "/ops-admin/secrets/by-ref?ref= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a secret reference may carry / or : (R7UI-S13); the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1 lane R7-ui (0.1.0 unreleased)"
+  - method: DELETE
+    path: /ops-admin/secrets/{ref}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/ops-admin/secrets/{ref}: the value as a path parameter"
+    to: "/ops-admin/secrets/by-ref?ref= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a secret reference may carry / or : (R7UI-S13); the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1 lane R7-ui (0.1.0 unreleased)"
+  - method: GET
+    path: /admin/org-units/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/admin/org-units/{id}: the value as a path parameter"
+    to: "/admin/org-units/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: an org unit id is chosen by the client (SecurityAdminBridge.java:97 keeps the given id) and may carry '/' or ':'; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1b lane R7-ui (0.1.0 unreleased)"
+  - method: PUT
+    path: /admin/org-units/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/admin/org-units/{id}: the value as a path parameter"
+    to: "/admin/org-units/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: an org unit id is chosen by the client (SecurityAdminBridge.java:97 keeps the given id) and may carry '/' or ':'; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1b lane R7-ui (0.1.0 unreleased)"
+  - method: DELETE
+    path: /admin/org-units/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/admin/org-units/{id}: the value as a path parameter"
+    to: "/admin/org-units/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: an org unit id is chosen by the client (SecurityAdminBridge.java:97 keeps the given id) and may carry '/' or ':'; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1b lane R7-ui (0.1.0 unreleased)"
+  - method: GET
+    path: /admin/seats/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/admin/seats/{id}: the value as a path parameter"
+    to: "/admin/seats/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a seat id is chosen by the client (SecurityAdminBridge.java:160 keeps the given id) and may carry '/' or ':'; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1b lane R7-ui (0.1.0 unreleased)"
+  - method: PUT
+    path: /admin/seats/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/admin/seats/{id}: the value as a path parameter"
+    to: "/admin/seats/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a seat id is chosen by the client (SecurityAdminBridge.java:160 keeps the given id) and may carry '/' or ':'; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1b lane R7-ui (0.1.0 unreleased)"
+  - method: DELETE
+    path: /admin/seats/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/admin/seats/{id}: the value as a path parameter"
+    to: "/admin/seats/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a seat id is chosen by the client (SecurityAdminBridge.java:160 keeps the given id) and may carry '/' or ':'; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1b lane R7-ui (0.1.0 unreleased)"
+  - method: DELETE
+    path: /admin/policies/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/admin/policies/{id}: the value as a path parameter"
+    to: "/admin/policies/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a policy id is chosen by the client (SecurityAdminBridge.java:351 keeps the given id) and may carry '/' or ':'; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1b lane R7-ui (0.1.0 unreleased)"
+  - method: POST
+    path: /admin/plugins/{id}/enable
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/admin/plugins/{id}/enable: the value as a path parameter"
+    to: "/admin/plugins/by-id/enable?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a plugin id is the id the jar declares (PluginManager.java:168) and may carry '/' or ':'; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1b lane R7-ui (0.1.0 unreleased)"
+  - method: POST
+    path: /admin/plugins/{id}/disable
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/admin/plugins/{id}/disable: the value as a path parameter"
+    to: "/admin/plugins/by-id/disable?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: a plugin id is the id the jar declares (PluginManager.java:168) and may carry '/' or ':'; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
+    decision: "owner 393 / 406, batch 1b lane R7-ui (0.1.0 unreleased)"

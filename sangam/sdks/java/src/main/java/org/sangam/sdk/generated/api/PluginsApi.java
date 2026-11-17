@@ -63,13 +63,14 @@ public final class PluginsApi {
      *
      * <p>Effective at the next restart.
      *
-     * <p>{@code POST /admin/plugins/{id}/enable} (operationId {@code enablePlugin}); permission {@code tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /admin/plugins/by-id/enable} (operationId {@code enablePlugin}); permission {@code tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Plugin id as the jar declares it; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public PluginInfo enablePlugin(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/admin/plugins/" + HttpTransport.seg(String.valueOf(id)) + "/enable");
+        ApiRequest req = ApiRequest.post("/admin/plugins/by-id/enable");
+        req.query("id", id);
         return call.json(req, options, R_enablePlugin);
     }
 
@@ -78,13 +79,14 @@ public final class PluginsApi {
      *
      * <p>Effective at the next restart.
      *
-     * <p>{@code POST /admin/plugins/{id}/disable} (operationId {@code disablePlugin}); permission {@code tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /admin/plugins/by-id/disable} (operationId {@code disablePlugin}); permission {@code tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Plugin id as the jar declares it; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public PluginInfo disablePlugin(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/admin/plugins/" + HttpTransport.seg(String.valueOf(id)) + "/disable");
+        ApiRequest req = ApiRequest.post("/admin/plugins/by-id/disable");
+        req.query("id", id);
         return call.json(req, options, R_disablePlugin);
     }
 

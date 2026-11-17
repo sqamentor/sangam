@@ -63,12 +63,14 @@ final class AdminGroupsApi
      *
      * Members of a group.
      *
-     * GET /admin/groups/{id}/members (operationId listGroupMembers); permission admin.read.
+     * GET /admin/groups/by-id/members (operationId listGroupMembers); permission admin.read.
+     * @param string $id query id
      * @return list<Model\User>
      */
     public function listGroupMembers(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/admin/groups/' . HttpTransport::seg((string) $id) . '/members');
+        $req = ApiRequest::get('/admin/groups/by-id/members');
+        $req->query('id', $id);
         return $this->calls->models($req, $options, Model\User::class);
     }
 
@@ -77,11 +79,15 @@ final class AdminGroupsApi
      *
      * MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).
      *
-     * POST /admin/groups/{id}/members/{userId} (operationId addGroupMember); permission policy.admin; result stored atomically with the state change.
+     * POST /admin/groups/by-id/members/by-user-id (operationId addGroupMember); permission policy.admin; result stored atomically with the state change.
+     * @param string $id query id
+     * @param string $userId query userId
      */
     public function addGroupMember(string $id, string $userId, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/admin/groups/' . HttpTransport::seg((string) $id) . '/members/' . HttpTransport::seg((string) $userId));
+        $req = ApiRequest::post('/admin/groups/by-id/members/by-user-id');
+        $req->query('id', $id);
+        $req->query('userId', $userId);
         $this->calls->none($req, $options);
     }
 
@@ -90,11 +96,15 @@ final class AdminGroupsApi
      *
      * MEMBERSHIP_CHANGED; policy_version+1.
      *
-     * DELETE /admin/groups/{id}/members/{userId} (operationId removeGroupMember); permission policy.admin; result stored atomically with the state change.
+     * DELETE /admin/groups/by-id/members/by-user-id (operationId removeGroupMember); permission policy.admin; result stored atomically with the state change.
+     * @param string $id query id
+     * @param string $userId query userId
      */
     public function removeGroupMember(string $id, string $userId, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/admin/groups/' . HttpTransport::seg((string) $id) . '/members/' . HttpTransport::seg((string) $userId));
+        $req = ApiRequest::delete('/admin/groups/by-id/members/by-user-id');
+        $req->query('id', $id);
+        $req->query('userId', $userId);
         $this->calls->none($req, $options);
     }
 
@@ -103,13 +113,15 @@ final class AdminGroupsApi
      *
      * The name only; memberships and the group's IdP or SCIM reference are kept (MEMBERSHIP_CHANGED, updated).
      *
-     * PUT /admin/groups/{id} (operationId updateGroup); permission policy.admin; result stored atomically with the state change.
+     * PUT /admin/groups/by-id (operationId updateGroup); permission policy.admin; result stored atomically with the state change.
      * @param Model\Group|array $body request body
+     * @param string $id query id
      * @return Model\Group|null
      */
-    public function updateGroup(string $id, Model\Group|array $body, ?RequestOptions $options = null): ?Model\Group
+    public function updateGroup(Model\Group|array $body, string $id, ?RequestOptions $options = null): ?Model\Group
     {
-        $req = ApiRequest::put('/admin/groups/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::put('/admin/groups/by-id');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }

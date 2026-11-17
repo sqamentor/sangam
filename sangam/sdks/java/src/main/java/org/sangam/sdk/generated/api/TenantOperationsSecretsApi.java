@@ -46,14 +46,15 @@ public final class TenantOperationsSecretsApi {
      *
      * <p>Encrypted at rest; write-only.
      *
-     * <p>{@code PUT /ops-admin/secrets/{ref}} (operationId {@code opsPutSecret}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ref path parameter {@code ref}
+     * <p>{@code PUT /ops-admin/secrets/by-ref} (operationId {@code opsPutSecret}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param ref query parameter {@code ref}. Secret reference (R7UI-S13); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void opsPutSecret(String ref, OpsSecret body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/ops-admin/secrets/" + HttpTransport.seg(String.valueOf(ref)));
+    public void opsPutSecret(OpsSecret body, String ref, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/ops-admin/secrets/by-ref");
         req.body(body);
+        req.query("ref", ref);
         call.none(req, options);
     }
 
@@ -62,12 +63,13 @@ public final class TenantOperationsSecretsApi {
      *
      * <p>Removes the secret.
      *
-     * <p>{@code DELETE /ops-admin/secrets/{ref}} (operationId {@code opsDeleteSecret}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ref path parameter {@code ref}
+     * <p>{@code DELETE /ops-admin/secrets/by-ref} (operationId {@code opsDeleteSecret}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param ref query parameter {@code ref}. Secret reference (R7UI-S13); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void opsDeleteSecret(String ref, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/ops-admin/secrets/" + HttpTransport.seg(String.valueOf(ref)));
+        ApiRequest req = ApiRequest.delete("/ops-admin/secrets/by-ref");
+        req.query("ref", ref);
         call.none(req, options);
     }
 

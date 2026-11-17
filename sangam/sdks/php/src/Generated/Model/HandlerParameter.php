@@ -13,7 +13,7 @@ use Sangam\Sdk\Generated\Support;
  * Schema HandlerParameter of sangam-api.yaml 0.1.0.
  *
  * @property-read string|null $name
- * @property-read string|null $type  One of: string, number, integer, boolean, date, date-time, decimal, object, array.
+ * @property-read string|null $type The model's sangam:argument type; any accepts every JSON value One of: string, number, integer, boolean, date, date-time, decimal, object, array, any.
  * @property-read bool|null $required
  * @property-read string|null $description
  */

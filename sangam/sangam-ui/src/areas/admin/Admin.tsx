@@ -354,7 +354,7 @@ export function Seats() {
         { key: 'validFrom', type: 'datetime', subtype: 'date', label: 'admin.validFrom', validate: { required: true } },
         { key: 'validTo', type: 'datetime', subtype: 'date', label: 'admin.validTo' },
       ]}
-      // deleteSeat: DELETE /admin/seats/{id}?reason= is the contract's deactivation (there is no /deactivate route)
+      // deleteSeat: DELETE /admin/seats/by-id?id=&reason= (decision 393) is the contract's deactivation (there is no /deactivate route)
       rowActions={[{ id: 'deactivate', label: 'admin.deactivate', reason: true, danger: true, remove: true, visible: (r) => !!r.active }]}
     />
   );

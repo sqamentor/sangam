@@ -128,8 +128,8 @@ describe('process definitions', () => {
 describe('definition detail', () => {
   const def = { id: 'grv-4', key: 'grievance', name: 'Grievance', version: 4, suspended: false };
   const setup = () => {
-    routes['/process-definitions/grv-4'] = def;
-    routes['/process-definitions/grv-4/xml'] = '<bpmn/>';
+    routes['/process-definitions/by-id'] = def;
+    routes['/process-definitions/by-id/xml?id=grv-4'] = '<bpmn/>';
     pages['/process-definitions'] = pageOf([def]);
     pages['/process-instances'] = pageOf([{ id: 'pi1', businessKey: 'GRV-1', state: 'ACTIVE', processDefinitionVersion: 4 }]);
   };
@@ -141,7 +141,7 @@ describe('definition detail', () => {
     const d = dialog();
     fireEvent.click(within(d).getByLabelText(L('ops.includeInstances')));
     reasonAndConfirm('Fee rule under review');
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/process-definitions/grv-4/suspension', { suspended: true, reason: 'Fee rule under review', includeInstances: false }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/process-definitions/by-id/suspension?id=grv-4', { suspended: true, reason: 'Fee rule under review', includeInstances: false }));
   });
 
   it('picking an activity narrows the instances; a batch on the selection previews its count and opens the created batch', async () => {
@@ -174,15 +174,15 @@ describe('definition detail', () => {
     setup();
     let release: (v: unknown) => void = () => undefined;
     const held = new Promise((r) => (release = r));
-    api.get.mockImplementation(async (path: string) => (path === '/process-definitions/grv-4' ? (await held, def) : (routes[path] ?? [])));
+    api.get.mockImplementation(async (path: string) => (path === '/process-definitions/by-id' ? (await held, def) : (routes[path] ?? [])));
     show(<DefinitionDetail />, '/ops/processes/grv-4', '/ops/processes/:id');
-    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/process-definitions/grv-4'));
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/process-definitions/by-id', { id: 'grv-4' }));
     // while the definition (and so its key) is unknown, the statistics read (processDefinitionKey required) waits
     expect(api.get.mock.calls.some((c) => c[0] === '/analytics/activities')).toBe(false);
     release(undefined);
     await waitFor(() => expect(api.get).toHaveBeenCalledWith('/analytics/activities', expect.objectContaining({ processDefinitionKey: 'grievance' })));
     expect(api.get.mock.calls.filter((c) => c[0] === '/analytics/activities').every((c) => (c[1] as { processDefinitionKey?: string }).processDefinitionKey === 'grievance')).toBe(true);
-    expect(api.text).toHaveBeenCalledWith('/process-definitions/grv-4/xml', 'application/xml');
+    expect(api.text).toHaveBeenCalledWith('/process-definitions/by-id/xml?id=grv-4', 'application/xml');
   });
 });
 
@@ -436,7 +436,7 @@ describe('instance detail', () => {
   const running = { id: 'pi1', businessKey: 'GRV-1', processDefinitionId: 'grv-4', processDefinitionKey: 'grievance', state: 'ACTIVE' };
   const open = (i: Record<string, unknown> = running) => {
     routes['/process-instances/pi1'] = i;
-    routes['/process-definitions/grv-4/xml'] = '<bpmn/>';
+    routes['/process-definitions/by-id/xml?id=grv-4'] = '<bpmn/>';
     routes['/process-instances/pi1/activity-tree'] = { id: 'pi1', activityId: 'grievance', activityType: 'processDefinition', children: [] };
     routes['/process-instances/pi1/variables'] = { amount: { type: 'Long', value: 500 }, aadhaar: { type: 'String', value: null, masked: true } };
     return show(<InstanceDetail />, '/ops/instances/pi1', '/ops/instances/:id');

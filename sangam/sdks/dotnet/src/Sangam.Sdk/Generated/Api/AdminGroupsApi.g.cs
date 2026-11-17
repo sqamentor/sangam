@@ -44,44 +44,50 @@ public sealed class AdminGroupsApi
     /// <summary>
     /// Group members
     /// Members of a group.
-    /// GET /admin/groups/{id}/members (operationId listGroupMembers); permission admin.read.
+    /// GET /admin/groups/by-id/members (operationId listGroupMembers); permission admin.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.User>?> ListGroupMembersAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/admin/groups/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/members");
+        var req = ApiRequest.Get($"/admin/groups/by-id/members");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.User>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Add a group member
     /// MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).
-    /// POST /admin/groups/{id}/members/{userId} (operationId addGroupMember); permission policy.admin; result stored atomically with the state change.
+    /// POST /admin/groups/by-id/members/by-user-id (operationId addGroupMember); permission policy.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task AddGroupMemberAsync(string id, string userId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/admin/groups/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/members/{HttpTransport.Seg(GeneratedCalls.Str(userId)!)}");
+        var req = ApiRequest.Post($"/admin/groups/by-id/members/by-user-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
+        req.WithQuery("userId", GeneratedCalls.Q(userId));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Remove a group member
     /// MEMBERSHIP_CHANGED; policy_version+1.
-    /// DELETE /admin/groups/{id}/members/{userId} (operationId removeGroupMember); permission policy.admin; result stored atomically with the state change.
+    /// DELETE /admin/groups/by-id/members/by-user-id (operationId removeGroupMember); permission policy.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task RemoveGroupMemberAsync(string id, string userId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/admin/groups/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/members/{HttpTransport.Seg(GeneratedCalls.Str(userId)!)}");
+        var req = ApiRequest.Delete($"/admin/groups/by-id/members/by-user-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
+        req.WithQuery("userId", GeneratedCalls.Q(userId));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Rename a group
     /// The name only; memberships and the group's IdP or SCIM reference are kept (MEMBERSHIP_CHANGED, updated).
-    /// PUT /admin/groups/{id} (operationId updateGroup); permission policy.admin; result stored atomically with the state change.
+    /// PUT /admin/groups/by-id (operationId updateGroup); permission policy.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.Group?> UpdateGroupAsync(string id, M.Group body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.Group?> UpdateGroupAsync(M.Group body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/admin/groups/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Put($"/admin/groups/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.Group?>(req, options, cancellationToken).ConfigureAwait(false);
     }

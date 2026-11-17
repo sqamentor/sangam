@@ -367,12 +367,14 @@ final class ProcessesApi
      *
      * One definition.
      *
-     * GET /process-definitions/{id} (operationId getProcessDefinition); permission process.read.
+     * GET /process-definitions/by-id (operationId getProcessDefinition); permission process.read.
+     * @param string $id query id
      * @return Model\ProcessDefinition|null
      */
     public function getProcessDefinition(string $id, ?RequestOptions $options = null): ?Model\ProcessDefinition
     {
-        $req = ApiRequest::get('/process-definitions/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::get('/process-definitions/by-id');
+        $req->query('id', $id);
         return $this->calls->model($req, $options, Model\ProcessDefinition::class);
     }
 
@@ -381,12 +383,14 @@ final class ProcessesApi
      *
      * The deployed BPMN 2.0 XML.
      *
-     * GET /process-definitions/{id}/xml (operationId getProcessDefinitionXml); permission process.read.
+     * GET /process-definitions/by-id/xml (operationId getProcessDefinitionXml); permission process.read.
+     * @param string $id query id
      * @return string
      */
     public function getProcessDefinitionXml(string $id, ?RequestOptions $options = null): string
     {
-        $req = ApiRequest::get('/process-definitions/' . HttpTransport::seg((string) $id) . '/xml');
+        $req = ApiRequest::get('/process-definitions/by-id/xml');
+        $req->query('id', $id);
         return $this->calls->raw($req, $options, 'application/xml');
     }
 
@@ -464,13 +468,15 @@ final class ProcessesApi
      *
      * No new starts while suspended; includeInstances suspends running instances too (R63).
      *
-     * POST /process-definitions/{id}/suspension (operationId setProcessDefinitionSuspension); permission process.modify; result stored atomically with the state change.
+     * POST /process-definitions/by-id/suspension (operationId setProcessDefinitionSuspension); permission process.modify; result stored atomically with the state change.
      * @param Model\SuspensionRequest|array $body request body
+     * @param string $id query id
      * @return Model\ProcessDefinition|null
      */
-    public function setProcessDefinitionSuspension(string $id, Model\SuspensionRequest|array $body, ?RequestOptions $options = null): ?Model\ProcessDefinition
+    public function setProcessDefinitionSuspension(Model\SuspensionRequest|array $body, string $id, ?RequestOptions $options = null): ?Model\ProcessDefinition
     {
-        $req = ApiRequest::post('/process-definitions/' . HttpTransport::seg((string) $id) . '/suspension');
+        $req = ApiRequest::post('/process-definitions/by-id/suspension');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -550,12 +556,14 @@ final class ProcessesApi
      *
      * The sangam:query and sangam:update handlers the deployed model declares.
      *
-     * GET /process-definitions/{id}/handlers (operationId listInstanceHandlers); permission process.read.
+     * GET /process-definitions/by-id/handlers (operationId listInstanceHandlers); permission process.read.
+     * @param string $id query id
      * @return list<Model\InstanceHandler>
      */
     public function listInstanceHandlers(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/process-definitions/' . HttpTransport::seg((string) $id) . '/handlers');
+        $req = ApiRequest::get('/process-definitions/by-id/handlers');
+        $req->query('id', $id);
         return $this->calls->models($req, $options, Model\InstanceHandler::class);
     }
 

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.operaton.bpm.engine.RepositoryService;
 import org.operaton.bpm.engine.RuntimeService;
 import org.operaton.bpm.engine.runtime.ProcessInstance;
 import org.sangam.engine.handlers.InstanceHandlerEvaluator;
@@ -44,14 +45,16 @@ import org.sangam.rest.support.SlotVariableGuard;
 public class OperatonInstanceHandlerAdapter implements InstanceHandlerPort {
 
     private final RuntimeService runtime;
+    private final RepositoryService repository;
     private final InstanceHandlerRegistry handlers;
     private final TxSupport tx;
     private final AuditPort audit;
     private final Clock clock;
 
-    public OperatonInstanceHandlerAdapter(RuntimeService runtime, InstanceHandlerRegistry handlers, TxSupport tx,
-                                          AuditPort audit, Clock clock) {
+    public OperatonInstanceHandlerAdapter(RuntimeService runtime, RepositoryService repository,
+                                          InstanceHandlerRegistry handlers, TxSupport tx, AuditPort audit, Clock clock) {
         this.runtime = runtime;
+        this.repository = repository;
         this.handlers = handlers;
         this.tx = tx;
         this.audit = audit;
@@ -69,6 +72,54 @@ public class OperatonInstanceHandlerAdapter implements InstanceHandlerPort {
     private org.sangam.rest.support.VariableMasking masking() {
         org.sangam.rest.support.VariableMasking m = masking.get();
         return m == null ? org.sangam.rest.support.VariableMasking.none() : m;
+    }
+
+    @Override
+    public List<Handler> list(RequestContext ctx, String definitionId) {
+        org.operaton.bpm.engine.repository.ProcessDefinition d = OperatonSupport.call(() ->
+                repository.createProcessDefinitionQuery().processDefinitionId(definitionId).singleResult());
+        if (d == null) {
+            throw ApiProblem.notFound("process definition", definitionId);
+        }
+        if (d.getTenantId() != null) {
+            OperatonSupport.checkTenant(ctx, d.getTenantId(), "process definition", definitionId);
+        }
+        InstanceHandlers.Definitions defs;
+        try {
+            defs = OperatonSupport.call(() -> handlers.of(definitionId));
+        } catch (InstanceHandlerException e) {
+            throw problem(e);
+        }
+        return handlers(defs);
+    }
+
+    /** The declared handlers as the contract lists them: queries then updates, each sorted by name. */
+    static List<Handler> handlers(InstanceHandlers.Definitions defs) {
+        List<Handler> out = new ArrayList<>();
+        defs.queries().values().stream().sorted(java.util.Comparator.comparing(InstanceHandlers.Query::name))
+                .forEach(q -> out.add(new Handler(q.name(), "QUERY", null, parameters(q.arguments()), null, null,
+                        List.of())));
+        defs.updates().values().stream().sorted(java.util.Comparator.comparing(InstanceHandlers.Update::name))
+                .forEach(u -> out.add(new Handler(u.name(), "UPDATE", null, parameters(u.arguments()), null, null,
+                        u.assignments().stream().map(InstanceHandlers.Assignment::variable).distinct().toList())));
+        return out;
+    }
+
+    private static List<Parameter> parameters(List<InstanceHandlers.Argument> args) {
+        return args.stream().map(a -> new Parameter(a.name(), type(a.type()), a.required(), null)).toList();
+    }
+
+    /** The model's argument type in the contract's {@code HandlerParameter.type} words. */
+    static String type(InstanceHandlers.ArgType t) {
+        return switch (t) {
+            case STRING -> "string";
+            case NUMBER -> "number";
+            case BOOLEAN -> "boolean";
+            case DATE -> "date";
+            case OBJECT -> "object";
+            case LIST -> "array";
+            case ANY -> "any";
+        };
     }
 
     @Override

@@ -30,7 +30,7 @@ import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.RestProperties;
 
 /**
- * UI-DEMO-5: {@code GET /process-definitions} and {@code GET /process-definitions/{id}} carry each definition's
+ * UI-DEMO-5: {@code GET /process-definitions} and {@code GET /process-definitions/by-id?id=} carry each definition's
  * {@code runningInstances} and {@code incidents}, counted over the caller tenant's instances only, so the process
  * list can show load and trouble without one instance query per row. A shared definition (no tenant) counts only the
  * caller tenant's instances of it.

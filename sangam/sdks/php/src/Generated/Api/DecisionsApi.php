@@ -67,12 +67,14 @@ final class DecisionsApi
      *
      * The deployed DMN XML.
      *
-     * GET /decision-definitions/{id}/xml (operationId getDecisionDefinitionXml); permission process.read.
+     * GET /decision-definitions/by-id/xml (operationId getDecisionDefinitionXml); permission process.read.
+     * @param string $id query id
      * @return string
      */
     public function getDecisionDefinitionXml(string $id, ?RequestOptions $options = null): string
     {
-        $req = ApiRequest::get('/decision-definitions/' . HttpTransport::seg((string) $id) . '/xml');
+        $req = ApiRequest::get('/decision-definitions/by-id/xml');
+        $req->query('id', $id);
         return $this->calls->raw($req, $options, 'application/xml');
     }
 }

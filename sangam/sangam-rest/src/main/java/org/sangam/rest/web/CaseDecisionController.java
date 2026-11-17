@@ -113,8 +113,9 @@ public class CaseDecisionController {
         return Lists.ok(decisions.definitions(ctx, key, latest, Lists.page(page, size)));
     }
 
-    @GetMapping(value = "/decision-definitions/{id}/xml", produces = MediaType.APPLICATION_XML_VALUE)
-    public String decisionXml(RequestContext ctx, @PathVariable String id) {
+    /** Decision 393: a decision definition id is key:version:uuid (may carry ':'), so it is a query parameter. */
+    @GetMapping(value = "/decision-definitions/by-id/xml", produces = MediaType.APPLICATION_XML_VALUE)
+    public String decisionXml(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.PROCESS_READ);
         return decisions.definitionXml(ctx, id);
     }

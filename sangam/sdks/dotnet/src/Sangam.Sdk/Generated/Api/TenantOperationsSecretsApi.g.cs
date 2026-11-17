@@ -29,11 +29,12 @@ public sealed class TenantOperationsSecretsApi
     /// <summary>
     /// Store a secret
     /// Encrypted at rest; write-only.
-    /// PUT /ops-admin/secrets/{ref} (operationId opsPutSecret); permission ops.tenant.admin; result stored atomically with the state change.
+    /// PUT /ops-admin/secrets/by-ref (operationId opsPutSecret); permission ops.tenant.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task OpsPutSecretAsync(string @ref, M.OpsSecret body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task OpsPutSecretAsync(M.OpsSecret body, string @ref, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/ops-admin/secrets/{HttpTransport.Seg(GeneratedCalls.Str(@ref)!)}");
+        var req = ApiRequest.Put($"/ops-admin/secrets/by-ref");
+        req.WithQuery("ref", GeneratedCalls.Q(@ref));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -41,11 +42,12 @@ public sealed class TenantOperationsSecretsApi
     /// <summary>
     /// Delete a secret
     /// Removes the secret.
-    /// DELETE /ops-admin/secrets/{ref} (operationId opsDeleteSecret); permission ops.tenant.admin; result stored atomically with the state change.
+    /// DELETE /ops-admin/secrets/by-ref (operationId opsDeleteSecret); permission ops.tenant.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task OpsDeleteSecretAsync(string @ref, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/ops-admin/secrets/{HttpTransport.Seg(GeneratedCalls.Str(@ref)!)}");
+        var req = ApiRequest.Delete($"/ops-admin/secrets/by-ref");
+        req.WithQuery("ref", GeneratedCalls.Q(@ref));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 

@@ -40,22 +40,24 @@ public sealed class PluginsApi
     /// <summary>
     /// Enable a plugin
     /// Effective at the next restart.
-    /// POST /admin/plugins/{id}/enable (operationId enablePlugin); permission tenant.admin; result stored atomically with the state change.
+    /// POST /admin/plugins/by-id/enable (operationId enablePlugin); permission tenant.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.PluginInfo?> EnablePluginAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/admin/plugins/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/enable");
+        var req = ApiRequest.Post($"/admin/plugins/by-id/enable");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<M.PluginInfo?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Disable a plugin
     /// Effective at the next restart.
-    /// POST /admin/plugins/{id}/disable (operationId disablePlugin); permission tenant.admin; result stored atomically with the state change.
+    /// POST /admin/plugins/by-id/disable (operationId disablePlugin); permission tenant.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.PluginInfo?> DisablePluginAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/admin/plugins/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/disable");
+        var req = ApiRequest.Post($"/admin/plugins/by-id/disable");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<M.PluginInfo?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 

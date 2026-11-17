@@ -46,11 +46,12 @@ public sealed class DecisionsApi
     /// <summary>
     /// DMN XML
     /// The deployed DMN XML.
-    /// GET /decision-definitions/{id}/xml (operationId getDecisionDefinitionXml); permission process.read.
+    /// GET /decision-definitions/by-id/xml (operationId getDecisionDefinitionXml); permission process.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<byte[]> GetDecisionDefinitionXmlAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/decision-definitions/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/xml");
+        var req = ApiRequest.Get($"/decision-definitions/by-id/xml");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.BytesAsync(req, options, "application/xml", cancellationToken).ConfigureAwait(false);
     }
 }

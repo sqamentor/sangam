@@ -57,8 +57,9 @@ public class InstanceControlController {
         return Lists.okRef(id, control.setSuspension(ctx, id, body));
     }
 
-    @PostMapping("/process-definitions/{id}/suspension")
-    public ResponseEntity<ProcessPort.ProcessDefinition> definitionSuspension(RequestContext ctx, @PathVariable String id,
+    /** Decision 393: a definition id is key:version:uuid (may carry ':'), so it is a query parameter. */
+    @PostMapping("/process-definitions/by-id/suspension")
+    public ResponseEntity<ProcessPort.ProcessDefinition> definitionSuspension(RequestContext ctx, @RequestParam("id") String id,
             @RequestBody InstanceControlPort.SuspensionRequest body) {
         permissions.require(ctx, Permissions.PROCESS_MODIFY);
         ProcessController.requireReason(body.reason());

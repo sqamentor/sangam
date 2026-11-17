@@ -124,15 +124,16 @@ public class OpsController {
         return Lists.ok(api.secrets().list(ctx.tenantId()));
     }
 
-    @PutMapping("/secrets/{ref}")
-    public ResponseEntity<Void> putSecret(RequestContext ctx, @PathVariable String ref, @RequestBody SecretRequest b) {
+    /** Decision 393 (R7UI-S13): a secret reference may carry '/' or ':', so it is a query parameter. */
+    @PutMapping("/secrets/by-ref")
+    public ResponseEntity<Void> putSecret(RequestContext ctx, @RequestParam("ref") String ref, @RequestBody SecretRequest b) {
         permissions.require(ctx, ADMIN);
         api.secrets().put(ctx.tenantId(), ref, b.value(), ctx.principalId());
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/secrets/{ref}")
-    public ResponseEntity<Void> deleteSecret(RequestContext ctx, @PathVariable String ref) {
+    @DeleteMapping("/secrets/by-ref")
+    public ResponseEntity<Void> deleteSecret(RequestContext ctx, @RequestParam("ref") String ref) {
         permissions.require(ctx, ADMIN);
         api.secrets().delete(ctx.tenantId(), ref, ctx.principalId());
         return ResponseEntity.noContent().build();
