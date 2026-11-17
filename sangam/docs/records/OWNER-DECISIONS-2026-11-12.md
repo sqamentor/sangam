@@ -660,3 +660,18 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - Exempt: plugin UI asset `{*path}` and the Matrix `{txnId}`.
   - FHIR, SMS-DLT and Event Grid callbacks move. The joint ledger shows no IFMS-configured callback URL for them.
   - Guard: `PathParameterGuardTest` with the ledger `sangam-rest/api/path-parameters.tsv`. Its PENDING count can only go down, and the release gate is zero PENDING.
+
+- **411 (owner chat 2026-11-17, "Yes, ci/ branches (Recommended)")**: Lanes may push test-only branches to `sqamentor/sangam` under the `ci/` prefix, so that GitHub Actions runs the long builds and the per-database tests in parallel. `main` and release tags stay behind the owner-signed push gate. This approval is for Sangam only; IFMS follows its own push rules.
+
+- **412 (owner chat 2026-11-17, "GitHub and AWS both, set it up now")**: Set up the three-level build strategy now.
+  - Level 1: the local heavy lock, for quick runs.
+  - Level 2: GitHub Actions on `ci/*` branches (decision 411), with a matrix job per database for long runs or when the local wait exceeds 30 minutes.
+  - Level 3: AWS CodeBuild, used when GitHub is backed up or its minutes are used up.
+  - The main push and the tags stay owner-signed.
+
+- **413 (owner chat 2026-11-17)**: AWS account 196337091345 belongs to VyaparTrust. The owner allows Sangam and IFMS to use it for their development CI; VyaparTrust is allowed the same functionality.
+  - This is an explicit, owner-made exception to the project boundary, for shared infrastructure only. No code, data or records are mixed.
+  - Root keys may be used to set it up (owner's choice).
+  - Every Sangam resource is named `sangam-ci-*` and tagged `project=sangam-ci`. VyaparTrust resources are never touched.
+  - Created: S3 bucket `sangam-ci-196337091345` (ap-south-1, public access blocked, 14-day expiry), IAM role `sangam-ci-codebuild-role` (logs plus this bucket only), CodeBuild project `sangam-ci-lanes` (LARGE, privileged Docker, S3 source, 120-minute timeout).
+  - Routing is automatic: local; then GitHub when the local queue is long; then AWS when GitHub is also busy for a long time.

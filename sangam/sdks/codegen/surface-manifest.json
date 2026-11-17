@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 988,
- "operations": 1173,
- "schemas": 894,
+ "paths": 990,
+ "operations": 1175,
+ "schemas": 897,
  "tags": [
   "AI",
   "Admin",
@@ -352,8 +352,8 @@
    "class": "MeApi",
    "tag": "Me",
    "pathPrefix": "",
-   "operations": 5,
-   "maxLines": 108
+   "operations": 7,
+   "maxLines": 140
   },
   {
    "class": "ModellerApi",
@@ -1118,6 +1118,7 @@
   "LockState",
   "LookupResult",
   "Me",
+  "MeCapabilities",
   "MeLocale",
   "MessageRequest",
   "MessageResult",
@@ -1494,6 +1495,8 @@
   "TaskDscDocument",
   "TaskForm",
   "TaskStat",
+  "TeamGroupCount",
+  "TeamTaskGroupReport",
   "Tenant",
   "TenantBundle",
   "TenantClaim",
@@ -3543,6 +3546,30 @@
    "python": "me.get_me",
    "dotnet": "MeApi#GetMeAsync",
    "php": "MeApi#getMe"
+  },
+  {
+   "operationId": "getMyCapabilities",
+   "method": "GET",
+   "path": "/me/capabilities",
+   "tag": "Me",
+   "apiClass": "MeApi",
+   "java": "MeApi#getMyCapabilities",
+   "typescript": "me.getMyCapabilities",
+   "python": "me.get_my_capabilities",
+   "dotnet": "MeApi#GetMyCapabilitiesAsync",
+   "php": "MeApi#getMyCapabilities"
+  },
+  {
+   "operationId": "getTeamTaskGroups",
+   "method": "GET",
+   "path": "/team/task-groups",
+   "tag": "Me",
+   "apiClass": "MeApi",
+   "java": "MeApi#getTeamTaskGroups",
+   "typescript": "me.getTeamTaskGroups",
+   "python": "me.get_team_task_groups",
+   "dotnet": "MeApi#GetTeamTaskGroupsAsync",
+   "php": "MeApi#getTeamTaskGroups"
   },
   {
    "operationId": "listMyNotifications",

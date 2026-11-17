@@ -89,9 +89,9 @@ public final class SecurityPermissionBridge implements PermissionPort {
             Permissions.TENANT_MIGRATION_ADMIN, Set.of(Permissions.GROUP_ADMIN),
             // decision 380 (recommended default groups, lane c7's proposal): the platform-wide hosted catalogue; a
             // platform deployer or administrator submits, only the administrator approves or rejects
-            org.sangam.rest.modules.modeller.CatalogueHostController.PUBLISH,
+            Permissions.CATALOGUE_PUBLISH,
             Set.of(Permissions.GROUP_ADMIN, GROUP_PLATFORM_DEPLOYER),
-            org.sangam.rest.modules.modeller.CatalogueHostController.REVIEW, Set.of(Permissions.GROUP_ADMIN));
+            Permissions.CATALOGUE_REVIEW, Set.of(Permissions.GROUP_ADMIN));
 
     /** Command type prefix of the decision 146 partition resize. */
     private static final String EXECUTOR_COMMANDS = "executor.partitions.";

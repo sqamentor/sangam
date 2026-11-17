@@ -5884,7 +5884,7 @@ class LowCodeApi:
         return cast("M.DataObjectRecordOperation", self._c.json(req, options))
 
 class MeApi:
-    """``Me`` (5 operations)."""
+    """``Me`` (7 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -5898,6 +5898,26 @@ class MeApi:
         """
         req = ApiRequest("GET", f"/me")
         return cast("M.Me", self._c.json(req, options))
+
+    def get_my_capabilities(self, *, options: Optional[RequestOptions] = None) -> M.MeCapabilities:
+        """Installed modules
+
+        Owner decision 399 (Q3): the optional modules whose REST API this server serves, derived from the wiring (a module is listed when its controllers are registered, which needs the module on the class path and enabled). Read-only, any signed-in caller, no permission. The UI hides the menu entries of a module that is not listed.
+
+        ``GET /me/capabilities`` (operationId ``getMyCapabilities``).
+        """
+        req = ApiRequest("GET", f"/me/capabilities")
+        return cast("M.MeCapabilities", self._c.json(req, options))
+
+    def get_team_task_groups(self, *, options: Optional[RequestOptions] = None) -> M.TeamTaskGroupReport:
+        """Team workload of my tenant
+
+        Owner decision 401: open, assigned and unassigned task counts of the caller's tenant, and per candidate group the open unassigned tasks (groups without one are left out), plus the unassigned tasks that offer no candidate group. Only tasks of the caller's tenant are counted, never another tenant's or a task without a tenant. Read-only.
+
+        ``GET /team/task-groups`` (operationId ``getTeamTaskGroups``); permission ``team.read``.
+        """
+        req = ApiRequest("GET", f"/team/task-groups")
+        return cast("M.TeamTaskGroupReport", self._c.json(req, options))
 
     def list_my_notifications(self, *, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Notification]:
         """My notifications
@@ -12959,7 +12979,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1173 operations on 988 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1175 operations on 990 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)

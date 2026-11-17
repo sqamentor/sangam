@@ -8551,6 +8551,53 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
+  /me/capabilities:
+    get:
+      operationId: getMyCapabilities
+      tags:
+      - Me
+      summary: Installed modules
+      description: 'Owner decision 399 (Q3): the optional modules whose REST API this server serves, derived from the wiring (a module is listed
+        when its controllers are registered, which needs the module on the class path and enabled). Read-only, any signed-in caller, no permission.
+        The UI hides the menu entries of a module that is not listed.'
+      x-sangam-requirements:
+      - R76
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeCapabilities'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /team/task-groups:
+    get:
+      operationId: getTeamTaskGroups
+      tags:
+      - Me
+      summary: Team workload of my tenant
+      description: 'Owner decision 401: open, assigned and unassigned task counts of the caller''s tenant, and per candidate group the open unassigned
+        tasks (groups without one are left out), plus the unassigned tasks that offer no candidate group. Only tasks of the caller''s tenant are
+        counted, never another tenant''s or a task without a tenant. Read-only.'
+      x-sangam-permission: team.read
+      x-sangam-requirements:
+      - R76
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamTaskGroupReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /me/notifications:
     get:
       operationId: listMyNotifications
@@ -60094,6 +60141,56 @@ components:
           format: date
         pendingApproval:
           type: boolean
+    MeCapabilities:
+      type: object
+      description: 'Owner decision 399 (Q3): the installed optional modules (GET /me/capabilities).'
+      properties:
+        modules:
+          type: array
+          items:
+            type: string
+          description: 'Sorted module ids, a subset of: ai, billing, case, channels, compliance, field, geo, ledger, programme, registry, resources'
+      required:
+      - modules
+    TeamGroupCount:
+      type: object
+      description: 'Owner decision 401: one candidate group of the caller''s tenant.'
+      properties:
+        group:
+          type: string
+        unassignedTasks:
+          type: integer
+          format: int64
+      required:
+      - group
+      - unassignedTasks
+    TeamTaskGroupReport:
+      type: object
+      description: 'Owner decision 401: the team workload of the caller''s tenant (GET /team/task-groups).'
+      properties:
+        open:
+          type: integer
+          format: int64
+        assigned:
+          type: integer
+          format: int64
+        unassigned:
+          type: integer
+          format: int64
+        withoutCandidateGroup:
+          type: integer
+          format: int64
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamGroupCount'
+          description: Sorted by group id
+      required:
+      - open
+      - assigned
+      - unassigned
+      - withoutCandidateGroup
+      - groups
     Me:
       type: object
       description: 'The authenticated caller: identity, tenant, personas (roles), seats held, current seat context and permissions (K1, S02).'
