@@ -1,0 +1,76 @@
+{
+  "key": "ifms-sna-sparsh/pay-correct",
+  "version": "1.0.4",
+  "pack": "gov.ifms.sna-sparsh",
+  "title": {
+    "en": "RBI batch refused or returned: correct and re-push, or cancel",
+    "hi": "आरबीआई बैच अस्वीकृत / वापस: सुधार कर पुनः भेजें या रद्द करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "opReasonCode",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Payment refusal / return reason",
+        "hi": "भुगतान अस्वीकृति / वापसी का कारण"
+      }
+    },
+    {
+      "id": "slsCode",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "State-linked scheme (SLS)",
+        "hi": "राज्य-संबद्ध योजना"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "payCorrectDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "reissue",
+        "label": {
+          "en": "Reissue after correction",
+          "hi": "सुधार के बाद पुनः जारी करें"
+        }
+      },
+      {
+        "value": "cancel",
+        "label": {
+          "en": "Cancel",
+          "hi": "रद्द करें"
+        }
+      }
+    ]
+  }
+}

@@ -383,3 +383,6 @@ SHIPS['gov.ifms.gia-uc'] = ('1.0.1', '1.0.3')
 # R8-ifms-tests IFT-5: approval bound at the PAO pass before core execution (bill PAO chain, SNA-SPARSH).
 SHIPS['gov.ifms.pao-chain'] = ('1.0.1', '1.0.3')
 SHIPS['gov.ifms.sna-sparsh'] = ('1.0.1', '1.0.3')
+# SANGAM-PAYMENT-LOOP (lane L-packs, E-31 §6): SNA-SPARSH no longer re-pushes a refused RBI batch automatically
+# (ss_payCorrect: the PD checker re-pushes after correction or cancels). 1.0.3 already ships IFT-5 content: 1.0.4.
+SHIPS['gov.ifms.sna-sparsh'] = ('1.0.1', '1.0.4')
