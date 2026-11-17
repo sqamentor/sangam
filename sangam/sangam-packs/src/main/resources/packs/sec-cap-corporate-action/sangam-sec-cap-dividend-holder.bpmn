@@ -3,7 +3,7 @@
 <!-- Dividend to one holder. Generated layout; edit freely in the Sangam modeller. -->
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_cap_dividend_holder" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.2">
   <process id="sangam-sec-cap-dividend-holder" name="Dividend to one holder" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2" operaton:isStartableInTasklist="false">
-    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.cap.corporate-action</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.2</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.cap.corporate-action</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.2</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key,amount,payeeAccount,currency,purpose</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="ch_start" name="Holder"></startEvent>
     <serviceTask id="ch_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>executionConnector=bank.transfer;executionStep=dividend;verifyApproval=false;reconcileRequired=false;executionPayloadFields=key,dividendPerShare</operaton:string></operaton:field></extensionElements></serviceTask>
     <callActivity id="ch_pay" name="Pay dividend net of TDS (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
@@ -11,10 +11,12 @@
     <endEvent id="ch_endUnpaid" name="Unpaid (to unpaid dividend account)"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>FAILED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>opReasonCode</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <exclusiveGateway id="ch_gw" name="executionOutcome?" default="sec_cap_dividend_holder_f4"></exclusiveGateway>
     <sequenceFlow id="sec_cap_dividend_holder_f1" sourceRef="ch_start" targetRef="ch_defaults"/>
-    <sequenceFlow id="sec_cap_dividend_holder_f2" sourceRef="ch_defaults" targetRef="ch_pay"/>
+    <sequenceFlow id="sec_cap_dividend_holder_f2" sourceRef="ch_defaults" targetRef="ch_pay_release"/>
     <sequenceFlow id="sec_cap_dividend_holder_f3" name="DONE" sourceRef="ch_gw" targetRef="ch_end"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_cap_dividend_holder_f4" name="otherwise" sourceRef="ch_gw" targetRef="ch_endUnpaid"/>
     <sequenceFlow id="sec_cap_dividend_holder_f5" sourceRef="ch_pay" targetRef="ch_gw"/>
+      <serviceTask id="ch_pay_release" name="Release under the batch sanction (owner decision E1)" operaton:class="org.sangam.packs.core.BatchItemReleaseDelegate"></serviceTask>
+    <sequenceFlow id="ch_pay_release_f" sourceRef="ch_pay_release" targetRef="ch_pay"/>
   </process>
   <bpmndi:BPMNDiagram id="sec_cap_dividend_holder_diagram">
     <bpmndi:BPMNPlane id="sec_cap_dividend_holder_plane" bpmnElement="sangam-sec-cap-dividend-holder">

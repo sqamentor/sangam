@@ -22,9 +22,17 @@
     <sequenceFlow id="pension_monthly_f6" sourceRef="pm_poll" targetRef="pm_aggregate"/>
     <sequenceFlow id="pension_monthly_f7" sourceRef="pm_aggregate" targetRef="pm_doneGw"/>
     <sequenceFlow id="pension_monthly_f8" name="not yet" sourceRef="pm_doneGw" targetRef="pm_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
-    <sequenceFlow id="pension_monthly_f9" sourceRef="pm_load" targetRef="pm_open"/>
+    <sequenceFlow id="pension_monthly_f9" sourceRef="pm_load" targetRef="pm_seal"/>
     <sequenceFlow id="pension_monthly_f10" name="complete" sourceRef="pm_doneGw" targetRef="pm_report"/>
     <sequenceFlow id="pension_monthly_f11" sourceRef="pm_report" targetRef="pm_end"/>
+      <serviceTask id="pm_seal" name="Seal the batch items (count, total, fingerprints; owner decision E1)" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>SEAL</operaton:string></operaton:field><operaton:field name="currency"><operaton:string>INR</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Monthly pension</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="payeeField"><operaton:string>bankAccount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="pm_bsanction" name="Sanction the sealed batch (core sanction, owner decision E1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="pm_bsgw" name="Batch sanctioned?" default="pm_bsgw_no"></exclusiveGateway>
+    <endEvent id="pm_bnotReleased" name="Batch not released"></endEvent>
+    <sequenceFlow id="pm_seal_f" sourceRef="pm_seal" targetRef="pm_bsanction"/>
+    <sequenceFlow id="pm_bsanction_f" sourceRef="pm_bsanction" targetRef="pm_bsgw"/>
+    <sequenceFlow id="pm_bsgw_yes" name="sanctioned" sourceRef="pm_bsgw" targetRef="pm_open"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pm_bsgw_no" name="not sanctioned" sourceRef="pm_bsgw" targetRef="pm_bnotReleased"/>
   </process>
   <bpmndi:BPMNDiagram id="pension_monthly_diagram">
     <bpmndi:BPMNPlane id="pension_monthly_plane" bpmnElement="sangam-pension-monthly">
