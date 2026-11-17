@@ -380,3 +380,6 @@ SHIPS['gov.ifms.gpf'] = ('1.0.1', '1.0.4')
 SHIPS['gov.ifms.loans-advances'] = ('1.0.1', '1.0.3')
 # gov.ifms.gia-uc pins the bill (gr_bill calledElementVersionTag), so its content changes with the bill's bump: 1.0.3.
 SHIPS['gov.ifms.gia-uc'] = ('1.0.1', '1.0.3')
+# R8-ifms-tests IFT-5: approval bound at the PAO pass before core execution (bill PAO chain, SNA-SPARSH).
+SHIPS['gov.ifms.pao-chain'] = ('1.0.1', '1.0.3')
+SHIPS['gov.ifms.sna-sparsh'] = ('1.0.1', '1.0.3')

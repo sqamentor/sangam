@@ -1,6 +1,6 @@
 {
   "key": "ifms-pao-chain/distribute",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.ifms.pao-chain",
   "title": {
     "en": "Assign bill in FIFO order",
