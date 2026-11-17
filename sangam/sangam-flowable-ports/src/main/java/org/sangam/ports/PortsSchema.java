@@ -27,6 +27,28 @@ public final class PortsSchema {
     }
 
     private static final List<String> TEMPLATES = List.of(
+            // ------------------------------------------------ case external tasks (PATCHES.md P-5, FLOWABLE-INTO-OPERATON FC-11 native)
+            """
+            CREATE TABLE PORT_CASE_EXT_TASK (
+              id_           {str64} NOT NULL,
+              tenant_id     {str64} NOT NULL,
+              case_inst_id  {str64} NOT NULL,
+              case_exec_id  {str64} NOT NULL,
+              case_def_id   {str64} NOT NULL,
+              activity_id   {str} NOT NULL,
+              topic         {str} NOT NULL,
+              worker_id     {str},
+              lock_exp_time {ts},
+              retries       {int},
+              error_msg     {str},
+              priority      {int} NOT NULL,
+              created_at    {ts} NOT NULL,
+              version_      {long} NOT NULL,
+              PRIMARY KEY (id_)
+            )""",
+            "CREATE UNIQUE INDEX PORT_CASE_EXT_TASK_EXEC ON PORT_CASE_EXT_TASK (case_exec_id)",
+            "CREATE INDEX PORT_CASE_EXT_TASK_FETCH ON PORT_CASE_EXT_TASK (topic, lock_exp_time)",
+            "CREATE INDEX PORT_CASE_EXT_TASK_CASE ON PORT_CASE_EXT_TASK (tenant_id, case_inst_id)",
             // ------------------------------------------------ event registry (FLOWABLE-INTO-OPERATON FC-02, FLOWABLE-INTO-OPERATON FC-03, FLOWABLE-INTO-OPERATON FC-43); FLOWABLE-INTO-OPERATON FC-04 uses UNIQUE_START (WS-INTEGRATION)
             """
             CREATE TABLE EVT_CHANNEL_DEF (

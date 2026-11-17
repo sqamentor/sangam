@@ -6355,6 +6355,30 @@ CREATE TABLE TEAM_TASK_FILTER (
 CREATE INDEX TEAM_TASK_FILTER_NAME ON TEAM_TASK_FILTER (tenant_id, name);
 --rollback DROP TABLE TEAM_TASK_FILTER;
 
+--changeset sangam:0048-01-port_case_ext_task dbms:oracle
+--comment: P-5 case external tasks keyed to the case execution
+CREATE TABLE PORT_CASE_EXT_TASK (
+  id_ VARCHAR2(64 CHAR) NOT NULL,
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  case_inst_id VARCHAR2(64 CHAR) NOT NULL,
+  case_exec_id VARCHAR2(64 CHAR) NOT NULL,
+  case_def_id VARCHAR2(64 CHAR) NOT NULL,
+  activity_id VARCHAR2(255 CHAR) NOT NULL,
+  topic VARCHAR2(255 CHAR) NOT NULL,
+  worker_id VARCHAR2(255 CHAR),
+  lock_exp_time TIMESTAMP WITH TIME ZONE,
+  retries NUMBER(10),
+  error_msg VARCHAR2(255 CHAR),
+  priority NUMBER(10) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  version_ NUMBER(19) NOT NULL,
+  CONSTRAINT PK_PORT_CASE_EXT_TASK PRIMARY KEY (id_)
+);
+CREATE UNIQUE INDEX PORT_CASE_EXT_TASK_EXEC ON PORT_CASE_EXT_TASK (case_exec_id);
+CREATE INDEX PORT_CASE_EXT_TASK_FETCH ON PORT_CASE_EXT_TASK (topic, lock_exp_time);
+CREATE INDEX PORT_CASE_EXT_TASK_CASE ON PORT_CASE_EXT_TASK (tenant_id, case_inst_id);
+--rollback DROP TABLE PORT_CASE_EXT_TASK;
+
 --changeset sangam:0016-03-form_draft-alter dbms:oracle
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD (form_version_hash VARCHAR2(64 CHAR));
