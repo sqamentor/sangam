@@ -188,7 +188,7 @@ class TaskFilterControllerTest {
         assertEquals("TENANT_REQUIRED", assertThrows(ApiProblem.class, () -> c.delete(ctx(null,
                 Permissions.GROUP_SUPERVISOR), "f1", "\"1\"", "r")).code());
         assertEquals(422, assertThrows(ApiProblem.class, () -> c.update(sup, "f1", "\"1\"",
-                new TaskFilterController.CreateRequest("n", null, Map.of("priority", 3), null))).status());
+                new TaskFilterController.CreateRequest("n", null, Map.of("nameLike", "x"), null))).status());
         assertEquals(4, port.calls.size(), "refused requests touch nothing");
         assertEquals(2, audits.size());
     }
@@ -196,7 +196,9 @@ class TaskFilterControllerTest {
     @Test
     void aSavedQueryHoldsOnlyCriteriaTheTaskListApplies() {
         RequestContext sup = ctx("t1", Permissions.GROUP_SUPERVISOR);
-        for (Map<String, Object> bad : List.<Map<String, Object>>of(Map.of("priority", 3), Map.of("dueBefore", "x"),
+        for (Map<String, Object> bad : List.<Map<String, Object>>of(Map.of("priority", "3"), Map.of("dueBefore", "x"),
+                Map.of("minPriority", 2.5), Map.of("maxPriority", true), Map.of("overdue", "yes"),
+                Map.of("dueAfter", "2026-11-17"), Map.of("nameLike", "x"),
                 Map.of("candidateGroups", List.of("a")), Map.of("assignee", 7), Map.of("mine", "yes"),
                 Map.of("state", "DONE"), Map.of("currency", "inr"), Map.of("variableNames", List.of()),
                 Map.of("candidateGroup", " "))) {
@@ -211,7 +213,10 @@ class TaskFilterControllerTest {
                 "businessKey", "b", "state", "ACTIVE", "sortBy", "due", "sortOrder", "asc"), null));
         c.create(sup, new TaskFilterController.CreateRequest("money", null, Map.of("currency", "INR",
                 "variableNames", List.of("amount")), null));
-        assertEquals(2, port.calls.size());
+        c.create(sup, new TaskFilterController.CreateRequest("urgent", null, Map.of("priority", 3, "minPriority", 1,
+                "maxPriority", 5, "dueBefore", "2026-12-01T00:00:00Z", "dueAfter", "2026-11-01T00:00:00Z",
+                "overdue", true), null));
+        assertEquals(3, port.calls.size());
     }
 
     @Test
