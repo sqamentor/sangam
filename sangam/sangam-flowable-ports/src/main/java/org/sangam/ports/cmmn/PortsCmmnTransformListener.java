@@ -128,7 +128,7 @@ public class PortsCmmnTransformListener implements CmmnTransformListener {
     public static final String SANGAM_CMMN_NS = "http://sangam.org/schema/1.0/cmmn";
 
     /**
-     * P-4 / FC-57: wraps the repetition rule the item handler stored with {@link MaxCountRepetitionRule} when the
+     * P-4 / FLOWABLE-INTO-OPERATON FC-57: wraps the repetition rule the item handler stored with {@link MaxCountRepetitionRule} when the
      * plan item's (or its definition's default) {@code repetitionRule} carries {@code sangam:maxInstanceCount}.
      */
     static void repetition(PlanItem planItem, CmmnActivity activity) {
