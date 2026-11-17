@@ -23,7 +23,7 @@ C = dict(
     ITEM=P + 'BatchItemOutcomeListener', JOIN=P + 'BatchJoinListener', LINK=P + 'LinkedInstanceDelegate',
     ASSIGN=P + 'AssignmentStrategyDelegate', SET=P + 'SetVariablesDelegate', COMM=P + 'CommitteeDelegate',
     CORR=P + 'CorrelationDelegate', SUSP=P + 'SuspensionDelegate', NOTIFY=P + 'NotifyDelegate',
-    MONEY=P + 'MoneyCalculationDelegate',
+    MONEY=P + 'MoneyCalculationDelegate', PAYEE=P + 'PayeeResolutionDelegate',
     MERIT='org.sangam.packs.gov.MeritListDelegate', WAIT='org.sangam.packs.gov.WaitlistDelegate',
     MATCH='org.sangam.packs.gov.ReconciliationMatchDelegate', HEAR='org.sangam.packs.gov.HearingScheduleDelegate',
     EVWIN='org.sangam.packs.universal.EventWindowDelegate',

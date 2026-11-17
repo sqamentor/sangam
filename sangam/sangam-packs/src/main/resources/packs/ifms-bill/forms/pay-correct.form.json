@@ -1,0 +1,65 @@
+{
+  "key": "ifms-bill/pay-correct",
+  "version": "1.0.4",
+  "pack": "gov.ifms.bill",
+  "title": {
+    "en": "Payment refused or returned: correct and reissue, or cancel",
+    "hi": "भुगतान अस्वीकृत / वापस: सुधार कर पुनः जारी करें या रद्द करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "opReasonCode",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Payment refusal / return reason",
+        "hi": "भुगतान अस्वीकृति / वापसी का कारण"
+      }
+    },
+    {
+      "id": "payeeVersionId",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Verified payee version",
+        "hi": "सत्यापित आदाता संस्करण"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "payCorrectDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "reissue",
+        "label": {
+          "en": "Reissue after correction",
+          "hi": "सुधार के बाद पुनः जारी करें"
+        }
+      },
+      {
+        "value": "cancel",
+        "label": {
+          "en": "Cancel",
+          "hi": "रद्द करें"
+        }
+      }
+    ]
+  }
+}

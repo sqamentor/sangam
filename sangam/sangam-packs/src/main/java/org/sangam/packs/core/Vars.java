@@ -213,7 +213,16 @@ public final class Vars {
      * still SCRUTINY on the case: SL-32, J-P3-E01). A called instance of another case (a batch item) stops the walk.
      */
     public static void setCaseState(org.operaton.bpm.engine.delegate.DelegateExecution ex, String state) {
-        ex.setVariable(CASE_STATE, state);
+        setOnCase(ex, CASE_STATE, state);
+    }
+
+    /**
+     * Sets {@code name} on this process instance and on every calling instance of the same case (same business key),
+     * as {@link #setCaseState} does for the case state: a called core block that waits (execution) makes its state
+     * visible to the case's side exits, which run in the caller.
+     */
+    public static void setOnCase(org.operaton.bpm.engine.delegate.DelegateExecution ex, String name, Object value) {
+        ex.setVariable(name, value);
         String bk = ex.getProcessBusinessKey();
         org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity pi =
                 ((org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity) ex).getProcessInstance();
@@ -221,7 +230,7 @@ public final class Vars {
             if (bk == null || !bk.equals(sup.getProcessBusinessKey())) {
                 break;
             }
-            sup.setVariable(CASE_STATE, state);
+            sup.setVariable(name, value);
         }
     }
 
