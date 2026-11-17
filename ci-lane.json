@@ -1,0 +1,6 @@
+{
+  "modules": "sangam-flowable-ports,sangam-server",
+  "dbs": "postgres,oracle,sqlserver,mysql",
+  "chunks": "B-engine",
+  "ui": false
+}
