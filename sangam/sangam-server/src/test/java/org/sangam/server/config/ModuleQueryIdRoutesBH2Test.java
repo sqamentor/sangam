@@ -87,6 +87,9 @@ class ModuleQueryIdRoutesBH2Test {
             HttpResponse<String> r = send(c[0], c[1], c[2]);
             String type = r.headers().firstValue("content-type").orElse("");
             String where = c[0] + " " + c[1] + " -> " + r.statusCode() + " " + type;
+            if (r.statusCode() == 204 && r.body().isEmpty()) {
+                continue; // the controller answered No Content: only a handler method produces that
+            }
             if (!type.startsWith("application/json") && !type.startsWith("application/problem+json")) {
                 wrong.add(where + ": not JSON: " + r.body());
                 continue;
