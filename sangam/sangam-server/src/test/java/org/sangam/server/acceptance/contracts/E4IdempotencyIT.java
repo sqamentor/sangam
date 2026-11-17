@@ -32,6 +32,7 @@ import org.sangam.core.layer.IdempotencyStore;
 import org.sangam.core.layer.IdempotencyStore.BeginResult;
 import org.sangam.core.layer.IdempotencyStore.Claim;
 import org.sangam.core.layer.Transactions;
+import org.sangam.rest.web.IdempotencyFilter;
 
 /**
  * E4 (SANGAM.md XI.4, X.2.2, R41) on Sangam: a process start protected by {@code Idempotency-Key}.
@@ -143,10 +144,15 @@ class E4IdempotencyIT extends ContractSupport {
                         if (a.status() == 201) {
                             return a.instanceId();
                         }
-                        if (a.status() != 409) {
+                        // 409 IDEMPOTENCY_IN_PROGRESS and 503 AUDIT_UNAVAILABLE (RM-10: the replay's audit row waits on
+                        // the tenant's security-audit chain row behind the other replays and its bounded lock wait
+                        // ran out) both say "retry with the same key"; anything else is a defect.
+                        boolean retryable = a.status() == 409
+                                || (a.status() == 503 && IdempotencyFilter.REPLAY_AUDIT_UNAVAILABLE.equals(a.code()));
+                        if (!retryable) {
                             throw new IllegalStateException("unexpected " + a);
                         }
-                        Thread.sleep(25);   // 409 IDEMPOTENCY_IN_PROGRESS, Retry-After
+                        Thread.sleep(25);
                     }
                     throw new IllegalStateException("no definite answer");
                 }));

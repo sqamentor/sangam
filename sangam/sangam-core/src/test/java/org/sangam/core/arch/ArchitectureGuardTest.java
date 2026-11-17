@@ -83,7 +83,7 @@ class ArchitectureGuardTest {
     static {
         CLASS_SIZE_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/operaton/OperatonOpsAdapter.java", 1358);
         CLASS_SIZE_ALLOWED.put("sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java", 1339);
-        CLASS_SIZE_ALLOWED.put("sangam-engine/src/main/java/org/sangam/engine/OperatonEngineAdapter.java", 1141);
+        CLASS_SIZE_ALLOWED.put("sangam-engine/src/main/java/org/sangam/engine/OperatonEngineAdapter.java", 1107);
         CLASS_SIZE_ALLOWED.put("sangam-resources/src/main/java/org/sangam/resources/roster/RosterService.java", 1146);
         CLASS_SIZE_ALLOWED.put("sangam-registry/src/main/java/org/sangam/registry/custody/CustodyService.java", 1118);
         CLASS_SIZE_ALLOWED.put("sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java", 1042);

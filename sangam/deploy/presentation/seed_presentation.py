@@ -7,8 +7,9 @@ realm files and a hosted Keycloak get the same people. Two parts, each skipped w
   1. Keycloak (admin REST API): the realm roles exist; each user exists with name, e-mail, attributes tenant, seat,
      office; its password is (re)set from SANGAM_PRESENTATION_PASSWORD_<USERNAME>; its realm roles are added.
      A user whose password variable is empty is created without a password and reported.
-  2. Sangam (REST API, a tenant administrator's bearer token): every seat-holding user gets a SUBSTANTIVE assignment
-     to its seat from today (POST /admin/assignments), unless one is already active today.
+  2. Sangam (REST API, a tenant administrator's bearer token): the org unit, roles and seats of the IFMS pack seed
+     (the server does not install pack seeds), then every seat-holding user who has signed in once (JIT person)
+     gets a SUBSTANTIVE assignment to its seat from today, unless it holds it already.
 
 Nothing is printed that is secret. Standard library only; no outbound call except to the two URLs given.
 
@@ -33,6 +34,8 @@ import uuid
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GEN = os.path.join(os.path.dirname(HERE), "compose", "keycloak", "generate_realm.py")
+SEED = os.path.join(os.path.dirname(os.path.dirname(HERE)), "sangam-packs", "src", "main", "resources", "packs",
+                    "ifms-gpf", "seed.json")
 
 
 def load_lists():
@@ -110,6 +113,89 @@ def user_rep(entry, tenant, office):
             "firstName": first, "lastName": last, "attributes": attrs}
 
 
+def items_of(body):
+    return body if isinstance(body, list) else (body or {}).get("items", [])
+
+
+def idem(*parts):
+    return {"Idempotency-Key": str(uuid.uuid5(uuid.NAMESPACE_URL, "sangam-presentation/" + "/".join(parts)))}
+
+
+def create_if_absent(what, method, url, tok, body, headers):
+    """POST/PUT; a 409 (already there) counts as present. Other errors stop the seed."""
+    try:
+        http(method, url, tok, body, headers=headers)
+        print(f"  {what}: created")
+    except SystemExit as e:
+        if "-> 409" not in str(e):
+            raise
+        print(f"  {what}: exists")
+
+
+def seats_in_order(seed):
+    """The seed's seats, each after the seat it reports to (as IfmsPacksIT.installSeatsAndHolders creates them)."""
+    pending, made, out = list(seed["seats"]), set(), []
+    ids = {s["id"] for s in seed["seats"]}
+    while pending:
+        ready = [s for s in pending if not s.get("reportsTo") or s["reportsTo"] in made or s["reportsTo"] not in ids]
+        if not ready:
+            raise SystemExit("seat hierarchy has a cycle: " + ", ".join(s["id"] for s in pending))
+        for s in ready:
+            out.append(s)
+            made.add(s["id"])
+            pending.remove(s)
+    return out
+
+
+def seed_sangam(base, tok, g, tenant, office, today):
+    """Org unit, roles and seats of the IFMS pack seed (the server does not install pack seeds: PackDeployer loads
+    them only into the simulator seat directory), then one SUBSTANTIVE posting per presentation seat holder.
+
+    A posting needs the person to exist (PostingService.requirePerson). Persons come from the first sign-in (JIT,
+    sangam.security.jit-provisioning-tenants, person id = the preferred_username), so a holder who has not signed in
+    yet is reported and the seed is run again afterwards."""
+    with open(SEED, encoding="utf-8") as f:
+        seed = json.load(f)
+    unit = next(o for o in seed["offices"] if o["id"] == office)
+    create_if_absent(f"org unit {office}", "POST", f"{base}/admin/org-units", tok,
+                     {"id": office, "code": office, "name": "Pay and Accounts Office", "level": "OFFICE",
+                      "parentId": unit.get("parent") or None}, idem(tenant, "unit", office))
+    for r in seed["roles"]:
+        http("PUT", f"{base}/admin/roles/{urllib.parse.quote(r['code'])}", tok, {"id": r["code"], "name": r["name"]["en"]},
+             headers=idem(tenant, "role", r["code"]))
+    print(f"  roles: {len(seed['roles'])} defined")
+    for s in seats_in_order(seed):
+        reports = s.get("reportsTo") if s.get("reportsTo") in {x["id"] for x in seed["seats"]} else None
+        create_if_absent(f"seat {s['id']}", "POST", f"{base}/admin/seats", tok,
+                         {"id": s["id"], "code": s["id"], "designation": s["role"], "name": s["name"]["en"],
+                          "orgUnitId": s["office"], "reportsToSeatId": reports, "roles": [s["role"]]},
+                         idem(tenant, "seat", s["id"]))
+    waiting = []
+    for e in g.PRESENTATION_USERS:
+        if not e[4]:
+            continue
+        _, people = http("GET", f"{base}/admin/users?" + urllib.parse.urlencode({"q": e[0]}), tok)
+        if not any(p.get("id") == e[0] for p in items_of(people)):
+            waiting.append(e[0])
+            continue
+        for seat in e[4]:
+            q = urllib.parse.urlencode({"seatId": seat, "kind": "SUBSTANTIVE", "activeOn": today})
+            _, held = http("GET", f"{base}/admin/assignments?{q}", tok)
+            holders = {a.get("personId") for a in items_of(held)}
+            if e[0] in holders:
+                print(f"  assignment {e[0]} -> {seat}: already active")
+                continue
+            if holders:   # SEAT_OCCUPIED: a regular seat has one substantive holder at a time
+                print(f"  assignment {e[0]} -> {seat}: seat held by {', '.join(sorted(holders))}; end that posting first")
+                continue
+            http("POST", f"{base}/admin/assignments", tok,
+                 {"seatId": seat, "personId": e[0], "kind": "SUBSTANTIVE", "validFrom": today,
+                  "orderRef": "Office order: presentation posting"}, headers=idem(tenant, e[0], seat, today))
+            print(f"  assignment {e[0]} -> {seat}: created")
+    if waiting:
+        print("  not yet signed in (no person yet): " + ", ".join(waiting) + "; sign in once as each, then run again")
+
+
 def main():
     dry = "--dry-run" in sys.argv[1:]
     g = load_lists()
@@ -126,6 +212,9 @@ def main():
         for e in users:
             pw = "set" if env(g.presentation_env_name(e[0])) else "MISSING"
             print(f"  keycloak {realm}: user {e[0]} roles {','.join(e[3])} seats {','.join(e[4]) or '-'} password {pw}")
+    with open(SEED, encoding="utf-8") as f:
+        order = [s["id"] for s in seats_in_order(json.load(f))]
+    print(f"  sangam: org unit {office}, pack roles, seats in order {', '.join(order)} (409 = already there)")
     for e in g.PRESENTATION_USERS:
         for seat in e[4]:
             print(f"  sangam: assignment {e[0]} -> {seat} SUBSTANTIVE from {today} (if none active)")
@@ -149,20 +238,7 @@ def main():
         print("keycloak: skipped (KEYCLOAK_URL, KEYCLOAK_ADMIN_USER, KEYCLOAK_ADMIN_PASSWORD not all set)")
 
     if api_ready:
-        base, tok = env("SANGAM_API_BASE").rstrip("/"), env("SANGAM_ADMIN_TOKEN")
-        for e in g.PRESENTATION_USERS:
-            for seat in e[4]:
-                q = urllib.parse.urlencode({"personId": e[0], "seatId": seat, "activeOn": today})
-                _, held = http("GET", f"{base}/admin/assignments?{q}", tok)
-                items = held if isinstance(held, list) else (held or {}).get("items", [])
-                if items:
-                    print(f"  assignment {e[0]} -> {seat}: already active")
-                    continue
-                key = str(uuid.uuid5(uuid.NAMESPACE_URL, f"sangam-presentation/{tenant}/{e[0]}/{seat}/{today}"))
-                http("POST", f"{base}/admin/assignments", tok,
-                     {"seatId": seat, "personId": e[0], "kind": "SUBSTANTIVE", "validFrom": today,
-                      "orderRef": "Presentation posting"}, headers={"Idempotency-Key": key})
-                print(f"  assignment {e[0]} -> {seat}: created")
+        seed_sangam(env("SANGAM_API_BASE").rstrip("/"), env("SANGAM_ADMIN_TOKEN"), g, tenant, office, today)
     else:
         print("sangam: skipped (SANGAM_API_BASE, SANGAM_ADMIN_TOKEN not both set)")
 

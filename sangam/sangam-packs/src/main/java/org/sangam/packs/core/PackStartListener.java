@@ -49,8 +49,15 @@ public class PackStartListener implements ExecutionListener {
         requireDurations(ex, Vars.field(durationFields, ex));
         String id = Vars.field(packId, ex, "unknown");
         String ver = Vars.field(packVersion, ex, "0");
-        ex.setVariable(Vars.PACK_VERSION, id + "@" + ver);
-        ex.setVariable("packId", id);
+        // IFT-6: a pack process called by another pack for the same case (same business key, e.g. bill -> PAO chain,
+        // a bill family -> the bill) joins the caller's case: the case was created by the caller, so its package,
+        // version, state, actor log and submitted hash are kept (they flow back to the caller through the call's
+        // out-mapping, and the audit rows of this case keep naming the caller's package); CASE_CREATED is written once
+        boolean joinsCase = joinsCallersCase(ex);
+        if (!joinsCase) {
+            ex.setVariable(Vars.PACK_VERSION, id + "@" + ver);
+            ex.setVariable("packId", id);
+        }
         if (ex.getVariable(Vars.TENANT_VARIABLE) == null) {
             // business data for forms and reports, copied from the engine tenant; never read as the tenant
             ex.setVariable(Vars.TENANT_VARIABLE, tenant);
@@ -73,6 +80,9 @@ public class PackStartListener implements ExecutionListener {
         }
         if (ex.getVariable(Vars.INITIATOR_SEAT) == null) {
             ex.setVariable(Vars.INITIATOR_SEAT, Vars.str(ex, "actingSeat", "citizen"));
+        }
+        if (joinsCase) {
+            return;
         }
         ex.setVariable("lastActorPerson", Vars.str(ex, Vars.INITIATOR_PERSON));
         ex.setVariable("lastActorSeat", Vars.str(ex, Vars.INITIATOR_SEAT));
@@ -97,6 +107,13 @@ public class PackStartListener implements ExecutionListener {
                 "profileVersion", ex.getVariable("profileVersion")));
         Vars.audit(ex, st.auditEvent(), Vars.map("package", id + "@" + ver,
                 "payloadHash", Vars.str(ex, "submittedPayloadHash")));
+    }
+
+    /** IFT-6: started by a call activity of another process instance with the same business key (the same case). */
+    static boolean joinsCallersCase(DelegateExecution ex) {
+        DelegateExecution sup = ex.getSuperExecution();
+        return sup != null && ex.getProcessBusinessKey() != null
+                && ex.getProcessBusinessKey().equals(sup.getProcessBusinessKey());
     }
 
     /** Decision 394: every named field that has a value holds a positive ISO-8601 duration, else the start is refused. */
