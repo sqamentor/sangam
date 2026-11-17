@@ -660,3 +660,5 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - Exempt: plugin UI asset `{*path}` and the Matrix `{txnId}`.
   - FHIR, SMS-DLT and Event Grid callbacks move. The joint ledger shows no IFMS-configured callback URL for them.
   - Guard: `PathParameterGuardTest` with the ledger `sangam-rest/api/path-parameters.tsv`. Its PENDING count can only go down, and the release gate is zero PENDING.
+
+- **411 (owner chat 2026-11-17, "Yes, ci/ branches (Recommended)")**: Lanes may push test-only branches to `sqamentor/sangam` under the `ci/` prefix, so that GitHub Actions runs the long builds and the per-database tests in parallel. `main` and release tags stay behind the owner-signed push gate. This approval is for Sangam only; IFMS follows its own push rules.
