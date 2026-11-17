@@ -281,7 +281,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/com.nimbusds/nimbus-jose-jwt@10.9.1": {
+  "pkg:maven/com.nimbusds/nimbus-jose-jwt@10.10": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "server"
@@ -453,7 +453,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/io.nats/jnats@2.26.4": {
+  "pkg:maven/io.nats/jnats@2.27.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "nats"
@@ -877,7 +877,7 @@
    ],
    "spdx": "CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0"
   },
-  "pkg:maven/joda-time/joda-time@2.15.0": {
+  "pkg:maven/joda-time/joda-time@2.15.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1085,14 +1085,14 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.bouncycastle/bcpkix-jdk18on@1.84": {
+  "pkg:maven/org.bouncycastle/bcpkix-jdk18on@1.87": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "esign"
    ],
    "spdx": "MIT (Bouncy Castle Licence; policy id Bouncy-Castle)"
   },
-  "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.84": {
+  "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.87": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "esign"
@@ -1106,7 +1106,7 @@
    ],
    "spdx": "MIT (Bouncy Castle Licence; policy id Bouncy-Castle)"
   },
-  "pkg:maven/org.bouncycastle/bcutil-jdk18on@1.84": {
+  "pkg:maven/org.bouncycastle/bcutil-jdk18on@1.87": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "esign"
@@ -1149,7 +1149,7 @@
    ],
    "spdx": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0 OR BSD-3-Clause (EDL-1.0)"
   },
-  "pkg:maven/org.eclipse.jgit/org.eclipse.jgit@7.8.0.202609011348-r": {
+  "pkg:maven/org.eclipse.jgit/org.eclipse.jgit@7.8.1.202611041320-r": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "server"
@@ -1482,7 +1482,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.bpm.dmn/operaton-engine-dmn@2.2.0": {
+  "pkg:maven/org.operaton.bpm.dmn/operaton-engine-dmn@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1490,7 +1490,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.bpm.dmn/operaton-engine-feel-api@2.2.0": {
+  "pkg:maven/org.operaton.bpm.dmn/operaton-engine-feel-api@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1498,7 +1498,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.bpm.dmn/operaton-engine-feel-juel@2.2.0": {
+  "pkg:maven/org.operaton.bpm.dmn/operaton-engine-feel-juel@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1506,7 +1506,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.bpm.dmn/operaton-engine-feel-scala@2.2.0": {
+  "pkg:maven/org.operaton.bpm.dmn/operaton-engine-feel-scala@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1514,7 +1514,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.bpm.juel/operaton-juel@2.2.0": {
+  "pkg:maven/org.operaton.bpm.juel/operaton-juel@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1522,7 +1522,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.bpm.model/operaton-bpmn-model@2.2.0": {
+  "pkg:maven/org.operaton.bpm.model/operaton-bpmn-model@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1530,7 +1530,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.bpm.model/operaton-cmmn-model@2.2.0": {
+  "pkg:maven/org.operaton.bpm.model/operaton-cmmn-model@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1538,7 +1538,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.bpm.model/operaton-dmn-model@2.2.0": {
+  "pkg:maven/org.operaton.bpm.model/operaton-dmn-model@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1546,7 +1546,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.bpm.model/operaton-xml-model@2.2.0": {
+  "pkg:maven/org.operaton.bpm.model/operaton-xml-model@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1554,29 +1554,14 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.bpm.springboot/operaton-bpm-spring-boot-starter-rest@2.2.0": {
+  "pkg:maven/org.operaton.bpm.springboot/operaton-bpm-spring-boot-starter-rest@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "server"
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.bpm.springboot/operaton-bpm-spring-boot-starter@2.2.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "control-plane",
-    "server"
-   ],
-   "spdx": "Apache-2.0"
-  },
-  "pkg:maven/org.operaton.bpm/operaton-engine-rest-core@2.2.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "server"
-   ],
-   "spdx": "Apache-2.0"
-  },
-  "pkg:maven/org.operaton.bpm/operaton-engine-spring@2.2.0": {
+  "pkg:maven/org.operaton.bpm.springboot/operaton-bpm-spring-boot-starter@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1584,7 +1569,14 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.bpm/operaton-engine@2.2.0": {
+  "pkg:maven/org.operaton.bpm/operaton-engine-rest-core@2.2.1": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "server"
+   ],
+   "spdx": "Apache-2.0"
+  },
+  "pkg:maven/org.operaton.bpm/operaton-engine-spring@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1592,7 +1584,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.commons/operaton-commons-logging@2.2.0": {
+  "pkg:maven/org.operaton.bpm/operaton-engine@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1600,7 +1592,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.commons/operaton-commons-typed-values@2.2.0": {
+  "pkg:maven/org.operaton.commons/operaton-commons-logging@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1608,7 +1600,15 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.operaton.commons/operaton-commons-utils@2.2.0": {
+  "pkg:maven/org.operaton.commons/operaton-commons-typed-values@2.2.1": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "control-plane",
+    "server"
+   ],
+   "spdx": "Apache-2.0"
+  },
+  "pkg:maven/org.operaton.commons/operaton-commons-utils@2.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1623,7 +1623,7 @@
    ],
    "spdx": "BSD-3-Clause"
   },
-  "pkg:maven/org.postgresql/postgresql@42.7.12": {
+  "pkg:maven/org.postgresql/postgresql@42.7.14": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
