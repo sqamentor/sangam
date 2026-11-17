@@ -45,6 +45,17 @@ Stages: IMPORT = Sangam pre-deploy validator, no error; SCHEMA = Operaton BPMN m
 
 A refused deployment is the designed outcome when an executable process (isExecutable="true") binds its work to another vendor's engine (activiti:, kp: or zeebe: extensions, `##unspecified` or `webService` implementations without an operation) or breaks a Sangam deploy rule (ADR-D-25 strict exclusive routing): Sangam refuses rather than deploy a process that cannot run. Each refusal is listed with its first error and is part of the regression gate.
 
+## Refused by security policy (SL-160)
+
+On the full server the SL-160 deploy allow-list checks every expression and script language in the file, descriptive processes included. Two models that deploy here are refused by security policy (SL-160) on the server, by owner ruling (no scanner exception):
+
+| Model | Server outcome | Code |
+|---|---|---|
+| A.2.1 | refused by security policy (SL-160) | SL160-SCRIPT (XPath conditions) |
+| C.8.0 | refused by security policy (SL-160) | SL160-EXPR-BEAN (`SYS.PROCESSINSTANCE_ID`) |
+
+MiwgConformanceIT asserts both refusals and their codes on PostgreSQL, Oracle, SQL Server and MySQL.
+
 ## XPath note
 
 BPMN 2.0.2 section 2.2 makes XPath 1.0 the default expression language and XML Schema / WSDL the default type and service languages for Process Execution Conformance. Sangam evaluates JUEL (`${...}`) and FEEL; it does not evaluate XPath and ignores `definitions/@expressionLanguage`. Models whose conditions are XPath (C.1.1) are not run. This gap is reported to the integrator (R10-bpmn report), not decided here.

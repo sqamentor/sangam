@@ -49,7 +49,15 @@ final class MiwgReport {
                 .append("work to another vendor's engine (activiti:, kp: or zeebe: extensions, `##unspecified` or `webService` ")
                 .append("implementations without an operation) or breaks a Sangam deploy rule (ADR-D-25 strict exclusive routing): ")
                 .append("Sangam refuses rather than deploy a process that cannot run. Each refusal is listed with its first error ")
-                .append("and is part of the regression gate.\n");
+                .append("and is part of the regression gate.\n")
+                .append("\n## Refused by security policy (SL-160)\n\n")
+                .append("On the full server the SL-160 deploy allow-list checks every expression and script language in the ")
+                .append("file, descriptive processes included. Two models that deploy here are refused by security policy ")
+                .append("(SL-160) on the server, by owner ruling (no scanner exception):\n\n")
+                .append("| Model | Server outcome | Code |\n|---|---|---|\n")
+                .append("| A.2.1 | refused by security policy (SL-160) | SL160-SCRIPT (XPath conditions) |\n")
+                .append("| C.8.0 | refused by security policy (SL-160) | SL160-EXPR-BEAN (`SYS.PROCESSINSTANCE_ID`) |\n\n")
+                .append("MiwgConformanceIT asserts both refusals and their codes on PostgreSQL, Oracle, SQL Server and MySQL.\n");
         sb.append("\n## XPath note\n\n")
                 .append("BPMN 2.0.2 section 2.2 makes XPath 1.0 the default expression language and XML Schema / WSDL the default type ")
                 .append("and service languages for Process Execution Conformance. Sangam evaluates JUEL (`${...}`) and FEEL; it does not ")

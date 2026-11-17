@@ -24,6 +24,16 @@ class MiwgConformanceIT extends EngineScenarioSupport {
 
     private static final Path MIWG = Path.of("..", "sangam-flowable-ports", "src", "test", "resources", "miwg");
 
+    /**
+     * Models the H2 harness deploys (ports plugin only) but the server refuses by design: the server's SL-160 deploy
+     * allow-list (owner decision 2026-11-12, ModelCodeAllowList) checks every expression and script language in the
+     * whole file, descriptive (isExecutable="false") processes included. Value: the refusal code the message must carry.
+     * Refused by security policy (SL-160): owner ruling, no scanner exception for descriptive processes.
+     */
+    static final Map<String, String> SERVER_REFUSED = Map.of(
+            "A.2.1", "SL160-SCRIPT",        // XPath condition language in a descriptive process
+            "C.8.0", "SL160-EXPR-BEAN");    // ${SYS.PROCESSINSTANCE_ID} text and itemDefinition structureRef in a descriptive process
+
     private static Map<String, String> expectedDeploy() {
         Map<String, String> out = new LinkedHashMap<>();
         try {
@@ -32,7 +42,7 @@ class MiwgConformanceIT extends EngineScenarioSupport {
                     continue;
                 }
                 String[] c = line.split("\t");
-                out.put(c[0], c[3].startsWith("PASS") ? "PASS" : "FAIL");
+                out.put(c[0], c[3].startsWith("PASS") && !SERVER_REFUSED.containsKey(c[0]) ? "PASS" : "FAIL");
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -62,6 +72,10 @@ class MiwgConformanceIT extends EngineScenarioSupport {
                 } catch (RuntimeException ex) {
                     outcome = "FAIL";
                     ctx.detail(e.getKey(), String.valueOf(ex.getMessage()).replaceAll("\\s+", " "));
+                    String code = SERVER_REFUSED.get(e.getKey());
+                    if (code != null) {
+                        ctx.check(e.getKey() + " refused with " + code, String.valueOf(ex.getMessage()).contains(code));
+                    }
                 }
                 results.add(e.getKey() + "=" + outcome);
                 ctx.check(e.getKey() + " deploy " + outcome + " (expected " + e.getValue() + ")", outcome.equals(e.getValue()));
@@ -78,7 +92,7 @@ class MiwgConformanceIT extends EngineScenarioSupport {
             adapter.executeDueJobs();   // camunda:async="true" on the e-mail send task
             completeExternal(ctx, pid, "emailService", Map.of(), false);
             ctx.require("waits for the document", active(pid).contains("ReceiveTask_WaitForDocument"));
-            engine.getRuntimeService().createMessageCorrelation("MESSAGE_documentReceived").tenantId(SCENARIO_TENANT)
+            engine.getRuntimeService().createMessageCorrelation("MESSAGE_documentReceived")
                     .processInstanceId(pid).correlate();
             adapter.executeDueJobs();   // asyncAfter on the end event
             ctx.check("ended at 'Document received'; history " + historicActivityIds(pid),
