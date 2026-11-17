@@ -101,6 +101,9 @@ public final class RoutingIncidents {
             }
             for (Incident i : engine.getRuntimeService().createIncidentQuery().processInstanceId(pi)
                     .incidentType(TYPE).orderByIncidentTimestamp().asc().list()) {
+                if (i.getRootCauseIncidentId() != null && !i.getId().equals(i.getRootCauseIncidentId())) {
+                    continue; // Operaton's copy on each calling activity (no message); the child's own incident is read
+                }
                 out.add(new Found(i.getId(), pi, rootProcessInstanceId, i.getActivityId(),
                         outcome(i.getIncidentMessage()).orElse(null), code(i.getIncidentMessage()),
                         i.getIncidentMessage()));

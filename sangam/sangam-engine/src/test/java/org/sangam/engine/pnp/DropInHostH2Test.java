@@ -101,6 +101,9 @@ class DropInHostH2Test {
                 <sequenceFlow id="big" sourceRef="gw" targetRef="ce">
                   <conditionExpression xsi:type="tFormalExpression">${amount &gt; 100}</conditionExpression>
                 </sequenceFlow>
+                <sequenceFlow id="huge" sourceRef="gw" targetRef="ce">
+                  <conditionExpression xsi:type="tFormalExpression">${amount &gt; 1000}</conditionExpression>
+                </sequenceFlow>
                 <endEvent id="ce"/>
               </process>
             </definitions>

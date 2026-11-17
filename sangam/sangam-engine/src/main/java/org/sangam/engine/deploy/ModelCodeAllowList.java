@@ -145,6 +145,7 @@ public final class ModelCodeAllowList {
             "org.sangam.packs.core.CumulativeThresholdDelegate",
             "org.sangam.packs.core.DecisionDelegate",
             "org.sangam.packs.core.DocumentDelegate",
+            "org.sangam.packs.core.DocumentSlotReadyListener", // decision 390 (1) prepare-task listener (22 packs)
             "org.sangam.packs.core.DscSignatureGuardListener",
             "org.sangam.packs.core.ExternalOperationDelegate",
             "org.sangam.packs.core.LedgerDelegate",
