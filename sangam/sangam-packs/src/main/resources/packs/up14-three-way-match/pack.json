@@ -36,6 +36,7 @@
   "connectors": [
     {
       "id": "ap.post",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Post invoice for payment"

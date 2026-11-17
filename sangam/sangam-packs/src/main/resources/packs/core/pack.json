@@ -116,6 +116,7 @@
   "connectors": [
     {
       "id": "esign.sign",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-SIGN",
       "purpose": "Signature over the approved payload hash",
@@ -126,18 +127,21 @@
     },
     {
       "id": "dsc.sign",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-SIGN",
       "purpose": "DSC signer agent"
     },
     {
       "id": "docs.issue",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-LANG",
       "purpose": "Bilingual output documents"
     },
     {
       "id": "notify.sms",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-DLT",
       "purpose": "SMS on DLT templates",
@@ -148,6 +152,7 @@
     },
     {
       "id": "notify.email",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-MAIL",
       "purpose": "Official e-mail",
@@ -158,24 +163,28 @@
     },
     {
       "id": "notify.inapp",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "In-app notification"
     },
     {
       "id": "referral.send",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Referral to another department inbox (AC-09)"
     },
     {
       "id": "referral.reply",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Reply to a referral"
     },
     {
       "id": "bank.statement",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-PFMS",
       "purpose": "Statement / status match for reconciliation"

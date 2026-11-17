@@ -56,24 +56,28 @@
   "connectors": [
     {
       "id": "certin.report",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "CERT-In incident report"
     },
     {
       "id": "regulator.report",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Regulator portal"
     },
     {
       "id": "dpb.report",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Data Protection Board intimation"
     },
     {
       "id": "notify.email",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Data principals",

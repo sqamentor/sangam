@@ -48,30 +48,35 @@
   "connectors": [
     {
       "id": "gst.verify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "GSTIN status"
     },
     {
       "id": "pan.verify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "PAN"
     },
     {
       "id": "bene.validate",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Penny drop"
     },
     {
       "id": "marketplace.createSeller",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Seller account"
     },
     {
       "id": "catalogue.publishSeller",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Seller profile"

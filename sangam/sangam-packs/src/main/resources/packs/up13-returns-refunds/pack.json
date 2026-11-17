@@ -40,12 +40,14 @@
   "connectors": [
     {
       "id": "shipping.pickup",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Pickup"
     },
     {
       "id": "payment.refund",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Refund",

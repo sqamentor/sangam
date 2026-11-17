@@ -56,12 +56,14 @@
   "connectors": [
     {
       "id": "debt.limit",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Remaining borrowing / guarantee authority (debt system)"
     },
     {
       "id": "debt.record",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Record the operation in the debt system"

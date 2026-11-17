@@ -87,8 +87,10 @@ public final class ManifestPack implements SangamPack {
                 PackDescriptor.SimulatorBinding binding = b.isObject()
                         ? new PackDescriptor.SimulatorBinding(b.path("connector").asText(null), b.path("operation").asText(null))
                         : null;
-                conns.add(new ConnectorUse(c.path("id").asText(), c.path("capabilityClass").asText("c"),
-                        c.path("govTag").asText(""), c.path("purpose").asText(""), binding));
+                String cid = c.path("id").asText();
+                conns.add(new ConnectorUse(cid, c.path("capabilityClass").asText("c"),
+                        c.path("govTag").asText(""), c.path("purpose").asText(""), binding,
+                        MoneyMovement.parse(cid, c.path("moneyMovement").asText(null))));
             }
             List<PackDescriptor.WorkerUse> workers = new ArrayList<>();
             for (JsonNode w : m.path("workers")) {

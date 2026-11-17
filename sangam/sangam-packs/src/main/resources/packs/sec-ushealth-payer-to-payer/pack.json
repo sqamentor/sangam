@@ -60,18 +60,21 @@
   "connectors": [
     {
       "id": "payer.memberMatch",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Member match at the other payer ($member-match)"
     },
     {
       "id": "payer.p2pData",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Payer-to-Payer data request and response (FHIR Bulk Data)"
     },
     {
       "id": "payer.memberRecord",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Member record of this payer (FHIR)"

@@ -40,12 +40,14 @@
   "connectors": [
     {
       "id": "hr.penaltyRecovery",
+      "moneyMovement": "IN",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Recovery of the penalty from salary"
     },
     {
       "id": "pfms.payment",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
       "purpose": "Compensation to the applicant",

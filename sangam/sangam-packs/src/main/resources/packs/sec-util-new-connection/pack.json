@@ -48,18 +48,21 @@
   "connectors": [
     {
       "id": "pg.collect",
+      "moneyMovement": "IN",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Connection charges"
     },
     {
       "id": "billing.credit",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Compensation credit"
     },
     {
       "id": "mdm.install",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Meter data management; keeps the business key as the connection case of the consumer"

@@ -28,18 +28,21 @@
   "connectors": [
     {
       "id": "dot.kyc",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Re-verification"
     },
     {
       "id": "hlr.swap",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Swap"
     },
     {
       "id": "hlr.smsBar",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "SMS barring"

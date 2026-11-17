@@ -40,6 +40,7 @@
   "connectors": [
     {
       "id": "crm.case",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "CRM / CMS case reference"
