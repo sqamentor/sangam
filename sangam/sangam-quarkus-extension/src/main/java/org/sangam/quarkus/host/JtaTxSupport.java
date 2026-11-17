@@ -88,6 +88,23 @@ public final class JtaTxSupport extends TxSupport {
     }
 
     @Override
+    public <T> T inReadTx(org.sangam.core.api.ReadSupplier<T> work) {
+        Objects.requireNonNull(work, "work");
+        boolean owner = begin();
+        T result;
+        try {
+            result = work.read();
+        } catch (RuntimeException | Error e) {
+            abandon(owner, e);
+            throw e;
+        }
+        if (owner) {
+            end(false);
+        }
+        return result;
+    }
+
+    @Override
     public <T> T withReadConnection(ReadWork<T> work) {
         Objects.requireNonNull(work, "work");
         boolean owner = begin();

@@ -147,7 +147,7 @@ public final class ActionModels {
 
     /** All active actions of a tenant, for the administrator's list; no per-object permission filter. */
     public List<Action> listActive(String tenantId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT document FROM MOD_ACTION WHERE tenant_id=? AND active=1 ORDER BY action_key", rs -> Json.MAPPER.convertValue(Json.readMap(rs.getString(1)), Action.class), tenantId));
+        return tx.read(c -> Jdbc.query(c, "SELECT document FROM MOD_ACTION WHERE tenant_id=? AND active=1 ORDER BY action_key", rs -> Json.MAPPER.convertValue(Json.readMap(rs.getString(1)), Action.class), tenantId));
     }
 
     /** Deactivates an action; past runs stay. Returns false when no active version existed. */

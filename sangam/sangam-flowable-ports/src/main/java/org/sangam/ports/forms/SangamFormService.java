@@ -69,7 +69,7 @@ public class SangamFormService {
     }
 
     public Optional<DeployedForm> form(String tenant, String key, Integer version) {
-        return tx.inTransaction(c -> version == null ? latest(c, tenant, key)
+        return tx.read(c -> version == null ? latest(c, tenant, key)
                 : Jdbc.one(c, "SELECT version, sha256, definition FROM FORM_DEF WHERE tenant_id = ? AND form_key = ? AND version = ?",
                 rs -> new DeployedForm(tenant, key, rs.getInt(1), rs.getString(2), Json.read(rs.getString(3), FormDefinition.class)),
                 t(tenant), key, version));

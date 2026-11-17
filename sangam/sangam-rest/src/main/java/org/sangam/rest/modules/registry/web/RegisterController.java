@@ -47,13 +47,13 @@ public class RegisterController {
 
     @GetMapping
     public List<Map<String, Object>> definitions() {
-        return support.tx((c, ctx) -> registers.definitions(c, ctx.tenant()).stream().map(RegisterDefinition::toMap).toList());
+        return support.rtx((c, ctx) -> registers.definitions(c, ctx.tenant()).stream().map(RegisterDefinition::toMap).toList());
     }
 
     /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @GetMapping("/by-register-key")
     public Map<String, Object> definition(@RequestParam("registerKey") String registerKey) {
-        return support.tx((c, ctx) -> registers.definition(c, ctx.tenant(), registerKey).toMap());
+        return support.rtx((c, ctx) -> registers.definition(c, ctx.tenant(), registerKey).toMap());
     }
 
     /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
@@ -72,20 +72,20 @@ public class RegisterController {
     public List<Map<String, Object>> books(@RequestParam("registerKey") String registerKey, @RequestParam(required = false) String scope,
                                            @RequestParam(defaultValue = "0") int page,
                                            @RequestParam(defaultValue = "50") int size) {
-        return support.tx((c, ctx) -> registers.books(c, ctx, registerKey, scope, page, size).stream()
+        return support.rtx((c, ctx) -> registers.books(c, ctx, registerKey, scope, page, size).stream()
                 .map(RegisterBookService.Book::toMap).toList());
     }
 
     @GetMapping("/books/{bookId}")
     public Map<String, Object> book(@PathVariable String bookId) {
-        return support.tx((c, ctx) -> registers.book(c, ctx, bookId).toMap());
+        return support.rtx((c, ctx) -> registers.book(c, ctx, bookId).toMap());
     }
 
     @GetMapping("/books/{bookId}/entries")
     public List<Map<String, Object>> entries(@PathVariable String bookId, @RequestParam(defaultValue = "1") long from,
                                              @RequestParam(defaultValue = "100") long count) {
         long to = lastEntry(from, count);
-        return support.tx((c, ctx) -> registers.entries(c, ctx, bookId, from, to).stream()
+        return support.rtx((c, ctx) -> registers.entries(c, ctx, bookId, from, to).stream()
                 .map(RegisterBookService.Entry::toMap).toList());
     }
 
@@ -105,7 +105,7 @@ public class RegisterController {
 
     @GetMapping("/books/{bookId}/entries/{entryNo}")
     public Map<String, Object> effective(@PathVariable String bookId, @PathVariable long entryNo) {
-        return support.tx((c, ctx) -> registers.effective(c, ctx, bookId, entryNo));
+        return support.rtx((c, ctx) -> registers.effective(c, ctx, bookId, entryNo));
     }
 
     @PostMapping("/books/{bookId}/entries/{entryNo}/corrections")
@@ -119,7 +119,7 @@ public class RegisterController {
 
     @GetMapping("/entries")
     public List<Map<String, Object>> entriesFor(@RequestParam String refType, @RequestParam String refId) {
-        return support.tx((c, ctx) -> registers.entriesFor(c, ctx, refType, refId).stream()
+        return support.rtx((c, ctx) -> registers.entriesFor(c, ctx, refType, refId).stream()
                 .map(RegisterBookService.Entry::toMap).toList());
     }
 
@@ -130,7 +130,7 @@ public class RegisterController {
 
     @GetMapping("/books/{bookId}/verify")
     public RegisterBookService.VerifyResult verify(@PathVariable String bookId) {
-        return support.tx((c, ctx) -> registers.verify(c, ctx, bookId));
+        return support.rtx((c, ctx) -> registers.verify(c, ctx, bookId));
     }
 
     @PostMapping("/books/{bookId}/extracts")
@@ -145,12 +145,12 @@ public class RegisterController {
 
     @GetMapping("/extracts/{extractId}")
     public Map<String, Object> getExtract(@PathVariable String extractId) {
-        return support.tx((c, ctx) -> registers.extract(c, ctx, extractId).toMap());
+        return support.rtx((c, ctx) -> registers.extract(c, ctx, extractId).toMap());
     }
 
     /** Public verification of a certified extract (tenant as a query parameter; no authentication). Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @GetMapping("/public/by-tenant/extracts/verify")
     public RegisterBookService.ExtractVerification verifyExtract(@RequestParam("tenant") String tenant, @RequestParam String code) {
-        return support.publicTx(tenant, (c, ctx) -> registers.verifyExtract(c, ctx, code));
+        return support.publicRead(tenant, (c, ctx) -> registers.verifyExtract(c, ctx, code));
     }
 }

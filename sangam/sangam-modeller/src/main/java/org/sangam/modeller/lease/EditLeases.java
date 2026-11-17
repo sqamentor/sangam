@@ -107,7 +107,7 @@ public final class EditLeases {
     }
 
     public Optional<Lease> current(String tenantId, String fileId) {
-        return tx.inTransaction(c -> Jdbc.one(c, SELECT + " WHERE tenant_id=? AND file_id=?", EditLeases::map, tenantId, fileId));
+        return tx.read(c -> Jdbc.one(c, SELECT + " WHERE tenant_id=? AND file_id=?", EditLeases::map, tenantId, fileId));
     }
 
     private Lease lock(Connection c, String tenantId, String fileId) {

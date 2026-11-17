@@ -112,7 +112,7 @@ public final class OperatonFormAdapter implements FormPort {
         if (formKey == null || formKey.isBlank() || "drafts".equals(formKey)) {
             throw ApiProblem.notFound("Form", formKey);
         }
-        List<Deployment> deployments = OperatonSupport.call(() -> repository.createDeploymentQuery()
+        List<Deployment> deployments = OperatonSupport.readCall(() -> repository.createDeploymentQuery()
                 .tenantIdIn(ctx.tenantId()).includeDeploymentsWithoutTenantId()
                 .orderByDeploymentTime().desc().list());
         boolean first = true;
@@ -353,7 +353,7 @@ public final class OperatonFormAdapter implements FormPort {
             params.add(taskId);
         }
         String sql = "SELECT " + DRAFT_COLS + " FROM FORM_DRAFT WHERE " + where + " ORDER BY updated_at DESC";
-        List<Draft> visible = tx.withConnection(c -> Jdbc.query(c, sql, this::draftRow, params.toArray()))
+        List<Draft> visible = tx.withReadConnection(c -> Jdbc.query(c, sql, this::draftRow, params.toArray()))
                 .stream().filter(d -> visibleTo(ctx, d)).toList();
         return Page.slice(visible, page, props.getCountCap());
     }
@@ -464,7 +464,7 @@ public final class OperatonFormAdapter implements FormPort {
 
     /** Lazy expiry (X.2.5.8 rule 4): expired drafts of the tenant are deleted before any read. */
     private void purgeExpired(String tenant) {
-        tx.withConnection(c -> Jdbc.update(c, "DELETE FROM FORM_DRAFT WHERE tenant_id=? AND expires_at<?",
+        tx.withReadConnection(c -> Jdbc.update(c, "DELETE FROM FORM_DRAFT WHERE tenant_id=? AND expires_at<?",
                 tenant, Instant.now()));
     }
 

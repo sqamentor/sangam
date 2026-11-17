@@ -51,14 +51,14 @@ public class AssetController {
 
     @GetMapping("/classes")
     public List<Map<String, Object>> classes() {
-        return support.tx((c, ctx) -> assets.listClasses(c, ctx));
+        return support.rtx((c, ctx) -> assets.listClasses(c, ctx));
     }
 
     /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @GetMapping("/classes/by-class-key")
     public Map<String, Object> getClass(@RequestParam("classKey") String classKey,
                                         @RequestParam(defaultValue = "true") boolean resolved) {
-        return support.tx((c, ctx) -> {
+        return support.rtx((c, ctx) -> {
             AssetClassDefinition d = resolved ? assets.resolveClass(c, ctx.tenant(), classKey) : assets.rawClass(c, ctx.tenant(), classKey);
             return d.toMap();
         });
@@ -80,19 +80,19 @@ public class AssetController {
                                           @RequestParam(required = false) String custodianRef,
                                           @RequestParam(defaultValue = "0") int page,
                                           @RequestParam(defaultValue = "50") int size) {
-        return support.tx((c, ctx) -> assets.list(c, ctx, new AssetService.Query(classKey, status, parentAssetId,
+        return support.rtx((c, ctx) -> assets.list(c, ctx, new AssetService.Query(classKey, status, parentAssetId,
                 locationRef, custodianRef, page, size)).stream().map(a -> a.toMap()).toList());
     }
 
     @GetMapping("/{id}")
     public Map<String, Object> get(@PathVariable String id) {
-        return support.tx((c, ctx) -> assets.view(c, ctx, id).toMap());
+        return support.rtx((c, ctx) -> assets.view(c, ctx, id).toMap());
     }
 
     /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @GetMapping("/by-tag")
     public Map<String, Object> byTag(@RequestParam("tag") String tag) {
-        return support.tx((c, ctx) -> assets.byTag(c, ctx, tag).toMap());
+        return support.rtx((c, ctx) -> assets.byTag(c, ctx, tag).toMap());
     }
 
     @PatchMapping("/{id}")
@@ -112,7 +112,7 @@ public class AssetController {
 
     @GetMapping("/{id}/movements")
     public List<Map<String, Object>> movements(@PathVariable String id) {
-        return support.tx((c, ctx) -> assets.movements(c, ctx, id));
+        return support.rtx((c, ctx) -> assets.movements(c, ctx, id));
     }
 
     @PostMapping("/{id}/reparent")
@@ -124,17 +124,17 @@ public class AssetController {
 
     @GetMapping("/{id}/children")
     public List<Map<String, Object>> children(@PathVariable String id) {
-        return support.tx((c, ctx) -> assets.children(c, ctx, id).stream().map(a -> a.toMap()).toList());
+        return support.rtx((c, ctx) -> assets.children(c, ctx, id).stream().map(a -> a.toMap()).toList());
     }
 
     @GetMapping("/{id}/ancestors")
     public List<Map<String, Object>> ancestors(@PathVariable String id) {
-        return support.tx((c, ctx) -> assets.ancestors(c, ctx, id).stream().map(a -> a.toMap()).toList());
+        return support.rtx((c, ctx) -> assets.ancestors(c, ctx, id).stream().map(a -> a.toMap()).toList());
     }
 
     @GetMapping("/{id}/subtree")
     public List<Map<String, Object>> subtree(@PathVariable String id) {
-        return support.tx((c, ctx) -> assets.subtree(c, ctx, id).stream().map(a -> a.toMap()).toList());
+        return support.rtx((c, ctx) -> assets.subtree(c, ctx, id).stream().map(a -> a.toMap()).toList());
     }
 
     @PostMapping("/{id}/dispose")
@@ -146,13 +146,13 @@ public class AssetController {
 
     @GetMapping("/{id}/depreciation")
     public List<Map<String, Object>> depreciation(@PathVariable String id) {
-        return support.tx((c, ctx) -> assets.depreciationSchedule(c, ctx, id).stream()
+        return support.rtx((c, ctx) -> assets.depreciationSchedule(c, ctx, id).stream()
                 .map(DepreciationCalculator.Line::toMap).toList());
     }
 
     @GetMapping("/{id}/book-value")
     public Map<String, Object> bookValue(@PathVariable String id, @RequestParam(required = false) String asOf) {
-        return support.tx((c, ctx) -> {
+        return support.rtx((c, ctx) -> {
             LocalDate d = asOf == null ? LocalDate.now(ctx.zone()) : LocalDate.parse(asOf);
             org.sangam.core.money.Money bv = assets.bookValue(c, ctx, id, d); // MoneyAmount string + currency
             return Maps.of("assetId", id, "asOf", d, "bookValue", bv == null ? null : bv.toPlainString(),
@@ -164,7 +164,7 @@ public class AssetController {
 
     @GetMapping("/{id}/meters")
     public List<Map<String, Object>> meters(@PathVariable String id) {
-        return support.tx((c, ctx) -> maintenance.meters(c, ctx, id).stream().map(MaintenanceService.Meter::toMap).toList());
+        return support.rtx((c, ctx) -> maintenance.meters(c, ctx, id).stream().map(MaintenanceService.Meter::toMap).toList());
     }
 
     @PostMapping("/{id}/meters")
@@ -188,7 +188,7 @@ public class AssetController {
     public List<Map<String, Object>> readings(@PathVariable String id, @RequestParam("meterType") String meterType,
                                               @RequestParam(defaultValue = "0") int page,
                                               @RequestParam(defaultValue = "50") int size) {
-        return support.tx((c, ctx) -> maintenance.readings(c, ctx, id, meterType, page, size).stream()
+        return support.rtx((c, ctx) -> maintenance.readings(c, ctx, id, meterType, page, size).stream()
                 .map(MaintenanceService.Reading::toMap).toList());
     }
 
@@ -209,7 +209,7 @@ public class AssetController {
 
     @GetMapping("/{id}/plans")
     public List<Map<String, Object>> plans(@PathVariable String id) {
-        return support.tx((c, ctx) -> maintenance.plans(c, ctx, id).stream().map(MaintenanceService.Plan::toMap).toList());
+        return support.rtx((c, ctx) -> maintenance.plans(c, ctx, id).stream().map(MaintenanceService.Plan::toMap).toList());
     }
 
     @PostMapping("/{id}/plans")
@@ -253,13 +253,13 @@ public class AssetController {
                                                 @RequestParam(required = false) String workType,
                                                 @RequestParam(defaultValue = "0") int page,
                                                 @RequestParam(defaultValue = "50") int size) {
-        return support.tx((c, ctx) -> maintenance.workOrders(c, ctx, assetId, state, workType, page, size).stream()
+        return support.rtx((c, ctx) -> maintenance.workOrders(c, ctx, assetId, state, workType, page, size).stream()
                 .map(WorkOrder::toMap).toList());
     }
 
     @GetMapping("/work-orders/{woId}")
     public Map<String, Object> workOrder(@PathVariable String woId) {
-        return support.tx((c, ctx) -> maintenance.workOrder(c, ctx, woId).toMap());
+        return support.rtx((c, ctx) -> maintenance.workOrder(c, ctx, woId).toMap());
     }
 
     @PostMapping("/work-orders/generate-due")
@@ -293,7 +293,7 @@ public class AssetController {
     @GetMapping("/{id}/reliability")
     public Map<String, Object> reliability(@PathVariable String id, @RequestParam(required = false) String from,
                                            @RequestParam(required = false) String to) {
-        return support.tx((c, ctx) -> maintenance.reliability(c, ctx, id, from == null ? null : Instant.parse(from),
+        return support.rtx((c, ctx) -> maintenance.reliability(c, ctx, id, from == null ? null : Instant.parse(from),
                 to == null ? null : Instant.parse(to)));
     }
 }

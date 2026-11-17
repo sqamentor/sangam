@@ -228,7 +228,7 @@ public final class PoisonInbound {
 
     /** Open parked items of every tenant of this cell (SL-142, decision 61), oldest first: for the cell operator only. */
     public List<Item> listParked() {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT r.id, r.tenant_id, r.task_id, r.state, r.created_at, r.details, d.ref_id, d.error"
+        return tx.read(c -> Jdbc.query(c, "SELECT r.id, r.tenant_id, r.task_id, r.state, r.created_at, r.details, d.ref_id, d.error"
                         + " FROM RECONCILIATION_ITEM r JOIN INTEGRATION_DEAD_LETTER d ON r.task_id = " + concat("'dead-letter:'", idText("d.id"))
                         + " WHERE r.kind=? AND r.state='OPEN' ORDER BY r.id",
                 PoisonInbound::map, KIND)).stream().filter(Item::parked).toList();
@@ -245,7 +245,7 @@ public final class PoisonInbound {
     private Parked parkedWhere(long itemId, String tenantOrNull) {
         String scope = tenantOrNull == null ? "" : " AND r.tenant_id=?";
         Object[] args = tenantOrNull == null ? new Object[]{itemId, KIND} : new Object[]{itemId, KIND, tenantOrNull};
-        return tx.inTransaction(c -> Jdbc.one(c, "SELECT r.id, r.tenant_id, r.task_id, r.state, r.details, d.ref_id, d.event_type,"
+        return tx.read(c -> Jdbc.one(c, "SELECT r.id, r.tenant_id, r.task_id, r.state, r.details, d.ref_id, d.event_type,"
                         + " d.payload FROM RECONCILIATION_ITEM r JOIN INTEGRATION_DEAD_LETTER d ON r.task_id = "
                         + concat("'dead-letter:'", idText("d.id")) + " WHERE r.id=? AND r.kind=?" + scope, rs -> {
                     Map<String, Object> d = Json.readMap(rs.getString("details"));

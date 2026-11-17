@@ -76,7 +76,7 @@ public class JdbcReconciliationSupport {
             params.add(kind);
         }
         long cap = props.getCountCap();
-        return tx.withConnection(c -> {
+        return tx.withReadConnection(c -> {
             List<ReconciliationItem> rows = JdbcAuditAdapter.limited(c,
                     "SELECT * FROM RECONCILIATION_ITEM" + where + " ORDER BY id DESC", page.firstResult() + page.size(),
                     JdbcReconciliationSupport::item, params.toArray());
@@ -90,7 +90,7 @@ public class JdbcReconciliationSupport {
 
     public ReconciliationItem get(RequestContext ctx, String id) {
         long itemId = parseId(id, "reconciliation item");
-        return tx.withConnection(c -> Jdbc.one(c, "SELECT * FROM RECONCILIATION_ITEM WHERE id=? AND tenant_id=?",
+        return tx.withReadConnection(c -> Jdbc.one(c, "SELECT * FROM RECONCILIATION_ITEM WHERE id=? AND tenant_id=?",
                 JdbcReconciliationSupport::item, itemId, ctx.tenantId()))
                 .orElseThrow(() -> ApiProblem.notFound("reconciliation item", id));
     }
@@ -129,7 +129,7 @@ public class JdbcReconciliationSupport {
             params.add(destination);
         }
         long cap = props.getCountCap();
-        return tx.withConnection(c -> {
+        return tx.withReadConnection(c -> {
             List<OutboxDelivery> rows = JdbcAuditAdapter.limited(c, "SELECT " + DELIVERY_COLUMNS + DELIVERY_FROM + where
                             + " ORDER BY d.outbox_id DESC", page.firstResult() + page.size(),
                     JdbcReconciliationSupport::delivery, params.toArray());
@@ -146,7 +146,7 @@ public class JdbcReconciliationSupport {
      * property of the database): NONE below 60 %, WARN from 60 %, REFUSE_NEW from 80 %.
      */
     public OutboxStats stats(RequestContext ctx) {
-        return tx.withConnection(c -> {
+        return tx.withReadConnection(c -> {
             Map<String, Long> byState = new LinkedHashMap<>();
             Jdbc.query(c, "SELECT state, COUNT(*) FROM OUTBOX_DELIVERY WHERE tenant_id=? GROUP BY state",
                     rs -> byState.put(rs.getString(1), rs.getLong(2)), ctx.tenantId());

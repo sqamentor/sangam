@@ -74,7 +74,7 @@ public class OperatonAnalyticsAdapter implements AnalyticsPort {
     public Summary summary(RequestContext ctx, Range range) {
         Range r = range(range);
         Supplier<HistoricProcessInstanceQuery> base = () -> instances(ctx, r);
-        return OperatonSupport.call(() -> {
+        return OperatonSupport.readCall(() -> {
             long started = base.get().count();
             long completed = base.get().completed().count();
             long active = base.get().active().count() + base.get().suspended().count();
@@ -104,7 +104,7 @@ public class OperatonAnalyticsAdapter implements AnalyticsPort {
         if (latest == null) {
             return List.of();
         }
-        return OperatonSupport.call(() -> {
+        return OperatonSupport.readCall(() -> {
             var sq = historyService.createHistoricActivityStatisticsQuery(latest.getId())
                     .includeFinished().includeCanceled().includeIncidents();
             if (r.from() != null) {
@@ -156,7 +156,7 @@ public class OperatonAnalyticsAdapter implements AnalyticsPort {
     @Override
     public List<TaskStat> tasks(RequestContext ctx, Range range) {
         Range r = range(range);
-        return OperatonSupport.call(() -> {
+        return OperatonSupport.readCall(() -> {
             HistoricTaskInstanceQuery q = historyService.createHistoricTaskInstanceQuery();
             if (ctx.tenantId() != null) {
                 q.tenantIdIn(ctx.tenantId());
@@ -360,7 +360,7 @@ public class OperatonAnalyticsAdapter implements AnalyticsPort {
      * sequences; one activity query per definition version.
      */
     private List<Trace> traces(RequestContext ctx, Range r, int max, boolean finishedOnly) {
-        return OperatonSupport.call(() -> {
+        return OperatonSupport.readCall(() -> {
             HistoricProcessInstanceQuery q = instances(ctx, r);
             if (finishedOnly) {
                 q.finished();

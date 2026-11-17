@@ -415,7 +415,7 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         }
         Optional<org.sangam.engine.lease.SangamLeaseTable.Row> lease = engine instanceof org.sangam.engine.OperatonEngineAdapter o
                 ? o.leaseOf(workId) : Optional.empty();
-        if (lease.isEmpty() && engine.inEngineTransaction(c -> tombstones.find(c, ctx.tenantId(), workId)).isPresent()) {
+        if (lease.isEmpty() && engine.inEngineReadTransaction(c -> tombstones.find(c, ctx.tenantId(), workId)).isPresent()) {
             throw ApiProblem.gone("GONE_INSTANCE_DELETED", "The instance of this work was deleted").with("workId", workId);
         }
         UUID op = operationIdOf(workId);

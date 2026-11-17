@@ -114,7 +114,7 @@ public final class JdbcApiContractStore implements ApiContractStore {
                 || (version != null && version < 1)) {
             return Optional.empty();   // nothing that does not fit the table can be stored in it
         }
-        return tx.inTransaction(c -> version == null ? latest(c, tenantId, packageId, contractId)
+        return tx.read(c -> version == null ? latest(c, tenantId, packageId, contractId)
                 : Jdbc.one(c, "SELECT " + COLS + " FROM API_CONTRACT WHERE tenant_id=? AND package_id=? AND contract_id=?"
                         + " AND version=?", JdbcApiContractStore::row, tenantId, packageId, contractId, version));
     }
@@ -124,7 +124,7 @@ public final class JdbcApiContractStore implements ApiContractStore {
         if (!fits(tenantId) || !fits(packageId)) {
             return List.of();
         }
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT " + COLS + " FROM API_CONTRACT a WHERE a.tenant_id=?"
+        return tx.read(c -> Jdbc.query(c, "SELECT " + COLS + " FROM API_CONTRACT a WHERE a.tenant_id=?"
                         + " AND a.package_id=? AND a." + LATEST, JdbcApiContractStore::row, tenantId, packageId))
                 .stream().sorted(Comparator.comparing(ApiContract::contractId)).toList();
     }

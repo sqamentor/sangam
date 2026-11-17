@@ -43,14 +43,14 @@ public final class JdbcTaskFilterAdapter implements TaskFilterPort {
     @Override
     public List<TaskFilter> list(String tenantId) {
         String t = tenant(tenantId);
-        return tx.withConnection(c -> Jdbc.query(c, "SELECT " + COLS + " FROM TEAM_TASK_FILTER WHERE tenant_id=?"
+        return tx.withReadConnection(c -> Jdbc.query(c, "SELECT " + COLS + " FROM TEAM_TASK_FILTER WHERE tenant_id=?"
                 + " ORDER BY name, filter_id", JdbcTaskFilterAdapter::map, t));
     }
 
     @Override
     public Optional<TaskFilter> get(String tenantId, String id) {
         String t = tenant(tenantId);
-        return tx.withConnection(c -> Jdbc.one(c, "SELECT " + COLS + " FROM TEAM_TASK_FILTER"
+        return tx.withReadConnection(c -> Jdbc.one(c, "SELECT " + COLS + " FROM TEAM_TASK_FILTER"
                 + " WHERE tenant_id=? AND filter_id=?", JdbcTaskFilterAdapter::map, t, id));
     }
 

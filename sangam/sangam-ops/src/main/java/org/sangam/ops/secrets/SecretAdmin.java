@@ -83,7 +83,7 @@ public final class SecretAdmin {
     }
 
     public List<SecretInfo> list(String tenantId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT ref_name,version,updated_by,updated_at,reason FROM OPS_SECRET WHERE tenant_id=? ORDER BY ref_name",
+        return tx.read(c -> Jdbc.query(c, "SELECT ref_name,version,updated_by,updated_at,reason FROM OPS_SECRET WHERE tenant_id=? ORDER BY ref_name",
                 rs -> new SecretInfo(rs.getString(1), rs.getInt(2), rs.getString(3), Jdbc.instant(rs, "updated_at"), rs.getString(5)), tenantId));
     }
 
