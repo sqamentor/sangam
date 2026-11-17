@@ -28,7 +28,7 @@
     <userTask id="db_sanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:dbt-batch/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.DocumentSlotReadyListener"><operaton:field name="slots"><operaton:string>sanctionDocumentId:SANCTION_NOTE</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <sequenceFlow id="dbt_batch_f1" sourceRef="db_start" targetRef="db_defaults"/>
     <sequenceFlow id="dbt_batch_f2" sourceRef="db_defaults" targetRef="db_load"/>
-    <sequenceFlow id="dbt_batch_f3" sourceRef="db_load" targetRef="db_sanctionPrepareGw"/>
+    <sequenceFlow id="dbt_batch_f3" sourceRef="db_load" targetRef="db_seal"/>
     <sequenceFlow id="dbt_batch_f4" sourceRef="db_open" targetRef="db_fanOut"/>
     <sequenceFlow id="dbt_batch_f5" sourceRef="db_fanOut" targetRef="db_fanGw"/>
     <sequenceFlow id="dbt_batch_f6" name="next chunk" sourceRef="db_fanGw" targetRef="db_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
@@ -44,7 +44,7 @@
     <sequenceFlow id="dbt_batch_f16" sourceRef="db_review" targetRef="db_roundGw"/>
     <sequenceFlow id="dbt_batch_f17" name="resend failures" sourceRef="db_roundGw" targetRef="db_nextRound"><conditionExpression xsi:type="tFormalExpression">${roundDecision == 'resubmit'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="dbt_batch_f18" sourceRef="db_nextRound" targetRef="db_retryGw"/>
-    <sequenceFlow id="dbt_batch_f19" name="resend" sourceRef="db_retryGw" targetRef="db_fanOut"><conditionExpression xsi:type="tFormalExpression">${retryCount &gt; 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="dbt_batch_f19" name="resend" sourceRef="db_retryGw" targetRef="db_retry_seal"><conditionExpression xsi:type="tFormalExpression">${retryCount &gt; 0}</conditionExpression></sequenceFlow>
     <sequenceFlow id="dbt_batch_f20" name="nothing retryable" sourceRef="db_retryGw" targetRef="db_report"/>
     <sequenceFlow id="dbt_batch_f21" name="close" sourceRef="db_roundGw" targetRef="db_report"/>
     <sequenceFlow id="dbt_batch_f22" name="all paid" sourceRef="db_failGw" targetRef="db_report"/>
@@ -52,6 +52,16 @@
     <sequenceFlow id="dbt_batch_f24" name="DSC signature needed" sourceRef="db_sanctionPrepareGw" targetRef="db_sanctionPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
     <sequenceFlow id="dbt_batch_f25" name="no DSC signature" sourceRef="db_sanctionPrepareGw" targetRef="db_sanction"/>
     <sequenceFlow id="dbt_batch_f26" sourceRef="db_sanctionPrepare" targetRef="db_sanction"/>
+      <serviceTask id="db_seal" name="Seal the batch items (count, total, fingerprints; owner decision E1)" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>SEAL</operaton:string></operaton:field><operaton:field name="currency"><operaton:string>INR</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>DBT instalment</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="payeeField"><operaton:string>bankAccount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <sequenceFlow id="db_seal_f" sourceRef="db_seal" targetRef="db_sanctionPrepareGw"/>
+      <serviceTask id="db_retry_seal" name="Seal the batch items (count, total, fingerprints; owner decision E1)" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>SEAL</operaton:string></operaton:field><operaton:field name="currency"><operaton:string>INR</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>DBT instalment</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="payeeField"><operaton:string>bankAccount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="db_retry_bsanction" name="Sanction the sealed batch (core sanction, owner decision E1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="db_retry_bsgw" name="Batch sanctioned?" default="db_retry_bsgw_no"></exclusiveGateway>
+    <endEvent id="db_retry_bnotReleased" name="Batch not released"></endEvent>
+    <sequenceFlow id="db_retry_seal_f" sourceRef="db_retry_seal" targetRef="db_retry_bsanction"/>
+    <sequenceFlow id="db_retry_bsanction_f" sourceRef="db_retry_bsanction" targetRef="db_retry_bsgw"/>
+    <sequenceFlow id="db_retry_bsgw_yes" name="sanctioned" sourceRef="db_retry_bsgw" targetRef="db_fanOut"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="db_retry_bsgw_no" name="not sanctioned" sourceRef="db_retry_bsgw" targetRef="db_retry_bnotReleased"/>
   </process>
   <bpmndi:BPMNDiagram id="dbt_batch_diagram">
     <bpmndi:BPMNPlane id="dbt_batch_plane" bpmnElement="sangam-dbt-batch">

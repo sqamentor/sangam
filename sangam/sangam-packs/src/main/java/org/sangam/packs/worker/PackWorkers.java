@@ -123,7 +123,8 @@ public final class PackWorkers {
                                               Map<String, Object> variables) {
                 String held = org.sangam.packs.core.MoneyOutApproval.refusal(connector, variables::get);
                 if (held != null) {
-                    throw new WorkerBpmnError(org.sangam.packs.core.MoneyOutApproval.ERROR, held);
+                    // a failure (retries, then an incident with the reason), never a BPMN error
+                    throw new IllegalStateException(org.sangam.packs.core.MoneyOutApproval.HELD + ": " + held);
                 }
                 Map<String, Object> payload = new HashMap<>();
                 variables.forEach((k, v) -> {

@@ -21,8 +21,16 @@
     <sequenceFlow id="sec_bank_dormancy_review_f6" sourceRef="dv_poll" targetRef="dv_aggregate"/>
     <sequenceFlow id="sec_bank_dormancy_review_f7" sourceRef="dv_aggregate" targetRef="dv_doneGw"/>
     <sequenceFlow id="sec_bank_dormancy_review_f8" name="not yet" sourceRef="dv_doneGw" targetRef="dv_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
-    <sequenceFlow id="sec_bank_dormancy_review_f9" sourceRef="dv_load" targetRef="dv_open"/>
+    <sequenceFlow id="sec_bank_dormancy_review_f9" sourceRef="dv_load" targetRef="dv_seal"/>
     <sequenceFlow id="sec_bank_dormancy_review_f10" name="complete" sourceRef="dv_doneGw" targetRef="dv_end"/>
+      <serviceTask id="dv_seal" name="Seal the batch items (count, total, fingerprints; owner decision E1)" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>SEAL</operaton:string></operaton:field><operaton:field name="currency"><operaton:string>INR</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Transfer to the DEA Fund</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="dv_bsanction" name="Sanction the sealed batch (core sanction, owner decision E1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="dv_bsgw" name="Batch sanctioned?" default="dv_bsgw_no"></exclusiveGateway>
+    <endEvent id="dv_bnotReleased" name="Batch not released"></endEvent>
+    <sequenceFlow id="dv_seal_f" sourceRef="dv_seal" targetRef="dv_bsanction"/>
+    <sequenceFlow id="dv_bsanction_f" sourceRef="dv_bsanction" targetRef="dv_bsgw"/>
+    <sequenceFlow id="dv_bsgw_yes" name="sanctioned" sourceRef="dv_bsgw" targetRef="dv_open"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="dv_bsgw_no" name="not sanctioned" sourceRef="dv_bsgw" targetRef="dv_bnotReleased"/>
   </process>
   <bpmndi:BPMNDiagram id="sec_bank_dormancy_review_diagram">
     <bpmndi:BPMNPlane id="sec_bank_dormancy_review_plane" bpmnElement="sangam-sec-bank-dormancy-review">

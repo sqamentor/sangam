@@ -27,6 +27,13 @@ public class ApprovalBindingListener implements TaskListener {
         if (decision == null || !Vars.csv(Vars.field(approveValues, t, "approve")).contains(decision.toString())) {
             return;
         }
+        if (Boolean.TRUE.equals(t.getVariable("moneyOutRelease"))) {
+            // owner decision E3: an approval that releases money out binds amount, payee account, currency and purpose
+            java.util.List<String> missing = MoneyOutApproval.missingMoneyFields(t::getVariable);
+            if (!missing.isEmpty()) {
+                throw new ProcessEngineException("422 MONEY_FIELDS_MISSING: the approval cannot bind " + missing);
+            }
+        }
         TaskActor a = TaskActor.of(t);
         String hash = Vars.materialHash(t);
         String presented = Vars.str(t, "presentedPayloadHash");
