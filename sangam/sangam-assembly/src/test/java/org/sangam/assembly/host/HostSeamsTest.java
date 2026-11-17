@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.assembly.host;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -75,6 +76,11 @@ class HostSeamsTest {
     static final Transactions NO_TX = new Transactions() {
         @Override
         public <T> T inTransaction(java.util.function.Function<Connection, T> work) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public <T> T read(ReadWork<T> work) {
             throw new UnsupportedOperationException();
         }
     };

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.ports.debug;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -57,6 +58,11 @@ class DebuggerServiceH2Test {
             @Override
             public <T> T inTransaction(Function<java.sql.Connection, T> work) {
                 return EngineTx.transactions(engineRef.get()).inTransaction(work);
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                return EngineTx.transactions(engineRef.get()).read(work);
             }
         };
         // the parse-side instance needs only the breakpoint table; the engine is built after the plugin is registered

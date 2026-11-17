@@ -41,7 +41,6 @@ import org.operaton.bpm.engine.impl.db.DbEntity;
 import org.operaton.bpm.engine.impl.db.entitymanager.OptimisticLockingListener;
 import org.operaton.bpm.engine.impl.db.entitymanager.OptimisticLockingResult;
 import org.operaton.bpm.engine.impl.db.entitymanager.operation.DbOperation;
-import org.operaton.bpm.engine.impl.interceptor.Command;
 import org.operaton.bpm.engine.impl.interceptor.CommandContext;
 import org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.ExternalTaskEntity;
@@ -58,6 +57,7 @@ import org.operaton.bpm.engine.runtime.ProcessInstance;
 import org.operaton.bpm.engine.runtime.ProcessInstantiationBuilder;
 import org.operaton.bpm.engine.task.Task;
 import org.sangam.core.api.ExpiryPolicy;
+import org.sangam.core.api.ReadWork;
 import org.sangam.core.engine.ConflictRetryExhaustedException;
 import org.sangam.core.engine.OperationIdentity;
 import org.sangam.core.engine.SangamClock;
@@ -182,12 +182,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
     }
 
     private <T> T once(BiFunction<CommandContext, Connection, T> work) {
-        Command<T> cmd = cc -> {
-            Connection conn = CommandState.connection(cc);
-            CommandState.applyLockTimeouts(cc, dialect, settings.getLockTimeout(), settings.getStatementTimeout()); // SL-99: restored at tx end
-            return work.apply(cc, conn);
-        };
-        return configuration.getCommandExecutorTxRequired().execute(cmd);
+        return new EngineCommands(configuration, settings, dialect).once(work);
     }
 
     /**
@@ -204,6 +199,11 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             return work.apply(CommandState.connection(Context.getCommandContext()));
         }
         return once((cc, conn) -> work.apply(conn));
+    }
+
+    @Override
+    public <T> T inEngineReadTransaction(ReadWork<T> work) {
+        return new EngineCommands(configuration, settings, dialect).read(work);
     }
 
     /** A root to lock: id, tenant and the definition key for the wait metric. */
