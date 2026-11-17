@@ -39,7 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 @ConditionalOnProperty(name = "sangam.cell.id")
 public class CellTenantAdminController {
 
-    public static final String ROLE = "CELL_ADMIN";
+    public static final String ROLE = org.sangam.rest.support.Permissions.CELL_ADMIN_ROLE;
     private static final Logger LOG = LoggerFactory.getLogger(CellTenantAdminController.class);
 
     private final CellTenantMover mover;

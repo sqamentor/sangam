@@ -68,9 +68,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class CatalogueHostController {
 
     /** Platform-only: submit an entry to the platform-wide catalogue. */
-    public static final String PUBLISH = "platform.catalogue.publish";
+    public static final String PUBLISH = org.sangam.rest.support.Permissions.CATALOGUE_PUBLISH;
     /** Platform-only: approve or reject a submitted entry. */
-    public static final String REVIEW = "platform.catalogue.review";
+    public static final String REVIEW = org.sangam.rest.support.Permissions.CATALOGUE_REVIEW;
 
     /** Class-B audit event of a submission (SANGAM.md X.4.0.3). */
     public static final String SUBMITTED_EVENT = "CATALOGUE_ENTRY_SUBMITTED";

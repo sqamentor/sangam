@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Me (5 operations). */
+/** Typed operations of Me (7 operations). */
 final class MeApi
 {
     public function __construct(private readonly Calls $calls)
@@ -32,6 +32,34 @@ final class MeApi
     {
         $req = ApiRequest::get('/me');
         return $this->calls->model($req, $options, Model\Me::class);
+    }
+
+    /**
+     * Installed modules
+     *
+     * Owner decision 399 (Q3): the optional modules whose REST API this server serves, derived from the wiring (a module is listed when its controllers are registered, which needs the module on the class path and enabled). Read-only, any signed-in caller, no permission. The UI hides the menu entries of a module that is not listed.
+     *
+     * GET /me/capabilities (operationId getMyCapabilities).
+     * @return Model\MeCapabilities|null
+     */
+    public function getMyCapabilities(?RequestOptions $options = null): ?Model\MeCapabilities
+    {
+        $req = ApiRequest::get('/me/capabilities');
+        return $this->calls->model($req, $options, Model\MeCapabilities::class);
+    }
+
+    /**
+     * Team workload of my tenant
+     *
+     * Owner decision 401: open, assigned and unassigned task counts of the caller's tenant, and per candidate group the open unassigned tasks (groups without one are left out), plus the unassigned tasks that offer no candidate group. Only tasks of the caller's tenant are counted, never another tenant's or a task without a tenant. Read-only.
+     *
+     * GET /team/task-groups (operationId getTeamTaskGroups); permission team.read.
+     * @return Model\TeamTaskGroupReport|null
+     */
+    public function getTeamTaskGroups(?RequestOptions $options = null): ?Model\TeamTaskGroupReport
+    {
+        $req = ApiRequest::get('/team/task-groups');
+        return $this->calls->model($req, $options, Model\TeamTaskGroupReport::class);
     }
 
     /**

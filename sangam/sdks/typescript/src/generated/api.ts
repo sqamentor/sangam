@@ -6837,7 +6837,7 @@ export class LowCodeApi {
   }
 }
 
-/** Typed operations of `Me` (5 operations). */
+/** Typed operations of `Me` (7 operations). */
 export class MeApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -6851,6 +6851,30 @@ export class MeApi {
   async getMe(options?: RequestOptions): Promise<M.Me> {
     const req: ApiRequest = { method: 'GET', path: `/me` };
     return this.calls.json<M.Me>(req, options);
+  }
+
+  /**
+   * Installed modules
+   *
+   * Owner decision 399 (Q3): the optional modules whose REST API this server serves, derived from the wiring (a module is listed when its controllers are registered, which needs the module on the class path and enabled). Read-only, any signed-in caller, no permission. The UI hides the menu entries of a module that is not listed.
+   *
+   * `GET /me/capabilities` (operationId `getMyCapabilities`).
+   */
+  async getMyCapabilities(options?: RequestOptions): Promise<M.MeCapabilities> {
+    const req: ApiRequest = { method: 'GET', path: `/me/capabilities` };
+    return this.calls.json<M.MeCapabilities>(req, options);
+  }
+
+  /**
+   * Team workload of my tenant
+   *
+   * Owner decision 401: open, assigned and unassigned task counts of the caller's tenant, and per candidate group the open unassigned tasks (groups without one are left out), plus the unassigned tasks that offer no candidate group. Only tasks of the caller's tenant are counted, never another tenant's or a task without a tenant. Read-only.
+   *
+   * `GET /team/task-groups` (operationId `getTeamTaskGroups`); permission `team.read`.
+   */
+  async getTeamTaskGroups(options?: RequestOptions): Promise<M.TeamTaskGroupReport> {
+    const req: ApiRequest = { method: 'GET', path: `/team/task-groups` };
+    return this.calls.json<M.TeamTaskGroupReport>(req, options);
   }
 
   /**
@@ -15169,7 +15193,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1173 operations on 988 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1175 operations on 990 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;

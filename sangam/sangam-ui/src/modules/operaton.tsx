@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiError, http } from '../api/client';
 import { useAuth } from '../auth/AuthProvider';
 import { areaItems, visibleNav } from '../app/nav';
+import { useInstalledModules } from '../app/installed';
 import { Checklist, checklistsFor } from '../components/Checklist';
 import { announce, useAction, useAsync } from '../lib/hooks';
 import { fmtDate } from '../i18n';
@@ -378,7 +379,8 @@ function SystemInfo() {
 export function Welcome() {
   const { t, i18n } = useTranslation();
   const { me } = useAuth();
-  const areas = visibleNav(me).filter((a) => a.id !== 'help');
+  const installed = useInstalledModules();
+  const areas = visibleNav(me, installed).filter((a) => a.id !== 'help');
   const links = config().welcomeLinks;
   return (
     <>

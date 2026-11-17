@@ -105,6 +105,11 @@
       <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-security</artifactId>
     </dependency>
+    <!-- decision 402 (2): the permission and admin ports on sangam-security (plain Java, package org.sangam.server.bridge) -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-security-bridge</artifactId>
+    </dependency>
     <dependency>
       <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-integration</artifactId>
