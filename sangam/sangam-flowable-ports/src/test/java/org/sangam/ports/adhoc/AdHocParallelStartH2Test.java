@@ -55,7 +55,9 @@ class AdHocParallelStartH2Test {
 
     @AfterEach
     void tearDown() {
+        String url = engine.getProcessEngineConfiguration().getJdbcUrl();
         engine.close();
+        org.sangam.ports.H2Mem.drop(url);   // DB_CLOSE_DELAY=-1 keeps the database until SHUTDOWN (R8-heap)
     }
 
     private List<String> taskKeys(String pid) {
