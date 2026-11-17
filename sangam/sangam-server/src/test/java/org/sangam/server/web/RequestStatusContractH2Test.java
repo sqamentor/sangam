@@ -153,7 +153,7 @@ class RequestStatusContractH2Test {
     @Test
     void aMissingRequiredNumberIsRefusedNamingTheField() throws Exception {
         // SL-81: Jackson 3's strict default stays (no global leniency); the 400 says which field
-        HttpResponse<String> r = send("PUT", "/api/v1/ops/cleanup/ttl/no-such-key", DEV, "{\"reason\":\"SL-81 contract\"}");
+        HttpResponse<String> r = send("PUT", "/api/v1/ops/cleanup/ttl/by-key?key=no-such-key", DEV, "{\"reason\":\"SL-81 contract\"}");
         assertEquals(400, r.statusCode(), r.body());
         JsonNode p = JSON.readTree(r.body());
         assertEquals("VALIDATION_FAILED", p.path("code").asText(), r.body());

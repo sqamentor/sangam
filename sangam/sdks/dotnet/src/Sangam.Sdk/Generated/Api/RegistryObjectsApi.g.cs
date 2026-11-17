@@ -87,11 +87,12 @@ public sealed class RegistryObjectsApi
     /// <summary>
     /// Transition
     /// RegistryController.transition (sangam-rest).
-    /// POST /registry/objects/{id}/transitions/{name} (operationId registryRegistryTransition); permission registry.write; result stored atomically with the state change.
+    /// POST /registry/objects/{id}/transitions/by-name (operationId registryRegistryTransition); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryTransitionAsync(string id, string name, M.RegistryRegistryTransitionBody? body = null, string? ifMatch = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/registry/objects/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/transitions/{HttpTransport.Seg(GeneratedCalls.Str(name)!)}");
+        var req = ApiRequest.Post($"/registry/objects/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/transitions/by-name");
+        req.WithQuery("name", GeneratedCalls.Q(name));
         req.WithHeader("If-Match", GeneratedCalls.Str(ifMatch));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);

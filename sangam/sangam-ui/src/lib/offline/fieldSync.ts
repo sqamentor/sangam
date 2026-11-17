@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
  * The PWA field client (M-001 / SL-129): encrypted local queue (sangam-field sync/LocalQueueContract.java:8-31), device
- * registration (POST /field/devices, DeviceRegistry.register) and the sync protocol (POST /field/sync/{deviceId}/upload,
- * GET /field/sync/{deviceId}/pull, SyncService), with the owner's decisions of 2026-11-12:
+ * registration (POST /field/devices, DeviceRegistry.register) and the sync protocol
+ * (POST /field/sync/by-device-id/upload?deviceId=, GET /field/sync/by-device-id/pull?deviceId=, SyncService), with the owner's decisions of 2026-11-12:
  * - one queue key per device installation; userId and tenantId are bound into every entry's AES-GCM AAD (crypto.ts);
  * - at logout entries stay encrypted and hidden from other users; they sync only under the same user. The server binds
  *   a device id to one principal (DeviceRegistry.java:79-83, requireActive :147-157), so each user of an installation

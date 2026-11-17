@@ -19,7 +19,6 @@ import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.web.Lists;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,7 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
  * × cycle × component; collections and refunds per payment reference / operation).
  */
 @RestController
-@RequestMapping("/api/v1/billing/{ledger}")
+@RequestMapping("/api/v1/billing/by-ledger")
 public class BillingController {
 
     public static final String READ = "billing.read";
@@ -76,8 +75,9 @@ public class BillingController {
     public record RefundResult(String railReference, String operationId) {
     }
 
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @GetMapping("/accounts")
-    public Map<String, Object> accounts(RequestContext ctx, @PathVariable String ledger,
+    public Map<String, Object> accounts(RequestContext ctx, @RequestParam("ledger") String ledger,
                                         @RequestParam(required = false) String cycle) {
         permissions.require(ctx, READ);
         Map<String, Object> in = base(ledger);
@@ -85,8 +85,9 @@ public class BillingController {
         return read(ctx, "accounts", in);
     }
 
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @PostMapping("/invoices")
-    public ResponseEntity<Map<String, Object>> invoice(RequestContext ctx, @PathVariable String ledger,
+    public ResponseEntity<Map<String, Object>> invoice(RequestContext ctx, @RequestParam("ledger") String ledger,
                                                        @RequestBody InvoiceRequest body) {
         permissions.require(ctx, WRITE);
         if (body == null || body.consumer() == null || body.cycle() == null || body.tariffId() == null) {
@@ -111,8 +112,9 @@ public class BillingController {
         return Lists.okRef(String.valueOf(out.get("invoiceNo")), out);
     }
 
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @PostMapping("/collections")
-    public ResponseEntity<Map<String, Object>> collect(RequestContext ctx, @PathVariable String ledger,
+    public ResponseEntity<Map<String, Object>> collect(RequestContext ctx, @RequestParam("ledger") String ledger,
                                                        @RequestBody CollectionRequest body) {
         permissions.require(ctx, WRITE);
         if (body == null || body.consumer() == null || body.channel() == null || body.paymentRef() == null
@@ -129,17 +131,19 @@ public class BillingController {
         return Lists.okRef(String.valueOf(out.get("receiptNo")), out);
     }
 
-    @GetMapping("/consumers/{consumer}/arrears")
-    public Map<String, Object> arrears(RequestContext ctx, @PathVariable String ledger, @PathVariable String consumer) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/consumers/by-consumer/arrears")
+    public Map<String, Object> arrears(RequestContext ctx, @RequestParam("ledger") String ledger, @RequestParam("consumer") String consumer) {
         permissions.require(ctx, READ);
         Map<String, Object> in = base(ledger);
         in.put("consumer", consumer);
         return read(ctx, "arrears", in);
     }
 
-    @PostMapping("/consumers/{consumer}/penalties")
-    public ResponseEntity<Map<String, Object>> penalties(RequestContext ctx, @PathVariable String ledger,
-                                                         @PathVariable String consumer,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/consumers/by-consumer/penalties")
+    public ResponseEntity<Map<String, Object>> penalties(RequestContext ctx, @RequestParam("ledger") String ledger,
+                                                         @RequestParam("consumer") String consumer,
                                                          @RequestBody PenaltyRequest body) {
         permissions.require(ctx, WRITE);
         if (body == null || body.tariffId() == null) {
@@ -152,9 +156,12 @@ public class BillingController {
         return Lists.okRef(consumer, call(ctx, "penalty", in));
     }
 
-    /** Waiver / write-off of outstanding demand; the approval is a pack, this records the approved order. */
+    /**
+     * Waiver / write-off of outstanding demand; the approval is a pack, this records the approved order.
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
     @PostMapping("/waivers")
-    public ResponseEntity<Map<String, Object>> waive(RequestContext ctx, @PathVariable String ledger,
+    public ResponseEntity<Map<String, Object>> waive(RequestContext ctx, @RequestParam("ledger") String ledger,
                                                      @RequestBody WaiverRequest body) {
         permissions.require(ctx, ADMIN);
         if (body == null || body.consumer() == null || body.amount() == null || body.orderRef() == null) {
@@ -171,9 +178,12 @@ public class BillingController {
         return Lists.okRef(body.orderRef(), call(ctx, "waive", in));
     }
 
-    /** Refund of a collection: reverses consumption and calls the payment rail once per operation id. */
+    /**
+     * Refund of a collection: reverses consumption and calls the payment rail once per operation id.
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
     @PostMapping("/refunds")
-    public ResponseEntity<RefundResult> refund(RequestContext ctx, @PathVariable String ledger,
+    public ResponseEntity<RefundResult> refund(RequestContext ctx, @RequestParam("ledger") String ledger,
                                                @RequestBody RefundRequest body) {
         permissions.require(ctx, ADMIN);
         if (body == null || body.consumer() == null || body.paymentRef() == null || body.amount() == null

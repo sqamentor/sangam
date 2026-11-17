@@ -88,13 +88,14 @@ public final class GeoApi {
      *
      * <p>GeoController.layer (sangam-rest).
      *
-     * <p>{@code GET /geo/layers/{layer}} (operationId {@code geoGeoLayer}); permission {@code geo.read}.
-     * @param layer path parameter {@code layer}
+     * <p>{@code GET /geo/layers/by-layer} (operationId {@code geoGeoLayer}); permission {@code geo.read}.
+     * @param layer query parameter {@code layer}. Layer; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> geoGeoLayer(String layer, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/geo/layers/" + HttpTransport.seg(String.valueOf(layer)));
+        ApiRequest req = ApiRequest.get("/geo/layers/by-layer");
+        req.query("layer", layer);
         return call.json(req, options, R_geoGeoLayer);
     }
 
@@ -103,15 +104,16 @@ public final class GeoApi {
      *
      * <p>GeoController.importBoundaries (sangam-rest).
      *
-     * <p>{@code POST /geo/layers/{layer}/import} (operationId {@code geoGeoImportBoundaries}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param layer path parameter {@code layer}
+     * <p>{@code POST /geo/layers/by-layer/import} (operationId {@code geoGeoImportBoundaries}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param layer query parameter {@code layer}. Layer; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> geoGeoImportBoundaries(String layer, GeoGeoImportBoundariesBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/geo/layers/" + HttpTransport.seg(String.valueOf(layer)) + "/import");
+    public java.util.Map<String, Object> geoGeoImportBoundaries(GeoGeoImportBoundariesBody body, String layer, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/geo/layers/by-layer/import");
         req.body(body);
+        req.query("layer", layer);
         return call.json(req, options, R_geoGeoImportBoundaries);
     }
 
@@ -120,8 +122,8 @@ public final class GeoApi {
      *
      * <p>GeoController.features (sangam-rest).
      *
-     * <p>{@code GET /geo/layers/{layer}/features} (operationId {@code geoGeoFeatures}); permission {@code geo.read}.
-     * @param layer path parameter {@code layer}
+     * <p>{@code GET /geo/layers/by-layer/features} (operationId {@code geoGeoFeatures}); permission {@code geo.read}.
+     * @param layer query parameter {@code layer}. Layer; may carry '/' or ':'
      * @param level query parameter {@code level}, or null
      * @param parentId query parameter {@code parentId}, or null
      * @param history query parameter {@code history}, or null
@@ -131,7 +133,8 @@ public final class GeoApi {
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<java.util.Map<String, Object>> geoGeoFeatures(String layer, String level, String parentId, Boolean history, Integer page, Integer size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/geo/layers/" + HttpTransport.seg(String.valueOf(layer)) + "/features");
+        ApiRequest req = ApiRequest.get("/geo/layers/by-layer/features");
+        req.query("layer", layer);
         req.query("level", level);
         req.query("parentId", parentId);
         req.query("history", history);
@@ -145,15 +148,16 @@ public final class GeoApi {
      *
      * <p>GeoController.putFeature (sangam-rest).
      *
-     * <p>{@code POST /geo/layers/{layer}/features} (operationId {@code geoGeoPutFeature}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param layer path parameter {@code layer}
+     * <p>{@code POST /geo/layers/by-layer/features} (operationId {@code geoGeoPutFeature}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param layer query parameter {@code layer}. Layer; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
-    public java.util.Map<String, Object> geoGeoPutFeature(String layer, GeoGeoPutFeatureBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/geo/layers/" + HttpTransport.seg(String.valueOf(layer)) + "/features");
+    public java.util.Map<String, Object> geoGeoPutFeature(GeoGeoPutFeatureBody body, String layer, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/geo/layers/by-layer/features");
         req.body(body);
+        req.query("layer", layer);
         return call.json(req, options, R_geoGeoPutFeature);
     }
 
@@ -162,14 +166,15 @@ public final class GeoApi {
      *
      * <p>GeoController.feature (sangam-rest).
      *
-     * <p>{@code GET /geo/features/{id}} (operationId {@code geoGeoFeature}); permission {@code geo.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /geo/features/by-id} (operationId {@code geoGeoFeature}); permission {@code geo.read}.
+     * @param id query parameter {@code id}. Id; may carry '/' or ':'
      * @param geometry query parameter {@code geometry}, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> geoGeoFeature(String id, Boolean geometry, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/geo/features/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.get("/geo/features/by-id");
+        req.query("id", id);
         req.query("geometry", geometry);
         return call.json(req, options, R_geoGeoFeature);
     }
@@ -179,12 +184,13 @@ public final class GeoApi {
      *
      * <p>GeoController.retire (sangam-rest).
      *
-     * <p>{@code DELETE /geo/features/{id}} (operationId {@code geoGeoRetire}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code DELETE /geo/features/by-id} (operationId {@code geoGeoRetire}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void geoGeoRetire(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/geo/features/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.delete("/geo/features/by-id");
+        req.query("id", id);
         call.none(req, options);
     }
 
@@ -193,13 +199,14 @@ public final class GeoApi {
      *
      * <p>GeoController.lineage (sangam-rest).
      *
-     * <p>{@code GET /geo/features/{id}/lineage} (operationId {@code geoGeoLineage}); permission {@code geo.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /geo/features/by-id/lineage} (operationId {@code geoGeoLineage}); permission {@code geo.read}.
+     * @param id query parameter {@code id}. Id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<java.util.Map<String, Object>> geoGeoLineage(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/geo/features/" + HttpTransport.seg(String.valueOf(id)) + "/lineage");
+        ApiRequest req = ApiRequest.get("/geo/features/by-id/lineage");
+        req.query("id", id);
         return call.json(req, options, R_geoGeoLineage);
     }
 
@@ -290,13 +297,14 @@ public final class GeoApi {
      *
      * <p>GeoController.fence (sangam-rest).
      *
-     * <p>{@code GET /geo/fences/{id}} (operationId {@code geoGeoFence}); permission {@code geo.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /geo/fences/by-id} (operationId {@code geoGeoFence}); permission {@code geo.read}.
+     * @param id query parameter {@code id}. Id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> geoGeoFence(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/geo/fences/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.get("/geo/fences/by-id");
+        req.query("id", id);
         return call.json(req, options, R_geoGeoFence);
     }
 
@@ -305,12 +313,13 @@ public final class GeoApi {
      *
      * <p>GeoController.deactivateFence (sangam-rest).
      *
-     * <p>{@code DELETE /geo/fences/{id}} (operationId {@code geoGeoDeactivateFence}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code DELETE /geo/fences/by-id} (operationId {@code geoGeoDeactivateFence}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void geoGeoDeactivateFence(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/geo/fences/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.delete("/geo/fences/by-id");
+        req.query("id", id);
         call.none(req, options);
     }
 
@@ -319,15 +328,16 @@ public final class GeoApi {
      *
      * <p>GeoController.checkFence (sangam-rest).
      *
-     * <p>{@code POST /geo/fences/{id}/check} (operationId {@code geoGeoCheckFence}); permission {@code geo.write}.
-     * @param id path parameter {@code id}
+     * <p>{@code POST /geo/fences/by-id/check} (operationId {@code geoGeoCheckFence}); permission {@code geo.write}.
      * @param body request body
+     * @param id query parameter {@code id}. Id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> geoGeoCheckFence(String id, GeoGeoCheckFenceBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/geo/fences/" + HttpTransport.seg(String.valueOf(id)) + "/check");
+    public java.util.Map<String, Object> geoGeoCheckFence(GeoGeoCheckFenceBody body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/geo/fences/by-id/check");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_geoGeoCheckFence);
     }
 
@@ -336,16 +346,18 @@ public final class GeoApi {
      *
      * <p>GeoController.putObjectGeometry (sangam-rest).
      *
-     * <p>{@code PUT /geo/objects/{type}/{id}/geometry} (operationId {@code geoGeoPutObjectGeometry}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param type path parameter {@code type}
-     * @param id path parameter {@code id}
+     * <p>{@code PUT /geo/objects/by-type/by-id/geometry} (operationId {@code geoGeoPutObjectGeometry}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param type query parameter {@code type}. Type; may carry '/' or ':'
+     * @param id query parameter {@code id}. Id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> geoGeoPutObjectGeometry(String type, String id, GeoGeoPutObjectGeometryBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/geo/objects/" + HttpTransport.seg(String.valueOf(type)) + "/" + HttpTransport.seg(String.valueOf(id)) + "/geometry");
+    public java.util.Map<String, Object> geoGeoPutObjectGeometry(GeoGeoPutObjectGeometryBody body, String type, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/geo/objects/by-type/by-id/geometry");
         req.body(body);
+        req.query("type", type);
+        req.query("id", id);
         return call.json(req, options, R_geoGeoPutObjectGeometry);
     }
 
@@ -354,15 +366,17 @@ public final class GeoApi {
      *
      * <p>GeoController.objectGeometry (sangam-rest).
      *
-     * <p>{@code GET /geo/objects/{type}/{id}/geometry} (operationId {@code geoGeoObjectGeometry}); permission {@code geo.read}.
-     * @param type path parameter {@code type}
-     * @param id path parameter {@code id}
+     * <p>{@code GET /geo/objects/by-type/by-id/geometry} (operationId {@code geoGeoObjectGeometry}); permission {@code geo.read}.
+     * @param type query parameter {@code type}. Type; may carry '/' or ':'
+     * @param id query parameter {@code id}. Id; may carry '/' or ':'
      * @param attribute query parameter {@code attribute}, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> geoGeoObjectGeometry(String type, String id, String attribute, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/geo/objects/" + HttpTransport.seg(String.valueOf(type)) + "/" + HttpTransport.seg(String.valueOf(id)) + "/geometry");
+        ApiRequest req = ApiRequest.get("/geo/objects/by-type/by-id/geometry");
+        req.query("type", type);
+        req.query("id", id);
         req.query("attribute", attribute);
         return call.json(req, options, R_geoGeoObjectGeometry);
     }
@@ -402,14 +416,15 @@ public final class GeoApi {
      *
      * <p>GeoController.queryExternal (sangam-rest).
      *
-     * <p>{@code POST /geo/external-layers/{ref}/query} (operationId {@code geoGeoQueryExternal}); permission {@code geo.write}.
-     * @param ref path parameter {@code ref}
+     * <p>{@code POST /geo/external-layers/by-ref/query} (operationId {@code geoGeoQueryExternal}); permission {@code geo.write}.
+     * @param ref query parameter {@code ref}. Ref; may carry '/' or ':'
      * @param body request body, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> geoGeoQueryExternal(String ref, GeoGeoQueryExternalBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/geo/external-layers/" + HttpTransport.seg(String.valueOf(ref)) + "/query");
+        ApiRequest req = ApiRequest.post("/geo/external-layers/by-ref/query");
+        req.query("ref", ref);
         req.body(body);
         return call.json(req, options, R_geoGeoQueryExternal);
     }
@@ -419,14 +434,15 @@ public final class GeoApi {
      *
      * <p>GeoController.importExternal (sangam-rest).
      *
-     * <p>{@code POST /geo/external-layers/{ref}/import} (operationId {@code geoGeoImportExternal}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ref path parameter {@code ref}
+     * <p>{@code POST /geo/external-layers/by-ref/import} (operationId {@code geoGeoImportExternal}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param ref query parameter {@code ref}. Ref; may carry '/' or ':'
      * @param body request body, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> geoGeoImportExternal(String ref, GeoGeoImportExternalBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/geo/external-layers/" + HttpTransport.seg(String.valueOf(ref)) + "/import");
+        ApiRequest req = ApiRequest.post("/geo/external-layers/by-ref/import");
+        req.query("ref", ref);
         req.body(body);
         return call.json(req, options, R_geoGeoImportExternal);
     }

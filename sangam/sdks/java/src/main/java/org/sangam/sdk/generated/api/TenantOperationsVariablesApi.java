@@ -128,13 +128,14 @@ public final class TenantOperationsVariablesApi {
      *
      * <p>Needs a reason.
      *
-     * <p>{@code DELETE /ops/variables/{id}} (operationId {@code uiOpsDeleteVariable}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code DELETE /ops/variables/by-id} (operationId {@code uiOpsDeleteVariable}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Variable name; may carry '/' or ':'
      * @param reason query parameter {@code reason}
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void uiOpsDeleteVariable(String id, String reason, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/ops/variables/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.delete("/ops/variables/by-id");
+        req.query("id", id);
         req.query("reason", reason);
         call.none(req, options);
     }

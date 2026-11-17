@@ -135,14 +135,15 @@ public final class FieldApi {
      *
      * <p>A template (latest version, or a given version).
      *
-     * <p>{@code GET /field/templates/{key}} (operationId {@code fieldWorkTemplate}); permission {@code field.capture}.
-     * @param key path parameter {@code key}
+     * <p>{@code GET /field/templates/by-key} (operationId {@code fieldWorkTemplate}); permission {@code field.capture}.
+     * @param key query parameter {@code key}. template key; may carry '/' or ':'
      * @param version query parameter {@code version}, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> fieldWorkTemplate(String key, Integer version, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/field/templates/" + HttpTransport.seg(String.valueOf(key)));
+        ApiRequest req = ApiRequest.get("/field/templates/by-key");
+        req.query("key", key);
         req.query("version", version);
         return call.json(req, options, R_fieldWorkTemplate);
     }
@@ -152,13 +153,14 @@ public final class FieldApi {
      *
      * <p>Retire a template version.
      *
-     * <p>{@code POST /field/templates/{key}/{version}/retire} (operationId {@code fieldWorkRetireTemplate}); permission {@code field.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param key path parameter {@code key}
+     * <p>{@code POST /field/templates/by-key/{version}/retire} (operationId {@code fieldWorkRetireTemplate}); permission {@code field.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param version path parameter {@code version}
+     * @param key query parameter {@code key}. template key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void fieldWorkRetireTemplate(String key, String version, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/field/templates/" + HttpTransport.seg(String.valueOf(key)) + "/" + HttpTransport.seg(String.valueOf(version)) + "/retire");
+    public void fieldWorkRetireTemplate(String version, String key, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/field/templates/by-key/" + HttpTransport.seg(String.valueOf(version)) + "/retire");
+        req.query("key", key);
         call.none(req, options);
     }
 
@@ -197,13 +199,14 @@ public final class FieldApi {
      *
      * <p>Run one schedule now.
      *
-     * <p>{@code POST /field/schedules/{id}/run} (operationId {@code fieldWorkRunSchedule}); permission {@code field.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /field/schedules/by-id/run} (operationId {@code fieldWorkRunSchedule}); permission {@code field.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. schedule id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> fieldWorkRunSchedule(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/field/schedules/" + HttpTransport.seg(String.valueOf(id)) + "/run");
+        ApiRequest req = ApiRequest.post("/field/schedules/by-id/run");
+        req.query("id", id);
         return call.json(req, options, R_fieldWorkRunSchedule);
     }
 
@@ -287,15 +290,16 @@ public final class FieldApi {
      *
      * <p>Set a device status (active, lost, revoked: revoke wipes the local queue).
      *
-     * <p>{@code POST /field/devices/{id}/status} (operationId {@code fieldWorkDeviceStatus}); permission {@code field.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /field/devices/by-id/status} (operationId {@code fieldWorkDeviceStatus}); permission {@code field.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. device id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> fieldWorkDeviceStatus(String id, FieldWorkDeviceStatusBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/field/devices/" + HttpTransport.seg(String.valueOf(id)) + "/status");
+    public java.util.Map<String, Object> fieldWorkDeviceStatus(FieldWorkDeviceStatusBody body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/field/devices/by-id/status");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_fieldWorkDeviceStatus);
     }
 
@@ -304,15 +308,16 @@ public final class FieldApi {
      *
      * <p>Set a device's offline queue policy.
      *
-     * <p>{@code POST /field/devices/{id}/policy} (operationId {@code fieldWorkDevicePolicy}); permission {@code field.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /field/devices/by-id/policy} (operationId {@code fieldWorkDevicePolicy}); permission {@code field.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. device id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> fieldWorkDevicePolicy(String id, FieldWorkDevicePolicyBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/field/devices/" + HttpTransport.seg(String.valueOf(id)) + "/policy");
+    public java.util.Map<String, Object> fieldWorkDevicePolicy(FieldWorkDevicePolicyBody body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/field/devices/by-id/policy");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_fieldWorkDevicePolicy);
     }
 
@@ -321,13 +326,14 @@ public final class FieldApi {
      *
      * <p>Verify a device's packet hash chain.
      *
-     * <p>{@code GET /field/devices/{id}/chain} (operationId {@code fieldWorkChain}); permission {@code field.review}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /field/devices/by-id/chain} (operationId {@code fieldWorkChain}); permission {@code field.review}.
+     * @param id query parameter {@code id}. device id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> fieldWorkChain(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/field/devices/" + HttpTransport.seg(String.valueOf(id)) + "/chain");
+        ApiRequest req = ApiRequest.get("/field/devices/by-id/chain");
+        req.query("id", id);
         return call.json(req, options, R_fieldWorkChain);
     }
 
@@ -336,15 +342,16 @@ public final class FieldApi {
      *
      * <p>Upload offline packets from a device (idempotent per packet).
      *
-     * <p>{@code POST /field/sync/{deviceId}/upload} (operationId {@code fieldWorkUpload}); permission {@code field.capture}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param deviceId path parameter {@code deviceId}
+     * <p>{@code POST /field/sync/by-device-id/upload} (operationId {@code fieldWorkUpload}); permission {@code field.capture}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param deviceId query parameter {@code deviceId}. device id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.List<Object> fieldWorkUpload(String deviceId, java.util.List<FieldWorkUploadBody> body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/field/sync/" + HttpTransport.seg(String.valueOf(deviceId)) + "/upload");
+    public java.util.List<Object> fieldWorkUpload(java.util.List<FieldWorkUploadBody> body, String deviceId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/field/sync/by-device-id/upload");
         req.body(body);
+        req.query("deviceId", deviceId);
         return call.json(req, options, R_fieldWorkUpload);
     }
 
@@ -353,14 +360,15 @@ public final class FieldApi {
      *
      * <p>Pull server changes for a device since a cursor.
      *
-     * <p>{@code GET /field/sync/{deviceId}/pull} (operationId {@code fieldWorkPull}); permission {@code field.capture}.
-     * @param deviceId path parameter {@code deviceId}
+     * <p>{@code GET /field/sync/by-device-id/pull} (operationId {@code fieldWorkPull}); permission {@code field.capture}.
+     * @param deviceId query parameter {@code deviceId}. device id; may carry '/' or ':'
      * @param cursor query parameter {@code cursor}, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> fieldWorkPull(String deviceId, Long cursor, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/field/sync/" + HttpTransport.seg(String.valueOf(deviceId)) + "/pull");
+        ApiRequest req = ApiRequest.get("/field/sync/by-device-id/pull");
+        req.query("deviceId", deviceId);
         req.query("cursor", cursor);
         return call.json(req, options, R_fieldWorkPull);
     }
@@ -434,13 +442,14 @@ public final class FieldApi {
      *
      * <p>Evidence metadata and integrity report.
      *
-     * <p>{@code GET /field/evidence/{id}} (operationId {@code fieldWorkEvidence}); permission {@code field.capture}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /field/evidence/by-id} (operationId {@code fieldWorkEvidence}); permission {@code field.capture}.
+     * @param id query parameter {@code id}. evidence id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> fieldWorkEvidence(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/field/evidence/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.get("/field/evidence/by-id");
+        req.query("id", id);
         return call.json(req, options, R_fieldWorkEvidence);
     }
 
@@ -449,13 +458,14 @@ public final class FieldApi {
      *
      * <p>Evidence content (streamed).
      *
-     * <p>{@code GET /field/evidence/{id}/content} (operationId {@code fieldWorkEvidenceContent}); permission {@code field.capture}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /field/evidence/by-id/content} (operationId {@code fieldWorkEvidenceContent}); permission {@code field.capture}.
+     * @param id query parameter {@code id}. evidence id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public byte[] fieldWorkEvidenceContent(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/field/evidence/" + HttpTransport.seg(String.valueOf(id)) + "/content");
+        ApiRequest req = ApiRequest.get("/field/evidence/by-id/content");
+        req.query("id", id);
         return call.bytes(req, options, "application/octet-stream");
     }
 
@@ -464,13 +474,14 @@ public final class FieldApi {
      *
      * <p>Re-run the integrity checks of an evidence item.
      *
-     * <p>{@code POST /field/evidence/{id}/reverify} (operationId {@code fieldWorkReverifyEvidence}); permission {@code field.review}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /field/evidence/by-id/reverify} (operationId {@code fieldWorkReverifyEvidence}); permission {@code field.review}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. evidence id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> fieldWorkReverifyEvidence(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/field/evidence/" + HttpTransport.seg(String.valueOf(id)) + "/reverify");
+        ApiRequest req = ApiRequest.post("/field/evidence/by-id/reverify");
+        req.query("id", id);
         return call.json(req, options, R_fieldWorkReverifyEvidence);
     }
 

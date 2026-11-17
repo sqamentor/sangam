@@ -57,13 +57,15 @@ final class RegistryAssetsApi
      *
      * AssetController.getClass (sangam-rest).
      *
-     * GET /registry/assets/classes/{classKey} (operationId registryAssetGetClass); permission registry.read.
+     * GET /registry/assets/classes/by-class-key (operationId registryAssetGetClass); permission registry.read.
+     * @param string $classKey query classKey
      * @param bool|null $resolved query resolved
      * @return array<string, mixed>
      */
     public function registryAssetGetClass(string $classKey, ?bool $resolved = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/registry/assets/classes/' . HttpTransport::seg((string) $classKey));
+        $req = ApiRequest::get('/registry/assets/classes/by-class-key');
+        $req->query('classKey', $classKey);
         $req->query('resolved', $resolved);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
@@ -153,12 +155,14 @@ final class RegistryAssetsApi
      *
      * AssetController.byTag (sangam-rest).
      *
-     * GET /registry/assets/by-tag/{tag} (operationId registryAssetByTag); permission registry.read.
+     * GET /registry/assets/by-tag (operationId registryAssetByTag); permission registry.read.
+     * @param string $tag query tag
      * @return array<string, mixed>
      */
     public function registryAssetByTag(string $tag, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/registry/assets/by-tag/' . HttpTransport::seg((string) $tag));
+        $req = ApiRequest::get('/registry/assets/by-tag');
+        $req->query('tag', $tag);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -339,13 +343,15 @@ final class RegistryAssetsApi
      *
      * AssetController.recordReading (sangam-rest).
      *
-     * POST /registry/assets/{id}/meters/{meterType}/readings (operationId registryAssetRecordReading); permission registry.write; result stored atomically with the state change.
+     * POST /registry/assets/{id}/meters/by-meter-type/readings (operationId registryAssetRecordReading); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetRecordReadingBody|array $body request body
+     * @param string $meterType query meterType
      * @return array<string, mixed>
      */
-    public function registryAssetRecordReading(string $id, string $meterType, Model\RegistryAssetRecordReadingBody|array $body, ?RequestOptions $options = null): array
+    public function registryAssetRecordReading(string $id, Model\RegistryAssetRecordReadingBody|array $body, string $meterType, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/registry/assets/' . HttpTransport::seg((string) $id) . '/meters/' . HttpTransport::seg((string) $meterType) . '/readings');
+        $req = ApiRequest::post('/registry/assets/' . HttpTransport::seg((string) $id) . '/meters/by-meter-type/readings');
+        $req->query('meterType', $meterType);
         if ($body !== null) {
             $req->body($body);
         }
@@ -357,14 +363,16 @@ final class RegistryAssetsApi
      *
      * AssetController.readings (sangam-rest).
      *
-     * GET /registry/assets/{id}/meters/{meterType}/readings (operationId registryAssetReadings); permission registry.read.
+     * GET /registry/assets/{id}/meters/by-meter-type/readings (operationId registryAssetReadings); permission registry.read.
+     * @param string $meterType query meterType
      * @param int|null $page query page
      * @param int|null $size query size
      * @return Page<array<string, mixed>>
      */
     public function registryAssetReadings(string $id, string $meterType, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/registry/assets/' . HttpTransport::seg((string) $id) . '/meters/' . HttpTransport::seg((string) $meterType) . '/readings');
+        $req = ApiRequest::get('/registry/assets/' . HttpTransport::seg((string) $id) . '/meters/by-meter-type/readings');
+        $req->query('meterType', $meterType);
         $req->query('page', $page);
         $req->query('size', $size);
         return $this->calls->page($req, $options, null, $page, $size);

@@ -36,35 +36,36 @@ schema("LedgerHeldRequest", "A request parked for funds.",
        "operation account:LedgerAccountKey target:LedgerAccountKey amount currency rateType reference auditRef actor "
        "asOf:date fromCommitment:bool fromEncumbrance:bool holdIfShort:bool attrs:obj")
 
-LG = pp("ledger", "ledger id from the tenant's profile (e.g. BUDGET, DEMAND)")
+LG = q("ledger", desc="ledger id from the tenant's profile (e.g. BUDGET, DEMAND); may carry '/' or ':'", required=True)
 ACC_Q = [q("period"), q("line", desc="line (head of account) prefix"), q("holder", desc="holder prefix"), q("stage")]
 
-op("get", "/ledger/{ledger}/accounts", "listLedgerAccounts", "Ledger", "List accounts",
+op("get", "/ledger/by-ledger/accounts", "listLedgerAccounts", "Ledger", "List accounts",
    "Balances of the ledger, filtered by period, line and holder prefixes and stage.", LR, params=[LG] + ACC_Q,
    resp=(200, "array:LedgerAccount"), perm="ledger.read", list_=True)
 op("get", "/ledger/accounts/{accountId}", "getLedgerAccount", "Ledger", "Get one account",
    "An account by its id (searches the tenant's profile ledgers, or ?ledger=).", LR,
    params=[pp("accountId"), q("ledger")], resp=(200, "LedgerAccount"), perm="ledger.read")
-op("post", "/ledger/{ledger}/operations", "applyLedgerOperation", "Ledger", "Apply an operation",
+op("post", "/ledger/by-ledger/operations", "applyLedgerOperation", "Ledger", "Apply an operation",
    "Posts one operation idempotently by reference; insufficient availability refuses (422) or parks the request "
    "(holdIfShort).", LR, params=[LG], body="LedgerOperationRequest", resp=(200, "LedgerResult"),
    cmd="ledger.operation", perm="ledger.write")
-op("post", "/ledger/{ledger}/freeze-orders", "createLedgerFreezeOrder", "Ledger", "Create a freeze order",
+op("post", "/ledger/by-ledger/freeze-orders", "createLedgerFreezeOrder", "Ledger", "Create a freeze order",
    "Freezes matching accounts until released.", LR, params=[LG], body="LedgerFreezeRequest",
    resp=(201, "LedgerFreezeOrder"), created=True, cmd="ledger.freeze", perm="ledger.admin")
-op("get", "/ledger/{ledger}/freeze-orders", "listLedgerFreezeOrders", "Ledger", "List freeze orders",
+op("get", "/ledger/by-ledger/freeze-orders", "listLedgerFreezeOrders", "Ledger", "List freeze orders",
    "Active freeze orders of the ledger.", LR, params=[LG], resp=(200, "array:LedgerFreezeOrder"), perm="ledger.read",
    list_=True)
-op("delete", "/ledger/{ledger}/freeze-orders/{id}", "releaseLedgerFreezeOrder", "Ledger", "Release a freeze order",
-   "Releases the order; frozen accounts reopen.", LR, params=[LG, pp("id")], resp=(204, None),
+op("delete", "/ledger/by-ledger/freeze-orders/by-id", "releaseLedgerFreezeOrder", "Ledger", "Release a freeze order",
+   "Releases the order; frozen accounts reopen.", LR,
+   params=[LG, q("id", desc="freeze order id; may carry '/' or ':'", required=True)], resp=(204, None),
    cmd="ledger.freeze.release", perm="ledger.admin")
-op("post", "/ledger/{ledger}/periods/close", "closeLedgerPeriod", "Ledger", "Close a period",
+op("post", "/ledger/by-ledger/periods/close", "closeLedgerPeriod", "Ledger", "Close a period",
    "Year-end lapse and carry-forward. The period is a query parameter: a fiscal-year label can carry '/' (2026/2027).",
    LR, params=[LG, q("period", desc="fiscal period label", required=True)], body="LedgerCloseRequest", body_required=False,
    resp=(200, "array:LedgerResult"), cmd="ledger.period.close", perm="ledger.admin")
-op("get", "/ledger/{ledger}/holds", "listLedgerHolds", "Ledger", "List held requests",
+op("get", "/ledger/by-ledger/holds", "listLedgerHolds", "Ledger", "List held requests",
    "Requests parked for funds on matching accounts.", LR, params=[LG] + ACC_Q, resp=(200, "array:LedgerHeldRequest"),
    perm="ledger.read", list_=True)
-op("post", "/ledger/{ledger}/reconcile", "reconcileLedger", "Ledger", "Reconcile a period",
+op("post", "/ledger/by-ledger/reconcile", "reconcileLedger", "Ledger", "Reconcile a period",
    "Mirror versus external balances (SHADOW ledgers).", LR, params=[LG], body="LedgerReconcileRequest",
    resp=(200, "array:LedgerReconcileRow"), cmd="ledger.reconcile", perm="ledger.admin")

@@ -25,13 +25,15 @@ final class QueuesApi
      *
      * QueueController.defineServicePoint (sangam-rest).
      *
-     * PUT /queues/service-points/{servicePointId} (operationId queuesQueueDefineServicePoint); permission resources.admin; result stored atomically with the state change.
+     * PUT /queues/service-points/by-service-point-id (operationId queuesQueueDefineServicePoint); permission resources.admin; result stored atomically with the state change.
      * @param Model\QueueRestPortServicePointRequest|array $body request body
+     * @param string $servicePointId query servicePointId
      * @return array<string, mixed>
      */
-    public function queuesQueueDefineServicePoint(string $servicePointId, Model\QueueRestPortServicePointRequest|array $body, ?RequestOptions $options = null): array
+    public function queuesQueueDefineServicePoint(Model\QueueRestPortServicePointRequest|array $body, string $servicePointId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::put('/queues/service-points/' . HttpTransport::seg((string) $servicePointId));
+        $req = ApiRequest::put('/queues/service-points/by-service-point-id');
+        $req->query('servicePointId', $servicePointId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -43,12 +45,14 @@ final class QueuesApi
      *
      * QueueController.servicePoint (sangam-rest).
      *
-     * GET /queues/service-points/{servicePointId} (operationId queuesQueueServicePoint); permission resources.read.
+     * GET /queues/service-points/by-service-point-id (operationId queuesQueueServicePoint); permission resources.read.
+     * @param string $servicePointId query servicePointId
      * @return array<string, mixed>
      */
     public function queuesQueueServicePoint(string $servicePointId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/queues/service-points/' . HttpTransport::seg((string) $servicePointId));
+        $req = ApiRequest::get('/queues/service-points/by-service-point-id');
+        $req->query('servicePointId', $servicePointId);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -57,13 +61,15 @@ final class QueuesApi
      *
      * QueueController.setServicePointStatus (sangam-rest).
      *
-     * POST /queues/service-points/{servicePointId}/status (operationId queuesQueueSetServicePointStatus); permission resources.admin; result stored atomically with the state change.
+     * POST /queues/service-points/by-service-point-id/status (operationId queuesQueueSetServicePointStatus); permission resources.admin; result stored atomically with the state change.
      * @param Model\QueueStatusRequest|array $body request body
+     * @param string $servicePointId query servicePointId
      * @return array<string, mixed>
      */
-    public function queuesQueueSetServicePointStatus(string $servicePointId, Model\QueueStatusRequest|array $body, ?RequestOptions $options = null): array
+    public function queuesQueueSetServicePointStatus(Model\QueueStatusRequest|array $body, string $servicePointId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/queues/service-points/' . HttpTransport::seg((string) $servicePointId) . '/status');
+        $req = ApiRequest::post('/queues/service-points/by-service-point-id/status');
+        $req->query('servicePointId', $servicePointId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -93,13 +99,17 @@ final class QueuesApi
      *
      * QueueController.defineCounter (sangam-rest).
      *
-     * PUT /queues/service-points/{servicePointId}/counters/{counterId} (operationId queuesQueueDefineCounter); permission resources.admin; result stored atomically with the state change.
+     * PUT /queues/service-points/by-service-point-id/counters/by-counter-id (operationId queuesQueueDefineCounter); permission resources.admin; result stored atomically with the state change.
      * @param Model\QueueRestPortCounterRequest|array $body request body
+     * @param string $servicePointId query servicePointId
+     * @param string $counterId query counterId
      * @return array<string, mixed>
      */
-    public function queuesQueueDefineCounter(string $servicePointId, string $counterId, Model\QueueRestPortCounterRequest|array $body, ?RequestOptions $options = null): array
+    public function queuesQueueDefineCounter(Model\QueueRestPortCounterRequest|array $body, string $servicePointId, string $counterId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::put('/queues/service-points/' . HttpTransport::seg((string) $servicePointId) . '/counters/' . HttpTransport::seg((string) $counterId));
+        $req = ApiRequest::put('/queues/service-points/by-service-point-id/counters/by-counter-id');
+        $req->query('servicePointId', $servicePointId);
+        $req->query('counterId', $counterId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -111,12 +121,14 @@ final class QueuesApi
      *
      * QueueController.counters (sangam-rest).
      *
-     * GET /queues/service-points/{servicePointId}/counters (operationId queuesQueueCounters); permission resources.read.
+     * GET /queues/service-points/by-service-point-id/counters (operationId queuesQueueCounters); permission resources.read.
+     * @param string $servicePointId query servicePointId
      * @return list<array<string, mixed>>
      */
     public function queuesQueueCounters(string $servicePointId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/queues/service-points/' . HttpTransport::seg((string) $servicePointId) . '/counters');
+        $req = ApiRequest::get('/queues/service-points/by-service-point-id/counters');
+        $req->query('servicePointId', $servicePointId);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -125,13 +137,15 @@ final class QueuesApi
      *
      * QueueController.openCounter (sangam-rest).
      *
-     * POST /queues/counters/{counterId}/open (operationId queuesQueueOpenCounter); permission resources.write; result stored atomically with the state change.
+     * POST /queues/counters/by-counter-id/open (operationId queuesQueueOpenCounter); permission resources.write; result stored atomically with the state change.
      * @param Model\QueueOpenRequest|array $body request body
+     * @param string $counterId query counterId
      * @return array<string, mixed>
      */
-    public function queuesQueueOpenCounter(string $counterId, Model\QueueOpenRequest|array $body, ?RequestOptions $options = null): array
+    public function queuesQueueOpenCounter(Model\QueueOpenRequest|array $body, string $counterId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/queues/counters/' . HttpTransport::seg((string) $counterId) . '/open');
+        $req = ApiRequest::post('/queues/counters/by-counter-id/open');
+        $req->query('counterId', $counterId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -143,13 +157,15 @@ final class QueuesApi
      *
      * QueueController.pauseCounter (sangam-rest).
      *
-     * POST /queues/counters/{counterId}/pause (operationId queuesQueuePauseCounter); permission resources.write; result stored atomically with the state change.
+     * POST /queues/counters/by-counter-id/pause (operationId queuesQueuePauseCounter); permission resources.write; result stored atomically with the state change.
      * @param Model\QueueReasonRequest|array $body request body
+     * @param string $counterId query counterId
      * @return array<string, mixed>
      */
-    public function queuesQueuePauseCounter(string $counterId, Model\QueueReasonRequest|array $body, ?RequestOptions $options = null): array
+    public function queuesQueuePauseCounter(Model\QueueReasonRequest|array $body, string $counterId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/queues/counters/' . HttpTransport::seg((string) $counterId) . '/pause');
+        $req = ApiRequest::post('/queues/counters/by-counter-id/pause');
+        $req->query('counterId', $counterId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -161,12 +177,14 @@ final class QueuesApi
      *
      * QueueController.closeCounter (sangam-rest).
      *
-     * POST /queues/counters/{counterId}/close (operationId queuesQueueCloseCounter); permission resources.write; result stored atomically with the state change.
+     * POST /queues/counters/by-counter-id/close (operationId queuesQueueCloseCounter); permission resources.write; result stored atomically with the state change.
+     * @param string $counterId query counterId
      * @return array<string, mixed>
      */
     public function queuesQueueCloseCounter(string $counterId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/queues/counters/' . HttpTransport::seg((string) $counterId) . '/close');
+        $req = ApiRequest::post('/queues/counters/by-counter-id/close');
+        $req->query('counterId', $counterId);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -175,13 +193,15 @@ final class QueuesApi
      *
      * QueueController.issueToken (sangam-rest).
      *
-     * POST /queues/service-points/{servicePointId}/tokens (operationId queuesQueueIssueToken); permission resources.write; result stored atomically with the state change.
+     * POST /queues/service-points/by-service-point-id/tokens (operationId queuesQueueIssueToken); permission resources.write; result stored atomically with the state change.
      * @param Model\QueueRestPortIssueTokenRequest|array $body request body
+     * @param string $servicePointId query servicePointId
      * @return array<string, mixed>
      */
-    public function queuesQueueIssueToken(string $servicePointId, Model\QueueRestPortIssueTokenRequest|array $body, ?RequestOptions $options = null): array
+    public function queuesQueueIssueToken(Model\QueueRestPortIssueTokenRequest|array $body, string $servicePointId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/queues/service-points/' . HttpTransport::seg((string) $servicePointId) . '/tokens');
+        $req = ApiRequest::post('/queues/service-points/by-service-point-id/tokens');
+        $req->query('servicePointId', $servicePointId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -193,7 +213,8 @@ final class QueuesApi
      *
      * QueueController.tokens (sangam-rest).
      *
-     * GET /queues/service-points/{servicePointId}/tokens (operationId queuesQueueTokens); permission resources.read.
+     * GET /queues/service-points/by-service-point-id/tokens (operationId queuesQueueTokens); permission resources.read.
+     * @param string $servicePointId query servicePointId
      * @param string|null $state query state
      * @param int|null $page query page
      * @param int|null $size query size
@@ -201,7 +222,8 @@ final class QueuesApi
      */
     public function queuesQueueTokens(string $servicePointId, ?string $state = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/queues/service-points/' . HttpTransport::seg((string) $servicePointId) . '/tokens');
+        $req = ApiRequest::get('/queues/service-points/by-service-point-id/tokens');
+        $req->query('servicePointId', $servicePointId);
         $req->query('state', $state);
         $req->query('page', $page);
         $req->query('size', $size);
@@ -277,12 +299,14 @@ final class QueuesApi
      *
      * QueueController.callNext (sangam-rest).
      *
-     * POST /queues/counters/{counterId}/call-next (operationId queuesQueueCallNext); permission resources.write; result stored atomically with the state change.
+     * POST /queues/counters/by-counter-id/call-next (operationId queuesQueueCallNext); permission resources.write; result stored atomically with the state change.
+     * @param string $counterId query counterId
      * @return array<string, mixed>
      */
     public function queuesQueueCallNext(string $counterId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/queues/counters/' . HttpTransport::seg((string) $counterId) . '/call-next');
+        $req = ApiRequest::post('/queues/counters/by-counter-id/call-next');
+        $req->query('counterId', $counterId);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -291,13 +315,15 @@ final class QueuesApi
      *
      * QueueController.callToken (sangam-rest).
      *
-     * POST /queues/counters/{counterId}/call (operationId queuesQueueCallToken); permission resources.write; result stored atomically with the state change.
+     * POST /queues/counters/by-counter-id/call (operationId queuesQueueCallToken); permission resources.write; result stored atomically with the state change.
      * @param Model\QueueCallRequest|array $body request body
+     * @param string $counterId query counterId
      * @return array<string, mixed>
      */
-    public function queuesQueueCallToken(string $counterId, Model\QueueCallRequest|array $body, ?RequestOptions $options = null): array
+    public function queuesQueueCallToken(Model\QueueCallRequest|array $body, string $counterId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/queues/counters/' . HttpTransport::seg((string) $counterId) . '/call');
+        $req = ApiRequest::post('/queues/counters/by-counter-id/call');
+        $req->query('counterId', $counterId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -309,12 +335,14 @@ final class QueuesApi
      *
      * QueueController.recall (sangam-rest).
      *
-     * POST /queues/counters/{counterId}/recall (operationId queuesQueueRecall); permission resources.write; result stored atomically with the state change.
+     * POST /queues/counters/by-counter-id/recall (operationId queuesQueueRecall); permission resources.write; result stored atomically with the state change.
+     * @param string $counterId query counterId
      * @return array<string, mixed>
      */
     public function queuesQueueRecall(string $counterId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/queues/counters/' . HttpTransport::seg((string) $counterId) . '/recall');
+        $req = ApiRequest::post('/queues/counters/by-counter-id/recall');
+        $req->query('counterId', $counterId);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -323,13 +351,15 @@ final class QueuesApi
      *
      * QueueController.skip (sangam-rest).
      *
-     * POST /queues/counters/{counterId}/skip (operationId queuesQueueSkip); permission resources.write; result stored atomically with the state change.
+     * POST /queues/counters/by-counter-id/skip (operationId queuesQueueSkip); permission resources.write; result stored atomically with the state change.
      * @param Model\QueueReasonRequest|array $body request body
+     * @param string $counterId query counterId
      * @return array<string, mixed>
      */
-    public function queuesQueueSkip(string $counterId, Model\QueueReasonRequest|array $body, ?RequestOptions $options = null): array
+    public function queuesQueueSkip(Model\QueueReasonRequest|array $body, string $counterId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/queues/counters/' . HttpTransport::seg((string) $counterId) . '/skip');
+        $req = ApiRequest::post('/queues/counters/by-counter-id/skip');
+        $req->query('counterId', $counterId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -341,12 +371,14 @@ final class QueuesApi
      *
      * QueueController.startServing (sangam-rest).
      *
-     * POST /queues/counters/{counterId}/start-serving (operationId queuesQueueStartServing); permission resources.write; result stored atomically with the state change.
+     * POST /queues/counters/by-counter-id/start-serving (operationId queuesQueueStartServing); permission resources.write; result stored atomically with the state change.
+     * @param string $counterId query counterId
      * @return array<string, mixed>
      */
     public function queuesQueueStartServing(string $counterId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/queues/counters/' . HttpTransport::seg((string) $counterId) . '/start-serving');
+        $req = ApiRequest::post('/queues/counters/by-counter-id/start-serving');
+        $req->query('counterId', $counterId);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -355,13 +387,15 @@ final class QueuesApi
      *
      * QueueController.complete (sangam-rest).
      *
-     * POST /queues/counters/{counterId}/complete (operationId queuesQueueComplete); permission resources.write; result stored atomically with the state change.
+     * POST /queues/counters/by-counter-id/complete (operationId queuesQueueComplete); permission resources.write; result stored atomically with the state change.
      * @param Model\QueueCompleteRequest|array $body request body
+     * @param string $counterId query counterId
      * @return array<string, mixed>
      */
-    public function queuesQueueComplete(string $counterId, Model\QueueCompleteRequest|array $body, ?RequestOptions $options = null): array
+    public function queuesQueueComplete(Model\QueueCompleteRequest|array $body, string $counterId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/queues/counters/' . HttpTransport::seg((string) $counterId) . '/complete');
+        $req = ApiRequest::post('/queues/counters/by-counter-id/complete');
+        $req->query('counterId', $counterId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -373,12 +407,14 @@ final class QueuesApi
      *
      * QueueController.noShowSweep (sangam-rest).
      *
-     * POST /queues/service-points/{servicePointId}/no-show-sweep (operationId queuesQueueNoShowSweep); permission resources.admin; result stored atomically with the state change.
+     * POST /queues/service-points/by-service-point-id/no-show-sweep (operationId queuesQueueNoShowSweep); permission resources.admin; result stored atomically with the state change.
+     * @param string $servicePointId query servicePointId
      * @return array<string, mixed>
      */
     public function queuesQueueNoShowSweep(string $servicePointId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/queues/service-points/' . HttpTransport::seg((string) $servicePointId) . '/no-show-sweep');
+        $req = ApiRequest::post('/queues/service-points/by-service-point-id/no-show-sweep');
+        $req->query('servicePointId', $servicePointId);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -387,12 +423,14 @@ final class QueuesApi
      *
      * QueueController.slaBreaches (sangam-rest).
      *
-     * GET /queues/service-points/{servicePointId}/sla-breaches (operationId queuesQueueSlaBreaches); permission resources.read.
+     * GET /queues/service-points/by-service-point-id/sla-breaches (operationId queuesQueueSlaBreaches); permission resources.read.
+     * @param string $servicePointId query servicePointId
      * @return list<array<string, mixed>>
      */
     public function queuesQueueSlaBreaches(string $servicePointId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/queues/service-points/' . HttpTransport::seg((string) $servicePointId) . '/sla-breaches');
+        $req = ApiRequest::get('/queues/service-points/by-service-point-id/sla-breaches');
+        $req->query('servicePointId', $servicePointId);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -401,14 +439,16 @@ final class QueuesApi
      *
      * QueueController.stats (sangam-rest).
      *
-     * GET /queues/service-points/{servicePointId}/stats (operationId queuesQueueStats); permission resources.read.
+     * GET /queues/service-points/by-service-point-id/stats (operationId queuesQueueStats); permission resources.read.
+     * @param string $servicePointId query servicePointId
      * @param string $from query from
      * @param string $to query to
      * @return array<string, mixed>
      */
     public function queuesQueueStats(string $servicePointId, string $from, string $to, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/queues/service-points/' . HttpTransport::seg((string) $servicePointId) . '/stats');
+        $req = ApiRequest::get('/queues/service-points/by-service-point-id/stats');
+        $req->query('servicePointId', $servicePointId);
         $req->query('from', $from);
         $req->query('to', $to);
         return Support::arr($this->calls->json($req, $options)) ?? [];
@@ -419,13 +459,15 @@ final class QueuesApi
      *
      * QueueController.display (sangam-rest).
      *
-     * GET /queues/service-points/{servicePointId}/display (operationId queuesQueueDisplay); permission resources.read.
+     * GET /queues/service-points/by-service-point-id/display (operationId queuesQueueDisplay); permission resources.read.
+     * @param string $servicePointId query servicePointId
      * @param int|null $next query next
      * @return array<string, mixed>
      */
     public function queuesQueueDisplay(string $servicePointId, ?int $next = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/queues/service-points/' . HttpTransport::seg((string) $servicePointId) . '/display');
+        $req = ApiRequest::get('/queues/service-points/by-service-point-id/display');
+        $req->query('servicePointId', $servicePointId);
         $req->query('next', $next);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
@@ -435,14 +477,16 @@ final class QueuesApi
      *
      * QueueController.callEvents (sangam-rest).
      *
-     * GET /queues/service-points/{servicePointId}/call-events (operationId queuesQueueCallEvents); permission resources.read.
+     * GET /queues/service-points/by-service-point-id/call-events (operationId queuesQueueCallEvents); permission resources.read.
+     * @param string $servicePointId query servicePointId
      * @param int|null $after query after
      * @param int|null $limit query limit
      * @return list<array<string, mixed>>
      */
     public function queuesQueueCallEvents(string $servicePointId, ?int $after = null, ?int $limit = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/queues/service-points/' . HttpTransport::seg((string) $servicePointId) . '/call-events');
+        $req = ApiRequest::get('/queues/service-points/by-service-point-id/call-events');
+        $req->query('servicePointId', $servicePointId);
         $req->query('after', $after);
         $req->query('limit', $limit);
         return Support::arr($this->calls->json($req, $options)) ?? [];

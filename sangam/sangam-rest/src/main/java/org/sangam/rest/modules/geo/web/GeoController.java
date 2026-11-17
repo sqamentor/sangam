@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -49,22 +48,25 @@ public class GeoController {
     @PostMapping("/layers")
     public ResponseEntity<Map<String, Object>> defineLayer(HttpServletRequest r, @RequestBody Map<String, Object> body) {
         Map<String, Object> l = port.defineLayer(callers.resolve(r), body);
-        return ResponseEntity.created(URI.create("/api/v1/geo/layers/" + l.get("code"))).body(l);
+        return ResponseEntity.created(URI.create("/api/v1/geo/layers/by-layer?layer=" + java.net.URLEncoder.encode(String.valueOf(l.get("code")), java.nio.charset.StandardCharsets.UTF_8))).body(l);
     }
 
-    @GetMapping("/layers/{layer}")
-    public Map<String, Object> layer(HttpServletRequest r, @PathVariable("layer") String layer) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/layers/by-layer")
+    public Map<String, Object> layer(HttpServletRequest r, @RequestParam("layer") String layer) {
         return port.getLayer(callers.resolve(r), layer);
     }
 
-    @PostMapping("/layers/{layer}/import")
-    public Map<String, Object> importBoundaries(HttpServletRequest r, @PathVariable("layer") String layer,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/layers/by-layer/import")
+    public Map<String, Object> importBoundaries(HttpServletRequest r, @RequestParam("layer") String layer,
                                                 @RequestBody Map<String, Object> body) {
         return port.importBoundaries(callers.resolve(r), layer, body);
     }
 
-    @GetMapping("/layers/{layer}/features")
-    public List<Map<String, Object>> features(HttpServletRequest r, @PathVariable("layer") String layer,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/layers/by-layer/features")
+    public List<Map<String, Object>> features(HttpServletRequest r, @RequestParam("layer") String layer,
                                               @RequestParam(value = "level", required = false) String level,
                                               @RequestParam(value = "parentId", required = false) String parentId,
                                               @RequestParam(value = "history", defaultValue = "false") boolean history,
@@ -73,26 +75,30 @@ public class GeoController {
         return port.listFeatures(callers.resolve(r), layer, level, parentId, history, page, size);
     }
 
-    @PostMapping("/layers/{layer}/features")
-    public ResponseEntity<Map<String, Object>> putFeature(HttpServletRequest r, @PathVariable("layer") String layer,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/layers/by-layer/features")
+    public ResponseEntity<Map<String, Object>> putFeature(HttpServletRequest r, @RequestParam("layer") String layer,
                                                           @RequestBody Map<String, Object> body) {
         Map<String, Object> f = port.putFeature(callers.resolve(r), layer, body);
-        return ResponseEntity.created(URI.create("/api/v1/geo/features/" + f.get("id"))).body(f);
+        return ResponseEntity.created(URI.create("/api/v1/geo/features/by-id?id=" + java.net.URLEncoder.encode(String.valueOf(f.get("id")), java.nio.charset.StandardCharsets.UTF_8))).body(f);
     }
 
-    @GetMapping("/features/{id}")
-    public Map<String, Object> feature(HttpServletRequest r, @PathVariable("id") String id,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/features/by-id")
+    public Map<String, Object> feature(HttpServletRequest r, @RequestParam("id") String id,
                                        @RequestParam(value = "geometry", defaultValue = "true") boolean geometry) {
         return port.getFeature(callers.resolve(r), id, geometry);
     }
 
-    @GetMapping("/features/{id}/lineage")
-    public List<Map<String, Object>> lineage(HttpServletRequest r, @PathVariable("id") String id) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/features/by-id/lineage")
+    public List<Map<String, Object>> lineage(HttpServletRequest r, @RequestParam("id") String id) {
         return port.lineage(callers.resolve(r), id);
     }
 
-    @DeleteMapping("/features/{id}")
-    public ResponseEntity<Void> retire(HttpServletRequest r, @PathVariable("id") String id) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @DeleteMapping("/features/by-id")
+    public ResponseEntity<Void> retire(HttpServletRequest r, @RequestParam("id") String id) {
         port.retireFeature(callers.resolve(r), id);
         return ResponseEntity.noContent().build();
     }
@@ -122,33 +128,38 @@ public class GeoController {
     @PostMapping("/fences")
     public ResponseEntity<Map<String, Object>> defineFence(HttpServletRequest r, @RequestBody Map<String, Object> body) {
         Map<String, Object> f = port.defineFence(callers.resolve(r), body);
-        return ResponseEntity.created(URI.create("/api/v1/geo/fences/" + f.get("id"))).body(f);
+        return ResponseEntity.created(URI.create("/api/v1/geo/fences/by-id?id=" + java.net.URLEncoder.encode(String.valueOf(f.get("id")), java.nio.charset.StandardCharsets.UTF_8))).body(f);
     }
 
-    @GetMapping("/fences/{id}")
-    public Map<String, Object> fence(HttpServletRequest r, @PathVariable("id") String id) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/fences/by-id")
+    public Map<String, Object> fence(HttpServletRequest r, @RequestParam("id") String id) {
         return port.getFence(callers.resolve(r), id);
     }
 
-    @DeleteMapping("/fences/{id}")
-    public ResponseEntity<Void> deactivateFence(HttpServletRequest r, @PathVariable("id") String id) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @DeleteMapping("/fences/by-id")
+    public ResponseEntity<Void> deactivateFence(HttpServletRequest r, @RequestParam("id") String id) {
         port.deactivateFence(callers.resolve(r), id);
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/fences/{id}/check")
-    public Map<String, Object> checkFence(HttpServletRequest r, @PathVariable("id") String id, @RequestBody Map<String, Object> body) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/fences/by-id/check")
+    public Map<String, Object> checkFence(HttpServletRequest r, @RequestParam("id") String id, @RequestBody Map<String, Object> body) {
         return port.checkFence(callers.resolve(r), id, body);
     }
 
-    @PutMapping("/objects/{type}/{id}/geometry")
-    public Map<String, Object> putObjectGeometry(HttpServletRequest r, @PathVariable("type") String type, @PathVariable("id") String id,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PutMapping("/objects/by-type/by-id/geometry")
+    public Map<String, Object> putObjectGeometry(HttpServletRequest r, @RequestParam("type") String type, @RequestParam("id") String id,
                                                  @RequestBody Map<String, Object> body) {
         return port.putObjectGeometry(callers.resolve(r), type, id, body);
     }
 
-    @GetMapping("/objects/{type}/{id}/geometry")
-    public Map<String, Object> objectGeometry(HttpServletRequest r, @PathVariable("type") String type, @PathVariable("id") String id,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/objects/by-type/by-id/geometry")
+    public Map<String, Object> objectGeometry(HttpServletRequest r, @RequestParam("type") String type, @RequestParam("id") String id,
                                               @RequestParam(value = "attribute", required = false) String attribute) {
         return port.getObjectGeometry(callers.resolve(r), type, id, attribute);
     }
@@ -163,14 +174,16 @@ public class GeoController {
         return port.registerExternalLayer(callers.resolve(r), body);
     }
 
-    @PostMapping("/external-layers/{ref}/query")
-    public Map<String, Object> queryExternal(HttpServletRequest r, @PathVariable("ref") String ref,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/external-layers/by-ref/query")
+    public Map<String, Object> queryExternal(HttpServletRequest r, @RequestParam("ref") String ref,
                                              @RequestBody(required = false) Map<String, Object> body) {
         return port.queryExternalLayer(callers.resolve(r), ref, body);
     }
 
-    @PostMapping("/external-layers/{ref}/import")
-    public Map<String, Object> importExternal(HttpServletRequest r, @PathVariable("ref") String ref,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/external-layers/by-ref/import")
+    public Map<String, Object> importExternal(HttpServletRequest r, @RequestParam("ref") String ref,
                                               @RequestBody(required = false) Map<String, Object> body) {
         return port.importExternalLayer(callers.resolve(r), ref, body);
     }

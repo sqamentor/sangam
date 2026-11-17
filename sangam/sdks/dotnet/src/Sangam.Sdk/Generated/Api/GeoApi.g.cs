@@ -41,22 +41,24 @@ public sealed class GeoApi
     /// <summary>
     /// Layer
     /// GeoController.layer (sangam-rest).
-    /// GET /geo/layers/{layer} (operationId geoGeoLayer); permission geo.read.
+    /// GET /geo/layers/by-layer (operationId geoGeoLayer); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoLayerAsync(string layer, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/geo/layers/{HttpTransport.Seg(GeneratedCalls.Str(layer)!)}");
+        var req = ApiRequest.Get($"/geo/layers/by-layer");
+        req.WithQuery("layer", GeneratedCalls.Q(layer));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Import boundaries
     /// GeoController.importBoundaries (sangam-rest).
-    /// POST /geo/layers/{layer}/import (operationId geoGeoImportBoundaries); permission geo.write; result stored atomically with the state change.
+    /// POST /geo/layers/by-layer/import (operationId geoGeoImportBoundaries); permission geo.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoImportBoundariesAsync(string layer, M.GeoGeoImportBoundariesBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoImportBoundariesAsync(M.GeoGeoImportBoundariesBody body, string layer, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/geo/layers/{HttpTransport.Seg(GeneratedCalls.Str(layer)!)}/import");
+        var req = ApiRequest.Post($"/geo/layers/by-layer/import");
+        req.WithQuery("layer", GeneratedCalls.Q(layer));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -64,11 +66,12 @@ public sealed class GeoApi
     /// <summary>
     /// Features
     /// GeoController.features (sangam-rest).
-    /// GET /geo/layers/{layer}/features (operationId geoGeoFeatures); permission geo.read.
+    /// GET /geo/layers/by-layer/features (operationId geoGeoFeatures); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> GeoGeoFeaturesAsync(string layer, string? level = null, string? parentId = null, bool? history = null, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/geo/layers/{HttpTransport.Seg(GeneratedCalls.Str(layer)!)}/features");
+        var req = ApiRequest.Get($"/geo/layers/by-layer/features");
+        req.WithQuery("layer", GeneratedCalls.Q(layer));
         req.WithQuery("level", GeneratedCalls.Q(level));
         req.WithQuery("parentId", GeneratedCalls.Q(parentId));
         req.WithQuery("history", GeneratedCalls.Q(history));
@@ -80,11 +83,12 @@ public sealed class GeoApi
     /// <summary>
     /// Put feature
     /// GeoController.putFeature (sangam-rest).
-    /// POST /geo/layers/{layer}/features (operationId geoGeoPutFeature); permission geo.write; result stored atomically with the state change.
+    /// POST /geo/layers/by-layer/features (operationId geoGeoPutFeature); permission geo.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoPutFeatureAsync(string layer, M.GeoGeoPutFeatureBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoPutFeatureAsync(M.GeoGeoPutFeatureBody body, string layer, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/geo/layers/{HttpTransport.Seg(GeneratedCalls.Str(layer)!)}/features");
+        var req = ApiRequest.Post($"/geo/layers/by-layer/features");
+        req.WithQuery("layer", GeneratedCalls.Q(layer));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -92,11 +96,12 @@ public sealed class GeoApi
     /// <summary>
     /// Feature
     /// GeoController.feature (sangam-rest).
-    /// GET /geo/features/{id} (operationId geoGeoFeature); permission geo.read.
+    /// GET /geo/features/by-id (operationId geoGeoFeature); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoFeatureAsync(string id, bool? geometry = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/geo/features/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Get($"/geo/features/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         req.WithQuery("geometry", GeneratedCalls.Q(geometry));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -104,22 +109,24 @@ public sealed class GeoApi
     /// <summary>
     /// Retire
     /// GeoController.retire (sangam-rest).
-    /// DELETE /geo/features/{id} (operationId geoGeoRetire); permission geo.write; result stored atomically with the state change.
+    /// DELETE /geo/features/by-id (operationId geoGeoRetire); permission geo.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task GeoGeoRetireAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/geo/features/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Delete($"/geo/features/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Lineage
     /// GeoController.lineage (sangam-rest).
-    /// GET /geo/features/{id}/lineage (operationId geoGeoLineage); permission geo.read.
+    /// GET /geo/features/by-id/lineage (operationId geoGeoLineage); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> GeoGeoLineageAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/geo/features/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/lineage");
+        var req = ApiRequest.Get($"/geo/features/by-id/lineage");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -183,33 +190,36 @@ public sealed class GeoApi
     /// <summary>
     /// Fence
     /// GeoController.fence (sangam-rest).
-    /// GET /geo/fences/{id} (operationId geoGeoFence); permission geo.read.
+    /// GET /geo/fences/by-id (operationId geoGeoFence); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoFenceAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/geo/fences/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Get($"/geo/fences/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Deactivate fence
     /// GeoController.deactivateFence (sangam-rest).
-    /// DELETE /geo/fences/{id} (operationId geoGeoDeactivateFence); permission geo.write; result stored atomically with the state change.
+    /// DELETE /geo/fences/by-id (operationId geoGeoDeactivateFence); permission geo.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task GeoGeoDeactivateFenceAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/geo/fences/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Delete($"/geo/fences/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Check fence
     /// GeoController.checkFence (sangam-rest).
-    /// POST /geo/fences/{id}/check (operationId geoGeoCheckFence); permission geo.write.
+    /// POST /geo/fences/by-id/check (operationId geoGeoCheckFence); permission geo.write.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoCheckFenceAsync(string id, M.GeoGeoCheckFenceBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoCheckFenceAsync(M.GeoGeoCheckFenceBody body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/geo/fences/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/check");
+        var req = ApiRequest.Post($"/geo/fences/by-id/check");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -217,11 +227,13 @@ public sealed class GeoApi
     /// <summary>
     /// Put object geometry
     /// GeoController.putObjectGeometry (sangam-rest).
-    /// PUT /geo/objects/{type}/{id}/geometry (operationId geoGeoPutObjectGeometry); permission geo.write; result stored atomically with the state change.
+    /// PUT /geo/objects/by-type/by-id/geometry (operationId geoGeoPutObjectGeometry); permission geo.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoPutObjectGeometryAsync(string type, string id, M.GeoGeoPutObjectGeometryBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoPutObjectGeometryAsync(M.GeoGeoPutObjectGeometryBody body, string type, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/geo/objects/{HttpTransport.Seg(GeneratedCalls.Str(type)!)}/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/geometry");
+        var req = ApiRequest.Put($"/geo/objects/by-type/by-id/geometry");
+        req.WithQuery("type", GeneratedCalls.Q(type));
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -229,11 +241,13 @@ public sealed class GeoApi
     /// <summary>
     /// Object geometry
     /// GeoController.objectGeometry (sangam-rest).
-    /// GET /geo/objects/{type}/{id}/geometry (operationId geoGeoObjectGeometry); permission geo.read.
+    /// GET /geo/objects/by-type/by-id/geometry (operationId geoGeoObjectGeometry); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoObjectGeometryAsync(string type, string id, string? attribute = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/geo/objects/{HttpTransport.Seg(GeneratedCalls.Str(type)!)}/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/geometry");
+        var req = ApiRequest.Get($"/geo/objects/by-type/by-id/geometry");
+        req.WithQuery("type", GeneratedCalls.Q(type));
+        req.WithQuery("id", GeneratedCalls.Q(id));
         req.WithQuery("attribute", GeneratedCalls.Q(attribute));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -264,11 +278,12 @@ public sealed class GeoApi
     /// <summary>
     /// Query external
     /// GeoController.queryExternal (sangam-rest).
-    /// POST /geo/external-layers/{ref}/query (operationId geoGeoQueryExternal); permission geo.write.
+    /// POST /geo/external-layers/by-ref/query (operationId geoGeoQueryExternal); permission geo.write.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoQueryExternalAsync(string @ref, M.GeoGeoQueryExternalBody? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/geo/external-layers/{HttpTransport.Seg(GeneratedCalls.Str(@ref)!)}/query");
+        var req = ApiRequest.Post($"/geo/external-layers/by-ref/query");
+        req.WithQuery("ref", GeneratedCalls.Q(@ref));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -276,11 +291,12 @@ public sealed class GeoApi
     /// <summary>
     /// Import external
     /// GeoController.importExternal (sangam-rest).
-    /// POST /geo/external-layers/{ref}/import (operationId geoGeoImportExternal); permission geo.write; result stored atomically with the state change.
+    /// POST /geo/external-layers/by-ref/import (operationId geoGeoImportExternal); permission geo.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoImportExternalAsync(string @ref, M.GeoGeoImportExternalBody? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/geo/external-layers/{HttpTransport.Seg(GeneratedCalls.Str(@ref)!)}/import");
+        var req = ApiRequest.Post($"/geo/external-layers/by-ref/import");
+        req.WithQuery("ref", GeneratedCalls.Q(@ref));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }

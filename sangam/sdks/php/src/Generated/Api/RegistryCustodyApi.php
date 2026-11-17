@@ -87,12 +87,14 @@ final class RegistryCustodyApi
      *
      * CustodyController.byLabel (sangam-rest).
      *
-     * GET /registry/custody/items/by-label/{label} (operationId registryCustodyByLabel); permission registry.read.
+     * GET /registry/custody/items/by-label (operationId registryCustodyByLabel); permission registry.read.
+     * @param string $label query label
      * @return array<string, mixed>
      */
     public function registryCustodyByLabel(string $label, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/registry/custody/items/by-label/' . HttpTransport::seg((string) $label));
+        $req = ApiRequest::get('/registry/custody/items/by-label');
+        $req->query('label', $label);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 

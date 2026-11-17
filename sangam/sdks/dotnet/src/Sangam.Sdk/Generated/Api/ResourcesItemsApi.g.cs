@@ -51,22 +51,24 @@ public sealed class ResourcesItemsApi
     /// <summary>
     /// Resource
     /// ResourcesController.resource (sangam-rest).
-    /// GET /resources/items/{resourceId} (operationId resourcesResourcesResource); permission resources.read.
+    /// GET /resources/items/by-resource-id (operationId resourcesResourcesResource); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesResourceAsync(string resourceId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/resources/items/{HttpTransport.Seg(GeneratedCalls.Str(resourceId)!)}");
+        var req = ApiRequest.Get($"/resources/items/by-resource-id");
+        req.WithQuery("resourceId", GeneratedCalls.Q(resourceId));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Update resource
     /// ResourcesController.updateResource (sangam-rest).
-    /// PATCH /resources/items/{resourceId} (operationId resourcesResourcesUpdateResource); permission resources.admin; result stored atomically with the state change.
+    /// PATCH /resources/items/by-resource-id (operationId resourcesResourcesUpdateResource); permission resources.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesUpdateResourceAsync(string resourceId, M.ResourcePatch body, long version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesUpdateResourceAsync(M.ResourcePatch body, string resourceId, long version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Patch($"/resources/items/{HttpTransport.Seg(GeneratedCalls.Str(resourceId)!)}");
+        var req = ApiRequest.Patch($"/resources/items/by-resource-id");
+        req.WithQuery("resourceId", GeneratedCalls.Q(resourceId));
         req.WithQuery("version", GeneratedCalls.Q(version));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
@@ -75,11 +77,12 @@ public sealed class ResourcesItemsApi
     /// <summary>
     /// Set status
     /// ResourcesController.setStatus (sangam-rest).
-    /// POST /resources/items/{resourceId}/status (operationId resourcesResourcesSetStatus); permission resources.admin; result stored atomically with the state change.
+    /// POST /resources/items/by-resource-id/status (operationId resourcesResourcesSetStatus); permission resources.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesSetStatusAsync(string resourceId, M.ResourcesStatusRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesSetStatusAsync(M.ResourcesStatusRequest body, string resourceId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/resources/items/{HttpTransport.Seg(GeneratedCalls.Str(resourceId)!)}/status");
+        var req = ApiRequest.Post($"/resources/items/by-resource-id/status");
+        req.WithQuery("resourceId", GeneratedCalls.Q(resourceId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -87,11 +90,12 @@ public sealed class ResourcesItemsApi
     /// <summary>
     /// Move
     /// ResourcesController.move (sangam-rest).
-    /// POST /resources/items/{resourceId}/move (operationId resourcesResourcesMove); permission resources.admin; result stored atomically with the state change.
+    /// POST /resources/items/by-resource-id/move (operationId resourcesResourcesMove); permission resources.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesMoveAsync(string resourceId, M.ResourcesMoveRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ResourcesResourcesMoveAsync(M.ResourcesMoveRequest body, string resourceId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/resources/items/{HttpTransport.Seg(GeneratedCalls.Str(resourceId)!)}/move");
+        var req = ApiRequest.Post($"/resources/items/by-resource-id/move");
+        req.WithQuery("resourceId", GeneratedCalls.Q(resourceId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -99,22 +103,24 @@ public sealed class ResourcesItemsApi
     /// <summary>
     /// Children
     /// ResourcesController.children (sangam-rest).
-    /// GET /resources/items/{resourceId}/children (operationId resourcesResourcesChildren); permission resources.read.
+    /// GET /resources/items/by-resource-id/children (operationId resourcesResourcesChildren); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> ResourcesResourcesChildrenAsync(string resourceId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/resources/items/{HttpTransport.Seg(GeneratedCalls.Str(resourceId)!)}/children");
+        var req = ApiRequest.Get($"/resources/items/by-resource-id/children");
+        req.WithQuery("resourceId", GeneratedCalls.Q(resourceId));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Slots
     /// ResourcesController.slots (sangam-rest).
-    /// GET /resources/items/{resourceId}/slots (operationId resourcesResourcesSlots); permission resources.read.
+    /// GET /resources/items/by-resource-id/slots (operationId resourcesResourcesSlots); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> ResourcesResourcesSlotsAsync(string resourceId, global::System.DateTimeOffset from, global::System.DateTimeOffset to, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/resources/items/{HttpTransport.Seg(GeneratedCalls.Str(resourceId)!)}/slots");
+        var req = ApiRequest.Get($"/resources/items/by-resource-id/slots");
+        req.WithQuery("resourceId", GeneratedCalls.Q(resourceId));
         req.WithQuery("from", GeneratedCalls.Q(from));
         req.WithQuery("to", GeneratedCalls.Q(to));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?>(req, options, cancellationToken).ConfigureAwait(false);
@@ -123,11 +129,12 @@ public sealed class ResourcesItemsApi
     /// <summary>
     /// Availability
     /// ResourcesController.availability (sangam-rest).
-    /// GET /resources/items/{resourceId}/availability (operationId resourcesResourcesAvailability); permission resources.read.
+    /// GET /resources/items/by-resource-id/availability (operationId resourcesResourcesAvailability); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> ResourcesResourcesAvailabilityAsync(string resourceId, global::System.DateTimeOffset from, global::System.DateTimeOffset to, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/resources/items/{HttpTransport.Seg(GeneratedCalls.Str(resourceId)!)}/availability");
+        var req = ApiRequest.Get($"/resources/items/by-resource-id/availability");
+        req.WithQuery("resourceId", GeneratedCalls.Q(resourceId));
         req.WithQuery("from", GeneratedCalls.Q(from));
         req.WithQuery("to", GeneratedCalls.Q(to));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?>(req, options, cancellationToken).ConfigureAwait(false);

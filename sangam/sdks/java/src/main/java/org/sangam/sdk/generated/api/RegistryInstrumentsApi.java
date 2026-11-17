@@ -204,16 +204,17 @@ public final class RegistryInstrumentsApi {
      *
      * <p>InstrumentController.transition (sangam-rest).
      *
-     * <p>{@code POST /registry/instruments/{id}/transitions/{name}} (operationId {@code registryInstrumentTransition}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * <p>{@code POST /registry/instruments/{id}/transitions/by-name} (operationId {@code registryInstrumentTransition}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
-     * @param name path parameter {@code name}
+     * @param name query parameter {@code name}. Name; may carry '/' or ':'
      * @param body request body, or null
      * @param ifMatch header parameter {@code If-Match}, or null. Revision the change is based on (409 on mismatch)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> registryInstrumentTransition(String id, String name, RegistryInstrumentTransitionBody body, String ifMatch, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/registry/instruments/" + HttpTransport.seg(String.valueOf(id)) + "/transitions/" + HttpTransport.seg(String.valueOf(name)));
+        ApiRequest req = ApiRequest.post("/registry/instruments/" + HttpTransport.seg(String.valueOf(id)) + "/transitions/by-name");
+        req.query("name", name);
         req.body(body);
         req.header("If-Match", ifMatch == null ? null : String.valueOf(ifMatch));
         return call.json(req, options, R_registryInstrumentTransition);
@@ -414,14 +415,15 @@ public final class RegistryInstrumentsApi {
      *
      * <p>InstrumentController.verifyCode (sangam-rest).
      *
-     * <p>{@code GET /registry/instruments/public/{tenant}/verify} (operationId {@code registryInstrumentVerifyCode}).
-     * @param tenant path parameter {@code tenant}
+     * <p>{@code GET /registry/instruments/public/by-tenant/verify} (operationId {@code registryInstrumentVerifyCode}).
+     * @param tenant query parameter {@code tenant}. Tenant; may carry '/' or ':'
      * @param code query parameter {@code code}
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> registryInstrumentVerifyCode(String tenant, String code, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/registry/instruments/public/" + HttpTransport.seg(String.valueOf(tenant)) + "/verify");
+        ApiRequest req = ApiRequest.get("/registry/instruments/public/by-tenant/verify");
+        req.query("tenant", tenant);
         req.query("code", code);
         return call.json(req, options, R_registryInstrumentVerifyCode);
     }

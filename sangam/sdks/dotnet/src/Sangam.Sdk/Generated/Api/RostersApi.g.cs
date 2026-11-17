@@ -43,11 +43,12 @@ public sealed class RostersApi
     /// <summary>
     /// Delete shift
     /// RosterController.deleteShift (sangam-rest).
-    /// DELETE /rosters/shifts/{shiftId} (operationId rostersRosterDeleteShift); permission resources.admin; result stored atomically with the state change.
+    /// DELETE /rosters/shifts/by-shift-id (operationId rostersRosterDeleteShift); permission resources.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task RostersRosterDeleteShiftAsync(string shiftId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/rosters/shifts/{HttpTransport.Seg(GeneratedCalls.Str(shiftId)!)}");
+        var req = ApiRequest.Delete($"/rosters/shifts/by-shift-id");
+        req.WithQuery("shiftId", GeneratedCalls.Q(shiftId));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -79,11 +80,12 @@ public sealed class RostersApi
     /// <summary>
     /// Delete rotation
     /// RosterController.deleteRotation (sangam-rest).
-    /// DELETE /rosters/rotations/{rotationId} (operationId rostersRosterDeleteRotation); permission resources.admin; result stored atomically with the state change.
+    /// DELETE /rosters/rotations/by-rotation-id (operationId rostersRosterDeleteRotation); permission resources.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task RostersRosterDeleteRotationAsync(string rotationId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/rosters/rotations/{HttpTransport.Seg(GeneratedCalls.Str(rotationId)!)}");
+        var req = ApiRequest.Delete($"/rosters/rotations/by-rotation-id");
+        req.WithQuery("rotationId", GeneratedCalls.Q(rotationId));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -165,11 +167,12 @@ public sealed class RostersApi
     /// <summary>
     /// Set member
     /// RosterController.setMember (sangam-rest).
-    /// PUT /rosters/periods/{periodId}/members/{personId} (operationId rostersRosterSetMember); permission resources.admin; result stored atomically with the state change.
+    /// PUT /rosters/periods/{periodId}/members/by-person-id (operationId rostersRosterSetMember); permission resources.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RostersRosterSetMemberAsync(string periodId, string personId, M.RosterRestPortMemberRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RostersRosterSetMemberAsync(string periodId, M.RosterRestPortMemberRequest body, string personId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/rosters/periods/{HttpTransport.Seg(GeneratedCalls.Str(periodId)!)}/members/{HttpTransport.Seg(GeneratedCalls.Str(personId)!)}");
+        var req = ApiRequest.Put($"/rosters/periods/{HttpTransport.Seg(GeneratedCalls.Str(periodId)!)}/members/by-person-id");
+        req.WithQuery("personId", GeneratedCalls.Q(personId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -177,11 +180,12 @@ public sealed class RostersApi
     /// <summary>
     /// Remove member
     /// RosterController.removeMember (sangam-rest).
-    /// DELETE /rosters/periods/{periodId}/members/{personId} (operationId rostersRosterRemoveMember); permission resources.admin; result stored atomically with the state change.
+    /// DELETE /rosters/periods/{periodId}/members/by-person-id (operationId rostersRosterRemoveMember); permission resources.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task RostersRosterRemoveMemberAsync(string periodId, string personId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/rosters/periods/{HttpTransport.Seg(GeneratedCalls.Str(periodId)!)}/members/{HttpTransport.Seg(GeneratedCalls.Str(personId)!)}");
+        var req = ApiRequest.Delete($"/rosters/periods/{HttpTransport.Seg(GeneratedCalls.Str(periodId)!)}/members/by-person-id");
+        req.WithQuery("personId", GeneratedCalls.Q(personId));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -213,11 +217,12 @@ public sealed class RostersApi
     /// <summary>
     /// Remove demand
     /// RosterController.removeDemand (sangam-rest).
-    /// DELETE /rosters/periods/{periodId}/demand/{demandId} (operationId rostersRosterRemoveDemand); permission resources.admin; result stored atomically with the state change.
+    /// DELETE /rosters/periods/{periodId}/demand/by-demand-id (operationId rostersRosterRemoveDemand); permission resources.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task RostersRosterRemoveDemandAsync(string periodId, string demandId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/rosters/periods/{HttpTransport.Seg(GeneratedCalls.Str(periodId)!)}/demand/{HttpTransport.Seg(GeneratedCalls.Str(demandId)!)}");
+        var req = ApiRequest.Delete($"/rosters/periods/{HttpTransport.Seg(GeneratedCalls.Str(periodId)!)}/demand/by-demand-id");
+        req.WithQuery("demandId", GeneratedCalls.Q(demandId));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -382,11 +387,12 @@ public sealed class RostersApi
     /// <summary>
     /// Personal roster
     /// RosterController.personalRoster (sangam-rest).
-    /// GET /rosters/people/{personId}/duties (operationId rostersRosterPersonalRoster); permission resources.read.
+    /// GET /rosters/people/by-person-id/duties (operationId rostersRosterPersonalRoster); permission resources.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RostersRosterPersonalRosterAsync(string personId, global::System.DateTimeOffset from, global::System.DateTimeOffset to, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/rosters/people/{HttpTransport.Seg(GeneratedCalls.Str(personId)!)}/duties");
+        var req = ApiRequest.Get($"/rosters/people/by-person-id/duties");
+        req.WithQuery("personId", GeneratedCalls.Q(personId));
         req.WithQuery("from", GeneratedCalls.Q(from));
         req.WithQuery("to", GeneratedCalls.Q(to));
         req.WithQuery("page", GeneratedCalls.Q(page));

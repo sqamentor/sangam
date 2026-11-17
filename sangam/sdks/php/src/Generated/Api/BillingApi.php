@@ -25,13 +25,15 @@ final class BillingApi
      *
      * Consumers holding demand accounts in the ledger.
      *
-     * GET /billing/{ledger}/accounts (operationId listBillingAccounts); permission billing.read.
+     * GET /billing/by-ledger/accounts (operationId listBillingAccounts); permission billing.read.
+     * @param string $ledger query ledger
      * @param string|null $cycle query cycle
      * @return array<string, mixed>
      */
     public function listBillingAccounts(string $ledger, ?string $cycle = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/billing/' . HttpTransport::seg((string) $ledger) . '/accounts');
+        $req = ApiRequest::get('/billing/by-ledger/accounts');
+        $req->query('ledger', $ledger);
         $req->query('cycle', $cycle);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
@@ -41,13 +43,15 @@ final class BillingApi
      *
      * Computes the tariff (fixed, per unit, slab, percent, DMN) and raises the demand per head.
      *
-     * POST /billing/{ledger}/invoices (operationId raiseBillingInvoice); permission billing.write; result stored atomically with the state change.
+     * POST /billing/by-ledger/invoices (operationId raiseBillingInvoice); permission billing.write; result stored atomically with the state change.
      * @param Model\BillingInvoiceRequest|array $body request body
+     * @param string $ledger query ledger
      * @return array<string, mixed>
      */
-    public function raiseBillingInvoice(string $ledger, Model\BillingInvoiceRequest|array $body, ?RequestOptions $options = null): array
+    public function raiseBillingInvoice(Model\BillingInvoiceRequest|array $body, string $ledger, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/billing/' . HttpTransport::seg((string) $ledger) . '/invoices');
+        $req = ApiRequest::post('/billing/by-ledger/invoices');
+        $req->query('ledger', $ledger);
         if ($body !== null) {
             $req->body($body);
         }
@@ -59,13 +63,15 @@ final class BillingApi
      *
      * Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt. A payment the channel cannot confirm is refused here; staff record it with acceptUnverifiedPayment (decision 141).
      *
-     * POST /billing/{ledger}/collections (operationId recordBillingCollection); permission billing.write; result stored atomically with the state change.
+     * POST /billing/by-ledger/collections (operationId recordBillingCollection); permission billing.write; result stored atomically with the state change.
      * @param Model\BillingCollectionRequest|array $body request body
+     * @param string $ledger query ledger
      * @return array<string, mixed>
      */
-    public function recordBillingCollection(string $ledger, Model\BillingCollectionRequest|array $body, ?RequestOptions $options = null): array
+    public function recordBillingCollection(Model\BillingCollectionRequest|array $body, string $ledger, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/billing/' . HttpTransport::seg((string) $ledger) . '/collections');
+        $req = ApiRequest::post('/billing/by-ledger/collections');
+        $req->query('ledger', $ledger);
         if ($body !== null) {
             $req->body($body);
         }
@@ -77,12 +83,16 @@ final class BillingApi
      *
      * Outstanding and overdue demand.
      *
-     * GET /billing/{ledger}/consumers/{consumer}/arrears (operationId getBillingArrears); permission billing.read.
+     * GET /billing/by-ledger/consumers/by-consumer/arrears (operationId getBillingArrears); permission billing.read.
+     * @param string $ledger query ledger
+     * @param string $consumer query consumer
      * @return array<string, mixed>
      */
     public function getBillingArrears(string $ledger, string $consumer, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/billing/' . HttpTransport::seg((string) $ledger) . '/consumers/' . HttpTransport::seg((string) $consumer) . '/arrears');
+        $req = ApiRequest::get('/billing/by-ledger/consumers/by-consumer/arrears');
+        $req->query('ledger', $ledger);
+        $req->query('consumer', $consumer);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -91,13 +101,17 @@ final class BillingApi
      *
      * Penalty / interest per the tariff (grace days, rate).
      *
-     * POST /billing/{ledger}/consumers/{consumer}/penalties (operationId levyBillingPenalties); permission billing.write; result stored atomically with the state change.
+     * POST /billing/by-ledger/consumers/by-consumer/penalties (operationId levyBillingPenalties); permission billing.write; result stored atomically with the state change.
      * @param Model\BillingPenaltyRequest|array $body request body
+     * @param string $ledger query ledger
+     * @param string $consumer query consumer
      * @return array<string, mixed>
      */
-    public function levyBillingPenalties(string $ledger, string $consumer, Model\BillingPenaltyRequest|array $body, ?RequestOptions $options = null): array
+    public function levyBillingPenalties(Model\BillingPenaltyRequest|array $body, string $ledger, string $consumer, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/billing/' . HttpTransport::seg((string) $ledger) . '/consumers/' . HttpTransport::seg((string) $consumer) . '/penalties');
+        $req = ApiRequest::post('/billing/by-ledger/consumers/by-consumer/penalties');
+        $req->query('ledger', $ledger);
+        $req->query('consumer', $consumer);
         if ($body !== null) {
             $req->body($body);
         }
@@ -109,13 +123,15 @@ final class BillingApi
      *
      * Writes off outstanding demand under an approved order.
      *
-     * POST /billing/{ledger}/waivers (operationId recordBillingWaiver); permission billing.admin; result stored atomically with the state change.
+     * POST /billing/by-ledger/waivers (operationId recordBillingWaiver); permission billing.admin; result stored atomically with the state change.
      * @param Model\BillingWaiverRequest|array $body request body
+     * @param string $ledger query ledger
      * @return array<string, mixed>
      */
-    public function recordBillingWaiver(string $ledger, Model\BillingWaiverRequest|array $body, ?RequestOptions $options = null): array
+    public function recordBillingWaiver(Model\BillingWaiverRequest|array $body, string $ledger, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/billing/' . HttpTransport::seg((string) $ledger) . '/waivers');
+        $req = ApiRequest::post('/billing/by-ledger/waivers');
+        $req->query('ledger', $ledger);
         if ($body !== null) {
             $req->body($body);
         }
@@ -127,13 +143,15 @@ final class BillingApi
      *
      * Reverses consumption and calls the payment rail once per operation (the Idempotency-Key).
      *
-     * POST /billing/{ledger}/refunds (operationId refundBillingCollection); permission billing.admin; result stored atomically with the state change.
+     * POST /billing/by-ledger/refunds (operationId refundBillingCollection); permission billing.admin; result stored atomically with the state change.
      * @param Model\BillingRefundRequest|array $body request body
+     * @param string $ledger query ledger
      * @return Model\BillingRefundResult|null
      */
-    public function refundBillingCollection(string $ledger, Model\BillingRefundRequest|array $body, ?RequestOptions $options = null): ?Model\BillingRefundResult
+    public function refundBillingCollection(Model\BillingRefundRequest|array $body, string $ledger, ?RequestOptions $options = null): ?Model\BillingRefundResult
     {
-        $req = ApiRequest::post('/billing/' . HttpTransport::seg((string) $ledger) . '/refunds');
+        $req = ApiRequest::post('/billing/by-ledger/refunds');
+        $req->query('ledger', $ledger);
         if ($body !== null) {
             $req->body($body);
         }
@@ -145,13 +163,15 @@ final class BillingApi
      *
      * Records a payment its channel cannot confirm now, in state PAYMENT_ACCEPTED_UNVERIFIED, with an audit record of the same name. Requires the ACCEPT_UNVERIFIED action on this channel, tenant and office (permission billing.accept-unverified, scoped); a generic billing permission is not enough (403 NOT_PERMITTED). Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Nothing is posted to the ledger. 403 CHANNEL_NOT_ENABLED when the channel is not configured for unverified acceptance or its operating policy is unresolved. 400 VALIDATION_FAILED when the currency is not the ledger currency or the amount is not a MoneyAmount of it. 409 DUPLICATE when the channel and paymentRef were already accepted in the tenant, with the existing id (a retry with the same Idempotency-Key returns the stored answer). 422 LIMIT_EXCEEDED when the amount exceeds the policy limit.
      *
-     * POST /billing/{ledger}/unverified-payments (operationId acceptUnverifiedPayment); permission billing.accept-unverified; result stored atomically with the state change.
+     * POST /billing/by-ledger/unverified-payments (operationId acceptUnverifiedPayment); permission billing.accept-unverified; result stored atomically with the state change.
      * @param Model\UnverifiedPaymentRequest|array $body request body
+     * @param string $ledger query ledger
      * @return Model\UnverifiedPayment|null
      */
-    public function acceptUnverifiedPayment(string $ledger, Model\UnverifiedPaymentRequest|array $body, ?RequestOptions $options = null): ?Model\UnverifiedPayment
+    public function acceptUnverifiedPayment(Model\UnverifiedPaymentRequest|array $body, string $ledger, ?RequestOptions $options = null): ?Model\UnverifiedPayment
     {
-        $req = ApiRequest::post('/billing/' . HttpTransport::seg((string) $ledger) . '/unverified-payments');
+        $req = ApiRequest::post('/billing/by-ledger/unverified-payments');
+        $req->query('ledger', $ledger);
         if ($body !== null) {
             $req->body($body);
         }
@@ -163,7 +183,8 @@ final class BillingApi
      *
      * Payments accepted unverified, oldest first, for reconciliation and ageing. Every filter applies before paging (size default 50, at most 500), with X-Total-Count.
      *
-     * GET /billing/{ledger}/unverified-payments (operationId listUnverifiedPayments); permission billing.read.
+     * GET /billing/by-ledger/unverified-payments (operationId listUnverifiedPayments); permission billing.read.
+     * @param string $ledger query ledger
      * @param string|null $state query state
      * @param string|null $channel query channel
      * @param string|null $office query office
@@ -174,7 +195,8 @@ final class BillingApi
      */
     public function listUnverifiedPayments(string $ledger, ?string $state = null, ?string $channel = null, ?string $office = null, ?int $minAgeDays = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/billing/' . HttpTransport::seg((string) $ledger) . '/unverified-payments');
+        $req = ApiRequest::get('/billing/by-ledger/unverified-payments');
+        $req->query('ledger', $ledger);
         $req->query('state', $state);
         $req->query('channel', $channel);
         $req->query('office', $office);
@@ -189,12 +211,14 @@ final class BillingApi
      *
      * One record with its resolution.
      *
-     * GET /billing/{ledger}/unverified-payments/{id} (operationId getUnverifiedPayment); permission billing.read.
+     * GET /billing/by-ledger/unverified-payments/{id} (operationId getUnverifiedPayment); permission billing.read.
+     * @param string $ledger query ledger
      * @return Model\UnverifiedPayment|null
      */
-    public function getUnverifiedPayment(string $ledger, string $id, ?RequestOptions $options = null): ?Model\UnverifiedPayment
+    public function getUnverifiedPayment(string $id, string $ledger, ?RequestOptions $options = null): ?Model\UnverifiedPayment
     {
-        $req = ApiRequest::get('/billing/' . HttpTransport::seg((string) $ledger) . '/unverified-payments/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::get('/billing/by-ledger/unverified-payments/' . HttpTransport::seg((string) $id));
+        $req->query('ledger', $ledger);
         return $this->calls->model($req, $options, Model\UnverifiedPayment::class);
     }
 
@@ -203,13 +227,15 @@ final class BillingApi
      *
      * Manual resolution of a pending payment to VERIFIED, REJECTED or REVERSED; rail reconciliation is the normal path to VERIFIED and runs as the system job, not through this operation. Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Maker-checker: the resolver must be a different principal from the acceptor (403 NOT_PERMITTED otherwise, decision 194). The state and the caller's authorisation are rechecked atomically with the transition (403 NOT_PERMITTED). A payment already resolved is 409 INVALID_TRANSITION and changes nothing. A manual VERIFIED needs verificationRef and evidenceRef (400 VALIDATION_FAILED otherwise) and is audited as its own event PAYMENT_UNVERIFIED_MANUALLY_VERIFIED (decision 196); REJECTED and REVERSED are audited as PAYMENT_UNVERIFIED_RESOLVED and post the penalty accrual paused since acceptance (decision 195).
      *
-     * POST /billing/{ledger}/unverified-payments/{id}/resolution (operationId resolveUnverifiedPayment); permission billing.resolve-unverified; result stored atomically with the state change.
+     * POST /billing/by-ledger/unverified-payments/{id}/resolution (operationId resolveUnverifiedPayment); permission billing.resolve-unverified; result stored atomically with the state change.
      * @param Model\UnverifiedPaymentResolveRequest|array $body request body
+     * @param string $ledger query ledger
      * @return Model\UnverifiedPayment|null
      */
-    public function resolveUnverifiedPayment(string $ledger, string $id, Model\UnverifiedPaymentResolveRequest|array $body, ?RequestOptions $options = null): ?Model\UnverifiedPayment
+    public function resolveUnverifiedPayment(string $id, Model\UnverifiedPaymentResolveRequest|array $body, string $ledger, ?RequestOptions $options = null): ?Model\UnverifiedPayment
     {
-        $req = ApiRequest::post('/billing/' . HttpTransport::seg((string) $ledger) . '/unverified-payments/' . HttpTransport::seg((string) $id) . '/resolution');
+        $req = ApiRequest::post('/billing/by-ledger/unverified-payments/' . HttpTransport::seg((string) $id) . '/resolution');
+        $req->query('ledger', $ledger);
         if ($body !== null) {
             $req->body($body);
         }
