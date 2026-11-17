@@ -1,0 +1,11 @@
+deploy drools after adding decision variables ok: 235
+deploy drools after adding decision variables refused: 38
+deploy drools unchanged refused: 273
+deploy operaton ok: 273
+files: 273
+tables: 235
+tables skipped (computed input expression): 1
+vectors same value: 494
+vectors skipped (entry not a simple literal): 374
+vectors total: 494
+evaluations timed: 494; mean per evaluation: operaton 15406.5 us / 105923 bytes, drools 4079.8 us / 11088 bytes (single thread, cold-to-warm mix, not a benchmark)

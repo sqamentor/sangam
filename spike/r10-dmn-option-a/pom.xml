@@ -11,6 +11,7 @@
   <properties>
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <operaton.version>2.2.0</operaton.version>
     <tck.dir>D:/sgw/r10-dmn-dl/tck/TestCases</tck.dir>
     <tck.out>${project.build.directory}/tck</tck.out>
   </properties>
@@ -32,7 +33,7 @@
     <dependency>
       <groupId>org.operaton.bpm</groupId>
       <artifactId>operaton-engine</artifactId>
-      <version>2.2.0</version>
+      <version>${operaton.version}</version>
     </dependency>
     <dependency>
       <groupId>org.kie</groupId>

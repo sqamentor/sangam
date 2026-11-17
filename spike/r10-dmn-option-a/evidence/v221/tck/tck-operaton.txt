@@ -1,0 +1,4 @@
+mode OPERATON: 3561 result nodes {ERROR=623, FAIL=103, NOT_RUN=3, PASS=2790, STRICT=42}
+  compliance-level-2 {ERROR=8, FAIL=3, PASS=100, STRICT=15}
+  compliance-level-3 {ERROR=610, FAIL=79, NOT_RUN=3, PASS=2666, STRICT=27}
+  non-compliant {ERROR=5, FAIL=21, PASS=24}

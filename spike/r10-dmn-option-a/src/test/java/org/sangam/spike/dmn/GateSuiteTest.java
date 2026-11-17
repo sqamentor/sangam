@@ -136,9 +136,9 @@ class GateSuiteTest {
         g.add(new Gate("NUL-8", "null and errors", true, "SG-34 explicit null rule matches null input",
                 table("UNIQUE", null, "number", "string", null, null, "null|\"n\"", ">0|\"p\""), "d", in("x", null), "n"));
         // --- hit policies, gaps and overlaps (spec 8.2.11)
-        g.add(new Gate("HIT-1", "hit policies", true, spec + "8.2.11 UNIQUE: overlap is an error",
+        g.add(new Gate("HIT-1", "hit policies", true, spec + "8.2.11 UNIQUE overlap (spec: null) + Sangam fail-on-error policy SG-34 (STANDARDS-PROFILE Strict evaluation)",
                 table("UNIQUE", null, "number", "string", null, null, ">0|\"a\"", ">5|\"b\""), "d", in("x", 10), ERR));
-        g.add(new Gate("HIT-2", "hit policies", true, spec + "8.2.11 ANY: different outputs is an error",
+        g.add(new Gate("HIT-2", "hit policies", true, spec + "8.2.11 ANY different outputs (spec: null) + Sangam fail-on-error policy SG-34",
                 table("ANY", null, "number", "string", null, null, ">0|\"a\"", ">5|\"b\""), "d", in("x", 10), ERR));
         g.add(new Gate("HIT-3", "hit policies", true, spec + "8.2.11 ANY: equal outputs",
                 table("ANY", null, "number", "string", null, null, ">0|\"a\"", ">5|\"a\""), "d", in("x", 10), "a"));
@@ -155,18 +155,21 @@ class GateSuiteTest {
                 table("COLLECT", "SUM", "number", "number", null, null, ">0|0.1", ">5|0.2"), "d", in("x", 10), n("0.3")));
         g.add(new Gate("HIT-9", "hit policies", true, spec + "8.2.11 COLLECT COUNT",
                 table("COLLECT", "COUNT", "number", "number", null, null, ">0|1", ">5|7"), "d", in("x", 10), n("2")));
+        g.add(new Gate("HIT-9b", "hit policies", false, spec + "COLLECT COUNT with duplicate outputs; expected 'distinct outputs' "
+                + "is pending a check against the DMN 1.5 PDF (informational until then)",
+                table("COLLECT", "COUNT", "number", "number", null, null, ">0|1", ">5|1"), "d", in("x", 10), n("1")));
         g.add(new Gate("GAP-1", "gaps", true, spec + "8.2.11 no matching rule, single hit: null",
                 table("UNIQUE", null, "number", "string", null, null, ">0|\"a\""), "d", in("x", -1), null));
-        g.add(new Gate("GAP-2", "gaps", true, spec + "8.3.2 default output entry when no rule matches",
+        g.add(new Gate("GAP-2", "gaps", true, spec + "decision table default output entry (clause number pending a check against the DMN 1.5 PDF, not downloaded)",
                 table("UNIQUE", null, "number", "string", null, "\"z\"", ">0|\"a\""), "d", in("x", -1), "z"));
         // --- security
         g.add(new Gate("SEC-1", "security", true, "OWASP XXE: a DOCTYPE / external entity is refused, no file content",
                 XXE, "d", in(), ERR));
-        g.add(new Gate("SEC-2", "security", true, "Sangam D-46/R6: no in-engine code execution; external Java function refused",
+        g.add(new Gate("SEC-2", "security", true, "Sangam SangamFeelEngine.java:68 withEnabledExternalFunctions(false); FeelClockTest: external Java function refused",
                 lit("(function(k) external {java: {class: \"java.lang.System\", method signature: \"getProperty(java.lang.String)\"}})(\"user.home\")"),
                 "d", in(), ERR));
         // --- boxed expressions and decision services (capabilities, not correctness gates)
-        g.add(new Gate("BOX-1", "DMN features", false, spec + "6.3.3 BKM + 10.? invocation",
+        g.add(new Gate("BOX-1", "DMN features", false, spec + "BKM and invocation (clause numbers pending a check against the DMN 1.5 PDF, not downloaded)",
                 defs("<businessKnowledgeModel id=\"b\" name=\"fee\"><variable name=\"fee\"/><encapsulatedLogic><formalParameter name=\"y\" typeRef=\"number\"/>"
                         + "<literalExpression><text>y * 2</text></literalExpression></encapsulatedLogic></businessKnowledgeModel>"
                         + "<decision id=\"d\" name=\"d\"><variable name=\"d\"/><knowledgeRequirement><requiredKnowledge href=\"#b\"/></knowledgeRequirement>"
@@ -178,7 +181,7 @@ class GateSuiteTest {
                 defs("<decision id=\"d\" name=\"d\"><variable name=\"d\"/><relation><column name=\"k\"/><row><literalExpression><text>1</text></literalExpression></row>"
                         + "<row><literalExpression><text>2</text></literalExpression></row></relation></decision>"), "d", in(),
                 List.of(Map.of("k", n("1")), Map.of("k", n("2")))));
-        g.add(new Gate("BOX-4", "DMN features", false, spec + "10.2.1.? boxed list / filter (FEEL)", lit("[1,2,3][item > 1]"), "d", in(),
+        g.add(new Gate("BOX-4", "DMN features", false, spec + "FEEL filter expression (clause number pending a check against the DMN 1.5 PDF, not downloaded)", lit("[1,2,3][item > 1]"), "d", in(),
                 List.of(n("2"), n("3"))));
         return g;
     }

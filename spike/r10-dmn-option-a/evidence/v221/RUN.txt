@@ -1,0 +1,2 @@
+Run 2026-11-18, -Doperaton.version=2.2.1, JDK 25.0.5, TZ=UTC, after review corrections (citations, HIT-9b informational).
+Mandatory: Operaton 30 PASS / 3 FAIL (HIT-8, DAT-1, GAP-2); Drools 28 PASS / 5 FAIL. Sangam jars: r10-dmn worktree build (before fix/dmn-gates).
