@@ -102,7 +102,7 @@ Clients:
    mappers.
 2. `sangam-server`: bearer-only (or confidential with no flows), used only as the audience.
 
-Realm roles: `sangam-user` (every user), the IFMS pack roles `DDO`, `HOO`, `DEALING_HAND`, `PAO`, `FA`, and
+Realm roles: `sangam-user` (every user), the IFMS pack roles `DDO`, `HOO`, `DEALING_HAND`, `PAO`, `FA`, `BILL_DISTRIBUTOR`, `AAO`, `SECOND_SIGNATORY`, and
 `sangam-tenant-admin`, `sangam-auditor`.
 
 Platform administrator: SL-70 refuses a platform issuer equal to the tenant issuer, so a platform administrator needs a
@@ -138,7 +138,7 @@ Before the seed: the tenant `GOI.FIN` exists (`POST /api/v1/admin/tenants`) and 
 ## 6. Who acts at each step (from the pack data)
 
 People: the Jaipur personas of IFMS E-67, `PRESENTATION_USERS` in `generate_realm.py`; seat by seat in the joint
-ledger [ANSWER] SANGAM-PERSONA-SEATS. Seats without a persona (BD-1, AAO-1, SS-1, PRAO-1, SECY-1) are created but
+ledger [ANSWER] SANGAM-PERSONA-SEATS. Seats without a persona (PRAO-1, SECY-1) are created but
 nobody holds them.
 
 
