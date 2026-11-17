@@ -4,7 +4,10 @@ package org.sangam.engine.feel;
 import java.io.InputStream;
 import java.util.Properties;
 
+import org.operaton.bpm.dmn.engine.DmnEngineConfiguration;
 import org.operaton.bpm.dmn.engine.impl.DefaultDmnEngineConfiguration;
+import org.operaton.bpm.engine.ProcessEngine;
+import org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 
 /**
  * R10: the identity of the FEEL engine a model version is bound to: the DMN engine's FEEL engine factory, the
@@ -21,6 +24,20 @@ public final class FeelEngineIdentity {
                 : dmn.getFeelEngineFactory().getClass().getSimpleName();
         boolean legacy = dmn != null && dmn.isEnableFeelLegacyBehavior();
         return factory + "/feel-engine-" + feelEngineVersion() + "/" + (legacy ? "legacy" : "strict");
+    }
+
+    /** The identity of the FEEL engine a Sangam engine installs: a default DMN configuration with Sangam FEEL. */
+    public static String sangamDefault() {
+        DefaultDmnEngineConfiguration dmn = (DefaultDmnEngineConfiguration) DmnEngineConfiguration
+                .createDefaultDmnEngineConfiguration();
+        org.sangam.feel.SangamFeel.install(dmn);
+        return of(dmn);
+    }
+
+    /** The identity of the FEEL engine a started process engine actually runs. */
+    public static String of(ProcessEngine engine) {
+        ProcessEngineConfigurationImpl cfg = (ProcessEngineConfigurationImpl) engine.getProcessEngineConfiguration();
+        return of((DefaultDmnEngineConfiguration) cfg.getDmnEngineConfiguration());
     }
 
     static String feelEngineVersion() {
