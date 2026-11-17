@@ -3,6 +3,9 @@ package org.sangam.ports.cmmn;
 
 import org.operaton.bpm.engine.delegate.CaseExecutionListener;
 import org.operaton.bpm.engine.delegate.DelegateCaseExecution;
+import org.operaton.bpm.engine.ProcessEngineException;
+import org.operaton.bpm.engine.impl.cmmn.CaseControlRule;
+import org.operaton.bpm.engine.impl.cmmn.handler.ItemHandler;
 import org.operaton.bpm.engine.impl.cmmn.model.CmmnActivity;
 import org.operaton.bpm.engine.impl.cmmn.transformer.CmmnTransformListener;
 import org.operaton.bpm.model.cmmn.instance.CaseTask;
@@ -12,6 +15,7 @@ import org.operaton.bpm.model.cmmn.instance.HumanTask;
 import org.operaton.bpm.model.cmmn.instance.Milestone;
 import org.operaton.bpm.model.cmmn.instance.PlanItem;
 import org.operaton.bpm.model.cmmn.instance.ProcessTask;
+import org.operaton.bpm.model.cmmn.instance.RepetitionRule;
 import org.operaton.bpm.model.cmmn.instance.Stage;
 import org.operaton.bpm.model.cmmn.instance.Task;
 import org.operaton.bpm.model.cmmn.instance.TimerEventListener;
@@ -63,36 +67,43 @@ public class PortsCmmnTransformListener implements CmmnTransformListener {
 
     @Override
     public void transformHumanTask(PlanItem planItem, HumanTask humanTask, CmmnActivity activity) {
+        repetition(planItem, activity);
         common(activity);
     }
 
     @Override
     public void transformProcessTask(PlanItem planItem, ProcessTask processTask, CmmnActivity activity) {
+        repetition(planItem, activity);
         common(activity);
     }
 
     @Override
     public void transformCaseTask(PlanItem planItem, CaseTask caseTask, CmmnActivity activity) {
+        repetition(planItem, activity);
         common(activity);
     }
 
     @Override
     public void transformDecisionTask(PlanItem planItem, DecisionTask decisionTask, CmmnActivity activity) {
+        repetition(planItem, activity);
         common(activity);
     }
 
     @Override
     public void transformTask(PlanItem planItem, Task task, CmmnActivity activity) {
+        repetition(planItem, activity);
         common(activity);
     }
 
     @Override
     public void transformStage(PlanItem planItem, Stage stage, CmmnActivity activity) {
+        repetition(planItem, activity);
         common(activity);
     }
 
     @Override
     public void transformMilestone(PlanItem planItem, Milestone milestone, CmmnActivity activity) {
+        repetition(planItem, activity);
         common(activity);
     }
 
@@ -110,6 +121,44 @@ public class PortsCmmnTransformListener implements CmmnTransformListener {
             activity.setProperty(SangamEventListenerActivityBehavior.PROPERTY_LISTENER_KIND, "generic");
         }
         common(activity);
+    }
+
+    /** Sangam CMMN extension namespace (attributes on standard CMMN elements). */
+    public static final String SANGAM_CMMN_NS = "http://sangam.org/schema/1.0/cmmn";
+
+    /**
+     * P-4 / FC-57: wraps the repetition rule the item handler stored with {@link MaxCountRepetitionRule} when the
+     * plan item's (or its definition's default) {@code repetitionRule} carries {@code sangam:maxInstanceCount}.
+     */
+    static void repetition(PlanItem planItem, CmmnActivity activity) {
+        RepetitionRule rule = null;
+        if (planItem != null && planItem.getItemControl() != null) {
+            rule = planItem.getItemControl().getRepetitionRule();
+        }
+        if (rule == null && planItem != null && planItem.getDefinition() != null
+                && planItem.getDefinition().getDefaultControl() != null) {
+            rule = planItem.getDefinition().getDefaultControl().getRepetitionRule();
+        }
+        if (rule == null) {
+            return;
+        }
+        String max = rule.getAttributeValueNs(SANGAM_CMMN_NS, "maxInstanceCount");
+        if (max == null || max.isBlank()) {
+            return;
+        }
+        int n;
+        try {
+            n = Integer.parseInt(max.trim());
+        } catch (NumberFormatException e) {
+            throw new ProcessEngineException("sangam:maxInstanceCount of plan item '" + activity.getId()
+                    + "' is not an integer: " + max, e);
+        }
+        if (n < 1) {
+            throw new ProcessEngineException("sangam:maxInstanceCount of plan item '" + activity.getId()
+                    + "' must be at least 1, was " + n);
+        }
+        CaseControlRule base = (CaseControlRule) activity.getProperty(ItemHandler.PROPERTY_REPETITION_RULE);
+        activity.setProperty(ItemHandler.PROPERTY_REPETITION_RULE, new MaxCountRepetitionRule(base, n));
     }
 
     private void common(CmmnActivity activity) {
