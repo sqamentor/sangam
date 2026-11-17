@@ -6,14 +6,13 @@
  * the keys the server reads (M-051). The server authorises every call (X.4.7).
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ApiError, http, request } from '../api/client';
 import { mergeById, openEventStream } from '../api/sse';
 import { useAction, useAsync, useInterval } from '../lib/hooks';
 import { BpmnDiagram } from '../components/BpmnDiagram';
 import { fmtNumber } from '../i18n';
-import { Badge, DataTable, Dialog, Empty, JsonView, Notice, ProblemAlert, ReasonDialog, Section, SelectField, TextArea, TextField } from '../components/ui';
+import { Badge, DataTable, Empty, JsonView, Notice, ProblemAlert, ReasonDialog, Section, SelectField, TextArea, TextField } from '../components/ui';
 import { ModulePage, c, cell, f, type Row, type ScreenDef } from './engine';
 import { KbSearch, OcrReview } from './aiOcr';
 
@@ -699,45 +698,3 @@ export function RetentionPlan() {
 export function OpsToolsPage() {
   return <ModulePage title="mod.ops2.title" screens={[usage, outliers, variables, secrets, sequences, indexJobs, migration]} extra={[{ id: 'ret', label: 'mod.ops2.retention', node: <RetentionPlan /> }]} />;
 }
-
-/** Ctrl+K global search; results come from the server, so they are already authorised. */
-export function GlobalSearch() {
-  const { t } = useTranslation();
-  const nav = useNavigate();
-  const [open, setOpen] = useState(false);
-  const [q, setQ] = useState('');
-  const [term, setTerm] = useState('');
-  useEffect(() => {
-    const on = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setOpen(true);
-      }
-    };
-    window.addEventListener('keydown', on);
-    return () => window.removeEventListener('keydown', on);
-  }, []);
-  const r = useAsync(() => http.page<Row>('/search', { q: term, size: 30 }), [term], open && !!term);
-  const target = useMemo(() => (x: Row) => {
-    const id = encodeURIComponent(String(x.id ?? x.resourceId ?? ''));
-    const type = String(x.type ?? x.resourceType ?? '').toUpperCase();
-    return type.includes('TASK') ? `/tasks/${id}` : type.includes('PROCESS') ? `/ops/instances/${id}` : type.includes('CASE') ? `/cases/${id}` : null;
-  }, []);
-  return (
-    <Dialog open={open} wide title={t('mod.ops2.search')} onClose={() => setOpen(false)}>
-      <form onSubmit={(e) => { e.preventDefault(); setTerm(q); }}>
-        <TextField label={t('common.search')} autoFocus value={q} onChange={setQ} />
-      </form>
-      <ProblemAlert error={r.error} />
-      {term && r.data?.items.length === 0 && <Empty message={t('common.emptyNone')} />}
-      <ul>
-        {r.data?.items.map((x, i) => {
-          const to = target(x);
-          const label = String(x.title ?? x.name ?? x.id);
-          return <li key={i}><Badge value={String(x.type ?? x.resourceType ?? '')} tone="info" /> {to ? <button type="button" className="link" onClick={() => { setOpen(false); nav(to); }}>{label}</button> : label}</li>;
-        })}
-      </ul>
-    </Dialog>
-  );
-}
-
