@@ -160,7 +160,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
 
     @Override
     public String engineId() {
-        return "operaton-2.2.0";
+        return "operaton-2.2.1";
     }
 
     @Override

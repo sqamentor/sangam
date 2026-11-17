@@ -45,7 +45,7 @@ jobs:
         java: ["25", "21", "27"]   # R5: 25 LTS baseline, 21 supported minimum, 27 current (SG-06; deploy/SUPPORT-MATRIX.md)
         # RM-56: each line runs one exact patch version (the job names and the matrix.java conditions keep the line)
         include:
-          - { java: "25", java-exact: "25.0.1" }
+          - { java: "25", java-exact: "25.0.5+8" }
           - { java: "21", java-exact: "21.0.8" }
           - { java: "27", java-exact: "27.0.0" }
     steps:

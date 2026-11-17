@@ -444,7 +444,7 @@ services:
   #   docker compose -f docker-compose.yml -f docker-compose.sidecars.yml --profile postgres --profile pdf --profile ocr up -d
   # Without it PDF output answers 422 FORMAT_NOT_AVAILABLE and OCR is unavailable (fail closed, nothing guessed).
   sidecar-secrets-init:
-    image: ${SANGAM_SIDECAR_INIT_IMAGE:-eclipse-temurin:25.0.1_8-jre-noble@sha256:ecbdcdbfae44ee61794a8ad36042b6b8e3c3124e5e9c171c3630fcd5ab856e33}
+    image: ${SANGAM_SIDECAR_INIT_IMAGE:-eclipse-temurin:25.0.5_8-jre-noble@sha256:e3b6f7887a50f20d8f07abf279d8a81a5953fb398a9555bd9edd56b9bd15968c}
     profiles: [pdf, ocr]
     restart: "no"
     user: "0:0"

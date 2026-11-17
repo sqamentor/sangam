@@ -223,7 +223,7 @@ jobs:
         if: steps.terms.outputs.run == 'true'
         with:
           distribution: temurin
-          java-version: "25.0.1"
+          java-version: "25.0.5+8"
           cache: maven
           cache-dependency-path: sangam/**/pom.xml
       - name: Free disk space for large DB images

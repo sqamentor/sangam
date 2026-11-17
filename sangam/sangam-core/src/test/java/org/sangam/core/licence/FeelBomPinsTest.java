@@ -48,8 +48,8 @@ class FeelBomPinsTest {
             assertEquals(build, b, "sangam-bom and the build pin the same " + e.getKey());
             assertEquals(build, allowed, "licence allowlist names exactly the pinned " + e.getKey());
         }
-        assertTrue(find(root, "<version\\.operaton>([^<]+)</", "version.operaton").equals("2.2.0"),
-                "the FEEL pins were verified against operaton-engine-dmn 2.2.0; an Operaton upgrade re-verifies them");
+        assertTrue(find(root, "<version\\.operaton>([^<]+)</", "version.operaton").equals("2.2.1"),
+                "the FEEL pins were verified against operaton-engine-dmn 2.2.1 (same as 2.2.0, pom diff 2026-11-17); an Operaton upgrade re-verifies them");
     }
 
     @Test
