@@ -26,7 +26,7 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
-import org.sangam.engine.tx.LockScope;
+import org.sangam.core.engine.RemoteCalls;
 import org.sangam.core.integration.ConnectorDescriptor;
 import org.sangam.core.integration.ConnectorProfile;
 import org.sangam.core.integration.ConnectorRequest;
@@ -53,7 +53,7 @@ import org.sangam.core.layer.CapabilityClass;
  *       {@code :operationId}) the connector can settle a lost commit answer: one row means the effect happened.</li>
  *   <li><b>Bounds.</b> A query returns at most {@code maxRows} rows ({@code truncated=true} beyond); every statement
  *       has the query timeout. VI.1 rule 5 (owner decision 86): no call while the thread's engine command holds an L2
- *       root lock ({@link LockScope}), exactly as for HTTP.</li>
+ *       root lock ({@link RemoteCalls}), exactly as for HTTP.</li>
  *   <li><b>Egress.</b> The database endpoint is the operator's data-source configuration (never process input), so it
  *       is fixed when the connector is built; the URL-based {@code EgressPolicy} applies to the HTTP-family
  *       transports.</li>
@@ -117,7 +117,7 @@ public final class JdbcConnector implements SangamConnector {
 
     @Override
     public ConnectorResult invoke(ConnectorRequest r) {
-        LockScope.assertNoLockHeld("JDBC " + config.id());
+        RemoteCalls.assertNoLockHeld("JDBC " + config.id());
         String name = r.str("statement", r.operation());
         NamedStatement st = config.statements().get(name);
         if (st == null) {
@@ -166,7 +166,7 @@ public final class JdbcConnector implements SangamConnector {
         if (st == null) {
             return new LookupResult.NotSupported();
         }
-        LockScope.assertNoLockHeld("JDBC lookup " + config.id());
+        RemoteCalls.assertNoLockHeld("JDBC lookup " + config.id());
         try (Connection c = dataSource.getConnection(); PreparedStatement ps = c.prepareStatement(st.positionalSql())) {
             ps.setQueryTimeout(timeoutSeconds(r));
             bind(ps, values(st, r));
