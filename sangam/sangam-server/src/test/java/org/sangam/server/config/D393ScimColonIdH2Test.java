@@ -60,7 +60,8 @@ class D393ScimColonIdH2Test {
     DataSource ds;
 
     HttpResponse<String> scim(String method, String path, String body) throws Exception {
-        HttpRequest.Builder b = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path)   // SCIM is served at /scim/v2 (ScimController), outside /api/v1)
+        // SCIM is served at /scim/v2 (ScimController), outside /api/v1
+        HttpRequest.Builder b = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
                 .timeout(Duration.ofSeconds(60))
                 .header("Authorization", "Bearer " + env.getRequiredProperty("sangam.security.dev-token.token"))
                 .header("Accept", "application/scim+json")
