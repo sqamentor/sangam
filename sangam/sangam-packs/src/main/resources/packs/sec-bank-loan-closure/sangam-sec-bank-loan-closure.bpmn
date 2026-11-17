@@ -23,7 +23,7 @@
     <exclusiveGateway id="lc_compGw" name="Released late?" default="sec_bank_loan_closure_f18"></exclusiveGateway>
     <exclusiveGateway id="lc_compMerge" name=""></exclusiveGateway>
     <callActivity id="lc_pay" name="Credit compensation (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
-    <callActivity id="lc_pay_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="lc_pay_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
     <exclusiveGateway id="lc_pay_sgw" name="Sanctioned?" default="lc_pay_sgw_no"></exclusiveGateway>
     <endEvent id="lc_pay_notReleased" name="Not released"></endEvent>
     <sequenceFlow id="lc_pay_sanction_f" sourceRef="lc_pay_sanction" targetRef="lc_pay_sgw"/>

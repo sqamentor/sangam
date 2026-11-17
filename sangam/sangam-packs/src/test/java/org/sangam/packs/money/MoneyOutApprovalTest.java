@@ -212,6 +212,54 @@ class MoneyOutApprovalTest {
                 .singleResult(), "an OUT connector without a recorded approval is held with APPROVAL_INVALIDATED");
     }
 
+    // ---- E2 / E3 on the shared rule ----
+
+    private static Map<String, Object> approvedCase(String approvedBy) {
+        Map<String, Object> v = new HashMap<>();
+        v.put("materialFields", "amount,payeeAccount,currency,purpose");
+        v.put("amount", 100);
+        v.put("payeeAccount", "ACC-1");
+        v.put("currency", "INR");
+        v.put("purpose", "Refund");
+        Map<String, Object> material = new java.util.LinkedHashMap<>();
+        for (String f : List.of("amount", "payeeAccount", "currency", "purpose")) {
+            material.put(f, org.sangam.packs.core.Vars.canonical(v.get(f)));
+        }
+        v.put("approvedPayloadHash", org.sangam.packs.core.Vars.hash(material));
+        v.put("approvedBy", approvedBy);
+        return v;
+    }
+
+    @Test
+    void aHumanApprovalOfACompletePayloadReleasesMoneyOut() {
+        assertEquals(null, org.sangam.packs.core.MoneyOutApproval.refusal("pfms.payment", approvedCase("p.officer")::get));
+    }
+
+    @Test
+    void aDeemedApprovalNeverReleasesMoneyOut() {
+        String r = org.sangam.packs.core.MoneyOutApproval.refusal("pfms.payment", approvedCase("system")::get);
+        assertTrue(r != null && r.contains("deemed"), String.valueOf(r));
+        assertEquals(null, org.sangam.packs.core.MoneyOutApproval.refusal("pg.collect", approvedCase("system")::get),
+                "money in is not held by the deemed rule");
+    }
+
+    @Test
+    void moneyOutWithoutAPayeeAccountOrPurposeIsRefused() {
+        Map<String, Object> v = approvedCase("p.officer");
+        v.put("purpose", " ");
+        v.put("materialFields", "amount,currency,purpose");
+        String r = org.sangam.packs.core.MoneyOutApproval.refusal("pfms.payment", v::get);
+        assertTrue(r != null && r.contains("payeeAccount") && r.contains("purpose"), String.valueOf(r));
+    }
+
+    @Test
+    void aPaymentWhosePayeeChangedAfterApprovalIsRefused() {
+        Map<String, Object> v = approvedCase("p.officer");
+        v.put("payeeAccount", "ACC-2");
+        String r = org.sangam.packs.core.MoneyOutApproval.refusal("pfms.payment", v::get);
+        assertTrue(r != null && r.contains("changed"), String.valueOf(r));
+    }
+
     private static PackDescriptor descriptor(String id, PackDescriptor.ConnectorUse u) {
         return new PackDescriptor(id, "1.0.0", Map.of("en", id), "test", "", List.of(), List.of(), List.of(),
                 List.of(), List.of(u), List.of(), List.of(), List.of(), Map.of());

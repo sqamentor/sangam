@@ -77,6 +77,7 @@ public final class MoneyPathGuard {
         List<String> starts = new ArrayList<>();
         collect(proc, nodes, succ, starts, true);
         Set<String> violations = new LinkedHashSet<>();
+        boolean movesMoney = false;
         Set<State> seen = new HashSet<>();
         Deque<State> todo = new ArrayDeque<>();
         starts.forEach(s -> todo.push(new State(s, null)));
@@ -97,6 +98,9 @@ public final class MoneyPathGuard {
                 }
                 String moving = movesMoneyOut(el, carried, mm, topics);
                 if (moving != null) {
+                    movesMoney = true;
+                }
+                if (moving != null) {
                     violations.add(res + ": process " + proc.getAttribute("id") + " reaches " + st.node() + " ("
                             + moving + ", moneyMovement OUT) on a path without a recorded approval (owner decision A1)");
                 }
@@ -105,7 +109,63 @@ public final class MoneyPathGuard {
                 todo.push(new State(n, carried));
             }
         }
+        if (movesMoney || anyMoneyOut(nodes, mm, topics)) {
+            List<String> declared = materialFields(proc);
+            List<String> missing = new ArrayList<>();
+            for (String f : MONEY_FIELDS) {
+                if (!declared.contains(f)) {
+                    missing.add(f);
+                }
+            }
+            if (!missing.isEmpty()) {
+                violations.add(res + ": process " + proc.getAttribute("id") + " moves money out but its materialFields "
+                        + declared + " lack " + missing + " (owner decision E3)");
+            }
+        }
         return new ArrayList<>(violations);
+    }
+
+    /** E3: amount, payee or beneficiary account, currency and purpose (MoneyOutApproval.MONEY_FIELDS). */
+    static final List<String> MONEY_FIELDS = List.of("amount", "payeeAccount", "currency", "purpose");
+
+    private static boolean anyMoneyOut(Map<String, Element> nodes, Function<String, MoneyMovement> mm,
+                                       Map<String, String> topics) {
+        for (Element e : nodes.values()) {
+            if (movesMoneyOut(e, null, mm, topics) != null) {
+                return true;
+            }
+            // any executionConnector this process assigns, tried on every core-execution call / PREPARE of it
+            String set = setsExecutionConnector(e);
+            if (set != null) {
+                for (Element x : nodes.values()) {
+                    if (movesMoneyOut(x, set, mm, topics) != null) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /** The materialFields the process declares on its PackStartListener (empty when none). */
+    private static List<String> materialFields(Element proc) {
+        NodeList ls = proc.getElementsByTagNameNS(OPERATON, "executionListener");
+        for (int i = 0; i < ls.getLength(); i++) {
+            Element l = (Element) ls.item(i);
+            if (l.getParentNode().getParentNode() == proc && l.getAttribute("class").endsWith(".PackStartListener")) {
+                String v = fields(l).get("materialFields");
+                if (v != null) {
+                    List<String> out = new ArrayList<>();
+                    for (String s : v.split(",")) {
+                        if (!s.isBlank()) {
+                            out.add(s.trim());
+                        }
+                    }
+                    return out;
+                }
+            }
+        }
+        return List.of();
     }
 
     /**
@@ -180,6 +240,9 @@ public final class MoneyPathGuard {
     private static boolean isApproval(Element e) {
         if ("callActivity".equals(e.getLocalName()) && CORE_SANCTION.equals(e.getAttribute("calledElement"))) {
             return true;
+        }
+        if (cls(e).endsWith(".BatchItemReleaseDelegate")) {
+            return true; // E1: the batch parent's sanction, released for this unchanged item
         }
         if (!"userTask".equals(e.getLocalName())) {
             return false;
