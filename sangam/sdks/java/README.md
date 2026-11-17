@@ -190,7 +190,7 @@ Environment variables:
 | `examples/BillPaymentWorker.java` | IX.4 P1, AC-01, AC-03, R36 |
 | all | R18 / ADR-D-4 (Tier-1 Java SDK) |
 
-Flowable gap-list ids (`spike/results/FLOWABLE-INTO-OPERATON.md`):
+Flowable gap-list ids (`sangam/docs/records/FLOWABLE-INTO-OPERATON.md`):
 
 | Id | What the SDK does |
 |---|---|

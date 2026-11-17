@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Government finance profiles (data): GOI, its departments and all 36 States / UTs
 
-Domain knowledge as data (ADR-D-20). Read by `sangam-config` (`ProfileLoader.loadIndex(cl, "profiles/profiles.idx")`), resolved per tenant scope by `ProfileResolver`, used by the `gov.ifms.*` packs through the `config.*` and `ledger.*` connectors. Generated from the research documents (`spike/results/IFMS-CENTRAL-REQUIREMENTS.md`, `IFMS-STATES-REQUIREMENTS.md`, `IFMS-RESEARCH-DELTA.md`); after generation these files are the source and are edited as data (maker-checker through `ConfigAdminService`).
+Domain knowledge as data (ADR-D-20). Read by `sangam-config` (`ProfileLoader.loadIndex(cl, "profiles/profiles.idx")`), resolved per tenant scope by `ProfileResolver`, used by the `gov.ifms.*` packs through the `config.*` and `ledger.*` connectors. Generated from the research documents (`sangam/docs/records/IFMS-CENTRAL-REQUIREMENTS.md`, `IFMS-STATES-REQUIREMENTS.md`, `IFMS-RESEARCH-DELTA.md`); after generation these files are the source and are edited as data (maker-checker through `ConfigAdminService`).
 
 ## Layout and layers
 

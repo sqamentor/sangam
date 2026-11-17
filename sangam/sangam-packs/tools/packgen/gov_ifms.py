@@ -7,8 +7,8 @@
 - delegation and rule tables as DMN (DFPR / GFR / CCS (Pension) Rules 2021 defaults; a State replaces a table with a
   tenant override, never with code).
 
-Requirement ids: IFC-nnn (spike/results/IFMS-CENTRAL-REQUIREMENTS.md), IFS-nnn / IFS-<ST>-nnn and GA-nn
-(spike/results/IFMS-STATES-REQUIREMENTS.md).
+Requirement ids: IFC-nnn (sangam/docs/records/IFMS-CENTRAL-REQUIREMENTS.md), IFS-nnn / IFS-<ST>-nnn and GA-nn
+(sangam/docs/records/IFMS-STATES-REQUIREMENTS.md).
 """
 from lib import C, q
 from packs import Pack

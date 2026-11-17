@@ -9,7 +9,7 @@ Source of truth for requirements: `../SANGAM.md`, in particular:
 - IX.3–IX.5 (government core, packs, seats);
 - XI.10 (Stage B evidence, A-10…A-16, defects).
 
-Premium and universal scope (R63–R84, UP-01…22) comes from `../spike/results/PREMIUM-AND-UNIVERSAL-SCOPE.md`. Flowable strengths come from `../spike/results/FLOWABLE-INTO-OPERATON.md`. The spike code in `../spike/` is **proven evidence**: reuse and harden it, do not reinvent it.
+Premium and universal scope (R63–R84, UP-01…22) comes from `../spike/results/PREMIUM-AND-UNIVERSAL-SCOPE.md`. Flowable strengths come from `docs/records/FLOWABLE-INTO-OPERATON.md`. The spike code in `../spike/` is **proven evidence**: reuse and harden it, do not reinvent it.
 
 ## 1. Principles: better than both Operaton and Flowable
 

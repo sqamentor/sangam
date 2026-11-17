@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # M-096 engineering governance (SANGAM.md A1/A5, P7; BACKLOG P1-029). Every check here is REPORT-ONLY: findings are
 # warnings and a step summary, never a failed run, until the owner switches them on.
-#   - traceability: register rows (spike/results/TRACEABILITY-REGISTER.csv) that claim coverage but name no proving
+#   - traceability: register rows (sangam/docs/records/TRACEABILITY-REGISTER.csv) that claim coverage but name no proving
 #     test. Switch: repository variable SANGAM_TRACEABILITY_ENFORCE=true (unset: report-only).
 #   - dco: every pull-request commit carries a Signed-off-by trailer matching its author. Switch: repository variable
 #     SANGAM_DCO_ENFORCE=true (unset: report-only). Q-10 is open: enforce only after the owner answers it.
@@ -46,7 +46,7 @@ jobs:
           ENFORCE: ${{ vars.SANGAM_TRACEABILITY_ENFORCE == 'true' && '--enforce' || '' }}
         run: |
           # shellcheck disable=SC2086
-          python -I .github/scripts/traceability_gate.py --register spike/results/TRACEABILITY-REGISTER.csv \
+          python -I .github/scripts/traceability_gate.py --register sangam/docs/records/TRACEABILITY-REGISTER.csv \
             --summary "$GITHUB_STEP_SUMMARY" $ENFORCE
 
   supply-chain:

@@ -405,7 +405,7 @@ C = implemented in the UI. "UI ready; server [P]" = the screen called a proposed
 | 51 | SaaS | — (deliberately not replicated) | X |
 | 52 | Operator permissions + audit | Policies, OperatorAudit, ReasonDialog on every action | C |
 
-### Flowable Enterprise UI items (EC-01…EC-21, `spike/results/FLOWABLE-INTO-OPERATON.md` §C.6)
+### Flowable Enterprise UI items (EC-01…EC-21, `sangam/docs/records/FLOWABLE-INTO-OPERATON.md` §C.6)
 
 | EC | Item | Screen |
 |---|---|---|

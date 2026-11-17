@@ -547,7 +547,7 @@ Sector packs have ids `sec.<sector>.<slug>` (directories `packs/sec-<sector>-<sl
 | SEC-UTIL-004 | `sec.util.meter-to-cash` |
 | SEC-UTIL-005 | `sec.util.disconnection` |
 
-### 6.6 Public finance (IFMS) requirements IFC-*, IFS-*, GA-* (`../../spike/results/IFMS-*-REQUIREMENTS.md`)
+### 6.6 Public finance (IFMS) requirements IFC-*, IFS-*, GA-* (`../docs/records/IFMS-*-REQUIREMENTS.md`)
 
 The `gov.ifms.*` packs are built on the generic services: `sangam-config` (profiles, classification, document-type catalogue, number series; connectors `config.*`) and `sangam-ledger` (limit / fund ledger; connectors `ledger.*`). The government data (GOI, its department profiles, all 36 States / UTs, the head-of-account seeds and the bill catalogue) is in `src/main/resources/profiles/`; its README has the full coverage map of every IFC / IFS / GA id with the generic capability, the data file, the pack and the status.
 

@@ -297,7 +297,7 @@ Ports added to `sangam-core/src/main/java/org/sangam/core/engine/` (engine-neutr
 ## Not done, and why
 
 - Engine source patches (FIO D-19 SKIP LOCKED mapping, FIO D-10 per-engine clock, FIO D-27, FIO D-52; FC-24 is no
-  longer in this list, because its hand-off and timer acquisition are done in `sangam-flowable-ports`; "FIO D-n" are the ids of section D "Operaton weaknesses" in `spike/results/FLOWABLE-INTO-OPERATON.md`, not ADRs): Stage D by
+  longer in this list, because its hand-off and timer acquisition are done in `sangam-flowable-ports`; "FIO D-n" are the ids of section D "Operaton weaknesses" in `sangam/docs/records/FLOWABLE-INTO-OPERATON.md`, not ADRs): Stage D by
   the plan; the interim extension-point routes are in place.
 - OFFERED/ack state (VI.3.1 stream offers): REST-first (ADR-D-5) — a fetch returns LOCKED work; OFFERED belongs to the
   worker API (WS-REST).
