@@ -181,7 +181,7 @@ class AiOcrControllerTest {
         int v = kb.newVersion("T1", "kb");
         AiController admin = controller(new Perms(AiController.ADMIN));
         AiProblemAdvice advice = new AiProblemAdvice();
-        MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/v1/ai/knowledge-bases/kb/versions/1/ocr");
+        MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/v1/ai/knowledge-bases/by-kb/versions/1/ocr");
 
         engineFailure = new OcrUnavailable("OCR is not ready: no URL");
         OcrUnavailable down = assertThrows(OcrUnavailable.class, () -> admin.ocr(ctx("alice"), "kb", v, image("image/png"), "s", null, "eng"));

@@ -192,7 +192,7 @@ export function ProfileLifecycle() {
 const master: ScreenDef = {
   id: 'master',
   title: 'mod.config.master',
-  list: '/config/master/{scheme}/{segment}',
+  list: '/config/master/by-scheme/by-segment',
   unpaged: true,
   filters: [f.text('scheme', undefined, true), f.text('segment', undefined, true), f.text('parent'), f.date('asOf')],
   requireFilters: ['scheme', 'segment'],
@@ -202,7 +202,7 @@ const master: ScreenDef = {
     { id: 'slip', label: 'act.correctionSlip', path: '/config/master/correction-slips', fields: [f.text('scope', undefined, true), f.text('scheme', undefined, true), f.date('effectiveFrom', undefined, true), f.json('changes', undefined, true)], showResult: true },
     { id: 'classify', label: 'act.validateCode', path: '/config/classification/validate', fields: [f.text('scheme', undefined, true), f.text('code', undefined, true), f.text('scope'), f.date('asOf')], showResult: true },
     // M-051: CrosswalkRequest(scope, office, code, amount, asOf) (ConfigController.java:114); the crosswalk id is the path only
-    { id: 'crosswalk', label: 'act.mapCrosswalk', path: '/config/crosswalks/{crosswalkId}/map', fields: [f.path(f.text('crosswalkId', undefined, true)), f.text('code', undefined, true), f.money('amount')], showResult: true },
+    { id: 'crosswalk', label: 'act.mapCrosswalk', path: '/config/crosswalks/by-id/map?id={crosswalkId}', fields: [f.path(f.text('crosswalkId', undefined, true)), f.text('code', undefined, true), f.money('amount')], showResult: true },
   ],
 };
 
@@ -214,7 +214,7 @@ const docTypes: ScreenDef = {
   filters: [f.text('scope'), f.text('family'), f.date('asOf')],
   columns: [c('id'), c('family'), c('name')],
   rowKey: ['id', 'key'],
-  actions: [{ id: 'check', label: 'act.checkDocument', path: '/config/document-types/{id}/check', fields: [f.json('document', undefined, true), f.text('scope')], showResult: true, noJson: true }],
+  actions: [{ id: 'check', label: 'act.checkDocument', path: '/config/document-types/by-id/check?id={id}', fields: [f.json('document', undefined, true), f.text('scope')], showResult: true, noJson: true }],
 };
 
 export function ConfigPage() {
@@ -602,7 +602,7 @@ export function PackLifecycle() {
         onClose={() => setOp(null)}
         onConfirm={(reason) =>
           op &&
-          void act.run((k) => http.post<unknown>(`/packs/${encodeURIComponent(op.packId)}/${op.kind}`, { tenant, reason }, k)).then((r) => {
+          void act.run((k) => http.post<unknown>(`/packs/by-id/${op.kind}?id=${encodeURIComponent(op.packId)}`, { tenant, reason }, k)).then((r) => {
             if (r !== undefined) {
               setResult(r);
               setOp(null);

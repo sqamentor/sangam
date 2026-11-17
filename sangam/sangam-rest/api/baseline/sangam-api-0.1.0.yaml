@@ -6819,7 +6819,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/channels/{key}:
+  /events/channels/by-key:
     get:
       operationId: getEventChannel
       tags:
@@ -6828,7 +6828,8 @@ paths:
       description: One channel.
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -6858,7 +6859,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -6910,7 +6912,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -6942,7 +6945,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/channels/{key}/retire:
+  /events/channels/by-key/retire:
     post:
       operationId: retireEventChannel
       tags:
@@ -6955,7 +6958,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -6997,7 +7001,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/channels/{key}/restore:
+  /events/channels/by-key/restore:
     post:
       operationId: restoreEventChannel
       tags:
@@ -7008,7 +7012,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7133,7 +7138,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/definitions/{key}:
+  /events/definitions/by-key:
     get:
       operationId: getEventDefinition
       tags:
@@ -7142,7 +7147,8 @@ paths:
       description: One definition.
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7173,7 +7179,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7205,7 +7212,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/definitions/{key}/retire:
+  /events/definitions/by-key/retire:
     post:
       operationId: retireEventDefinition
       tags:
@@ -7217,7 +7224,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7259,7 +7267,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/definitions/{key}/restore:
+  /events/definitions/by-key/restore:
     post:
       operationId: restoreEventDefinition
       tags:
@@ -7270,7 +7278,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
         required: true
         schema:
           type: string
@@ -7312,7 +7321,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /events/{channel}:
+  /events/by-channel:
     post:
       operationId: publishEvent
       tags:
@@ -7324,7 +7333,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: channel
-        in: path
+        in: query
+        description: Inbound event channel key; may carry ':'
         required: true
         schema:
           type: string
@@ -14321,7 +14331,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /queries/{name}:
+  /queries/by-name:
     get:
       operationId: runNamedQuery
       tags:
@@ -14330,7 +14340,8 @@ paths:
       description: Named query (R25); further query parameters are passed to the query. Uses the same authorization as the underlying data.
       parameters:
       - name: name
-        in: path
+        in: query
+        description: Named query (tasks.mine, process-instances, or data:<data object key>); may carry ':'
         required: true
         schema:
           type: string
@@ -14965,7 +14976,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /compliance/notices/{key}:
+  /compliance/notices/by-key:
     get:
       operationId: getComplianceNotice
       tags:
@@ -14974,7 +14985,8 @@ paths:
       description: The notice in the requested language; falls back to the pack default only where the pack allows (DPDP Rules r.3).
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Consent notice key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -15014,7 +15026,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
       security: []
-  /compliance/notices/{key}/publish:
+  /compliance/notices/by-key/publish:
     post:
       operationId: publishComplianceNotice
       tags:
@@ -15025,7 +15037,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Consent notice key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -15133,7 +15146,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /compliance/purposes/{code}:
+  /compliance/purposes/by-code:
     put:
       operationId: defineCompliancePurpose
       tags:
@@ -15144,7 +15157,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: code
-        in: path
+        in: query
+        description: Purpose code; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -15321,7 +15335,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /compliance/consent-managers/{cm}/artefacts:
+  /compliance/consent-managers/by-cm/artefacts:
     post:
       operationId: ingestConsentArtefact
       tags:
@@ -15332,7 +15346,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: cm
-        in: path
+        in: query
+        description: Consent manager id; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -16042,7 +16057,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /compliance/contacts/{role}:
+  /compliance/contacts/by-role:
     post:
       operationId: setComplianceContact
       tags:
@@ -16053,7 +16068,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: role
-        in: path
+        in: query
+        description: Contact role of the jurisdiction pack; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -17208,7 +17224,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ai/knowledge-bases/{kb}/versions:
+  /ai/knowledge-bases/by-kb/versions:
     post:
       operationId: aiKbNewVersion
       tags:
@@ -17219,7 +17235,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: kb
-        in: path
+        in: query
+        description: Knowledge base key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -17254,7 +17271,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ai/knowledge-bases/{kb}/versions/{version}/documents:
+  /ai/knowledge-bases/by-kb/versions/{version}/documents:
     post:
       operationId: aiKbIngest
       tags:
@@ -17265,7 +17282,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: kb
-        in: path
+        in: query
+        description: Knowledge base key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -17311,7 +17329,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ai/knowledge-bases/{kb}/versions/{version}/activate:
+  /ai/knowledge-bases/by-kb/versions/{version}/activate:
     post:
       operationId: aiKbActivate
       tags:
@@ -17322,7 +17340,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: kb
-        in: path
+        in: query
+        description: Knowledge base key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -17358,7 +17377,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ai/knowledge-bases/{kb}/search:
+  /ai/knowledge-bases/by-kb/search:
     post:
       operationId: aiKbSearch
       tags:
@@ -17367,7 +17386,8 @@ paths:
       description: Results are filtered by what the caller may read.
       parameters:
       - name: kb
-        in: path
+        in: query
+        description: Knowledge base key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -17909,7 +17929,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /ai/a2a/{agent}/card:
+  /ai/a2a/by-agent/card:
     get:
       operationId: aiA2aCard
       tags:
@@ -17918,7 +17938,8 @@ paths:
       description: Card of a configured inbound agent of the tenant.
       parameters:
       - name: agent
-        in: path
+        in: query
+        description: Inbound agent key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -17942,7 +17963,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /ai/a2a/{agent}:
+  /ai/a2a/by-agent:
     post:
       operationId: aiA2a
       tags:
@@ -17951,7 +17972,8 @@ paths:
       description: JSON-RPC; the caller must be on the agent allow-list. Honours the A2A-Version header; a browser Origin must be allow-listed.
       parameters:
       - name: agent
-        in: path
+        in: query
+        description: Inbound agent key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -18327,7 +18349,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /ai/knowledge-bases/{key}/retire:
+  /ai/knowledge-bases/by-key/retire:
     post:
       operationId: aiUiRetireKb
       tags:
@@ -18338,7 +18360,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
+        in: query
+        description: Knowledge base key; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -24651,7 +24674,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /config/master/{scheme}/{segment}:
+  /config/master/by-scheme/by-segment:
     get:
       operationId: listConfigMasterCodes
       tags:
@@ -24660,12 +24683,14 @@ paths:
       description: Codes of a scheme segment valid on the date (optionally children of a parent code).
       parameters:
       - name: scheme
-        in: path
+        in: query
+        description: Classification scheme; may carry '/' or ':'
         required: true
         schema:
           type: string
       - name: segment
-        in: path
+        in: query
+        description: Scheme segment; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -24911,7 +24936,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /config/document-types/{id}/check:
+  /config/document-types/by-id/check:
     post:
       operationId: checkConfigDocument
       tags:
@@ -24920,7 +24945,8 @@ paths:
       description: Checks a document against its type (required fields, limits, chain).
       parameters:
       - name: id
-        in: path
+        in: query
+        description: Document type id; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -24951,7 +24977,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /config/crosswalks/{id}/map:
+  /config/crosswalks/by-id/map:
     post:
       operationId: mapConfigCrosswalk
       tags:
@@ -24960,7 +24986,8 @@ paths:
       description: Maps a code (and amount) to the target classification (e.g. COFOG) with shares.
       parameters:
       - name: id
-        in: path
+        in: query
+        description: Crosswalk id; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -24991,7 +25018,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /hooks/fhir/{channel}:
+  /hooks/fhir/by-channel:
     post:
       operationId: receiveFhirNotification
       tags:
@@ -25001,7 +25028,8 @@ paths:
         to the integration inbox (deduplicated, tenant-bound by the channel). ClaimResponse becomes sangam.ushealth.pasUpdate.'
       parameters:
       - name: channel
-        in: path
+        in: query
+        description: Configured FHIR subscription channel; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -29050,7 +29078,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease:
+  /models/by-file/lease:
     get:
       operationId: getModelLease
       tags:
@@ -29059,11 +29087,11 @@ paths:
       description: The lease on a model file.
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       x-sangam-permission: package.read
       x-sangam-requirements:
       - R43
@@ -29093,11 +29121,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -29129,7 +29157,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease/heartbeat:
+  /models/by-file/lease/heartbeat:
     post:
       operationId: heartbeatModelLease
       tags:
@@ -29140,11 +29168,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -29178,7 +29206,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease/release:
+  /models/by-file/lease/release:
     post:
       operationId: releaseModelLease
       tags:
@@ -29189,11 +29217,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -29227,7 +29255,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease/request-takeover:
+  /models/by-file/lease/request-takeover:
     post:
       operationId: requestModelLeaseTakeover
       tags:
@@ -29238,11 +29266,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -29270,7 +29298,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /models/{file}/lease/takeover:
+  /models/by-file/lease/takeover:
     post:
       operationId: takeOverModelLease
       tags:
@@ -29281,11 +29309,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
-        description: 'model file: the package id'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -29798,7 +29826,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /models/{file}/lease/acquire:
+  /models/by-file/lease/acquire:
     post:
       operationId: acquireModelLeaseUi
       tags:
@@ -29809,7 +29837,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
+        in: query
+        description: Model file id; may carry '/' or ':'
         required: true
         schema:
           type: string
@@ -30084,7 +30113,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /service-mocks/{id}:
+  /service-mocks/by-id:
     patch:
       operationId: toggleServiceMock
       tags:
@@ -30095,7 +30124,8 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
+        in: query
+        description: Mock row id (service.operation); may carry '/' or ':'
         required: true
         schema:
           type: string

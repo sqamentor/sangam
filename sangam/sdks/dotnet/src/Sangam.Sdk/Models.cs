@@ -244,7 +244,7 @@ public static class Reconciliation
 public sealed record Deployment(string Id, string? Name, string? Source, string? TenantId, DateTimeOffset? DeploymentTime,
     JsonElement? Resources, JsonElement? Definitions);
 
-/// <summary>CloudEvents 1.0 envelope for <c>POST /events/{channel}</c> (required: id, source, type, specversion).</summary>
+/// <summary>CloudEvents 1.0 envelope for <c>POST /events/by-channel?channel=</c> (required: id, source, type, specversion).</summary>
 public sealed record CloudEvent
 {
     public required string Id { get; init; }

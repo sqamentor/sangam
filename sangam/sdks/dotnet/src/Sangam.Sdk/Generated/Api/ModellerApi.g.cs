@@ -173,33 +173,36 @@ public sealed class ModellerApi
     /// <summary>
     /// Current lease
     /// The lease on a model file.
-    /// GET /models/{file}/lease (operationId getModelLease); permission package.read.
+    /// GET /models/by-file/lease (operationId getModelLease); permission package.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.ModelEditLease?> GetModelLeaseAsync(string file, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/models/{HttpTransport.Seg(GeneratedCalls.Str(file)!)}/lease");
+        var req = ApiRequest.Get($"/models/by-file/lease");
+        req.WithQuery("file", GeneratedCalls.Q(file));
         return await _calls.JsonAsync<M.ModelEditLease?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Acquire the lease
     /// Saves then send the fence in X-Sangam-Edit-Fence.
-    /// POST /models/{file}/lease (operationId acquireModelLease); permission package.author; result stored atomically with the state change.
+    /// POST /models/by-file/lease (operationId acquireModelLease); permission package.author; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.ModelLeaseOutcome?> AcquireModelLeaseAsync(string file, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/models/{HttpTransport.Seg(GeneratedCalls.Str(file)!)}/lease");
+        var req = ApiRequest.Post($"/models/by-file/lease");
+        req.WithQuery("file", GeneratedCalls.Q(file));
         return await _calls.JsonAsync<M.ModelLeaseOutcome?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Renew the lease
     /// Holder only.
-    /// POST /models/{file}/lease/heartbeat (operationId heartbeatModelLease); permission package.author; result stored atomically with the state change.
+    /// POST /models/by-file/lease/heartbeat (operationId heartbeatModelLease); permission package.author; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task HeartbeatModelLeaseAsync(string file, M.ModelFenceRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task HeartbeatModelLeaseAsync(M.ModelFenceRequest body, string file, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/models/{HttpTransport.Seg(GeneratedCalls.Str(file)!)}/lease/heartbeat");
+        var req = ApiRequest.Post($"/models/by-file/lease/heartbeat");
+        req.WithQuery("file", GeneratedCalls.Q(file));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -207,11 +210,12 @@ public sealed class ModellerApi
     /// <summary>
     /// Release the lease
     /// Holder only.
-    /// POST /models/{file}/lease/release (operationId releaseModelLease); permission package.author; result stored atomically with the state change.
+    /// POST /models/by-file/lease/release (operationId releaseModelLease); permission package.author; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task ReleaseModelLeaseAsync(string file, M.ModelFenceRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task ReleaseModelLeaseAsync(M.ModelFenceRequest body, string file, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/models/{HttpTransport.Seg(GeneratedCalls.Str(file)!)}/lease/release");
+        var req = ApiRequest.Post($"/models/by-file/lease/release");
+        req.WithQuery("file", GeneratedCalls.Q(file));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -219,22 +223,24 @@ public sealed class ModellerApi
     /// <summary>
     /// Ask for the lease
     /// Tells the holder.
-    /// POST /models/{file}/lease/request-takeover (operationId requestModelLeaseTakeover); permission package.author; result stored atomically with the state change.
+    /// POST /models/by-file/lease/request-takeover (operationId requestModelLeaseTakeover); permission package.author; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task RequestModelLeaseTakeoverAsync(string file, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/models/{HttpTransport.Seg(GeneratedCalls.Str(file)!)}/lease/request-takeover");
+        var req = ApiRequest.Post($"/models/by-file/lease/request-takeover");
+        req.WithQuery("file", GeneratedCalls.Q(file));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Take over the lease
     /// Needs modeller.lease.takeover; audited.
-    /// POST /models/{file}/lease/takeover (operationId takeOverModelLease); permission package.author; result stored atomically with the state change.
+    /// POST /models/by-file/lease/takeover (operationId takeOverModelLease); permission package.author; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.ModelEditLease?> TakeOverModelLeaseAsync(string file, M.ModelTakeoverRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.ModelEditLease?> TakeOverModelLeaseAsync(M.ModelTakeoverRequest body, string file, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/models/{HttpTransport.Seg(GeneratedCalls.Str(file)!)}/lease/takeover");
+        var req = ApiRequest.Post($"/models/by-file/lease/takeover");
+        req.WithQuery("file", GeneratedCalls.Q(file));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.ModelEditLease?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -242,11 +248,12 @@ public sealed class ModellerApi
     /// <summary>
     /// Model presence stream
     /// Server-sent events, event name 'presence', data = ModelPresence: one event on connect and one on every join, leave or lease change (M-101). The caller is present while the stream is open; closing it leaves. Live across nodes like the conversation stream (M-040).
-    /// GET /models/{file}/presence/stream (operationId streamModelPresence); permission package.read.
+    /// GET /models/by-file/presence/stream (operationId streamModelPresence); permission package.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<byte[]> StreamModelPresenceAsync(string file, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/models/{HttpTransport.Seg(GeneratedCalls.Str(file)!)}/presence/stream");
+        var req = ApiRequest.Get($"/models/by-file/presence/stream");
+        req.WithQuery("file", GeneratedCalls.Q(file));
         return await _calls.BytesAsync(req, options, "text/event-stream", cancellationToken).ConfigureAwait(false);
     }
 
@@ -375,11 +382,12 @@ public sealed class ModellerApi
     /// <summary>
     /// Acquire the edit lease (console)
     /// Same as POST on the lease.
-    /// POST /models/{file}/lease/acquire (operationId acquireModelLeaseUi); permission package.author; result stored atomically with the state change.
+    /// POST /models/by-file/lease/acquire (operationId acquireModelLeaseUi); permission package.author; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> AcquireModelLeaseUiAsync(string file, M.ModellerFenceRequest? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/models/{HttpTransport.Seg(GeneratedCalls.Str(file)!)}/lease/acquire");
+        var req = ApiRequest.Post($"/models/by-file/lease/acquire");
+        req.WithQuery("file", GeneratedCalls.Q(file));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -448,11 +456,12 @@ public sealed class ModellerApi
     /// <summary>
     /// Toggle a mock's service
     /// Affects every rule of the service.
-    /// PATCH /service-mocks/{id} (operationId toggleServiceMock); permission ops.write; result stored atomically with the state change.
+    /// PATCH /service-mocks/by-id (operationId toggleServiceMock); permission ops.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ToggleServiceMockAsync(string id, M.ServiceMocksToggle body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> ToggleServiceMockAsync(M.ServiceMocksToggle body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Patch($"/service-mocks/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Patch($"/service-mocks/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }

@@ -123,12 +123,14 @@ final class AIApi
      *
      * Starts a BUILDING version.
      *
-     * POST /ai/knowledge-bases/{kb}/versions (operationId aiKbNewVersion); permission ai.admin; result stored atomically with the state change.
+     * POST /ai/knowledge-bases/by-kb/versions (operationId aiKbNewVersion); permission ai.admin; result stored atomically with the state change.
+     * @param string $kb query kb
      * @return Model\AiKbVersion|null
      */
     public function aiKbNewVersion(string $kb, ?RequestOptions $options = null): ?Model\AiKbVersion
     {
-        $req = ApiRequest::post('/ai/knowledge-bases/' . HttpTransport::seg((string) $kb) . '/versions');
+        $req = ApiRequest::post('/ai/knowledge-bases/by-kb/versions');
+        $req->query('kb', $kb);
         return $this->calls->model($req, $options, Model\AiKbVersion::class);
     }
 
@@ -137,13 +139,15 @@ final class AIApi
      *
      * Only a BUILDING version accepts documents.
      *
-     * POST /ai/knowledge-bases/{kb}/versions/{version}/documents (operationId aiKbIngest); permission ai.admin; result stored atomically with the state change.
+     * POST /ai/knowledge-bases/by-kb/versions/{version}/documents (operationId aiKbIngest); permission ai.admin; result stored atomically with the state change.
      * @param Model\AiIngest|array $body request body
+     * @param string $kb query kb
      * @return Model\AiIngestResult|null
      */
-    public function aiKbIngest(string $kb, string $version, Model\AiIngest|array $body, ?RequestOptions $options = null): ?Model\AiIngestResult
+    public function aiKbIngest(string $version, Model\AiIngest|array $body, string $kb, ?RequestOptions $options = null): ?Model\AiIngestResult
     {
-        $req = ApiRequest::post('/ai/knowledge-bases/' . HttpTransport::seg((string) $kb) . '/versions/' . HttpTransport::seg((string) $version) . '/documents');
+        $req = ApiRequest::post('/ai/knowledge-bases/by-kb/versions/' . HttpTransport::seg((string) $version) . '/documents');
+        $req->query('kb', $kb);
         if ($body !== null) {
             $req->body($body);
         }
@@ -155,11 +159,13 @@ final class AIApi
      *
      * Makes the version the searched one.
      *
-     * POST /ai/knowledge-bases/{kb}/versions/{version}/activate (operationId aiKbActivate); permission ai.admin; result stored atomically with the state change.
+     * POST /ai/knowledge-bases/by-kb/versions/{version}/activate (operationId aiKbActivate); permission ai.admin; result stored atomically with the state change.
+     * @param string $kb query kb
      */
-    public function aiKbActivate(string $kb, string $version, ?RequestOptions $options = null): void
+    public function aiKbActivate(string $version, string $kb, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/ai/knowledge-bases/' . HttpTransport::seg((string) $kb) . '/versions/' . HttpTransport::seg((string) $version) . '/activate');
+        $req = ApiRequest::post('/ai/knowledge-bases/by-kb/versions/' . HttpTransport::seg((string) $version) . '/activate');
+        $req->query('kb', $kb);
         $this->calls->none($req, $options);
     }
 
@@ -168,13 +174,15 @@ final class AIApi
      *
      * Results are filtered by what the caller may read.
      *
-     * POST /ai/knowledge-bases/{kb}/search (operationId aiKbSearch); permission ai.use.
+     * POST /ai/knowledge-bases/by-kb/search (operationId aiKbSearch); permission ai.use.
      * @param Model\AiKbSearch|array $body request body
+     * @param string $kb query kb
      * @return list<Model\AiKbHit>
      */
-    public function aiKbSearch(string $kb, Model\AiKbSearch|array $body, ?RequestOptions $options = null): array
+    public function aiKbSearch(Model\AiKbSearch|array $body, string $kb, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/ai/knowledge-bases/' . HttpTransport::seg((string) $kb) . '/search');
+        $req = ApiRequest::post('/ai/knowledge-bases/by-kb/search');
+        $req->query('kb', $kb);
         if ($body !== null) {
             $req->body($body);
         }
@@ -186,13 +194,15 @@ final class AIApi
      *
      * M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.
      *
-     * POST /ai/knowledge-bases/{kb}/versions/{version}/ocr (operationId aiKbOcr); permission ai.admin; result stored atomically with the state change.
+     * POST /ai/knowledge-bases/by-kb/versions/{version}/ocr (operationId aiKbOcr); permission ai.admin; result stored atomically with the state change.
      * @param array<string, mixed> $body request body (parts by name; values that are files: ['file' => bytes])
+     * @param string $kb query kb
      * @return Model\AiOcrTranscript|null
      */
-    public function aiKbOcr(string $kb, string $version, array $body, ?RequestOptions $options = null): ?Model\AiOcrTranscript
+    public function aiKbOcr(string $version, array $body, string $kb, ?RequestOptions $options = null): ?Model\AiOcrTranscript
     {
-        $req = ApiRequest::post('/ai/knowledge-bases/' . HttpTransport::seg((string) $kb) . '/versions/' . HttpTransport::seg((string) $version) . '/ocr');
+        $req = ApiRequest::post('/ai/knowledge-bases/by-kb/versions/' . HttpTransport::seg((string) $version) . '/ocr');
+        $req->query('kb', $kb);
         Support::multipart($req, $body);
         return $this->calls->model($req, $options, Model\AiOcrTranscript::class);
     }
@@ -477,12 +487,14 @@ final class AIApi
      *
      * Card of a configured inbound agent of the tenant.
      *
-     * GET /ai/a2a/{agent}/card (operationId aiA2aCard); permission ai.use.
+     * GET /ai/a2a/by-agent/card (operationId aiA2aCard); permission ai.use.
+     * @param string $agent query agent
      * @return array<string, mixed>
      */
     public function aiA2aCard(string $agent, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/ai/a2a/' . HttpTransport::seg((string) $agent) . '/card');
+        $req = ApiRequest::get('/ai/a2a/by-agent/card');
+        $req->query('agent', $agent);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -491,14 +503,16 @@ final class AIApi
      *
      * A2A v1.0 JSON-RPC binding (application/json). Methods: SendMessage; GetTask; CancelTask (params id, tenant, metadata; result Task; errors -32001, -32002, -32004); ListTasks (params tenant, contextId, status, pageSize 1 to 100 default 50, pageToken, historyLength, statusTimestampAfter, includeArtifacts; result tasks, nextPageToken (empty on the last page), pageSize, totalSize; -32602 on a bad pageSize; -32004 while the process gateway does not implement it). SendStreamingMessage, SubscribeToTask and GetExtendedAgentCard answer -32004 (unsupported operation) and the four TaskPushNotificationConfig methods -32003 (push notifications not supported); the agent card says extendedAgentCard false. The caller must be on the agent allow-list; a browser Origin must be allow-listed.
      *
-     * POST /ai/a2a/{agent} (operationId aiA2a); permission ai.use.
+     * POST /ai/a2a/by-agent (operationId aiA2a); permission ai.use.
      * @param Model\AiMcpBody|array $body request body
+     * @param string $agent query agent
      * @param string|null $a2AVersion header A2A-Version
      * @return array<string, mixed>
      */
-    public function aiA2a(string $agent, Model\AiMcpBody|array $body, ?string $a2AVersion = null, ?RequestOptions $options = null): array
+    public function aiA2a(Model\AiMcpBody|array $body, string $agent, ?string $a2AVersion = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/ai/a2a/' . HttpTransport::seg((string) $agent));
+        $req = ApiRequest::post('/ai/a2a/by-agent');
+        $req->query('agent', $agent);
         $req->header('A2A-Version', Support::headerValue($a2AVersion));
         if ($body !== null) {
             $req->body($body);
@@ -649,11 +663,13 @@ final class AIApi
      *
      * Retrieval stops. Needs a reason; actor and reason are kept.
      *
-     * POST /ai/knowledge-bases/{key}/retire (operationId aiUiRetireKb); permission ai.admin; result stored atomically with the state change.
+     * POST /ai/knowledge-bases/by-key/retire (operationId aiUiRetireKb); permission ai.admin; result stored atomically with the state change.
+     * @param string $key query key
      */
     public function aiUiRetireKb(string $key, Model\AiUiDecisionRequest|array|null $body = null, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/ai/knowledge-bases/' . HttpTransport::seg((string) $key) . '/retire');
+        $req = ApiRequest::post('/ai/knowledge-bases/by-key/retire');
+        $req->query('key', $key);
         if ($body !== null) {
             $req->body($body);
         }

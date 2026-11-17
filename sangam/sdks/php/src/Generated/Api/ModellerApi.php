@@ -241,12 +241,14 @@ final class ModellerApi
      *
      * The lease on a model file.
      *
-     * GET /models/{file}/lease (operationId getModelLease); permission package.read.
+     * GET /models/by-file/lease (operationId getModelLease); permission package.read.
+     * @param string $file query file
      * @return Model\ModelEditLease|null
      */
     public function getModelLease(string $file, ?RequestOptions $options = null): ?Model\ModelEditLease
     {
-        $req = ApiRequest::get('/models/' . HttpTransport::seg((string) $file) . '/lease');
+        $req = ApiRequest::get('/models/by-file/lease');
+        $req->query('file', $file);
         return $this->calls->model($req, $options, Model\ModelEditLease::class);
     }
 
@@ -255,12 +257,14 @@ final class ModellerApi
      *
      * Saves then send the fence in X-Sangam-Edit-Fence.
      *
-     * POST /models/{file}/lease (operationId acquireModelLease); permission package.author; result stored atomically with the state change.
+     * POST /models/by-file/lease (operationId acquireModelLease); permission package.author; result stored atomically with the state change.
+     * @param string $file query file
      * @return Model\ModelLeaseOutcome|null
      */
     public function acquireModelLease(string $file, ?RequestOptions $options = null): ?Model\ModelLeaseOutcome
     {
-        $req = ApiRequest::post('/models/' . HttpTransport::seg((string) $file) . '/lease');
+        $req = ApiRequest::post('/models/by-file/lease');
+        $req->query('file', $file);
         return $this->calls->model($req, $options, Model\ModelLeaseOutcome::class);
     }
 
@@ -269,12 +273,14 @@ final class ModellerApi
      *
      * Holder only.
      *
-     * POST /models/{file}/lease/heartbeat (operationId heartbeatModelLease); permission package.author; result stored atomically with the state change.
+     * POST /models/by-file/lease/heartbeat (operationId heartbeatModelLease); permission package.author; result stored atomically with the state change.
      * @param Model\ModelFenceRequest|array $body request body
+     * @param string $file query file
      */
-    public function heartbeatModelLease(string $file, Model\ModelFenceRequest|array $body, ?RequestOptions $options = null): void
+    public function heartbeatModelLease(Model\ModelFenceRequest|array $body, string $file, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/models/' . HttpTransport::seg((string) $file) . '/lease/heartbeat');
+        $req = ApiRequest::post('/models/by-file/lease/heartbeat');
+        $req->query('file', $file);
         if ($body !== null) {
             $req->body($body);
         }
@@ -286,12 +292,14 @@ final class ModellerApi
      *
      * Holder only.
      *
-     * POST /models/{file}/lease/release (operationId releaseModelLease); permission package.author; result stored atomically with the state change.
+     * POST /models/by-file/lease/release (operationId releaseModelLease); permission package.author; result stored atomically with the state change.
      * @param Model\ModelFenceRequest|array $body request body
+     * @param string $file query file
      */
-    public function releaseModelLease(string $file, Model\ModelFenceRequest|array $body, ?RequestOptions $options = null): void
+    public function releaseModelLease(Model\ModelFenceRequest|array $body, string $file, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/models/' . HttpTransport::seg((string) $file) . '/lease/release');
+        $req = ApiRequest::post('/models/by-file/lease/release');
+        $req->query('file', $file);
         if ($body !== null) {
             $req->body($body);
         }
@@ -303,11 +311,13 @@ final class ModellerApi
      *
      * Tells the holder.
      *
-     * POST /models/{file}/lease/request-takeover (operationId requestModelLeaseTakeover); permission package.author; result stored atomically with the state change.
+     * POST /models/by-file/lease/request-takeover (operationId requestModelLeaseTakeover); permission package.author; result stored atomically with the state change.
+     * @param string $file query file
      */
     public function requestModelLeaseTakeover(string $file, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/models/' . HttpTransport::seg((string) $file) . '/lease/request-takeover');
+        $req = ApiRequest::post('/models/by-file/lease/request-takeover');
+        $req->query('file', $file);
         $this->calls->none($req, $options);
     }
 
@@ -316,13 +326,15 @@ final class ModellerApi
      *
      * Needs modeller.lease.takeover; audited.
      *
-     * POST /models/{file}/lease/takeover (operationId takeOverModelLease); permission package.author; result stored atomically with the state change.
+     * POST /models/by-file/lease/takeover (operationId takeOverModelLease); permission package.author; result stored atomically with the state change.
      * @param Model\ModelTakeoverRequest|array $body request body
+     * @param string $file query file
      * @return Model\ModelEditLease|null
      */
-    public function takeOverModelLease(string $file, Model\ModelTakeoverRequest|array $body, ?RequestOptions $options = null): ?Model\ModelEditLease
+    public function takeOverModelLease(Model\ModelTakeoverRequest|array $body, string $file, ?RequestOptions $options = null): ?Model\ModelEditLease
     {
-        $req = ApiRequest::post('/models/' . HttpTransport::seg((string) $file) . '/lease/takeover');
+        $req = ApiRequest::post('/models/by-file/lease/takeover');
+        $req->query('file', $file);
         if ($body !== null) {
             $req->body($body);
         }
@@ -334,12 +346,14 @@ final class ModellerApi
      *
      * Server-sent events, event name 'presence', data = ModelPresence: one event on connect and one on every join, leave or lease change (M-101). The caller is present while the stream is open; closing it leaves. Live across nodes like the conversation stream (M-040).
      *
-     * GET /models/{file}/presence/stream (operationId streamModelPresence); permission package.read.
+     * GET /models/by-file/presence/stream (operationId streamModelPresence); permission package.read.
+     * @param string $file query file
      * @return string
      */
     public function streamModelPresence(string $file, ?RequestOptions $options = null): string
     {
-        $req = ApiRequest::get('/models/' . HttpTransport::seg((string) $file) . '/presence/stream');
+        $req = ApiRequest::get('/models/by-file/presence/stream');
+        $req->query('file', $file);
         return $this->calls->raw($req, $options, 'text/event-stream');
     }
 
@@ -524,12 +538,14 @@ final class ModellerApi
      *
      * Same as POST on the lease.
      *
-     * POST /models/{file}/lease/acquire (operationId acquireModelLeaseUi); permission package.author; result stored atomically with the state change.
+     * POST /models/by-file/lease/acquire (operationId acquireModelLeaseUi); permission package.author; result stored atomically with the state change.
+     * @param string $file query file
      * @return array<string, mixed>
      */
     public function acquireModelLeaseUi(string $file, Model\ModellerFenceRequest|array|null $body = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/models/' . HttpTransport::seg((string) $file) . '/lease/acquire');
+        $req = ApiRequest::post('/models/by-file/lease/acquire');
+        $req->query('file', $file);
         if ($body !== null) {
             $req->body($body);
         }
@@ -628,13 +644,15 @@ final class ModellerApi
      *
      * Affects every rule of the service.
      *
-     * PATCH /service-mocks/{id} (operationId toggleServiceMock); permission ops.write; result stored atomically with the state change.
+     * PATCH /service-mocks/by-id (operationId toggleServiceMock); permission ops.write; result stored atomically with the state change.
      * @param Model\ServiceMocksToggle|array $body request body
+     * @param string $id query id
      * @return array<string, mixed>
      */
-    public function toggleServiceMock(string $id, Model\ServiceMocksToggle|array $body, ?RequestOptions $options = null): array
+    public function toggleServiceMock(Model\ServiceMocksToggle|array $body, string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::patch('/service-mocks/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::patch('/service-mocks/by-id');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }

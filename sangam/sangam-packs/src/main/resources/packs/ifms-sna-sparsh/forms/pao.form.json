@@ -1,6 +1,6 @@
 {
   "key": "ifms-sna-sparsh/pao",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "pack": "gov.ifms.sna-sparsh",
   "title": {
     "en": "PAO pre-check and pass",

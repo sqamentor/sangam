@@ -48,7 +48,7 @@ import org.springframework.core.env.Environment;
  *       every node loads the stored registrations at start and then every {@code registration.refresh-interval}
  *       (1m), which is how a change made on another node arrives. The admin routes are the {@link DltPort}.</li>
  *   <li><b>Delivery reports (304).</b> {@link DltDeliveryReports} behind the public, signed route
- *       {@code POST /api/v1/hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports}; the signing secret of a connector is
+ *       {@code POST /api/v1/hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports?connectorId=}; the signing secret of a connector is
  *       a {@code secret://} reference ({@code delivery-reports.secrets.*}); a connector without one refuses every
  *       report. {@link DltDeliveryStatusPoller#runOnce} is the fallback, every {@code delivery-status.interval} (5m)
  *       on every node (its claim is skip-locked), unless {@code delivery-status.enabled=false}.</li>

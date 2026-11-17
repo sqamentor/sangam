@@ -486,7 +486,7 @@ export const api = {
     /** M-125 diffModels: semantic diff of two versions of one model file (package.read); reads only, stores nothing. */
     diff: (body: T.ModelDiffRequest) => http.post<T.ModelDiffReport>('/models/diff', body),
     /** M-101 streamModelPresence path (text/event-stream, event 'presence', data ModelPresence); open with openEventStream. */
-    presencePath: (file: string) => `/models/${enc(file)}/presence/stream`,
+    presencePath: (file: string) => `/models/by-file/presence/stream?file=${enc(file)}`,
   },
   forms: {
     get: async (key: string, version?: number) => A.normForm(await http.get<Record<string, unknown>>('/forms/by-key', { key, version })),
@@ -768,7 +768,7 @@ export const api = {
     list: () => http.get<{ id: string; key: string; title: string; version: number; state: string }[]>('/pages'),
     get: (key: string) => http.get<PageModel>(`/pages/${enc(key)}`),
     save: (p: PageModel) => (p.id ? http.put<PageModel>(`/pages/${enc(p.key)}`, p) : http.post<PageModel>('/pages', p)),
-    query: (name: string, params: Query) => http.page<Record<string, unknown>>(`/queries/${enc(name)}`, params),
+    query: (name: string, params: Query) => http.page<Record<string, unknown>>(`/queries/by-name?name=${enc(name)}`, params),
   },
   dataObjects: {
     list: () => http.get<DataObjectDef[]>('/data-objects'),
@@ -792,24 +792,24 @@ export const api = {
   // ------------------------------------------------------------ events (FC-02, FC-03), keyed by `key`
   events: {
     channels: async () => (await http.page<EventChannel>('/events/channels', { size: 500 })).items,
-    saveChannel: (c: EventChannel, isNew: boolean) => (isNew ? http.post<EventChannel>('/events/channels', c) : http.put<EventChannel>(`/events/channels/${enc(c.key)}`, c)),
+    saveChannel: (c: EventChannel, isNew: boolean) => (isNew ? http.post<EventChannel>('/events/channels', c) : http.put<EventChannel>(`/events/channels/by-key?key=${enc(c.key)}`, c)),
     definitions: async () => (await http.page<EventDefinition>('/events/definitions', { size: 500 })).items,
     /** The contract has no PUT for definitions: an edit re-creates the definition under the same key. */
     saveDefinition: async (d: EventDefinition, isNew: boolean) => {
-      if (!isNew) await http.del<void>(`/events/definitions/${enc(d.key)}`, { reason: 'definition updated' });
+      if (!isNew) await http.del<void>(`/events/definitions/by-key?key=${enc(d.key)}`, { reason: 'definition updated' });
       return http.post<EventDefinition>('/events/definitions', d);
     },
     send: (channel: string, payload: unknown, key?: string) =>
-      http.post<void>(`/events/${enc(channel)}`, { specversion: '1.0', id: key ?? crypto.randomUUID(), source: 'sangam-ui', type: 'sangam.test', datacontenttype: 'application/json', data: payload }, key),
+      http.post<void>(`/events/by-channel?channel=${enc(channel)}`, { specversion: '1.0', id: key ?? crypto.randomUUID(), source: 'sangam-ui', type: 'sangam.test', datacontenttype: 'application/json', data: payload }, key),
   },
 
   // ------------------------------------------------------------ citizen portal (C01–C06)
   portal: {
     services: () => http.get<T.PortalService[]>('/portal/services'),
     /** Decision 63: the service's own form under portal.use (never an arbitrary form key). */
-    form: async (serviceKey: string) => A.normForm(await http.get<Record<string, unknown>>(`/portal/services/${enc(serviceKey)}/form`)),
+    form: async (serviceKey: string) => A.normForm(await http.get<Record<string, unknown>>(`/portal/services/by-key/form?key=${enc(serviceKey)}`)),
     /** Decisions 339, 341, 343: the current published consent notice of the service, one entry per purpose. */
-    notice: (serviceKey: string, lang?: string) => http.get<T.PortalNotice>(`/portal/services/${enc(serviceKey)}/notice`, { lang }),
+    notice: (serviceKey: string, lang?: string) => http.get<T.PortalNotice>(`/portal/services/by-key/notice?key=${enc(serviceKey)}`, { lang }),
     /** A submission to a noticed service carries the consent; a draft never does (decision 341). */
     apply: (serviceKey: string, variables: Record<string, unknown>, submit: boolean, key?: string, consent?: T.PortalConsent) =>
       http.post<T.Application>('/portal/applications', { serviceKey, variables: A.toVariableMap(variables), submit, ...(consent ? { consent } : {}) }, key),

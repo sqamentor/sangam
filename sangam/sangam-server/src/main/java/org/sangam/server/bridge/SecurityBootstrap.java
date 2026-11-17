@@ -37,6 +37,14 @@ public final class SecurityBootstrap {
      * explicit grant on the payment channel like everybody else. Asking for them made the policy, and with it the whole
      * bootstrap of the tenant, be refused.
      */
+    /** Policy id of the i-th administrator group: {@link #POLICY_ID} for the first, then {@code bootstrap-admin-<i+1>}. */
+    /** Actor of the decision 392 split when the bootstrap runs it (same id as the start-time runner's). */
+    public static final String POLICY_SPLIT_ACTOR = "policy-split-392";
+
+    static String policyId(int i) {
+        return i == 0 ? POLICY_ID : POLICY_ID + "-" + (i + 1);
+    }
+
     static Set<Permission> wildcardPermissions() {
         EnumSet<Permission> all = EnumSet.allOf(Permission.class);
         all.removeIf(Permission::explicitOnly);
@@ -62,11 +70,20 @@ public final class SecurityBootstrap {
                         // decision 368: a tenant created before the platform role rows existed gets them (idempotent)
                         security.roles().ensurePlatformRoles(c, platform, tenant);
                     }
-                    if (security.policies().find(c, tenant, POLICY_ID).isEmpty()) {
-                        List<String> subjects = adminGroups.stream().map(g -> SecurityIdentity.GROUP + g).toList();
-                        PolicyAdminService.PolicyDefinition def = new PolicyAdminService.PolicyDefinition(POLICY_ID,
-                                "Development bootstrap: administrators", PolicyAdminService.Effect.ALLOW, subjects, "*",
-                                "*", wildcardPermissions(), null);
+                    // decision 392: one policy id per principal, so one policy per administrator group. A policy
+                    // stored before 392 naming several groups is split first (same step and lock as the start-time
+                    // runner), and a group that already has its grant, under any id, gets no second one.
+                    security.policies().splitMultiPrincipal(c, SecurityIdentity.system(tenant, POLICY_SPLIT_ACTOR));
+                    for (int i = 0; i < adminGroups.size(); i++) {
+                        String policyId = policyId(i);
+                        if (security.policies().find(c, tenant, policyId).isPresent()
+                                || security.policies().hasPolicyFor(c, tenant, SecurityIdentity.GROUP + adminGroups.get(i),
+                                "*", "*")) {
+                            continue;
+                        }
+                        PolicyAdminService.PolicyDefinition def = new PolicyAdminService.PolicyDefinition(policyId,
+                                "Development bootstrap: administrators", PolicyAdminService.Effect.ALLOW,
+                                List.of(SecurityIdentity.GROUP + adminGroups.get(i)), "*", "*", wildcardPermissions(), null);
                         PolicyAdminService.PolicyChange change = security.policies().create(c, platform, def,
                                 "development bootstrap");
                         if (change != null && "PENDING".equalsIgnoreCase(change.status())) {
@@ -75,8 +92,8 @@ public final class SecurityBootstrap {
                                     null, "bootstrap", true, Map.of());
                             security.policies().approve(c, approver, change.changeId());
                         }
-                        LOG.warn("DEV bootstrap: granted every permission a wildcard may confer on every resource to groups {}"
-                                + " in tenant '{}'", adminGroups, tenant);
+                        LOG.warn("DEV bootstrap: granted every permission a wildcard may confer on every resource to group"
+                                + " {} in tenant '{}'", adminGroups.get(i), tenant);
                     }
                     return null;
                 });

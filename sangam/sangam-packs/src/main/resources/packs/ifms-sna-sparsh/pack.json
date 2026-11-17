@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.sna-sparsh",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "name": {
     "en": "SNA-SPARSH just-in-time release",
     "hi": "एसएनए-स्पर्श समय पर विमुक्ति"
@@ -34,6 +34,10 @@
     {
       "kind": "FORM",
       "path": "packs/ifms-sna-sparsh/forms/pao.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-sna-sparsh/forms/pay-correct.form.json"
     },
     {
       "kind": "SEED",

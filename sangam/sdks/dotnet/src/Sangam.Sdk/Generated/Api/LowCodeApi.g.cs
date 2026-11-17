@@ -64,11 +64,12 @@ public sealed class LowCodeApi
     /// <summary>
     /// Run a named query
     /// Named query (R25); further query parameters are passed to the query. Uses the same authorization as the underlying data.
-    /// GET /queries/{name} (operationId runNamedQuery); permission lowcode.read.
+    /// GET /queries/by-name (operationId runNamedQuery); permission lowcode.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RunNamedQueryAsync(string name, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/queries/{HttpTransport.Seg(GeneratedCalls.Str(name)!)}");
+        var req = ApiRequest.Get($"/queries/by-name");
+        req.WithQuery("name", GeneratedCalls.Q(name));
         req.WithQuery("page", GeneratedCalls.Q(page));
         req.WithQuery("size", GeneratedCalls.Q(size));
         return await _calls.PageAsync<global::System.Collections.Generic.Dictionary<string, object?>>(req, options, page, size, cancellationToken).ConfigureAwait(false);

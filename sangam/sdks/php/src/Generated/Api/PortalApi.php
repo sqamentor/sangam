@@ -39,12 +39,14 @@ final class PortalApi
      *
      * The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); versionHash is the form's own. 404 for a service not in the catalogue or without a form.
      *
-     * GET /portal/services/{key}/form (operationId getPortalServiceForm); permission portal.use.
+     * GET /portal/services/by-key/form (operationId getPortalServiceForm); permission portal.use.
+     * @param string $key query key
      * @return Model\FormVersion|null
      */
     public function getPortalServiceForm(string $key, ?RequestOptions $options = null): ?Model\FormVersion
     {
-        $req = ApiRequest::get('/portal/services/' . HttpTransport::seg((string) $key) . '/form');
+        $req = ApiRequest::get('/portal/services/by-key/form');
+        $req->query('key', $key);
         return $this->calls->model($req, $options, Model\FormVersion::class);
     }
 
@@ -53,13 +55,15 @@ final class PortalApi
      *
      * The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
      *
-     * GET /portal/services/{key}/notice (operationId getPortalServiceNotice); permission portal.use.
+     * GET /portal/services/by-key/notice (operationId getPortalServiceNotice); permission portal.use.
+     * @param string $key query key
      * @param string|null $lang query lang
      * @return Model\PortalNotice|null
      */
     public function getPortalServiceNotice(string $key, ?string $lang = null, ?RequestOptions $options = null): ?Model\PortalNotice
     {
-        $req = ApiRequest::get('/portal/services/' . HttpTransport::seg((string) $key) . '/notice');
+        $req = ApiRequest::get('/portal/services/by-key/notice');
+        $req->query('key', $key);
         $req->query('lang', $lang);
         return $this->calls->model($req, $options, Model\PortalNotice::class);
     }

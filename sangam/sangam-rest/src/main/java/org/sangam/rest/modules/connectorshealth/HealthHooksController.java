@@ -15,12 +15,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Health interoperability hooks (sangam-connectors-health):
  * <ul>
- *   <li>{@code POST /api/v1/hooks/fhir/{channel}}: FHIR R5/R4B topic-based subscription notifications. Unauthenticated
+ *   <li>{@code POST /api/v1/hooks/fhir/by-channel?channel=}: FHIR R5/R4B topic-based subscription notifications. Unauthenticated
  *       at the Sangam layer; the receiver checks the channel's shared secret header (constant-time) and writes each
  *       focus resource to the integration inbox (deduplicated, tenant-bound by the channel binding).</li>
  *   <li>{@code GET /cds-services} and {@code POST /cds-services/{id}}: the CDS Hooks service endpoints (HL7 CDS Hooks
@@ -56,8 +57,8 @@ public class HealthHooksController {
         return ResponseEntity.status(r.poisonItemId() != null ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.ACCEPTED).body(r);
     }
 
-    @PostMapping(value = "/api/v1/hooks/fhir/{channel}", consumes = {"application/fhir+json", "application/json"})
-    public ResponseEntity<Map<String, Object>> fhirNotification(@PathVariable String channel,
+    @PostMapping(value = "/api/v1/hooks/fhir/by-channel", consumes = {"application/fhir+json", "application/json"})
+    public ResponseEntity<Map<String, Object>> fhirNotification(@RequestParam("channel") String channel,
                                                                 @RequestBody(required = false) byte[] body,
                                                                 HttpServletRequest request) {
         if (body == null || body.length == 0) {

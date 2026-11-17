@@ -14,7 +14,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Inbound webhook channel (FLOWABLE-INTO-OPERATON FC-03, ARCHITECTURE §4 {@code POST /events/{channel}}). Two entries:
+ * Inbound webhook channel (FLOWABLE-INTO-OPERATON FC-03, ARCHITECTURE §4 {@code POST /events/by-channel?channel=}). Two entries:
  * <ul>
  *   <li>{@link #receive}, the webhook ingress of a sender with no Sangam identity: when the channel has
  *       {@code properties.secretRef}, the {@code X-Sangam-Signature: sha256=<hex>} header must be the HMAC-SHA256 of

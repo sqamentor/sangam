@@ -564,12 +564,52 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
 
     // ------------------------------------------------------------------ 2. ESS
 
+    /**
+     * The bank statement the department's reconciliation reads (pack connector {@code bank.statement}, operation
+     * {@code match}), here a statement source the test controls: it answers MATCHED for an operation whose line is on the
+     * statement, else PENDING, as a statement connector does. Bound for this tenant only.
+     */
+    static final class StatementSource implements org.sangam.core.integration.SangamConnector {
+        static final String ID = "it-bank-statement";
+        final Set<String> lines = java.util.concurrent.ConcurrentHashMap.newKeySet();
+        final List<String> asked = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+        @Override
+        public org.sangam.core.integration.ConnectorDescriptor descriptor() {
+            return new org.sangam.core.integration.ConnectorDescriptor(ID, "test",
+                    org.sangam.core.layer.CapabilityClass.B_LOOKUP_ONLY, List.of("match"),
+                    org.sangam.core.integration.ConnectorProfile.LIVE);
+        }
+
+        @Override
+        public org.sangam.core.integration.ConnectorResult invoke(org.sangam.core.integration.ConnectorRequest request) {
+            String op = String.valueOf(request.input().get("operationId"));
+            asked.add(op);
+            return org.sangam.core.integration.ConnectorResult.Success.of(
+                    Map.of("match", lines.contains(op) ? "MATCHED" : "PENDING"), "STMT-" + op);
+        }
+    }
+
+    @Autowired
+    org.sangam.integration.packs.PackConnectorBindings packBindings;
+
     @Test
     void gpfAdvance() throws Exception {
-        Run r = drive("sangam-ifms-gpf", bk("GPF"), employee("gpfAccount", "GPF-123", "gpfPurpose", "ADVANCE",
+        // reconcileRequired stays (designed behaviour): the payment closes when the bank statement shows it. The
+        // statement already carries the payment's line when the case first reconciles (operationId = UUIDv5 of the
+        // case, the step 'pay' and attempt 1, Vars.operationId). The later-arrival path (PENDING, then the hourly
+        // re-query) is a test gap: the driver runs no job before its due date (TESTING-GAP-REGISTER).
+        StatementSource statement = new StatementSource();
+        connectors.register(TENANT, statement);
+        packBindings.bindForTenant(TENANT, "bank.statement", StatementSource.ID, "match");
+        String gpf = bk("GPF");
+        String payment = org.sangam.packs.core.Vars.operationId(TENANT, gpf, "pay", 1);
+        statement.lines.add(payment);
+        Run r = drive("sangam-ifms-gpf", gpf, employee("gpfAccount", "GPF-123", "gpfPurpose", "ADVANCE",
                 "amount", 5_000_000L, "gpfBalance", 40_000_000L, "qualifyingService", new BigDecimal("12.0"), "employeeId", EMPLOYEE,
                 "payee", "A Subscriber", "payeeAccount", "XXXX1001", "ifsc", "SBIN0000001"));
         assertClosed("GPF advance", r);
+        assertThat(statement.asked).as("the payment was reconciled against the bank statement").contains(payment);
     }
 
     @Test

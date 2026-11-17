@@ -43,15 +43,15 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * {@code /api/v1/compliance}: data-protection and incident-reporting compliance (sangam-compliance; DPDP Act 2023 and
  * Rules 2025, CERT-In directions; GOV-4, R53). Colon-style actions of the module API are sub-paths here
- * ({@code /notices/{key}:publish} → {@code POST /notices/{key}/publish}).
+ * ({@code /notices/{key}:publish} → {@code POST /notices/by-key/publish?key=}).
  *
  * <p>Permissions (resource type COMPLIANCE): {@code compliance.read} for queries, {@code compliance.modify} for case
  * work, {@code compliance.admin} for configuration, {@code audit.read} for log verification and reports. A data
  * principal may read their own consents and rights requests and withdraw their own consent without those permissions.
  *
  * <p>Public (unauthenticated) endpoints take the tenant from {@code X-Sangam-Tenant} or {@code ?tenant=}:
- * {@code GET /notices/{key}}, {@code GET /privacy-policy}, {@code POST /rights-requests},
- * {@code POST /consent-managers/{cm}/artefacts} (mTLS from the consent manager at the gateway).
+ * {@code GET /notices/by-key?key=}, {@code GET /privacy-policy}, {@code POST /rights-requests},
+ * {@code POST /consent-managers/by-cm/artefacts?cm=} (mTLS from the consent manager at the gateway).
  */
 @RestController
 @RequestMapping("/api/v1/compliance")
@@ -109,16 +109,16 @@ public class ComplianceController {
 
     // ---------------------------------------------------------------- notices, privacy policy, purposes
 
-    @GetMapping("/notices/{key}")
-    public ConsentNoticeService.RenderedNotice notice(HttpServletRequest req, @PathVariable String key,
+    @GetMapping("/notices/by-key")
+    public ConsentNoticeService.RenderedNotice notice(HttpServletRequest req, @RequestParam("key") String key,
             @RequestParam(required = false) Integer version, @RequestParam(required = false) String lang,
             @RequestHeader(value = TENANT_HEADER, required = false) String tenantHeader,
             @RequestParam(required = false) String tenant) {
         return api.notice(publicTenant(req, tenantHeader, tenant), key, version, lang);
     }
 
-    @PostMapping("/notices/{key}/publish")
-    public ConsentNoticeService.PublishResult publishNotice(RequestContext ctx, @PathVariable String key,
+    @PostMapping("/notices/by-key/publish")
+    public ConsentNoticeService.PublishResult publishNotice(RequestContext ctx, @RequestParam("key") String key,
                                                             @RequestBody ComplianceRequests.PublishNoticeRequest body) {
         SecurityIdentity id = require(ctx, Permissions.COMPLIANCE_ADMIN);
         return api.publishNotice(id, key, body.purposes() == null ? Set.of() : body.purposes());
@@ -137,8 +137,8 @@ public class ComplianceController {
         return Lists.ok(api.purposes(require(ctx, Permissions.COMPLIANCE_READ)));
     }
 
-    @PutMapping("/purposes/{code}")
-    public PurposeDefinition definePurpose(RequestContext ctx, @PathVariable String code,
+    @PutMapping("/purposes/by-code")
+    public PurposeDefinition definePurpose(RequestContext ctx, @RequestParam("code") String code,
                                            @RequestBody ComplianceRequests.DefinePurposeRequest body) {
         SecurityIdentity id = require(ctx, Permissions.COMPLIANCE_ADMIN);
         return api.definePurpose(id, toPurpose(code, body));
@@ -287,8 +287,8 @@ public class ComplianceController {
         return subject;
     }
 
-    @PostMapping("/consent-managers/{cm}/artefacts")
-    public ResponseEntity<ConsentService.Consent> ingestArtefact(HttpServletRequest req, @PathVariable String cm,
+    @PostMapping("/consent-managers/by-cm/artefacts")
+    public ResponseEntity<ConsentService.Consent> ingestArtefact(HttpServletRequest req, @RequestParam("cm") String cm,
             @RequestBody ComplianceRequests.ConsentArtefactRequest body,
             @RequestHeader(value = TENANT_HEADER, required = false) String tenantHeader,
             @RequestParam(required = false) String tenant) {
@@ -447,8 +447,8 @@ public class ComplianceController {
         return Lists.ok(api.contacts(require(ctx, Permissions.COMPLIANCE_READ)));
     }
 
-    @PostMapping("/contacts/{role}")
-    public ResponseEntity<Void> setContact(RequestContext ctx, @PathVariable String role,
+    @PostMapping("/contacts/by-role")
+    public ResponseEntity<Void> setContact(RequestContext ctx, @RequestParam("role") String role,
                                            @RequestBody ComplianceRequests.ContactRequest body) {
         SecurityIdentity id = require(ctx, Permissions.COMPLIANCE_ADMIN);
         // an omitted residency attestation is "not attested" (refused for a role that must be resident), never true

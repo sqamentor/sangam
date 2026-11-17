@@ -7355,7 +7355,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /events/channels/{key}:
+  /events/channels/by-key:
     get:
       operationId: getEventChannel
       tags:
@@ -7364,10 +7364,11 @@ paths:
       description: One channel.
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
+        required: true
       x-sangam-permission: event.admin
       x-sangam-requirements:
       - FC-03
@@ -7396,10 +7397,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -7452,10 +7454,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
+        required: true
       - $ref: '#/components/parameters/reason'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
@@ -7488,7 +7491,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /events/channels/{key}/retire:
+  /events/channels/by-key/retire:
     post:
       operationId: retireEventChannel
       tags:
@@ -7501,10 +7504,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -7547,7 +7551,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /events/channels/{key}/restore:
+  /events/channels/by-key/restore:
     post:
       operationId: restoreEventChannel
       tags:
@@ -7558,10 +7562,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -7693,7 +7698,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /events/definitions/{key}:
+  /events/definitions/by-key:
     get:
       operationId: getEventDefinition
       tags:
@@ -7702,10 +7707,11 @@ paths:
       description: One definition.
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
+        required: true
       x-sangam-permission: event.admin
       x-sangam-requirements:
       - FC-02
@@ -7735,10 +7741,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
+        required: true
       - $ref: '#/components/parameters/reason'
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
@@ -7771,7 +7778,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /events/definitions/{key}/retire:
+  /events/definitions/by-key/retire:
     post:
       operationId: retireEventDefinition
       tags:
@@ -7783,10 +7790,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -7829,7 +7837,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /events/definitions/{key}/restore:
+  /events/definitions/by-key/restore:
     post:
       operationId: restoreEventDefinition
       tags:
@@ -7840,10 +7848,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -7886,7 +7895,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /events/{channel}:
+  /events/by-channel:
     post:
       operationId: publishEvent
       tags:
@@ -7898,10 +7907,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: channel
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Inbound event channel key; may carry ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -9685,7 +9695,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /portal/services/{key}/form:
+  /portal/services/by-key/form:
     get:
       operationId: getPortalServiceForm
       tags:
@@ -9696,11 +9706,11 @@ paths:
         a service not in the catalogue or without a form.
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: service key
+        description: Service key (the service form key); may carry '/' or ':'
+        required: true
       x-sangam-permission: portal.use
       x-sangam-requirements:
       - UP-22
@@ -9721,7 +9731,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /portal/services/{key}/notice:
+  /portal/services/by-key/notice:
     get:
       operationId: getPortalServiceNotice
       tags:
@@ -9732,11 +9742,11 @@ paths:
         for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: service key
+        description: Service key (the service form key); may carry '/' or ':'
+        required: true
       - name: lang
         in: query
         schema:
@@ -15669,7 +15679,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /queries/{name}:
+  /queries/by-name:
     get:
       operationId: runNamedQuery
       tags:
@@ -15678,10 +15688,11 @@ paths:
       description: Named query (R25); further query parameters are passed to the query. Uses the same authorization as the underlying data.
       parameters:
       - name: name
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Named query (tasks.mine, process-instances, or data:<data object key>); may carry ':'
+        required: true
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/size'
       x-sangam-permission: lowcode.read
@@ -16475,7 +16486,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /compliance/notices/{key}:
+  /compliance/notices/by-key:
     get:
       operationId: getComplianceNotice
       tags:
@@ -16484,10 +16495,11 @@ paths:
       description: The notice in the requested language; falls back to the pack default only where the pack allows (DPDP Rules r.3).
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Consent notice key; may carry '/' or ':'
+        required: true
       - name: version
         in: query
         schema:
@@ -16526,7 +16538,7 @@ paths:
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
       security: []
-  /compliance/notices/{key}/publish:
+  /compliance/notices/by-key/publish:
     post:
       operationId: publishComplianceNotice
       tags:
@@ -16537,10 +16549,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Consent notice key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -16653,7 +16666,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /compliance/purposes/{code}:
+  /compliance/purposes/by-code:
     put:
       operationId: defineCompliancePurpose
       tags:
@@ -16664,10 +16677,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: code
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Purpose code; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -16896,7 +16910,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /compliance/consent-managers/{cm}/artefacts:
+  /compliance/consent-managers/by-cm/artefacts:
     post:
       operationId: ingestConsentArtefact
       tags:
@@ -16907,10 +16921,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: cm
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Consent manager id; may carry '/' or ':'
+        required: true
       - name: X-Sangam-Tenant
         in: header
         required: false
@@ -17716,7 +17731,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /compliance/contacts/{role}:
+  /compliance/contacts/by-role:
     post:
       operationId: setComplianceContact
       tags:
@@ -17727,10 +17742,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: role
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Contact role of the jurisdiction pack; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -19686,7 +19702,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/knowledge-bases/{kb}/versions:
+  /ai/knowledge-bases/by-kb/versions:
     post:
       operationId: aiKbNewVersion
       tags:
@@ -19697,10 +19713,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: kb
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Knowledge base key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -19736,7 +19753,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/knowledge-bases/{kb}/versions/{version}/documents:
+  /ai/knowledge-bases/by-kb/versions/{version}/documents:
     post:
       operationId: aiKbIngest
       tags:
@@ -19747,10 +19764,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: kb
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Knowledge base key; may carry '/' or ':'
+        required: true
       - name: version
         in: path
         required: true
@@ -19797,7 +19815,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/knowledge-bases/{kb}/versions/{version}/activate:
+  /ai/knowledge-bases/by-kb/versions/{version}/activate:
     post:
       operationId: aiKbActivate
       tags:
@@ -19808,10 +19826,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: kb
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Knowledge base key; may carry '/' or ':'
+        required: true
       - name: version
         in: path
         required: true
@@ -19848,7 +19867,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/knowledge-bases/{kb}/search:
+  /ai/knowledge-bases/by-kb/search:
     post:
       operationId: aiKbSearch
       tags:
@@ -19857,10 +19876,11 @@ paths:
       description: Results are filtered by what the caller may read.
       parameters:
       - name: kb
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Knowledge base key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
       x-sangam-permission: ai.use
@@ -19892,7 +19912,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/knowledge-bases/{kb}/versions/{version}/ocr:
+  /ai/knowledge-bases/by-kb/versions/{version}/ocr:
     post:
       operationId: aiKbOcr
       tags:
@@ -19907,10 +19927,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: kb
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Knowledge base key; may carry '/' or ':'
+        required: true
       - name: version
         in: path
         required: true
@@ -20688,7 +20709,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/a2a/{agent}/card:
+  /ai/a2a/by-agent/card:
     get:
       operationId: aiA2aCard
       tags:
@@ -20697,10 +20718,11 @@ paths:
       description: Card of a configured inbound agent of the tenant.
       parameters:
       - name: agent
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Inbound agent key; may carry '/' or ':'
+        required: true
       x-sangam-permission: ai.use
       x-sangam-requirements:
       - VI.4
@@ -20723,7 +20745,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/a2a/{agent}:
+  /ai/a2a/by-agent:
     post:
       operationId: aiA2a
       tags:
@@ -20737,10 +20759,11 @@ paths:
         extendedAgentCard false. The caller must be on the agent allow-list; a browser Origin must be allow-listed.'
       parameters:
       - name: agent
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Inbound agent key; may carry '/' or ':'
+        required: true
       - name: A2A-Version
         in: header
         required: false
@@ -21139,7 +21162,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /ai/knowledge-bases/{key}/retire:
+  /ai/knowledge-bases/by-key/retire:
     post:
       operationId: aiUiRetireKb
       tags:
@@ -21150,10 +21173,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: key
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Knowledge base key; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -29121,7 +29145,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /config/master/{scheme}/{segment}:
+  /config/master/by-scheme/by-segment:
     get:
       operationId: listConfigMasterCodes
       tags:
@@ -29130,15 +29154,17 @@ paths:
       description: Codes of a scheme segment valid on the date (optionally children of a parent code).
       parameters:
       - name: scheme
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Classification scheme; may carry '/' or ':'
+        required: true
       - name: segment
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Scheme segment; may carry '/' or ':'
+        required: true
       - name: scope
         in: query
         schema:
@@ -29395,7 +29421,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /config/document-types/{id}/check:
+  /config/document-types/by-id/check:
     post:
       operationId: checkConfigDocument
       tags:
@@ -29404,10 +29430,11 @@ paths:
       description: Checks a document against its type (required fields, limits, chain).
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Document type id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
       x-sangam-permission: config.read
@@ -29437,7 +29464,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /config/crosswalks/{id}/map:
+  /config/crosswalks/by-id/map:
     post:
       operationId: mapConfigCrosswalk
       tags:
@@ -29446,10 +29473,11 @@ paths:
       description: Maps a code (and amount) to the target classification (e.g. COFOG) with shares.
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Crosswalk id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
       x-sangam-permission: config.read
@@ -29479,7 +29507,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /hooks/fhir/{channel}:
+  /hooks/fhir/by-channel:
     post:
       operationId: receiveFhirNotification
       tags:
@@ -29489,10 +29517,11 @@ paths:
         to the integration inbox (deduplicated, tenant-bound by the channel). ClaimResponse becomes sangam.ushealth.pasUpdate.'
       parameters:
       - name: channel
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Configured FHIR subscription channel; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
       x-sangam-requirements:
@@ -29914,7 +29943,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports:
+  /hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports:
     post:
       operationId: receiveDltDeliveryReports
       tags:
@@ -29932,11 +29961,11 @@ paths:
         schema:
           type: string
       - name: connectorId
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: The tenant's DLT SMS connector
+        description: The tenant's DLT SMS connector; may carry '/' or ':'
+        required: true
       - name: X-Sangam-Signature
         in: header
         required: true
@@ -30978,7 +31007,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /hooks/eventgrid/{tenant}/{channel}:
+  /hooks/eventgrid/{tenant}/by-channel:
     options:
       operationId: eventGridHookHandshake
       tags:
@@ -30994,11 +31023,11 @@ paths:
         schema:
           type: string
       - name: channel
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: Configured Event Grid inbound channel of the tenant
+        description: Configured Event Grid inbound channel of the tenant (an event channel key); may carry ':'
+        required: true
       - name: WebHook-Request-Origin
         in: header
         required: true
@@ -31054,11 +31083,11 @@ paths:
         schema:
           type: string
       - name: channel
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: Configured Event Grid inbound channel of the tenant
+        description: Configured Event Grid inbound channel of the tenant (an event channel key); may carry ':'
+        required: true
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
       x-sangam-requirements:
@@ -36444,7 +36473,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /models/{file}/lease:
+  /models/by-file/lease:
     get:
       operationId: getModelLease
       tags:
@@ -36453,11 +36482,11 @@ paths:
       description: The lease on a model file.
       parameters:
       - name: file
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: 'model file: the package id'
+        description: Model file id; may carry '/' or ':'
+        required: true
       x-sangam-permission: package.read
       x-sangam-requirements:
       - R43
@@ -36489,11 +36518,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: 'model file: the package id'
+        description: Model file id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -36529,7 +36558,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /models/{file}/lease/heartbeat:
+  /models/by-file/lease/heartbeat:
     post:
       operationId: heartbeatModelLease
       tags:
@@ -36540,11 +36569,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: 'model file: the package id'
+        description: Model file id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -36582,7 +36611,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /models/{file}/lease/release:
+  /models/by-file/lease/release:
     post:
       operationId: releaseModelLease
       tags:
@@ -36593,11 +36622,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: 'model file: the package id'
+        description: Model file id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -36635,7 +36664,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /models/{file}/lease/request-takeover:
+  /models/by-file/lease/request-takeover:
     post:
       operationId: requestModelLeaseTakeover
       tags:
@@ -36646,11 +36675,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: 'model file: the package id'
+        description: Model file id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -36682,7 +36711,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /models/{file}/lease/takeover:
+  /models/by-file/lease/takeover:
     post:
       operationId: takeOverModelLease
       tags:
@@ -36693,11 +36722,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: 'model file: the package id'
+        description: Model file id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -36739,7 +36768,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /models/{file}/presence/stream:
+  /models/by-file/presence/stream:
     get:
       operationId: streamModelPresence
       tags:
@@ -36749,11 +36778,11 @@ paths:
         change (M-101). The caller is present while the stream is open; closing it leaves. Live across nodes like the conversation stream (M-040).'
       parameters:
       - name: file
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: 'model file: the package id'
+        description: Model file id; may carry '/' or ':'
+        required: true
       x-sangam-permission: package.read
       x-sangam-requirements:
       - R43
@@ -37254,7 +37283,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /models/{file}/lease/acquire:
+  /models/by-file/lease/acquire:
     post:
       operationId: acquireModelLeaseUi
       tags:
@@ -37265,10 +37294,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: file
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Model file id; may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -37559,7 +37589,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
-  /service-mocks/{id}:
+  /service-mocks/by-id:
     patch:
       operationId: toggleServiceMock
       tags:
@@ -37570,10 +37600,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
+        description: Mock row id (service.operation); may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -40892,7 +40923,7 @@ paths:
           $ref: '#/components/responses/MisdirectedRequest'
       x-sangam-groups:
       - sangam-admin
-  /packs/{id}/uninstall:
+  /packs/by-id/uninstall:
     post:
       operationId: uninstallPack
       tags:
@@ -40905,11 +40936,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: pack id, e.g. sec.health.admission-discharge
+        description: Pack id, e.g. sec.health.admission-discharge (no pattern, PackDeployer); may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -40956,7 +40987,7 @@ paths:
           $ref: '#/components/responses/MisdirectedRequest'
       x-sangam-groups:
       - sangam-admin
-  /packs/{id}/rollback:
+  /packs/by-id/rollback:
     post:
       operationId: rollbackPack
       tags:
@@ -40973,11 +41004,11 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: pack id, e.g. sec.health.admission-discharge
+        description: Pack id, e.g. sec.health.admission-discharge (no pattern, PackDeployer); may carry '/' or ':'
+        required: true
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/SeatHeader'
       - $ref: '#/components/parameters/ActingForSeat'
@@ -41024,7 +41055,7 @@ paths:
           $ref: '#/components/responses/MisdirectedRequest'
       x-sangam-groups:
       - sangam-admin
-  /packs/{id}/document-slots:
+  /packs/by-id/document-slots:
     get:
       operationId: listPackDocumentSlots
       tags:
@@ -41034,11 +41065,11 @@ paths:
         none. 404 NOT_FOUND when no pack with this id is registered.
       parameters:
       - name: id
-        in: path
-        required: true
+        in: query
         schema:
           type: string
-        description: pack id, e.g. sec.health.admission-discharge
+        description: Pack id, e.g. sec.health.admission-discharge (no pattern, PackDeployer); may carry '/' or ':'
+        required: true
       x-sangam-permission: tenant.admin
       x-sangam-requirements:
       - SL-41
@@ -65271,8 +65302,8 @@ components:
       - basis
     ComplianceDefinePurposeRequest:
       type: object
-      description: A processing purpose to define or version (PUT /compliance/purposes/{code}). standardsAttested, active and every data item's
-        sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version
+      description: A processing purpose to define or version (PUT /compliance/purposes/by-code?code=). standardsAttested, active and every data
+        item's sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version
         is assigned by the server (previous + 1). Durations are ISO-8601.
       properties:
         code:
@@ -65759,7 +65790,7 @@ components:
       properties:
         role:
           type: string
-          description: Taken from the path on POST /compliance/contacts/{role}.
+          description: Taken from the query parameter role on POST /compliance/contacts/by-role.
         name:
           type: string
         designation:

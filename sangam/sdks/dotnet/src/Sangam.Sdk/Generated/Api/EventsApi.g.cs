@@ -43,22 +43,24 @@ public sealed class EventsApi
     /// <summary>
     /// Get a channel
     /// One channel.
-    /// GET /events/channels/{key} (operationId getEventChannel); permission event.admin.
+    /// GET /events/channels/by-key (operationId getEventChannel); permission event.admin.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.EventChannel?> GetEventChannelAsync(string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/events/channels/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}");
+        var req = ApiRequest.Get($"/events/channels/by-key");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         return await _calls.JsonAsync<M.EventChannel?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Update a channel
     /// Updates a channel.
-    /// PUT /events/channels/{key} (operationId updateEventChannel); permission event.admin; result stored atomically with the state change.
+    /// PUT /events/channels/by-key (operationId updateEventChannel); permission event.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.EventChannel?> UpdateEventChannelAsync(string key, M.EventChannel body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.EventChannel?> UpdateEventChannelAsync(M.EventChannel body, string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/events/channels/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}");
+        var req = ApiRequest.Put($"/events/channels/by-key");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.EventChannel?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -66,11 +68,12 @@ public sealed class EventsApi
     /// <summary>
     /// Delete a channel
     /// Retires every active version and removes the retired versions. Refused with 409 EVENT_IN_FLIGHT while events on the channel are buffered in the inbox or undelivered in the outbox.
-    /// DELETE /events/channels/{key} (operationId deleteEventChannel); permission event.admin; result stored atomically with the state change.
+    /// DELETE /events/channels/by-key (operationId deleteEventChannel); permission event.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task DeleteEventChannelAsync(string key, string? reason = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/events/channels/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}");
+        var req = ApiRequest.Delete($"/events/channels/by-key");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         req.WithQuery("reason", GeneratedCalls.Q(reason));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -78,11 +81,12 @@ public sealed class EventsApi
     /// <summary>
     /// Retire a channel
     /// Marks every active version RETIRED: the channel no longer resolves and stops receiving; an older active version, if any, becomes current. Refused with 409 EVENT_IN_FLIGHT while events are in flight. Returns the channel with active=false (or the version that became current).
-    /// POST /events/channels/{key}/retire (operationId retireEventChannel); permission event.admin; result stored atomically with the state change.
+    /// POST /events/channels/by-key/retire (operationId retireEventChannel); permission event.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.EventChannel?> RetireEventChannelAsync(string key, M.ReasonRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.EventChannel?> RetireEventChannelAsync(M.ReasonRequest body, string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/events/channels/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/retire");
+        var req = ApiRequest.Post($"/events/channels/by-key/retire");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.EventChannel?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -90,11 +94,12 @@ public sealed class EventsApi
     /// <summary>
     /// Restore a channel
     /// Re-activates the newest retired version (undo of a retire); 409 NOT_RETIRED when there is none.
-    /// POST /events/channels/{key}/restore (operationId restoreEventChannel); permission event.admin; result stored atomically with the state change.
+    /// POST /events/channels/by-key/restore (operationId restoreEventChannel); permission event.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.EventChannel?> RestoreEventChannelAsync(string key, M.ReasonRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.EventChannel?> RestoreEventChannelAsync(M.ReasonRequest body, string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/events/channels/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/restore");
+        var req = ApiRequest.Post($"/events/channels/by-key/restore");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.EventChannel?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -127,22 +132,24 @@ public sealed class EventsApi
     /// <summary>
     /// Get an event definition
     /// One definition.
-    /// GET /events/definitions/{key} (operationId getEventDefinition); permission event.admin.
+    /// GET /events/definitions/by-key (operationId getEventDefinition); permission event.admin.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.EventDefinition?> GetEventDefinitionAsync(string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/events/definitions/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}");
+        var req = ApiRequest.Get($"/events/definitions/by-key");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         return await _calls.JsonAsync<M.EventDefinition?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Delete an event definition
     /// Retires every active version and removes the retired versions. Refused with 409 EVENT_IN_FLIGHT while events of the key are buffered or undelivered.
-    /// DELETE /events/definitions/{key} (operationId deleteEventDefinition); permission event.admin; result stored atomically with the state change.
+    /// DELETE /events/definitions/by-key (operationId deleteEventDefinition); permission event.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task DeleteEventDefinitionAsync(string key, string? reason = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/events/definitions/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}");
+        var req = ApiRequest.Delete($"/events/definitions/by-key");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         req.WithQuery("reason", GeneratedCalls.Q(reason));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -150,11 +157,12 @@ public sealed class EventsApi
     /// <summary>
     /// Retire an event definition
     /// Marks every active version RETIRED; an older active version, if any, becomes current. Refused with 409 EVENT_IN_FLIGHT while events of the key are in flight.
-    /// POST /events/definitions/{key}/retire (operationId retireEventDefinition); permission event.admin; result stored atomically with the state change.
+    /// POST /events/definitions/by-key/retire (operationId retireEventDefinition); permission event.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.EventDefinition?> RetireEventDefinitionAsync(string key, M.ReasonRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.EventDefinition?> RetireEventDefinitionAsync(M.ReasonRequest body, string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/events/definitions/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/retire");
+        var req = ApiRequest.Post($"/events/definitions/by-key/retire");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.EventDefinition?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -162,11 +170,12 @@ public sealed class EventsApi
     /// <summary>
     /// Restore an event definition
     /// Re-activates the newest retired version (undo of a retire); 409 NOT_RETIRED when there is none.
-    /// POST /events/definitions/{key}/restore (operationId restoreEventDefinition); permission event.admin; result stored atomically with the state change.
+    /// POST /events/definitions/by-key/restore (operationId restoreEventDefinition); permission event.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.EventDefinition?> RestoreEventDefinitionAsync(string key, M.ReasonRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.EventDefinition?> RestoreEventDefinitionAsync(M.ReasonRequest body, string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/events/definitions/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/restore");
+        var req = ApiRequest.Post($"/events/definitions/by-key/restore");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.EventDefinition?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -174,11 +183,12 @@ public sealed class EventsApi
     /// <summary>
     /// Publish an event
     /// Accepts a CloudEvent on an inbound channel; de-duplicated through the inbox by (tenant, source, id) (R38), then starts (uniqueStart) or correlates (R83).
-    /// POST /events/{channel} (operationId publishEvent); permission event.publish; result stored atomically with the state change.
+    /// POST /events/by-channel (operationId publishEvent); permission event.publish; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.PublishResult?> PublishEventAsync(string channel, M.CloudEvent body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.PublishResult?> PublishEventAsync(M.CloudEvent body, string channel, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/events/{HttpTransport.Seg(GeneratedCalls.Str(channel)!)}");
+        var req = ApiRequest.Post($"/events/by-channel");
+        req.WithQuery("channel", GeneratedCalls.Q(channel));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.PublishResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }

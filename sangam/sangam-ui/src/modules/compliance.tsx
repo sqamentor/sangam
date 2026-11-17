@@ -73,9 +73,9 @@ export const purposes: ScreenDef = {
     // basis code of the tenant's jurisdiction pack (PurposeBindingGuard.java:64-65); owner 2026-11-12 #49: no fixed list in the UI
     // ComplianceDefinePurposeRequest: standardsAttested, active and every data item's sensitive are explicit choices
     // (required Yes / No, no default; the server refuses an omitted one by name), and the version is the server's
-    { id: 'define', label: 'act.definePurpose', method: 'PUT', path: '/compliance/purposes/{code}', fields: purposeFields, check: checkPurpose, hint: 'mod.compliance.purposeHint' },
-    // M-051: the server reads {purposes} only (ComplianceRequests.java:18, ComplianceController.java:106-111); the key is the path
-    { id: 'notice', label: 'act.publishNotice', path: '/compliance/notices/{key}/publish', fields: [f.path(f.text('key', 'fld.noticeKey', true)), f.json('purposes', 'privacy.purposeCodes', true)], showResult: true, noJson: true, hint: 'mod.compliance.noticeHint' },
+    { id: 'define', label: 'act.definePurpose', method: 'PUT', path: '/compliance/purposes/by-code?code={code}', fields: purposeFields, check: checkPurpose, hint: 'mod.compliance.purposeHint' },
+    // M-051: the server reads {purposes} only (ComplianceRequests.java:18, ComplianceController.java:106-111); the key is the query parameter key (decision 393)
+    { id: 'notice', label: 'act.publishNotice', path: '/compliance/notices/by-key/publish?key={key}', fields: [f.path(f.text('key', 'fld.noticeKey', true)), f.json('purposes', 'privacy.purposeCodes', true)], showResult: true, noJson: true, hint: 'mod.compliance.noticeHint' },
   ],
 };
 
@@ -329,7 +329,7 @@ export function contactAct(role: ContactRoleView): Act {
   return {
     id: 'set',
     label: 'act.setContact',
-    path: `/compliance/contacts/${encodeURIComponent(role.code)}`,
+    path: `/compliance/contacts/by-role?role=${encodeURIComponent(role.code)}`,
     fields,
     hint: role.mustBeResident ? 'mod.compliance.residentHint' : undefined,
     check: role.mustBeResident ? (body, t) => (body.resident === true ? undefined : t('mod.compliance.residentRequired')) : undefined,
@@ -506,8 +506,8 @@ export function NoticeView({ notice }: { notice: RenderedNotice }) {
 /**
  * M-033 (admin): the privacy policy as the public sees it (GET /compliance/privacy-policy ?lang, public,
  * ComplianceController.java:114-120; SecurityConfig.java:80-81), a published consent notice by key and version
- * (GET /compliance/notices/{key} ?version&lang, :98-104), and publishing a new notice version from purposes
- * (POST /compliance/notices/{key}/publish {purposes}, compliance.admin, :106-111; ComplianceRequests.java:18). The policy
+ * (GET /compliance/notices/by-key ?key&version&lang, :98-104), and publishing a new notice version from purposes
+ * (POST /compliance/notices/by-key/publish?key= {purposes}, compliance.admin, :106-111; ComplianceRequests.java:18). The policy
  * itself has no edit endpoint: it is rendered from the active purposes, the activity register and the published
  * contacts (ConsentNoticeService.java:198), so it is edited through those.
  */
@@ -519,7 +519,7 @@ export function PrivacyAdmin() {
   const [q, setQ] = useState<{ lang: string } | null>(null);
   const [nq, setNq] = useState<{ key: string; version?: string; lang: string } | null>(null);
   const policy = useAsync((signal) => http.get<RenderedNotice>('/compliance/privacy-policy', { lang: q?.lang || undefined }, signal), [JSON.stringify(q)], !!q);
-  const notice = useAsync((signal) => http.get<RenderedNotice>(`/compliance/notices/${encodeURIComponent(nq?.key ?? '')}`, { version: nq?.version || undefined, lang: nq?.lang || undefined }, signal), [JSON.stringify(nq)], !!nq);
+  const notice = useAsync((signal) => http.get<RenderedNotice>('/compliance/notices/by-key', { key: nq?.key ?? '', version: nq?.version || undefined, lang: nq?.lang || undefined }, signal), [JSON.stringify(nq)], !!nq);
   return (
     <>
       <Section title={t('privacy.policy')}>

@@ -43,7 +43,7 @@
     {
       "id": "sangam.connector.async-serverless",
       "name": "Serverless function, asynchronous",
-      "description": "Starts a function and continues on its callback: the connector adds the callback (endpoint.callback.url, a /events/{channel} inbound webhook) and the correlation key (the operation id) to the request. Model a message catch event after this task correlated on the correlation key.",
+      "description": "Starts a function and continues on its callback: the connector adds the callback (endpoint.callback.url, a /events/by-channel?channel= inbound webhook) and the correlation key (the operation id) to the request. Model a message catch event after this task correlated on the correlation key.",
       "appliesTo": ["bpmn:ServiceTask"],
       "fields": [
         { "name": "type", "binding": "operaton:type", "required": true, "pattern": "external", "default": "external", "choices": ["external"] },

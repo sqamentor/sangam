@@ -217,6 +217,9 @@ class HostSchemaAndPrecedenceTest {
         // decision 385 (3): production needs this environment's name and the other environments' key fingerprints
         m.put("sangam.keys.environment", "prod");
         m.put("sangam.keys.foreign-fingerprints", FOREIGN_FINGERPRINTS.toString());
+        // decision 371 (1) (DEC-371-1): production refuses to start without the trusted proxies (UI and ingress); a
+        // host resolves client addresses the same way as the server, as the server's SG-38 baseline does (48cb179e)
+        m.put("sangam.http.trusted-proxies", "10.0.0.0/8");
         m.put("sangam.security.bootstrap.enabled", "false");
         m.put("sangam.security.dev-token.enabled", "false");
         m.put("sangam.security.platform-issuer", "");
