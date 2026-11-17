@@ -617,3 +617,11 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - Above all, make Sangam end-to-end 100% suitable for IFMS, together with every plug-and-play provision.
   - Use all agents, plus extra ones, to finish as fast as possible, aiming for a stable release today, within a few hours.
   - Nothing is coded or developed below 98% confidence; this raises the floor from 97% to 98%.
+
+- **404 (owner chat 2026-11-17, recommended answers)**:
+  - (1) Shared task lists use a Sangam-owned saved-filter table, limited to the caller's organisation, with its own create and list endpoints.
+  - (2) The organisation admin also gets team.read, alongside supervisor and operator.
+  - (3) PNP-3: keep Sangam's incident when no gateway route matches; IFMS reads incidents through `RoutingIncidents.collect`.
+  - (4) PNP-2: host bean approvals stay exact-name only, in all environments.
+  - (5) PNP-2: each deployment that uses a host-approved bean is also recorded in the class-B audit chain, done now.
+  - Assigned to R8-ux-build for (1) and (2), and to R8-pnp for (3) to (5).
