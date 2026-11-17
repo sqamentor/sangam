@@ -19,6 +19,13 @@
     <serviceTask id="cd_benpos" name="Beneficiary positions at the record date" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOAD</operaton:string></operaton:field><operaton:field name="connector"><operaton:string>depository.benpos</operaton:string></operaton:field><operaton:field name="sampleSize"><operaton:string>3</operaton:string></operaton:field></extensionElements></serviceTask>
     <userTask id="cd_review" name="Review payment outcome before the 30-day limit" operaton:candidateGroups="${csSeat}" operaton:formKey="sangam:sec-cap-corporate-action/review" operaton:dueDate="${paymentDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <serviceTask id="cd_unpaid" name="Move unpaid amounts to the unpaid dividend account (7 days)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>bank.unpaidDividend</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>transfer</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>companyName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>unpaid</operaton:string></operaton:field><operaton:field name="step"><operaton:string>unpaid-dividend</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="cd_unpaid_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="cd_unpaid_sgw" name="Sanctioned?" default="cd_unpaid_sgw_no"></exclusiveGateway>
+    <endEvent id="cd_unpaid_notReleased" name="Not released"></endEvent>
+    <sequenceFlow id="cd_unpaid_sanction_f" sourceRef="cd_unpaid_sanction" targetRef="cd_unpaid_sgw"/>
+    <sequenceFlow id="cd_unpaid_sgw_yes" name="sanctioned" sourceRef="cd_unpaid_sgw" targetRef="cd_unpaid"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="cd_unpaid_sgw_no" name="not sanctioned" sourceRef="cd_unpaid_sgw" targetRef="cd_unpaid_notReleased"/>
+
     <endEvent id="cd_end" name="Dividend closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <sequenceFlow id="sec_cap_dividend_f1" sourceRef="cd_start" targetRef="cd_defaults"/>
     <sequenceFlow id="sec_cap_dividend_f2" sourceRef="cd_defaults" targetRef="cd_intimate"/>
@@ -35,7 +42,7 @@
     <sequenceFlow id="sec_cap_dividend_f13" sourceRef="cd_recordDate" targetRef="cd_benpos"/>
     <sequenceFlow id="sec_cap_dividend_f14" sourceRef="cd_benpos" targetRef="cd_open"/>
     <sequenceFlow id="sec_cap_dividend_f15" name="complete" sourceRef="cd_doneGw" targetRef="cd_review"/>
-    <sequenceFlow id="sec_cap_dividend_f16" sourceRef="cd_review" targetRef="cd_unpaid"/>
+    <sequenceFlow id="sec_cap_dividend_f16" sourceRef="cd_review" targetRef="cd_unpaid_sanction"/>
     <sequenceFlow id="sec_cap_dividend_f17" sourceRef="cd_unpaid" targetRef="cd_end"/>
   </process>
   <bpmndi:BPMNDiagram id="sec_cap_dividend_diagram">
@@ -54,7 +61,7 @@
       <bpmndi:BPMNShape id="cd_doneGw_di" bpmnElement="cd_doneGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="cd_benpos_di" bpmnElement="cd_benpos"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="cd_review_di" bpmnElement="cd_review"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="cd_unpaid_di" bpmnElement="cd_unpaid"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_unpaid_sanction_di" bpmnElement="cd_unpaid_sanction"><dc:Bounds x="2150" y="-100" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="cd_unpaid_sgw_di" bpmnElement="cd_unpaid_sgw" isMarkerVisible="true"><dc:Bounds x="2280" y="-90" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="cd_unpaid_notReleased_di" bpmnElement="cd_unpaid_notReleased"><dc:Bounds x="2287" y="-180" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="cd_unpaid_sanction_f_di" bpmnElement="cd_unpaid_sanction_f"><di:waypoint x="2250" y="-65"/><di:waypoint x="2280" y="-65"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="cd_unpaid_sgw_yes_di" bpmnElement="cd_unpaid_sgw_yes"><di:waypoint x="2305" y="-40"/><di:waypoint x="2305" y="30"/><di:waypoint x="2330" y="30"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="cd_unpaid_sgw_no_di" bpmnElement="cd_unpaid_sgw_no"><di:waypoint x="2305" y="-90"/><di:waypoint x="2305" y="-144"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="cd_unpaid_di" bpmnElement="cd_unpaid"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="cd_end_di" bpmnElement="cd_end"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="sec_cap_dividend_f1_di" bpmnElement="sec_cap_dividend_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_cap_dividend_f2_di" bpmnElement="sec_cap_dividend_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>

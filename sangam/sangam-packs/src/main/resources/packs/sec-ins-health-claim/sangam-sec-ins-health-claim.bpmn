@@ -53,6 +53,13 @@
     <exclusiveGateway id="hc_discharge_breachGw" name="Deemed?" default="sec_ins_health_claim_f47"></exclusiveGateway>
     <exclusiveGateway id="hc_discharge_done" name=""></exclusiveGateway>
     <callActivity id="hc_settle" name="Settle with the hospital (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="hc_settle_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="hc_settle_sgw" name="Sanctioned?" default="hc_settle_sgw_no"></exclusiveGateway>
+    <endEvent id="hc_settle_notReleased" name="Not released"></endEvent>
+    <sequenceFlow id="hc_settle_sanction_f" sourceRef="hc_settle_sanction" targetRef="hc_settle_sgw"/>
+    <sequenceFlow id="hc_settle_sgw_yes" name="sanctioned" sourceRef="hc_settle_sgw" targetRef="hc_settle"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="hc_settle_sgw_no" name="not sanctioned" sourceRef="hc_settle_sgw" targetRef="hc_settle_notReleased"/>
+
     <serviceTask id="hc_insGroup" name="Insured group" operaton:expression="${execution.setVariable('insuredGroup', 'external:'.concat(policyNo))}"></serviceTask>
     <serviceTask id="hc_docs_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_docs</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>30D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
     <userTask id="hc_docs" name="Submit claim documents" operaton:candidateGroups="${insuredGroup}" operaton:formKey="sangam:sec-ins-health-claim/documents" operaton:dueDate="${hc_docsDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
@@ -133,7 +140,7 @@
     <sequenceFlow id="sec_ins_health_claim_f48" sourceRef="hc_discharge_slaPlan" targetRef="hc_discharge"/>
     <sequenceFlow id="sec_ins_health_claim_f49" sourceRef="hc_discharge" targetRef="hc_discharge_done"/>
     <sequenceFlow id="sec_ins_health_claim_f50" sourceRef="hc_dis" targetRef="hc_discharge_slaPlan"/>
-    <sequenceFlow id="sec_ins_health_claim_f51" sourceRef="hc_discharge_done" targetRef="hc_settle"/>
+    <sequenceFlow id="sec_ins_health_claim_f51" sourceRef="hc_discharge_done" targetRef="hc_settle_sanction"/>
     <sequenceFlow id="sec_ins_health_claim_f52" name="reimbursement" sourceRef="hc_netGw" targetRef="hc_insGroup"/>
     <sequenceFlow id="sec_ins_health_claim_f53" sourceRef="hc_docs_warn" targetRef="hc_docs_warnNotify"/>
     <sequenceFlow id="sec_ins_health_claim_f54" sourceRef="hc_docs_warnNotify" targetRef="hc_docs_warnEnd"/>
@@ -154,7 +161,7 @@
     <sequenceFlow id="sec_ins_health_claim_f69" sourceRef="hc_assess" targetRef="hc_assess_done"/>
     <sequenceFlow id="sec_ins_health_claim_f70" sourceRef="hc_docs_done" targetRef="hc_assess_slaPlan"/>
     <sequenceFlow id="sec_ins_health_claim_f71" sourceRef="hc_assess_done" targetRef="hc_reimbGw"/>
-    <sequenceFlow id="sec_ins_health_claim_f72" name="approve" sourceRef="hc_reimbGw" targetRef="hc_settle"><conditionExpression xsi:type="tFormalExpression">${reimbDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_health_claim_f72" name="approve" sourceRef="hc_reimbGw" targetRef="hc_settle_sanction"><conditionExpression xsi:type="tFormalExpression">${reimbDecision == 'approve'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_ins_health_claim_f73" name="reject" sourceRef="hc_reimbGw" targetRef="hc_rj_reject"/>
     <sequenceFlow id="sec_ins_health_claim_f74" name="DONE" sourceRef="hc_payGw" targetRef="hc_end"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_ins_health_claim_f75" name="otherwise" sourceRef="hc_payGw" targetRef="hc_payFailed"/>
@@ -224,7 +231,7 @@
       <bpmndi:BPMNShape id="hc_discharge_breachAct_di" bpmnElement="hc_discharge_breachAct"><dc:Bounds x="2990" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_discharge_breachGw_di" bpmnElement="hc_discharge_breachGw"><dc:Bounds x="3180" y="295" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_discharge_done_di" bpmnElement="hc_discharge_done"><dc:Bounds x="3345" y="295" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hc_settle_di" bpmnElement="hc_settle"><dc:Bounds x="3485" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_settle_sanction_di" bpmnElement="hc_settle_sanction"><dc:Bounds x="3305" y="-100" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="hc_settle_sgw_di" bpmnElement="hc_settle_sgw" isMarkerVisible="true"><dc:Bounds x="3435" y="-90" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="hc_settle_notReleased_di" bpmnElement="hc_settle_notReleased"><dc:Bounds x="3442" y="-180" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="hc_settle_sanction_f_di" bpmnElement="hc_settle_sanction_f"><di:waypoint x="3405" y="-65"/><di:waypoint x="3435" y="-65"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="hc_settle_sgw_yes_di" bpmnElement="hc_settle_sgw_yes"><di:waypoint x="3460" y="-40"/><di:waypoint x="3460" y="30"/><di:waypoint x="3485" y="30"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="hc_settle_sgw_no_di" bpmnElement="hc_settle_sgw_no"><di:waypoint x="3460" y="-90"/><di:waypoint x="3460" y="-144"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="hc_settle_di" bpmnElement="hc_settle"><dc:Bounds x="3485" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_insGroup_di" bpmnElement="hc_insGroup"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_docs_slaPlan_di" bpmnElement="hc_docs_slaPlan"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_docs_di" bpmnElement="hc_docs"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>

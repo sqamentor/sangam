@@ -51,6 +51,13 @@
     <intermediateCatchEvent id="ip_flCancel" name="Free-look cancellation"><messageEventDefinition messageRef="msg_sangam_ins_freeLookCancel"/></intermediateCatchEvent>
     <intermediateCatchEvent id="ip_flEnd" name="Free-look over"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${freeLookDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
     <serviceTask id="ip_refund" name="Refund premium less risk premium, medicals and stamp duty" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>pg.refund</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>refund</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerName,premiumAmount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>flRefund</operaton:string></operaton:field><operaton:field name="step"><operaton:string>free-look-refund</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ip_refund_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="ip_refund_sgw" name="Sanctioned?" default="ip_refund_sgw_no"></exclusiveGateway>
+    <endEvent id="ip_refund_notReleased" name="Not released"></endEvent>
+    <sequenceFlow id="ip_refund_sanction_f" sourceRef="ip_refund_sanction" targetRef="ip_refund_sgw"/>
+    <sequenceFlow id="ip_refund_sgw_yes" name="sanctioned" sourceRef="ip_refund_sgw" targetRef="ip_refund"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ip_refund_sgw_no" name="not sanctioned" sourceRef="ip_refund_sgw" targetRef="ip_refund_notReleased"/>
+
     <endEvent id="ip_endFreeLook" name="Cancelled in free-look"></endEvent>
     <endEvent id="ip_end" name="Policy in force"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <boundaryEvent id="ip_uw_warn" name="SLA warning (75%)" attachedToRef="ip_uw" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ip_uwWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
@@ -105,7 +112,7 @@
     <sequenceFlow id="sec_ins_proposal_f46" sourceRef="ip_freeLook" targetRef="ip_flWait"/>
     <sequenceFlow id="sec_ins_proposal_f47" sourceRef="ip_flWait" targetRef="ip_flCancel"/>
     <sequenceFlow id="sec_ins_proposal_f48" sourceRef="ip_flWait" targetRef="ip_flEnd"/>
-    <sequenceFlow id="sec_ins_proposal_f49" sourceRef="ip_flCancel" targetRef="ip_refund"/>
+    <sequenceFlow id="sec_ins_proposal_f49" sourceRef="ip_flCancel" targetRef="ip_refund_sanction"/>
     <sequenceFlow id="sec_ins_proposal_f50" sourceRef="ip_refund" targetRef="ip_endFreeLook"/>
     <sequenceFlow id="sec_ins_proposal_f51" sourceRef="ip_flEnd" targetRef="ip_end"/>
     <subProcess id="ip_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
@@ -171,7 +178,7 @@
       <bpmndi:BPMNShape id="ip_flWait_di" bpmnElement="ip_flWait"><dc:Bounds x="4335" y="170" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ip_flCancel_di" bpmnElement="ip_flCancel"><dc:Bounds x="4507" y="302" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ip_flEnd_di" bpmnElement="ip_flEnd"><dc:Bounds x="4507" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="ip_refund_di" bpmnElement="ip_refund"><dc:Bounds x="4640" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_refund_sanction_di" bpmnElement="ip_refund_sanction"><dc:Bounds x="4460" y="150" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="ip_refund_sgw_di" bpmnElement="ip_refund_sgw" isMarkerVisible="true"><dc:Bounds x="4590" y="160" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="ip_refund_notReleased_di" bpmnElement="ip_refund_notReleased"><dc:Bounds x="4597" y="70" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="ip_refund_sanction_f_di" bpmnElement="ip_refund_sanction_f"><di:waypoint x="4560" y="185"/><di:waypoint x="4590" y="185"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="ip_refund_sgw_yes_di" bpmnElement="ip_refund_sgw_yes"><di:waypoint x="4615" y="210"/><di:waypoint x="4615" y="280"/><di:waypoint x="4640" y="280"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="ip_refund_sgw_no_di" bpmnElement="ip_refund_sgw_no"><di:waypoint x="4615" y="160"/><di:waypoint x="4615" y="106"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="ip_refund_di" bpmnElement="ip_refund"><dc:Bounds x="4640" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ip_endFreeLook_di" bpmnElement="ip_endFreeLook"><dc:Bounds x="4837" y="302" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ip_end_di" bpmnElement="ip_end"><dc:Bounds x="4672" y="177" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ip_uw_warn_di" bpmnElement="ip_uw_warn"><dc:Bounds x="1678" y="342" width="36" height="36"/></bpmndi:BPMNShape>

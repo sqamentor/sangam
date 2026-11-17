@@ -10,6 +10,13 @@
     <businessRuleTask id="u14_match" name="Match with tolerances (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>up14-tolerance</operaton:string></operaton:field></extensionElements></businessRuleTask>
     <exclusiveGateway id="u14_gw" name="Result?" default="up14_three_way_match_f5"></exclusiveGateway>
     <callActivity id="u14_post" name="Post (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="u14_post_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="u14_post_sgw" name="Sanctioned?" default="u14_post_sgw_no"></exclusiveGateway>
+    <endEvent id="u14_post_notReleased" name="Not released"></endEvent>
+    <sequenceFlow id="u14_post_sanction_f" sourceRef="u14_post_sanction" targetRef="u14_post_sgw"/>
+    <sequenceFlow id="u14_post_sgw_yes" name="sanctioned" sourceRef="u14_post_sgw" targetRef="u14_post"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="u14_post_sgw_no" name="not sanctioned" sourceRef="u14_post_sgw" targetRef="u14_post_notReleased"/>
+
     <userTask id="u14_exception" name="Resolve match exception" operaton:candidateGroups="${apSeat}" operaton:formKey="sangam:up14-three-way-match/exception"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>exceptionDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
     <exclusiveGateway id="u14_eg" name="" default="up14_three_way_match_f11"></exclusiveGateway>
     <serviceTask id="u14_ask" name="Ask supplier to clarify" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>supplier-clarification</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>supplierName</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -19,10 +26,10 @@
     <sequenceFlow id="up14_three_way_match_f1" sourceRef="u14_start" targetRef="u14_defaults"/>
     <sequenceFlow id="up14_three_way_match_f2" sourceRef="u14_defaults" targetRef="u14_match"/>
     <sequenceFlow id="up14_three_way_match_f3" sourceRef="u14_match" targetRef="u14_gw"/>
-    <sequenceFlow id="up14_three_way_match_f4" name="match / within tolerance" sourceRef="u14_gw" targetRef="u14_post"><conditionExpression xsi:type="tFormalExpression">${matchResult != 'EXCEPTION'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up14_three_way_match_f4" name="match / within tolerance" sourceRef="u14_gw" targetRef="u14_post_sanction"><conditionExpression xsi:type="tFormalExpression">${matchResult != 'EXCEPTION'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="up14_three_way_match_f5" name="exception" sourceRef="u14_gw" targetRef="u14_exception"/>
     <sequenceFlow id="up14_three_way_match_f6" sourceRef="u14_exception" targetRef="u14_eg"/>
-    <sequenceFlow id="up14_three_way_match_f7" name="approve" sourceRef="u14_eg" targetRef="u14_post"><conditionExpression xsi:type="tFormalExpression">${exceptionDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up14_three_way_match_f7" name="approve" sourceRef="u14_eg" targetRef="u14_post_sanction"><conditionExpression xsi:type="tFormalExpression">${exceptionDecision == 'approve'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="up14_three_way_match_f8" name="clarify" sourceRef="u14_eg" targetRef="u14_ask"><conditionExpression xsi:type="tFormalExpression">${exceptionDecision == 'clarify'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="up14_three_way_match_f9" sourceRef="u14_ask" targetRef="u14_response"/>
     <sequenceFlow id="up14_three_way_match_f10" sourceRef="u14_response" targetRef="u14_match"/>
@@ -35,7 +42,7 @@
       <bpmndi:BPMNShape id="u14_defaults_di" bpmnElement="u14_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u14_match_di" bpmnElement="u14_match"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u14_gw_di" bpmnElement="u14_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="u14_post_di" bpmnElement="u14_post"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u14_post_sanction_di" bpmnElement="u14_post_sanction"><dc:Bounds x="830" y="150" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="u14_post_sgw_di" bpmnElement="u14_post_sgw" isMarkerVisible="true"><dc:Bounds x="960" y="160" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="u14_post_notReleased_di" bpmnElement="u14_post_notReleased"><dc:Bounds x="967" y="70" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="u14_post_sanction_f_di" bpmnElement="u14_post_sanction_f"><di:waypoint x="930" y="185"/><di:waypoint x="960" y="185"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="u14_post_sgw_yes_di" bpmnElement="u14_post_sgw_yes"><di:waypoint x="985" y="210"/><di:waypoint x="985" y="280"/><di:waypoint x="1010" y="280"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="u14_post_sgw_no_di" bpmnElement="u14_post_sgw_no"><di:waypoint x="985" y="160"/><di:waypoint x="985" y="106"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="u14_post_di" bpmnElement="u14_post"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u14_exception_di" bpmnElement="u14_exception"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u14_eg_di" bpmnElement="u14_eg"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u14_ask_di" bpmnElement="u14_ask"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
