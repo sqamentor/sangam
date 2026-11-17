@@ -100,6 +100,12 @@ public final class Permissions {
     public static final String COMPLIANCE_READ = "compliance.read";
     public static final String COMPLIANCE_MODIFY = "compliance.modify";
     public static final String COMPLIANCE_ADMIN = "compliance.admin";
+    /**
+     * Owner decision 401: read the team workload of the caller's tenant (GET /team/task-groups). Tenant-scoped,
+     * read-only; held by {@link #GROUP_SUPERVISOR} and {@link #GROUP_OPERATOR} (who already sees every task of the
+     * tenant, OperatonWorkspaceAdapter#involved), and by {@code sangam-admin} through {@code *}.
+     */
+    public static final String TEAM_READ = "team.read";
 
     /** Data protection officer / grievance officer: all compliance permissions plus audit read. */
     public static final String GROUP_DPO = "sangam-dpo";
@@ -138,6 +144,8 @@ public final class Permissions {
     public static final String GROUP_SYSTEM = "sangam-system";
     /** Engine administrators: the unchanged Operaton REST API ({@code /engine-rest/**}) and nothing else extra. */
     public static final String GROUP_ENGINE_ADMIN = "sangam-engine-admin";
+    /** Owner decision 401: a supervisor of the tenant's work: the team workload ({@link #TEAM_READ}) and nothing else extra. */
+    public static final String GROUP_SUPERVISOR = "sangam-supervisor";
 
     /**
      * The only groups admitted to {@code /engine-rest/**} (server gate, {@code SecurityConfig}). The workspace
@@ -163,7 +171,8 @@ public final class Permissions {
                     PROCESS_READ, DEPLOYMENT_READ)),
             Map.entry(GROUP_OPERATOR, union(union(USER, MODULE_WRITE), Set.of(OPS_READ, OPS_WRITE, RECON_RESOLVE, BATCH_ADMIN,
                     PROCESS_DELETE, PROCESS_MODIFY, HISTORY_READ, ANALYTICS_READ, ANALYTICS_ADMIN, DEPLOYMENT_READ,
-                    DEBUG_USE, COMPLIANCE_READ, COMPLIANCE_MODIFY))),
+                    DEBUG_USE, COMPLIANCE_READ, COMPLIANCE_MODIFY, TEAM_READ))),
+            Map.entry(GROUP_SUPERVISOR, Set.of(TEAM_READ)),
             Map.entry(GROUP_AUDITOR, union(MODULE_READ, Set.of(AUDIT_READ, AUDIT_EXPORT, HISTORY_READ, ANALYTICS_READ, PROCESS_READ,
                     TASK_READ, CASE_READ, DOCUMENT_READ, PACKAGE_READ, DOCUMENT_LEGAL_HOLD, COMPLIANCE_READ))),
             Map.entry(GROUP_TENANT_ADMIN, union(union(union(MODULE_READ, MODULE_WRITE), MODULE_ADMIN), Set.of(ADMIN_READ, ADMIN_WRITE, POLICY_ADMIN, TENANT_ADMIN, EVENT_ADMIN,

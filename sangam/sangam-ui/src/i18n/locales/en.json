@@ -5059,5 +5059,16 @@
       "tamper": "Run a tamper check",
       "export": "Export evidence"
     }
+  },
+  "team": {
+    "totals": "Totals",
+    "open": "Open tasks",
+    "assigned": "Picked up",
+    "unassigned": "Not picked up",
+    "withoutGroup": "Not offered to any team list",
+    "byGroup": "Not picked up, by team list",
+    "group": "Team list",
+    "unassignedTasks": "Tasks not picked up",
+    "noGroups": "No team list has tasks waiting to be picked up."
   }
 }

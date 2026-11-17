@@ -122,6 +122,12 @@ export const api = {
       http.post<T.Assignment>('/me/leave-requests', body),
   },
 
+  // ------------------------------------------------------------ team (decision 401)
+  team: {
+    /** Open, assigned and unassigned tasks of the caller's organisation, and unassigned tasks per team list. */
+    taskGroups: () => http.get<T.TeamTaskGroupReport>('/team/task-groups'),
+  },
+
   // ------------------------------------------------------------ tasks
   tasks: {
     /**

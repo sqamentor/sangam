@@ -1330,3 +1330,12 @@ export interface Notification {
   category: 'GOVERNMENT_MESSAGE' | 'TASK' | 'SYSTEM';
   link?: string;
 }
+
+/** GET /team/task-groups (decision 401, permission team.read): counts of the caller's own organisation. */
+export interface TeamTaskGroupReport {
+  open: number;
+  assigned: number;
+  unassigned: number;
+  withoutCandidateGroup: number;
+  groups: { group: string; unassignedTasks: number }[];
+}

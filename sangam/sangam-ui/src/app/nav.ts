@@ -8,7 +8,7 @@
  * guard in App.tsx, so the menu never offers a screen that the guard would refuse.
  */
 import type { Me, Role } from '../api/types';
-import { ROUTE_ACCESS, canAccess, type Access } from './access';
+import { ROUTE_ACCESS, TEAM_READ, canAccess, type Access } from './access';
 
 export interface NavItem {
   to: string;
@@ -82,8 +82,9 @@ export const NAV: NavArea[] = [
           e('work', 'tasks', '/tasks'),
           e('work', 'start', '/start'),
           e('work', 'requests', '/cases'),
-          // Engine task reports (/engine-rest/task/...) are open to the platform operator only today (UX-SPEC Q4).
-          e('work', 'team', '/team', { access: { roles: ['PLATFORM_OPERATOR'], perms: [] } }),
+          // Decision 401: a Sangam read limited to the caller's organisation, for holders of team.read.
+          e('work', 'team', '/team', { access: TEAM_READ }),
+          // Saved filters live only in the engine, with no organisation of their own: platform screens still (401 open item).
           e('work', 'taskLists', '/tasks/filters', { access: { roles: ['PLATFORM_OPERATOR', 'PLATFORM_ADMIN'], perms: [] } }),
           e('work', 'field', '/field'),
           e('work', 'away', '/my/delegations'),
