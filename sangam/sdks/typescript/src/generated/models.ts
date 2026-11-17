@@ -3535,7 +3535,7 @@ export interface ComplianceConsentArtefact {
  * Schema `ComplianceContact`.
  */
 export interface ComplianceContact {
-  /** Taken from the path on POST /compliance/contacts/{role}. */
+  /** Taken from the query parameter role on POST /compliance/contacts/by-role. */
   role?: string;
   name: string;
   designation?: string;
@@ -3562,7 +3562,7 @@ export interface ComplianceDataItemRequest {
 }
 
 /**
- * A processing purpose to define or version (PUT /compliance/purposes/{code}). standardsAttested, active and every data item's sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version is assigned by the server (previous + 1). Durations are ISO-8601.
+ * A processing purpose to define or version (PUT /compliance/purposes/by-code?code=). standardsAttested, active and every data item's sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version is assigned by the server (previous + 1). Durations are ISO-8601.
  *
  * Schema `ComplianceDefinePurposeRequest`.
  */
@@ -6329,8 +6329,8 @@ export interface Group {
  */
 export interface HandlerParameter {
   name?: string;
-  /**  One of: string, number, integer, boolean, date, date-time, decimal, object, array. */
-  type?: 'string' | 'number' | 'integer' | 'boolean' | 'date' | 'date-time' | 'decimal' | 'object' | 'array';
+  /** The model's sangam:argument type; any accepts every JSON value One of: string, number, integer, boolean, date, date-time, decimal, object, array, any. */
+  type?: 'string' | 'number' | 'integer' | 'boolean' | 'date' | 'date-time' | 'decimal' | 'object' | 'array' | 'any';
   required?: boolean;
   description?: string;
 }

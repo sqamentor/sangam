@@ -56,24 +56,24 @@ public class EventFormController {
     public ResponseEntity<EventPort.Channel> createChannel(RequestContext ctx, @RequestBody EventPort.Channel body) {
         permissions.require(ctx, Permissions.EVENT_ADMIN);
         EventPort.Channel c = events.createChannel(ctx, body);
-        return Lists.created("/api/v1/events/channels/" + c.key(), c.key(), c);
+        return Lists.created("/api/v1/events/channels/by-key?key=" + java.net.URLEncoder.encode(c.key(), java.nio.charset.StandardCharsets.UTF_8), c.key(), c);
     }
 
-    @GetMapping("/events/channels/{key}")
-    public EventPort.Channel channel(RequestContext ctx, @PathVariable String key) {
+    @GetMapping("/events/channels/by-key")
+    public EventPort.Channel channel(RequestContext ctx, @RequestParam("key") String key) {
         permissions.require(ctx, Permissions.EVENT_ADMIN);
         return events.channel(ctx, key);
     }
 
-    @PutMapping("/events/channels/{key}")
-    public ResponseEntity<EventPort.Channel> updateChannel(RequestContext ctx, @PathVariable String key,
+    @PutMapping("/events/channels/by-key")
+    public ResponseEntity<EventPort.Channel> updateChannel(RequestContext ctx, @RequestParam("key") String key,
                                                            @RequestBody EventPort.Channel body) {
         permissions.require(ctx, Permissions.EVENT_ADMIN);
         return Lists.okRef(key, events.updateChannel(ctx, key, body));
     }
 
-    @DeleteMapping("/events/channels/{key}")
-    public ResponseEntity<Void> deleteChannel(RequestContext ctx, @PathVariable String key,
+    @DeleteMapping("/events/channels/by-key")
+    public ResponseEntity<Void> deleteChannel(RequestContext ctx, @RequestParam("key") String key,
                                               @RequestParam(required = false) String reason) {
         permissions.require(ctx, Permissions.EVENT_ADMIN);
         ProcessController.requireReason(reason);
@@ -85,32 +85,32 @@ public class EventFormController {
     public record ReasonBody(String reason) {
     }
 
-    @PostMapping("/events/channels/{key}/retire")
-    public ResponseEntity<EventPort.Channel> retireChannel(RequestContext ctx, @PathVariable String key,
+    @PostMapping("/events/channels/by-key/retire")
+    public ResponseEntity<EventPort.Channel> retireChannel(RequestContext ctx, @RequestParam("key") String key,
                                                            @RequestBody ReasonBody body) {
         permissions.require(ctx, Permissions.EVENT_ADMIN);
         ProcessController.requireReason(body.reason());
         return Lists.okRef(key, events.retireChannel(ctx, key, body.reason()));
     }
 
-    @PostMapping("/events/channels/{key}/restore")
-    public ResponseEntity<EventPort.Channel> restoreChannel(RequestContext ctx, @PathVariable String key,
+    @PostMapping("/events/channels/by-key/restore")
+    public ResponseEntity<EventPort.Channel> restoreChannel(RequestContext ctx, @RequestParam("key") String key,
                                                             @RequestBody ReasonBody body) {
         permissions.require(ctx, Permissions.EVENT_ADMIN);
         ProcessController.requireReason(body.reason());
         return Lists.okRef(key, events.restoreChannel(ctx, key, body.reason()));
     }
 
-    @PostMapping("/events/definitions/{key}/retire")
-    public ResponseEntity<EventPort.EventDefinition> retireDefinition(RequestContext ctx, @PathVariable String key,
+    @PostMapping("/events/definitions/by-key/retire")
+    public ResponseEntity<EventPort.EventDefinition> retireDefinition(RequestContext ctx, @RequestParam("key") String key,
                                                                       @RequestBody ReasonBody body) {
         permissions.require(ctx, Permissions.EVENT_ADMIN);
         ProcessController.requireReason(body.reason());
         return Lists.okRef(key, events.retireDefinition(ctx, key, body.reason()));
     }
 
-    @PostMapping("/events/definitions/{key}/restore")
-    public ResponseEntity<EventPort.EventDefinition> restoreDefinition(RequestContext ctx, @PathVariable String key,
+    @PostMapping("/events/definitions/by-key/restore")
+    public ResponseEntity<EventPort.EventDefinition> restoreDefinition(RequestContext ctx, @RequestParam("key") String key,
                                                                        @RequestBody ReasonBody body) {
         permissions.require(ctx, Permissions.EVENT_ADMIN);
         ProcessController.requireReason(body.reason());
@@ -129,17 +129,17 @@ public class EventFormController {
                                                                       @RequestBody EventPort.EventDefinition body) {
         permissions.require(ctx, Permissions.EVENT_ADMIN);
         EventPort.EventDefinition d = events.createDefinition(ctx, body);
-        return Lists.created("/api/v1/events/definitions/" + d.key(), d.key(), d);
+        return Lists.created("/api/v1/events/definitions/by-key?key=" + java.net.URLEncoder.encode(d.key(), java.nio.charset.StandardCharsets.UTF_8), d.key(), d);
     }
 
-    @GetMapping("/events/definitions/{key}")
-    public EventPort.EventDefinition definition(RequestContext ctx, @PathVariable String key) {
+    @GetMapping("/events/definitions/by-key")
+    public EventPort.EventDefinition definition(RequestContext ctx, @RequestParam("key") String key) {
         permissions.require(ctx, Permissions.EVENT_ADMIN);
         return events.definition(ctx, key);
     }
 
-    @DeleteMapping("/events/definitions/{key}")
-    public ResponseEntity<Void> deleteDefinition(RequestContext ctx, @PathVariable String key,
+    @DeleteMapping("/events/definitions/by-key")
+    public ResponseEntity<Void> deleteDefinition(RequestContext ctx, @RequestParam("key") String key,
                                                  @RequestParam(required = false) String reason) {
         permissions.require(ctx, Permissions.EVENT_ADMIN);
         ProcessController.requireReason(reason);
@@ -147,8 +147,8 @@ public class EventFormController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping(value = "/events/{channel}", consumes = {"application/cloudevents+json", "application/json"})
-    public ResponseEntity<EventPort.PublishResult> publish(RequestContext ctx, @PathVariable String channel,
+    @PostMapping(value = "/events/by-channel", consumes = {"application/cloudevents+json", "application/json"})
+    public ResponseEntity<EventPort.PublishResult> publish(RequestContext ctx, @RequestParam("channel") String channel,
                                                            @RequestBody EventPort.CloudEvent body) {
         permissions.require(ctx, Permissions.EVENT_PUBLISH);
         EventPort.PublishResult r = events.publish(ctx, channel, body);
@@ -216,15 +216,15 @@ public class EventFormController {
      * CloudEvents 1.0 abuse-protection handshake of an inbound Event Grid channel. Public route (SecurityConfig): the
      * channel's authentication is checked by the port before anything else; off unless the server enables Event Grid.
      */
-    @RequestMapping(path = "/hooks/eventgrid/{tenant}/{channel}", method = RequestMethod.OPTIONS)
-    public ResponseEntity<String> eventGridHandshake(@PathVariable String tenant, @PathVariable String channel,
+    @RequestMapping(path = "/hooks/eventgrid/{tenant}/by-channel", method = RequestMethod.OPTIONS)
+    public ResponseEntity<String> eventGridHandshake(@PathVariable String tenant, @RequestParam("channel") String channel,
                                                      HttpServletRequest request) {
         return answer(events.eventGridHook("OPTIONS", tenant, channel, headers(request), query(request), null));
     }
 
     /** An Event Grid delivery (CloudEvents single or batch, or the Event Grid schema). */
-    @PostMapping("/hooks/eventgrid/{tenant}/{channel}")
-    public ResponseEntity<String> eventGridDelivery(@PathVariable String tenant, @PathVariable String channel,
+    @PostMapping("/hooks/eventgrid/{tenant}/by-channel")
+    public ResponseEntity<String> eventGridDelivery(@PathVariable String tenant, @RequestParam("channel") String channel,
                                                     @RequestBody(required = false) String body,
                                                     HttpServletRequest request) {
         return answer(events.eventGridHook("POST", tenant, channel, headers(request), query(request), body));

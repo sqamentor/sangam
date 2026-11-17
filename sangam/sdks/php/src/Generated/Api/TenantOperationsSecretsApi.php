@@ -39,12 +39,14 @@ final class TenantOperationsSecretsApi
      *
      * Encrypted at rest; write-only.
      *
-     * PUT /ops-admin/secrets/{ref} (operationId opsPutSecret); permission ops.tenant.admin; result stored atomically with the state change.
+     * PUT /ops-admin/secrets/by-ref (operationId opsPutSecret); permission ops.tenant.admin; result stored atomically with the state change.
      * @param Model\OpsSecret|array $body request body
+     * @param string $ref query ref
      */
-    public function opsPutSecret(string $ref, Model\OpsSecret|array $body, ?RequestOptions $options = null): void
+    public function opsPutSecret(Model\OpsSecret|array $body, string $ref, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::put('/ops-admin/secrets/' . HttpTransport::seg((string) $ref));
+        $req = ApiRequest::put('/ops-admin/secrets/by-ref');
+        $req->query('ref', $ref);
         if ($body !== null) {
             $req->body($body);
         }
@@ -56,11 +58,13 @@ final class TenantOperationsSecretsApi
      *
      * Removes the secret.
      *
-     * DELETE /ops-admin/secrets/{ref} (operationId opsDeleteSecret); permission ops.tenant.admin; result stored atomically with the state change.
+     * DELETE /ops-admin/secrets/by-ref (operationId opsDeleteSecret); permission ops.tenant.admin; result stored atomically with the state change.
+     * @param string $ref query ref
      */
     public function opsDeleteSecret(string $ref, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/ops-admin/secrets/' . HttpTransport::seg((string) $ref));
+        $req = ApiRequest::delete('/ops-admin/secrets/by-ref');
+        $req->query('ref', $ref);
         $this->calls->none($req, $options);
     }
 

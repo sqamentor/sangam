@@ -121,6 +121,6 @@ final class ProcessesApi extends ApiSupport
     /** @return array<string, mixed> CaseInstance */
     public function getCase(string $caseInstanceId): array
     {
-        return (array) $this->call(ApiRequest::get('/case-instances/' . self::seg($caseInstanceId)));
+        return (array) $this->call(ApiRequest::get('/case-instances/by-id')->query('id', $caseInstanceId));
     }
 }

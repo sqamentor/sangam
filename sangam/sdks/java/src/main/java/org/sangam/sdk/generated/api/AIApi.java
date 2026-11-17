@@ -186,13 +186,14 @@ public final class AIApi {
      *
      * <p>Starts a BUILDING version.
      *
-     * <p>{@code POST /ai/knowledge-bases/{kb}/versions} (operationId {@code aiKbNewVersion}); permission {@code ai.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param kb path parameter {@code kb}
+     * <p>{@code POST /ai/knowledge-bases/by-kb/versions} (operationId {@code aiKbNewVersion}); permission {@code ai.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param kb query parameter {@code kb}. Knowledge base key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public AiKbVersion aiKbNewVersion(String kb, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ai/knowledge-bases/" + HttpTransport.seg(String.valueOf(kb)) + "/versions");
+        ApiRequest req = ApiRequest.post("/ai/knowledge-bases/by-kb/versions");
+        req.query("kb", kb);
         return call.json(req, options, R_aiKbNewVersion);
     }
 
@@ -201,16 +202,17 @@ public final class AIApi {
      *
      * <p>Only a BUILDING version accepts documents.
      *
-     * <p>{@code POST /ai/knowledge-bases/{kb}/versions/{version}/documents} (operationId {@code aiKbIngest}); permission {@code ai.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param kb path parameter {@code kb}
+     * <p>{@code POST /ai/knowledge-bases/by-kb/versions/{version}/documents} (operationId {@code aiKbIngest}); permission {@code ai.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param version path parameter {@code version}
      * @param body request body
+     * @param kb query parameter {@code kb}. Knowledge base key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public AiIngestResult aiKbIngest(String kb, String version, AiIngest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ai/knowledge-bases/" + HttpTransport.seg(String.valueOf(kb)) + "/versions/" + HttpTransport.seg(String.valueOf(version)) + "/documents");
+    public AiIngestResult aiKbIngest(String version, AiIngest body, String kb, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ai/knowledge-bases/by-kb/versions/" + HttpTransport.seg(String.valueOf(version)) + "/documents");
         req.body(body);
+        req.query("kb", kb);
         return call.json(req, options, R_aiKbIngest);
     }
 
@@ -219,13 +221,14 @@ public final class AIApi {
      *
      * <p>Makes the version the searched one.
      *
-     * <p>{@code POST /ai/knowledge-bases/{kb}/versions/{version}/activate} (operationId {@code aiKbActivate}); permission {@code ai.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param kb path parameter {@code kb}
+     * <p>{@code POST /ai/knowledge-bases/by-kb/versions/{version}/activate} (operationId {@code aiKbActivate}); permission {@code ai.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param version path parameter {@code version}
+     * @param kb query parameter {@code kb}. Knowledge base key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void aiKbActivate(String kb, String version, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ai/knowledge-bases/" + HttpTransport.seg(String.valueOf(kb)) + "/versions/" + HttpTransport.seg(String.valueOf(version)) + "/activate");
+    public void aiKbActivate(String version, String kb, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ai/knowledge-bases/by-kb/versions/" + HttpTransport.seg(String.valueOf(version)) + "/activate");
+        req.query("kb", kb);
         call.none(req, options);
     }
 
@@ -234,15 +237,16 @@ public final class AIApi {
      *
      * <p>Results are filtered by what the caller may read.
      *
-     * <p>{@code POST /ai/knowledge-bases/{kb}/search} (operationId {@code aiKbSearch}); permission {@code ai.use}.
-     * @param kb path parameter {@code kb}
+     * <p>{@code POST /ai/knowledge-bases/by-kb/search} (operationId {@code aiKbSearch}); permission {@code ai.use}.
      * @param body request body
+     * @param kb query parameter {@code kb}. Knowledge base key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.List<AiKbHit> aiKbSearch(String kb, AiKbSearch body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ai/knowledge-bases/" + HttpTransport.seg(String.valueOf(kb)) + "/search");
+    public java.util.List<AiKbHit> aiKbSearch(AiKbSearch body, String kb, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ai/knowledge-bases/by-kb/search");
         req.body(body);
+        req.query("kb", kb);
         return call.json(req, options, R_aiKbSearch);
     }
 
@@ -251,16 +255,17 @@ public final class AIApi {
      *
      * <p>M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.
      *
-     * <p>{@code POST /ai/knowledge-bases/{kb}/versions/{version}/ocr} (operationId {@code aiKbOcr}); permission {@code ai.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param kb path parameter {@code kb}
+     * <p>{@code POST /ai/knowledge-bases/by-kb/versions/{version}/ocr} (operationId {@code aiKbOcr}); permission {@code ai.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param version path parameter {@code version}
      * @param body request body (multipart parts by name: FilePart or byte[] values are files, a list repeats the part)
+     * @param kb query parameter {@code kb}. Knowledge base key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
-    public AiOcrTranscript aiKbOcr(String kb, String version, java.util.Map<String, Object> body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ai/knowledge-bases/" + HttpTransport.seg(String.valueOf(kb)) + "/versions/" + HttpTransport.seg(String.valueOf(version)) + "/ocr");
+    public AiOcrTranscript aiKbOcr(String version, java.util.Map<String, Object> body, String kb, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ai/knowledge-bases/by-kb/versions/" + HttpTransport.seg(String.valueOf(version)) + "/ocr");
         GeneratedCalls.multipart(req, body, options);
+        req.query("kb", kb);
         return call.json(req, options, R_aiKbOcr);
     }
 
@@ -532,13 +537,14 @@ public final class AIApi {
      *
      * <p>Card of a configured inbound agent of the tenant.
      *
-     * <p>{@code GET /ai/a2a/{agent}/card} (operationId {@code aiA2aCard}); permission {@code ai.use}.
-     * @param agent path parameter {@code agent}
+     * <p>{@code GET /ai/a2a/by-agent/card} (operationId {@code aiA2aCard}); permission {@code ai.use}.
+     * @param agent query parameter {@code agent}. Inbound agent key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> aiA2aCard(String agent, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ai/a2a/" + HttpTransport.seg(String.valueOf(agent)) + "/card");
+        ApiRequest req = ApiRequest.get("/ai/a2a/by-agent/card");
+        req.query("agent", agent);
         return call.json(req, options, R_aiA2aCard);
     }
 
@@ -547,16 +553,17 @@ public final class AIApi {
      *
      * <p>A2A v1.0 JSON-RPC binding (application/json). Methods: SendMessage; GetTask; CancelTask (params id, tenant, metadata; result Task; errors -32001, -32002, -32004); ListTasks (params tenant, contextId, status, pageSize 1 to 100 default 50, pageToken, historyLength, statusTimestampAfter, includeArtifacts; result tasks, nextPageToken (empty on the last page), pageSize, totalSize; -32602 on a bad pageSize; -32004 while the process gateway does not implement it). SendStreamingMessage, SubscribeToTask and GetExtendedAgentCard answer -32004 (unsupported operation) and the four TaskPushNotificationConfig methods -32003 (push notifications not supported); the agent card says extendedAgentCard false. The caller must be on the agent allow-list; a browser Origin must be allow-listed.
      *
-     * <p>{@code POST /ai/a2a/{agent}} (operationId {@code aiA2a}); permission {@code ai.use}.
-     * @param agent path parameter {@code agent}
+     * <p>{@code POST /ai/a2a/by-agent} (operationId {@code aiA2a}); permission {@code ai.use}.
      * @param body request body
+     * @param agent query parameter {@code agent}. Inbound agent key; may carry '/' or ':'
      * @param a2AVersion header parameter {@code A2A-Version}, or null. Major.Minor protocol version, 1.0 for A2A v1.0.x
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> aiA2a(String agent, AiMcpBody body, String a2AVersion, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ai/a2a/" + HttpTransport.seg(String.valueOf(agent)));
+    public java.util.Map<String, Object> aiA2a(AiMcpBody body, String agent, String a2AVersion, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ai/a2a/by-agent");
         req.body(body);
+        req.query("agent", agent);
         req.header("A2A-Version", a2AVersion == null ? null : String.valueOf(a2AVersion));
         return call.json(req, options, R_aiA2a);
     }
@@ -704,13 +711,14 @@ public final class AIApi {
      *
      * <p>Retrieval stops. Needs a reason; actor and reason are kept.
      *
-     * <p>{@code POST /ai/knowledge-bases/{key}/retire} (operationId {@code aiUiRetireKb}); permission {@code ai.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param key path parameter {@code key}
+     * <p>{@code POST /ai/knowledge-bases/by-key/retire} (operationId {@code aiUiRetireKb}); permission {@code ai.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param key query parameter {@code key}. Knowledge base key; may carry '/' or ':'
      * @param body request body, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void aiUiRetireKb(String key, AiUiDecisionRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ai/knowledge-bases/" + HttpTransport.seg(String.valueOf(key)) + "/retire");
+        ApiRequest req = ApiRequest.post("/ai/knowledge-bases/by-key/retire");
+        req.query("key", key);
         req.body(body);
         call.none(req, options);
     }

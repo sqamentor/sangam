@@ -143,11 +143,12 @@ public class IdentityAdminController {
             throw invalid("active", "a user is created active; disable it afterwards with a reason");
         }
         IdentityAdminPort.User u = identity.createUser(ctx, body);
-        return Lists.created("/api/v1/admin/users/" + u.id(), u.id(), u);
+        return Lists.created("/api/v1/admin/users/by-id?id=" + query(u.id()), u.id(), u);
     }
 
-    @PutMapping("/users/{id}")
-    public ResponseEntity<IdentityAdminPort.User> updateUser(RequestContext ctx, @PathVariable String id,
+    /** Decision 393: a user id is an IdP principal id (may carry '/' or ':'), so it is a query parameter. */
+    @PutMapping("/users/by-id")
+    public ResponseEntity<IdentityAdminPort.User> updateUser(RequestContext ctx, @RequestParam("id") String id,
                                                              @RequestBody IdentityAdminPort.UserRequest body) {
         permissions.require(ctx, Permissions.ADMIN_WRITE);
         if (body == null) {
@@ -158,8 +159,8 @@ public class IdentityAdminController {
         return Lists.okRef(id, identity.updateUser(ctx, id, body));
     }
 
-    @PostMapping("/users/{id}/disable")
-    public ResponseEntity<IdentityAdminPort.User> disableUser(RequestContext ctx, @PathVariable String id,
+    @PostMapping("/users/by-id/disable")
+    public ResponseEntity<IdentityAdminPort.User> disableUser(RequestContext ctx, @RequestParam("id") String id,
                                                               @RequestBody IdentityAdminPort.DecisionRequest body) {
         permissions.require(ctx, Permissions.ADMIN_WRITE);
         ProcessController.requireReason(body == null ? null : body.reason());
@@ -180,11 +181,12 @@ public class IdentityAdminController {
                     + " groups are provisioned by their source");
         }
         IdentityAdminPort.Group g = identity.createGroup(ctx, body);
-        return Lists.created("/api/v1/admin/groups/" + g.id(), g.id(), g);
+        return Lists.created("/api/v1/admin/groups/by-id?id=" + query(g.id()), g.id(), g);
     }
 
-    @PutMapping("/groups/{id}")
-    public ResponseEntity<IdentityAdminPort.Group> updateGroup(RequestContext ctx, @PathVariable String id,
+    /** Decision 393: a group id is an IdP group path (may carry '/'), so it is a query parameter. */
+    @PutMapping("/groups/by-id")
+    public ResponseEntity<IdentityAdminPort.Group> updateGroup(RequestContext ctx, @RequestParam("id") String id,
                                                                @RequestBody IdentityAdminPort.Group body) {
         permissions.require(ctx, Permissions.POLICY_ADMIN);
         if (body == null) {
@@ -206,25 +208,32 @@ public class IdentityAdminController {
         }
     }
 
+    /** A value for a query parameter of a Location header (decision 393: ids may carry '/' or ':'). */
+    private static String query(String value) {
+        return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
+    }
+
     private static org.sangam.rest.port.ApiProblem invalid(String field, String detail) {
         return org.sangam.rest.port.ApiProblem.badRequest("VALIDATION_FAILED", detail).with("field", field);
     }
 
-    @GetMapping("/groups/{id}/members")
-    public ResponseEntity<List<IdentityAdminPort.User>> members(RequestContext ctx, @PathVariable String id) {
+    @GetMapping("/groups/by-id/members")
+    public ResponseEntity<List<IdentityAdminPort.User>> members(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.ADMIN_READ);
         return Lists.ok(identity.groupMembers(ctx, id));
     }
 
-    @PostMapping("/groups/{id}/members/{userId}")
-    public ResponseEntity<Void> addMember(RequestContext ctx, @PathVariable String id, @PathVariable String userId) {
+    @PostMapping("/groups/by-id/members/by-user-id")
+    public ResponseEntity<Void> addMember(RequestContext ctx, @RequestParam("id") String id,
+                                          @RequestParam("userId") String userId) {
         permissions.require(ctx, Permissions.POLICY_ADMIN);
         identity.setMembership(ctx, id, userId, true);
         return ResponseEntity.noContent().header(Lists.RESOURCE_REF, id + "/" + userId).build();
     }
 
-    @DeleteMapping("/groups/{id}/members/{userId}")
-    public ResponseEntity<Void> removeMember(RequestContext ctx, @PathVariable String id, @PathVariable String userId) {
+    @DeleteMapping("/groups/by-id/members/by-user-id")
+    public ResponseEntity<Void> removeMember(RequestContext ctx, @RequestParam("id") String id,
+                                             @RequestParam("userId") String userId) {
         permissions.require(ctx, Permissions.POLICY_ADMIN);
         identity.setMembership(ctx, id, userId, false);
         return ResponseEntity.noContent().header(Lists.RESOURCE_REF, id + "/" + userId).build();
@@ -267,8 +276,9 @@ public class IdentityAdminController {
 
     // ---------------------------------------------------------------- roles (decision 368)
 
-    @PutMapping("/roles/{roleId}")
-    public ResponseEntity<IdentityAdminPort.RoleDefinition> defineRole(RequestContext ctx, @PathVariable String roleId,
+    /** Decision 393: ROLE_ID_PATTERN allows ':' (pack:clerk), so the role id is a query parameter. */
+    @PutMapping("/roles/by-role-id")
+    public ResponseEntity<IdentityAdminPort.RoleDefinition> defineRole(RequestContext ctx, @RequestParam("roleId") String roleId,
             @RequestBody IdentityAdminPort.RoleDefinition body) {
         permissions.require(ctx, Permissions.POLICY_ADMIN);
         return Lists.okRef(roleId, identity.defineRole(ctx, roleId, body));

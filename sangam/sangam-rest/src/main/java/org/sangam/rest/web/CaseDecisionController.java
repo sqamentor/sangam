@@ -58,20 +58,20 @@ public class CaseDecisionController {
         return Lists.ok(cases.list(ctx, key, businessKey, active, Lists.page(page, size)));
     }
 
-    @GetMapping("/case-instances/{id}")
-    public CasePort.CaseInstance getCase(RequestContext ctx, @PathVariable String id) {
+    @GetMapping("/case-instances/by-id")
+    public CasePort.CaseInstance getCase(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.CASE_READ);
         return cases.get(ctx, id);
     }
 
-    @GetMapping("/case-instances/{id}/variables")
-    public Map<String, Object> caseVariables(RequestContext ctx, @PathVariable String id) {
+    @GetMapping("/case-instances/by-id/variables")
+    public Map<String, Object> caseVariables(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.CASE_READ);
         return cases.variables(ctx, id);
     }
 
-    @PostMapping("/case-instances/{id}/commands")
-    public ResponseEntity<CasePort.CaseInstance> caseCommand(RequestContext ctx, @PathVariable String id,
+    @PostMapping("/case-instances/by-id/commands")
+    public ResponseEntity<CasePort.CaseInstance> caseCommand(RequestContext ctx, @RequestParam("id") String id,
                                                              @RequestBody CasePort.InstanceCommand body) {
         permissions.require(ctx, Permissions.CASE_WRITE);
         requireAction(body.action());
@@ -79,9 +79,9 @@ public class CaseDecisionController {
                 new CasePort.InstanceCommand(body.action(), SlotVariableGuard.callerVariables(body.variables()), body.reason())));
     }
 
-    @PostMapping("/case-instances/{id}/executions/{executionId}/commands")
-    public ResponseEntity<CasePort.CaseInstance> executionCommand(RequestContext ctx, @PathVariable String id,
-            @PathVariable String executionId, @RequestBody CasePort.ExecutionCommand body) {
+    @PostMapping("/case-instances/by-id/executions/by-execution-id/commands")
+    public ResponseEntity<CasePort.CaseInstance> executionCommand(RequestContext ctx, @RequestParam("id") String id,
+            @RequestParam("executionId") String executionId, @RequestBody CasePort.ExecutionCommand body) {
         permissions.require(ctx, Permissions.CASE_WRITE);
         requireAction(body.action());
         return Lists.okRef(id, cases.executionCommand(ctx, id, executionId,
@@ -96,8 +96,8 @@ public class CaseDecisionController {
         return Lists.ok(cases.definitions(ctx, key, latest, Lists.page(page, size)));
     }
 
-    @PostMapping("/decisions/{key}/evaluate")
-    public DecisionPort.EvaluateResult evaluate(RequestContext ctx, @PathVariable String key,
+    @PostMapping("/decisions/by-key/evaluate")
+    public DecisionPort.EvaluateResult evaluate(RequestContext ctx, @RequestParam("key") String key,
                                                 @RequestBody DecisionPort.EvaluateRequest body) {
         permissions.require(ctx, Permissions.DECISION_EVALUATE);
         Telemetry.businessKey(body.businessKey());
@@ -113,8 +113,9 @@ public class CaseDecisionController {
         return Lists.ok(decisions.definitions(ctx, key, latest, Lists.page(page, size)));
     }
 
-    @GetMapping(value = "/decision-definitions/{id}/xml", produces = MediaType.APPLICATION_XML_VALUE)
-    public String decisionXml(RequestContext ctx, @PathVariable String id) {
+    /** Decision 393: a decision definition id is key:version:uuid (may carry ':'), so it is a query parameter. */
+    @GetMapping(value = "/decision-definitions/by-id/xml", produces = MediaType.APPLICATION_XML_VALUE)
+    public String decisionXml(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.PROCESS_READ);
         return decisions.definitionXml(ctx, id);
     }

@@ -115,7 +115,7 @@ const caseConfig: ScreenDef = {
   toolbar: [{ id: 'publish', label: 'act.publish', method: 'PUT', path: '/case-config/{kind}', fields: [f.path(f.select('kind', ['case-type', 'reference-kind', 'committee-kind'], undefined, true))], hint: 'mod.cases.configBodyHint' }],
 };
 
-// M-039: links between process, case and task scopes (GET/POST /links, DELETE /links/{id}; process.read / process.write,
+// M-039: links between process, case and task scopes (GET/POST /links, DELETE /links/by-id?id=; process.read / process.write,
 // DocumentController.java:97-121). Body CreateLinkRequest(linkType, sourceScopeType, sourceId, targetScopeType, targetId,
 // referenceType) (LinkPort.java:20-21); scope types bpmn | cmmn | task (sangam-api.yaml listLinks).
 const SCOPES = ['bpmn', 'cmmn', 'task'];
@@ -143,7 +143,7 @@ const links: ScreenDef = {
       f.text('referenceType', 'fld.referenceType'),
     ],
   },
-  actions: [{ id: 'delete', label: 'common.delete', method: 'DELETE', path: '/links/{id}', reason: 'query', danger: true, noJson: true }],
+  actions: [{ id: 'delete', label: 'common.delete', method: 'DELETE', path: '/links/by-id?id={id}', reason: 'query', danger: true, noJson: true }],
 };
 
 // M-039: deployed case definitions (GET /case-definitions ?key &latest; case.read, CaseDecisionController.java:90-96)

@@ -106,8 +106,8 @@ public final class ComplianceApi {
      *
      * <p>The notice in the requested language; falls back to the pack default only where the pack allows (DPDP Rules r.3).
      *
-     * <p>{@code GET /compliance/notices/{key}} (operationId {@code getComplianceNotice}).
-     * @param key path parameter {@code key}
+     * <p>{@code GET /compliance/notices/by-key} (operationId {@code getComplianceNotice}).
+     * @param key query parameter {@code key}. Consent notice key; may carry '/' or ':'
      * @param version query parameter {@code version}, or null
      * @param lang query parameter {@code lang}, or null
      * @param tenant query parameter {@code tenant}, or null. Tenant of an unauthenticated call (else X-Sangam-Tenant)
@@ -116,7 +116,8 @@ public final class ComplianceApi {
      * @return the 200 response
      */
     public ComplianceRenderedNotice getComplianceNotice(String key, Integer version, String lang, String tenant, String xSangamTenant, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/compliance/notices/" + HttpTransport.seg(String.valueOf(key)));
+        ApiRequest req = ApiRequest.get("/compliance/notices/by-key");
+        req.query("key", key);
         req.query("version", version);
         req.query("lang", lang);
         req.query("tenant", tenant);
@@ -129,15 +130,16 @@ public final class ComplianceApi {
      *
      * <p>Publishes a new version for every enabled language; reports missing translations.
      *
-     * <p>{@code POST /compliance/notices/{key}/publish} (operationId {@code publishComplianceNotice}); permission {@code compliance.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param key path parameter {@code key}
+     * <p>{@code POST /compliance/notices/by-key/publish} (operationId {@code publishComplianceNotice}); permission {@code compliance.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param key query parameter {@code key}. Consent notice key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public CompliancePublishResult publishComplianceNotice(String key, CompliancePublishNoticeRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/compliance/notices/" + HttpTransport.seg(String.valueOf(key)) + "/publish");
+    public CompliancePublishResult publishComplianceNotice(CompliancePublishNoticeRequest body, String key, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/compliance/notices/by-key/publish");
         req.body(body);
+        req.query("key", key);
         return call.json(req, options, R_publishComplianceNotice);
     }
 
@@ -180,15 +182,16 @@ public final class ComplianceApi {
      *
      * <p>Defines or versions a purpose; validated against the jurisdiction pack (legal basis, legitimate uses, retention).
      *
-     * <p>{@code PUT /compliance/purposes/{code}} (operationId {@code defineCompliancePurpose}); permission {@code compliance.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param code path parameter {@code code}
+     * <p>{@code PUT /compliance/purposes/by-code} (operationId {@code defineCompliancePurpose}); permission {@code compliance.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param code query parameter {@code code}. Purpose code; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public CompliancePurpose defineCompliancePurpose(String code, ComplianceDefinePurposeRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/compliance/purposes/" + HttpTransport.seg(String.valueOf(code)));
+    public CompliancePurpose defineCompliancePurpose(ComplianceDefinePurposeRequest body, String code, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/compliance/purposes/by-code");
         req.body(body);
+        req.query("code", code);
         return call.json(req, options, R_defineCompliancePurpose);
     }
 
@@ -260,17 +263,18 @@ public final class ComplianceApi {
      *
      * <p>Called by a registered consent manager (mTLS at the gateway; public at the API).
      *
-     * <p>{@code POST /compliance/consent-managers/{cm}/artefacts} (operationId {@code ingestConsentArtefact}); result stored atomically with the state change (x-sangam-idempotent).
-     * @param cm path parameter {@code cm}
+     * <p>{@code POST /compliance/consent-managers/by-cm/artefacts} (operationId {@code ingestConsentArtefact}); result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param cm query parameter {@code cm}. Consent manager id; may carry '/' or ':'
      * @param tenant query parameter {@code tenant}, or null. Tenant of an unauthenticated call (else X-Sangam-Tenant)
      * @param xSangamTenant header parameter {@code X-Sangam-Tenant}, or null. Tenant of an unauthenticated call (else ?tenant=)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
-    public ComplianceConsent ingestConsentArtefact(String cm, ComplianceConsentArtefact body, String tenant, String xSangamTenant, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/compliance/consent-managers/" + HttpTransport.seg(String.valueOf(cm)) + "/artefacts");
+    public ComplianceConsent ingestConsentArtefact(ComplianceConsentArtefact body, String cm, String tenant, String xSangamTenant, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/compliance/consent-managers/by-cm/artefacts");
         req.body(body);
+        req.query("cm", cm);
         req.query("tenant", tenant);
         req.header("X-Sangam-Tenant", xSangamTenant == null ? null : String.valueOf(xSangamTenant));
         return call.json(req, options, R_ingestConsentArtefact);
@@ -536,14 +540,15 @@ public final class ComplianceApi {
      *
      * <p>Sets the effective contact for a role of the jurisdiction pack (residency checked where required).
      *
-     * <p>{@code POST /compliance/contacts/{role}} (operationId {@code setComplianceContact}); permission {@code compliance.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param role path parameter {@code role}
+     * <p>{@code POST /compliance/contacts/by-role} (operationId {@code setComplianceContact}); permission {@code compliance.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param role query parameter {@code role}. Contact role of the jurisdiction pack; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void setComplianceContact(String role, ComplianceContact body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/compliance/contacts/" + HttpTransport.seg(String.valueOf(role)));
+    public void setComplianceContact(ComplianceContact body, String role, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/compliance/contacts/by-role");
         req.body(body);
+        req.query("role", role);
         call.none(req, options);
     }
 
@@ -593,13 +598,14 @@ public final class ComplianceApi {
      *
      * <p>The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
      *
-     * <p>{@code GET /compliance/process-roots/{rootId}/legal-holds} (operationId {@code listComplianceLegalHolds}); permission {@code compliance.read}.
-     * @param rootId path parameter {@code rootId}
+     * <p>{@code GET /compliance/process-roots/by-root-id/legal-holds} (operationId {@code listComplianceLegalHolds}); permission {@code compliance.read}.
+     * @param rootId query parameter {@code rootId}. Process root id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<ComplianceLegalHold> listComplianceLegalHolds(String rootId, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/compliance/process-roots/" + HttpTransport.seg(String.valueOf(rootId)) + "/legal-holds");
+        ApiRequest req = ApiRequest.get("/compliance/process-roots/by-root-id/legal-holds");
+        req.query("rootId", rootId);
         return call.json(req, options, R_listComplianceLegalHolds);
     }
 
@@ -608,15 +614,16 @@ public final class ComplianceApi {
      *
      * <p>Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
      *
-     * <p>{@code POST /compliance/process-roots/{rootId}/legal-holds} (operationId {@code placeComplianceLegalHold}); permission {@code compliance.modify}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param rootId path parameter {@code rootId}
+     * <p>{@code POST /compliance/process-roots/by-root-id/legal-holds} (operationId {@code placeComplianceLegalHold}); permission {@code compliance.modify}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param rootId query parameter {@code rootId}. Process root id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
-    public ComplianceLegalHold placeComplianceLegalHold(String rootId, ComplianceLegalHoldRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/compliance/process-roots/" + HttpTransport.seg(String.valueOf(rootId)) + "/legal-holds");
+    public ComplianceLegalHold placeComplianceLegalHold(ComplianceLegalHoldRequest body, String rootId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/compliance/process-roots/by-root-id/legal-holds");
         req.body(body);
+        req.query("rootId", rootId);
         return call.json(req, options, R_placeComplianceLegalHold);
     }
 
@@ -625,15 +632,17 @@ public final class ComplianceApi {
      *
      * <p>Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.
      *
-     * <p>{@code POST /compliance/process-roots/{rootId}/legal-holds/{holdId}/release} (operationId {@code releaseComplianceLegalHold}); permission {@code compliance.modify}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param rootId path parameter {@code rootId}
-     * @param holdId path parameter {@code holdId}
+     * <p>{@code POST /compliance/process-roots/by-root-id/legal-holds/by-hold-id/release} (operationId {@code releaseComplianceLegalHold}); permission {@code compliance.modify}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param rootId query parameter {@code rootId}. Process root id; may carry '/' or ':'
+     * @param holdId query parameter {@code holdId}. Legal hold id (a breach hold is breach:&lt;id&gt;); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void releaseComplianceLegalHold(String rootId, String holdId, ComplianceLegalHoldRelease body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/compliance/process-roots/" + HttpTransport.seg(String.valueOf(rootId)) + "/legal-holds/" + HttpTransport.seg(String.valueOf(holdId)) + "/release");
+    public void releaseComplianceLegalHold(ComplianceLegalHoldRelease body, String rootId, String holdId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/compliance/process-roots/by-root-id/legal-holds/by-hold-id/release");
         req.body(body);
+        req.query("rootId", rootId);
+        req.query("holdId", holdId);
         call.none(req, options);
     }
 

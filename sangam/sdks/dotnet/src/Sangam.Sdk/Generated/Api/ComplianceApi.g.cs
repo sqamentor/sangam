@@ -18,11 +18,12 @@ public sealed class ComplianceApi
     /// <summary>
     /// Render a consent notice (public)
     /// The notice in the requested language; falls back to the pack default only where the pack allows (DPDP Rules r.3).
-    /// GET /compliance/notices/{key} (operationId getComplianceNotice).
+    /// GET /compliance/notices/by-key (operationId getComplianceNotice).
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.ComplianceRenderedNotice?> GetComplianceNoticeAsync(string key, int? version = null, string? lang = null, string? tenant = null, string? xSangamTenant = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/compliance/notices/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}");
+        var req = ApiRequest.Get($"/compliance/notices/by-key");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         req.WithQuery("version", GeneratedCalls.Q(version));
         req.WithQuery("lang", GeneratedCalls.Q(lang));
         req.WithQuery("tenant", GeneratedCalls.Q(tenant));
@@ -33,11 +34,12 @@ public sealed class ComplianceApi
     /// <summary>
     /// Publish a notice version
     /// Publishes a new version for every enabled language; reports missing translations.
-    /// POST /compliance/notices/{key}/publish (operationId publishComplianceNotice); permission compliance.admin; result stored atomically with the state change.
+    /// POST /compliance/notices/by-key/publish (operationId publishComplianceNotice); permission compliance.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.CompliancePublishResult?> PublishComplianceNoticeAsync(string key, M.CompliancePublishNoticeRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.CompliancePublishResult?> PublishComplianceNoticeAsync(M.CompliancePublishNoticeRequest body, string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/compliance/notices/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/publish");
+        var req = ApiRequest.Post($"/compliance/notices/by-key/publish");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.CompliancePublishResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -70,11 +72,12 @@ public sealed class ComplianceApi
     /// <summary>
     /// Define a purpose
     /// Defines or versions a purpose; validated against the jurisdiction pack (legal basis, legitimate uses, retention).
-    /// PUT /compliance/purposes/{code} (operationId defineCompliancePurpose); permission compliance.admin; result stored atomically with the state change.
+    /// PUT /compliance/purposes/by-code (operationId defineCompliancePurpose); permission compliance.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.CompliancePurpose?> DefineCompliancePurposeAsync(string code, M.ComplianceDefinePurposeRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.CompliancePurpose?> DefineCompliancePurposeAsync(M.ComplianceDefinePurposeRequest body, string code, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/compliance/purposes/{HttpTransport.Seg(GeneratedCalls.Str(code)!)}");
+        var req = ApiRequest.Put($"/compliance/purposes/by-code");
+        req.WithQuery("code", GeneratedCalls.Q(code));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.CompliancePurpose?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -129,11 +132,12 @@ public sealed class ComplianceApi
     /// <summary>
     /// Ingest a consent-manager artefact
     /// Called by a registered consent manager (mTLS at the gateway; public at the API).
-    /// POST /compliance/consent-managers/{cm}/artefacts (operationId ingestConsentArtefact); result stored atomically with the state change.
+    /// POST /compliance/consent-managers/by-cm/artefacts (operationId ingestConsentArtefact); result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.ComplianceConsent?> IngestConsentArtefactAsync(string cm, M.ComplianceConsentArtefact body, string? tenant = null, string? xSangamTenant = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.ComplianceConsent?> IngestConsentArtefactAsync(M.ComplianceConsentArtefact body, string cm, string? tenant = null, string? xSangamTenant = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/compliance/consent-managers/{HttpTransport.Seg(GeneratedCalls.Str(cm)!)}/artefacts");
+        var req = ApiRequest.Post($"/compliance/consent-managers/by-cm/artefacts");
+        req.WithQuery("cm", GeneratedCalls.Q(cm));
         req.WithQuery("tenant", GeneratedCalls.Q(tenant));
         req.WithHeader("X-Sangam-Tenant", GeneratedCalls.Str(xSangamTenant));
         if (body is not null) req.WithBody(body);
@@ -330,11 +334,12 @@ public sealed class ComplianceApi
     /// <summary>
     /// Set a contact
     /// Sets the effective contact for a role of the jurisdiction pack (residency checked where required).
-    /// POST /compliance/contacts/{role} (operationId setComplianceContact); permission compliance.admin; result stored atomically with the state change.
+    /// POST /compliance/contacts/by-role (operationId setComplianceContact); permission compliance.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task SetComplianceContactAsync(string role, M.ComplianceContact body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task SetComplianceContactAsync(M.ComplianceContact body, string role, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/compliance/contacts/{HttpTransport.Seg(GeneratedCalls.Str(role)!)}");
+        var req = ApiRequest.Post($"/compliance/contacts/by-role");
+        req.WithQuery("role", GeneratedCalls.Q(role));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -370,22 +375,24 @@ public sealed class ComplianceApi
     /// <summary>
     /// Active legal holds of a process root
     /// The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
-    /// GET /compliance/process-roots/{rootId}/legal-holds (operationId listComplianceLegalHolds); permission compliance.read.
+    /// GET /compliance/process-roots/by-root-id/legal-holds (operationId listComplianceLegalHolds); permission compliance.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.ComplianceLegalHold>?> ListComplianceLegalHoldsAsync(string rootId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/compliance/process-roots/{HttpTransport.Seg(GeneratedCalls.Str(rootId)!)}/legal-holds");
+        var req = ApiRequest.Get($"/compliance/process-roots/by-root-id/legal-holds");
+        req.WithQuery("rootId", GeneratedCalls.Q(rootId));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.ComplianceLegalHold>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Place a legal hold on a process root
     /// Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
-    /// POST /compliance/process-roots/{rootId}/legal-holds (operationId placeComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
+    /// POST /compliance/process-roots/by-root-id/legal-holds (operationId placeComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.ComplianceLegalHold?> PlaceComplianceLegalHoldAsync(string rootId, M.ComplianceLegalHoldRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.ComplianceLegalHold?> PlaceComplianceLegalHoldAsync(M.ComplianceLegalHoldRequest body, string rootId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/compliance/process-roots/{HttpTransport.Seg(GeneratedCalls.Str(rootId)!)}/legal-holds");
+        var req = ApiRequest.Post($"/compliance/process-roots/by-root-id/legal-holds");
+        req.WithQuery("rootId", GeneratedCalls.Q(rootId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.ComplianceLegalHold?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -393,11 +400,13 @@ public sealed class ComplianceApi
     /// <summary>
     /// Release a legal hold
     /// Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.
-    /// POST /compliance/process-roots/{rootId}/legal-holds/{holdId}/release (operationId releaseComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
+    /// POST /compliance/process-roots/by-root-id/legal-holds/by-hold-id/release (operationId releaseComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task ReleaseComplianceLegalHoldAsync(string rootId, string holdId, M.ComplianceLegalHoldRelease body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task ReleaseComplianceLegalHoldAsync(M.ComplianceLegalHoldRelease body, string rootId, string holdId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/compliance/process-roots/{HttpTransport.Seg(GeneratedCalls.Str(rootId)!)}/legal-holds/{HttpTransport.Seg(GeneratedCalls.Str(holdId)!)}/release");
+        var req = ApiRequest.Post($"/compliance/process-roots/by-root-id/legal-holds/by-hold-id/release");
+        req.WithQuery("rootId", GeneratedCalls.Q(rootId));
+        req.WithQuery("holdId", GeneratedCalls.Q(holdId));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }

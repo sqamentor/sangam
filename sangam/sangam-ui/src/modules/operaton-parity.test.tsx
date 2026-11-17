@@ -225,7 +225,7 @@ describe('Cockpit process instance', () => {
       '/process-instances/pi1/cancel-preview': { summary: ['1 open task closes'] },
       '/process-instances/pi1/variables': {},
       '/process-instances/pi1': { id: 'pi1', state: 'ACTIVE', definitionId: 'd1', definitionKey: 'leave' },
-      '/process-definitions/d1/xml': '<xml/>',
+      '/process-definitions/by-id/xml?id=d1': '<xml/>',
     };
     show(<InstanceDetail />, '/ops/instances/pi1', '/ops/instances/:id');
   }

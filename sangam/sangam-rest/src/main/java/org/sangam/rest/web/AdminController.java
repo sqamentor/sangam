@@ -60,24 +60,24 @@ public class AdminController {
     public ResponseEntity<AdminPort.OrgUnit> createOrgUnit(RequestContext ctx, @RequestBody AdminPort.OrgUnit body) {
         permissions.require(ctx, Permissions.ADMIN_WRITE);
         AdminPort.OrgUnit o = admin.createOrgUnit(ctx, body);
-        return Lists.created("/api/v1/admin/org-units/" + o.id(), o.id(), o);
+        return Lists.created(byId("/api/v1/admin/org-units", o.id()), o.id(), o);
     }
 
-    @GetMapping("/org-units/{id}")
-    public AdminPort.OrgUnit orgUnit(RequestContext ctx, @PathVariable String id) {
+    @GetMapping("/org-units/by-id")
+    public AdminPort.OrgUnit orgUnit(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.ADMIN_READ);
         return admin.orgUnit(ctx, id);
     }
 
-    @PutMapping("/org-units/{id}")
-    public ResponseEntity<AdminPort.OrgUnit> updateOrgUnit(RequestContext ctx, @PathVariable String id,
+    @PutMapping("/org-units/by-id")
+    public ResponseEntity<AdminPort.OrgUnit> updateOrgUnit(RequestContext ctx, @RequestParam("id") String id,
                                                            @RequestBody AdminPort.OrgUnit body) {
         permissions.require(ctx, Permissions.ADMIN_WRITE);
         return Lists.okRef(id, admin.updateOrgUnit(ctx, id, body));
     }
 
-    @DeleteMapping("/org-units/{id}")
-    public ResponseEntity<Void> deleteOrgUnit(RequestContext ctx, @PathVariable String id,
+    @DeleteMapping("/org-units/by-id")
+    public ResponseEntity<Void> deleteOrgUnit(RequestContext ctx, @RequestParam("id") String id,
                                               @RequestParam(required = false) String reason) {
         permissions.require(ctx, Permissions.ADMIN_WRITE);
         ProcessController.requireReason(reason);
@@ -97,24 +97,24 @@ public class AdminController {
     public ResponseEntity<AdminPort.Seat> createSeat(RequestContext ctx, @RequestBody AdminPort.Seat body) {
         permissions.require(ctx, Permissions.ADMIN_WRITE);
         AdminPort.Seat s = admin.createSeat(ctx, body);
-        return Lists.created("/api/v1/admin/seats/" + s.id(), s.id(), s);
+        return Lists.created(byId("/api/v1/admin/seats", s.id()), s.id(), s);
     }
 
-    @GetMapping("/seats/{id}")
-    public AdminPort.Seat seat(RequestContext ctx, @PathVariable String id) {
+    @GetMapping("/seats/by-id")
+    public AdminPort.Seat seat(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.ADMIN_READ);
         return admin.seat(ctx, id);
     }
 
-    @PutMapping("/seats/{id}")
-    public ResponseEntity<AdminPort.Seat> updateSeat(RequestContext ctx, @PathVariable String id,
+    @PutMapping("/seats/by-id")
+    public ResponseEntity<AdminPort.Seat> updateSeat(RequestContext ctx, @RequestParam("id") String id,
                                                      @RequestBody AdminPort.Seat body) {
         permissions.require(ctx, Permissions.ADMIN_WRITE);
         return Lists.okRef(id, admin.updateSeat(ctx, id, body));
     }
 
-    @DeleteMapping("/seats/{id}")
-    public ResponseEntity<Void> deleteSeat(RequestContext ctx, @PathVariable String id,
+    @DeleteMapping("/seats/by-id")
+    public ResponseEntity<Void> deleteSeat(RequestContext ctx, @RequestParam("id") String id,
                                            @RequestParam(required = false) String reason) {
         permissions.require(ctx, Permissions.ADMIN_WRITE);
         ProcessController.requireReason(reason);
@@ -194,11 +194,11 @@ public class AdminController {
     public ResponseEntity<AdminPort.Policy> createPolicy(RequestContext ctx, @RequestBody AdminPort.Policy body) {
         permissions.require(ctx, Permissions.POLICY_ADMIN);
         AdminPort.Policy p = admin.createPolicy(ctx, body);
-        return Lists.created("/api/v1/admin/policies/" + p.id(), p.id(), p);
+        return Lists.created(byId("/api/v1/admin/policies", p.id()), p.id(), p);
     }
 
-    @DeleteMapping("/policies/{id}")
-    public ResponseEntity<Void> deletePolicy(RequestContext ctx, @PathVariable String id,
+    @DeleteMapping("/policies/by-id")
+    public ResponseEntity<Void> deletePolicy(RequestContext ctx, @RequestParam("id") String id,
                                              @RequestParam(required = false) String reason) {
         permissions.require(ctx, Permissions.POLICY_ADMIN);
         ProcessController.requireReason(reason);
@@ -260,5 +260,10 @@ public class AdminController {
         permissions.require(ctx, Permissions.TENANT_ADMIN);
         ProcessController.requireReason(body == null ? null : body.reason());
         return Lists.okRef(id, admin.suspendTenant(ctx, id, body.reason()));
+    }
+
+    /** Decision 393: the Location of a created item whose client-chosen id may hold '/' or ':'. */
+    static String byId(String base, String id) {
+        return base + "/by-id?id=" + java.net.URLEncoder.encode(id, java.nio.charset.StandardCharsets.UTF_8);
     }
 }

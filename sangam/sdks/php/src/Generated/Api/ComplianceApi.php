@@ -25,7 +25,8 @@ final class ComplianceApi
      *
      * The notice in the requested language; falls back to the pack default only where the pack allows (DPDP Rules r.3).
      *
-     * GET /compliance/notices/{key} (operationId getComplianceNotice).
+     * GET /compliance/notices/by-key (operationId getComplianceNotice).
+     * @param string $key query key
      * @param int|null $version query version
      * @param string|null $lang query lang
      * @param string|null $tenant query tenant
@@ -34,7 +35,8 @@ final class ComplianceApi
      */
     public function getComplianceNotice(string $key, ?int $version = null, ?string $lang = null, ?string $tenant = null, ?string $xSangamTenant = null, ?RequestOptions $options = null): ?Model\ComplianceRenderedNotice
     {
-        $req = ApiRequest::get('/compliance/notices/' . HttpTransport::seg((string) $key));
+        $req = ApiRequest::get('/compliance/notices/by-key');
+        $req->query('key', $key);
         $req->query('version', $version);
         $req->query('lang', $lang);
         $req->query('tenant', $tenant);
@@ -47,13 +49,15 @@ final class ComplianceApi
      *
      * Publishes a new version for every enabled language; reports missing translations.
      *
-     * POST /compliance/notices/{key}/publish (operationId publishComplianceNotice); permission compliance.admin; result stored atomically with the state change.
+     * POST /compliance/notices/by-key/publish (operationId publishComplianceNotice); permission compliance.admin; result stored atomically with the state change.
      * @param Model\CompliancePublishNoticeRequest|array $body request body
+     * @param string $key query key
      * @return Model\CompliancePublishResult|null
      */
-    public function publishComplianceNotice(string $key, Model\CompliancePublishNoticeRequest|array $body, ?RequestOptions $options = null): ?Model\CompliancePublishResult
+    public function publishComplianceNotice(Model\CompliancePublishNoticeRequest|array $body, string $key, ?RequestOptions $options = null): ?Model\CompliancePublishResult
     {
-        $req = ApiRequest::post('/compliance/notices/' . HttpTransport::seg((string) $key) . '/publish');
+        $req = ApiRequest::post('/compliance/notices/by-key/publish');
+        $req->query('key', $key);
         if ($body !== null) {
             $req->body($body);
         }
@@ -99,13 +103,15 @@ final class ComplianceApi
      *
      * Defines or versions a purpose; validated against the jurisdiction pack (legal basis, legitimate uses, retention).
      *
-     * PUT /compliance/purposes/{code} (operationId defineCompliancePurpose); permission compliance.admin; result stored atomically with the state change.
+     * PUT /compliance/purposes/by-code (operationId defineCompliancePurpose); permission compliance.admin; result stored atomically with the state change.
      * @param Model\ComplianceDefinePurposeRequest|array $body request body
+     * @param string $code query code
      * @return Model\CompliancePurpose|null
      */
-    public function defineCompliancePurpose(string $code, Model\ComplianceDefinePurposeRequest|array $body, ?RequestOptions $options = null): ?Model\CompliancePurpose
+    public function defineCompliancePurpose(Model\ComplianceDefinePurposeRequest|array $body, string $code, ?RequestOptions $options = null): ?Model\CompliancePurpose
     {
-        $req = ApiRequest::put('/compliance/purposes/' . HttpTransport::seg((string) $code));
+        $req = ApiRequest::put('/compliance/purposes/by-code');
+        $req->query('code', $code);
         if ($body !== null) {
             $req->body($body);
         }
@@ -183,15 +189,17 @@ final class ComplianceApi
      *
      * Called by a registered consent manager (mTLS at the gateway; public at the API).
      *
-     * POST /compliance/consent-managers/{cm}/artefacts (operationId ingestConsentArtefact); result stored atomically with the state change.
+     * POST /compliance/consent-managers/by-cm/artefacts (operationId ingestConsentArtefact); result stored atomically with the state change.
      * @param Model\ComplianceConsentArtefact|array $body request body
+     * @param string $cm query cm
      * @param string|null $tenant query tenant
      * @param string|null $xSangamTenant header X-Sangam-Tenant
      * @return Model\ComplianceConsent|null
      */
-    public function ingestConsentArtefact(string $cm, Model\ComplianceConsentArtefact|array $body, ?string $tenant = null, ?string $xSangamTenant = null, ?RequestOptions $options = null): ?Model\ComplianceConsent
+    public function ingestConsentArtefact(Model\ComplianceConsentArtefact|array $body, string $cm, ?string $tenant = null, ?string $xSangamTenant = null, ?RequestOptions $options = null): ?Model\ComplianceConsent
     {
-        $req = ApiRequest::post('/compliance/consent-managers/' . HttpTransport::seg((string) $cm) . '/artefacts');
+        $req = ApiRequest::post('/compliance/consent-managers/by-cm/artefacts');
+        $req->query('cm', $cm);
         $req->query('tenant', $tenant);
         $req->header('X-Sangam-Tenant', Support::headerValue($xSangamTenant));
         if ($body !== null) {
@@ -468,12 +476,14 @@ final class ComplianceApi
      *
      * Sets the effective contact for a role of the jurisdiction pack (residency checked where required).
      *
-     * POST /compliance/contacts/{role} (operationId setComplianceContact); permission compliance.admin; result stored atomically with the state change.
+     * POST /compliance/contacts/by-role (operationId setComplianceContact); permission compliance.admin; result stored atomically with the state change.
      * @param Model\ComplianceContact|array $body request body
+     * @param string $role query role
      */
-    public function setComplianceContact(string $role, Model\ComplianceContact|array $body, ?RequestOptions $options = null): void
+    public function setComplianceContact(Model\ComplianceContact|array $body, string $role, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/compliance/contacts/' . HttpTransport::seg((string) $role));
+        $req = ApiRequest::post('/compliance/contacts/by-role');
+        $req->query('role', $role);
         if ($body !== null) {
             $req->body($body);
         }
@@ -529,12 +539,14 @@ final class ComplianceApi
      *
      * The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
      *
-     * GET /compliance/process-roots/{rootId}/legal-holds (operationId listComplianceLegalHolds); permission compliance.read.
+     * GET /compliance/process-roots/by-root-id/legal-holds (operationId listComplianceLegalHolds); permission compliance.read.
+     * @param string $rootId query rootId
      * @return list<Model\ComplianceLegalHold>
      */
     public function listComplianceLegalHolds(string $rootId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/compliance/process-roots/' . HttpTransport::seg((string) $rootId) . '/legal-holds');
+        $req = ApiRequest::get('/compliance/process-roots/by-root-id/legal-holds');
+        $req->query('rootId', $rootId);
         return $this->calls->models($req, $options, Model\ComplianceLegalHold::class);
     }
 
@@ -543,13 +555,15 @@ final class ComplianceApi
      *
      * Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
      *
-     * POST /compliance/process-roots/{rootId}/legal-holds (operationId placeComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
+     * POST /compliance/process-roots/by-root-id/legal-holds (operationId placeComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
      * @param Model\ComplianceLegalHoldRequest|array $body request body
+     * @param string $rootId query rootId
      * @return Model\ComplianceLegalHold|null
      */
-    public function placeComplianceLegalHold(string $rootId, Model\ComplianceLegalHoldRequest|array $body, ?RequestOptions $options = null): ?Model\ComplianceLegalHold
+    public function placeComplianceLegalHold(Model\ComplianceLegalHoldRequest|array $body, string $rootId, ?RequestOptions $options = null): ?Model\ComplianceLegalHold
     {
-        $req = ApiRequest::post('/compliance/process-roots/' . HttpTransport::seg((string) $rootId) . '/legal-holds');
+        $req = ApiRequest::post('/compliance/process-roots/by-root-id/legal-holds');
+        $req->query('rootId', $rootId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -561,12 +575,16 @@ final class ComplianceApi
      *
      * Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.
      *
-     * POST /compliance/process-roots/{rootId}/legal-holds/{holdId}/release (operationId releaseComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
+     * POST /compliance/process-roots/by-root-id/legal-holds/by-hold-id/release (operationId releaseComplianceLegalHold); permission compliance.modify; result stored atomically with the state change.
      * @param Model\ComplianceLegalHoldRelease|array $body request body
+     * @param string $rootId query rootId
+     * @param string $holdId query holdId
      */
-    public function releaseComplianceLegalHold(string $rootId, string $holdId, Model\ComplianceLegalHoldRelease|array $body, ?RequestOptions $options = null): void
+    public function releaseComplianceLegalHold(Model\ComplianceLegalHoldRelease|array $body, string $rootId, string $holdId, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/compliance/process-roots/' . HttpTransport::seg((string) $rootId) . '/legal-holds/' . HttpTransport::seg((string) $holdId) . '/release');
+        $req = ApiRequest::post('/compliance/process-roots/by-root-id/legal-holds/by-hold-id/release');
+        $req->query('rootId', $rootId);
+        $req->query('holdId', $holdId);
         if ($body !== null) {
             $req->body($body);
         }

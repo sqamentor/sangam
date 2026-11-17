@@ -85,7 +85,7 @@ describe('decisions', () => {
 
   it('picking a definition shows its table; decision history is read per process instance (sweep S3)', async () => {
     pages['/decision-definitions'] = pageOf([def]);
-    routes['/decision-definitions/dd1/xml'] = '<dmn/>';
+    routes['/decision-definitions/by-id/xml?id=dd1'] = '<dmn/>';
     // components.schemas.HistoricDecision: inputs and outputs are name/value maps
     pages['/history/decisions'] = pageOf([
       { id: 'di1', decisionDefinitionKey: 'fee', decisionDefinitionId: 'fee:3:x', evaluationTime: '2026-11-10T08:00:00Z', processInstanceId: 'pi1', activityId: 'Task_Fee', inputs: { amount: 500 }, outputs: { fee: 20 } },
@@ -112,7 +112,7 @@ describe('decisions', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Fee table' }));
     fireEvent.change(screen.getByLabelText(L('ops.variablesJson')), { target: { value: '{"amount": 1200, "urgent": true}' } });
     fireEvent.click(screen.getByRole('button', { name: T('ops.evaluate') }));
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/decisions/fee/evaluate', { variables: { amount: { type: 'Long', value: 1200 }, urgent: { type: 'Boolean', value: true } } }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/decisions/by-key/evaluate?key=fee', { variables: { amount: { type: 'Long', value: 1200 }, urgent: { type: 'Boolean', value: true } } }));
     expect(await screen.findByText(/"fee": 25/)).toBeTruthy();
     api.post.mockRejectedValueOnce(problem(422, 'DECISION_INPUT_MISSING', 'Input amount is missing'));
     fireEvent.click(screen.getByRole('button', { name: T('ops.evaluate') }));
@@ -250,7 +250,7 @@ describe('event registry', () => {
     fireEvent.click(buttonIn(s, 'common.send'));
     await waitFor(() =>
       expect(api.post).toHaveBeenCalledWith(
-        '/events/grievance-in',
+        '/events/by-channel?channel=grievance-in',
         { specversion: '1.0', id: expect.any(String), source: 'sangam-ui', type: 'sangam.test', datacontenttype: 'application/json', data: { ref: 'G-1' } },
         KEY,
       ),
@@ -279,7 +279,7 @@ describe('event registry', () => {
         ],
       }),
     );
-    expect(api.del).toHaveBeenCalledWith('/events/definitions/paid', { reason: 'definition updated' });
+    expect(api.del).toHaveBeenCalledWith('/events/definitions/by-key?key=paid', { reason: 'definition updated' });
   });
 });
 
@@ -386,7 +386,7 @@ describe('sandbox debugger', () => {
   it('attach, toggle a breakpoint, step and fire a timer', async () => {
     routes['/debug/status'] = { enabled: true, profile: 'sandbox', sandboxTenant: 'sbx' };
     routes['/process-instances/pi1'] = { id: 'pi1', processDefinitionId: 'def1', state: 'ACTIVE' };
-    routes['/process-definitions/def1/xml'] = '<bpmn/>';
+    routes['/process-definitions/by-id/xml?id=def1'] = '<bpmn/>';
     routes['/process-instances/pi1/activity-tree'] = { id: 'pi1', activityId: 'proc', activityType: 'processDefinition', childActivityInstances: [] };
     routes['/debug/instances/pi1/breakpoints'] = ['Task_Start'];
     pages['/ops/jobs'] = pageOf([{ id: 'job-t', activityId: 'Timer_1', dueDate: '2026-11-20T10:00:00Z' }]);
@@ -409,7 +409,7 @@ describe('sandbox debugger', () => {
   it('a refused step (production guard) is shown', async () => {
     routes['/debug/status'] = { enabled: true, profile: 'sandbox' };
     routes['/process-instances/pi1'] = { id: 'pi1', processDefinitionId: 'def1', state: 'ACTIVE' };
-    routes['/process-definitions/def1/xml'] = '<bpmn/>';
+    routes['/process-definitions/by-id/xml?id=def1'] = '<bpmn/>';
     api.post.mockRejectedValueOnce(problem(403, 'DEBUG_NOT_ALLOWED'));
     show(<Debugger />);
     await screen.findByRole('button', { name: T('debug.attach') });

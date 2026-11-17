@@ -62,8 +62,8 @@ public class LowCodeController {
         return Lists.okRef(key, lowCode.updatePage(ctx, key, body));
     }
 
-    @GetMapping("/queries/{name}")
-    public ResponseEntity<List<Map<String, Object>>> query(RequestContext ctx, @PathVariable String name,
+    @GetMapping("/queries/by-name")
+    public ResponseEntity<List<Map<String, Object>>> query(RequestContext ctx, @RequestParam("name") String name,
             @RequestParam Map<String, String> all,
             @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
         permissions.require(ctx, Permissions.LOWCODE_READ);

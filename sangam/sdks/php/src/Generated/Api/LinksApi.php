@@ -63,12 +63,14 @@ final class LinksApi
      *
      * Removes an explicit link.
      *
-     * DELETE /links/{id} (operationId deleteLink); permission process.write; result stored atomically with the state change.
+     * DELETE /links/by-id (operationId deleteLink); permission process.write; result stored atomically with the state change.
+     * @param string $id query id
      * @param string|null $reason query reason
      */
     public function deleteLink(string $id, ?string $reason = null, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/links/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::delete('/links/by-id');
+        $req->query('id', $id);
         $req->query('reason', $reason);
         $this->calls->none($req, $options);
     }

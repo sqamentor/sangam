@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.web;
 
+import java.util.List;
+
 import org.sangam.rest.port.InstanceHandlerPort;
 import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.Permissions;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -25,6 +29,13 @@ public class InstanceHandlerController {
     public InstanceHandlerController(InstanceHandlerPort handlers, PermissionPort permissions) {
         this.handlers = handlers;
         this.permissions = permissions;
+    }
+
+    /** Decision 393: the definition id (key:version:uuid) is the {@code id} query parameter. */
+    @GetMapping("/process-definitions/by-id/handlers")
+    public List<InstanceHandlerPort.Handler> list(RequestContext ctx, @RequestParam("id") String id) {
+        permissions.require(ctx, Permissions.PROCESS_READ);
+        return handlers.list(ctx, id);
     }
 
     @PostMapping("/process-instances/{id}/queries/{name}")

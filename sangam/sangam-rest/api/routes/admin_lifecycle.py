@@ -51,20 +51,23 @@ schema("UserRequest", "A LOCAL user an administrator creates or updates (R67).",
               "source": "Only LOCAL: SCIM and directory sync provision their own users"})
 for _f, _n in (("id", 64), ("username", 64), ("displayName", 255), ("email", 255)):
     SCHEMAS["UserRequest"]["properties"][_f]["maxLength"] = _n
+# decision 393: user and group ids are IdP principal ids and group paths (may carry '/' or ':'): query parameters
+UIDQ_ = q("id", desc="User id (an IdP principal id); may carry '/' or ':'", required=True)
+GIDQ_ = q("id", desc="Group id (an IdP group path such as /staff/clerks); may carry '/' or ':'", required=True)
 op("post", "/admin/users", "createUser", "Admin", "Create a user",
    "A LOCAL user of the caller's tenant (USER_PROVISIONED); an IdP subject is linked separately. 409 USER_EXISTS.",
    ["R67", "R41"], body="UserRequest", resp=(201, "User"), cmd="admin.user.create", perm="admin.write", created=True)
-op("put", "/admin/users/{id}", "updateUser", "Admin", "Update a user", "Display name and e-mail (USER_UPDATED).",
-   ["R67", "R41"], params=[ID], body="UserRequest", resp=(200, "User"), cmd="admin.user.update", perm="admin.write")
-op("post", "/admin/users/{id}/disable", "disableUser", "Admin", "Disable a user",
+op("put", "/admin/users/by-id", "updateUser", "Admin", "Update a user", "Display name and e-mail (USER_UPDATED).",
+   ["R67", "R41"], params=[UIDQ_], body="UserRequest", resp=(200, "User"), cmd="admin.user.update", perm="admin.write")
+op("post", "/admin/users/by-id/disable", "disableUser", "Admin", "Disable a user",
    "USER_DISABLED with the reason; every API token of the user is revoked in the same transaction. 409 SELF_DISABLE "
-   "for the caller's own user.", ["R67", "R41", "R42"], params=[ID], body="ReasonRequest", resp=(200, "User"),
+   "for the caller's own user.", ["R67", "R41", "R42"], params=[UIDQ_], body="ReasonRequest", resp=(200, "User"),
    cmd="admin.user.disable", perm="admin.write")
 op("post", "/admin/groups", "createGroup", "Admin", "Create a group",
    "A LOCAL group of the caller's tenant (MEMBERSHIP_CHANGED, created). 409 GROUP_EXISTS.", ["R67", "R41"],
    body="Group", resp=(201, "Group"), cmd="admin.group.create", perm="policy.admin", created=True)
-op("put", "/admin/groups/{id}", "updateGroup", "Admin", "Rename a group",
+op("put", "/admin/groups/by-id", "updateGroup", "Admin", "Rename a group",
    "The name only; memberships and the group's IdP or SCIM reference are kept (MEMBERSHIP_CHANGED, updated).",
-   ["R67", "R41"], params=[ID], body="Group", resp=(200, "Group"), cmd="admin.group.update", perm="policy.admin")
-for _p, _m in (("/admin/users", "post"), ("/admin/users/{id}/disable", "post"), ("/admin/groups", "post")):
+   ["R67", "R41"], params=[GIDQ_], body="Group", resp=(200, "Group"), cmd="admin.group.update", perm="policy.admin")
+for _p, _m in (("/admin/users", "post"), ("/admin/users/by-id/disable", "post"), ("/admin/groups", "post")):
     PATHS[_p][_m]["responses"]["409"] = {"description": "USER_EXISTS, SELF_DISABLE or GROUP_EXISTS", "content": PROBLEM}

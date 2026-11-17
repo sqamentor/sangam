@@ -192,7 +192,7 @@ export function ProfileLifecycle() {
 const master: ScreenDef = {
   id: 'master',
   title: 'mod.config.master',
-  list: '/config/master/{scheme}/{segment}',
+  list: '/config/master/by-scheme/by-segment',
   unpaged: true,
   filters: [f.text('scheme', undefined, true), f.text('segment', undefined, true), f.text('parent'), f.date('asOf')],
   requireFilters: ['scheme', 'segment'],
@@ -202,7 +202,7 @@ const master: ScreenDef = {
     { id: 'slip', label: 'act.correctionSlip', path: '/config/master/correction-slips', fields: [f.text('scope', undefined, true), f.text('scheme', undefined, true), f.date('effectiveFrom', undefined, true), f.json('changes', undefined, true)], showResult: true },
     { id: 'classify', label: 'act.validateCode', path: '/config/classification/validate', fields: [f.text('scheme', undefined, true), f.text('code', undefined, true), f.text('scope'), f.date('asOf')], showResult: true },
     // M-051: CrosswalkRequest(scope, office, code, amount, asOf) (ConfigController.java:114); the crosswalk id is the path only
-    { id: 'crosswalk', label: 'act.mapCrosswalk', path: '/config/crosswalks/{crosswalkId}/map', fields: [f.path(f.text('crosswalkId', undefined, true)), f.text('code', undefined, true), f.money('amount')], showResult: true },
+    { id: 'crosswalk', label: 'act.mapCrosswalk', path: '/config/crosswalks/by-id/map?id={crosswalkId}', fields: [f.path(f.text('crosswalkId', undefined, true)), f.text('code', undefined, true), f.money('amount')], showResult: true },
   ],
 };
 
@@ -214,7 +214,7 @@ const docTypes: ScreenDef = {
   filters: [f.text('scope'), f.text('family'), f.date('asOf')],
   columns: [c('id'), c('family'), c('name')],
   rowKey: ['id', 'key'],
-  actions: [{ id: 'check', label: 'act.checkDocument', path: '/config/document-types/{id}/check', fields: [f.json('document', undefined, true), f.text('scope')], showResult: true, noJson: true }],
+  actions: [{ id: 'check', label: 'act.checkDocument', path: '/config/document-types/by-id/check?id={id}', fields: [f.json('document', undefined, true), f.text('scope')], showResult: true, noJson: true }],
 };
 
 export function ConfigPage() {
@@ -249,7 +249,7 @@ const runs: ScreenDef = {
   ],
   toolbar: [
     { id: 'packs', label: 'mod.onboarding.resolvePacks', path: '/onboarding/packs/resolve', fields: [f.json('ids', 'fld.packIds', true)], noJson: true, showResult: true },
-    { id: 'export', label: 'mod.onboarding.exportBundle', method: 'GET', path: '/onboarding/tenants/{tenant}/bundle', fields: [f.text('tenant', undefined, true)], noJson: true, showResult: true },
+    { id: 'export', label: 'mod.onboarding.exportBundle', method: 'GET', path: '/onboarding/tenants/by-tenant/bundle?tenant={tenant}', fields: [f.text('tenant', undefined, true)], noJson: true, showResult: true },
     { id: 'import', label: 'mod.onboarding.importBundle', path: '/onboarding/bundles/import', showResult: true },
     { id: 'diff', label: 'mod.onboarding.diffBundles', path: '/onboarding/bundles/diff', showResult: true },
   ],
@@ -390,7 +390,7 @@ export function promotionProblem(e: unknown, t: (k: string, o?: Record<string, u
 
 /**
  * M-034: promotion between environments (PromotionController, sangam-server; platform administrators only, :68-72).
- * Export the tenant's signed bundle here (GET /onboarding/promotions/{tenant}/bundle, :116); in the target environment,
+ * Export the tenant's signed bundle here (GET /onboarding/promotions/by-tenant/bundle?tenant=, :117); in the target environment,
  * load it and plan (POST /onboarding/promotions/plan, :124), which verifies the signature (BundleService.verified) and
  * diffs it against the target's current configuration; apply the reviewed plan by its hash (POST
  * /onboarding/promotions, :135), which starts an ordinary onboarding run. A different administrator then approves the
@@ -419,7 +419,7 @@ export function Promotions({ onApplied }: { onApplied: () => void }) {
     <>
       <Section title={t('promo.export')}>
         <p className="hint">{t('promo.exportHint')}</p>
-        <form className="filters" onSubmit={(e) => (e.preventDefault(), void exp.run(() => download(`/onboarding/promotions/${encodeURIComponent(source.trim())}/bundle`, undefined, `${source.trim()}-bundle.json`)))}>
+        <form className="filters" onSubmit={(e) => (e.preventDefault(), void exp.run(() => download(`/onboarding/promotions/by-tenant/bundle?tenant=${encodeURIComponent(source.trim())}`, undefined, `${source.trim()}-bundle.json`)))}>
           <TextField label={t('fld.tenant')} required value={source} onChange={setSource} />
           <button type="submit" disabled={!source.trim() || exp.busy}>{t('promo.download')}</button>
         </form>
@@ -602,7 +602,7 @@ export function PackLifecycle() {
         onClose={() => setOp(null)}
         onConfirm={(reason) =>
           op &&
-          void act.run((k) => http.post<unknown>(`/packs/${encodeURIComponent(op.packId)}/${op.kind}`, { tenant, reason }, k)).then((r) => {
+          void act.run((k) => http.post<unknown>(`/packs/by-id/${op.kind}?id=${encodeURIComponent(op.packId)}`, { tenant, reason }, k)).then((r) => {
             if (r !== undefined) {
               setResult(r);
               setOp(null);

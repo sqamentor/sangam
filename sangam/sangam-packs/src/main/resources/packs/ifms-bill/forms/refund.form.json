@@ -1,6 +1,6 @@
 {
   "key": "ifms-bill/refund",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "pack": "gov.ifms.bill",
   "title": {
     "en": "Refund bill",

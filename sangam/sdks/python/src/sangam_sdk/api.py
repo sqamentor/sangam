@@ -263,7 +263,7 @@ class ProcessesApi(_Api):
 
 
 class DecisionsApi(_Api):
-    """DMN 1.6 ``POST /decisions/{key}/evaluate``."""
+    """DMN 1.6 ``POST /decisions/by-key/evaluate?key=`` (a decision key may carry '/' or ':')."""
 
     def evaluate(self, decision_key: str, variables: Vars = None, *, version: int | None = None,
                  purpose: str | None = None, business_key: str | None = None) -> DecisionEvaluateResult:
@@ -271,7 +271,7 @@ class DecisionsApi(_Api):
         body = compact({"variables": encode_variables(variables), "version": version, "purpose": purpose,
                         "businessKey": business_key})
         return DecisionEvaluateResult.from_dict(self._call(ApiRequest(
-            "POST", f"/decisions/{seg(decision_key)}/evaluate", body=body)))
+            "POST", "/decisions/by-key/evaluate", query={"key": decision_key}, body=body)))
 
 
 class AuditApi(_Api):
@@ -433,9 +433,9 @@ class RepositoryApi(_Api):
 
     def publish_event(self, channel: str, event: CloudEvent | Mapping[str, Any],
                       idempotency_key: str | None = None) -> PublishResult:
-        """``POST /events/{channel}`` (202) with a CloudEvents 1.0 envelope (R16)."""
+        """``POST /events/by-channel?channel=`` (202) with a CloudEvents 1.0 envelope (R16); a channel key may carry ':'."""
         body = event.to_dict() if isinstance(event, CloudEvent) else dict(event)
-        return self._obj(ApiRequest("POST", f"/events/{seg(channel)}", body=body,
+        return self._obj(ApiRequest("POST", "/events/by-channel", query={"channel": channel}, body=body,
                                     idempotency_key=idempotency_key or body.get("id")), PublishResult)
 
     def publish(self, channel: str, source: str, type: str, data: Any = None, *, subject: str | None = None,

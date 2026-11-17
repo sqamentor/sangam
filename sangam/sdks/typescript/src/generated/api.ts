@@ -164,10 +164,10 @@ export class AIApi {
    *
    * Starts a BUILDING version.
    *
-   * `POST /ai/knowledge-bases/{kb}/versions` (operationId `aiKbNewVersion`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-kb/versions` (operationId `aiKbNewVersion`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiKbNewVersion(kb: string, options?: RequestOptions): Promise<M.AiKbVersion> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/versions` };
+  async aiKbNewVersion(params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.AiKbVersion> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/versions`, query: { kb: params?.kb } };
     return this.calls.json<M.AiKbVersion>(req, options);
   }
 
@@ -176,10 +176,10 @@ export class AIApi {
    *
    * Only a BUILDING version accepts documents.
    *
-   * `POST /ai/knowledge-bases/{kb}/versions/{version}/documents` (operationId `aiKbIngest`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-kb/versions/{version}/documents` (operationId `aiKbIngest`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiKbIngest(kb: string, version: string, body: M.AiIngest, options?: RequestOptions): Promise<M.AiIngestResult> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/versions/${seg(String(version))}/documents` };
+  async aiKbIngest(version: string, body: M.AiIngest, params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.AiIngestResult> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/versions/${seg(String(version))}/documents`, query: { kb: params?.kb } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.AiIngestResult>(req, options);
   }
@@ -189,10 +189,10 @@ export class AIApi {
    *
    * Makes the version the searched one.
    *
-   * `POST /ai/knowledge-bases/{kb}/versions/{version}/activate` (operationId `aiKbActivate`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-kb/versions/{version}/activate` (operationId `aiKbActivate`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiKbActivate(kb: string, version: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/versions/${seg(String(version))}/activate` };
+  async aiKbActivate(version: string, params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/versions/${seg(String(version))}/activate`, query: { kb: params?.kb } };
     await this.calls.none(req, options);
   }
 
@@ -201,10 +201,10 @@ export class AIApi {
    *
    * Results are filtered by what the caller may read.
    *
-   * `POST /ai/knowledge-bases/{kb}/search` (operationId `aiKbSearch`); permission `ai.use`.
+   * `POST /ai/knowledge-bases/by-kb/search` (operationId `aiKbSearch`); permission `ai.use`.
    */
-  async aiKbSearch(kb: string, body: M.AiKbSearch, options?: RequestOptions): Promise<Array<M.AiKbHit>> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/search` };
+  async aiKbSearch(body: M.AiKbSearch, params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.AiKbHit>> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/search`, query: { kb: params?.kb } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Array<M.AiKbHit>>(req, options);
   }
@@ -214,10 +214,10 @@ export class AIApi {
    *
    * M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.
    *
-   * `POST /ai/knowledge-bases/{kb}/versions/{version}/ocr` (operationId `aiKbOcr`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-kb/versions/{version}/ocr` (operationId `aiKbOcr`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiKbOcr(kb: string, version: string, body: FormData, options?: RequestOptions): Promise<M.AiOcrTranscript> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(kb))}/versions/${seg(String(version))}/ocr` };
+  async aiKbOcr(version: string, body: FormData, params: { kb: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.AiOcrTranscript> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-kb/versions/${seg(String(version))}/ocr`, query: { kb: params?.kb } };
     if (body !== undefined) req.rawBody = body;
     return this.calls.json<M.AiOcrTranscript>(req, options);
   }
@@ -417,10 +417,10 @@ export class AIApi {
    *
    * Card of a configured inbound agent of the tenant.
    *
-   * `GET /ai/a2a/{agent}/card` (operationId `aiA2aCard`); permission `ai.use`.
+   * `GET /ai/a2a/by-agent/card` (operationId `aiA2aCard`); permission `ai.use`.
    */
-  async aiA2aCard(agent: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/ai/a2a/${seg(String(agent))}/card` };
+  async aiA2aCard(params: { agent: string /* Inbound agent key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/ai/a2a/by-agent/card`, query: { agent: params?.agent } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -429,10 +429,10 @@ export class AIApi {
    *
    * A2A v1.0 JSON-RPC binding (application/json). Methods: SendMessage; GetTask; CancelTask (params id, tenant, metadata; result Task; errors -32001, -32002, -32004); ListTasks (params tenant, contextId, status, pageSize 1 to 100 default 50, pageToken, historyLength, statusTimestampAfter, includeArtifacts; result tasks, nextPageToken (empty on the last page), pageSize, totalSize; -32602 on a bad pageSize; -32004 while the process gateway does not implement it). SendStreamingMessage, SubscribeToTask and GetExtendedAgentCard answer -32004 (unsupported operation) and the four TaskPushNotificationConfig methods -32003 (push notifications not supported); the agent card says extendedAgentCard false. The caller must be on the agent allow-list; a browser Origin must be allow-listed.
    *
-   * `POST /ai/a2a/{agent}` (operationId `aiA2a`); permission `ai.use`.
+   * `POST /ai/a2a/by-agent` (operationId `aiA2a`); permission `ai.use`.
    */
-  async aiA2a(agent: string, body: M.AiMcpBody, params?: { a2AVersion?: string /* Major.Minor protocol version, 1.0 for A2A v1.0.x */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/a2a/${seg(String(agent))}` };
+  async aiA2a(body: M.AiMcpBody, params: { agent: string /* Inbound agent key; may carry '/' or ':' */; a2AVersion?: string /* Major.Minor protocol version, 1.0 for A2A v1.0.x */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/a2a/by-agent`, query: { agent: params?.agent } };
     headersOf(req, { 'A2A-Version': params?.a2AVersion });
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
@@ -542,10 +542,10 @@ export class AIApi {
    *
    * Retrieval stops. Needs a reason; actor and reason are kept.
    *
-   * `POST /ai/knowledge-bases/{key}/retire` (operationId `aiUiRetireKb`); permission `ai.admin`; result stored atomically with the state change.
+   * `POST /ai/knowledge-bases/by-key/retire` (operationId `aiUiRetireKb`); permission `ai.admin`; result stored atomically with the state change.
    */
-  async aiUiRetireKb(key: string, body?: M.AiUiDecisionRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/${seg(String(key))}/retire` };
+  async aiUiRetireKb(body: M.AiUiDecisionRequest | undefined, params: { key: string /* Knowledge base key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/ai/knowledge-bases/by-key/retire`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -598,10 +598,10 @@ export class AdminApi {
    *
    * One item.
    *
-   * `GET /admin/seats/{id}` (operationId `getSeat`); permission `admin.read`.
+   * `GET /admin/seats/by-id` (operationId `getSeat`); permission `admin.read`.
    */
-  async getSeat(id: string, options?: RequestOptions): Promise<M.Seat> {
-    const req: ApiRequest = { method: 'GET', path: `/admin/seats/${seg(String(id))}` };
+  async getSeat(params: { id: string /* The item id (client-chosen; may carry '/' or ':') */ }, options?: RequestOptions): Promise<M.Seat> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/seats/by-id`, query: { id: params?.id } };
     return this.calls.json<M.Seat>(req, options);
   }
 
@@ -610,10 +610,10 @@ export class AdminApi {
    *
    * Updates and audits.
    *
-   * `PUT /admin/seats/{id}` (operationId `updateSeat`); permission `admin.write`; result stored atomically with the state change.
+   * `PUT /admin/seats/by-id` (operationId `updateSeat`); permission `admin.write`; result stored atomically with the state change.
    */
-  async updateSeat(id: string, body: M.Seat, options?: RequestOptions): Promise<M.Seat> {
-    const req: ApiRequest = { method: 'PUT', path: `/admin/seats/${seg(String(id))}` };
+  async updateSeat(body: M.Seat, params: { id: string /* The item id (client-chosen; may carry '/' or ':') */ }, options?: RequestOptions): Promise<M.Seat> {
+    const req: ApiRequest = { method: 'PUT', path: `/admin/seats/by-id`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Seat>(req, options);
   }
@@ -623,10 +623,10 @@ export class AdminApi {
    *
    * Deletes (reason audited).
    *
-   * `DELETE /admin/seats/{id}` (operationId `deleteSeat`); permission `admin.write`; result stored atomically with the state change.
+   * `DELETE /admin/seats/by-id` (operationId `deleteSeat`); permission `admin.write`; result stored atomically with the state change.
    */
-  async deleteSeat(id: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/admin/seats/${seg(String(id))}`, query: { reason: params?.reason } };
+  async deleteSeat(params: { id: string /* The item id (client-chosen; may carry '/' or ':') */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/admin/seats/by-id`, query: { id: params?.id, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 
@@ -710,10 +710,10 @@ export class AdminApi {
    *
    * Deletes (reason audited).
    *
-   * `DELETE /admin/policies/{id}` (operationId `deletePolicy`); permission `policy.admin`; result stored atomically with the state change.
+   * `DELETE /admin/policies/by-id` (operationId `deletePolicy`); permission `policy.admin`; result stored atomically with the state change.
    */
-  async deletePolicy(id: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/admin/policies/${seg(String(id))}`, query: { reason: params?.reason } };
+  async deletePolicy(params: { id: string /* The item id (client-chosen; may carry '/' or ':') */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/admin/policies/by-id`, query: { id: params?.id, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 
@@ -885,10 +885,10 @@ export class AdminApi {
    *
    * Defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT on ROLE roleId; GRANT_CHANGED). A requested token scope is bound to a service principal only when it is a defined role the caller may grant.
    *
-   * `PUT /admin/roles/{roleId}` (operationId `defineRole`); permission `policy.admin`; result stored atomically with the state change.
+   * `PUT /admin/roles/by-role-id` (operationId `defineRole`); permission `policy.admin`; result stored atomically with the state change.
    */
-  async defineRole(roleId: string, body: M.RoleDefinition, options?: RequestOptions): Promise<M.RoleDefinition> {
-    const req: ApiRequest = { method: 'PUT', path: `/admin/roles/${seg(String(roleId))}` };
+  async defineRole(body: M.RoleDefinition, params: { roleId: string /* Role id (ROLE_ID_PATTERN allows ':', e.g. pack:clerk); may carry ':' */ }, options?: RequestOptions): Promise<M.RoleDefinition> {
+    const req: ApiRequest = { method: 'PUT', path: `/admin/roles/by-role-id`, query: { roleId: params?.roleId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.RoleDefinition>(req, options);
   }
@@ -948,10 +948,10 @@ export class AdminApi {
    *
    * Display name and e-mail (USER_UPDATED).
    *
-   * `PUT /admin/users/{id}` (operationId `updateUser`); permission `admin.write`; result stored atomically with the state change.
+   * `PUT /admin/users/by-id` (operationId `updateUser`); permission `admin.write`; result stored atomically with the state change.
    */
-  async updateUser(id: string, body: M.UserRequest, options?: RequestOptions): Promise<M.User> {
-    const req: ApiRequest = { method: 'PUT', path: `/admin/users/${seg(String(id))}` };
+  async updateUser(body: M.UserRequest, params: { id: string /* User id (an IdP principal id); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.User> {
+    const req: ApiRequest = { method: 'PUT', path: `/admin/users/by-id`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.User>(req, options);
   }
@@ -961,10 +961,10 @@ export class AdminApi {
    *
    * USER_DISABLED with the reason; every API token of the user is revoked in the same transaction. 409 SELF_DISABLE for the caller's own user.
    *
-   * `POST /admin/users/{id}/disable` (operationId `disableUser`); permission `admin.write`; result stored atomically with the state change.
+   * `POST /admin/users/by-id/disable` (operationId `disableUser`); permission `admin.write`; result stored atomically with the state change.
    */
-  async disableUser(id: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.User> {
-    const req: ApiRequest = { method: 'POST', path: `/admin/users/${seg(String(id))}/disable` };
+  async disableUser(body: M.ReasonRequest, params: { id: string /* User id (an IdP principal id); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.User> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/users/by-id/disable`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.User>(req, options);
   }
@@ -1098,10 +1098,10 @@ export class AdminGroupsApi {
    *
    * Members of a group.
    *
-   * `GET /admin/groups/{id}/members` (operationId `listGroupMembers`); permission `admin.read`.
+   * `GET /admin/groups/by-id/members` (operationId `listGroupMembers`); permission `admin.read`.
    */
-  async listGroupMembers(id: string, options?: RequestOptions): Promise<Array<M.User>> {
-    const req: ApiRequest = { method: 'GET', path: `/admin/groups/${seg(String(id))}/members` };
+  async listGroupMembers(params: { id: string /* Group id (an IdP group path such as /staff/clerks); may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.User>> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/groups/by-id/members`, query: { id: params?.id } };
     return this.calls.json<Array<M.User>>(req, options);
   }
 
@@ -1110,10 +1110,10 @@ export class AdminGroupsApi {
    *
    * MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).
    *
-   * `POST /admin/groups/{id}/members/{userId}` (operationId `addGroupMember`); permission `policy.admin`; result stored atomically with the state change.
+   * `POST /admin/groups/by-id/members/by-user-id` (operationId `addGroupMember`); permission `policy.admin`; result stored atomically with the state change.
    */
-  async addGroupMember(id: string, userId: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/admin/groups/${seg(String(id))}/members/${seg(String(userId))}` };
+  async addGroupMember(params: { id: string /* Group id (an IdP group path such as /staff/clerks); may carry '/' or ':' */; userId: string /* User id (an IdP principal id); may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/groups/by-id/members/by-user-id`, query: { id: params?.id, userId: params?.userId } };
     await this.calls.none(req, options);
   }
 
@@ -1122,10 +1122,10 @@ export class AdminGroupsApi {
    *
    * MEMBERSHIP_CHANGED; policy_version+1.
    *
-   * `DELETE /admin/groups/{id}/members/{userId}` (operationId `removeGroupMember`); permission `policy.admin`; result stored atomically with the state change.
+   * `DELETE /admin/groups/by-id/members/by-user-id` (operationId `removeGroupMember`); permission `policy.admin`; result stored atomically with the state change.
    */
-  async removeGroupMember(id: string, userId: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/admin/groups/${seg(String(id))}/members/${seg(String(userId))}` };
+  async removeGroupMember(params: { id: string /* Group id (an IdP group path such as /staff/clerks); may carry '/' or ':' */; userId: string /* User id (an IdP principal id); may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/admin/groups/by-id/members/by-user-id`, query: { id: params?.id, userId: params?.userId } };
     await this.calls.none(req, options);
   }
 
@@ -1134,10 +1134,10 @@ export class AdminGroupsApi {
    *
    * The name only; memberships and the group's IdP or SCIM reference are kept (MEMBERSHIP_CHANGED, updated).
    *
-   * `PUT /admin/groups/{id}` (operationId `updateGroup`); permission `policy.admin`; result stored atomically with the state change.
+   * `PUT /admin/groups/by-id` (operationId `updateGroup`); permission `policy.admin`; result stored atomically with the state change.
    */
-  async updateGroup(id: string, body: M.Group, options?: RequestOptions): Promise<M.Group> {
-    const req: ApiRequest = { method: 'PUT', path: `/admin/groups/${seg(String(id))}` };
+  async updateGroup(body: M.Group, params: { id: string /* Group id (an IdP group path such as /staff/clerks); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Group> {
+    const req: ApiRequest = { method: 'PUT', path: `/admin/groups/by-id`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Group>(req, options);
   }
@@ -1177,10 +1177,10 @@ export class AdminOrgUnitsApi {
    *
    * One item.
    *
-   * `GET /admin/org-units/{id}` (operationId `getOrgUnit`); permission `admin.read`.
+   * `GET /admin/org-units/by-id` (operationId `getOrgUnit`); permission `admin.read`.
    */
-  async getOrgUnit(id: string, options?: RequestOptions): Promise<M.OrgUnit> {
-    const req: ApiRequest = { method: 'GET', path: `/admin/org-units/${seg(String(id))}` };
+  async getOrgUnit(params: { id: string /* The item id (client-chosen; may carry '/' or ':') */ }, options?: RequestOptions): Promise<M.OrgUnit> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/org-units/by-id`, query: { id: params?.id } };
     return this.calls.json<M.OrgUnit>(req, options);
   }
 
@@ -1189,10 +1189,10 @@ export class AdminOrgUnitsApi {
    *
    * Updates and audits.
    *
-   * `PUT /admin/org-units/{id}` (operationId `updateOrgUnit`); permission `admin.write`; result stored atomically with the state change.
+   * `PUT /admin/org-units/by-id` (operationId `updateOrgUnit`); permission `admin.write`; result stored atomically with the state change.
    */
-  async updateOrgUnit(id: string, body: M.OrgUnit, options?: RequestOptions): Promise<M.OrgUnit> {
-    const req: ApiRequest = { method: 'PUT', path: `/admin/org-units/${seg(String(id))}` };
+  async updateOrgUnit(body: M.OrgUnit, params: { id: string /* The item id (client-chosen; may carry '/' or ':') */ }, options?: RequestOptions): Promise<M.OrgUnit> {
+    const req: ApiRequest = { method: 'PUT', path: `/admin/org-units/by-id`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.OrgUnit>(req, options);
   }
@@ -1202,10 +1202,10 @@ export class AdminOrgUnitsApi {
    *
    * Deletes (reason audited).
    *
-   * `DELETE /admin/org-units/{id}` (operationId `deleteOrgUnit`); permission `admin.write`; result stored atomically with the state change.
+   * `DELETE /admin/org-units/by-id` (operationId `deleteOrgUnit`); permission `admin.write`; result stored atomically with the state change.
    */
-  async deleteOrgUnit(id: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/admin/org-units/${seg(String(id))}`, query: { reason: params?.reason } };
+  async deleteOrgUnit(params: { id: string /* The item id (client-chosen; may carry '/' or ':') */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/admin/org-units/by-id`, query: { id: params?.id, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 
@@ -3285,10 +3285,10 @@ export class CasesApi {
    *
    * Case with plan item instances.
    *
-   * `GET /case-instances/{id}` (operationId `getCaseInstance`); permission `case.read`.
+   * `GET /case-instances/by-id` (operationId `getCaseInstance`); permission `case.read`.
    */
-  async getCaseInstance(id: string, options?: RequestOptions): Promise<M.CaseInstance> {
-    const req: ApiRequest = { method: 'GET', path: `/case-instances/${seg(String(id))}` };
+  async getCaseInstance(params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CaseInstance> {
+    const req: ApiRequest = { method: 'GET', path: `/case-instances/by-id`, query: { id: params?.id } };
     return this.calls.json<M.CaseInstance>(req, options);
   }
 
@@ -3297,10 +3297,10 @@ export class CasesApi {
    *
    * Case variables (K11).
    *
-   * `GET /case-instances/{id}/variables` (operationId `getCaseVariables`); permission `case.read`.
+   * `GET /case-instances/by-id/variables` (operationId `getCaseVariables`); permission `case.read`.
    */
-  async getCaseVariables(id: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/case-instances/${seg(String(id))}/variables` };
+  async getCaseVariables(params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/case-instances/by-id/variables`, query: { id: params?.id } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -3309,10 +3309,10 @@ export class CasesApi {
    *
    * complete | close | terminate | reactivate (linked new case).
    *
-   * `POST /case-instances/{id}/commands` (operationId `commandCaseInstance`); permission `case.write`; result stored atomically with the state change.
+   * `POST /case-instances/by-id/commands` (operationId `commandCaseInstance`); permission `case.write`; result stored atomically with the state change.
    */
-  async commandCaseInstance(id: string, body: M.CaseInstanceCommand, options?: RequestOptions): Promise<M.CaseInstance> {
-    const req: ApiRequest = { method: 'POST', path: `/case-instances/${seg(String(id))}/commands` };
+  async commandCaseInstance(body: M.CaseInstanceCommand, params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CaseInstance> {
+    const req: ApiRequest = { method: 'POST', path: `/case-instances/by-id/commands`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CaseInstance>(req, options);
   }
@@ -3322,10 +3322,10 @@ export class CasesApi {
    *
    * start | complete | disable | reenable | terminate | manualStart (discretionary items).
    *
-   * `POST /case-instances/{id}/executions/{executionId}/commands` (operationId `commandCaseExecution`); permission `case.write`; result stored atomically with the state change.
+   * `POST /case-instances/by-id/executions/by-execution-id/commands` (operationId `commandCaseExecution`); permission `case.write`; result stored atomically with the state change.
    */
-  async commandCaseExecution(id: string, executionId: string, body: M.CaseExecutionCommand, options?: RequestOptions): Promise<M.CaseInstance> {
-    const req: ApiRequest = { method: 'POST', path: `/case-instances/${seg(String(id))}/executions/${seg(String(executionId))}/commands` };
+  async commandCaseExecution(body: M.CaseExecutionCommand, params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */; executionId: string /* Case execution (plan item) id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CaseInstance> {
+    const req: ApiRequest = { method: 'POST', path: `/case-instances/by-id/executions/by-execution-id/commands`, query: { id: params?.id, executionId: params?.executionId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CaseInstance>(req, options);
   }
@@ -3347,10 +3347,10 @@ export class CasesApi {
    *
    * Comments on the case (R76 case workspace).
    *
-   * `GET /case-instances/{id}/comments` (operationId `listCaseComments`); permission `case.read`.
+   * `GET /case-instances/by-id/comments` (operationId `listCaseComments`); permission `case.read`.
    */
-  async listCaseComments(id: string, options?: RequestOptions): Promise<Array<M.CaseComment>> {
-    const req: ApiRequest = { method: 'GET', path: `/case-instances/${seg(String(id))}/comments` };
+  async listCaseComments(params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.CaseComment>> {
+    const req: ApiRequest = { method: 'GET', path: `/case-instances/by-id/comments`, query: { id: params?.id } };
     return this.calls.json<Array<M.CaseComment>>(req, options);
   }
 
@@ -3359,10 +3359,10 @@ export class CasesApi {
    *
    * Adds a comment.
    *
-   * `POST /case-instances/{id}/comments` (operationId `addCaseComment`); permission `case.write`; result stored atomically with the state change.
+   * `POST /case-instances/by-id/comments` (operationId `addCaseComment`); permission `case.write`; result stored atomically with the state change.
    */
-  async addCaseComment(id: string, body: M.AddCaseCommentRequest, options?: RequestOptions): Promise<M.CaseComment> {
-    const req: ApiRequest = { method: 'POST', path: `/case-instances/${seg(String(id))}/comments` };
+  async addCaseComment(body: M.AddCaseCommentRequest, params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CaseComment> {
+    const req: ApiRequest = { method: 'POST', path: `/case-instances/by-id/comments`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CaseComment>(req, options);
   }
@@ -3372,10 +3372,10 @@ export class CasesApi {
    *
    * Participants, including external experts and parties (UP-09, UP-22).
    *
-   * `GET /case-instances/{id}/participants` (operationId `listCaseParticipants`); permission `case.read`.
+   * `GET /case-instances/by-id/participants` (operationId `listCaseParticipants`); permission `case.read`.
    */
-  async listCaseParticipants(id: string, options?: RequestOptions): Promise<Array<M.Participant>> {
-    const req: ApiRequest = { method: 'GET', path: `/case-instances/${seg(String(id))}/participants` };
+  async listCaseParticipants(params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.Participant>> {
+    const req: ApiRequest = { method: 'GET', path: `/case-instances/by-id/participants`, query: { id: params?.id } };
     return this.calls.json<Array<M.Participant>>(req, options);
   }
 
@@ -3384,10 +3384,10 @@ export class CasesApi {
    *
    * Starts a linked new case of the same definition with the old variables; audited on both chains.
    *
-   * `POST /case-instances/{id}/reactivation` (operationId `reactivateCase`); permission `case.write`; result stored atomically with the state change.
+   * `POST /case-instances/by-id/reactivation` (operationId `reactivateCase`); permission `case.write`; result stored atomically with the state change.
    */
-  async reactivateCase(id: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.CaseInstance> {
-    const req: ApiRequest = { method: 'POST', path: `/case-instances/${seg(String(id))}/reactivation` };
+  async reactivateCase(body: M.ReasonRequest, params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CaseInstance> {
+    const req: ApiRequest = { method: 'POST', path: `/case-instances/by-id/reactivation`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CaseInstance>(req, options);
   }
@@ -3844,10 +3844,10 @@ export class ComplianceApi {
    *
    * The notice in the requested language; falls back to the pack default only where the pack allows (DPDP Rules r.3).
    *
-   * `GET /compliance/notices/{key}` (operationId `getComplianceNotice`).
+   * `GET /compliance/notices/by-key` (operationId `getComplianceNotice`).
    */
-  async getComplianceNotice(key: string, params?: { version?: number; lang?: string; tenant?: string /* Tenant of an unauthenticated call (else X-Sangam-Tenant) */; xSangamTenant?: string /* Tenant of an unauthenticated call (else ?tenant=) */ }, options?: RequestOptions): Promise<M.ComplianceRenderedNotice> {
-    const req: ApiRequest = { method: 'GET', path: `/compliance/notices/${seg(String(key))}`, query: { version: params?.version, lang: params?.lang, tenant: params?.tenant } };
+  async getComplianceNotice(params: { key: string /* Consent notice key; may carry '/' or ':' */; version?: number; lang?: string; tenant?: string /* Tenant of an unauthenticated call (else X-Sangam-Tenant) */; xSangamTenant?: string /* Tenant of an unauthenticated call (else ?tenant=) */ }, options?: RequestOptions): Promise<M.ComplianceRenderedNotice> {
+    const req: ApiRequest = { method: 'GET', path: `/compliance/notices/by-key`, query: { key: params?.key, version: params?.version, lang: params?.lang, tenant: params?.tenant } };
     headersOf(req, { 'X-Sangam-Tenant': params?.xSangamTenant });
     return this.calls.json<M.ComplianceRenderedNotice>(req, options);
   }
@@ -3857,10 +3857,10 @@ export class ComplianceApi {
    *
    * Publishes a new version for every enabled language; reports missing translations.
    *
-   * `POST /compliance/notices/{key}/publish` (operationId `publishComplianceNotice`); permission `compliance.admin`; result stored atomically with the state change.
+   * `POST /compliance/notices/by-key/publish` (operationId `publishComplianceNotice`); permission `compliance.admin`; result stored atomically with the state change.
    */
-  async publishComplianceNotice(key: string, body: M.CompliancePublishNoticeRequest, options?: RequestOptions): Promise<M.CompliancePublishResult> {
-    const req: ApiRequest = { method: 'POST', path: `/compliance/notices/${seg(String(key))}/publish` };
+  async publishComplianceNotice(body: M.CompliancePublishNoticeRequest, params: { key: string /* Consent notice key; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CompliancePublishResult> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/notices/by-key/publish`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CompliancePublishResult>(req, options);
   }
@@ -3895,10 +3895,10 @@ export class ComplianceApi {
    *
    * Defines or versions a purpose; validated against the jurisdiction pack (legal basis, legitimate uses, retention).
    *
-   * `PUT /compliance/purposes/{code}` (operationId `defineCompliancePurpose`); permission `compliance.admin`; result stored atomically with the state change.
+   * `PUT /compliance/purposes/by-code` (operationId `defineCompliancePurpose`); permission `compliance.admin`; result stored atomically with the state change.
    */
-  async defineCompliancePurpose(code: string, body: M.ComplianceDefinePurposeRequest, options?: RequestOptions): Promise<M.CompliancePurpose> {
-    const req: ApiRequest = { method: 'PUT', path: `/compliance/purposes/${seg(String(code))}` };
+  async defineCompliancePurpose(body: M.ComplianceDefinePurposeRequest, params: { code: string /* Purpose code; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CompliancePurpose> {
+    const req: ApiRequest = { method: 'PUT', path: `/compliance/purposes/by-code`, query: { code: params?.code } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CompliancePurpose>(req, options);
   }
@@ -3959,10 +3959,10 @@ export class ComplianceApi {
    *
    * Called by a registered consent manager (mTLS at the gateway; public at the API).
    *
-   * `POST /compliance/consent-managers/{cm}/artefacts` (operationId `ingestConsentArtefact`); result stored atomically with the state change.
+   * `POST /compliance/consent-managers/by-cm/artefacts` (operationId `ingestConsentArtefact`); result stored atomically with the state change.
    */
-  async ingestConsentArtefact(cm: string, body: M.ComplianceConsentArtefact, params?: { tenant?: string /* Tenant of an unauthenticated call (else X-Sangam-Tenant) */; xSangamTenant?: string /* Tenant of an unauthenticated call (else ?tenant=) */ }, options?: RequestOptions): Promise<M.ComplianceConsent> {
-    const req: ApiRequest = { method: 'POST', path: `/compliance/consent-managers/${seg(String(cm))}/artefacts`, query: { tenant: params?.tenant } };
+  async ingestConsentArtefact(body: M.ComplianceConsentArtefact, params: { cm: string /* Consent manager id; may carry '/' or ':' */; tenant?: string /* Tenant of an unauthenticated call (else X-Sangam-Tenant) */; xSangamTenant?: string /* Tenant of an unauthenticated call (else ?tenant=) */ }, options?: RequestOptions): Promise<M.ComplianceConsent> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/consent-managers/by-cm/artefacts`, query: { cm: params?.cm, tenant: params?.tenant } };
     headersOf(req, { 'X-Sangam-Tenant': params?.xSangamTenant });
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ComplianceConsent>(req, options);
@@ -4175,10 +4175,10 @@ export class ComplianceApi {
    *
    * Sets the effective contact for a role of the jurisdiction pack (residency checked where required).
    *
-   * `POST /compliance/contacts/{role}` (operationId `setComplianceContact`); permission `compliance.admin`; result stored atomically with the state change.
+   * `POST /compliance/contacts/by-role` (operationId `setComplianceContact`); permission `compliance.admin`; result stored atomically with the state change.
    */
-  async setComplianceContact(role: string, body: M.ComplianceContact, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/compliance/contacts/${seg(String(role))}` };
+  async setComplianceContact(body: M.ComplianceContact, params: { role: string /* Contact role of the jurisdiction pack; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/contacts/by-role`, query: { role: params?.role } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -4216,10 +4216,10 @@ export class ComplianceApi {
    *
    * The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
    *
-   * `GET /compliance/process-roots/{rootId}/legal-holds` (operationId `listComplianceLegalHolds`); permission `compliance.read`.
+   * `GET /compliance/process-roots/by-root-id/legal-holds` (operationId `listComplianceLegalHolds`); permission `compliance.read`.
    */
-  async listComplianceLegalHolds(rootId: string, options?: RequestOptions): Promise<Array<M.ComplianceLegalHold>> {
-    const req: ApiRequest = { method: 'GET', path: `/compliance/process-roots/${seg(String(rootId))}/legal-holds` };
+  async listComplianceLegalHolds(params: { rootId: string /* Process root id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.ComplianceLegalHold>> {
+    const req: ApiRequest = { method: 'GET', path: `/compliance/process-roots/by-root-id/legal-holds`, query: { rootId: params?.rootId } };
     return this.calls.json<Array<M.ComplianceLegalHold>>(req, options);
   }
 
@@ -4228,10 +4228,10 @@ export class ComplianceApi {
    *
    * Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
    *
-   * `POST /compliance/process-roots/{rootId}/legal-holds` (operationId `placeComplianceLegalHold`); permission `compliance.modify`; result stored atomically with the state change.
+   * `POST /compliance/process-roots/by-root-id/legal-holds` (operationId `placeComplianceLegalHold`); permission `compliance.modify`; result stored atomically with the state change.
    */
-  async placeComplianceLegalHold(rootId: string, body: M.ComplianceLegalHoldRequest, options?: RequestOptions): Promise<M.ComplianceLegalHold> {
-    const req: ApiRequest = { method: 'POST', path: `/compliance/process-roots/${seg(String(rootId))}/legal-holds` };
+  async placeComplianceLegalHold(body: M.ComplianceLegalHoldRequest, params: { rootId: string /* Process root id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.ComplianceLegalHold> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/process-roots/by-root-id/legal-holds`, query: { rootId: params?.rootId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ComplianceLegalHold>(req, options);
   }
@@ -4241,10 +4241,10 @@ export class ComplianceApi {
    *
    * Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.
    *
-   * `POST /compliance/process-roots/{rootId}/legal-holds/{holdId}/release` (operationId `releaseComplianceLegalHold`); permission `compliance.modify`; result stored atomically with the state change.
+   * `POST /compliance/process-roots/by-root-id/legal-holds/by-hold-id/release` (operationId `releaseComplianceLegalHold`); permission `compliance.modify`; result stored atomically with the state change.
    */
-  async releaseComplianceLegalHold(rootId: string, holdId: string, body: M.ComplianceLegalHoldRelease, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/compliance/process-roots/${seg(String(rootId))}/legal-holds/${seg(String(holdId))}/release` };
+  async releaseComplianceLegalHold(body: M.ComplianceLegalHoldRelease, params: { rootId: string /* Process root id; may carry '/' or ':' */; holdId: string /* Legal hold id (a breach hold is breach:<id>); may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/process-roots/by-root-id/legal-holds/by-hold-id/release`, query: { rootId: params?.rootId, holdId: params?.holdId } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -4472,10 +4472,10 @@ export class ConfigApi {
    *
    * Codes of a scheme segment valid on the date (optionally children of a parent code).
    *
-   * `GET /config/master/{scheme}/{segment}` (operationId `listConfigMasterCodes`); permission `config.read`.
+   * `GET /config/master/by-scheme/by-segment` (operationId `listConfigMasterCodes`); permission `config.read`.
    */
-  async listConfigMasterCodes(scheme: string, segment: string, params?: { scope?: string /* scope id; default: the caller's tenant */; parent?: string; asOf?: string; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.ConfigMasterCode>> {
-    const req: ApiRequest = { method: 'GET', path: `/config/master/${seg(String(scheme))}/${seg(String(segment))}`, query: { scope: params?.scope, parent: params?.parent, asOf: params?.asOf, page: params?.page, size: params?.size } };
+  async listConfigMasterCodes(params: { scheme: string /* Classification scheme; may carry '/' or ':' */; segment: string /* Scheme segment; may carry '/' or ':' */; scope?: string /* scope id; default: the caller's tenant */; parent?: string; asOf?: string; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.ConfigMasterCode>> {
+    const req: ApiRequest = { method: 'GET', path: `/config/master/by-scheme/by-segment`, query: { scheme: params?.scheme, segment: params?.segment, scope: params?.scope, parent: params?.parent, asOf: params?.asOf, page: params?.page, size: params?.size } };
     return this.calls.page<M.ConfigMasterCode>(req, options, params?.page, params?.size);
   }
 
@@ -4535,10 +4535,10 @@ export class ConfigApi {
    *
    * Checks a document against its type (required fields, limits, chain).
    *
-   * `POST /config/document-types/{id}/check` (operationId `checkConfigDocument`); permission `config.read`.
+   * `POST /config/document-types/by-id/check` (operationId `checkConfigDocument`); permission `config.read`.
    */
-  async checkConfigDocument(id: string, body: M.ConfigDocumentCheckRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/config/document-types/${seg(String(id))}/check` };
+  async checkConfigDocument(body: M.ConfigDocumentCheckRequest, params: { id: string /* Document type id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/config/document-types/by-id/check`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -4548,10 +4548,10 @@ export class ConfigApi {
    *
    * Maps a code (and amount) to the target classification (e.g. COFOG) with shares.
    *
-   * `POST /config/crosswalks/{id}/map` (operationId `mapConfigCrosswalk`); permission `config.read`.
+   * `POST /config/crosswalks/by-id/map` (operationId `mapConfigCrosswalk`); permission `config.read`.
    */
-  async mapConfigCrosswalk(id: string, body: M.ConfigCrosswalkRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/config/crosswalks/${seg(String(id))}/map` };
+  async mapConfigCrosswalk(body: M.ConfigCrosswalkRequest, params: { id: string /* Crosswalk id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/config/crosswalks/by-id/map`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -4620,10 +4620,10 @@ export class DecisionsApi {
    *
    * Evaluates the latest (or given) version; ROUTING/AUTHORITY evaluations with a businessKey are recorded as class-B events (X.2.3.2).
    *
-   * `POST /decisions/{key}/evaluate` (operationId `evaluateDecision`); permission `decision.evaluate`.
+   * `POST /decisions/by-key/evaluate` (operationId `evaluateDecision`); permission `decision.evaluate`.
    */
-  async evaluateDecision(key: string, body: M.DecisionEvaluateRequest, options?: RequestOptions): Promise<M.DecisionEvaluateResult> {
-    const req: ApiRequest = { method: 'POST', path: `/decisions/${seg(String(key))}/evaluate` };
+  async evaluateDecision(body: M.DecisionEvaluateRequest, params: { key: string /* DMN decision key from the deployed model; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.DecisionEvaluateResult> {
+    const req: ApiRequest = { method: 'POST', path: `/decisions/by-key/evaluate`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.DecisionEvaluateResult>(req, options);
   }
@@ -4645,10 +4645,10 @@ export class DecisionsApi {
    *
    * The deployed DMN XML.
    *
-   * `GET /decision-definitions/{id}/xml` (operationId `getDecisionDefinitionXml`); permission `process.read`.
+   * `GET /decision-definitions/by-id/xml` (operationId `getDecisionDefinitionXml`); permission `process.read`.
    */
-  async getDecisionDefinitionXml(id: string, options?: RequestOptions): Promise<string> {
-    const req: ApiRequest = { method: 'GET', path: `/decision-definitions/${seg(String(id))}/xml` };
+  async getDecisionDefinitionXml(params: { id: string /* Decision definition id (key:version:uuid); may carry ':' */ }, options?: RequestOptions): Promise<string> {
+    const req: ApiRequest = { method: 'GET', path: `/decision-definitions/by-id/xml`, query: { id: params?.id } };
     return this.calls.text(req, options, 'application/xml');
   }
 }
@@ -4728,10 +4728,10 @@ export class DltHooksApi {
    *
    * Public at the Sangam layer: the X-Sangam-Signature header is the authentication and is checked first. A missing, wrong or stale signature (outside 5 minutes) is 401 WEBHOOK_SIGNATURE_INVALID; a tenant or connector that is not a configured DLT SMS connector is 404. The body is one report or an array of reports; a body that is not, or a report with neither clientRef nor messageId, is 422 DLT_DELIVERY_REPORT_INVALID and nothing is written. Each accepted report updates the message's delivery state; NOTIFICATION_DELIVERED is written once per delivered message (decision 304).
    *
-   * `POST /hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports` (operationId `receiveDltDeliveryReports`).
+   * `POST /hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports` (operationId `receiveDltDeliveryReports`).
    */
-  async receiveDltDeliveryReports(tenant: string, connectorId: string, body: unknown, params: { xSangamSignature: string /* t=<epoch seconds>,v1=<hex HMAC-SHA256(secret, t + '.' + body)>; refused when t is more than 5 minutes from the server clock */ }, options?: RequestOptions): Promise<M.DltDeliveryReportResult> {
-    const req: ApiRequest = { method: 'POST', path: `/hooks/sms-dlt/${seg(String(tenant))}/${seg(String(connectorId))}/delivery-reports` };
+  async receiveDltDeliveryReports(tenant: string, body: unknown, params: { connectorId: string /* The tenant's DLT SMS connector; may carry '/' or ':' */; xSangamSignature: string /* t=<epoch seconds>,v1=<hex HMAC-SHA256(secret, t + '.' + body)>; refused when t is more than 5 minutes from the server clock */ }, options?: RequestOptions): Promise<M.DltDeliveryReportResult> {
+    const req: ApiRequest = { method: 'POST', path: `/hooks/sms-dlt/${seg(String(tenant))}/by-connector-id/delivery-reports`, query: { connectorId: params?.connectorId } };
     headersOf(req, { 'X-Sangam-Signature': params?.xSangamSignature });
     if (body !== undefined) req.body = body;
     return this.calls.json<M.DltDeliveryReportResult>(req, options);
@@ -4841,10 +4841,10 @@ export class DocumentsApi {
    *
    * Latest version metadata.
    *
-   * `GET /documents/{id}` (operationId `getDocument`); permission `document.read`.
+   * `GET /documents/by-id` (operationId `getDocument`); permission `document.read`.
    */
-  async getDocument(id: string, options?: RequestOptions): Promise<M.Document> {
-    const req: ApiRequest = { method: 'GET', path: `/documents/${seg(String(id))}` };
+  async getDocument(params: { id: string /* Document id (an engine attachment or content item id); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Document> {
+    const req: ApiRequest = { method: 'GET', path: `/documents/by-id`, query: { id: params?.id } };
     return this.calls.json<M.Document>(req, options);
   }
 
@@ -4853,10 +4853,10 @@ export class DocumentsApi {
    *
    * Deletes (subject to retention and legal hold, R29, R61).
    *
-   * `DELETE /documents/{id}` (operationId `deleteDocument`); permission `document.write`; result stored atomically with the state change.
+   * `DELETE /documents/by-id` (operationId `deleteDocument`); permission `document.write`; result stored atomically with the state change.
    */
-  async deleteDocument(id: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/documents/${seg(String(id))}`, query: { reason: params?.reason } };
+  async deleteDocument(params: { id: string /* Document id (an engine attachment or content item id); may carry '/' or ':' */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/documents/by-id`, query: { id: params?.id, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 
@@ -4865,10 +4865,10 @@ export class DocumentsApi {
    *
    * Content of the latest or given version.
    *
-   * `GET /documents/{id}/content` (operationId `getDocumentContent`); permission `document.read`.
+   * `GET /documents/by-id/content` (operationId `getDocumentContent`); permission `document.read`.
    */
-  async getDocumentContent(id: string, params?: { version?: number }, options?: RequestOptions): Promise<Uint8Array> {
-    const req: ApiRequest = { method: 'GET', path: `/documents/${seg(String(id))}/content`, query: { version: params?.version } };
+  async getDocumentContent(params: { id: string /* Document id (an engine attachment or content item id); may carry '/' or ':' */; version?: number }, options?: RequestOptions): Promise<Uint8Array> {
+    const req: ApiRequest = { method: 'GET', path: `/documents/by-id/content`, query: { id: params?.id, version: params?.version } };
     return this.calls.bytes(req, options, 'application/octet-stream');
   }
 
@@ -4877,10 +4877,10 @@ export class DocumentsApi {
    *
    * Adds an immutable version (R74). A slot applies when the document belongs to a process instance. DSC document slot (decisions 267 to 269): with a documentType for which the pack of the process instance declares a slot, a PDF fills that slot in the same transaction as the store, audited in DOCUMENT_UPLOADED or DOCUMENT_VERSION_ADDED with slot and document_type. Only the assignee of an open task of that instance with task.write may set or replace a slot (403 DOCUMENT_SLOT_NOT_TASK_HOLDER); a slot holding another document is 409 DOCUMENT_SLOT_OCCUPIED unless replaceSlot is true. Nothing is stored on either refusal. A slot changed after the signing task was created is refused at completion.
    *
-   * `POST /documents/{id}/versions` (operationId `addDocumentVersion`); permission `document.write`; result stored atomically with the state change.
+   * `POST /documents/by-id/versions` (operationId `addDocumentVersion`); permission `document.write`; result stored atomically with the state change.
    */
-  async addDocumentVersion(id: string, body: FormData, options?: RequestOptions): Promise<M.Document> {
-    const req: ApiRequest = { method: 'POST', path: `/documents/${seg(String(id))}/versions` };
+  async addDocumentVersion(body: FormData, params: { id: string /* Document id (an engine attachment or content item id); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Document> {
+    const req: ApiRequest = { method: 'POST', path: `/documents/by-id/versions`, query: { id: params?.id } };
     if (body !== undefined) req.rawBody = body;
     return this.calls.json<M.Document>(req, options);
   }
@@ -4890,10 +4890,10 @@ export class DocumentsApi {
    *
    * Every immutable version (R74).
    *
-   * `GET /documents/{id}/versions` (operationId `listDocumentVersions`); permission `document.read`.
+   * `GET /documents/by-id/versions` (operationId `listDocumentVersions`); permission `document.read`.
    */
-  async listDocumentVersions(id: string, options?: RequestOptions): Promise<Array<M.Document>> {
-    const req: ApiRequest = { method: 'GET', path: `/documents/${seg(String(id))}/versions` };
+  async listDocumentVersions(params: { id: string /* Document id (an engine attachment or content item id); may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.Document>> {
+    const req: ApiRequest = { method: 'GET', path: `/documents/by-id/versions`, query: { id: params?.id } };
     return this.calls.json<Array<M.Document>>(req, options);
   }
 
@@ -4902,10 +4902,10 @@ export class DocumentsApi {
    *
    * A held document cannot be deleted or disposed of (R61, R29).
    *
-   * `POST /documents/{id}/legal-hold` (operationId `setDocumentLegalHold`); permission `document.legal-hold`; result stored atomically with the state change.
+   * `POST /documents/by-id/legal-hold` (operationId `setDocumentLegalHold`); permission `document.legal-hold`; result stored atomically with the state change.
    */
-  async setDocumentLegalHold(id: string, body: M.LegalHoldRequest, options?: RequestOptions): Promise<M.Document> {
-    const req: ApiRequest = { method: 'POST', path: `/documents/${seg(String(id))}/legal-hold` };
+  async setDocumentLegalHold(body: M.LegalHoldRequest, params: { id: string /* Document id (an engine attachment or content item id); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Document> {
+    const req: ApiRequest = { method: 'POST', path: `/documents/by-id/legal-hold`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Document>(req, options);
   }
@@ -4913,7 +4913,7 @@ export class DocumentsApi {
   /**
    * Document templates
    *
-   * Output templates (R74, S12); the id 'templates' is reserved for /documents/{id}.
+   * Output templates (R74, S12); (a literal route next to /documents/by-id).
    *
    * `GET /documents/templates` (operationId `listDocumentTemplates`); permission `document.read`.
    */
@@ -5051,10 +5051,10 @@ export class EventGridHooksApi {
    *
    * Public at the Sangam layer; the channel's authentication is checked first: a Microsoft Entra ID delivery token (Authorization: Bearer; issuer, audience and signature validated against the channel's configured tenant and application) or the delivery-property secret header, whichever the channel configures (decision 219). A delivery that satisfies no configured method is 401 WEBHOOK_SIGNATURE_INVALID (fail closed), 404 when the channel is not configured or not enabled. CloudEvents structured single or batch, or the Event Grid schema (an array). A Microsoft.EventGrid.SubscriptionValidationEvent is answered with {validationResponse} and writes nothing; other events are written to the inbox (deduplicated by id) and acknowledged. A content type the channel does not accept is 400.
    *
-   * `POST /hooks/eventgrid/{tenant}/{channel}` (operationId `receiveEventGridDelivery`).
+   * `POST /hooks/eventgrid/{tenant}/by-channel` (operationId `receiveEventGridDelivery`).
    */
-  async receiveEventGridDelivery(tenant: string, channel: string, body: Array<Record<string, unknown>>, options?: RequestOptions): Promise<M.EventGridHookResult> {
-    const req: ApiRequest = { method: 'POST', path: `/hooks/eventgrid/${seg(String(tenant))}/${seg(String(channel))}` };
+  async receiveEventGridDelivery(tenant: string, body: Array<Record<string, unknown>>, params: { channel: string /* Configured Event Grid inbound channel of the tenant (an event channel key); may carry ':' */ }, options?: RequestOptions): Promise<M.EventGridHookResult> {
+    const req: ApiRequest = { method: 'POST', path: `/hooks/eventgrid/${seg(String(tenant))}/by-channel`, query: { channel: params?.channel } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.EventGridHookResult>(req, options);
   }
@@ -5094,10 +5094,10 @@ export class EventsApi {
    *
    * One channel.
    *
-   * `GET /events/channels/{key}` (operationId `getEventChannel`); permission `event.admin`.
+   * `GET /events/channels/by-key` (operationId `getEventChannel`); permission `event.admin`.
    */
-  async getEventChannel(key: string, options?: RequestOptions): Promise<M.EventChannel> {
-    const req: ApiRequest = { method: 'GET', path: `/events/channels/${seg(String(key))}` };
+  async getEventChannel(params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */ }, options?: RequestOptions): Promise<M.EventChannel> {
+    const req: ApiRequest = { method: 'GET', path: `/events/channels/by-key`, query: { key: params?.key } };
     return this.calls.json<M.EventChannel>(req, options);
   }
 
@@ -5106,10 +5106,10 @@ export class EventsApi {
    *
    * Updates a channel.
    *
-   * `PUT /events/channels/{key}` (operationId `updateEventChannel`); permission `event.admin`; result stored atomically with the state change.
+   * `PUT /events/channels/by-key` (operationId `updateEventChannel`); permission `event.admin`; result stored atomically with the state change.
    */
-  async updateEventChannel(key: string, body: M.EventChannel, options?: RequestOptions): Promise<M.EventChannel> {
-    const req: ApiRequest = { method: 'PUT', path: `/events/channels/${seg(String(key))}` };
+  async updateEventChannel(body: M.EventChannel, params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */ }, options?: RequestOptions): Promise<M.EventChannel> {
+    const req: ApiRequest = { method: 'PUT', path: `/events/channels/by-key`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.EventChannel>(req, options);
   }
@@ -5119,10 +5119,10 @@ export class EventsApi {
    *
    * Retires every active version and removes the retired versions. Refused with 409 EVENT_IN_FLIGHT while events on the channel are buffered in the inbox or undelivered in the outbox.
    *
-   * `DELETE /events/channels/{key}` (operationId `deleteEventChannel`); permission `event.admin`; result stored atomically with the state change.
+   * `DELETE /events/channels/by-key` (operationId `deleteEventChannel`); permission `event.admin`; result stored atomically with the state change.
    */
-  async deleteEventChannel(key: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/events/channels/${seg(String(key))}`, query: { reason: params?.reason } };
+  async deleteEventChannel(params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/events/channels/by-key`, query: { key: params?.key, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 
@@ -5131,10 +5131,10 @@ export class EventsApi {
    *
    * Marks every active version RETIRED: the channel no longer resolves and stops receiving; an older active version, if any, becomes current. Refused with 409 EVENT_IN_FLIGHT while events are in flight. Returns the channel with active=false (or the version that became current).
    *
-   * `POST /events/channels/{key}/retire` (operationId `retireEventChannel`); permission `event.admin`; result stored atomically with the state change.
+   * `POST /events/channels/by-key/retire` (operationId `retireEventChannel`); permission `event.admin`; result stored atomically with the state change.
    */
-  async retireEventChannel(key: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.EventChannel> {
-    const req: ApiRequest = { method: 'POST', path: `/events/channels/${seg(String(key))}/retire` };
+  async retireEventChannel(body: M.ReasonRequest, params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */ }, options?: RequestOptions): Promise<M.EventChannel> {
+    const req: ApiRequest = { method: 'POST', path: `/events/channels/by-key/retire`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.EventChannel>(req, options);
   }
@@ -5144,10 +5144,10 @@ export class EventsApi {
    *
    * Re-activates the newest retired version (undo of a retire); 409 NOT_RETIRED when there is none.
    *
-   * `POST /events/channels/{key}/restore` (operationId `restoreEventChannel`); permission `event.admin`; result stored atomically with the state change.
+   * `POST /events/channels/by-key/restore` (operationId `restoreEventChannel`); permission `event.admin`; result stored atomically with the state change.
    */
-  async restoreEventChannel(key: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.EventChannel> {
-    const req: ApiRequest = { method: 'POST', path: `/events/channels/${seg(String(key))}/restore` };
+  async restoreEventChannel(body: M.ReasonRequest, params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */ }, options?: RequestOptions): Promise<M.EventChannel> {
+    const req: ApiRequest = { method: 'POST', path: `/events/channels/by-key/restore`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.EventChannel>(req, options);
   }
@@ -5182,10 +5182,10 @@ export class EventsApi {
    *
    * One definition.
    *
-   * `GET /events/definitions/{key}` (operationId `getEventDefinition`); permission `event.admin`.
+   * `GET /events/definitions/by-key` (operationId `getEventDefinition`); permission `event.admin`.
    */
-  async getEventDefinition(key: string, options?: RequestOptions): Promise<M.EventDefinition> {
-    const req: ApiRequest = { method: 'GET', path: `/events/definitions/${seg(String(key))}` };
+  async getEventDefinition(params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */ }, options?: RequestOptions): Promise<M.EventDefinition> {
+    const req: ApiRequest = { method: 'GET', path: `/events/definitions/by-key`, query: { key: params?.key } };
     return this.calls.json<M.EventDefinition>(req, options);
   }
 
@@ -5194,10 +5194,10 @@ export class EventsApi {
    *
    * Retires every active version and removes the retired versions. Refused with 409 EVENT_IN_FLIGHT while events of the key are buffered or undelivered.
    *
-   * `DELETE /events/definitions/{key}` (operationId `deleteEventDefinition`); permission `event.admin`; result stored atomically with the state change.
+   * `DELETE /events/definitions/by-key` (operationId `deleteEventDefinition`); permission `event.admin`; result stored atomically with the state change.
    */
-  async deleteEventDefinition(key: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/events/definitions/${seg(String(key))}`, query: { reason: params?.reason } };
+  async deleteEventDefinition(params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/events/definitions/by-key`, query: { key: params?.key, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 
@@ -5206,10 +5206,10 @@ export class EventsApi {
    *
    * Marks every active version RETIRED; an older active version, if any, becomes current. Refused with 409 EVENT_IN_FLIGHT while events of the key are in flight.
    *
-   * `POST /events/definitions/{key}/retire` (operationId `retireEventDefinition`); permission `event.admin`; result stored atomically with the state change.
+   * `POST /events/definitions/by-key/retire` (operationId `retireEventDefinition`); permission `event.admin`; result stored atomically with the state change.
    */
-  async retireEventDefinition(key: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.EventDefinition> {
-    const req: ApiRequest = { method: 'POST', path: `/events/definitions/${seg(String(key))}/retire` };
+  async retireEventDefinition(body: M.ReasonRequest, params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */ }, options?: RequestOptions): Promise<M.EventDefinition> {
+    const req: ApiRequest = { method: 'POST', path: `/events/definitions/by-key/retire`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.EventDefinition>(req, options);
   }
@@ -5219,10 +5219,10 @@ export class EventsApi {
    *
    * Re-activates the newest retired version (undo of a retire); 409 NOT_RETIRED when there is none.
    *
-   * `POST /events/definitions/{key}/restore` (operationId `restoreEventDefinition`); permission `event.admin`; result stored atomically with the state change.
+   * `POST /events/definitions/by-key/restore` (operationId `restoreEventDefinition`); permission `event.admin`; result stored atomically with the state change.
    */
-  async restoreEventDefinition(key: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.EventDefinition> {
-    const req: ApiRequest = { method: 'POST', path: `/events/definitions/${seg(String(key))}/restore` };
+  async restoreEventDefinition(body: M.ReasonRequest, params: { key: string /* Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':' */ }, options?: RequestOptions): Promise<M.EventDefinition> {
+    const req: ApiRequest = { method: 'POST', path: `/events/definitions/by-key/restore`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.EventDefinition>(req, options);
   }
@@ -5232,10 +5232,10 @@ export class EventsApi {
    *
    * Accepts a CloudEvent on an inbound channel; de-duplicated through the inbox by (tenant, source, id) (R38), then starts (uniqueStart) or correlates (R83).
    *
-   * `POST /events/{channel}` (operationId `publishEvent`); permission `event.publish`; result stored atomically with the state change.
+   * `POST /events/by-channel` (operationId `publishEvent`); permission `event.publish`; result stored atomically with the state change.
    */
-  async publishEvent(channel: string, body: M.CloudEvent, options?: RequestOptions): Promise<M.PublishResult> {
-    const req: ApiRequest = { method: 'POST', path: `/events/${seg(String(channel))}` };
+  async publishEvent(body: M.CloudEvent, params: { channel: string /* Inbound event channel key; may carry ':' */ }, options?: RequestOptions): Promise<M.PublishResult> {
+    const req: ApiRequest = { method: 'POST', path: `/events/by-channel`, query: { channel: params?.channel } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.PublishResult>(req, options);
   }
@@ -6388,10 +6388,10 @@ export class HealthHooksApi {
    *
    * Public at the Sangam layer: the channel's shared secret header is checked (constant time) and each focus resource is written to the integration inbox (deduplicated, tenant-bound by the channel). ClaimResponse becomes sangam.ushealth.pasUpdate.
    *
-   * `POST /hooks/fhir/{channel}` (operationId `receiveFhirNotification`).
+   * `POST /hooks/fhir/by-channel` (operationId `receiveFhirNotification`).
    */
-  async receiveFhirNotification(channel: string, body: Record<string, unknown>, options?: RequestOptions): Promise<M.HealthHookResult> {
-    const req: ApiRequest = { method: 'POST', path: `/hooks/fhir/${seg(String(channel))}` };
+  async receiveFhirNotification(body: Record<string, unknown>, params: { channel: string /* Configured FHIR subscription channel; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.HealthHookResult> {
+    const req: ApiRequest = { method: 'POST', path: `/hooks/fhir/by-channel`, query: { channel: params?.channel } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.HealthHookResult>(req, options);
   }
@@ -6687,10 +6687,10 @@ export class LinksApi {
    *
    * Removes an explicit link.
    *
-   * `DELETE /links/{id}` (operationId `deleteLink`); permission `process.write`; result stored atomically with the state change.
+   * `DELETE /links/by-id` (operationId `deleteLink`); permission `process.write`; result stored atomically with the state change.
    */
-  async deleteLink(id: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/links/${seg(String(id))}`, query: { reason: params?.reason } };
+  async deleteLink(params: { id: string /* Link id (a derived link is derived:<type>:<source>:<target>); may carry '/' or ':' */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/links/by-id`, query: { id: params?.id, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 }
@@ -6754,10 +6754,10 @@ export class LowCodeApi {
    *
    * Named query (R25); further query parameters are passed to the query. Uses the same authorization as the underlying data.
    *
-   * `GET /queries/{name}` (operationId `runNamedQuery`); permission `lowcode.read`.
+   * `GET /queries/by-name` (operationId `runNamedQuery`); permission `lowcode.read`.
    */
-  async runNamedQuery(name: string, params?: { page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
-    const req: ApiRequest = { method: 'GET', path: `/queries/${seg(String(name))}`, query: { page: params?.page, size: params?.size } };
+  async runNamedQuery(params: { name: string /* Named query (tasks.mine, process-instances, or data:<data object key>); may carry ':' */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<Record<string, unknown>>> {
+    const req: ApiRequest = { method: 'GET', path: `/queries/by-name`, query: { name: params?.name, page: params?.page, size: params?.size } };
     return this.calls.page<Record<string, unknown>>(req, options, params?.page, params?.size);
   }
 
@@ -7012,10 +7012,10 @@ export class ModellerApi {
    *
    * Installs a kind package entry into the caller's tenant: the catalogue checks first (index signature, licence allow-list, platform version, artefact SHA-256), then the package import (T70: the bundle's own hash and signatures; the package lands APPROVED, activation still needs a deployer and the ENV_BINDING values). 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds are never installed), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_ARTIFACT_PATH_INVALID, CATALOGUE_EGRESS_DENIED, or a package import refusal (PACKAGE_HASH_MISMATCH, signatures); 409 PACKAGE_EXISTS.
    *
-   * `POST /catalogue/{id}/{version}/install` (operationId `installCatalogueEntry`); permission `package.deploy`; result stored atomically with the state change.
+   * `POST /catalogue/by-id/by-version/install` (operationId `installCatalogueEntry`); permission `package.deploy`; result stored atomically with the state change.
    */
-  async installCatalogueEntry(id: string, version: string, body?: M.CatalogueInstallRequest, options?: RequestOptions): Promise<M.Package> {
-    const req: ApiRequest = { method: 'POST', path: `/catalogue/${seg(String(id))}/${seg(String(version))}/install` };
+  async installCatalogueEntry(body: M.CatalogueInstallRequest | undefined, params: { id: string /* Catalogue entry id from the remote index; may carry '/' or ':' */; version: string /* Catalogue entry version from the remote index; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Package> {
+    const req: ApiRequest = { method: 'POST', path: `/catalogue/by-id/by-version/install`, query: { id: params?.id, version: params?.version } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Package>(req, options);
   }
@@ -7025,10 +7025,10 @@ export class ModellerApi {
    *
    * Decision 380 P2 (b): publishes the connector element templates of a kind connector-template entry in the caller's tenant after the same catalogue checks as a package install (index signature, licence allow-list, platform version, artefact SHA-256). The artefact is data only ({templates: [{id, name, description, appliesTo, fields}]}, the format of the built-in connector templates); every template id is the entry id or starts with it and a dot, so an entry never replaces a built-in or another entry's template, and no field may be named like a credential. Only changed templates get a new version, with one CATALOGUE_TEMPLATES_INSTALLED audit event in the same transaction; a repeated install writes nothing. 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds), CATALOGUE_KIND_MISMATCH (a package entry), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_EGRESS_DENIED; 501 when the modeller template store is not installed.
    *
-   * `POST /catalogue/{id}/{version}/install-templates` (operationId `installCatalogueTemplates`); permission `package.author`; result stored atomically with the state change.
+   * `POST /catalogue/by-id/by-version/install-templates` (operationId `installCatalogueTemplates`); permission `package.author`; result stored atomically with the state change.
    */
-  async installCatalogueTemplates(id: string, version: string, body?: M.CatalogueInstallRequest, options?: RequestOptions): Promise<M.CatalogueTemplatesInstalled> {
-    const req: ApiRequest = { method: 'POST', path: `/catalogue/${seg(String(id))}/${seg(String(version))}/install-templates` };
+  async installCatalogueTemplates(body: M.CatalogueInstallRequest | undefined, params: { id: string /* Catalogue entry id from the remote index; may carry '/' or ':' */; version: string /* Catalogue entry version from the remote index; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CatalogueTemplatesInstalled> {
+    const req: ApiRequest = { method: 'POST', path: `/catalogue/by-id/by-version/install-templates`, query: { id: params?.id, version: params?.version } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CatalogueTemplatesInstalled>(req, options);
   }
@@ -7163,10 +7163,10 @@ export class ModellerApi {
    *
    * The lease on a model file.
    *
-   * `GET /models/{file}/lease` (operationId `getModelLease`); permission `package.read`.
+   * `GET /models/by-file/lease` (operationId `getModelLease`); permission `package.read`.
    */
-  async getModelLease(file: string, options?: RequestOptions): Promise<M.ModelEditLease> {
-    const req: ApiRequest = { method: 'GET', path: `/models/${seg(String(file))}/lease` };
+  async getModelLease(params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.ModelEditLease> {
+    const req: ApiRequest = { method: 'GET', path: `/models/by-file/lease`, query: { file: params?.file } };
     return this.calls.json<M.ModelEditLease>(req, options);
   }
 
@@ -7175,10 +7175,10 @@ export class ModellerApi {
    *
    * Saves then send the fence in X-Sangam-Edit-Fence.
    *
-   * `POST /models/{file}/lease` (operationId `acquireModelLease`); permission `package.author`; result stored atomically with the state change.
+   * `POST /models/by-file/lease` (operationId `acquireModelLease`); permission `package.author`; result stored atomically with the state change.
    */
-  async acquireModelLease(file: string, options?: RequestOptions): Promise<M.ModelLeaseOutcome> {
-    const req: ApiRequest = { method: 'POST', path: `/models/${seg(String(file))}/lease` };
+  async acquireModelLease(params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.ModelLeaseOutcome> {
+    const req: ApiRequest = { method: 'POST', path: `/models/by-file/lease`, query: { file: params?.file } };
     return this.calls.json<M.ModelLeaseOutcome>(req, options);
   }
 
@@ -7187,10 +7187,10 @@ export class ModellerApi {
    *
    * Holder only.
    *
-   * `POST /models/{file}/lease/heartbeat` (operationId `heartbeatModelLease`); permission `package.author`; result stored atomically with the state change.
+   * `POST /models/by-file/lease/heartbeat` (operationId `heartbeatModelLease`); permission `package.author`; result stored atomically with the state change.
    */
-  async heartbeatModelLease(file: string, body: M.ModelFenceRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/models/${seg(String(file))}/lease/heartbeat` };
+  async heartbeatModelLease(body: M.ModelFenceRequest, params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/models/by-file/lease/heartbeat`, query: { file: params?.file } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -7200,10 +7200,10 @@ export class ModellerApi {
    *
    * Holder only.
    *
-   * `POST /models/{file}/lease/release` (operationId `releaseModelLease`); permission `package.author`; result stored atomically with the state change.
+   * `POST /models/by-file/lease/release` (operationId `releaseModelLease`); permission `package.author`; result stored atomically with the state change.
    */
-  async releaseModelLease(file: string, body: M.ModelFenceRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/models/${seg(String(file))}/lease/release` };
+  async releaseModelLease(body: M.ModelFenceRequest, params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/models/by-file/lease/release`, query: { file: params?.file } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -7213,10 +7213,10 @@ export class ModellerApi {
    *
    * Tells the holder.
    *
-   * `POST /models/{file}/lease/request-takeover` (operationId `requestModelLeaseTakeover`); permission `package.author`; result stored atomically with the state change.
+   * `POST /models/by-file/lease/request-takeover` (operationId `requestModelLeaseTakeover`); permission `package.author`; result stored atomically with the state change.
    */
-  async requestModelLeaseTakeover(file: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/models/${seg(String(file))}/lease/request-takeover` };
+  async requestModelLeaseTakeover(params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/models/by-file/lease/request-takeover`, query: { file: params?.file } };
     await this.calls.none(req, options);
   }
 
@@ -7225,10 +7225,10 @@ export class ModellerApi {
    *
    * Needs modeller.lease.takeover; audited.
    *
-   * `POST /models/{file}/lease/takeover` (operationId `takeOverModelLease`); permission `package.author`; result stored atomically with the state change.
+   * `POST /models/by-file/lease/takeover` (operationId `takeOverModelLease`); permission `package.author`; result stored atomically with the state change.
    */
-  async takeOverModelLease(file: string, body: M.ModelTakeoverRequest, options?: RequestOptions): Promise<M.ModelEditLease> {
-    const req: ApiRequest = { method: 'POST', path: `/models/${seg(String(file))}/lease/takeover` };
+  async takeOverModelLease(body: M.ModelTakeoverRequest, params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.ModelEditLease> {
+    const req: ApiRequest = { method: 'POST', path: `/models/by-file/lease/takeover`, query: { file: params?.file } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ModelEditLease>(req, options);
   }
@@ -7238,10 +7238,10 @@ export class ModellerApi {
    *
    * Server-sent events, event name 'presence', data = ModelPresence: one event on connect and one on every join, leave or lease change (M-101). The caller is present while the stream is open; closing it leaves. Live across nodes like the conversation stream (M-040).
    *
-   * `GET /models/{file}/presence/stream` (operationId `streamModelPresence`); permission `package.read`.
+   * `GET /models/by-file/presence/stream` (operationId `streamModelPresence`); permission `package.read`.
    */
-  async streamModelPresence(file: string, options?: RequestOptions): Promise<string> {
-    const req: ApiRequest = { method: 'GET', path: `/models/${seg(String(file))}/presence/stream` };
+  async streamModelPresence(params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<string> {
+    const req: ApiRequest = { method: 'GET', path: `/models/by-file/presence/stream`, query: { file: params?.file } };
     return this.calls.text(req, options, 'text/event-stream');
   }
 
@@ -7376,10 +7376,10 @@ export class ModellerApi {
    *
    * Same as POST on the lease.
    *
-   * `POST /models/{file}/lease/acquire` (operationId `acquireModelLeaseUi`); permission `package.author`; result stored atomically with the state change.
+   * `POST /models/by-file/lease/acquire` (operationId `acquireModelLeaseUi`); permission `package.author`; result stored atomically with the state change.
    */
-  async acquireModelLeaseUi(file: string, body?: M.ModellerFenceRequest, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'POST', path: `/models/${seg(String(file))}/lease/acquire` };
+  async acquireModelLeaseUi(body: M.ModellerFenceRequest | undefined, params: { file: string /* Model file id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'POST', path: `/models/by-file/lease/acquire`, query: { file: params?.file } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -7452,10 +7452,10 @@ export class ModellerApi {
    *
    * Affects every rule of the service.
    *
-   * `PATCH /service-mocks/{id}` (operationId `toggleServiceMock`); permission `ops.write`; result stored atomically with the state change.
+   * `PATCH /service-mocks/by-id` (operationId `toggleServiceMock`); permission `ops.write`; result stored atomically with the state change.
    */
-  async toggleServiceMock(id: string, body: M.ServiceMocksToggle, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'PATCH', path: `/service-mocks/${seg(String(id))}` };
+  async toggleServiceMock(body: M.ServiceMocksToggle, params: { id: string /* Mock row id (service.operation); may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'PATCH', path: `/service-mocks/by-id`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -7609,10 +7609,10 @@ export class OnboardingApi {
    *
    * The tenant's configuration, signed. No secrets, no go-live evidence.
    *
-   * `GET /onboarding/tenants/{tenant}/bundle` (operationId `exportTenantBundle`); permission `tenant.admin`.
+   * `GET /onboarding/tenants/by-tenant/bundle` (operationId `exportTenantBundle`); permission `tenant.admin`.
    */
-  async exportTenantBundle(tenant: string, options?: RequestOptions): Promise<M.TenantBundle> {
-    const req: ApiRequest = { method: 'GET', path: `/onboarding/tenants/${seg(String(tenant))}/bundle` };
+  async exportTenantBundle(params: { tenant: string /* Tenant id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.TenantBundle> {
+    const req: ApiRequest = { method: 'GET', path: `/onboarding/tenants/by-tenant/bundle`, query: { tenant: params?.tenant } };
     return this.calls.json<M.TenantBundle>(req, options);
   }
 
@@ -7647,10 +7647,10 @@ export class OnboardingApi {
    *
    * The tenant's signed bundle labelled with this environment (sangam.onboarding.environment). 409 PROMOTION_ENVIRONMENT_NOT_SET without a label.
    *
-   * `GET /onboarding/promotions/{tenant}/bundle` (operationId `exportPromotionBundle`); permission `tenant.admin`.
+   * `GET /onboarding/promotions/by-tenant/bundle` (operationId `exportPromotionBundle`); permission `tenant.admin`.
    */
-  async exportPromotionBundle(tenant: string, options?: RequestOptions): Promise<M.TenantBundle> {
-    const req: ApiRequest = { method: 'GET', path: `/onboarding/promotions/${seg(String(tenant))}/bundle` };
+  async exportPromotionBundle(params: { tenant: string /* Tenant id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.TenantBundle> {
+    const req: ApiRequest = { method: 'GET', path: `/onboarding/promotions/by-tenant/bundle`, query: { tenant: params?.tenant } };
     return this.calls.json<M.TenantBundle>(req, options);
   }
 
@@ -8570,10 +8570,10 @@ export class PacksApi {
    *
    * Removes every version of the pack from the tenant, audited (PACK_UNINSTALLED). 404 PACK_NOT_INSTALLED; 409 PACK_HAS_DEPENDANTS or PACK_HAS_LIVE_INSTANCES with `blockers`; 400 REASON_REQUIRED. 409 PACK_OPERATION_IN_PROGRESS while another operation on the pack runs (SL-116).
    *
-   * `POST /packs/{id}/uninstall` (operationId `uninstallPack`); permission `tenant.admin`; result stored atomically with the state change.
+   * `POST /packs/by-id/uninstall` (operationId `uninstallPack`); permission `tenant.admin`; result stored atomically with the state change.
    */
-  async uninstallPack(id: string, body: M.PackLifecycleRequest, options?: RequestOptions): Promise<M.PackUninstalled> {
-    const req: ApiRequest = { method: 'POST', path: `/packs/${seg(String(id))}/uninstall` };
+  async uninstallPack(body: M.PackLifecycleRequest, params: { id: string /* Pack id, e.g. sec.health.admission-discharge (no pattern, PackDeployer); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.PackUninstalled> {
+    const req: ApiRequest = { method: 'POST', path: `/packs/by-id/uninstall`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.PackUninstalled>(req, options);
   }
@@ -8583,10 +8583,10 @@ export class PacksApi {
    *
    * Roll-forward (SL-54): the resources of the most recent deployment of a different version are read back from the engine and deployed as a NEW version, the next patch above the highest installed version of the pack, with every version-bearing part restated for it; no existing `id@version` is reused or changed. New instances started by key then start on the previous models; running instances keep the definitions they started on. Each further rollback rolls forward again to a new version. Audited (PACK_ROLLED_BACK, with the new version). 404 PACK_NOT_INSTALLED; 409 PACK_NO_PREVIOUS_VERSION; 409 PACK_VERSION_NOT_SEMVER with `blockers` (the installed versions that are not MAJOR.MINOR.PATCH, so the next version cannot be determined); 422 PACK_REJECTED with `violations`; 400 REASON_REQUIRED. 409 PACK_OPERATION_IN_PROGRESS while another operation on the pack runs (SL-116).
    *
-   * `POST /packs/{id}/rollback` (operationId `rollbackPack`); permission `tenant.admin`; result stored atomically with the state change.
+   * `POST /packs/by-id/rollback` (operationId `rollbackPack`); permission `tenant.admin`; result stored atomically with the state change.
    */
-  async rollbackPack(id: string, body: M.PackLifecycleRequest, options?: RequestOptions): Promise<M.PackDeployResult> {
-    const req: ApiRequest = { method: 'POST', path: `/packs/${seg(String(id))}/rollback` };
+  async rollbackPack(body: M.PackLifecycleRequest, params: { id: string /* Pack id, e.g. sec.health.admission-discharge (no pattern, PackDeployer); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.PackDeployResult> {
+    const req: ApiRequest = { method: 'POST', path: `/packs/by-id/rollback`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.PackDeployResult>(req, options);
   }
@@ -8596,10 +8596,10 @@ export class PacksApi {
    *
    * The documentType-to-slot pairs the pack declares for its DSC steps (decision 269), in manifest order; empty when the pack declares none. 404 NOT_FOUND when no pack with this id is registered.
    *
-   * `GET /packs/{id}/document-slots` (operationId `listPackDocumentSlots`); permission `tenant.admin`.
+   * `GET /packs/by-id/document-slots` (operationId `listPackDocumentSlots`); permission `tenant.admin`.
    */
-  async listPackDocumentSlots(id: string, options?: RequestOptions): Promise<Array<M.PackDocumentSlot>> {
-    const req: ApiRequest = { method: 'GET', path: `/packs/${seg(String(id))}/document-slots` };
+  async listPackDocumentSlots(params: { id: string /* Pack id, e.g. sec.health.admission-discharge (no pattern, PackDeployer); may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.PackDocumentSlot>> {
+    const req: ApiRequest = { method: 'GET', path: `/packs/by-id/document-slots`, query: { id: params?.id } };
     return this.calls.json<Array<M.PackDocumentSlot>>(req, options);
   }
 }
@@ -8637,10 +8637,10 @@ export class PluginsApi {
    *
    * Effective at the next restart.
    *
-   * `POST /admin/plugins/{id}/enable` (operationId `enablePlugin`); permission `tenant.admin`; result stored atomically with the state change.
+   * `POST /admin/plugins/by-id/enable` (operationId `enablePlugin`); permission `tenant.admin`; result stored atomically with the state change.
    */
-  async enablePlugin(id: string, options?: RequestOptions): Promise<M.PluginInfo> {
-    const req: ApiRequest = { method: 'POST', path: `/admin/plugins/${seg(String(id))}/enable` };
+  async enablePlugin(params: { id: string /* Plugin id as the jar declares it; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.PluginInfo> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/plugins/by-id/enable`, query: { id: params?.id } };
     return this.calls.json<M.PluginInfo>(req, options);
   }
 
@@ -8649,10 +8649,10 @@ export class PluginsApi {
    *
    * Effective at the next restart.
    *
-   * `POST /admin/plugins/{id}/disable` (operationId `disablePlugin`); permission `tenant.admin`; result stored atomically with the state change.
+   * `POST /admin/plugins/by-id/disable` (operationId `disablePlugin`); permission `tenant.admin`; result stored atomically with the state change.
    */
-  async disablePlugin(id: string, options?: RequestOptions): Promise<M.PluginInfo> {
-    const req: ApiRequest = { method: 'POST', path: `/admin/plugins/${seg(String(id))}/disable` };
+  async disablePlugin(params: { id: string /* Plugin id as the jar declares it; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.PluginInfo> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/plugins/by-id/disable`, query: { id: params?.id } };
     return this.calls.json<M.PluginInfo>(req, options);
   }
 
@@ -8702,10 +8702,10 @@ export class PortalApi {
    *
    * The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); versionHash is the form's own. 404 for a service not in the catalogue or without a form.
    *
-   * `GET /portal/services/{key}/form` (operationId `getPortalServiceForm`); permission `portal.use`.
+   * `GET /portal/services/by-key/form` (operationId `getPortalServiceForm`); permission `portal.use`.
    */
-  async getPortalServiceForm(key: string, options?: RequestOptions): Promise<M.FormVersion> {
-    const req: ApiRequest = { method: 'GET', path: `/portal/services/${seg(String(key))}/form` };
+  async getPortalServiceForm(params: { key: string /* Service key (the service form key); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.FormVersion> {
+    const req: ApiRequest = { method: 'GET', path: `/portal/services/by-key/form`, query: { key: params?.key } };
     return this.calls.json<M.FormVersion>(req, options);
   }
 
@@ -8714,10 +8714,10 @@ export class PortalApi {
    *
    * The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
    *
-   * `GET /portal/services/{key}/notice` (operationId `getPortalServiceNotice`); permission `portal.use`.
+   * `GET /portal/services/by-key/notice` (operationId `getPortalServiceNotice`); permission `portal.use`.
    */
-  async getPortalServiceNotice(key: string, params?: { lang?: string /* language code of the jurisdiction pack (default: the tenant's) */ }, options?: RequestOptions): Promise<M.PortalNotice> {
-    const req: ApiRequest = { method: 'GET', path: `/portal/services/${seg(String(key))}/notice`, query: { lang: params?.lang } };
+  async getPortalServiceNotice(params: { key: string /* Service key (the service form key); may carry '/' or ':' */; lang?: string /* language code of the jurisdiction pack (default: the tenant's) */ }, options?: RequestOptions): Promise<M.PortalNotice> {
+    const req: ApiRequest = { method: 'GET', path: `/portal/services/by-key/notice`, query: { key: params?.key, lang: params?.lang } };
     return this.calls.json<M.PortalNotice>(req, options);
   }
 
@@ -8763,10 +8763,10 @@ export class PortalApi {
    *
    * Status, stage, clarifications and messages; officers appear only as seat designations (PER-8).
    *
-   * `GET /portal/applications/{id}` (operationId `getMyApplication`); permission `portal.use`.
+   * `GET /portal/applications/by-id` (operationId `getMyApplication`); permission `portal.use`.
    */
-  async getMyApplication(id: string, options?: RequestOptions): Promise<M.Application> {
-    const req: ApiRequest = { method: 'GET', path: `/portal/applications/${seg(String(id))}` };
+  async getMyApplication(params: { id: string /* Application id from the portal adapter; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Application> {
+    const req: ApiRequest = { method: 'GET', path: `/portal/applications/by-id`, query: { id: params?.id } };
     return this.calls.json<M.Application>(req, options);
   }
 
@@ -8775,10 +8775,10 @@ export class PortalApi {
    *
    * Text plus files (CLARIFICATION_RECEIVED, C04).
    *
-   * `POST /portal/applications/{id}/clarifications/{clarificationId}/reply` (operationId `replyToClarification`); permission `portal.use`; result stored atomically with the state change.
+   * `POST /portal/applications/by-id/clarifications/by-clarification-id/reply` (operationId `replyToClarification`); permission `portal.use`; result stored atomically with the state change.
    */
-  async replyToClarification(id: string, clarificationId: string, body: FormData, options?: RequestOptions): Promise<M.Application> {
-    const req: ApiRequest = { method: 'POST', path: `/portal/applications/${seg(String(id))}/clarifications/${seg(String(clarificationId))}/reply` };
+  async replyToClarification(body: FormData, params: { id: string /* Application id from the portal adapter; may carry '/' or ':' */; clarificationId: string /* Clarification id (an engine task id); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Application> {
+    const req: ApiRequest = { method: 'POST', path: `/portal/applications/by-id/clarifications/by-clarification-id/reply`, query: { id: params?.id, clarificationId: params?.clarificationId } };
     if (body !== undefined) req.rawBody = body;
     return this.calls.json<M.Application>(req, options);
   }
@@ -8788,10 +8788,10 @@ export class PortalApi {
    *
    * CASE_WITHDRAWN.
    *
-   * `POST /portal/applications/{id}/withdraw` (operationId `withdrawApplication`); permission `portal.use`; result stored atomically with the state change.
+   * `POST /portal/applications/by-id/withdraw` (operationId `withdrawApplication`); permission `portal.use`; result stored atomically with the state change.
    */
-  async withdrawApplication(id: string, body: M.WithdrawRequest, options?: RequestOptions): Promise<M.Application> {
-    const req: ApiRequest = { method: 'POST', path: `/portal/applications/${seg(String(id))}/withdraw` };
+  async withdrawApplication(body: M.WithdrawRequest, params: { id: string /* Application id from the portal adapter; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Application> {
+    const req: ApiRequest = { method: 'POST', path: `/portal/applications/by-id/withdraw`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Application>(req, options);
   }
@@ -8801,10 +8801,10 @@ export class PortalApi {
    *
    * APPEAL_FILED.
    *
-   * `POST /portal/applications/{id}/appeal` (operationId `appealApplication`); permission `portal.use`; result stored atomically with the state change.
+   * `POST /portal/applications/by-id/appeal` (operationId `appealApplication`); permission `portal.use`; result stored atomically with the state change.
    */
-  async appealApplication(id: string, body: M.AppealRequest, options?: RequestOptions): Promise<M.Application> {
-    const req: ApiRequest = { method: 'POST', path: `/portal/applications/${seg(String(id))}/appeal` };
+  async appealApplication(body: M.AppealRequest, params: { id: string /* Application id from the portal adapter; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Application> {
+    const req: ApiRequest = { method: 'POST', path: `/portal/applications/by-id/appeal`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Application>(req, options);
   }
@@ -8814,10 +8814,10 @@ export class PortalApi {
    *
    * Certificate, sanction or rejection order (C05).
    *
-   * `GET /portal/applications/{id}/outcome` (operationId `downloadOutcome`); permission `portal.use`.
+   * `GET /portal/applications/by-id/outcome` (operationId `downloadOutcome`); permission `portal.use`.
    */
-  async downloadOutcome(id: string, options?: RequestOptions): Promise<Uint8Array> {
-    const req: ApiRequest = { method: 'GET', path: `/portal/applications/${seg(String(id))}/outcome` };
+  async downloadOutcome(params: { id: string /* Application id from the portal adapter; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Uint8Array> {
+    const req: ApiRequest = { method: 'GET', path: `/portal/applications/by-id/outcome`, query: { id: params?.id } };
     return this.calls.bytes(req, options, 'application/octet-stream');
   }
 
@@ -9030,10 +9030,10 @@ export class ProcessesApi {
    *
    * Enabled and active activities of an ad-hoc scope.
    *
-   * `GET /process-instances/{id}/ad-hoc/{adHocActivityId}` (operationId `getAdHocState`); permission `process.read`.
+   * `GET /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id` (operationId `getAdHocState`); permission `process.read`.
    */
-  async getAdHocState(id: string, adHocActivityId: string, options?: RequestOptions): Promise<M.AdHocState> {
-    const req: ApiRequest = { method: 'GET', path: `/process-instances/${seg(String(id))}/ad-hoc/${seg(String(adHocActivityId))}` };
+  async getAdHocState(id: string, params: { adHocActivityId: string /* Id of the ad-hoc sub-process activity (a BPMN element id from the deployed model); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.AdHocState> {
+    const req: ApiRequest = { method: 'GET', path: `/process-instances/${seg(String(id))}/ad-hoc/by-ad-hoc-activity-id`, query: { adHocActivityId: params?.adHocActivityId } };
     return this.calls.json<M.AdHocState>(req, options);
   }
 
@@ -9042,10 +9042,10 @@ export class ProcessesApi {
    *
    * Starts an enabled activity in the ad-hoc scope.
    *
-   * `POST /process-instances/{id}/ad-hoc/{adHocActivityId}/start` (operationId `startAdHocActivity`); permission `process.write`; result stored atomically with the state change.
+   * `POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/start` (operationId `startAdHocActivity`); permission `process.write`; result stored atomically with the state change.
    */
-  async startAdHocActivity(id: string, adHocActivityId: string, body: M.StartAdHocActivityRequest, options?: RequestOptions): Promise<M.AdHocState> {
-    const req: ApiRequest = { method: 'POST', path: `/process-instances/${seg(String(id))}/ad-hoc/${seg(String(adHocActivityId))}/start` };
+  async startAdHocActivity(id: string, body: M.StartAdHocActivityRequest, params: { adHocActivityId: string /* Id of the ad-hoc sub-process activity (a BPMN element id from the deployed model); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.AdHocState> {
+    const req: ApiRequest = { method: 'POST', path: `/process-instances/${seg(String(id))}/ad-hoc/by-ad-hoc-activity-id/start`, query: { adHocActivityId: params?.adHocActivityId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.AdHocState>(req, options);
   }
@@ -9055,10 +9055,10 @@ export class ProcessesApi {
    *
    * Completes the ad-hoc sub-process when its completion condition allows.
    *
-   * `POST /process-instances/{id}/ad-hoc/{adHocActivityId}/complete` (operationId `completeAdHoc`); permission `process.write`; result stored atomically with the state change.
+   * `POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/complete` (operationId `completeAdHoc`); permission `process.write`; result stored atomically with the state change.
    */
-  async completeAdHoc(id: string, adHocActivityId: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<M.AdHocState> {
-    const req: ApiRequest = { method: 'POST', path: `/process-instances/${seg(String(id))}/ad-hoc/${seg(String(adHocActivityId))}/complete`, query: { reason: params?.reason } };
+  async completeAdHoc(id: string, params: { adHocActivityId: string /* Id of the ad-hoc sub-process activity (a BPMN element id from the deployed model); may carry '/' or ':' */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<M.AdHocState> {
+    const req: ApiRequest = { method: 'POST', path: `/process-instances/${seg(String(id))}/ad-hoc/by-ad-hoc-activity-id/complete`, query: { adHocActivityId: params?.adHocActivityId, reason: params?.reason } };
     return this.calls.json<M.AdHocState>(req, options);
   }
 
@@ -9092,10 +9092,10 @@ export class ProcessesApi {
    *
    * One definition.
    *
-   * `GET /process-definitions/{id}` (operationId `getProcessDefinition`); permission `process.read`.
+   * `GET /process-definitions/by-id` (operationId `getProcessDefinition`); permission `process.read`.
    */
-  async getProcessDefinition(id: string, options?: RequestOptions): Promise<M.ProcessDefinition> {
-    const req: ApiRequest = { method: 'GET', path: `/process-definitions/${seg(String(id))}` };
+  async getProcessDefinition(params: { id: string /* Process definition id (key:version:uuid); may carry ':' */ }, options?: RequestOptions): Promise<M.ProcessDefinition> {
+    const req: ApiRequest = { method: 'GET', path: `/process-definitions/by-id`, query: { id: params?.id } };
     return this.calls.json<M.ProcessDefinition>(req, options);
   }
 
@@ -9104,10 +9104,10 @@ export class ProcessesApi {
    *
    * The deployed BPMN 2.0 XML.
    *
-   * `GET /process-definitions/{id}/xml` (operationId `getProcessDefinitionXml`); permission `process.read`.
+   * `GET /process-definitions/by-id/xml` (operationId `getProcessDefinitionXml`); permission `process.read`.
    */
-  async getProcessDefinitionXml(id: string, options?: RequestOptions): Promise<string> {
-    const req: ApiRequest = { method: 'GET', path: `/process-definitions/${seg(String(id))}/xml` };
+  async getProcessDefinitionXml(params: { id: string /* Process definition id (key:version:uuid); may carry ':' */ }, options?: RequestOptions): Promise<string> {
+    const req: ApiRequest = { method: 'GET', path: `/process-definitions/by-id/xml`, query: { id: params?.id } };
     return this.calls.text(req, options, 'application/xml');
   }
 
@@ -9167,10 +9167,10 @@ export class ProcessesApi {
    *
    * No new starts while suspended; includeInstances suspends running instances too (R63).
    *
-   * `POST /process-definitions/{id}/suspension` (operationId `setProcessDefinitionSuspension`); permission `process.modify`; result stored atomically with the state change.
+   * `POST /process-definitions/by-id/suspension` (operationId `setProcessDefinitionSuspension`); permission `process.modify`; result stored atomically with the state change.
    */
-  async setProcessDefinitionSuspension(id: string, body: M.SuspensionRequest, options?: RequestOptions): Promise<M.ProcessDefinition> {
-    const req: ApiRequest = { method: 'POST', path: `/process-definitions/${seg(String(id))}/suspension` };
+  async setProcessDefinitionSuspension(body: M.SuspensionRequest, params: { id: string /* Process definition id (key:version:uuid); may carry ':' */ }, options?: RequestOptions): Promise<M.ProcessDefinition> {
+    const req: ApiRequest = { method: 'POST', path: `/process-definitions/by-id/suspension`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ProcessDefinition>(req, options);
   }
@@ -9231,10 +9231,10 @@ export class ProcessesApi {
    *
    * The sangam:query and sangam:update handlers the deployed model declares.
    *
-   * `GET /process-definitions/{id}/handlers` (operationId `listInstanceHandlers`); permission `process.read`.
+   * `GET /process-definitions/by-id/handlers` (operationId `listInstanceHandlers`); permission `process.read`.
    */
-  async listInstanceHandlers(id: string, options?: RequestOptions): Promise<Array<M.InstanceHandler>> {
-    const req: ApiRequest = { method: 'GET', path: `/process-definitions/${seg(String(id))}/handlers` };
+  async listInstanceHandlers(params: { id: string /* Process definition id (key:version:uuid); may carry ':' */ }, options?: RequestOptions): Promise<Array<M.InstanceHandler>> {
+    const req: ApiRequest = { method: 'GET', path: `/process-definitions/by-id/handlers`, query: { id: params?.id } };
     return this.calls.json<Array<M.InstanceHandler>>(req, options);
   }
 
@@ -9336,10 +9336,10 @@ export class ProgrammesApi {
    *
    * Open, close or lock a reporting period.
    *
-   * `POST /programme-periods/{id}/state` (operationId `programmeChangePeriodState`); permission `programme.admin`; result stored atomically with the state change.
+   * `POST /programme-periods/by-id/state` (operationId `programmeChangePeriodState`); permission `programme.admin`; result stored atomically with the state change.
    */
-  async programmeChangePeriodState(id: string, body: M.PgPeriodStateRequest, options?: RequestOptions): Promise<M.PgPeriod> {
-    const req: ApiRequest = { method: 'POST', path: `/programme-periods/${seg(String(id))}/state` };
+  async programmeChangePeriodState(body: M.PgPeriodStateRequest, params: { id: string /* Reporting period id (<frequency>:<start>, PeriodService); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.PgPeriod> {
+    const req: ApiRequest = { method: 'POST', path: `/programme-periods/by-id/state`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.PgPeriod>(req, options);
   }
@@ -13942,7 +13942,7 @@ export class SCIMApi {
    *
    * `GET /scim/v2/Users` (operationId `scimListUsers`); permission `scim.provision`.
    */
-  async scimListUsers(params?: { filter?: string /* SCIM filter: eq, co, sw on userName / externalId / displayName (others: 400 invalidFilter) */; startIndex?: number /* 1-based */; count?: number /* Page size, at most 200 */; attributes?: string; excludedAttributes?: string }, options?: RequestOptions): Promise<Uint8Array> {
+  async scimListUsers(params?: { filter?: string /* SCIM filter: eq, co, sw on id / userName / externalId / displayName (others: 400 invalidFilter) */; startIndex?: number /* 1-based */; count?: number /* Page size, at most 200 */; attributes?: string; excludedAttributes?: string }, options?: RequestOptions): Promise<Uint8Array> {
     const req: ApiRequest = { method: 'GET', path: `/scim/v2/Users`, query: { filter: params?.filter, startIndex: params?.startIndex, count: params?.count, attributes: params?.attributes, excludedAttributes: params?.excludedAttributes } };
     return this.calls.bytes(req, options, 'application/scim+json');
   }
@@ -14017,7 +14017,7 @@ export class SCIMApi {
    *
    * `GET /scim/v2/Groups` (operationId `scimListGroups`); permission `scim.provision`.
    */
-  async scimListGroups(params?: { filter?: string /* SCIM filter: eq, co, sw on userName / externalId / displayName (others: 400 invalidFilter) */; startIndex?: number /* 1-based */; count?: number /* Page size, at most 200 */; attributes?: string; excludedAttributes?: string }, options?: RequestOptions): Promise<Uint8Array> {
+  async scimListGroups(params?: { filter?: string /* SCIM filter: eq, co, sw on id / userName / externalId / displayName (others: 400 invalidFilter) */; startIndex?: number /* 1-based */; count?: number /* Page size, at most 200 */; attributes?: string; excludedAttributes?: string }, options?: RequestOptions): Promise<Uint8Array> {
     const req: ApiRequest = { method: 'GET', path: `/scim/v2/Groups`, query: { filter: params?.filter, startIndex: params?.startIndex, count: params?.count, attributes: params?.attributes, excludedAttributes: params?.excludedAttributes } };
     return this.calls.bytes(req, options, 'application/scim+json');
   }
@@ -14811,10 +14811,10 @@ export class TenantOperationsSecretsApi {
    *
    * Encrypted at rest; write-only.
    *
-   * `PUT /ops-admin/secrets/{ref}` (operationId `opsPutSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   * `PUT /ops-admin/secrets/by-ref` (operationId `opsPutSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
    */
-  async opsPutSecret(ref: string, body: M.OpsSecret, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'PUT', path: `/ops-admin/secrets/${seg(String(ref))}` };
+  async opsPutSecret(body: M.OpsSecret, params: { ref: string /* Secret reference (R7UI-S13); may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'PUT', path: `/ops-admin/secrets/by-ref`, query: { ref: params?.ref } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -14824,10 +14824,10 @@ export class TenantOperationsSecretsApi {
    *
    * Removes the secret.
    *
-   * `DELETE /ops-admin/secrets/{ref}` (operationId `opsDeleteSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   * `DELETE /ops-admin/secrets/by-ref` (operationId `opsDeleteSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
    */
-  async opsDeleteSecret(ref: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/ops-admin/secrets/${seg(String(ref))}` };
+  async opsDeleteSecret(params: { ref: string /* Secret reference (R7UI-S13); may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/ops-admin/secrets/by-ref`, query: { ref: params?.ref } };
     await this.calls.none(req, options);
   }
 

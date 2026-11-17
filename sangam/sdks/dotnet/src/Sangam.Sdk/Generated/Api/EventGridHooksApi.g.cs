@@ -18,11 +18,12 @@ public sealed class EventGridHooksApi
     /// <summary>
     /// Receive an Event Grid delivery
     /// Public at the Sangam layer; the channel's authentication is checked first: a Microsoft Entra ID delivery token (Authorization: Bearer; issuer, audience and signature validated against the channel's configured tenant and application) or the delivery-property secret header, whichever the channel configures (decision 219). A delivery that satisfies no configured method is 401 WEBHOOK_SIGNATURE_INVALID (fail closed), 404 when the channel is not configured or not enabled. CloudEvents structured single or batch, or the Event Grid schema (an array). A Microsoft.EventGrid.SubscriptionValidationEvent is answered with {validationResponse} and writes nothing; other events are written to the inbox (deduplicated by id) and acknowledged. A content type the channel does not accept is 400.
-    /// POST /hooks/eventgrid/{tenant}/{channel} (operationId receiveEventGridDelivery).
+    /// POST /hooks/eventgrid/{tenant}/by-channel (operationId receiveEventGridDelivery).
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.EventGridHookResult?> ReceiveEventGridDeliveryAsync(string tenant, string channel, global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.EventGridHookResult?> ReceiveEventGridDeliveryAsync(string tenant, global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>> body, string channel, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/hooks/eventgrid/{HttpTransport.Seg(GeneratedCalls.Str(tenant)!)}/{HttpTransport.Seg(GeneratedCalls.Str(channel)!)}");
+        var req = ApiRequest.Post($"/hooks/eventgrid/{HttpTransport.Seg(GeneratedCalls.Str(tenant)!)}/by-channel");
+        req.WithQuery("channel", GeneratedCalls.Q(channel));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.EventGridHookResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }

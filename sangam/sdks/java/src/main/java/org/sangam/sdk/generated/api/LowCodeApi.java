@@ -105,15 +105,16 @@ public final class LowCodeApi {
      *
      * <p>Named query (R25); further query parameters are passed to the query. Uses the same authorization as the underlying data.
      *
-     * <p>{@code GET /queries/{name}} (operationId {@code runNamedQuery}); permission {@code lowcode.read}.
-     * @param name path parameter {@code name}
+     * <p>{@code GET /queries/by-name} (operationId {@code runNamedQuery}); permission {@code lowcode.read}.
+     * @param name query parameter {@code name}. Named query (tasks.mine, process-instances, or data:&lt;data object key&gt;); may carry ':'
      * @param page query parameter {@code page}, or null. 0-based page index
      * @param size query parameter {@code size}, or null. Page size
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<java.util.Map<String, Object>> runNamedQuery(String name, Long page, Long size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/queries/" + HttpTransport.seg(String.valueOf(name)));
+        ApiRequest req = ApiRequest.get("/queries/by-name");
+        req.query("name", name);
         req.query("page", page);
         req.query("size", size);
         return call.page(req, options, R_runNamedQuery, page, size);

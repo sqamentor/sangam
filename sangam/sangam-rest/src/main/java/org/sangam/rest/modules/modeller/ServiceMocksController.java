@@ -16,7 +16,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -89,8 +88,8 @@ public class ServiceMocksController {
     }
 
     /** Toggles are per service in the module, so this affects every rule of the row's service. */
-    @PatchMapping("/{id}")
-    public MockRow toggle(RequestContext ctx, @PathVariable String id, @RequestBody Toggle b) {
+    @PatchMapping("/by-id")
+    public MockRow toggle(RequestContext ctx, @RequestParam("id") String id, @RequestBody Toggle b) {
         permissions.require(ctx, Permissions.OPS_WRITE);
         ServiceMocks m = mocks();
         ServiceMocks.Rule rule = m.rules().stream().filter(r -> id(r).equals(id)).findFirst().orElseThrow(() -> ApiProblem.notFound("service mock", id));

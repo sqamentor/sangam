@@ -69,13 +69,14 @@ public final class AdminGroupsApi {
      *
      * <p>Members of a group.
      *
-     * <p>{@code GET /admin/groups/{id}/members} (operationId {@code listGroupMembers}); permission {@code admin.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /admin/groups/by-id/members} (operationId {@code listGroupMembers}); permission {@code admin.read}.
+     * @param id query parameter {@code id}. Group id (an IdP group path such as /staff/clerks); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<User> listGroupMembers(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/admin/groups/" + HttpTransport.seg(String.valueOf(id)) + "/members");
+        ApiRequest req = ApiRequest.get("/admin/groups/by-id/members");
+        req.query("id", id);
         return call.json(req, options, R_listGroupMembers);
     }
 
@@ -84,13 +85,15 @@ public final class AdminGroupsApi {
      *
      * <p>MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).
      *
-     * <p>{@code POST /admin/groups/{id}/members/{userId}} (operationId {@code addGroupMember}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
-     * @param userId path parameter {@code userId}
+     * <p>{@code POST /admin/groups/by-id/members/by-user-id} (operationId {@code addGroupMember}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Group id (an IdP group path such as /staff/clerks); may carry '/' or ':'
+     * @param userId query parameter {@code userId}. User id (an IdP principal id); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void addGroupMember(String id, String userId, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/admin/groups/" + HttpTransport.seg(String.valueOf(id)) + "/members/" + HttpTransport.seg(String.valueOf(userId)));
+        ApiRequest req = ApiRequest.post("/admin/groups/by-id/members/by-user-id");
+        req.query("id", id);
+        req.query("userId", userId);
         call.none(req, options);
     }
 
@@ -99,13 +102,15 @@ public final class AdminGroupsApi {
      *
      * <p>MEMBERSHIP_CHANGED; policy_version+1.
      *
-     * <p>{@code DELETE /admin/groups/{id}/members/{userId}} (operationId {@code removeGroupMember}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
-     * @param userId path parameter {@code userId}
+     * <p>{@code DELETE /admin/groups/by-id/members/by-user-id} (operationId {@code removeGroupMember}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Group id (an IdP group path such as /staff/clerks); may carry '/' or ':'
+     * @param userId query parameter {@code userId}. User id (an IdP principal id); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void removeGroupMember(String id, String userId, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/admin/groups/" + HttpTransport.seg(String.valueOf(id)) + "/members/" + HttpTransport.seg(String.valueOf(userId)));
+        ApiRequest req = ApiRequest.delete("/admin/groups/by-id/members/by-user-id");
+        req.query("id", id);
+        req.query("userId", userId);
         call.none(req, options);
     }
 
@@ -114,15 +119,16 @@ public final class AdminGroupsApi {
      *
      * <p>The name only; memberships and the group's IdP or SCIM reference are kept (MEMBERSHIP_CHANGED, updated).
      *
-     * <p>{@code PUT /admin/groups/{id}} (operationId {@code updateGroup}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code PUT /admin/groups/by-id} (operationId {@code updateGroup}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. Group id (an IdP group path such as /staff/clerks); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public Group updateGroup(String id, Group body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/admin/groups/" + HttpTransport.seg(String.valueOf(id)));
+    public Group updateGroup(Group body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/admin/groups/by-id");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_updateGroup);
     }
 }

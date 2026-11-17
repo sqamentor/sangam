@@ -77,12 +77,14 @@ final class AdminOrgUnitsApi
      *
      * One item.
      *
-     * GET /admin/org-units/{id} (operationId getOrgUnit); permission admin.read.
+     * GET /admin/org-units/by-id (operationId getOrgUnit); permission admin.read.
+     * @param string $id query id
      * @return Model\OrgUnit|null
      */
     public function getOrgUnit(string $id, ?RequestOptions $options = null): ?Model\OrgUnit
     {
-        $req = ApiRequest::get('/admin/org-units/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::get('/admin/org-units/by-id');
+        $req->query('id', $id);
         return $this->calls->model($req, $options, Model\OrgUnit::class);
     }
 
@@ -91,13 +93,15 @@ final class AdminOrgUnitsApi
      *
      * Updates and audits.
      *
-     * PUT /admin/org-units/{id} (operationId updateOrgUnit); permission admin.write; result stored atomically with the state change.
+     * PUT /admin/org-units/by-id (operationId updateOrgUnit); permission admin.write; result stored atomically with the state change.
      * @param Model\OrgUnit|array $body request body
+     * @param string $id query id
      * @return Model\OrgUnit|null
      */
-    public function updateOrgUnit(string $id, Model\OrgUnit|array $body, ?RequestOptions $options = null): ?Model\OrgUnit
+    public function updateOrgUnit(Model\OrgUnit|array $body, string $id, ?RequestOptions $options = null): ?Model\OrgUnit
     {
-        $req = ApiRequest::put('/admin/org-units/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::put('/admin/org-units/by-id');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -109,12 +113,14 @@ final class AdminOrgUnitsApi
      *
      * Deletes (reason audited).
      *
-     * DELETE /admin/org-units/{id} (operationId deleteOrgUnit); permission admin.write; result stored atomically with the state change.
+     * DELETE /admin/org-units/by-id (operationId deleteOrgUnit); permission admin.write; result stored atomically with the state change.
+     * @param string $id query id
      * @param string|null $reason query reason
      */
     public function deleteOrgUnit(string $id, ?string $reason = null, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/admin/org-units/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::delete('/admin/org-units/by-id');
+        $req->query('id', $id);
         $req->query('reason', $reason);
         $this->calls->none($req, $options);
     }

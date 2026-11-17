@@ -53,7 +53,7 @@ class EventGridHookProblemJsonTest {
     static final String ENTRA_TENANT = "00000000-0000-4000-8000-000000000001";
     static final String KEY_FETCH_FAILURE = "Entra signing keys cannot be fetched from https://keys.internal.example/x:"
             + " ConnectException <b>10.1.2.3</b>";
-    static final String ROUTE = "/api/v1/hooks/eventgrid/T1/";
+    static final String ROUTE = "/api/v1/hooks/eventgrid/T1/by-channel?channel=";
 
     final Map<String, ChannelDefinition> channels = new HashMap<>();
     final List<String> delivered = new ArrayList<>();

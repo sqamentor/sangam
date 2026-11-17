@@ -158,8 +158,8 @@ public class ProgrammeController {
     }
 
     /** Open, close or lock a reporting period. */
-    @PostMapping("/programme-periods/{id}/state")
-    public PeriodService.Period changePeriodState(RequestContext ctx, @PathVariable String id,
+    @PostMapping("/programme-periods/by-id/state")
+    public PeriodService.Period changePeriodState(RequestContext ctx, @RequestParam("id") String id,
                                                   @RequestBody PeriodStateRequest body) {
         return port.changePeriodState(api(ctx, ADMIN), id, enumOf(PeriodService.State.class, body.state(), "state"),
                 body.reason());

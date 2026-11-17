@@ -24,7 +24,7 @@ public class HealthHooksFallbackController {
     static final String CAPABILITY = "connectors-health";
     static final String MODULE = "sangam-connectors-health";
 
-    @PostMapping("/api/v1/hooks/fhir/{channel}")
+    @PostMapping("/api/v1/hooks/fhir/by-channel")
     public ResponseEntity<Map<String, Object>> fhirNotification(HttpServletRequest request) {
         return notInstalled(request);
     }

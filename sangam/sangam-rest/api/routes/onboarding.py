@@ -90,8 +90,8 @@ op("post", "/onboarding/runs/{id}/cancel", "cancelOnboardingRun", "Onboarding", 
 op("post", "/onboarding/packs/resolve", "resolveOnboardingPacks", "Onboarding", "Resolve packs",
    "Dependencies, semantic versions, compatibility, conflicts and upgrade paths.", ONB, body="PackResolveRequest",
    resp=(200, "PackResolution"), perm="tenant.admin")
-op("get", "/onboarding/tenants/{tenant}/bundle", "exportTenantBundle", "Onboarding", "Export a bundle",
-   "The tenant's configuration, signed. No secrets, no go-live evidence.", ONB, params=[pp("tenant")],
+op("get", "/onboarding/tenants/by-tenant/bundle", "exportTenantBundle", "Onboarding", "Export a bundle",
+   "The tenant's configuration, signed. No secrets, no go-live evidence.", ONB, params=[q("tenant", desc="Tenant id; may carry '/' or ':'", required=True)],
    resp=(200, "TenantBundle"), perm="tenant.admin")
 op("post", "/onboarding/bundles/import", "importTenantBundle", "Onboarding", "Import a bundle",
    "Verifies the signature (422 BUNDLE_SIGNATURE_INVALID, BUNDLE_UNSIGNED), renames the scope, then dry-runs or starts.",
@@ -106,10 +106,12 @@ op("get", "/admin/plugins", "listPlugins", "Plugins", "List plugins", "Every jar
 op("get", "/admin/plugins/audit", "getPluginAudit", "Plugins", "Plugin audit trail",
    "Hash-chained JSON lines, oldest first.", ONB, resp=(200, {"application/json": {"schema": {
        "type": "array", "items": {"type": "string"}}}}), perm="tenant.admin")
-op("post", "/admin/plugins/{id}/enable", "enablePlugin", "Plugins", "Enable a plugin", "Effective at the next restart.",
-   ONB, params=[pp("id")], resp=(200, "PluginInfo"), cmd="plugin.enable", perm="tenant.admin")
-op("post", "/admin/plugins/{id}/disable", "disablePlugin", "Plugins", "Disable a plugin", "Effective at the next restart.",
-   ONB, params=[pp("id")], resp=(200, "PluginInfo"), cmd="plugin.disable", perm="tenant.admin")
+# decision 393: a plugin id is the jar's own declared id and may hold '/' or ':', so it is the id query parameter
+_PLUGIN_ID = q("id", desc="Plugin id as the jar declares it; may carry '/' or ':'", required=True)
+op("post", "/admin/plugins/by-id/enable", "enablePlugin", "Plugins", "Enable a plugin", "Effective at the next restart.",
+   ONB, params=[_PLUGIN_ID], resp=(200, "PluginInfo"), cmd="plugin.enable", perm="tenant.admin")
+op("post", "/admin/plugins/by-id/disable", "disablePlugin", "Plugins", "Disable a plugin", "Effective at the next restart.",
+   ONB, params=[_PLUGIN_ID], resp=(200, "PluginInfo"), cmd="plugin.disable", perm="tenant.admin")
 
 schema("UiPluginManifest", "A UI plugin: its entry module, styles and shell contributions.",
        "id version name vendor entry styles:list:s contributes:list:obj requires:obj", ["id", "version", "entry"])

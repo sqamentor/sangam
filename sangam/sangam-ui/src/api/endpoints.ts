@@ -110,6 +110,15 @@ const packageTags = new Map<string, string | null>();
 /** The incident commands that take an IncidentAction (POST /ops/incidents/{id}/retry | resolve | skip | cancel). */
 export type IncidentVerb = 'retry' | 'resolve' | 'skip' | 'cancel';
 
+/**
+ * Decision 393: collections whose entry id may carry '/' or ':' (user ids are IdP principal ids, group ids IdP group
+ * paths; org unit, seat and policy ids are chosen by the client) address an entry on the literal by-id route with the
+ * id as a query parameter, not as a path segment.
+ */
+const BY_ID_PATHS = new Set(['/admin/users', '/admin/groups', '/admin/org-units', '/admin/seats', '/admin/policies']);
+const itemUrl = (path: string, id: string, action?: string) =>
+  BY_ID_PATHS.has(path) ? `${path}/by-id${action ? `/${action}` : ''}?id=${enc(id)}` : `${path}/${enc(id)}${action ? `/${action}` : ''}`;
+
 export const api = {
   me: {
     get: async () => A.normMe(await http.get<Record<string, unknown>>('/me')),
@@ -244,7 +253,7 @@ export const api = {
       f.append('file', file, file.name);
       return http.upload<Record<string, unknown>>(`/tasks/${enc(id)}/attachments`, f, key).then(A.normDocument);
     },
-    downloadAttachment: (_taskId: string, docId: string, name: string) => download(`/documents/${enc(docId)}/content`, undefined, name),
+    downloadAttachment: (_taskId: string, docId: string, name: string) => download(`/documents/by-id/content?id=${enc(docId)}`, undefined, name),
     comments: async (id: string) => ((await http.get<Record<string, unknown>[]>(`/tasks/${enc(id)}/comments`)) ?? []).map(A.normComment),
     addComment: (id: string, text: string, key?: string) =>
       http.post<Record<string, unknown>>(`/tasks/${enc(id)}/comments`, { message: text }, key).then(A.normComment),
@@ -283,9 +292,9 @@ export const api = {
   },
   processes: {
     definitions: (q: ListQuery & { latest?: boolean; key?: string }) => http.page<T.ProcessDefinition>('/process-definitions', { ...q, key: q.key ?? q.q }),
-    definition: (id: string) => http.get<T.ProcessDefinition>(`/process-definitions/${enc(id)}`),
+    definition: (id: string) => http.get<T.ProcessDefinition>('/process-definitions/by-id', { id }),
     /** getProcessDefinitionXml produces application/xml only (ProcessController.definitionXml). */
-    xml: async (id: string) => ({ bpmn20Xml: A.xmlOf(await http.text(`/process-definitions/${enc(id)}/xml`, 'application/xml'), 'bpmn20Xml') }),
+    xml: async (id: string) => ({ bpmn20Xml: A.xmlOf(await http.text(`/process-definitions/by-id/xml?id=${enc(id)}`, 'application/xml'), 'bpmn20Xml') }),
     /**
      * /analytics/activities: active = runtime tokens, count = history heatmap. processDefinitionKey is required
      * (400 PROCESS_DEFINITION_KEY_REQUIRED), so a caller asks only once it knows the key; from / to are calendar days.
@@ -293,7 +302,7 @@ export const api = {
     statistics: async (id: string, mode: 'runtime' | 'history', q: Query = {}, definitionKey?: string) =>
       A.normActivityStats(id, await http.get<Record<string, unknown>[]>('/analytics/activities', { processDefinitionKey: definitionKey, ...dayRange(q.from, q.to) }), mode),
     suspendDefinition: (id: string, suspended: boolean, reason: string, includeInstances: boolean) =>
-      http.post<void>(`/process-definitions/${enc(id)}/suspension`, { suspended, reason, includeInstances }),
+      http.post<void>(`/process-definitions/by-id/suspension?id=${enc(id)}`, { suspended, reason, includeInstances }),
     start: (body: { key: string; businessKey?: string; variables?: Record<string, unknown> }, key?: string) =>
       http.post<Record<string, unknown>>('/process-instances', { ...body, variables: A.toVariableMap(body.variables) }, key).then(A.normInstance),
     instances: async (q: ListQuery & T.InstanceQuery & { history?: boolean }) => {
@@ -375,11 +384,11 @@ export const api = {
         key,
       ),
     /** FC-01 ad-hoc sub-process. */
-    adHoc: (id: string, adHocId: string) => http.get<Record<string, unknown>>(`/process-instances/${enc(id)}/ad-hoc/${enc(adHocId)}`),
+    adHoc: (id: string, adHocId: string) => http.get<Record<string, unknown>>(`/process-instances/${enc(id)}/ad-hoc/by-ad-hoc-activity-id?adHocActivityId=${enc(adHocId)}`),
     adHocStart: (id: string, adHocId: string, activityId: string, key?: string) =>
-      http.post<Record<string, unknown>>(`/process-instances/${enc(id)}/ad-hoc/${enc(adHocId)}/start`, { activityId }, key),
+      http.post<Record<string, unknown>>(`/process-instances/${enc(id)}/ad-hoc/by-ad-hoc-activity-id/start?adHocActivityId=${enc(adHocId)}`, { activityId }, key),
     adHocComplete: (id: string, adHocId: string, reason: string, key?: string) =>
-      http.post<Record<string, unknown>>(`/process-instances/${enc(id)}/ad-hoc/${enc(adHocId)}/complete?reason=${enc(reason)}`, {}, key),
+      http.post<Record<string, unknown>>(`/process-instances/${enc(id)}/ad-hoc/by-ad-hoc-activity-id/complete?adHocActivityId=${enc(adHocId)}&reason=${enc(reason)}`, {}, key),
     /** R43 resubmit with version history. */
     resubmit: (id: string, body: { variables: Record<string, unknown>; reason?: string; expectedVersion?: number }, key?: string) =>
       http.post<Record<string, unknown>>(`/process-instances/${enc(id)}/resubmit`, { ...body, variables: A.toVariableMap(body.variables) }, key).then(A.normCaseVersion),
@@ -412,27 +421,27 @@ export const api = {
   cases: {
     list: (q: ListQuery & { state?: string }) =>
       http.page<T.CaseInstance>('/case-instances', { page: q.page, size: q.size, businessKey: q.q, active: q.state ? q.state === 'ACTIVE' : undefined, state: q.state }),
-    get: (id: string) => http.get<T.CaseInstance>(`/case-instances/${enc(id)}`),
+    get: (id: string) => http.get<T.CaseInstance>(`/case-instances/by-id?id=${enc(id)}`),
     start: (body: { key: string; businessKey?: string; variables?: Record<string, unknown> }, key?: string) =>
       http.post<T.CaseInstance>('/case-instances', { ...body, variables: A.toVariableMap(body.variables) }, key),
     /** CaseExecutionCommand {action: manualStart|complete|disable|reenable|terminate, reason}. */
     planItemAction: (id: string, planItemId: string, action: 'manual-start' | 'complete' | 'disable' | 'reenable' | 'terminate', reason: string) =>
-      http.post<void>(`/case-instances/${enc(id)}/executions/${enc(planItemId)}/commands`, { action: action === 'manual-start' ? 'manualStart' : action, reason }),
-    reactivate: (id: string, reason: string, key?: string) => http.post<T.CaseInstance>(`/case-instances/${enc(id)}/reactivation`, { reason }, key), // (FC-59)
+      http.post<void>(`/case-instances/by-id/executions/by-execution-id/commands?id=${enc(id)}&executionId=${enc(planItemId)}`, { action: action === 'manual-start' ? 'manualStart' : action, reason }),
+    reactivate: (id: string, reason: string, key?: string) => http.post<T.CaseInstance>(`/case-instances/by-id/reactivation?id=${enc(id)}`, { reason }, key), // (FC-59)
     documents: async (id: string) => A.mapPage(await http.page<Record<string, unknown>>('/documents', { caseInstanceId: id, size: 100 }), A.normDocument).items,
-    comments: (id: string) => http.get<T.Comment[]>(`/case-instances/${enc(id)}/comments`),
-    addComment: (id: string, text: string) => http.post<T.Comment>(`/case-instances/${enc(id)}/comments`, { text }),
-    participants: (id: string) => http.get<{ id: string; name: string; role: string; external?: boolean }[]>(`/case-instances/${enc(id)}/participants`),
+    comments: (id: string) => http.get<T.Comment[]>(`/case-instances/by-id/comments?id=${enc(id)}`),
+    addComment: (id: string, text: string) => http.post<T.Comment>(`/case-instances/by-id/comments?id=${enc(id)}`, { text }),
+    participants: (id: string) => http.get<{ id: string; name: string; role: string; external?: boolean }[]>(`/case-instances/by-id/participants?id=${enc(id)}`),
   },
   decisions: {
     definitions: (q: ListQuery) => http.page<T.DecisionDefinition>('/decision-definitions', { ...q, key: q.q }),
     /** getDecisionDefinitionXml produces application/xml only (CaseDecisionController). */
-    xml: async (id: string) => ({ dmnXml: A.xmlOf(await http.text(`/decision-definitions/${enc(id)}/xml`, 'application/xml'), 'dmnXml') }),
+    xml: async (id: string) => ({ dmnXml: A.xmlOf(await http.text(`/decision-definitions/by-id/xml?id=${enc(id)}`, 'application/xml'), 'dmnXml') }),
     /** listHistoricDecisions needs processInstanceId or caseInstanceId (400 FILTER_REQUIRED); it has no decision-key filter. */
     instances: async (q: ListQuery & { processInstanceId?: string; caseInstanceId?: string }) =>
       A.mapPage(await http.page<Record<string, unknown>>('/history/decisions', { page: q.page, size: q.size, processInstanceId: q.processInstanceId, caseInstanceId: q.caseInstanceId }), A.normDecisionInstance),
     evaluate: (key: string, variables: Record<string, unknown>) =>
-      http.post<{ outputs: Record<string, unknown>[] }>(`/decisions/${enc(key)}/evaluate`, { variables: A.toVariableMap(variables) }),
+      http.post<{ outputs: Record<string, unknown>[] }>(`/decisions/by-key/evaluate?key=${enc(key)}`, { variables: A.toVariableMap(variables) }),
   },
 
   // ------------------------------------------------------------ deployments, packages, modeller (R43, R69)
@@ -500,7 +509,7 @@ export const api = {
     /** M-125 diffModels: semantic diff of two versions of one model file (package.read); reads only, stores nothing. */
     diff: (body: T.ModelDiffRequest) => http.post<T.ModelDiffReport>('/models/diff', body),
     /** M-101 streamModelPresence path (text/event-stream, event 'presence', data ModelPresence); open with openEventStream. */
-    presencePath: (file: string) => `/models/${enc(file)}/presence/stream`,
+    presencePath: (file: string) => `/models/by-file/presence/stream?file=${enc(file)}`,
   },
   forms: {
     get: async (key: string, version?: number) => A.normForm(await http.get<Record<string, unknown>>('/forms/by-key', { key, version })),
@@ -631,9 +640,9 @@ export const api = {
     tenants: (q: ListQuery) => http.page<T.Tenant>('/admin/tenants', q),
     saveTenant: (t: Partial<T.Tenant>) => (t.id ? http.put<T.Tenant>(`/admin/tenants/${enc(t.id)}`, t) : http.post<T.Tenant>('/admin/tenants', t)),
     orgTree: async (asOf?: string) => A.toTree((await http.page<T.OrgUnit>('/admin/org-units', { activeOn: asOf, includeInactive: true, size: 500 })).items),
-    saveOrgUnit: (u: Partial<T.OrgUnit>) => (u.id ? http.put<T.OrgUnit>(`/admin/org-units/${enc(u.id)}`, u) : http.post<T.OrgUnit>('/admin/org-units', u)),
+    saveOrgUnit: (u: Partial<T.OrgUnit>) => (u.id ? http.put<T.OrgUnit>(itemUrl('/admin/org-units', u.id), u) : http.post<T.OrgUnit>('/admin/org-units', u)),
     moveOrgUnit: (id: string, parentId: string, effectiveFrom: string, reason: string) =>
-      http.put<T.OrgUnit>(`/admin/org-units/${enc(id)}?reason=${enc(reason)}`, { parentId, validFrom: effectiveFrom }), // PUT with new parent, // effective-dated
+      http.put<T.OrgUnit>(`${itemUrl('/admin/org-units', id)}&reason=${enc(reason)}`, { parentId, validFrom: effectiveFrom }), // PUT with new parent, // effective-dated
     importOrg: (file: File) => {
       const f = new FormData();
       f.append('file', file, file.name);
@@ -663,19 +672,21 @@ export const api = {
       // the request fields of components.schemas.Policy; id, version and audit fields are server-assigned
       const body = { effect: p.effect, principalType: p.principalType, principalId: p.principalId, resourceType: p.resourceType, resourceId: p.resourceId, actions: p.actions, conditionId: p.conditionId };
       const created = await http.post<T.Policy>('/admin/policies', body);
-      if (p.id) await http.del<void>(`/admin/policies/${enc(p.id)}`, { reason: `replaced by ${created.id}` });
+      if (p.id) await http.del<void>('/admin/policies/by-id', { id: p.id, reason: `replaced by ${created.id}` });
       return created;
     },
-    deletePolicy: (id: string, reason: string) => http.del<void>(`/admin/policies/${enc(id)}`, { reason }),
+    deletePolicy: (id: string, reason: string) => http.del<void>('/admin/policies/by-id', { id, reason }),
     policyVersion: () => http.get<{ version?: number; policyVersion?: number }>('/admin/policies/version'),
     explain: (body: { principalId: string; action: string; resourceType: string; resourceId: string }) =>
       http.post<{ allowed: boolean; matched: { policyId: string; effect: 'ALLOW' | 'DENY'; scope: string }[]; policyVersion: number }>('/admin/policies/explain', body),
     sodExceptions: (q: ListQuery) => http.page<T.SodException>('/admin/sod-exceptions', q),
     saveSodException: (e: Partial<T.SodException>) => http.post<T.SodException>('/admin/sod-exceptions', e),
     decideSodException: (id: string, approve: boolean, reason: string) => http.post<void>(`/admin/sod-exceptions/${enc(id)}/${approve ? 'approve' : 'reject'}`, { reason }),
-    groupMembers: (id: string) => http.get<T.User[]>(`/admin/groups/${enc(id)}/members`),
+    groupMembers: (id: string) => http.get<T.User[]>('/admin/groups/by-id/members', { id }),
     setMembership: (groupId: string, userId: string, member: boolean) =>
-      member ? http.post<void>(`/admin/groups/${enc(groupId)}/members/${enc(userId)}`) : http.del<void>(`/admin/groups/${enc(groupId)}/members/${enc(userId)}`),
+      member
+        ? http.post<void>(`/admin/groups/by-id/members/by-user-id?id=${enc(groupId)}&userId=${enc(userId)}`)
+        : http.del<void>('/admin/groups/by-id/members/by-user-id', { id: groupId, userId }),
     identityProviders: () => http.get<T.IdentityProvider[]>('/admin/identity-providers'),
     saveIdentityProvider: (p: Partial<T.IdentityProvider>) =>
       p.id ? http.put<T.IdentityProvider>(`/admin/identity-providers/${enc(p.id)}`, p) : http.post<T.IdentityProvider>('/admin/identity-providers', p),
@@ -693,9 +704,10 @@ export const api = {
      * create (POST) or update (PUT of the id); `create` says which, since some entries carry a user-chosen id when new.
      * `id` names the entry when the body sent is not the entry itself (a request schema without the id).
      */
-    save: <R extends { id?: string }>(path: string, r: R, create = !r.id, id = r.id) => (create ? http.post<R>(path, r) : http.put<R>(`${path}/${enc(id!)}`, r)),
-    remove: (path: string, id: string, reason: string) => http.del<void>(`${path}/${enc(id)}`, { reason }),
-    action: <R>(path: string, id: string, action: string, body: unknown = {}) => http.post<R>(`${path}/${enc(id)}/${action}`, body),
+    save: <R extends { id?: string }>(path: string, r: R, create = !r.id, id = r.id) => (create ? http.post<R>(path, r) : http.put<R>(itemUrl(path, id!), r)),
+    remove: (path: string, id: string, reason: string) =>
+      BY_ID_PATHS.has(path) ? http.del<void>(`${path}/by-id`, { id, reason }) : http.del<void>(`${path}/${enc(id)}`, { reason }),
+    action: <R>(path: string, id: string, action: string, body: unknown = {}) => http.post<R>(itemUrl(path, id, action), body),
   },
   /**
    * M-021 test-mode clock (contract tag TestMode, group sangam-admin): getTestClock (admin.read) and changeTestClock
@@ -759,9 +771,9 @@ export const api = {
     /** listDocuments is scoped: one of taskId, processInstanceId or caseInstanceId is required (400 SCOPE_REQUIRED). */
     list: async (q: ListQuery & DocumentScope) =>
       A.mapPage(await http.page<Record<string, unknown>>('/documents', { page: q.page, size: q.size, name: q.q, taskId: q.taskId, processInstanceId: q.processInstanceId, caseInstanceId: q.caseInstanceId }), A.normDocument),
-    versions: (id: string) => http.get<T.Attachment[]>(`/documents/${enc(id)}/versions`),
-    content: (id: string, name: string, version?: number) => download(`/documents/${enc(id)}/content`, { version }, name),
-    setHold: (id: string, hold: boolean, reason: string) => http.post<void>(`/documents/${enc(id)}/legal-hold`, { hold, reason }),
+    versions: (id: string) => http.get<T.Attachment[]>(`/documents/by-id/versions?id=${enc(id)}`),
+    content: (id: string, name: string, version?: number) => download(`/documents/by-id/content?id=${enc(id)}`, { version }, name),
+    setHold: (id: string, hold: boolean, reason: string) => http.post<void>(`/documents/by-id/legal-hold?id=${enc(id)}`, { hold, reason }),
     templates: () => http.get<{ id: string; name: string; languages: string[]; format: 'PDFA' | 'DOCX' | 'HTML'; version: number }[]>('/documents/templates'),
     generate: (templateId: string, businessKey: string, language: string, key?: string) =>
       http.post<Record<string, unknown>>('/documents/generate', { templateId, businessKey, language }, key).then(A.normDocument),
@@ -774,7 +786,7 @@ export const api = {
       http.upload<Record<string, unknown>>('/documents', documentForm(file, o), key).then(A.normDocument),
     /** addDocumentVersion: the same slot rules; a new version of the document the slot holds needs no replace. */
     addVersion: (id: string, file: File, o: { name?: string; documentType?: string; replaceSlot?: boolean }, key?: string) =>
-      http.upload<Record<string, unknown>>(`/documents/${enc(id)}/versions`, documentForm(file, o), key).then(A.normDocument),
+      http.upload<Record<string, unknown>>(`/documents/by-id/versions?id=${enc(id)}`, documentForm(file, o), key).then(A.normDocument),
   },
 
   // ------------------------------------------------------------ pages and data objects (R77, R78, EC-03, EC-06)
@@ -782,7 +794,7 @@ export const api = {
     list: () => http.get<{ id: string; key: string; title: string; version: number; state: string }[]>('/pages'),
     get: (key: string) => http.get<PageModel>(`/pages/${enc(key)}`),
     save: (p: PageModel) => (p.id ? http.put<PageModel>(`/pages/${enc(p.key)}`, p) : http.post<PageModel>('/pages', p)),
-    query: (name: string, params: Query) => http.page<Record<string, unknown>>(`/queries/${enc(name)}`, params),
+    query: (name: string, params: Query) => http.page<Record<string, unknown>>(`/queries/by-name?name=${enc(name)}`, params),
   },
   dataObjects: {
     list: () => http.get<DataObjectDef[]>('/data-objects'),
@@ -806,24 +818,24 @@ export const api = {
   // ------------------------------------------------------------ events (FC-02, FC-03), keyed by `key`
   events: {
     channels: async () => (await http.page<EventChannel>('/events/channels', { size: 500 })).items,
-    saveChannel: (c: EventChannel, isNew: boolean) => (isNew ? http.post<EventChannel>('/events/channels', c) : http.put<EventChannel>(`/events/channels/${enc(c.key)}`, c)),
+    saveChannel: (c: EventChannel, isNew: boolean) => (isNew ? http.post<EventChannel>('/events/channels', c) : http.put<EventChannel>(`/events/channels/by-key?key=${enc(c.key)}`, c)),
     definitions: async () => (await http.page<EventDefinition>('/events/definitions', { size: 500 })).items,
     /** The contract has no PUT for definitions: an edit re-creates the definition under the same key. */
     saveDefinition: async (d: EventDefinition, isNew: boolean) => {
-      if (!isNew) await http.del<void>(`/events/definitions/${enc(d.key)}`, { reason: 'definition updated' });
+      if (!isNew) await http.del<void>(`/events/definitions/by-key?key=${enc(d.key)}`, { reason: 'definition updated' });
       return http.post<EventDefinition>('/events/definitions', d);
     },
     send: (channel: string, payload: unknown, key?: string) =>
-      http.post<void>(`/events/${enc(channel)}`, { specversion: '1.0', id: key ?? crypto.randomUUID(), source: 'sangam-ui', type: 'sangam.test', datacontenttype: 'application/json', data: payload }, key),
+      http.post<void>(`/events/by-channel?channel=${enc(channel)}`, { specversion: '1.0', id: key ?? crypto.randomUUID(), source: 'sangam-ui', type: 'sangam.test', datacontenttype: 'application/json', data: payload }, key),
   },
 
   // ------------------------------------------------------------ citizen portal (C01–C06)
   portal: {
     services: () => http.get<T.PortalService[]>('/portal/services'),
     /** Decision 63: the service's own form under portal.use (never an arbitrary form key). */
-    form: async (serviceKey: string) => A.normForm(await http.get<Record<string, unknown>>(`/portal/services/${enc(serviceKey)}/form`)),
+    form: async (serviceKey: string) => A.normForm(await http.get<Record<string, unknown>>(`/portal/services/by-key/form?key=${enc(serviceKey)}`)),
     /** Decisions 339, 341, 343: the current published consent notice of the service, one entry per purpose. */
-    notice: (serviceKey: string, lang?: string) => http.get<T.PortalNotice>(`/portal/services/${enc(serviceKey)}/notice`, { lang }),
+    notice: (serviceKey: string, lang?: string) => http.get<T.PortalNotice>(`/portal/services/by-key/notice?key=${enc(serviceKey)}`, { lang }),
     /** A submission to a noticed service carries the consent; a draft never does (decision 341). */
     apply: (serviceKey: string, variables: Record<string, unknown>, submit: boolean, key?: string, consent?: T.PortalConsent) =>
       http.post<T.Application>('/portal/applications', { serviceKey, variables: A.toVariableMap(variables), submit, ...(consent ? { consent } : {}) }, key),
@@ -835,16 +847,16 @@ export const api = {
     withdrawConsent: (consentId: string, purposes: string[], key?: string) =>
       http.post<T.MyConsent>(`/compliance/consents/${enc(consentId)}/withdraw`, { purposes }, key),
     mine: (q: ListQuery = {}) => http.page<T.Application>('/portal/applications', q),
-    get: (id: string) => http.get<T.Application>(`/portal/applications/${enc(id)}`),
+    get: (id: string) => http.get<T.Application>(`/portal/applications/by-id?id=${enc(id)}`),
     reply: (id: string, clarificationId: string, text: string, files: File[], key?: string) => {
       const f = new FormData();
       f.append('text', text);
       files.forEach((x) => f.append('files', x, x.name));
-      return http.upload<void>(`/portal/applications/${enc(id)}/clarifications/${enc(clarificationId)}/reply`, f, key);
+      return http.upload<void>(`/portal/applications/by-id/clarifications/by-clarification-id/reply?id=${enc(id)}&clarificationId=${enc(clarificationId)}`, f, key);
     },
-    withdraw: (id: string, reason: string, key?: string) => http.post<void>(`/portal/applications/${enc(id)}/withdraw`, { reason }, key),
-    appeal: (id: string, grounds: string, key?: string) => http.post<void>(`/portal/applications/${enc(id)}/appeal`, { grounds }, key),
-    outcome: (id: string) => download(`/portal/applications/${enc(id)}/outcome`, undefined, `outcome-${id}.pdf`),
+    withdraw: (id: string, reason: string, key?: string) => http.post<void>(`/portal/applications/by-id/withdraw?id=${enc(id)}`, { reason }, key),
+    appeal: (id: string, grounds: string, key?: string) => http.post<void>(`/portal/applications/by-id/appeal?id=${enc(id)}`, { grounds }, key),
+    outcome: (id: string) => download(`/portal/applications/by-id/outcome?id=${enc(id)}`, undefined, `outcome-${id}.pdf`),
     grievances: () => http.get<{ id: string; reference: string; subject: string; status: string; filedAt: string; dueAt: string }[]>('/portal/grievances'),
     fileGrievance: (body: { subject: string; text: string; kind: 'GRIEVANCE' | 'DATA_RIGHTS' }, key?: string) => http.post<{ reference: string }>('/portal/grievances', body, key),
   },

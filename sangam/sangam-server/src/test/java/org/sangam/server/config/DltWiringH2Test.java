@@ -215,7 +215,7 @@ class DltWiringH2Test {
     }
 
     private MockHttpServletResponse deliver(String connectorId, String body, String signatureOrNull) throws Exception {
-        var request = post(ROUTE + connectorId + "/delivery-reports").contentType("application/json")
+        var request = post(ROUTE + "by-connector-id/delivery-reports?connectorId=" + connectorId).contentType("application/json")
                 .content(body.getBytes(StandardCharsets.UTF_8));
         if (signatureOrNull != null) {
             request.header(WebhookSignature.HEADER, signatureOrNull);

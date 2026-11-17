@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -33,14 +34,14 @@ public class DocumentExtrasController {
         this.permissions = permissions;
     }
 
-    @GetMapping("/{id}/versions")
-    public ResponseEntity<List<DocumentPort.Document>> versions(RequestContext ctx, @PathVariable String id) {
+    @GetMapping("/by-id/versions")
+    public ResponseEntity<List<DocumentPort.Document>> versions(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.DOCUMENT_READ);
         return Lists.ok(extras.versions(ctx, id));
     }
 
-    @PostMapping("/{id}/legal-hold")
-    public ResponseEntity<DocumentPort.Document> legalHold(RequestContext ctx, @PathVariable String id,
+    @PostMapping("/by-id/legal-hold")
+    public ResponseEntity<DocumentPort.Document> legalHold(RequestContext ctx, @RequestParam("id") String id,
                                                            @RequestBody DocumentExtrasPort.LegalHoldRequest body) {
         permissions.require(ctx, Permissions.DOCUMENT_LEGAL_HOLD);
         ProcessController.requireReason(body == null ? null : body.reason());

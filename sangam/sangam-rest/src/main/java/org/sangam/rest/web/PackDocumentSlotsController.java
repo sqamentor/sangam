@@ -10,12 +10,12 @@ import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.Permissions;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Owner decision 269: {@code GET /api/v1/packs/{id}/document-slots}, the documentType-to-slot pairs of one pack's DSC
+ * Owner decision 269: {@code GET /api/v1/packs/by-id/document-slots?id=}, the documentType-to-slot pairs of one pack's DSC
  * steps. Same gate as the other pack routes ({@code tenant.admin} and the platform administrator group); {@code 404}
  * for an unknown pack, {@code 501 CAPABILITY_NOT_INSTALLED} without the packs module.
  */
@@ -31,8 +31,8 @@ public class PackDocumentSlotsController {
         this.permissions = permissions;
     }
 
-    @GetMapping("/{id}/document-slots")
-    public List<PackDocumentSlotsPort.DocumentSlot> documentSlots(RequestContext ctx, @PathVariable String id) {
+    @GetMapping("/by-id/document-slots")
+    public List<PackDocumentSlotsPort.DocumentSlot> documentSlots(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.TENANT_ADMIN);
         if (!ctx.inGroup(Permissions.GROUP_ADMIN)) {
             throw ApiProblem.notPermitted("platform pack administration");

@@ -32,15 +32,16 @@ public final class DecisionsApi {
      *
      * <p>Evaluates the latest (or given) version; ROUTING/AUTHORITY evaluations with a businessKey are recorded as class-B events (X.2.3.2).
      *
-     * <p>{@code POST /decisions/{key}/evaluate} (operationId {@code evaluateDecision}); permission {@code decision.evaluate}.
-     * @param key path parameter {@code key}
+     * <p>{@code POST /decisions/by-key/evaluate} (operationId {@code evaluateDecision}); permission {@code decision.evaluate}.
      * @param body request body
+     * @param key query parameter {@code key}. DMN decision key from the deployed model; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public DecisionEvaluateResult evaluateDecision(String key, DecisionEvaluateRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/decisions/" + HttpTransport.seg(String.valueOf(key)) + "/evaluate");
+    public DecisionEvaluateResult evaluateDecision(DecisionEvaluateRequest body, String key, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/decisions/by-key/evaluate");
         req.body(body);
+        req.query("key", key);
         return call.json(req, options, R_evaluateDecision);
     }
 
@@ -71,13 +72,14 @@ public final class DecisionsApi {
      *
      * <p>The deployed DMN XML.
      *
-     * <p>{@code GET /decision-definitions/{id}/xml} (operationId {@code getDecisionDefinitionXml}); permission {@code process.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /decision-definitions/by-id/xml} (operationId {@code getDecisionDefinitionXml}); permission {@code process.read}.
+     * @param id query parameter {@code id}. Decision definition id (key:version:uuid); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public byte[] getDecisionDefinitionXml(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/decision-definitions/" + HttpTransport.seg(String.valueOf(id)) + "/xml");
+        ApiRequest req = ApiRequest.get("/decision-definitions/by-id/xml");
+        req.query("id", id);
         return call.bytes(req, options, "application/xml");
     }
 }

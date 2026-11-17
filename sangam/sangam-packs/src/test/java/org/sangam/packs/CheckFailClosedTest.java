@@ -54,6 +54,9 @@ class CheckFailClosedTest {
     @AfterAll
     static void tearDown() {
         engine.close();
+        // R8-heap2: a test class stays loaded for the whole run; its statics must not keep a closed engine
+        engine = null;
+        driver = null;
     }
 
     /** Starts {@code key} with the bag plus {@code kv} (a null value removes the key); runs it; returns the business key. */

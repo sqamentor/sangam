@@ -13,12 +13,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * India DLT SMS (owner decisions 304 and 305).
  * <ul>
- *   <li>{@code POST /api/v1/hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports}: the provider's signed
+ *   <li>{@code POST /api/v1/hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports?connectorId=}: the provider's signed
  *       delivery-report webhook. Public route (SecurityConfig): no Sangam token is asked for, the port verifies the
  *       {@code X-Sangam-Signature} of the raw body first and refuses with {@code 401 WEBHOOK_SIGNATURE_INVALID}
  *       before anything is read or written. The tenant is the one in the path, as for the other hooks; it only
@@ -43,8 +44,8 @@ public class DltController {
 
     // ---------------------------------------------------------------- decision 304: delivery reports (public, signed)
 
-    @PostMapping("/hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports")
-    public DltPort.DeliveryReportResult deliveryReports(@PathVariable String tenant, @PathVariable String connectorId,
+    @PostMapping("/hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports")
+    public DltPort.DeliveryReportResult deliveryReports(@PathVariable String tenant, @RequestParam("connectorId") String connectorId,
                                                         @RequestBody(required = false) byte[] body,
                                                         HttpServletRequest request) {
         return dlt.deliveryReports(tenant, connectorId, EventFormController.headers(request),

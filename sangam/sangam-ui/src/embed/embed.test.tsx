@@ -212,7 +212,7 @@ describe('<sangam-task-form>', () => {
 
 describe('<sangam-process-diagram>', () => {
   it('reads the definition XML and the instance tokens, and emits sangam-element-selected', async () => {
-    routes['/process-definitions/d1/xml'] = '<definitions/>';
+    routes['/process-definitions/by-id/xml?id=d1'] = '<definitions/>';
     routes['/process-instances/p1/activity-tree'] = { id: 'p1', activityId: 'proc', children: [{ id: 'a1', activityId: 'Task_1', children: [] }] };
     const selected: CustomEvent[] = [];
     document.addEventListener('sangam-element-selected', (e) => selected.push(e as CustomEvent), { once: true });
@@ -222,7 +222,7 @@ describe('<sangam-process-diagram>', () => {
     expect(d.textContent).toContain('Leave');
     await waitFor(() => expect(within(shadow(el)).getByTestId('bpmn').getAttribute('data-stats')).toBe('Task_1'));
     expect(api.get).toHaveBeenCalledWith('/process-instances/p1/activity-tree');
-    expect(api.text).toHaveBeenCalledWith('/process-definitions/d1/xml', 'application/xml');
+    expect(api.text).toHaveBeenCalledWith('/process-definitions/by-id/xml?id=d1', 'application/xml');
     fireEvent.click(within(d).getByText('select'));
     expect(selected[0].detail).toEqual({ definitionId: 'd1', activityId: 'Task_1', name: 'Check' });
   });

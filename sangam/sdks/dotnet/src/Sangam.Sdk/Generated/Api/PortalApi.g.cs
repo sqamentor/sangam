@@ -29,22 +29,24 @@ public sealed class PortalApi
     /// <summary>
     /// Application form of a service
     /// The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); versionHash is the form's own. 404 for a service not in the catalogue or without a form.
-    /// GET /portal/services/{key}/form (operationId getPortalServiceForm); permission portal.use.
+    /// GET /portal/services/by-key/form (operationId getPortalServiceForm); permission portal.use.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.FormVersion?> GetPortalServiceFormAsync(string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/portal/services/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/form");
+        var req = ApiRequest.Get($"/portal/services/by-key/form");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         return await _calls.JsonAsync<M.FormVersion?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Consent notice of a service
     /// The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
-    /// GET /portal/services/{key}/notice (operationId getPortalServiceNotice); permission portal.use.
+    /// GET /portal/services/by-key/notice (operationId getPortalServiceNotice); permission portal.use.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.PortalNotice?> GetPortalServiceNoticeAsync(string key, string? lang = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/portal/services/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/notice");
+        var req = ApiRequest.Get($"/portal/services/by-key/notice");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         req.WithQuery("lang", GeneratedCalls.Q(lang));
         return await _calls.JsonAsync<M.PortalNotice?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -88,22 +90,25 @@ public sealed class PortalApi
     /// <summary>
     /// Application status
     /// Status, stage, clarifications and messages; officers appear only as seat designations (PER-8).
-    /// GET /portal/applications/{id} (operationId getMyApplication); permission portal.use.
+    /// GET /portal/applications/by-id (operationId getMyApplication); permission portal.use.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.Application?> GetMyApplicationAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/portal/applications/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Get($"/portal/applications/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<M.Application?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Reply to a clarification
     /// Text plus files (CLARIFICATION_RECEIVED, C04).
-    /// POST /portal/applications/{id}/clarifications/{clarificationId}/reply (operationId replyToClarification); permission portal.use; result stored atomically with the state change.
+    /// POST /portal/applications/by-id/clarifications/by-clarification-id/reply (operationId replyToClarification); permission portal.use; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.Application?> ReplyToClarificationAsync(string id, string clarificationId, global::System.Collections.Generic.IReadOnlyDictionary<string, object?> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.Application?> ReplyToClarificationAsync(global::System.Collections.Generic.IReadOnlyDictionary<string, object?> body, string id, string clarificationId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/portal/applications/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/clarifications/{HttpTransport.Seg(GeneratedCalls.Str(clarificationId)!)}/reply");
+        var req = ApiRequest.Post($"/portal/applications/by-id/clarifications/by-clarification-id/reply");
+        req.WithQuery("id", GeneratedCalls.Q(id));
+        req.WithQuery("clarificationId", GeneratedCalls.Q(clarificationId));
         if (body is not null) req.WithContent(GeneratedCalls.Multipart(body));
         return await _calls.JsonAsync<M.Application?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -111,11 +116,12 @@ public sealed class PortalApi
     /// <summary>
     /// Withdraw an application
     /// CASE_WITHDRAWN.
-    /// POST /portal/applications/{id}/withdraw (operationId withdrawApplication); permission portal.use; result stored atomically with the state change.
+    /// POST /portal/applications/by-id/withdraw (operationId withdrawApplication); permission portal.use; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.Application?> WithdrawApplicationAsync(string id, M.WithdrawRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.Application?> WithdrawApplicationAsync(M.WithdrawRequest body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/portal/applications/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/withdraw");
+        var req = ApiRequest.Post($"/portal/applications/by-id/withdraw");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.Application?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -123,11 +129,12 @@ public sealed class PortalApi
     /// <summary>
     /// Appeal a decision
     /// APPEAL_FILED.
-    /// POST /portal/applications/{id}/appeal (operationId appealApplication); permission portal.use; result stored atomically with the state change.
+    /// POST /portal/applications/by-id/appeal (operationId appealApplication); permission portal.use; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.Application?> AppealApplicationAsync(string id, M.AppealRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.Application?> AppealApplicationAsync(M.AppealRequest body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/portal/applications/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/appeal");
+        var req = ApiRequest.Post($"/portal/applications/by-id/appeal");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.Application?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -135,11 +142,12 @@ public sealed class PortalApi
     /// <summary>
     /// Outcome document
     /// Certificate, sanction or rejection order (C05).
-    /// GET /portal/applications/{id}/outcome (operationId downloadOutcome); permission portal.use.
+    /// GET /portal/applications/by-id/outcome (operationId downloadOutcome); permission portal.use.
     /// </summary>
     public async global::System.Threading.Tasks.Task<byte[]> DownloadOutcomeAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/portal/applications/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/outcome");
+        var req = ApiRequest.Get($"/portal/applications/by-id/outcome");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.BytesAsync(req, options, "application/octet-stream", cancellationToken).ConfigureAwait(false);
     }
 

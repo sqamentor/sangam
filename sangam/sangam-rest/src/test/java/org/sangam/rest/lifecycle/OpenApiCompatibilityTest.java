@@ -157,6 +157,31 @@ class OpenApiCompatibilityTest {
         return ApiDeprecationRegistry.load(new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)));
     }
 
+    /**
+     * Corrections are history: one operation may carry several (a response code fixed, later a route moved), so the
+     * key is method, path and the corrected shape ("to"). Two entries equal on all three are a copy, not history.
+     * Duplicate keys are refused too: an entry missing its "- method:" line would silently overwrite the one above it.
+     */
+    @Test
+    void noCorrectionIsRecordedTwice() throws IOException {
+        LoaderOptions strict = new LoaderOptions();
+        strict.setAllowDuplicateKeys(false);
+        Map<String, Object> registry;
+        try (InputStream in = Files.newInputStream(REGISTRY)) {
+            registry = new Yaml(new SafeConstructor(strict)).load(in);
+        }
+        Object raw = registry.get("corrections");
+        List<?> corrections = raw instanceof List<?> l ? l : List.of();
+        Map<String, Integer> seen = new java.util.LinkedHashMap<>();
+        for (Object o : corrections) {
+            Map<?, ?> c = (Map<?, ?>) o;
+            seen.merge(c.get("method") + " " + c.get("path") + " -> " + c.get("to"), 1, Integer::sum);
+        }
+        List<String> copies = seen.entrySet().stream().filter(e -> e.getValue() > 1).map(Map.Entry::getKey).toList();
+        assertTrue(!corrections.isEmpty(), "the registry lists its corrections");
+        assertEquals(List.of(), copies, "a correction (method, path, to) recorded more than once");
+    }
+
     private static Map<String, Object> spec(String yaml) {
         return new Yaml(new SafeConstructor(new LoaderOptions())).load(yaml);
     }

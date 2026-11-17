@@ -271,12 +271,14 @@ final class ProcessesApi
      *
      * Enabled and active activities of an ad-hoc scope.
      *
-     * GET /process-instances/{id}/ad-hoc/{adHocActivityId} (operationId getAdHocState); permission process.read.
+     * GET /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id (operationId getAdHocState); permission process.read.
+     * @param string $adHocActivityId query adHocActivityId
      * @return Model\AdHocState|null
      */
     public function getAdHocState(string $id, string $adHocActivityId, ?RequestOptions $options = null): ?Model\AdHocState
     {
-        $req = ApiRequest::get('/process-instances/' . HttpTransport::seg((string) $id) . '/ad-hoc/' . HttpTransport::seg((string) $adHocActivityId));
+        $req = ApiRequest::get('/process-instances/' . HttpTransport::seg((string) $id) . '/ad-hoc/by-ad-hoc-activity-id');
+        $req->query('adHocActivityId', $adHocActivityId);
         return $this->calls->model($req, $options, Model\AdHocState::class);
     }
 
@@ -285,13 +287,15 @@ final class ProcessesApi
      *
      * Starts an enabled activity in the ad-hoc scope.
      *
-     * POST /process-instances/{id}/ad-hoc/{adHocActivityId}/start (operationId startAdHocActivity); permission process.write; result stored atomically with the state change.
+     * POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/start (operationId startAdHocActivity); permission process.write; result stored atomically with the state change.
      * @param Model\StartAdHocActivityRequest|array $body request body
+     * @param string $adHocActivityId query adHocActivityId
      * @return Model\AdHocState|null
      */
-    public function startAdHocActivity(string $id, string $adHocActivityId, Model\StartAdHocActivityRequest|array $body, ?RequestOptions $options = null): ?Model\AdHocState
+    public function startAdHocActivity(string $id, Model\StartAdHocActivityRequest|array $body, string $adHocActivityId, ?RequestOptions $options = null): ?Model\AdHocState
     {
-        $req = ApiRequest::post('/process-instances/' . HttpTransport::seg((string) $id) . '/ad-hoc/' . HttpTransport::seg((string) $adHocActivityId) . '/start');
+        $req = ApiRequest::post('/process-instances/' . HttpTransport::seg((string) $id) . '/ad-hoc/by-ad-hoc-activity-id/start');
+        $req->query('adHocActivityId', $adHocActivityId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -303,13 +307,15 @@ final class ProcessesApi
      *
      * Completes the ad-hoc sub-process when its completion condition allows.
      *
-     * POST /process-instances/{id}/ad-hoc/{adHocActivityId}/complete (operationId completeAdHoc); permission process.write; result stored atomically with the state change.
+     * POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/complete (operationId completeAdHoc); permission process.write; result stored atomically with the state change.
+     * @param string $adHocActivityId query adHocActivityId
      * @param string|null $reason query reason
      * @return Model\AdHocState|null
      */
     public function completeAdHoc(string $id, string $adHocActivityId, ?string $reason = null, ?RequestOptions $options = null): ?Model\AdHocState
     {
-        $req = ApiRequest::post('/process-instances/' . HttpTransport::seg((string) $id) . '/ad-hoc/' . HttpTransport::seg((string) $adHocActivityId) . '/complete');
+        $req = ApiRequest::post('/process-instances/' . HttpTransport::seg((string) $id) . '/ad-hoc/by-ad-hoc-activity-id/complete');
+        $req->query('adHocActivityId', $adHocActivityId);
         $req->query('reason', $reason);
         return $this->calls->model($req, $options, Model\AdHocState::class);
     }
@@ -361,12 +367,14 @@ final class ProcessesApi
      *
      * One definition.
      *
-     * GET /process-definitions/{id} (operationId getProcessDefinition); permission process.read.
+     * GET /process-definitions/by-id (operationId getProcessDefinition); permission process.read.
+     * @param string $id query id
      * @return Model\ProcessDefinition|null
      */
     public function getProcessDefinition(string $id, ?RequestOptions $options = null): ?Model\ProcessDefinition
     {
-        $req = ApiRequest::get('/process-definitions/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::get('/process-definitions/by-id');
+        $req->query('id', $id);
         return $this->calls->model($req, $options, Model\ProcessDefinition::class);
     }
 
@@ -375,12 +383,14 @@ final class ProcessesApi
      *
      * The deployed BPMN 2.0 XML.
      *
-     * GET /process-definitions/{id}/xml (operationId getProcessDefinitionXml); permission process.read.
+     * GET /process-definitions/by-id/xml (operationId getProcessDefinitionXml); permission process.read.
+     * @param string $id query id
      * @return string
      */
     public function getProcessDefinitionXml(string $id, ?RequestOptions $options = null): string
     {
-        $req = ApiRequest::get('/process-definitions/' . HttpTransport::seg((string) $id) . '/xml');
+        $req = ApiRequest::get('/process-definitions/by-id/xml');
+        $req->query('id', $id);
         return $this->calls->raw($req, $options, 'application/xml');
     }
 
@@ -458,13 +468,15 @@ final class ProcessesApi
      *
      * No new starts while suspended; includeInstances suspends running instances too (R63).
      *
-     * POST /process-definitions/{id}/suspension (operationId setProcessDefinitionSuspension); permission process.modify; result stored atomically with the state change.
+     * POST /process-definitions/by-id/suspension (operationId setProcessDefinitionSuspension); permission process.modify; result stored atomically with the state change.
      * @param Model\SuspensionRequest|array $body request body
+     * @param string $id query id
      * @return Model\ProcessDefinition|null
      */
-    public function setProcessDefinitionSuspension(string $id, Model\SuspensionRequest|array $body, ?RequestOptions $options = null): ?Model\ProcessDefinition
+    public function setProcessDefinitionSuspension(Model\SuspensionRequest|array $body, string $id, ?RequestOptions $options = null): ?Model\ProcessDefinition
     {
-        $req = ApiRequest::post('/process-definitions/' . HttpTransport::seg((string) $id) . '/suspension');
+        $req = ApiRequest::post('/process-definitions/by-id/suspension');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -544,12 +556,14 @@ final class ProcessesApi
      *
      * The sangam:query and sangam:update handlers the deployed model declares.
      *
-     * GET /process-definitions/{id}/handlers (operationId listInstanceHandlers); permission process.read.
+     * GET /process-definitions/by-id/handlers (operationId listInstanceHandlers); permission process.read.
+     * @param string $id query id
      * @return list<Model\InstanceHandler>
      */
     public function listInstanceHandlers(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/process-definitions/' . HttpTransport::seg((string) $id) . '/handlers');
+        $req = ApiRequest::get('/process-definitions/by-id/handlers');
+        $req->query('id', $id);
         return $this->calls->models($req, $options, Model\InstanceHandler::class);
     }
 

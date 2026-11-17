@@ -212,8 +212,8 @@ export const http = {
   del: <T>(path: string, query?: Query, idempotencyKey?: string) => request<T>('DELETE', path, { query, idempotencyKey }),
   engine: <T>(path: string, query?: Query) => request<T>('GET', path, { query, base: '/engine-rest' }),
   /**
-   * GET of an operation whose success answer is not JSON (sangam-api.yaml: /process-definitions/{id}/xml and
-   * /decision-definitions/{id}/xml produce application/xml, /ops/jobs/{id}/stacktrace text/plain). It asks for exactly
+   * GET of an operation whose success answer is not JSON (sangam-api.yaml: /process-definitions/by-id/xml and
+   * /decision-definitions/by-id/xml produce application/xml, /ops/jobs/{id}/stacktrace text/plain). It asks for exactly
    * the declared media type, with problem+json for a refusal: the default JSON Accept is answered 406 there.
    */
   text: (path: string, mediaType: string, query?: Query) => request<string>('GET', path, { query, headers: { Accept: `${mediaType}, application/problem+json` } }),

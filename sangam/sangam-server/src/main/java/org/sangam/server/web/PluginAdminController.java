@@ -9,9 +9,9 @@ import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.Permissions;
 import org.sangam.server.plugins.PluginManager;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** {@code /api/v1/admin/plugins}: list, enable, disable (effective at restart), audit trail. Platform administrators only. */
@@ -46,13 +46,13 @@ public class PluginAdminController {
         return plugins.auditTrail();
     }
 
-    @PostMapping("/{id}/enable")
-    public PluginManager.PluginInfo enable(RequestContext ctx, @PathVariable String id) {
+    @PostMapping("/by-id/enable")
+    public PluginManager.PluginInfo enable(RequestContext ctx, @RequestParam("id") String id) {
         return set(ctx, id, true);
     }
 
-    @PostMapping("/{id}/disable")
-    public PluginManager.PluginInfo disable(RequestContext ctx, @PathVariable String id) {
+    @PostMapping("/by-id/disable")
+    public PluginManager.PluginInfo disable(RequestContext ctx, @RequestParam("id") String id) {
         return set(ctx, id, false);
     }
 

@@ -178,14 +178,14 @@ describe('page runtime', () => {
 
   it('renders the blocks from their named queries; starting the process needs the confirm box', async () => {
     routes['/pages/district-dash'] = page;
-    pages['/queries/open-count'] = pageOf([{ n: 42 }]);
-    pages['/queries/offices'] = pageOf([{ id: 'o1', name: 'Ajmer', district: 'Ajmer' }]);
+    pages['/queries/by-name?name=open-count'] = pageOf([{ n: 42 }]);
+    pages['/queries/by-name?name=offices'] = pageOf([{ id: 'o1', name: 'Ajmer', district: 'Ajmer' }]);
     api.post.mockResolvedValueOnce({ id: 'pi7' });
     show(<PageRuntime />, '/pages/district-dash', '/pages/:key');
     expect(await screen.findByRole('heading', { name: 'Pending work' })).toBeTruthy();
     expect(await screen.findByText('42')).toBeTruthy();
     expect(await screen.findByText('Ajmer')).toBeTruthy();
-    expect(api.page).toHaveBeenCalledWith('/queries/open-count', { size: 1 });
+    expect(api.page).toHaveBeenCalledWith('/queries/by-name?name=open-count', { size: 1 });
     const start = screen.getByRole('button', { name: 'Start an inspection' }) as HTMLButtonElement;
     expect(start.disabled).toBe(true);
     fireEvent.click(screen.getByLabelText(L('pages.confirmStart')));

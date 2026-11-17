@@ -1036,15 +1036,15 @@ op("get", "/process-instances/{id}/links", "listProcessInstanceLinks", "Processe
    resp=(200, "array:EntityLink"), perm="process.read", errors=GET_E)
 op("get", "/process-instances/{id}/attachments", "listProcessInstanceAttachments", "Processes", "Instance documents",
    "Documents attached to the instance (FC-40).", ["FC-40", "R74"], params=[ID], resp=(200, "array:Document"), perm="document.read", errors=GET_E)
-ADHOC = [ID, pp("adHocActivityId", "Id of the ad-hoc sub-process activity")]
-op("get", "/process-instances/{id}/ad-hoc/{adHocActivityId}", "getAdHocState", "Processes", "Ad-hoc sub-process state",
+ADHOC = [ID, q("adHocActivityId", desc="Id of the ad-hoc sub-process activity (a BPMN element id from the deployed model); may carry '/' or ':'", required=True)]
+op("get", "/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id", "getAdHocState", "Processes", "Ad-hoc sub-process state",
    "Enabled and active activities of an ad-hoc scope (FC-01).", ["FC-01"], params=ADHOC, resp=(200, "AdHocState"), perm="process.read",
    errors=GET_E + ("NotImplemented",))
-op("post", "/process-instances/{id}/ad-hoc/{adHocActivityId}/start", "startAdHocActivity", "Processes", "Start an ad-hoc activity",
+op("post", "/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/start", "startAdHocActivity", "Processes", "Start an ad-hoc activity",
    "Starts an enabled activity in the ad-hoc scope (FC-01).", ["FC-01", "R41"], params=ADHOC, body="StartAdHocActivityRequest",
    resp=(200, "AdHocState"), cmd="process.adhoc.start", perm="process.write",
    errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "NotImplemented"))
-op("post", "/process-instances/{id}/ad-hoc/{adHocActivityId}/complete", "completeAdHoc", "Processes", "Complete an ad-hoc scope",
+op("post", "/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/complete", "completeAdHoc", "Processes", "Complete an ad-hoc scope",
    "Completes the ad-hoc sub-process when its completion condition allows (FC-01).", ["FC-01", "R41"], params=ADHOC + [P("reason")],
    resp=(200, "AdHocState"), cmd="process.adhoc.complete", perm="process.write",
    errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "NotImplemented"))
@@ -1054,11 +1054,13 @@ op("post", "/process-instances/{id}/inject", "injectIntoProcessInstance", "Proce
    perm="process.modify", errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "NotImplemented"))
 op("get", "/process-definitions", "listProcessDefinitions", "Processes", "List process definitions", "Deployed BPMN definitions of the tenant (and shared).",
    [], list_=True, params=[q("key"), q("latest", "bool"), q("deploymentId")], resp=(200, "array:ProcessDefinition"), perm="process.read", errors=STD_R)
-op("get", "/process-definitions/{id}", "getProcessDefinition", "Processes", "Get a process definition", "One definition.", [],
-   params=[ID], resp=(200, "ProcessDefinition"), perm="process.read", errors=GET_E)
+# decision 393: a definition id is key:version:uuid (Operaton), so it is a query parameter on literal by-id routes
+PDQ = q("id", desc="Process definition id (key:version:uuid); may carry ':'", required=True)
+op("get", "/process-definitions/by-id", "getProcessDefinition", "Processes", "Get a process definition", "One definition.", [],
+   params=[PDQ], resp=(200, "ProcessDefinition"), perm="process.read", errors=GET_E)
 XML = {"application/xml": {"schema": {"type": "string"}}}
-op("get", "/process-definitions/{id}/xml", "getProcessDefinitionXml", "Processes", "BPMN XML", "The deployed BPMN 2.0 XML.", [],
-   params=[ID], resp=(200, XML), perm="process.read", errors=GET_E)
+op("get", "/process-definitions/by-id/xml", "getProcessDefinitionXml", "Processes", "BPMN XML", "The deployed BPMN 2.0 XML.", [],
+   params=[PDQ], resp=(200, XML), perm="process.read", errors=GET_E)
 op("post", "/messages", "correlateMessage", "Processes", "Correlate a message",
    "Correlates to exactly one waiting instance (or all); refused at back-pressure for starts (VI.2.4).", ["R41", "R38"],
    body="MessageRequest", resp=(200, "MessageResult"), cmd="message.correlate", perm="message.send",
@@ -1071,27 +1073,29 @@ op("post", "/case-instances", "startCaseInstance", "Cases", "Start a case", "Sta
    body="StartCaseRequest", resp=(201, "CaseInstance"), cmd="case.start", perm="case.write", created=True)
 op("get", "/case-instances", "listCaseInstances", "Cases", "List cases", "Authorized list.", ["R45", "A-16"], list_=True,
    params=[q("key"), q("businessKey"), q("active", "bool")], resp=(200, "array:CaseInstance"), perm="case.read", errors=STD_R)
-op("get", "/case-instances/{id}", "getCaseInstance", "Cases", "Get a case", "Case with plan item instances.", ["R45"], params=[ID],
+CASE_ID = q("id", desc="Case instance id from the case engine; may carry '/' or ':'", required=True)
+op("get", "/case-instances/by-id", "getCaseInstance", "Cases", "Get a case", "Case with plan item instances.", ["R45"], params=[CASE_ID],
    resp=(200, "CaseInstance"), perm="case.read", errors=GET_E)
-op("get", "/case-instances/{id}/variables", "getCaseVariables", "Cases", "Case variables", "Case variables (K11).", ["R45"], params=[ID],
+op("get", "/case-instances/by-id/variables", "getCaseVariables", "Cases", "Case variables", "Case variables (K11).", ["R45"], params=[CASE_ID],
    resp=(200, "object"), perm="case.read", errors=GET_E)
-op("post", "/case-instances/{id}/commands", "commandCaseInstance", "Cases", "Case command",
-   "complete | close | terminate | reactivate (FC-59, linked new case).", ["R45", "FC-59", "R41"], params=[ID], body="CaseInstanceCommand",
+op("post", "/case-instances/by-id/commands", "commandCaseInstance", "Cases", "Case command",
+   "complete | close | terminate | reactivate (FC-59, linked new case).", ["R45", "FC-59", "R41"], params=[CASE_ID], body="CaseInstanceCommand",
    resp=(200, "CaseInstance"), cmd="case.command", perm="case.write")
-op("post", "/case-instances/{id}/executions/{executionId}/commands", "commandCaseExecution", "Cases", "Plan item command",
+op("post", "/case-instances/by-id/executions/by-execution-id/commands", "commandCaseExecution", "Cases", "Plan item command",
    "start | complete | disable | reenable | terminate | manualStart (discretionary items; FC-55, FC-56).", ["R45", "FC-55", "FC-56", "R41"],
-   params=[ID, pp("executionId")], body="CaseExecutionCommand", resp=(200, "CaseInstance"), cmd="case.execution.command", perm="case.write")
+   params=[CASE_ID, q("executionId", desc="Case execution (plan item) id from the case engine; may carry '/' or ':'", required=True)], body="CaseExecutionCommand", resp=(200, "CaseInstance"), cmd="case.execution.command", perm="case.write")
 op("get", "/case-definitions", "listCaseDefinitions", "Cases", "List case definitions", "Deployed CMMN definitions.", ["R45"], list_=True,
    params=[q("key"), q("latest", "bool")], resp=(200, "array:CaseDefinition"), perm="case.read", errors=STD_R)
 
 # Decisions
-op("post", "/decisions/{key}/evaluate", "evaluateDecision", "Decisions", "Evaluate a decision",
+op("post", "/decisions/by-key/evaluate", "evaluateDecision", "Decisions", "Evaluate a decision",
    "Evaluates the latest (or given) version; ROUTING/AUTHORITY evaluations with a businessKey are recorded as class-B events (X.2.3.2).",
-   ["R8", "R42", "IX.5"], params=[pp("key")], body="DecisionEvaluateRequest", resp=(200, "DecisionEvaluateResult"), perm="decision.evaluate",
+   ["R8", "R42", "IX.5"], params=[q("key", desc="DMN decision key from the deployed model; may carry '/' or ':'", required=True)], body="DecisionEvaluateRequest", resp=(200, "DecisionEvaluateResult"), perm="decision.evaluate",
    errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "Unprocessable"))
 op("get", "/decision-definitions", "listDecisionDefinitions", "Decisions", "List decision definitions", "Deployed DMN decisions.", [],
    list_=True, params=[q("key"), q("latest", "bool")], resp=(200, "array:DecisionDefinition"), perm="process.read", errors=STD_R)
-op("get", "/decision-definitions/{id}/xml", "getDecisionDefinitionXml", "Decisions", "DMN XML", "The deployed DMN XML.", [], params=[ID],
+op("get", "/decision-definitions/by-id/xml", "getDecisionDefinitionXml", "Decisions", "DMN XML", "The deployed DMN XML.", [],
+   params=[q("id", desc="Decision definition id (key:version:uuid); may carry ':'", required=True)],
    resp=(200, XML), perm="process.read", errors=GET_E)
 
 # Deployments
@@ -1156,17 +1160,18 @@ op("post", "/documents", "uploadDocument", "Documents", "Upload a document", "St
    " A slot applies when processInstanceId is given, or taskId names a task of a process instance; never for a "
    "caseInstanceId." + _SLOT_TEXT,
    ["FC-40", "R74", "K12", "R41"], body=MULTI_DOC, resp=(201, "Document"), cmd="document.upload", perm="document.write", created=True)
+DOC_ID = q("id", desc="Document id (an engine attachment or content item id); may carry '/' or ':'", required=True)
 op("get", "/documents", "listDocuments", "Documents", "List documents", "Authorized document list.", ["FC-40", "R74"], list_=True,
    params=[q("taskId"), q("processInstanceId"), q("caseInstanceId"), q("name")], resp=(200, "array:Document"), perm="document.read", errors=STD_R)
-op("get", "/documents/{id}", "getDocument", "Documents", "Document metadata", "Latest version metadata.", ["R74"], params=[ID],
+op("get", "/documents/by-id", "getDocument", "Documents", "Document metadata", "Latest version metadata.", ["R74"], params=[DOC_ID],
    resp=(200, "Document"), perm="document.read", errors=GET_E)
-op("get", "/documents/{id}/content", "getDocumentContent", "Documents", "Document content", "Content of the latest or given version.", ["R74"],
-   params=[ID, q("version", "int")], resp=(200, {"application/octet-stream": {"schema": {"type": "string", "contentMediaType": "application/octet-stream"}}}),
+op("get", "/documents/by-id/content", "getDocumentContent", "Documents", "Document content", "Content of the latest or given version.", ["R74"],
+   params=[DOC_ID, q("version", "int")], resp=(200, {"application/octet-stream": {"schema": {"type": "string", "contentMediaType": "application/octet-stream"}}}),
    perm="document.read", errors=GET_E)
-op("post", "/documents/{id}/versions", "addDocumentVersion", "Documents", "New document version", "Adds an immutable version (R74)."
+op("post", "/documents/by-id/versions", "addDocumentVersion", "Documents", "New document version", "Adds an immutable version (R74)."
    " A slot applies when the document belongs to a process instance." + _SLOT_TEXT,
-   ["R74", "R41"], params=[ID], body=MULTI_VERSION, resp=(201, "Document"), cmd="document.version", perm="document.write", created=True)
-for _p in ("/documents", "/documents/{id}/versions"):
+   ["R74", "R41"], params=[DOC_ID], body=MULTI_VERSION, resp=(201, "Document"), cmd="document.version", perm="document.write", created=True)
+for _p in ("/documents", "/documents/by-id/versions"):
     _r = PATHS[_p]["post"]["responses"]
     _r["403"] = {"description": RESPONSES["Forbidden"]["description"] + "; or DOCUMENT_SLOT_NOT_TASK_HOLDER: a "
                  "documentType names a DSC slot and the caller is not the assignee of an open task of that process "
@@ -1175,16 +1180,17 @@ for _p in ("/documents", "/documents/{id}/versions"):
     _prev = RESPONSES[_prev["$ref"].rsplit("/", 1)[1]] if _prev and "$ref" in _prev else _prev
     _r["409"] = {"description": (_prev["description"] + "; or " if _prev else "") + "DOCUMENT_SLOT_OCCUPIED: the "
                  "slot already holds another document and replaceSlot is not true (nothing stored)", "content": PROBLEM}
-op("delete", "/documents/{id}", "deleteDocument", "Documents", "Delete a document", "Deletes (subject to retention and legal hold, R29, R61).",
-   ["R74", "R61", "R41"], params=[ID, P("reason")], resp=(204, None), cmd="document.delete", perm="document.write")
+op("delete", "/documents/by-id", "deleteDocument", "Documents", "Delete a document", "Deletes (subject to retention and legal hold, R29, R61).",
+   ["R74", "R61", "R41"], params=[DOC_ID, P("reason")], resp=(204, None), cmd="document.delete", perm="document.write")
 
 # Links
+LINK_ID = q("id", desc="Link id (a derived link is derived:<type>:<source>:<target>); may carry '/' or ':'", required=True)
 op("get", "/links", "listLinks", "Links", "List entity links", "Links of one scope (FC-31, FC-32).", ["FC-31", "FC-32"],
    params=[q("scopeType", required=True, enum=["bpmn", "cmmn", "task"]), q("scopeId", required=True), q("linkType")],
    resp=(200, "array:EntityLink"), perm="process.read", errors=STD_R)
 op("post", "/links", "createLink", "Links", "Create a link", "Explicit reference/sibling link (FC-31).", ["FC-31", "R41"], body="CreateLinkRequest",
    resp=(201, "EntityLink"), cmd="link.create", perm="process.write", created=True)
-op("delete", "/links/{id}", "deleteLink", "Links", "Delete a link", "Removes an explicit link.", ["FC-31", "R41"], params=[ID, P("reason")],
+op("delete", "/links/by-id", "deleteLink", "Links", "Delete a link", "Removes an explicit link.", ["FC-31", "R41"], params=[LINK_ID, P("reason")],
    resp=(204, None), cmd="link.delete", perm="process.write")
 
 # History
@@ -1246,24 +1252,28 @@ AQ = [q("q", desc="Free-text search"), q("parentId"), q("orgUnitId"), q("seatId"
       q("includeInactive", "bool")]
 
 
-def crud(base, sch, name, plural, cmdbase, perm_r, perm_w, reqs, update=True, delete=True, get=True):
+def crud(base, sch, name, plural, cmdbase, perm_r, perm_w, reqs, update=True, delete=True, get=True, by_id=False):
+    """by_id (decision 393): the id is client-chosen and may hold '/' or ':', so one item is addressed on the literal
+    base/by-id route with the id as a required query parameter, never as a path segment."""
     tag = "Admin"
+    item, idp = (base + "/by-id", q("id", desc="The item id (client-chosen; may carry '/' or ':')", required=True))         if by_id else (base + "/{id}", ID)
     op("get", base, "list" + plural, tag, "List " + name.lower() + "s", "Tenant-scoped admin list.", reqs, list_=True, params=AQ,
        resp=(200, "array:" + sch), perm=perm_r, errors=STD_R)
     op("post", base, "create" + name, tag, "Create " + name.lower(), "Creates and audits on the tenant security chain.", reqs + ["R41", "R42"],
        body=sch, resp=(201, sch), cmd=cmdbase + ".create", perm=perm_w, created=True)
     if get:
-        op("get", base + "/{id}", "get" + name, tag, "Get " + name.lower(), "One item.", reqs, params=[ID], resp=(200, sch), perm=perm_r, errors=GET_E)
+        op("get", item, "get" + name, tag, "Get " + name.lower(), "One item.", reqs, params=[idp], resp=(200, sch), perm=perm_r, errors=GET_E)
     if update:
-        op("put", base + "/{id}", "update" + name, tag, "Update " + name.lower(), "Updates and audits.", reqs + ["R41", "R42"], params=[ID],
+        op("put", item, "update" + name, tag, "Update " + name.lower(), "Updates and audits.", reqs + ["R41", "R42"], params=[idp],
            body=sch, resp=(200, sch), cmd=cmdbase + ".update", perm=perm_w)
     if delete:
-        op("delete", base + "/{id}", "delete" + name, tag, "Delete " + name.lower(), "Deletes (reason audited).", reqs + ["R41", "R42"],
-           params=[ID, P("reason")], resp=(204, None), cmd=cmdbase + ".delete", perm=perm_w)
+        op("delete", item, "delete" + name, tag, "Delete " + name.lower(), "Deletes (reason audited).", reqs + ["R41", "R42"],
+           params=[idp, P("reason")], resp=(204, None), cmd=cmdbase + ".delete", perm=perm_w)
 
 
-crud("/admin/org-units", "OrgUnit", "OrgUnit", "OrgUnits", "admin.orgunit", "admin.read", "admin.write", ["IX.5", "R19"])
-crud("/admin/seats", "Seat", "Seat", "Seats", "admin.seat", "admin.read", "admin.write", ["IX.5", "R19"])
+crud("/admin/org-units", "OrgUnit", "OrgUnit", "OrgUnits", "admin.orgunit", "admin.read", "admin.write", ["IX.5", "R19"],
+     by_id=True)
+crud("/admin/seats", "Seat", "Seat", "Seats", "admin.seat", "admin.read", "admin.write", ["IX.5", "R19"], by_id=True)
 crud("/admin/assignments", "Assignment", "Assignment", "Assignments", "admin.assignment", "admin.read", "admin.write", ["IX.5"],
      update=False, delete=False)
 op("post", "/admin/assignments/{id}/end", "endAssignment", "Admin", "End an assignment", "Ends an effective-dated holding (SEAT_HOLDER_CHANGED).",
@@ -1273,7 +1283,7 @@ crud("/admin/delegations", "Delegation", "Delegation", "Delegations", "admin.del
 op("post", "/admin/delegations/{id}/revoke", "revokeDelegation", "Admin", "Revoke a delegation", "Revokes (DELEGATION_EXPIRED).",
    ["IX.5", "R41", "R42"], params=[ID], body="ReasonRequest", resp=(200, "Delegation"), cmd="admin.delegation.revoke", perm="admin.write")
 crud("/admin/policies", "Policy", "Policy", "Policies", "admin.policy", "policy.admin", "policy.admin", ["VI.4", "A-13", "R19"],
-     update=False, get=False)
+     update=False, get=False, by_id=True)
 op("get", "/admin/policies/version", "getPolicyVersion", "Admin", "Policy version", "Current policy_version of the tenant (VI.4 rule 5).",
    ["VI.4"], resp=(200, "PolicyVersion"), perm="policy.admin", errors=STD_R)
 crud("/admin/tenants", "Tenant", "Tenant", "Tenants", "admin.tenant", "tenant.admin", "tenant.admin", ["EC-17", "R19"], delete=False)
@@ -1344,44 +1354,45 @@ op("get", "/events/channels", "listEventChannels", "Events", "List channels", "E
 op("post", "/events/channels", "createEventChannel", "Events", "Create a channel", "Registers a channel; keys 'channels' and 'definitions' are reserved.",
    ["FC-03", "R41"], body="EventChannel", resp=(201, "EventChannel"), cmd="event.channel.create", perm="event.admin", created=True)
 KEY = pp("key")
-op("get", "/events/channels/{key}", "getEventChannel", "Events", "Get a channel", "One channel.", ["FC-03"], params=[KEY],
+EVK = q("key", desc="Event channel or event definition key ([A-Za-z0-9_.:-], EventRegistry.java:316); may carry ':'", required=True)
+op("get", "/events/channels/by-key", "getEventChannel", "Events", "Get a channel", "One channel.", ["FC-03"], params=[EVK],
    resp=(200, "EventChannel"), perm="event.admin", errors=GET_E)
-op("put", "/events/channels/{key}", "updateEventChannel", "Events", "Update a channel", "Updates a channel.", ["FC-03", "R41"], params=[KEY],
+op("put", "/events/channels/by-key", "updateEventChannel", "Events", "Update a channel", "Updates a channel.", ["FC-03", "R41"], params=[EVK],
    body="EventChannel", resp=(200, "EventChannel"), cmd="event.channel.update", perm="event.admin")
 EVT_CONFLICT = ("BadRequest", "Unauthorized", "Forbidden", "NotFound", "Conflict")
-op("delete", "/events/channels/{key}", "deleteEventChannel", "Events", "Delete a channel",
+op("delete", "/events/channels/by-key", "deleteEventChannel", "Events", "Delete a channel",
    "Retires every active version and removes the retired versions. Refused with 409 EVENT_IN_FLIGHT while events on the channel are buffered in the inbox or undelivered in the outbox.",
-   ["FC-03", "R41"], params=[KEY, P("reason")], resp=(204, None), cmd="event.channel.delete", perm="event.admin",
+   ["FC-03", "R41"], params=[EVK, P("reason")], resp=(204, None), cmd="event.channel.delete", perm="event.admin",
    errors=EVT_CONFLICT)
-op("post", "/events/channels/{key}/retire", "retireEventChannel", "Events", "Retire a channel",
+op("post", "/events/channels/by-key/retire", "retireEventChannel", "Events", "Retire a channel",
    "Marks every active version RETIRED: the channel no longer resolves and stops receiving; an older active version, if any, becomes current. Refused with 409 EVENT_IN_FLIGHT while events are in flight. Returns the channel with active=false (or the version that became current).",
-   ["FC-03", "R41", "R42"], params=[KEY], body="ReasonRequest", resp=(200, "EventChannel"), cmd="event.channel.retire",
+   ["FC-03", "R41", "R42"], params=[EVK], body="ReasonRequest", resp=(200, "EventChannel"), cmd="event.channel.retire",
    perm="event.admin", errors=EVT_CONFLICT)
-op("post", "/events/channels/{key}/restore", "restoreEventChannel", "Events", "Restore a channel",
+op("post", "/events/channels/by-key/restore", "restoreEventChannel", "Events", "Restore a channel",
    "Re-activates the newest retired version (undo of a retire); 409 NOT_RETIRED when there is none.",
-   ["FC-03", "R41", "R42"], params=[KEY], body="ReasonRequest", resp=(200, "EventChannel"), cmd="event.channel.restore",
+   ["FC-03", "R41", "R42"], params=[EVK], body="ReasonRequest", resp=(200, "EventChannel"), cmd="event.channel.restore",
    perm="event.admin", errors=EVT_CONFLICT)
 op("get", "/events/definitions", "listEventDefinitions", "Events", "List event definitions", "Event definitions (FC-02, FC-04).", ["FC-02", "FC-04"],
    list_=True, resp=(200, "array:EventDefinition"), perm="event.admin", errors=STD_R)
 op("post", "/events/definitions", "createEventDefinition", "Events", "Create an event definition", "Registers an event definition.",
    ["FC-02", "FC-04", "R41"], body="EventDefinition", resp=(201, "EventDefinition"), cmd="event.definition.create", perm="event.admin", created=True)
-op("get", "/events/definitions/{key}", "getEventDefinition", "Events", "Get an event definition", "One definition.", ["FC-02"], params=[KEY],
+op("get", "/events/definitions/by-key", "getEventDefinition", "Events", "Get an event definition", "One definition.", ["FC-02"], params=[EVK],
    resp=(200, "EventDefinition"), perm="event.admin", errors=GET_E)
-op("delete", "/events/definitions/{key}", "deleteEventDefinition", "Events", "Delete an event definition",
+op("delete", "/events/definitions/by-key", "deleteEventDefinition", "Events", "Delete an event definition",
    "Retires every active version and removes the retired versions. Refused with 409 EVENT_IN_FLIGHT while events of the key are buffered or undelivered.",
-   ["FC-02", "R41"], params=[KEY, P("reason")], resp=(204, None), cmd="event.definition.delete", perm="event.admin",
+   ["FC-02", "R41"], params=[EVK, P("reason")], resp=(204, None), cmd="event.definition.delete", perm="event.admin",
    errors=EVT_CONFLICT)
-op("post", "/events/definitions/{key}/retire", "retireEventDefinition", "Events", "Retire an event definition",
+op("post", "/events/definitions/by-key/retire", "retireEventDefinition", "Events", "Retire an event definition",
    "Marks every active version RETIRED; an older active version, if any, becomes current. Refused with 409 EVENT_IN_FLIGHT while events of the key are in flight.",
-   ["FC-02", "R41", "R42"], params=[KEY], body="ReasonRequest", resp=(200, "EventDefinition"),
+   ["FC-02", "R41", "R42"], params=[EVK], body="ReasonRequest", resp=(200, "EventDefinition"),
    cmd="event.definition.retire", perm="event.admin", errors=EVT_CONFLICT)
-op("post", "/events/definitions/{key}/restore", "restoreEventDefinition", "Events", "Restore an event definition",
+op("post", "/events/definitions/by-key/restore", "restoreEventDefinition", "Events", "Restore an event definition",
    "Re-activates the newest retired version (undo of a retire); 409 NOT_RETIRED when there is none.",
-   ["FC-02", "R41", "R42"], params=[KEY], body="ReasonRequest", resp=(200, "EventDefinition"),
+   ["FC-02", "R41", "R42"], params=[EVK], body="ReasonRequest", resp=(200, "EventDefinition"),
    cmd="event.definition.restore", perm="event.admin", errors=EVT_CONFLICT)
-op("post", "/events/{channel}", "publishEvent", "Events", "Publish an event",
+op("post", "/events/by-channel", "publishEvent", "Events", "Publish an event",
    "Accepts a CloudEvent on an inbound channel; de-duplicated through the inbox by (tenant, source, id) (R38), then starts (uniqueStart) or correlates (FC-02, FC-04, R83).",
-   ["FC-02", "FC-03", "FC-04", "R38", "R83", "R41"], params=[pp("channel")],
+   ["FC-02", "FC-03", "FC-04", "R38", "R83", "R41"], params=[q("channel", desc="Inbound event channel key; may carry ':'", required=True)],
    body={"required": True, "content": {"application/cloudevents+json": {"schema": R("CloudEvent")}, "application/json": {"schema": R("CloudEvent")}}},
    resp=(202, "PublishResult"), cmd="event.publish", perm="event.publish",
    errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "ServiceUnavailable"))
@@ -1507,16 +1518,16 @@ op("get", "/tasks/{id}/lifecycle", "getTaskLifecycle", "Workspace", "Task lifecy
    params=TQ, resp=(200, "array:LifecycleEvent"), perm="task.read", errors=GET_E)
 op("get", "/start-catalogue", "getStartCatalogue", "Workspace", "Start catalogue",
    "Processes and cases the caller may start (R76).", ["R76"], resp=(200, "array:CatalogueEntry"), perm="process.read", errors=WS_E)
-op("get", "/case-instances/{id}/comments", "listCaseComments", "Cases", "Case comments", "Comments on the case (R76 case workspace).",
-   ["R76", "R45"], params=[ID], resp=(200, "array:CaseComment"), perm="case.read", errors=GET_E)
-op("post", "/case-instances/{id}/comments", "addCaseComment", "Cases", "Add a case comment", "Adds a comment.", ["R76", "R41"],
-   params=[ID], body="AddCaseCommentRequest", resp=(201, "CaseComment"), cmd="case.comment", perm="case.write", created=True)
-op("get", "/case-instances/{id}/participants", "listCaseParticipants", "Cases", "Case participants",
-   "Participants, including external experts and parties (UP-09, UP-22).", ["R76", "UP-09", "UP-22"], params=[ID],
+op("get", "/case-instances/by-id/comments", "listCaseComments", "Cases", "Case comments", "Comments on the case (R76 case workspace).",
+   ["R76", "R45"], params=[CASE_ID], resp=(200, "array:CaseComment"), perm="case.read", errors=GET_E)
+op("post", "/case-instances/by-id/comments", "addCaseComment", "Cases", "Add a case comment", "Adds a comment.", ["R76", "R41"],
+   params=[CASE_ID], body="AddCaseCommentRequest", resp=(201, "CaseComment"), cmd="case.comment", perm="case.write", created=True)
+op("get", "/case-instances/by-id/participants", "listCaseParticipants", "Cases", "Case participants",
+   "Participants, including external experts and parties (UP-09, UP-22).", ["R76", "UP-09", "UP-22"], params=[CASE_ID],
    resp=(200, "array:Participant"), perm="case.read", errors=GET_E)
-op("post", "/case-instances/{id}/reactivation", "reactivateCase", "Cases", "Reactivate a case",
+op("post", "/case-instances/by-id/reactivation", "reactivateCase", "Cases", "Reactivate a case",
    "Starts a linked new case of the same definition with the old variables (FC-59); audited on both chains.",
-   ["FC-59", "R45", "R41"], params=[ID], body="ReasonRequest", resp=(201, "CaseInstance"), cmd="case.reactivate", perm="case.write", created=True)
+   ["FC-59", "R45", "R41"], params=[CASE_ID], body="ReasonRequest", resp=(201, "CaseInstance"), cmd="case.reactivate", perm="case.write", created=True)
 op("get", "/field/visits", "listFieldVisits", "Field", "My field visits", "Inspection visits assigned to the caller (S15, EC-16).",
    ["EC-16", "R76"], resp=(200, "array:FieldVisit"), perm="task.read", errors=WS_E)
 op("post", "/field/visits/{id}/record", "recordFieldVisit", "Field", "Record a visit",
@@ -1531,9 +1542,9 @@ op("get", "/process-instances/{id}/cancel-preview", "previewCancel", "Processes"
 op("post", "/process-instances/{id}/suspension", "setProcessInstanceSuspension", "Processes", "Suspend or resume an instance",
    "Suspension with a mandatory reason; redateDeadlines shifts SLA due dates on resume (D-32, R63).", ["R63", "D-32", "R41", "R42"],
    params=[ID], body="SuspensionRequest", resp=(200, "ProcessInstance"), cmd="process.suspension", perm="process.write")
-op("post", "/process-definitions/{id}/suspension", "setProcessDefinitionSuspension", "Processes", "Suspend or resume a definition",
+op("post", "/process-definitions/by-id/suspension", "setProcessDefinitionSuspension", "Processes", "Suspend or resume a definition",
    "No new starts while suspended; includeInstances suspends running instances too (R63).", ["R63", "R41", "R42"],
-   params=[ID], body="SuspensionRequest", resp=(200, "ProcessDefinition"), cmd="definition.suspension", perm="process.modify")
+   params=[PDQ], body="SuspensionRequest", resp=(200, "ProcessDefinition"), cmd="definition.suspension", perm="process.modify")
 op("post", "/process-instances/{id}/modify/preview", "previewModification", "Processes", "Consequence preview of a modification",
    "What a modification would do, with R49 limits (O03).", ["R49", "R63", "O03"], params=[ID], body="ModifyPreviewRequest",
    resp=(200, "ConsequencePreview"), perm="process.read", errors=("BadRequest",) + GET_E)
@@ -1549,17 +1560,17 @@ op("get", "/history/external-task-log", "listExternalTaskLog", "History", "Exter
 PE = ("BadRequest", "Unauthorized", "Forbidden", "NotFound")
 op("get", "/portal/services", "listPortalServices", "Portal", "Citizen services", "Services the applicant can apply for (C01).",
    ["UP-22", "R54"], resp=(200, "array:PortalService"), perm="portal.use", errors=WS_E)
-op("get", "/portal/services/{key}/form", "getPortalServiceForm", "Portal", "Application form of a service",
+op("get", "/portal/services/by-key/form", "getPortalServiceForm", "Portal", "Application form of a service",
    "The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in "
    "force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); "
    "versionHash is the form's own. 404 for a service not in the catalogue or without a form.", ["UP-22", "R47", "C02"],
-   params=[pp("key", "service key")], resp=(200, "FormVersion"), perm="portal.use", errors=GET_E)
-op("get", "/portal/services/{key}/notice", "getPortalServiceNotice", "Portal", "Consent notice of a service",
+   params=[q("key", desc="Service key (the service form key); may carry '/' or ':'", required=True)], resp=(200, "FormVersion"), perm="portal.use", errors=GET_E)
+op("get", "/portal/services/by-key/notice", "getPortalServiceNotice", "Portal", "Consent notice of a service",
    "The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the "
    "jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or "
    "without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED "
    "without sangam-compliance.", ["UP-22", "C02"],
-   params=[pp("key", "service key"), q("lang", desc="language code of the jurisdiction pack (default: the tenant's)")],
+   params=[q("key", desc="Service key (the service form key); may carry '/' or ':'", required=True), q("lang", desc="language code of the jurisdiction pack (default: the tenant's)")],
    resp=(200, "PortalNotice"), perm="portal.use", errors=("Unauthorized", "Forbidden", "NotFound", "Unprocessable",
                                                           "NotImplemented"))
 op("post", "/portal/applications", "applyForService", "Portal", "Apply for a service",
@@ -1578,22 +1589,23 @@ op("get", "/portal/notifications", "listMyPortalNotifications", "Portal", "My no
    "Notices sent to the caller's portal account, newest first: a personal-data breach notice with the items the "
    "jurisdiction pack requires (IN: DPDP Rules r.7(1)(a)-(e); owner decision 347). Empty without sangam-compliance.",
    ["UP-22"], resp=(200, "array:PortalNotification"), perm="portal.use", errors=WS_E)
+APP_ID = q("id", desc="Application id from the portal adapter; may carry '/' or ':'", required=True)
 op("get", "/portal/applications", "listMyApplications", "Portal", "My applications", "Only the applicant's own applications (C03).",
    ["UP-22"], list_=True, resp=(200, "array:Application"), perm="portal.use", errors=WS_E)
-op("get", "/portal/applications/{id}", "getMyApplication", "Portal", "Application status",
-   "Status, stage, clarifications and messages; officers appear only as seat designations (PER-8).", ["UP-22"], params=[ID],
+op("get", "/portal/applications/by-id", "getMyApplication", "Portal", "Application status",
+   "Status, stage, clarifications and messages; officers appear only as seat designations (PER-8).", ["UP-22"], params=[APP_ID],
    resp=(200, "Application"), perm="portal.use", errors=GET_E)
-op("post", "/portal/applications/{id}/clarifications/{clarificationId}/reply", "replyToClarification", "Portal", "Reply to a clarification",
-   "Text plus files (CLARIFICATION_RECEIVED, C04).", ["UP-22", "R41", "K12"], params=[ID, pp("clarificationId")],
+op("post", "/portal/applications/by-id/clarifications/by-clarification-id/reply", "replyToClarification", "Portal", "Reply to a clarification",
+   "Text plus files (CLARIFICATION_RECEIVED, C04).", ["UP-22", "R41", "K12"], params=[APP_ID, q("clarificationId", desc="Clarification id (an engine task id); may carry '/' or ':'", required=True)],
    body={"required": True, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ["text"], "properties": {
        "text": {"type": "string"}, "files": {"type": "array", "items": FPR()}}}}}},
    resp=(200, "Application"), cmd="portal.reply", perm="portal.use")
-op("post", "/portal/applications/{id}/withdraw", "withdrawApplication", "Portal", "Withdraw an application", "CASE_WITHDRAWN.",
-   ["UP-22", "R41"], params=[ID], body="WithdrawRequest", resp=(200, "Application"), cmd="portal.withdraw", perm="portal.use")
-op("post", "/portal/applications/{id}/appeal", "appealApplication", "Portal", "Appeal a decision", "APPEAL_FILED.",
-   ["UP-22", "R41"], params=[ID], body="AppealRequest", resp=(200, "Application"), cmd="portal.appeal", perm="portal.use")
-op("get", "/portal/applications/{id}/outcome", "downloadOutcome", "Portal", "Outcome document", "Certificate, sanction or rejection order (C05).",
-   ["UP-22", "R74"], params=[ID], resp=(200, BIN("application/octet-stream")), perm="portal.use", errors=GET_E)
+op("post", "/portal/applications/by-id/withdraw", "withdrawApplication", "Portal", "Withdraw an application", "CASE_WITHDRAWN.",
+   ["UP-22", "R41"], params=[APP_ID], body="WithdrawRequest", resp=(200, "Application"), cmd="portal.withdraw", perm="portal.use")
+op("post", "/portal/applications/by-id/appeal", "appealApplication", "Portal", "Appeal a decision", "APPEAL_FILED.",
+   ["UP-22", "R41"], params=[APP_ID], body="AppealRequest", resp=(200, "Application"), cmd="portal.appeal", perm="portal.use")
+op("get", "/portal/applications/by-id/outcome", "downloadOutcome", "Portal", "Outcome document", "Certificate, sanction or rejection order (C05).",
+   ["UP-22", "R74"], params=[APP_ID], resp=(200, BIN("application/octet-stream")), perm="portal.use", errors=GET_E)
 op("get", "/portal/grievances", "listMyGrievances", "Portal", "My grievances", "Grievances and DPDP data-rights requests (C06, R53).",
    ["R53", "UP-22"], resp=(200, "array:Grievance"), perm="portal.use", errors=WS_E)
 op("post", "/portal/grievances", "fileGrievance", "Portal", "File a grievance", "Files a grievance or a data-rights request.",
@@ -1692,13 +1704,13 @@ op("get", "/audit/evidence-pack", "getEvidencePack", "Audit", "Evidence pack",
    ["R42", "X.2.3"], params=[BKQ], resp=(200, BIN("application/zip")), perm="audit.export", errors=GET_E)
 
 # Document extras (DocumentExtrasPort)
-op("get", "/documents/{id}/versions", "listDocumentVersions", "Documents", "Document versions", "Every immutable version (R74).", ["R74"],
-   params=[ID], resp=(200, "array:Document"), perm="document.read", errors=GET_E)
-op("post", "/documents/{id}/legal-hold", "setDocumentLegalHold", "Documents", "Set or release a legal hold",
-   "A held document cannot be deleted or disposed of (R61, R29).", ["R61", "R41", "R42"], params=[ID], body="LegalHoldRequest",
+op("get", "/documents/by-id/versions", "listDocumentVersions", "Documents", "Document versions", "Every immutable version (R74).", ["R74"],
+   params=[DOC_ID], resp=(200, "array:Document"), perm="document.read", errors=GET_E)
+op("post", "/documents/by-id/legal-hold", "setDocumentLegalHold", "Documents", "Set or release a legal hold",
+   "A held document cannot be deleted or disposed of (R61, R29).", ["R61", "R41", "R42"], params=[DOC_ID], body="LegalHoldRequest",
    resp=(200, "Document"), cmd="document.legal-hold", perm="document.legal-hold")
 op("get", "/documents/templates", "listDocumentTemplates", "Documents", "Document templates",
-   "Output templates (R74, S12); the id 'templates' is reserved for /documents/{id}.", ["R74"], resp=(200, "array:DocumentTemplate"),
+   "Output templates (R74, S12); (a literal route next to /documents/by-id).", ["R74"], resp=(200, "array:DocumentTemplate"),
    perm="document.read", errors=WS_E)
 op("post", "/documents/generate", "generateDocument", "Documents", "Generate a document",
    "Renders a template for a case and stores it as a document (R74, EC-18).", ["R74", "EC-18", "R41"], body="DocumentGenerateRequest",
@@ -1752,12 +1764,15 @@ op("get", "/admin/users", "listUsers", "Admin", "Users", "Users known to the ten
    resp=(200, "array:User"), perm="admin.read", errors=STD_R)
 op("get", "/admin/groups", "listGroups", "Admin", "Groups", "Groups of the tenant (R67).", ["R67"], list_=True, params=[q("q")],
    resp=(200, "array:Group"), perm="admin.read", errors=STD_R)
-op("get", "/admin/groups/{id}/members", "listGroupMembers", "Admin", "Group members", "Members of a group.", ["R67"], params=[ID],
+# decision 393: user and group ids are IdP principal ids and group paths (may carry '/' or ':'): query parameters
+GIDQ = q("id", desc="Group id (an IdP group path such as /staff/clerks); may carry '/' or ':'", required=True)
+UIDQ = q("userId", desc="User id (an IdP principal id); may carry '/' or ':'", required=True)
+op("get", "/admin/groups/by-id/members", "listGroupMembers", "Admin", "Group members", "Members of a group.", ["R67"], params=[GIDQ],
    resp=(200, "array:User"), perm="admin.read", errors=GET_E)
-GM = [ID, pp("userId")]
-op("post", "/admin/groups/{id}/members/{userId}", "addGroupMember", "Admin", "Add a group member", "MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).",
+GM = [GIDQ, UIDQ]
+op("post", "/admin/groups/by-id/members/by-user-id", "addGroupMember", "Admin", "Add a group member", "MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).",
    ["R67", "VI.4", "R41"], params=GM, resp=(204, None), cmd="admin.group.member.add", perm="policy.admin")
-op("delete", "/admin/groups/{id}/members/{userId}", "removeGroupMember", "Admin", "Remove a group member", "MEMBERSHIP_CHANGED; policy_version+1.",
+op("delete", "/admin/groups/by-id/members/by-user-id", "removeGroupMember", "Admin", "Remove a group member", "MEMBERSHIP_CHANGED; policy_version+1.",
    ["R67", "VI.4", "R41"], params=GM, resp=(204, None), cmd="admin.group.member.remove", perm="policy.admin")
 op("get", "/admin/identity-providers", "listIdentityProviders", "Admin", "Identity providers", "OIDC, SAML 2.0 and LDAP providers (R50, R67).",
    ["R50", "R67"], resp=(200, "array:IdentityProvider"), perm="tenant.admin", errors=WS_E)
@@ -1769,10 +1784,10 @@ op("post", "/admin/identity-providers/{id}/test", "testIdentityProvider", "Admin
    ["R50"], params=[ID], resp=(200, "IdentityTestResult"), perm="tenant.admin", errors=GET_E)
 op("post", "/admin/identity-providers/{id}/sync", "syncIdentityProvider", "Admin", "Sync users and groups", "Directory sync (R67).",
    ["R67", "R41"], params=[ID], resp=(200, "IdentitySyncResult"), cmd="admin.idp.sync", perm="tenant.admin")
-op("put", "/admin/roles/{roleId}", "defineRole", "Admin", "Define a role",
+op("put", "/admin/roles/by-role-id", "defineRole", "Admin", "Define a role",
    "Defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT on ROLE roleId; GRANT_CHANGED). A requested"
    " token scope is bound to a service principal only when it is a defined role the caller may grant.",
-   ["VI.4", "R41"], params=[pp("roleId")], body="RoleDefinition", resp=(200, "RoleDefinition"), cmd="admin.role.define",
+   ["VI.4", "R41"], params=[q("roleId", desc="Role id (ROLE_ID_PATTERN allows ':', e.g. pack:clerk); may carry ':'", required=True)], body="RoleDefinition", resp=(200, "RoleDefinition"), cmd="admin.role.define",
    perm="policy.admin")
 op("get", "/admin/service-principals", "listServicePrincipals", "Admin", "Service principals", "Worker and integration principals (R26).",
    ["R26", "K14"], resp=(200, "array:ServicePrincipal"), perm="admin.read", errors=WS_E)
@@ -1826,9 +1841,9 @@ op("get", "/pages/{key}", "getPage", "LowCode", "Get a page", "Page model; autho
    resp=(200, "PageModel"), perm="lowcode.read", errors=GET_E)
 op("put", "/pages/{key}", "updatePage", "LowCode", "Update a page", "New version of the page.", ["R77", "R41"], params=[KEY],
    body="PageModel", resp=(200, "PageModel"), cmd="page.update", perm="lowcode.admin")
-op("get", "/queries/{name}", "runNamedQuery", "LowCode", "Run a named query",
+op("get", "/queries/by-name", "runNamedQuery", "LowCode", "Run a named query",
    "Named query (R25); further query parameters are passed to the query. Uses the same authorization as the underlying data.",
-   ["R25", "R77", "VI.4"], list_=True, params=[pp("name")], resp=(200, "array:VariableMap"), perm="lowcode.read", errors=GET_E)
+   ["R25", "R77", "VI.4"], list_=True, params=[q("name", desc="Named query (tasks.mine, process-instances, or data:<data object key>); may carry ':'", required=True)], resp=(200, "array:VariableMap"), perm="lowcode.read", errors=GET_E)
 op("get", "/data-objects", "listDataObjects", "LowCode", "Data objects", "Data-object definitions (R78, EC-06).", ["R78"],
    resp=(200, "array:DataObjectDef"), perm="lowcode.read", errors=WS_E)
 op("post", "/data-objects", "createDataObject", "LowCode", "Create a data object", "New definition.", ["R78", "R41"], body="DataObjectDef",
@@ -1942,7 +1957,7 @@ schema("CompliancePurpose", "A processing purpose with its legal basis, data ite
        "code names:smap descriptions:smap dataItems:list:obj basis legalRef subGround registerRef standardsAttested:bool "
        "exemptions:list:s exemptionRef childExemptions:list:s flags:list:s retentionTrigger retention retentionClass "
        "recordClass recordRetention recordRetentionRef version:int active:bool specialCondition", ["basis"])
-schema("ComplianceDefinePurposeRequest", "A processing purpose to define or version (PUT /compliance/purposes/{code}). standardsAttested, active and every data item's sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version is assigned by the server (previous + 1). Durations are ISO-8601.",
+schema("ComplianceDefinePurposeRequest", "A processing purpose to define or version (PUT /compliance/purposes/by-code?code=). standardsAttested, active and every data item's sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version is assigned by the server (previous + 1). Durations are ISO-8601.",
        "code names:smap descriptions:smap dataItems:list:ComplianceDataItemRequest basis legalRef subGround registerRef "
        "standardsAttested:bool exemptions:list:s exemptionRef childExemptions:list:s flags:list:s retentionTrigger retention "
        "retentionClass recordClass recordRetention recordRetentionRef active:bool specialCondition",
@@ -1997,7 +2012,7 @@ schema("ComplianceReasonBody", "A reason.", "reason", ["reason"])
 schema("ComplianceContact", "A published contact (DPO / grievance officer, DPDP s.8(9), s.10(2)).",
        "role name designation organisation email phone mobile address resident:bool validFrom:dt", ["name", "email"],
        descs={"resident": "The person is resident in the pack's home country (a residency attestation). Required by the server, true, for a role the pack marks mustBeResident (IN: the DPO); omitted is not attested, never assumed.",
-              "role": "Taken from the path on POST /compliance/contacts/{role}."})
+              "role": "Taken from the query parameter role on POST /compliance/contacts/by-role."})
 schema("ComplianceAuditEvidenceRequest", "Independent data audit evidence (Significant Data Fiduciary, DPDP s.10).",
        "kind periodFrom:dt periodTo:dt completedAt:dt auditor accreditationRef independent:bool findings:list:s reportHash authorityReportRef",
        ["kind", "auditor", "independent"],
@@ -2040,14 +2055,14 @@ def public(path, method):
 
 
 C = "/compliance"
-op("get", C + "/notices/{key}", "getComplianceNotice", "Compliance", "Render a consent notice (public)",
+op("get", C + "/notices/by-key", "getComplianceNotice", "Compliance", "Render a consent notice (public)",
    "The notice in the requested language; falls back to the pack default only where the pack allows (DPDP Rules r.3).",
-   CR + ["DPDP s.5"], params=[KEY, q("version", "int"), q("lang")] + TENANT_PUBLIC, resp=(200, "ComplianceRenderedNotice"),
+   CR + ["DPDP s.5"], params=[q("key", desc="Consent notice key; may carry '/' or ':'", required=True), q("version", "int"), q("lang")] + TENANT_PUBLIC, resp=(200, "ComplianceRenderedNotice"),
    errors=("BadRequest", "NotFound"))
-public(C + "/notices/{key}", "get")
-op("post", C + "/notices/{key}/publish", "publishComplianceNotice", "Compliance", "Publish a notice version",
+public(C + "/notices/by-key", "get")
+op("post", C + "/notices/by-key/publish", "publishComplianceNotice", "Compliance", "Publish a notice version",
    "Publishes a new version for every enabled language; reports missing translations.", CR + ["DPDP s.5", "R41"],
-   params=[KEY], body="CompliancePublishNoticeRequest", resp=(200, "CompliancePublishResult"),
+   params=[q("key", desc="Consent notice key; may carry '/' or ':'", required=True)], body="CompliancePublishNoticeRequest", resp=(200, "CompliancePublishResult"),
    cmd="compliance.notice.publish", perm="compliance.admin")
 op("get", C + "/privacy-policy", "getPrivacyPolicy", "Compliance", "Render the privacy policy (public)",
    "The published privacy policy in the requested language.", CR, params=[q("lang")] + TENANT_PUBLIC,
@@ -2055,9 +2070,9 @@ op("get", C + "/privacy-policy", "getPrivacyPolicy", "Compliance", "Render the p
 public(C + "/privacy-policy", "get")
 op("get", C + "/purposes", "listCompliancePurposes", "Compliance", "List purposes", "Registered processing purposes.",
    CR + ["DPDP s.4"], resp=(200, "array:CompliancePurpose"), perm="compliance.read", errors=STD_R)
-op("put", C + "/purposes/{code}", "defineCompliancePurpose", "Compliance", "Define a purpose",
+op("put", C + "/purposes/by-code", "defineCompliancePurpose", "Compliance", "Define a purpose",
    "Defines or versions a purpose; validated against the jurisdiction pack (legal basis, legitimate uses, retention).",
-   CR + ["DPDP s.4", "DPDP s.7", "R41"], params=[pp("code")], body="ComplianceDefinePurposeRequest", resp=(200, "CompliancePurpose"),
+   CR + ["DPDP s.4", "DPDP s.7", "R41"], params=[q("code", desc="Purpose code; may carry '/' or ':'", required=True)], body="ComplianceDefinePurposeRequest", resp=(200, "CompliancePurpose"),
    cmd="compliance.purpose.define", perm="compliance.admin")
 op("post", C + "/consents", "giveConsent", "Compliance", "Give consent",
    "The data principal (or verified guardian) consents to purposes of a notice version. Recording consent for another principal needs compliance.modify.",
@@ -2074,11 +2089,11 @@ op("post", C + "/consents/search", "searchConsents", "Compliance", "Search a pri
    "Consents of the principal named in the body (owner decision 338; blank = the caller's own). Another principal's history needs compliance.read and writes PERSONAL_DATA_READ on that principal's chain (owner decision 348).",
    CR + ["DPDP s.6", "DPDP Rules r.6"], body="ComplianceSubjectSearch", body_required=False,
    resp=(200, "array:ComplianceConsent"), perm="owner / compliance.read", errors=STD_R)
-op("post", C + "/consent-managers/{cm}/artefacts", "ingestConsentArtefact", "Compliance", "Ingest a consent-manager artefact",
+op("post", C + "/consent-managers/by-cm/artefacts", "ingestConsentArtefact", "Compliance", "Ingest a consent-manager artefact",
    "Called by a registered consent manager (mTLS at the gateway; public at the API).", CR + ["DPDP s.6(7)", "R41"],
-   params=[pp("cm")] + TENANT_PUBLIC, body="ComplianceConsentArtefact", resp=(201, "ComplianceConsent"),
+   params=[q("cm", desc="Consent manager id; may carry '/' or ':'", required=True)] + TENANT_PUBLIC, body="ComplianceConsentArtefact", resp=(201, "ComplianceConsent"),
    cmd="compliance.consent-artefact.ingest", created=True)
-public(C + "/consent-managers/{cm}/artefacts", "post")
+public(C + "/consent-managers/by-cm/artefacts", "post")
 op("post", C + "/rights-requests", "submitRightsRequest", "Compliance", "Submit a rights request (public)",
    "Access, correction, erasure, grievance or nomination (DPDP s.11-14); authenticated by a method the jurisdiction pack names (owner decision 335: the caller's signed-in identity, or the published identifier with an OTP), else 401 PRINCIPAL_NOT_AUTHENTICATED; due dates from the pack; the acknowledgement carries the published DPO contact (decision 346). 409 COMPLIANCE_PACK_NOT_INSTALLED when the compliance pack is not installed for the tenant (decision 336).",
    CR + ["DPDP s.11", "DPDP s.12", "DPDP s.13", "DPDP s.14", "R41"], params=TENANT_PUBLIC, body="ComplianceRightsSubmission",
@@ -2128,9 +2143,9 @@ for verb, body, cmdv, desc in [
        cmd="compliance.lawful-request." + cmdv, perm="compliance.modify")
 op("get", C + "/contacts", "listComplianceContacts", "Compliance", "List contacts", "DPO, grievance officer and other published contacts.",
    CR + ["DPDP s.8(9)"], resp=(200, "array:ComplianceContact"), perm="compliance.read", errors=STD_R)
-op("post", C + "/contacts/{role}", "setComplianceContact", "Compliance", "Set a contact",
+op("post", C + "/contacts/by-role", "setComplianceContact", "Compliance", "Set a contact",
    "Sets the effective contact for a role of the jurisdiction pack (residency checked where required).",
-   CR + ["DPDP s.8(9)", "DPDP s.10(2)", "R41"], params=[pp("role")], body="ComplianceContact", resp=(204, None),
+   CR + ["DPDP s.8(9)", "DPDP s.10(2)", "R41"], params=[q("role", desc="Contact role of the jurisdiction pack; may carry '/' or ':'", required=True)], body="ComplianceContact", resp=(204, None),
    cmd="compliance.contact.set", perm="compliance.admin")
 # owner decision 360: the compliance-owned one-time code of a rights request (public, as the submission)
 schema("ComplianceOtpChallengeRequest", "A one-time code for a rights request (owner decision 360), sent through the principal notifier to an identifier the tenant accepts (rights.otp.identifier-types; IN pack: MOBILE, EMAIL; DPDP Rules r.14(1)). `language` is a code of the jurisdiction pack.",
@@ -2154,16 +2169,17 @@ schema("ComplianceLegalHoldRequest", "A legal hold to place on a process root (o
        "kind reference reason", ["kind", "reason"], enums={"kind": ["RTI", "AUDIT", "LITIGATION", "VIGILANCE", "OTHER"]})
 schema("ComplianceLegalHoldRelease", "The reason a legal hold is released; the releaser must not be the person who placed it (FOUR_EYES_REQUIRED).", "reason", ["reason"])
 schema("ComplianceLegalHold", "An active legal hold on a process root.", "holdId rootId reason heldBy", ["holdId", "rootId"])
-op("get", C + "/process-roots/{rootId}/legal-holds", "listComplianceLegalHolds", "Compliance", "Active legal holds of a process root",
+ROOT_ID = q("rootId", desc="Process root id; may carry '/' or ':'", required=True)
+op("get", C + "/process-roots/by-root-id/legal-holds", "listComplianceLegalHolds", "Compliance", "Active legal holds of a process root",
    "The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.", CR + ["DPDP s.8(7)", "R61"],
-   params=[pp("rootId")], resp=(200, "array:ComplianceLegalHold"), perm="compliance.read", errors=GET_E)
-op("post", C + "/process-roots/{rootId}/legal-holds", "placeComplianceLegalHold", "Compliance", "Place a legal hold on a process root",
+   params=[ROOT_ID], resp=(200, "array:ComplianceLegalHold"), perm="compliance.read", errors=GET_E)
+op("post", C + "/process-roots/by-root-id/legal-holds", "placeComplianceLegalHold", "Compliance", "Place a legal hold on a process root",
    "Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.",
-   CR + ["DPDP s.8(7)", "R61"], params=[pp("rootId")], body="ComplianceLegalHoldRequest", resp=(201, "ComplianceLegalHold"),
+   CR + ["DPDP s.8(7)", "R61"], params=[ROOT_ID], body="ComplianceLegalHoldRequest", resp=(201, "ComplianceLegalHold"),
    cmd="compliance.legal-hold.place", perm="compliance.modify", created=True)
-op("post", C + "/process-roots/{rootId}/legal-holds/{holdId}/release", "releaseComplianceLegalHold", "Compliance", "Release a legal hold",
+op("post", C + "/process-roots/by-root-id/legal-holds/by-hold-id/release", "releaseComplianceLegalHold", "Compliance", "Release a legal hold",
    "Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.",
-   CR + ["DPDP s.8(7)", "R61"], params=[pp("rootId"), pp("holdId")], body="ComplianceLegalHoldRelease", resp=(204, None),
+   CR + ["DPDP s.8(7)", "R61"], params=[ROOT_ID, q("holdId", desc="Legal hold id (a breach hold is breach:<id>); may carry '/' or ':'", required=True)], body="ComplianceLegalHoldRelease", resp=(204, None),
    cmd="compliance.legal-hold.release", perm="compliance.modify")
 op("post", C + "/evidence/audits", "recordComplianceAudit", "Compliance", "Record audit evidence",
    "Independent data audit (Significant Data Fiduciary obligations).", CR + ["DPDP s.10", "R41"],

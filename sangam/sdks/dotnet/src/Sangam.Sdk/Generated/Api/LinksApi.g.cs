@@ -44,11 +44,12 @@ public sealed class LinksApi
     /// <summary>
     /// Delete a link
     /// Removes an explicit link.
-    /// DELETE /links/{id} (operationId deleteLink); permission process.write; result stored atomically with the state change.
+    /// DELETE /links/by-id (operationId deleteLink); permission process.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task DeleteLinkAsync(string id, string? reason = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/links/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Delete($"/links/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         req.WithQuery("reason", GeneratedCalls.Q(reason));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }

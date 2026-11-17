@@ -84,13 +84,14 @@ public final class AdminOrgUnitsApi {
      *
      * <p>One item.
      *
-     * <p>{@code GET /admin/org-units/{id}} (operationId {@code getOrgUnit}); permission {@code admin.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /admin/org-units/by-id} (operationId {@code getOrgUnit}); permission {@code admin.read}.
+     * @param id query parameter {@code id}. The item id (client-chosen; may carry '/' or ':')
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public OrgUnit getOrgUnit(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/admin/org-units/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.get("/admin/org-units/by-id");
+        req.query("id", id);
         return call.json(req, options, R_getOrgUnit);
     }
 
@@ -99,15 +100,16 @@ public final class AdminOrgUnitsApi {
      *
      * <p>Updates and audits.
      *
-     * <p>{@code PUT /admin/org-units/{id}} (operationId {@code updateOrgUnit}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code PUT /admin/org-units/by-id} (operationId {@code updateOrgUnit}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. The item id (client-chosen; may carry '/' or ':')
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public OrgUnit updateOrgUnit(String id, OrgUnit body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/admin/org-units/" + HttpTransport.seg(String.valueOf(id)));
+    public OrgUnit updateOrgUnit(OrgUnit body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/admin/org-units/by-id");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_updateOrgUnit);
     }
 
@@ -116,13 +118,14 @@ public final class AdminOrgUnitsApi {
      *
      * <p>Deletes (reason audited).
      *
-     * <p>{@code DELETE /admin/org-units/{id}} (operationId {@code deleteOrgUnit}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code DELETE /admin/org-units/by-id} (operationId {@code deleteOrgUnit}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. The item id (client-chosen; may carry '/' or ':')
      * @param reason query parameter {@code reason}, or null. Mandatory reason (audited, R42)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void deleteOrgUnit(String id, String reason, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/admin/org-units/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.delete("/admin/org-units/by-id");
+        req.query("id", id);
         req.query("reason", reason);
         call.none(req, options);
     }

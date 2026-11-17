@@ -116,7 +116,7 @@ describe('define purpose: the legal attestations are explicit choices (integrato
     confirm();
     await waitFor(() => expect(api.request).toHaveBeenCalled());
     const [method, path, opts] = api.request.mock.calls[0] as [string, string, { body: Record<string, unknown> }];
-    expect([method, path]).toEqual(['PUT', '/compliance/purposes/P1']);
+    expect([method, path]).toEqual(['PUT', '/compliance/purposes/by-code?code=P1']);
     expect(opts.body).toMatchObject({ basis: 'CONSENT', standardsAttested: false, active: true, dataItems: [{ code: 'name', sensitive: false }] });
     expect(opts.body.version).toBeUndefined();
   });

@@ -51,22 +51,24 @@ public sealed class AdminOrgUnitsApi
     /// <summary>
     /// Get orgunit
     /// One item.
-    /// GET /admin/org-units/{id} (operationId getOrgUnit); permission admin.read.
+    /// GET /admin/org-units/by-id (operationId getOrgUnit); permission admin.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.OrgUnit?> GetOrgUnitAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/admin/org-units/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Get($"/admin/org-units/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<M.OrgUnit?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Update orgunit
     /// Updates and audits.
-    /// PUT /admin/org-units/{id} (operationId updateOrgUnit); permission admin.write; result stored atomically with the state change.
+    /// PUT /admin/org-units/by-id (operationId updateOrgUnit); permission admin.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.OrgUnit?> UpdateOrgUnitAsync(string id, M.OrgUnit body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.OrgUnit?> UpdateOrgUnitAsync(M.OrgUnit body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/admin/org-units/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Put($"/admin/org-units/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.OrgUnit?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -74,11 +76,12 @@ public sealed class AdminOrgUnitsApi
     /// <summary>
     /// Delete orgunit
     /// Deletes (reason audited).
-    /// DELETE /admin/org-units/{id} (operationId deleteOrgUnit); permission admin.write; result stored atomically with the state change.
+    /// DELETE /admin/org-units/by-id (operationId deleteOrgUnit); permission admin.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task DeleteOrgUnitAsync(string id, string? reason = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/admin/org-units/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Delete($"/admin/org-units/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         req.WithQuery("reason", GeneratedCalls.Q(reason));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }

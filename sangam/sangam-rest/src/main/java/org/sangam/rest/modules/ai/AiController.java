@@ -184,14 +184,14 @@ public class AiController {
         return api.runtime().decide(ctx.tenantId(), id, ctx.principalId(), b.approve(), b.argsHash(), b.reason());
     }
 
-    @PostMapping("/ai/knowledge-bases/{kb}/versions")
-    public KbVersion newVersion(RequestContext ctx, @PathVariable String kb) {
+    @PostMapping("/ai/knowledge-bases/by-kb/versions")
+    public KbVersion newVersion(RequestContext ctx, @RequestParam("kb") String kb) {
         permissions.require(ctx, ADMIN);
         return new KbVersion(api.knowledge().newVersion(ctx.tenantId(), kb));
     }
 
-    @PostMapping("/ai/knowledge-bases/{kb}/versions/{version}/documents")
-    public IngestResult ingest(RequestContext ctx, @PathVariable String kb, @PathVariable int version, @RequestBody IngestRequest b) {
+    @PostMapping("/ai/knowledge-bases/by-kb/versions/{version}/documents")
+    public IngestResult ingest(RequestContext ctx, @RequestParam("kb") String kb, @PathVariable int version, @RequestBody IngestRequest b) {
         permissions.require(ctx, ADMIN);
         try {
             return new IngestResult(api.knowledge().ingest(ctx.tenantId(), kb, version, b.documentId(), b.docVersion(), b.text()));
@@ -200,15 +200,15 @@ public class AiController {
         }
     }
 
-    @PostMapping("/ai/knowledge-bases/{kb}/versions/{version}/activate")
-    public ResponseEntity<Void> activate(RequestContext ctx, @PathVariable String kb, @PathVariable int version) {
+    @PostMapping("/ai/knowledge-bases/by-kb/versions/{version}/activate")
+    public ResponseEntity<Void> activate(RequestContext ctx, @RequestParam("kb") String kb, @PathVariable int version) {
         permissions.require(ctx, ADMIN);
         api.knowledge().activate(ctx.tenantId(), kb, version);
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/ai/knowledge-bases/{kb}/search")
-    public ResponseEntity<List<KnowledgeBaseService.Hit>> search(RequestContext ctx, @PathVariable String kb, @RequestBody KbSearchRequest b) {
+    @PostMapping("/ai/knowledge-bases/by-kb/search")
+    public ResponseEntity<List<KnowledgeBaseService.Hit>> search(RequestContext ctx, @RequestParam("kb") String kb, @RequestBody KbSearchRequest b) {
         permissions.require(ctx, USE);
         int k = b.k() == null ? 5 : Math.min(Math.max(b.k(), 1), 50);
         return Lists.ok(api.knowledge().retrieve(org.sangam.rest.modules.cases.CaseIdentity.identity(ctx), kb, b.query(), k));
@@ -219,8 +219,8 @@ public class AiController {
      * nothing is ingested until an approval. 503 OCR_UNAVAILABLE without a ready engine, 422 OCR_REJECTED when the engine
      * refuses the image; neither records a transcript.
      */
-    @PostMapping(value = "/ai/knowledge-bases/{kb}/versions/{version}/ocr", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<OcrIngestion.Transcript> ocr(RequestContext ctx, @PathVariable String kb, @PathVariable int version,
+    @PostMapping(value = "/ai/knowledge-bases/by-kb/versions/{version}/ocr", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<OcrIngestion.Transcript> ocr(RequestContext ctx, @RequestParam("kb") String kb, @PathVariable int version,
             @RequestPart("file") MultipartFile file, @RequestParam String documentId, @RequestParam(required = false) String docVersion,
             @RequestParam String languages) throws java.io.IOException {
         permissions.require(ctx, ADMIN);
@@ -362,15 +362,15 @@ public class AiController {
         return reply == null ? ResponseEntity.accepted().build() : ResponseEntity.ok(reply);
     }
 
-    @GetMapping("/ai/a2a/{agent}/card")
-    public Map<String, Object> card(RequestContext ctx, @PathVariable String agent, HttpServletRequest req) {
+    @GetMapping("/ai/a2a/by-agent/card")
+    public Map<String, Object> card(RequestContext ctx, @RequestParam("agent") String agent, HttpServletRequest req) {
         checkOrigin(req);
         permissions.require(ctx, USE);
         return server(ctx, agent).agentCard();
     }
 
-    @PostMapping(value = "/ai/a2a/{agent}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public String a2a(RequestContext ctx, @PathVariable String agent, @RequestBody String json, HttpServletRequest req) {
+    @PostMapping(value = "/ai/a2a/by-agent", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public String a2a(RequestContext ctx, @RequestParam("agent") String agent, @RequestBody String json, HttpServletRequest req) {
         checkOrigin(req);
         permissions.require(ctx, USE);
         return server(ctx, agent).handle(ctx.principalId(), json, req.getHeader("A2A-Version"));

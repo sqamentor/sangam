@@ -18,11 +18,12 @@ public sealed class DecisionsApi
     /// <summary>
     /// Evaluate a decision
     /// Evaluates the latest (or given) version; ROUTING/AUTHORITY evaluations with a businessKey are recorded as class-B events (X.2.3.2).
-    /// POST /decisions/{key}/evaluate (operationId evaluateDecision); permission decision.evaluate.
+    /// POST /decisions/by-key/evaluate (operationId evaluateDecision); permission decision.evaluate.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.DecisionEvaluateResult?> EvaluateDecisionAsync(string key, M.DecisionEvaluateRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.DecisionEvaluateResult?> EvaluateDecisionAsync(M.DecisionEvaluateRequest body, string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/decisions/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/evaluate");
+        var req = ApiRequest.Post($"/decisions/by-key/evaluate");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.DecisionEvaluateResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -45,11 +46,12 @@ public sealed class DecisionsApi
     /// <summary>
     /// DMN XML
     /// The deployed DMN XML.
-    /// GET /decision-definitions/{id}/xml (operationId getDecisionDefinitionXml); permission process.read.
+    /// GET /decision-definitions/by-id/xml (operationId getDecisionDefinitionXml); permission process.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<byte[]> GetDecisionDefinitionXmlAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/decision-definitions/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/xml");
+        var req = ApiRequest.Get($"/decision-definitions/by-id/xml");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.BytesAsync(req, options, "application/xml", cancellationToken).ConfigureAwait(false);
     }
 }

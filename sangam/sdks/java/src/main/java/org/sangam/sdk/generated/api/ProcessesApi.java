@@ -334,14 +334,15 @@ public final class ProcessesApi {
      *
      * <p>Enabled and active activities of an ad-hoc scope.
      *
-     * <p>{@code GET /process-instances/{id}/ad-hoc/{adHocActivityId}} (operationId {@code getAdHocState}); permission {@code process.read}.
+     * <p>{@code GET /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id} (operationId {@code getAdHocState}); permission {@code process.read}.
      * @param id path parameter {@code id}
-     * @param adHocActivityId path parameter {@code adHocActivityId}. Id of the ad-hoc sub-process activity
+     * @param adHocActivityId query parameter {@code adHocActivityId}. Id of the ad-hoc sub-process activity (a BPMN element id from the deployed model); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public AdHocState getAdHocState(String id, String adHocActivityId, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/ad-hoc/" + HttpTransport.seg(String.valueOf(adHocActivityId)));
+        ApiRequest req = ApiRequest.get("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/ad-hoc/by-ad-hoc-activity-id");
+        req.query("adHocActivityId", adHocActivityId);
         return call.json(req, options, R_getAdHocState);
     }
 
@@ -350,16 +351,17 @@ public final class ProcessesApi {
      *
      * <p>Starts an enabled activity in the ad-hoc scope.
      *
-     * <p>{@code POST /process-instances/{id}/ad-hoc/{adHocActivityId}/start} (operationId {@code startAdHocActivity}); permission {@code process.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * <p>{@code POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/start} (operationId {@code startAdHocActivity}); permission {@code process.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
-     * @param adHocActivityId path parameter {@code adHocActivityId}. Id of the ad-hoc sub-process activity
      * @param body request body
+     * @param adHocActivityId query parameter {@code adHocActivityId}. Id of the ad-hoc sub-process activity (a BPMN element id from the deployed model); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public AdHocState startAdHocActivity(String id, String adHocActivityId, StartAdHocActivityRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/ad-hoc/" + HttpTransport.seg(String.valueOf(adHocActivityId)) + "/start");
+    public AdHocState startAdHocActivity(String id, StartAdHocActivityRequest body, String adHocActivityId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/ad-hoc/by-ad-hoc-activity-id/start");
         req.body(body);
+        req.query("adHocActivityId", adHocActivityId);
         return call.json(req, options, R_startAdHocActivity);
     }
 
@@ -368,15 +370,16 @@ public final class ProcessesApi {
      *
      * <p>Completes the ad-hoc sub-process when its completion condition allows.
      *
-     * <p>{@code POST /process-instances/{id}/ad-hoc/{adHocActivityId}/complete} (operationId {@code completeAdHoc}); permission {@code process.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * <p>{@code POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/complete} (operationId {@code completeAdHoc}); permission {@code process.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
-     * @param adHocActivityId path parameter {@code adHocActivityId}. Id of the ad-hoc sub-process activity
+     * @param adHocActivityId query parameter {@code adHocActivityId}. Id of the ad-hoc sub-process activity (a BPMN element id from the deployed model); may carry '/' or ':'
      * @param reason query parameter {@code reason}, or null. Mandatory reason (audited, R42)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public AdHocState completeAdHoc(String id, String adHocActivityId, String reason, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/ad-hoc/" + HttpTransport.seg(String.valueOf(adHocActivityId)) + "/complete");
+        ApiRequest req = ApiRequest.post("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/ad-hoc/by-ad-hoc-activity-id/complete");
+        req.query("adHocActivityId", adHocActivityId);
         req.query("reason", reason);
         return call.json(req, options, R_completeAdHoc);
     }
@@ -427,13 +430,14 @@ public final class ProcessesApi {
      *
      * <p>One definition.
      *
-     * <p>{@code GET /process-definitions/{id}} (operationId {@code getProcessDefinition}); permission {@code process.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /process-definitions/by-id} (operationId {@code getProcessDefinition}); permission {@code process.read}.
+     * @param id query parameter {@code id}. Process definition id (key:version:uuid); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public ProcessDefinition getProcessDefinition(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/process-definitions/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.get("/process-definitions/by-id");
+        req.query("id", id);
         return call.json(req, options, R_getProcessDefinition);
     }
 
@@ -442,13 +446,14 @@ public final class ProcessesApi {
      *
      * <p>The deployed BPMN 2.0 XML.
      *
-     * <p>{@code GET /process-definitions/{id}/xml} (operationId {@code getProcessDefinitionXml}); permission {@code process.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /process-definitions/by-id/xml} (operationId {@code getProcessDefinitionXml}); permission {@code process.read}.
+     * @param id query parameter {@code id}. Process definition id (key:version:uuid); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public byte[] getProcessDefinitionXml(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/process-definitions/" + HttpTransport.seg(String.valueOf(id)) + "/xml");
+        ApiRequest req = ApiRequest.get("/process-definitions/by-id/xml");
+        req.query("id", id);
         return call.bytes(req, options, "application/xml");
     }
 
@@ -522,15 +527,16 @@ public final class ProcessesApi {
      *
      * <p>No new starts while suspended; includeInstances suspends running instances too (R63).
      *
-     * <p>{@code POST /process-definitions/{id}/suspension} (operationId {@code setProcessDefinitionSuspension}); permission {@code process.modify}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /process-definitions/by-id/suspension} (operationId {@code setProcessDefinitionSuspension}); permission {@code process.modify}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. Process definition id (key:version:uuid); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public ProcessDefinition setProcessDefinitionSuspension(String id, SuspensionRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/process-definitions/" + HttpTransport.seg(String.valueOf(id)) + "/suspension");
+    public ProcessDefinition setProcessDefinitionSuspension(SuspensionRequest body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/process-definitions/by-id/suspension");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_setProcessDefinitionSuspension);
     }
 
@@ -605,13 +611,14 @@ public final class ProcessesApi {
      *
      * <p>The sangam:query and sangam:update handlers the deployed model declares.
      *
-     * <p>{@code GET /process-definitions/{id}/handlers} (operationId {@code listInstanceHandlers}); permission {@code process.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /process-definitions/by-id/handlers} (operationId {@code listInstanceHandlers}); permission {@code process.read}.
+     * @param id query parameter {@code id}. Process definition id (key:version:uuid); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<InstanceHandler> listInstanceHandlers(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/process-definitions/" + HttpTransport.seg(String.valueOf(id)) + "/handlers");
+        ApiRequest req = ApiRequest.get("/process-definitions/by-id/handlers");
+        req.query("id", id);
         return call.json(req, options, R_listInstanceHandlers);
     }
 

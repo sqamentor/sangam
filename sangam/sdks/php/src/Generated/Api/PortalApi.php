@@ -39,12 +39,14 @@ final class PortalApi
      *
      * The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); versionHash is the form's own. 404 for a service not in the catalogue or without a form.
      *
-     * GET /portal/services/{key}/form (operationId getPortalServiceForm); permission portal.use.
+     * GET /portal/services/by-key/form (operationId getPortalServiceForm); permission portal.use.
+     * @param string $key query key
      * @return Model\FormVersion|null
      */
     public function getPortalServiceForm(string $key, ?RequestOptions $options = null): ?Model\FormVersion
     {
-        $req = ApiRequest::get('/portal/services/' . HttpTransport::seg((string) $key) . '/form');
+        $req = ApiRequest::get('/portal/services/by-key/form');
+        $req->query('key', $key);
         return $this->calls->model($req, $options, Model\FormVersion::class);
     }
 
@@ -53,13 +55,15 @@ final class PortalApi
      *
      * The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
      *
-     * GET /portal/services/{key}/notice (operationId getPortalServiceNotice); permission portal.use.
+     * GET /portal/services/by-key/notice (operationId getPortalServiceNotice); permission portal.use.
+     * @param string $key query key
      * @param string|null $lang query lang
      * @return Model\PortalNotice|null
      */
     public function getPortalServiceNotice(string $key, ?string $lang = null, ?RequestOptions $options = null): ?Model\PortalNotice
     {
-        $req = ApiRequest::get('/portal/services/' . HttpTransport::seg((string) $key) . '/notice');
+        $req = ApiRequest::get('/portal/services/by-key/notice');
+        $req->query('key', $key);
         $req->query('lang', $lang);
         return $this->calls->model($req, $options, Model\PortalNotice::class);
     }
@@ -119,12 +123,14 @@ final class PortalApi
      *
      * Status, stage, clarifications and messages; officers appear only as seat designations (PER-8).
      *
-     * GET /portal/applications/{id} (operationId getMyApplication); permission portal.use.
+     * GET /portal/applications/by-id (operationId getMyApplication); permission portal.use.
+     * @param string $id query id
      * @return Model\Application|null
      */
     public function getMyApplication(string $id, ?RequestOptions $options = null): ?Model\Application
     {
-        $req = ApiRequest::get('/portal/applications/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::get('/portal/applications/by-id');
+        $req->query('id', $id);
         return $this->calls->model($req, $options, Model\Application::class);
     }
 
@@ -133,13 +139,17 @@ final class PortalApi
      *
      * Text plus files (CLARIFICATION_RECEIVED, C04).
      *
-     * POST /portal/applications/{id}/clarifications/{clarificationId}/reply (operationId replyToClarification); permission portal.use; result stored atomically with the state change.
+     * POST /portal/applications/by-id/clarifications/by-clarification-id/reply (operationId replyToClarification); permission portal.use; result stored atomically with the state change.
      * @param array<string, mixed> $body request body (parts by name; values that are files: ['file' => bytes])
+     * @param string $id query id
+     * @param string $clarificationId query clarificationId
      * @return Model\Application|null
      */
-    public function replyToClarification(string $id, string $clarificationId, array $body, ?RequestOptions $options = null): ?Model\Application
+    public function replyToClarification(array $body, string $id, string $clarificationId, ?RequestOptions $options = null): ?Model\Application
     {
-        $req = ApiRequest::post('/portal/applications/' . HttpTransport::seg((string) $id) . '/clarifications/' . HttpTransport::seg((string) $clarificationId) . '/reply');
+        $req = ApiRequest::post('/portal/applications/by-id/clarifications/by-clarification-id/reply');
+        $req->query('id', $id);
+        $req->query('clarificationId', $clarificationId);
         Support::multipart($req, $body);
         return $this->calls->model($req, $options, Model\Application::class);
     }
@@ -149,13 +159,15 @@ final class PortalApi
      *
      * CASE_WITHDRAWN.
      *
-     * POST /portal/applications/{id}/withdraw (operationId withdrawApplication); permission portal.use; result stored atomically with the state change.
+     * POST /portal/applications/by-id/withdraw (operationId withdrawApplication); permission portal.use; result stored atomically with the state change.
      * @param Model\WithdrawRequest|array $body request body
+     * @param string $id query id
      * @return Model\Application|null
      */
-    public function withdrawApplication(string $id, Model\WithdrawRequest|array $body, ?RequestOptions $options = null): ?Model\Application
+    public function withdrawApplication(Model\WithdrawRequest|array $body, string $id, ?RequestOptions $options = null): ?Model\Application
     {
-        $req = ApiRequest::post('/portal/applications/' . HttpTransport::seg((string) $id) . '/withdraw');
+        $req = ApiRequest::post('/portal/applications/by-id/withdraw');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -167,13 +179,15 @@ final class PortalApi
      *
      * APPEAL_FILED.
      *
-     * POST /portal/applications/{id}/appeal (operationId appealApplication); permission portal.use; result stored atomically with the state change.
+     * POST /portal/applications/by-id/appeal (operationId appealApplication); permission portal.use; result stored atomically with the state change.
      * @param Model\AppealRequest|array $body request body
+     * @param string $id query id
      * @return Model\Application|null
      */
-    public function appealApplication(string $id, Model\AppealRequest|array $body, ?RequestOptions $options = null): ?Model\Application
+    public function appealApplication(Model\AppealRequest|array $body, string $id, ?RequestOptions $options = null): ?Model\Application
     {
-        $req = ApiRequest::post('/portal/applications/' . HttpTransport::seg((string) $id) . '/appeal');
+        $req = ApiRequest::post('/portal/applications/by-id/appeal');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -185,12 +199,14 @@ final class PortalApi
      *
      * Certificate, sanction or rejection order (C05).
      *
-     * GET /portal/applications/{id}/outcome (operationId downloadOutcome); permission portal.use.
+     * GET /portal/applications/by-id/outcome (operationId downloadOutcome); permission portal.use.
+     * @param string $id query id
      * @return string
      */
     public function downloadOutcome(string $id, ?RequestOptions $options = null): string
     {
-        $req = ApiRequest::get('/portal/applications/' . HttpTransport::seg((string) $id) . '/outcome');
+        $req = ApiRequest::get('/portal/applications/by-id/outcome');
+        $req->query('id', $id);
         return $this->calls->raw($req, $options, 'application/octet-stream');
     }
 

@@ -383,3 +383,13 @@ SHIPS['gov.ifms.gia-uc'] = ('1.0.1', '1.0.3')
 # R8-ifms-tests IFT-5: approval bound at the PAO pass before core execution (bill PAO chain, SNA-SPARSH).
 SHIPS['gov.ifms.pao-chain'] = ('1.0.1', '1.0.3')
 SHIPS['gov.ifms.sna-sparsh'] = ('1.0.1', '1.0.3')
+# SANGAM-PAYMENT-LOOP (lane L-packs, E-31 §6): SNA-SPARSH no longer re-pushes a refused RBI batch automatically
+# (ss_payCorrect: the PD checker re-pushes after correction or cancels). 1.0.3 already ships IFT-5 content: 1.0.4.
+SHIPS['gov.ifms.sna-sparsh'] = ('1.0.1', '1.0.4')
+# Owner decision (option A, lane L-packs): bl_payeeReview moves from PAO-1 to the dealing hand (dealingSeat, default
+# DH-1), so the PAO pass is no longer refused by SoD after a payee review. gov.ifms.bill 1.0.4 is on integration: 1.0.5.
+SHIPS['gov.ifms.bill'] = ('1.0.1', '1.0.5')
+# The callers pin the bill (calledElementVersionTag 1.0.5), so their content changes with it (decision 390 (4)).
+SHIPS['gov.ifms.gpf'] = ('1.0.1', '1.0.5')
+SHIPS['gov.ifms.loans-advances'] = ('1.0.1', '1.0.4')
+SHIPS['gov.ifms.gia-uc'] = ('1.0.1', '1.0.4')

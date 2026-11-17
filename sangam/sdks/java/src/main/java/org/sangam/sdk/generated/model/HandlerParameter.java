@@ -9,7 +9,7 @@ package org.sangam.sdk.generated.model;
  * <p>Schema {@code HandlerParameter} of sangam-api.yaml 0.1.0.
  *
  * @param name wire field {@code name}
- * @param type wire field {@code type}.  One of: string, number, integer, boolean, date, date-time, decimal, object, array.
+ * @param type wire field {@code type}. The model's sangam:argument type; any accepts every JSON value One of: string, number, integer, boolean, date, date-time, decimal, object, array, any.
  * @param required wire field {@code required}
  * @param description wire field {@code description}
  */

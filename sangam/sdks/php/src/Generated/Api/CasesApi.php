@@ -67,12 +67,14 @@ final class CasesApi
      *
      * Case with plan item instances.
      *
-     * GET /case-instances/{id} (operationId getCaseInstance); permission case.read.
+     * GET /case-instances/by-id (operationId getCaseInstance); permission case.read.
+     * @param string $id query id
      * @return Model\CaseInstance|null
      */
     public function getCaseInstance(string $id, ?RequestOptions $options = null): ?Model\CaseInstance
     {
-        $req = ApiRequest::get('/case-instances/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::get('/case-instances/by-id');
+        $req->query('id', $id);
         return $this->calls->model($req, $options, Model\CaseInstance::class);
     }
 
@@ -81,12 +83,14 @@ final class CasesApi
      *
      * Case variables (K11).
      *
-     * GET /case-instances/{id}/variables (operationId getCaseVariables); permission case.read.
+     * GET /case-instances/by-id/variables (operationId getCaseVariables); permission case.read.
+     * @param string $id query id
      * @return array<string, mixed>
      */
     public function getCaseVariables(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/case-instances/' . HttpTransport::seg((string) $id) . '/variables');
+        $req = ApiRequest::get('/case-instances/by-id/variables');
+        $req->query('id', $id);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -95,13 +99,15 @@ final class CasesApi
      *
      * complete | close | terminate | reactivate (linked new case).
      *
-     * POST /case-instances/{id}/commands (operationId commandCaseInstance); permission case.write; result stored atomically with the state change.
+     * POST /case-instances/by-id/commands (operationId commandCaseInstance); permission case.write; result stored atomically with the state change.
      * @param Model\CaseInstanceCommand|array $body request body
+     * @param string $id query id
      * @return Model\CaseInstance|null
      */
-    public function commandCaseInstance(string $id, Model\CaseInstanceCommand|array $body, ?RequestOptions $options = null): ?Model\CaseInstance
+    public function commandCaseInstance(Model\CaseInstanceCommand|array $body, string $id, ?RequestOptions $options = null): ?Model\CaseInstance
     {
-        $req = ApiRequest::post('/case-instances/' . HttpTransport::seg((string) $id) . '/commands');
+        $req = ApiRequest::post('/case-instances/by-id/commands');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -113,13 +119,17 @@ final class CasesApi
      *
      * start | complete | disable | reenable | terminate | manualStart (discretionary items).
      *
-     * POST /case-instances/{id}/executions/{executionId}/commands (operationId commandCaseExecution); permission case.write; result stored atomically with the state change.
+     * POST /case-instances/by-id/executions/by-execution-id/commands (operationId commandCaseExecution); permission case.write; result stored atomically with the state change.
      * @param Model\CaseExecutionCommand|array $body request body
+     * @param string $id query id
+     * @param string $executionId query executionId
      * @return Model\CaseInstance|null
      */
-    public function commandCaseExecution(string $id, string $executionId, Model\CaseExecutionCommand|array $body, ?RequestOptions $options = null): ?Model\CaseInstance
+    public function commandCaseExecution(Model\CaseExecutionCommand|array $body, string $id, string $executionId, ?RequestOptions $options = null): ?Model\CaseInstance
     {
-        $req = ApiRequest::post('/case-instances/' . HttpTransport::seg((string) $id) . '/executions/' . HttpTransport::seg((string) $executionId) . '/commands');
+        $req = ApiRequest::post('/case-instances/by-id/executions/by-execution-id/commands');
+        $req->query('id', $id);
+        $req->query('executionId', $executionId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -153,12 +163,14 @@ final class CasesApi
      *
      * Comments on the case (R76 case workspace).
      *
-     * GET /case-instances/{id}/comments (operationId listCaseComments); permission case.read.
+     * GET /case-instances/by-id/comments (operationId listCaseComments); permission case.read.
+     * @param string $id query id
      * @return list<Model\CaseComment>
      */
     public function listCaseComments(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/case-instances/' . HttpTransport::seg((string) $id) . '/comments');
+        $req = ApiRequest::get('/case-instances/by-id/comments');
+        $req->query('id', $id);
         return $this->calls->models($req, $options, Model\CaseComment::class);
     }
 
@@ -167,13 +179,15 @@ final class CasesApi
      *
      * Adds a comment.
      *
-     * POST /case-instances/{id}/comments (operationId addCaseComment); permission case.write; result stored atomically with the state change.
+     * POST /case-instances/by-id/comments (operationId addCaseComment); permission case.write; result stored atomically with the state change.
      * @param Model\AddCaseCommentRequest|array $body request body
+     * @param string $id query id
      * @return Model\CaseComment|null
      */
-    public function addCaseComment(string $id, Model\AddCaseCommentRequest|array $body, ?RequestOptions $options = null): ?Model\CaseComment
+    public function addCaseComment(Model\AddCaseCommentRequest|array $body, string $id, ?RequestOptions $options = null): ?Model\CaseComment
     {
-        $req = ApiRequest::post('/case-instances/' . HttpTransport::seg((string) $id) . '/comments');
+        $req = ApiRequest::post('/case-instances/by-id/comments');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -185,12 +199,14 @@ final class CasesApi
      *
      * Participants, including external experts and parties (UP-09, UP-22).
      *
-     * GET /case-instances/{id}/participants (operationId listCaseParticipants); permission case.read.
+     * GET /case-instances/by-id/participants (operationId listCaseParticipants); permission case.read.
+     * @param string $id query id
      * @return list<Model\Participant>
      */
     public function listCaseParticipants(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/case-instances/' . HttpTransport::seg((string) $id) . '/participants');
+        $req = ApiRequest::get('/case-instances/by-id/participants');
+        $req->query('id', $id);
         return $this->calls->models($req, $options, Model\Participant::class);
     }
 
@@ -199,13 +215,15 @@ final class CasesApi
      *
      * Starts a linked new case of the same definition with the old variables; audited on both chains.
      *
-     * POST /case-instances/{id}/reactivation (operationId reactivateCase); permission case.write; result stored atomically with the state change.
+     * POST /case-instances/by-id/reactivation (operationId reactivateCase); permission case.write; result stored atomically with the state change.
      * @param Model\ReasonRequest|array $body request body
+     * @param string $id query id
      * @return Model\CaseInstance|null
      */
-    public function reactivateCase(string $id, Model\ReasonRequest|array $body, ?RequestOptions $options = null): ?Model\CaseInstance
+    public function reactivateCase(Model\ReasonRequest|array $body, string $id, ?RequestOptions $options = null): ?Model\CaseInstance
     {
-        $req = ApiRequest::post('/case-instances/' . HttpTransport::seg((string) $id) . '/reactivation');
+        $req = ApiRequest::post('/case-instances/by-id/reactivation');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }

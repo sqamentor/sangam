@@ -88,22 +88,24 @@ public sealed class AIApi
     /// <summary>
     /// Create a knowledge base version
     /// Starts a BUILDING version.
-    /// POST /ai/knowledge-bases/{kb}/versions (operationId aiKbNewVersion); permission ai.admin; result stored atomically with the state change.
+    /// POST /ai/knowledge-bases/by-kb/versions (operationId aiKbNewVersion); permission ai.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.AiKbVersion?> AiKbNewVersionAsync(string kb, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ai/knowledge-bases/{HttpTransport.Seg(GeneratedCalls.Str(kb)!)}/versions");
+        var req = ApiRequest.Post($"/ai/knowledge-bases/by-kb/versions");
+        req.WithQuery("kb", GeneratedCalls.Q(kb));
         return await _calls.JsonAsync<M.AiKbVersion?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Ingest a document
     /// Only a BUILDING version accepts documents.
-    /// POST /ai/knowledge-bases/{kb}/versions/{version}/documents (operationId aiKbIngest); permission ai.admin; result stored atomically with the state change.
+    /// POST /ai/knowledge-bases/by-kb/versions/{version}/documents (operationId aiKbIngest); permission ai.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.AiIngestResult?> AiKbIngestAsync(string kb, string version, M.AiIngest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.AiIngestResult?> AiKbIngestAsync(string version, M.AiIngest body, string kb, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ai/knowledge-bases/{HttpTransport.Seg(GeneratedCalls.Str(kb)!)}/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/documents");
+        var req = ApiRequest.Post($"/ai/knowledge-bases/by-kb/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/documents");
+        req.WithQuery("kb", GeneratedCalls.Q(kb));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.AiIngestResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -111,22 +113,24 @@ public sealed class AIApi
     /// <summary>
     /// Activate a version
     /// Makes the version the searched one.
-    /// POST /ai/knowledge-bases/{kb}/versions/{version}/activate (operationId aiKbActivate); permission ai.admin; result stored atomically with the state change.
+    /// POST /ai/knowledge-bases/by-kb/versions/{version}/activate (operationId aiKbActivate); permission ai.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task AiKbActivateAsync(string kb, string version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task AiKbActivateAsync(string version, string kb, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ai/knowledge-bases/{HttpTransport.Seg(GeneratedCalls.Str(kb)!)}/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/activate");
+        var req = ApiRequest.Post($"/ai/knowledge-bases/by-kb/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/activate");
+        req.WithQuery("kb", GeneratedCalls.Q(kb));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Search a knowledge base
     /// Results are filtered by what the caller may read.
-    /// POST /ai/knowledge-bases/{kb}/search (operationId aiKbSearch); permission ai.use.
+    /// POST /ai/knowledge-bases/by-kb/search (operationId aiKbSearch); permission ai.use.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.AiKbHit>?> AiKbSearchAsync(string kb, M.AiKbSearch body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.AiKbHit>?> AiKbSearchAsync(M.AiKbSearch body, string kb, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ai/knowledge-bases/{HttpTransport.Seg(GeneratedCalls.Str(kb)!)}/search");
+        var req = ApiRequest.Post($"/ai/knowledge-bases/by-kb/search");
+        req.WithQuery("kb", GeneratedCalls.Q(kb));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.AiKbHit>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -134,11 +138,12 @@ public sealed class AIApi
     /// <summary>
     /// Submit an image for OCR
     /// M-103 (owner decision 378(3)): runs the image through the OCR engine and records its text as a transcript in state PENDING_REVIEW; nothing is ingested until a reviewer approves it (POST /ai/ocr-transcripts/{id}/decide). The version must exist (400 VALIDATION_FAILED) and be BUILDING (409 KB_VERSION_NOT_BUILDING), checked before the engine is called. No ready OCR engine, a timeout or an unusable answer is 503 OCR_UNAVAILABLE; an image the engine refuses (empty, another media type, too large, unknown language codes, unreadable) is 422 OCR_REJECTED. Neither records a transcript.
-    /// POST /ai/knowledge-bases/{kb}/versions/{version}/ocr (operationId aiKbOcr); permission ai.admin; result stored atomically with the state change.
+    /// POST /ai/knowledge-bases/by-kb/versions/{version}/ocr (operationId aiKbOcr); permission ai.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.AiOcrTranscript?> AiKbOcrAsync(string kb, string version, global::System.Collections.Generic.IReadOnlyDictionary<string, object?> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.AiOcrTranscript?> AiKbOcrAsync(string version, global::System.Collections.Generic.IReadOnlyDictionary<string, object?> body, string kb, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ai/knowledge-bases/{HttpTransport.Seg(GeneratedCalls.Str(kb)!)}/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/ocr");
+        var req = ApiRequest.Post($"/ai/knowledge-bases/by-kb/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/ocr");
+        req.WithQuery("kb", GeneratedCalls.Q(kb));
         if (body is not null) req.WithContent(GeneratedCalls.Multipart(body));
         return await _calls.JsonAsync<M.AiOcrTranscript?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -335,22 +340,24 @@ public sealed class AIApi
     /// <summary>
     /// A2A agent card
     /// Card of a configured inbound agent of the tenant.
-    /// GET /ai/a2a/{agent}/card (operationId aiA2aCard); permission ai.use.
+    /// GET /ai/a2a/by-agent/card (operationId aiA2aCard); permission ai.use.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> AiA2aCardAsync(string agent, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/ai/a2a/{HttpTransport.Seg(GeneratedCalls.Str(agent)!)}/card");
+        var req = ApiRequest.Get($"/ai/a2a/by-agent/card");
+        req.WithQuery("agent", GeneratedCalls.Q(agent));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// A2A endpoint
     /// A2A v1.0 JSON-RPC binding (application/json). Methods: SendMessage; GetTask; CancelTask (params id, tenant, metadata; result Task; errors -32001, -32002, -32004); ListTasks (params tenant, contextId, status, pageSize 1 to 100 default 50, pageToken, historyLength, statusTimestampAfter, includeArtifacts; result tasks, nextPageToken (empty on the last page), pageSize, totalSize; -32602 on a bad pageSize; -32004 while the process gateway does not implement it). SendStreamingMessage, SubscribeToTask and GetExtendedAgentCard answer -32004 (unsupported operation) and the four TaskPushNotificationConfig methods -32003 (push notifications not supported); the agent card says extendedAgentCard false. The caller must be on the agent allow-list; a browser Origin must be allow-listed.
-    /// POST /ai/a2a/{agent} (operationId aiA2a); permission ai.use.
+    /// POST /ai/a2a/by-agent (operationId aiA2a); permission ai.use.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> AiA2aAsync(string agent, M.AiMcpBody body, string? a2AVersion = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> AiA2aAsync(M.AiMcpBody body, string agent, string? a2AVersion = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ai/a2a/{HttpTransport.Seg(GeneratedCalls.Str(agent)!)}");
+        var req = ApiRequest.Post($"/ai/a2a/by-agent");
+        req.WithQuery("agent", GeneratedCalls.Q(agent));
         req.WithHeader("A2A-Version", GeneratedCalls.Str(a2AVersion));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
@@ -458,11 +465,12 @@ public sealed class AIApi
     /// <summary>
     /// Retire a knowledge base
     /// Retrieval stops. Needs a reason; actor and reason are kept.
-    /// POST /ai/knowledge-bases/{key}/retire (operationId aiUiRetireKb); permission ai.admin; result stored atomically with the state change.
+    /// POST /ai/knowledge-bases/by-key/retire (operationId aiUiRetireKb); permission ai.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task AiUiRetireKbAsync(string key, M.AiUiDecisionRequest? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/ai/knowledge-bases/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/retire");
+        var req = ApiRequest.Post($"/ai/knowledge-bases/by-key/retire");
+        req.WithQuery("key", GeneratedCalls.Q(key));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }

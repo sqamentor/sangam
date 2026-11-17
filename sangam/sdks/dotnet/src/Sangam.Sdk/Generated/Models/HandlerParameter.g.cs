@@ -13,7 +13,7 @@ public sealed record HandlerParameter
     public string? Name { get; init; }
 
     /// <summary>
-    /// One of: string, number, integer, boolean, date, date-time, decimal, object, array.
+    /// The model's sangam:argument type; any accepts every JSON value One of: string, number, integer, boolean, date, date-time, decimal, object, array, any.
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("type")]
     public string? Type { get; init; }

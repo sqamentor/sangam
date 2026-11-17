@@ -75,7 +75,7 @@ class PlatformIssuerH2Test {
         String newTenant = "sl70-" + UUID.randomUUID().toString().substring(0, 8);
         return List.of(
                 new String[] {"POST", "/api/v1/onboarding/packs/resolve", "{\"ids\":[],\"tenant\":\"sl70-other\"}"},
-                new String[] {"GET", "/api/v1/onboarding/tenants/sl70-other/bundle", null},
+                new String[] {"GET", "/api/v1/onboarding/tenants/by-tenant/bundle?tenant=sl70-other", null},
                 new String[] {"POST", "/api/v1/ops/cleanup?reason=sl70", null},
                 new String[] {"POST", "/api/v1/admin/tenants", "{\"id\":\"" + newTenant + "\",\"name\":\"SL-70\",\"revision\":0}"});
     }
@@ -128,7 +128,7 @@ class PlatformIssuerH2Test {
         assertEquals(200, me.statusCode(), me.body());
         assertTrue(me.body().contains("\"PLATFORM_ADMIN\""), me.body());
         Map<String, Integer> expected = Map.of("/api/v1/onboarding/packs/resolve", 200,
-                "/api/v1/onboarding/tenants/sl70-other/bundle", 404, // no onboarding run of that tenant: the call is admitted
+                "/api/v1/onboarding/tenants/by-tenant/bundle?tenant=sl70-other", 404, // no onboarding run of that tenant: the call is admitted
                 "/api/v1/ops/cleanup?reason=sl70", 202,
                 "/api/v1/admin/tenants", 201);
         for (String[] op : platformOperations()) {

@@ -66,14 +66,14 @@
    "tag": "AI",
    "pathPrefix": "",
    "operations": 38,
-   "maxLines": 734
+   "maxLines": 742
   },
   {
    "class": "AdminApi",
    "tag": "Admin",
    "pathPrefix": "",
    "operations": 32,
-   "maxLines": 638
+   "maxLines": 645
   },
   {
    "class": "AdminAssignmentsApi",
@@ -87,14 +87,14 @@
    "tag": "Admin",
    "pathPrefix": "groups",
    "operations": 6,
-   "maxLines": 128
+   "maxLines": 134
   },
   {
    "class": "AdminOrgUnitsApi",
    "tag": "Admin",
    "pathPrefix": "org-units",
    "operations": 6,
-   "maxLines": 145
+   "maxLines": 148
   },
   {
    "class": "AdminPowerTablesApi",
@@ -178,7 +178,7 @@
    "tag": "Cases",
    "pathPrefix": "",
    "operations": 11,
-   "maxLines": 234
+   "maxLines": 243
   },
   {
    "class": "CellApi",
@@ -199,14 +199,14 @@
    "tag": "Compliance",
    "pathPrefix": "",
    "operations": 39,
-   "maxLines": 753
+   "maxLines": 762
   },
   {
    "class": "ConfigApi",
    "tag": "Config",
    "pathPrefix": "",
    "operations": 17,
-   "maxLines": 376
+   "maxLines": 380
   },
   {
    "class": "DebugApi",
@@ -220,7 +220,7 @@
    "tag": "Decisions",
    "pathPrefix": "",
    "operations": 3,
-   "maxLines": 83
+   "maxLines": 85
   },
   {
    "class": "DeploymentsApi",
@@ -234,7 +234,7 @@
    "tag": "DltHooks",
    "pathPrefix": "",
    "operations": 1,
-   "maxLines": 47
+   "maxLines": 48
   },
   {
    "class": "DltRegistrationApi",
@@ -248,7 +248,7 @@
    "tag": "Documents",
    "pathPrefix": "",
    "operations": 10,
-   "maxLines": 205
+   "maxLines": 211
   },
   {
    "class": "DscCertificatesApi",
@@ -262,14 +262,14 @@
    "tag": "EventGridHooks",
    "pathPrefix": "",
    "operations": 1,
-   "maxLines": 45
+   "maxLines": 46
   },
   {
    "class": "EventsApi",
    "tag": "Events",
    "pathPrefix": "",
    "operations": 14,
-   "maxLines": 272
+   "maxLines": 282
   },
   {
    "class": "ExecutorApi",
@@ -318,7 +318,7 @@
    "tag": "HealthHooks",
    "pathPrefix": "",
    "operations": 2,
-   "maxLines": 61
+   "maxLines": 62
   },
   {
    "class": "HistoryApi",
@@ -339,14 +339,14 @@
    "tag": "Links",
    "pathPrefix": "",
    "operations": 3,
-   "maxLines": 81
+   "maxLines": 82
   },
   {
    "class": "LowCodeApi",
    "tag": "LowCode",
    "pathPrefix": "",
    "operations": 11,
-   "maxLines": 222
+   "maxLines": 223
   },
   {
    "class": "MeApi",
@@ -360,14 +360,14 @@
    "tag": "Modeller",
    "pathPrefix": "",
    "operations": 37,
-   "maxLines": 683
+   "maxLines": 696
   },
   {
    "class": "OnboardingApi",
    "tag": "Onboarding",
    "pathPrefix": "",
    "operations": 17,
-   "maxLines": 328
+   "maxLines": 330
   },
   {
    "class": "OpsApi",
@@ -416,35 +416,35 @@
    "tag": "Packs",
    "pathPrefix": "",
    "operations": 4,
-   "maxLines": 99
+   "maxLines": 102
   },
   {
    "class": "PluginsApi",
    "tag": "Plugins",
    "pathPrefix": "",
    "operations": 6,
-   "maxLines": 120
+   "maxLines": 122
   },
   {
    "class": "PortalApi",
    "tag": "Portal",
    "pathPrefix": "",
    "operations": 13,
-   "maxLines": 253
+   "maxLines": 261
   },
   {
    "class": "ProcessesApi",
    "tag": "Processes",
    "pathPrefix": "",
    "operations": 33,
-   "maxLines": 653
+   "maxLines": 660
   },
   {
    "class": "ProgrammesApi",
    "tag": "Programmes",
    "pathPrefix": "",
    "operations": 25,
-   "maxLines": 503
+   "maxLines": 504
   },
   {
    "class": "Programmes2Api",
@@ -605,7 +605,7 @@
    "tag": "Tenant operations",
    "pathPrefix": "secrets",
    "operations": 6,
-   "maxLines": 125
+   "maxLines": 127
   },
   {
    "class": "TenantOperationsVariablesApi",
@@ -1968,7 +1968,7 @@
   {
    "operationId": "getAdHocState",
    "method": "GET",
-   "path": "/process-instances/{id}/ad-hoc/{adHocActivityId}",
+   "path": "/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id",
    "tag": "Processes",
    "apiClass": "ProcessesApi",
    "java": "ProcessesApi#getAdHocState",
@@ -1980,7 +1980,7 @@
   {
    "operationId": "startAdHocActivity",
    "method": "POST",
-   "path": "/process-instances/{id}/ad-hoc/{adHocActivityId}/start",
+   "path": "/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/start",
    "tag": "Processes",
    "apiClass": "ProcessesApi",
    "java": "ProcessesApi#startAdHocActivity",
@@ -1992,7 +1992,7 @@
   {
    "operationId": "completeAdHoc",
    "method": "POST",
-   "path": "/process-instances/{id}/ad-hoc/{adHocActivityId}/complete",
+   "path": "/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/complete",
    "tag": "Processes",
    "apiClass": "ProcessesApi",
    "java": "ProcessesApi#completeAdHoc",
@@ -2028,7 +2028,7 @@
   {
    "operationId": "getProcessDefinition",
    "method": "GET",
-   "path": "/process-definitions/{id}",
+   "path": "/process-definitions/by-id",
    "tag": "Processes",
    "apiClass": "ProcessesApi",
    "java": "ProcessesApi#getProcessDefinition",
@@ -2040,7 +2040,7 @@
   {
    "operationId": "getProcessDefinitionXml",
    "method": "GET",
-   "path": "/process-definitions/{id}/xml",
+   "path": "/process-definitions/by-id/xml",
    "tag": "Processes",
    "apiClass": "ProcessesApi",
    "java": "ProcessesApi#getProcessDefinitionXml",
@@ -2100,7 +2100,7 @@
   {
    "operationId": "getCaseInstance",
    "method": "GET",
-   "path": "/case-instances/{id}",
+   "path": "/case-instances/by-id",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#getCaseInstance",
@@ -2112,7 +2112,7 @@
   {
    "operationId": "getCaseVariables",
    "method": "GET",
-   "path": "/case-instances/{id}/variables",
+   "path": "/case-instances/by-id/variables",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#getCaseVariables",
@@ -2124,7 +2124,7 @@
   {
    "operationId": "commandCaseInstance",
    "method": "POST",
-   "path": "/case-instances/{id}/commands",
+   "path": "/case-instances/by-id/commands",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#commandCaseInstance",
@@ -2136,7 +2136,7 @@
   {
    "operationId": "commandCaseExecution",
    "method": "POST",
-   "path": "/case-instances/{id}/executions/{executionId}/commands",
+   "path": "/case-instances/by-id/executions/by-execution-id/commands",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#commandCaseExecution",
@@ -2160,7 +2160,7 @@
   {
    "operationId": "evaluateDecision",
    "method": "POST",
-   "path": "/decisions/{key}/evaluate",
+   "path": "/decisions/by-key/evaluate",
    "tag": "Decisions",
    "apiClass": "DecisionsApi",
    "java": "DecisionsApi#evaluateDecision",
@@ -2184,7 +2184,7 @@
   {
    "operationId": "getDecisionDefinitionXml",
    "method": "GET",
-   "path": "/decision-definitions/{id}/xml",
+   "path": "/decision-definitions/by-id/xml",
    "tag": "Decisions",
    "apiClass": "DecisionsApi",
    "java": "DecisionsApi#getDecisionDefinitionXml",
@@ -2352,7 +2352,7 @@
   {
    "operationId": "getDocument",
    "method": "GET",
-   "path": "/documents/{id}",
+   "path": "/documents/by-id",
    "tag": "Documents",
    "apiClass": "DocumentsApi",
    "java": "DocumentsApi#getDocument",
@@ -2364,7 +2364,7 @@
   {
    "operationId": "deleteDocument",
    "method": "DELETE",
-   "path": "/documents/{id}",
+   "path": "/documents/by-id",
    "tag": "Documents",
    "apiClass": "DocumentsApi",
    "java": "DocumentsApi#deleteDocument",
@@ -2376,7 +2376,7 @@
   {
    "operationId": "getDocumentContent",
    "method": "GET",
-   "path": "/documents/{id}/content",
+   "path": "/documents/by-id/content",
    "tag": "Documents",
    "apiClass": "DocumentsApi",
    "java": "DocumentsApi#getDocumentContent",
@@ -2388,7 +2388,7 @@
   {
    "operationId": "addDocumentVersion",
    "method": "POST",
-   "path": "/documents/{id}/versions",
+   "path": "/documents/by-id/versions",
    "tag": "Documents",
    "apiClass": "DocumentsApi",
    "java": "DocumentsApi#addDocumentVersion",
@@ -2400,7 +2400,7 @@
   {
    "operationId": "listDocumentVersions",
    "method": "GET",
-   "path": "/documents/{id}/versions",
+   "path": "/documents/by-id/versions",
    "tag": "Documents",
    "apiClass": "DocumentsApi",
    "java": "DocumentsApi#listDocumentVersions",
@@ -2436,7 +2436,7 @@
   {
    "operationId": "deleteLink",
    "method": "DELETE",
-   "path": "/links/{id}",
+   "path": "/links/by-id",
    "tag": "Links",
    "apiClass": "LinksApi",
    "java": "LinksApi#deleteLink",
@@ -2616,7 +2616,7 @@
   {
    "operationId": "getOrgUnit",
    "method": "GET",
-   "path": "/admin/org-units/{id}",
+   "path": "/admin/org-units/by-id",
    "tag": "Admin",
    "apiClass": "AdminOrgUnitsApi",
    "java": "AdminOrgUnitsApi#getOrgUnit",
@@ -2628,7 +2628,7 @@
   {
    "operationId": "updateOrgUnit",
    "method": "PUT",
-   "path": "/admin/org-units/{id}",
+   "path": "/admin/org-units/by-id",
    "tag": "Admin",
    "apiClass": "AdminOrgUnitsApi",
    "java": "AdminOrgUnitsApi#updateOrgUnit",
@@ -2640,7 +2640,7 @@
   {
    "operationId": "deleteOrgUnit",
    "method": "DELETE",
-   "path": "/admin/org-units/{id}",
+   "path": "/admin/org-units/by-id",
    "tag": "Admin",
    "apiClass": "AdminOrgUnitsApi",
    "java": "AdminOrgUnitsApi#deleteOrgUnit",
@@ -2676,7 +2676,7 @@
   {
    "operationId": "getSeat",
    "method": "GET",
-   "path": "/admin/seats/{id}",
+   "path": "/admin/seats/by-id",
    "tag": "Admin",
    "apiClass": "AdminApi",
    "java": "AdminApi#getSeat",
@@ -2688,7 +2688,7 @@
   {
    "operationId": "updateSeat",
    "method": "PUT",
-   "path": "/admin/seats/{id}",
+   "path": "/admin/seats/by-id",
    "tag": "Admin",
    "apiClass": "AdminApi",
    "java": "AdminApi#updateSeat",
@@ -2700,7 +2700,7 @@
   {
    "operationId": "deleteSeat",
    "method": "DELETE",
-   "path": "/admin/seats/{id}",
+   "path": "/admin/seats/by-id",
    "tag": "Admin",
    "apiClass": "AdminApi",
    "java": "AdminApi#deleteSeat",
@@ -2832,7 +2832,7 @@
   {
    "operationId": "deletePolicy",
    "method": "DELETE",
-   "path": "/admin/policies/{id}",
+   "path": "/admin/policies/by-id",
    "tag": "Admin",
    "apiClass": "AdminApi",
    "java": "AdminApi#deletePolicy",
@@ -3240,7 +3240,7 @@
   {
    "operationId": "getEventChannel",
    "method": "GET",
-   "path": "/events/channels/{key}",
+   "path": "/events/channels/by-key",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#getEventChannel",
@@ -3252,7 +3252,7 @@
   {
    "operationId": "updateEventChannel",
    "method": "PUT",
-   "path": "/events/channels/{key}",
+   "path": "/events/channels/by-key",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#updateEventChannel",
@@ -3264,7 +3264,7 @@
   {
    "operationId": "deleteEventChannel",
    "method": "DELETE",
-   "path": "/events/channels/{key}",
+   "path": "/events/channels/by-key",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#deleteEventChannel",
@@ -3276,7 +3276,7 @@
   {
    "operationId": "retireEventChannel",
    "method": "POST",
-   "path": "/events/channels/{key}/retire",
+   "path": "/events/channels/by-key/retire",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#retireEventChannel",
@@ -3288,7 +3288,7 @@
   {
    "operationId": "restoreEventChannel",
    "method": "POST",
-   "path": "/events/channels/{key}/restore",
+   "path": "/events/channels/by-key/restore",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#restoreEventChannel",
@@ -3324,7 +3324,7 @@
   {
    "operationId": "getEventDefinition",
    "method": "GET",
-   "path": "/events/definitions/{key}",
+   "path": "/events/definitions/by-key",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#getEventDefinition",
@@ -3336,7 +3336,7 @@
   {
    "operationId": "deleteEventDefinition",
    "method": "DELETE",
-   "path": "/events/definitions/{key}",
+   "path": "/events/definitions/by-key",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#deleteEventDefinition",
@@ -3348,7 +3348,7 @@
   {
    "operationId": "retireEventDefinition",
    "method": "POST",
-   "path": "/events/definitions/{key}/retire",
+   "path": "/events/definitions/by-key/retire",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#retireEventDefinition",
@@ -3360,7 +3360,7 @@
   {
    "operationId": "restoreEventDefinition",
    "method": "POST",
-   "path": "/events/definitions/{key}/restore",
+   "path": "/events/definitions/by-key/restore",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#restoreEventDefinition",
@@ -3372,7 +3372,7 @@
   {
    "operationId": "publishEvent",
    "method": "POST",
-   "path": "/events/{channel}",
+   "path": "/events/by-channel",
    "tag": "Events",
    "apiClass": "EventsApi",
    "java": "EventsApi#publishEvent",
@@ -3768,7 +3768,7 @@
   {
    "operationId": "listCaseComments",
    "method": "GET",
-   "path": "/case-instances/{id}/comments",
+   "path": "/case-instances/by-id/comments",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#listCaseComments",
@@ -3780,7 +3780,7 @@
   {
    "operationId": "addCaseComment",
    "method": "POST",
-   "path": "/case-instances/{id}/comments",
+   "path": "/case-instances/by-id/comments",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#addCaseComment",
@@ -3792,7 +3792,7 @@
   {
    "operationId": "listCaseParticipants",
    "method": "GET",
-   "path": "/case-instances/{id}/participants",
+   "path": "/case-instances/by-id/participants",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#listCaseParticipants",
@@ -3804,7 +3804,7 @@
   {
    "operationId": "reactivateCase",
    "method": "POST",
-   "path": "/case-instances/{id}/reactivation",
+   "path": "/case-instances/by-id/reactivation",
    "tag": "Cases",
    "apiClass": "CasesApi",
    "java": "CasesApi#reactivateCase",
@@ -3864,7 +3864,7 @@
   {
    "operationId": "setProcessDefinitionSuspension",
    "method": "POST",
-   "path": "/process-definitions/{id}/suspension",
+   "path": "/process-definitions/by-id/suspension",
    "tag": "Processes",
    "apiClass": "ProcessesApi",
    "java": "ProcessesApi#setProcessDefinitionSuspension",
@@ -3924,7 +3924,7 @@
   {
    "operationId": "getPortalServiceForm",
    "method": "GET",
-   "path": "/portal/services/{key}/form",
+   "path": "/portal/services/by-key/form",
    "tag": "Portal",
    "apiClass": "PortalApi",
    "java": "PortalApi#getPortalServiceForm",
@@ -3936,7 +3936,7 @@
   {
    "operationId": "getPortalServiceNotice",
    "method": "GET",
-   "path": "/portal/services/{key}/notice",
+   "path": "/portal/services/by-key/notice",
    "tag": "Portal",
    "apiClass": "PortalApi",
    "java": "PortalApi#getPortalServiceNotice",
@@ -3984,7 +3984,7 @@
   {
    "operationId": "getMyApplication",
    "method": "GET",
-   "path": "/portal/applications/{id}",
+   "path": "/portal/applications/by-id",
    "tag": "Portal",
    "apiClass": "PortalApi",
    "java": "PortalApi#getMyApplication",
@@ -3996,7 +3996,7 @@
   {
    "operationId": "replyToClarification",
    "method": "POST",
-   "path": "/portal/applications/{id}/clarifications/{clarificationId}/reply",
+   "path": "/portal/applications/by-id/clarifications/by-clarification-id/reply",
    "tag": "Portal",
    "apiClass": "PortalApi",
    "java": "PortalApi#replyToClarification",
@@ -4008,7 +4008,7 @@
   {
    "operationId": "withdrawApplication",
    "method": "POST",
-   "path": "/portal/applications/{id}/withdraw",
+   "path": "/portal/applications/by-id/withdraw",
    "tag": "Portal",
    "apiClass": "PortalApi",
    "java": "PortalApi#withdrawApplication",
@@ -4020,7 +4020,7 @@
   {
    "operationId": "appealApplication",
    "method": "POST",
-   "path": "/portal/applications/{id}/appeal",
+   "path": "/portal/applications/by-id/appeal",
    "tag": "Portal",
    "apiClass": "PortalApi",
    "java": "PortalApi#appealApplication",
@@ -4032,7 +4032,7 @@
   {
    "operationId": "downloadOutcome",
    "method": "GET",
-   "path": "/portal/applications/{id}/outcome",
+   "path": "/portal/applications/by-id/outcome",
    "tag": "Portal",
    "apiClass": "PortalApi",
    "java": "PortalApi#downloadOutcome",
@@ -4476,7 +4476,7 @@
   {
    "operationId": "setDocumentLegalHold",
    "method": "POST",
-   "path": "/documents/{id}/legal-hold",
+   "path": "/documents/by-id/legal-hold",
    "tag": "Documents",
    "apiClass": "DocumentsApi",
    "java": "DocumentsApi#setDocumentLegalHold",
@@ -4752,7 +4752,7 @@
   {
    "operationId": "listGroupMembers",
    "method": "GET",
-   "path": "/admin/groups/{id}/members",
+   "path": "/admin/groups/by-id/members",
    "tag": "Admin",
    "apiClass": "AdminGroupsApi",
    "java": "AdminGroupsApi#listGroupMembers",
@@ -4764,7 +4764,7 @@
   {
    "operationId": "addGroupMember",
    "method": "POST",
-   "path": "/admin/groups/{id}/members/{userId}",
+   "path": "/admin/groups/by-id/members/by-user-id",
    "tag": "Admin",
    "apiClass": "AdminGroupsApi",
    "java": "AdminGroupsApi#addGroupMember",
@@ -4776,7 +4776,7 @@
   {
    "operationId": "removeGroupMember",
    "method": "DELETE",
-   "path": "/admin/groups/{id}/members/{userId}",
+   "path": "/admin/groups/by-id/members/by-user-id",
    "tag": "Admin",
    "apiClass": "AdminGroupsApi",
    "java": "AdminGroupsApi#removeGroupMember",
@@ -4848,7 +4848,7 @@
   {
    "operationId": "defineRole",
    "method": "PUT",
-   "path": "/admin/roles/{roleId}",
+   "path": "/admin/roles/by-role-id",
    "tag": "Admin",
    "apiClass": "AdminApi",
    "java": "AdminApi#defineRole",
@@ -5472,7 +5472,7 @@
   {
    "operationId": "runNamedQuery",
    "method": "GET",
-   "path": "/queries/{name}",
+   "path": "/queries/by-name",
    "tag": "LowCode",
    "apiClass": "LowCodeApi",
    "java": "LowCodeApi#runNamedQuery",
@@ -5664,7 +5664,7 @@
   {
    "operationId": "getComplianceNotice",
    "method": "GET",
-   "path": "/compliance/notices/{key}",
+   "path": "/compliance/notices/by-key",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#getComplianceNotice",
@@ -5676,7 +5676,7 @@
   {
    "operationId": "publishComplianceNotice",
    "method": "POST",
-   "path": "/compliance/notices/{key}/publish",
+   "path": "/compliance/notices/by-key/publish",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#publishComplianceNotice",
@@ -5712,7 +5712,7 @@
   {
    "operationId": "defineCompliancePurpose",
    "method": "PUT",
-   "path": "/compliance/purposes/{code}",
+   "path": "/compliance/purposes/by-code",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#defineCompliancePurpose",
@@ -5772,7 +5772,7 @@
   {
    "operationId": "ingestConsentArtefact",
    "method": "POST",
-   "path": "/compliance/consent-managers/{cm}/artefacts",
+   "path": "/compliance/consent-managers/by-cm/artefacts",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#ingestConsentArtefact",
@@ -5976,7 +5976,7 @@
   {
    "operationId": "setComplianceContact",
    "method": "POST",
-   "path": "/compliance/contacts/{role}",
+   "path": "/compliance/contacts/by-role",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#setComplianceContact",
@@ -6012,7 +6012,7 @@
   {
    "operationId": "listComplianceLegalHolds",
    "method": "GET",
-   "path": "/compliance/process-roots/{rootId}/legal-holds",
+   "path": "/compliance/process-roots/by-root-id/legal-holds",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#listComplianceLegalHolds",
@@ -6024,7 +6024,7 @@
   {
    "operationId": "placeComplianceLegalHold",
    "method": "POST",
-   "path": "/compliance/process-roots/{rootId}/legal-holds",
+   "path": "/compliance/process-roots/by-root-id/legal-holds",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#placeComplianceLegalHold",
@@ -6036,7 +6036,7 @@
   {
    "operationId": "releaseComplianceLegalHold",
    "method": "POST",
-   "path": "/compliance/process-roots/{rootId}/legal-holds/{holdId}/release",
+   "path": "/compliance/process-roots/by-root-id/legal-holds/by-hold-id/release",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
    "java": "ComplianceApi#releaseComplianceLegalHold",
@@ -6336,7 +6336,7 @@
   {
    "operationId": "updateUser",
    "method": "PUT",
-   "path": "/admin/users/{id}",
+   "path": "/admin/users/by-id",
    "tag": "Admin",
    "apiClass": "AdminApi",
    "java": "AdminApi#updateUser",
@@ -6348,7 +6348,7 @@
   {
    "operationId": "disableUser",
    "method": "POST",
-   "path": "/admin/users/{id}/disable",
+   "path": "/admin/users/by-id/disable",
    "tag": "Admin",
    "apiClass": "AdminApi",
    "java": "AdminApi#disableUser",
@@ -6360,7 +6360,7 @@
   {
    "operationId": "updateGroup",
    "method": "PUT",
-   "path": "/admin/groups/{id}",
+   "path": "/admin/groups/by-id",
    "tag": "Admin",
    "apiClass": "AdminGroupsApi",
    "java": "AdminGroupsApi#updateGroup",
@@ -6444,7 +6444,7 @@
   {
    "operationId": "aiKbNewVersion",
    "method": "POST",
-   "path": "/ai/knowledge-bases/{kb}/versions",
+   "path": "/ai/knowledge-bases/by-kb/versions",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiKbNewVersion",
@@ -6456,7 +6456,7 @@
   {
    "operationId": "aiKbIngest",
    "method": "POST",
-   "path": "/ai/knowledge-bases/{kb}/versions/{version}/documents",
+   "path": "/ai/knowledge-bases/by-kb/versions/{version}/documents",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiKbIngest",
@@ -6468,7 +6468,7 @@
   {
    "operationId": "aiKbActivate",
    "method": "POST",
-   "path": "/ai/knowledge-bases/{kb}/versions/{version}/activate",
+   "path": "/ai/knowledge-bases/by-kb/versions/{version}/activate",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiKbActivate",
@@ -6480,7 +6480,7 @@
   {
    "operationId": "aiKbSearch",
    "method": "POST",
-   "path": "/ai/knowledge-bases/{kb}/search",
+   "path": "/ai/knowledge-bases/by-kb/search",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiKbSearch",
@@ -6492,7 +6492,7 @@
   {
    "operationId": "aiKbOcr",
    "method": "POST",
-   "path": "/ai/knowledge-bases/{kb}/versions/{version}/ocr",
+   "path": "/ai/knowledge-bases/by-kb/versions/{version}/ocr",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiKbOcr",
@@ -6684,7 +6684,7 @@
   {
    "operationId": "aiA2aCard",
    "method": "GET",
-   "path": "/ai/a2a/{agent}/card",
+   "path": "/ai/a2a/by-agent/card",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiA2aCard",
@@ -6696,7 +6696,7 @@
   {
    "operationId": "aiA2a",
    "method": "POST",
-   "path": "/ai/a2a/{agent}",
+   "path": "/ai/a2a/by-agent",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiA2a",
@@ -6804,7 +6804,7 @@
   {
    "operationId": "aiUiRetireKb",
    "method": "POST",
-   "path": "/ai/knowledge-bases/{key}/retire",
+   "path": "/ai/knowledge-bases/by-key/retire",
    "tag": "AI",
    "apiClass": "AIApi",
    "java": "AIApi#aiUiRetireKb",
@@ -8148,7 +8148,7 @@
   {
    "operationId": "installCatalogueEntry",
    "method": "POST",
-   "path": "/catalogue/{id}/{version}/install",
+   "path": "/catalogue/by-id/by-version/install",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#installCatalogueEntry",
@@ -8160,7 +8160,7 @@
   {
    "operationId": "installCatalogueTemplates",
    "method": "POST",
-   "path": "/catalogue/{id}/{version}/install-templates",
+   "path": "/catalogue/by-id/by-version/install-templates",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#installCatalogueTemplates",
@@ -8604,7 +8604,7 @@
   {
    "operationId": "listConfigMasterCodes",
    "method": "GET",
-   "path": "/config/master/{scheme}/{segment}",
+   "path": "/config/master/by-scheme/by-segment",
    "tag": "Config",
    "apiClass": "ConfigApi",
    "java": "ConfigApi#listConfigMasterCodes",
@@ -8664,7 +8664,7 @@
   {
    "operationId": "checkConfigDocument",
    "method": "POST",
-   "path": "/config/document-types/{id}/check",
+   "path": "/config/document-types/by-id/check",
    "tag": "Config",
    "apiClass": "ConfigApi",
    "java": "ConfigApi#checkConfigDocument",
@@ -8676,7 +8676,7 @@
   {
    "operationId": "mapConfigCrosswalk",
    "method": "POST",
-   "path": "/config/crosswalks/{id}/map",
+   "path": "/config/crosswalks/by-id/map",
    "tag": "Config",
    "apiClass": "ConfigApi",
    "java": "ConfigApi#mapConfigCrosswalk",
@@ -8688,7 +8688,7 @@
   {
    "operationId": "receiveFhirNotification",
    "method": "POST",
-   "path": "/hooks/fhir/{channel}",
+   "path": "/hooks/fhir/by-channel",
    "tag": "HealthHooks",
    "apiClass": "HealthHooksApi",
    "java": "HealthHooksApi#receiveFhirNotification",
@@ -8784,7 +8784,7 @@
   {
    "operationId": "receiveDltDeliveryReports",
    "method": "POST",
-   "path": "/hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports",
+   "path": "/hooks/sms-dlt/{tenant}/by-connector-id/delivery-reports",
    "tag": "DltHooks",
    "apiClass": "DltHooksApi",
    "java": "DltHooksApi#receiveDltDeliveryReports",
@@ -8976,7 +8976,7 @@
   {
    "operationId": "receiveEventGridDelivery",
    "method": "POST",
-   "path": "/hooks/eventgrid/{tenant}/{channel}",
+   "path": "/hooks/eventgrid/{tenant}/by-channel",
    "tag": "EventGridHooks",
    "apiClass": "EventGridHooksApi",
    "java": "EventGridHooksApi#receiveEventGridDelivery",
@@ -10068,7 +10068,7 @@
   {
    "operationId": "listInstanceHandlers",
    "method": "GET",
-   "path": "/process-definitions/{id}/handlers",
+   "path": "/process-definitions/by-id/handlers",
    "tag": "Processes",
    "apiClass": "ProcessesApi",
    "java": "ProcessesApi#listInstanceHandlers",
@@ -10248,7 +10248,7 @@
   {
    "operationId": "getModelLease",
    "method": "GET",
-   "path": "/models/{file}/lease",
+   "path": "/models/by-file/lease",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#getModelLease",
@@ -10260,7 +10260,7 @@
   {
    "operationId": "acquireModelLease",
    "method": "POST",
-   "path": "/models/{file}/lease",
+   "path": "/models/by-file/lease",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#acquireModelLease",
@@ -10272,7 +10272,7 @@
   {
    "operationId": "heartbeatModelLease",
    "method": "POST",
-   "path": "/models/{file}/lease/heartbeat",
+   "path": "/models/by-file/lease/heartbeat",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#heartbeatModelLease",
@@ -10284,7 +10284,7 @@
   {
    "operationId": "releaseModelLease",
    "method": "POST",
-   "path": "/models/{file}/lease/release",
+   "path": "/models/by-file/lease/release",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#releaseModelLease",
@@ -10296,7 +10296,7 @@
   {
    "operationId": "requestModelLeaseTakeover",
    "method": "POST",
-   "path": "/models/{file}/lease/request-takeover",
+   "path": "/models/by-file/lease/request-takeover",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#requestModelLeaseTakeover",
@@ -10308,7 +10308,7 @@
   {
    "operationId": "takeOverModelLease",
    "method": "POST",
-   "path": "/models/{file}/lease/takeover",
+   "path": "/models/by-file/lease/takeover",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#takeOverModelLease",
@@ -10320,7 +10320,7 @@
   {
    "operationId": "streamModelPresence",
    "method": "GET",
-   "path": "/models/{file}/presence/stream",
+   "path": "/models/by-file/presence/stream",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#streamModelPresence",
@@ -10452,7 +10452,7 @@
   {
    "operationId": "acquireModelLeaseUi",
    "method": "POST",
-   "path": "/models/{file}/lease/acquire",
+   "path": "/models/by-file/lease/acquire",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#acquireModelLeaseUi",
@@ -10524,7 +10524,7 @@
   {
    "operationId": "toggleServiceMock",
    "method": "PATCH",
-   "path": "/service-mocks/{id}",
+   "path": "/service-mocks/by-id",
    "tag": "Modeller",
    "apiClass": "ModellerApi",
    "java": "ModellerApi#toggleServiceMock",
@@ -10668,7 +10668,7 @@
   {
    "operationId": "exportTenantBundle",
    "method": "GET",
-   "path": "/onboarding/tenants/{tenant}/bundle",
+   "path": "/onboarding/tenants/by-tenant/bundle",
    "tag": "Onboarding",
    "apiClass": "OnboardingApi",
    "java": "OnboardingApi#exportTenantBundle",
@@ -10728,7 +10728,7 @@
   {
    "operationId": "enablePlugin",
    "method": "POST",
-   "path": "/admin/plugins/{id}/enable",
+   "path": "/admin/plugins/by-id/enable",
    "tag": "Plugins",
    "apiClass": "PluginsApi",
    "java": "PluginsApi#enablePlugin",
@@ -10740,7 +10740,7 @@
   {
    "operationId": "disablePlugin",
    "method": "POST",
-   "path": "/admin/plugins/{id}/disable",
+   "path": "/admin/plugins/by-id/disable",
    "tag": "Plugins",
    "apiClass": "PluginsApi",
    "java": "PluginsApi#disablePlugin",
@@ -10872,7 +10872,7 @@
   {
    "operationId": "opsPutSecret",
    "method": "PUT",
-   "path": "/ops-admin/secrets/{ref}",
+   "path": "/ops-admin/secrets/by-ref",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsSecretsApi",
    "java": "TenantOperationsSecretsApi#opsPutSecret",
@@ -10884,7 +10884,7 @@
   {
    "operationId": "opsDeleteSecret",
    "method": "DELETE",
-   "path": "/ops-admin/secrets/{ref}",
+   "path": "/ops-admin/secrets/by-ref",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsSecretsApi",
    "java": "TenantOperationsSecretsApi#opsDeleteSecret",
@@ -11412,7 +11412,7 @@
   {
    "operationId": "uninstallPack",
    "method": "POST",
-   "path": "/packs/{id}/uninstall",
+   "path": "/packs/by-id/uninstall",
    "tag": "Packs",
    "apiClass": "PacksApi",
    "java": "PacksApi#uninstallPack",
@@ -11424,7 +11424,7 @@
   {
    "operationId": "rollbackPack",
    "method": "POST",
-   "path": "/packs/{id}/rollback",
+   "path": "/packs/by-id/rollback",
    "tag": "Packs",
    "apiClass": "PacksApi",
    "java": "PacksApi#rollbackPack",
@@ -11436,7 +11436,7 @@
   {
    "operationId": "listPackDocumentSlots",
    "method": "GET",
-   "path": "/packs/{id}/document-slots",
+   "path": "/packs/by-id/document-slots",
    "tag": "Packs",
    "apiClass": "PacksApi",
    "java": "PacksApi#listPackDocumentSlots",
@@ -11508,7 +11508,7 @@
   {
    "operationId": "programmeChangePeriodState",
    "method": "POST",
-   "path": "/programme-periods/{id}/state",
+   "path": "/programme-periods/by-id/state",
    "tag": "Programmes",
    "apiClass": "ProgrammesApi",
    "java": "ProgrammesApi#programmeChangePeriodState",
@@ -12036,7 +12036,7 @@
   {
    "operationId": "exportPromotionBundle",
    "method": "GET",
-   "path": "/onboarding/promotions/{tenant}/bundle",
+   "path": "/onboarding/promotions/by-tenant/bundle",
    "tag": "Onboarding",
    "apiClass": "OnboardingApi",
    "java": "OnboardingApi#exportPromotionBundle",
@@ -15710,7 +15710,7 @@
   {
    "operationId": "eventGridHookHandshake",
    "method": "OPTIONS",
-   "path": "/hooks/eventgrid/{tenant}/{channel}"
+   "path": "/hooks/eventgrid/{tenant}/by-channel"
   }
  ]
 }

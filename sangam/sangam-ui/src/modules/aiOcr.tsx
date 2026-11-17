@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
  * M-103 option A (owner decision 378(3)): OCR into a knowledge base, reviewed before ingest. Every path is a contract
- * operation of sangam-rest/api/sangam-api.yaml: aiKbOcr (POST /ai/knowledge-bases/{kb}/versions/{version}/ocr,
+ * operation of sangam-rest/api/sangam-api.yaml: aiKbOcr (POST /ai/knowledge-bases/by-kb/versions/{version}/ocr?kb=,
  * multipart, ai.admin), aiListOcrTranscripts (GET /ai/ocr-transcripts, ai.review), aiGetOcrTranscript
  * (GET /ai/ocr-transcripts/{id}), aiDecideOcrTranscript (POST /ai/ocr-transcripts/{id}/decide) and aiKbSearch, whose
  * hits name the approved transcript a chunk came from (AiKbHit.ocrTranscriptId). The server authorises every call and
@@ -43,7 +43,7 @@ function Upload({ onCreated }: { onCreated: (t: Transcript) => void }) {
     form.append('documentId', v.documentId.trim());
     if (v.docVersion.trim()) form.append('docVersion', v.docVersion.trim());
     form.append('languages', v.languages.trim());
-    void act.run((k) => http.upload<Transcript>(`/ai/knowledge-bases/${seg(v.kb)}/versions/${seg(v.version)}/ocr`, form, k)).then((r) => {
+    void act.run((k) => http.upload<Transcript>(`/ai/knowledge-bases/by-kb/versions/${seg(v.version)}/ocr?kb=${seg(v.kb)}`, form, k)).then((r) => {
       if (!r) return;
       setCreated(r.id);
       onCreated(r);
@@ -206,7 +206,7 @@ export function KbSearch() {
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<Hit[]>();
   const act = useAction();
-  const search = () => void act.run(() => http.post<Hit[]>(`/ai/knowledge-bases/${seg(kb)}/search`, { query })).then((r) => r && setHits(r));
+  const search = () => void act.run(() => http.post<Hit[]>(`/ai/knowledge-bases/by-kb/search?kb=${seg(kb)}`, { query })).then((r) => r && setHits(r));
   return (
     <Section title={t('mod.ai.ocr.search')}>
       <form className="filters" onSubmit={(e) => { e.preventDefault(); if (kb.trim() && query.trim()) search(); }}>

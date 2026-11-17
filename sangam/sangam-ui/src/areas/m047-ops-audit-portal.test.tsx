@@ -406,7 +406,7 @@ describe('M-047 analytics dashboard', () => {
 /**
  * Evidence: Portal.tsx (catalogue; apply with the service's published notice, one checkbox per purpose and the age
  * declaration, decisions 339/341/343; withdraw, appeal; grievances); endpoints.ts portal block. The form is the
- * service's own (GET /portal/services/{key}/form, decision 63), the notice GET /portal/services/{key}/notice.
+ * service's own (GET /portal/services/by-key/form?key=, decision 63), the notice GET /portal/services/by-key/notice?key=.
  */
 describe('M-047 citizen portal', () => {
   const service = { key: 'cert', name: 'Certificate', formKey: 'f1', fee: 0, noticeKey: 'n1' };
@@ -426,8 +426,8 @@ describe('M-047 citizen portal', () => {
   const openApply = () => show(<PortalApply />, '/portal/apply/cert', '/portal/apply/:serviceKey');
   const routesForApply = () => {
     routes['/portal/services'] = [service];
-    routes['/portal/services/cert/form'] = form;
-    routes['/portal/services/cert/notice'] = notice;
+    routes['/portal/services/by-key/form?key=cert'] = form;
+    routes['/portal/services/by-key/notice?key=cert'] = notice;
   };
 
   it('submit needs a ticked purpose of the published notice, the age declaration and the required fields, then sends the consent with submit=true', async () => {
@@ -507,7 +507,7 @@ describe('M-047 citizen portal', () => {
     const submit = (await screen.findByRole('button', { name: T('portal.submit') })) as HTMLButtonElement;
     expect(screen.queryByText(T('portal.dpdpTitle'))).toBeNull();
     expect(screen.queryByRole('checkbox')).toBeNull();
-    expect(api.get).not.toHaveBeenCalledWith('/portal/services/cert/notice', expect.anything());
+    expect(api.get).not.toHaveBeenCalledWith('/portal/services/by-key/notice?key=cert', expect.anything());
     fireEvent.click(submit);
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/portal/applications', { serviceKey: 'cert', variables: {}, submit: true }, KEY));
   });
@@ -525,21 +525,21 @@ describe('M-047 citizen portal', () => {
   });
 
   it('a rejected application can be appealed with grounds before the deadline', async () => {
-    routes['/portal/applications/a1'] = { id: 'a1', reference: 'APP-1', serviceName: 'Certificate', status: 'REJECTED', appealDeadline: '2999-01-01', clarifications: [] };
+    routes['/portal/applications/by-id?id=a1'] = { id: 'a1', reference: 'APP-1', serviceName: 'Certificate', status: 'REJECTED', appealDeadline: '2999-01-01', clarifications: [] };
     show(<PortalApplication />, '/portal/applications/a1', '/portal/applications/:id');
     fireEvent.click(await screen.findByRole('button', { name: T('portal.fileAppeal') }));
     const d = dialog();
     fireEvent.change(within(d).getByLabelText(L('portal.grounds')), { target: { value: 'The record was correct' } });
     reasonAndConfirm('Appeal against the rejection');
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/portal/applications/a1/appeal', { grounds: 'The record was correct' }, KEY));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/portal/applications/by-id/appeal?id=a1', { grounds: 'The record was correct' }, KEY));
   });
 
   it('a submitted application is withdrawn with a reason', async () => {
-    routes['/portal/applications/a1'] = { id: 'a1', reference: 'APP-1', serviceName: 'Certificate', status: 'SUBMITTED', clarifications: [] };
+    routes['/portal/applications/by-id?id=a1'] = { id: 'a1', reference: 'APP-1', serviceName: 'Certificate', status: 'SUBMITTED', clarifications: [] };
     show(<PortalApplication />, '/portal/applications/a1', '/portal/applications/:id');
     fireEvent.click(await screen.findByRole('button', { name: T('portal.withdraw') }));
     reasonAndConfirm('No longer needed');
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/portal/applications/a1/withdraw', { reason: 'No longer needed' }, KEY));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/portal/applications/by-id/withdraw?id=a1', { reason: 'No longer needed' }, KEY));
   });
 
   it('a grievance is filed and its reference is shown', async () => {
@@ -565,7 +565,7 @@ describe('M-047 citizen privacy pages', () => {
   const consent = { consentId: 'c1', noticeKey: 'n1', noticeVersion: 3, status: 'GIVEN', givenAt: '2026-11-01T10:00:00Z', activePurposes: ['P_APPLY', 'P_UPDATES'] };
   const withNames = () => {
     routes['/portal/services'] = [{ key: 'cert', name: 'Certificate', fee: 0, noticeKey: 'n1' }];
-    routes['/portal/services/cert/notice'] = {
+    routes['/portal/services/by-key/notice?key=cert'] = {
       noticeKey: 'n1',
       version: 3,
       language: 'en',

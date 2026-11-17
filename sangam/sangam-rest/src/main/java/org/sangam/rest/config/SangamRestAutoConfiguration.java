@@ -500,6 +500,7 @@ public class SangamRestAutoConfiguration {
     public org.sangam.rest.port.InstanceHandlerPort sangamInstanceHandlerPort(ProcessEngine engine, TxSupport tx,
                                                                                AuditPort audit) {
         return new org.sangam.rest.adapter.operaton.OperatonInstanceHandlerAdapter(engine.getRuntimeService(),
+                engine.getRepositoryService(),
                 new org.sangam.engine.handlers.InstanceHandlerRegistry(engine.getRepositoryService(),
                         new org.sangam.engine.handlers.InstanceHandlerEvaluator()),
                 tx, audit, java.time.Clock.systemUTC());

@@ -3142,7 +3142,7 @@ class _ComplianceDefinePurposeRequestRequired(TypedDict):
 
 
 class ComplianceDefinePurposeRequest(_ComplianceDefinePurposeRequestRequired, total=False):
-    """A processing purpose to define or version (PUT /compliance/purposes/{code}). standardsAttested, active and every data item's sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version is assigned by the server (previous + 1). Durations are ISO-8601.
+    """A processing purpose to define or version (PUT /compliance/purposes/by-code?code=). standardsAttested, active and every data item's sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version is assigned by the server (previous + 1). Durations are ISO-8601.
 
 Schema ``ComplianceDefinePurposeRequest``."""
     code: str
@@ -5497,7 +5497,7 @@ class HandlerParameter(TypedDict, total=False):
 
 Schema ``HandlerParameter``."""
     name: str
-    type: Literal["string", "number", "integer", "boolean", "date", "date-time", "decimal", "object", "array"]
+    type: Literal["string", "number", "integer", "boolean", "date", "date-time", "decimal", "object", "array", "any"]
     required: bool
     description: str
 

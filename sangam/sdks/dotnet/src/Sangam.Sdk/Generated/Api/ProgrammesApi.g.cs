@@ -77,11 +77,12 @@ public sealed class ProgrammesApi
     /// <summary>
     /// Open, close or lock a reporting period
     /// Open, close or lock a reporting period.
-    /// POST /programme-periods/{id}/state (operationId programmeChangePeriodState); permission programme.admin; result stored atomically with the state change.
+    /// POST /programme-periods/by-id/state (operationId programmeChangePeriodState); permission programme.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.PgPeriod?> ProgrammeChangePeriodStateAsync(string id, M.PgPeriodStateRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.PgPeriod?> ProgrammeChangePeriodStateAsync(M.PgPeriodStateRequest body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/programme-periods/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/state");
+        var req = ApiRequest.Post($"/programme-periods/by-id/state");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.PgPeriod?>(req, options, cancellationToken).ConfigureAwait(false);
     }

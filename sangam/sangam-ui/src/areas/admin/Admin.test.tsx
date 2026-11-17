@@ -92,7 +92,7 @@ afterEach(() => {
 /**
  * Every call these tests saw is an operation of the contract. Round 6 item 2 closed the gaps this list used to name
  * (tenant validate/activate/suspend, user create/update/disable, group create/update are contract routes since lane
- * w2; seat deactivate is DELETE /admin/seats/{id}?reason=); a new drift fails this check.
+ * w2; seat deactivate is DELETE /admin/seats/by-id?id=&reason=); a new drift fails this check.
  */
 const KNOWN_GAPS: string[] = [];
 afterAll(() => {
@@ -257,7 +257,7 @@ describe('A02 org hierarchy', () => {
     type(d, 'admin.newParent', 'root-2');
     type(d, 'admin.effectiveFrom', '2026-12-01');
     reasonAndConfirm('Reorganisation order 12');
-    await waitFor(() => expect(api.put).toHaveBeenCalledWith(`/admin/org-units/m1?reason=${encodeURIComponent('Reorganisation order 12')}`, { parentId: 'root-2', validFrom: '2026-12-01' }));
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith(`/admin/org-units/by-id?id=m1&reason=${encodeURIComponent('Reorganisation order 12')}`, { parentId: 'root-2', validFrom: '2026-12-01' }));
   });
 
   it('a CSV import reports created, updated and the rows in error', async () => {
@@ -289,8 +289,8 @@ describe('seats', () => {
     expect(within(rowWith('Clerk')).queryByRole('button', { name: T('admin.deactivate') })).toBeNull();
     fireEvent.click(within(s1).getByRole('button', { name: T('admin.deactivate') }));
     reasonAndConfirm('Post abolished by order 7');
-    // the contract's deactivation is DELETE /admin/seats/{id}?reason= (deleteSeat); there is no /deactivate route
-    await waitFor(() => expect(api.del).toHaveBeenCalledWith('/admin/seats/s1', { reason: 'Post abolished by order 7' }));
+    // the contract's deactivation is DELETE /admin/seats/by-id?id=&reason= (deleteSeat, decision 393); there is no /deactivate route
+    await waitFor(() => expect(api.del).toHaveBeenCalledWith('/admin/seats/by-id', { id: 's1', reason: 'Post abolished by order 7' }));
     expect(api.post.mock.calls.some((c) => String(c[0]).startsWith('/admin/seats/'))).toBe(false);
   });
 });
@@ -567,7 +567,7 @@ describe('A08 policies', () => {
     const d = dialog();
     fireEvent.click(within(d).getByLabelText('READ'));
     fireEvent.click(buttonIn(d, 'common.save'));
-    await waitFor(() => expect(api.del).toHaveBeenCalledWith('/admin/policies/po1', { reason: 'replaced by po2' }));
+    await waitFor(() => expect(api.del).toHaveBeenCalledWith('/admin/policies/by-id', { id: 'po1', reason: 'replaced by po2' }));
     expect(api.post).toHaveBeenCalledWith('/admin/policies', { effect: 'DENY', principalType: 'GROUP', principalId: 'clerks', resourceType: 'PROCESS_INSTANCE', resourceId: '*', actions: ['DELETE_INSTANCE', 'READ'], conditionId: null });
   });
 
@@ -583,7 +583,7 @@ describe('A08 policies', () => {
     show(<Policies />);
     fireEvent.click(within(rowWith(await screen.findByText('GROUP:clerks').then((e) => e.textContent!))).getByRole('button', { name: T('common.delete') }));
     reasonAndConfirm('Superseded by the new rules');
-    await waitFor(() => expect(api.del).toHaveBeenCalledWith('/admin/policies/po1', { reason: 'Superseded by the new rules' }));
+    await waitFor(() => expect(api.del).toHaveBeenCalledWith('/admin/policies/by-id', { id: 'po1', reason: 'Superseded by the new rules' }));
   });
 });
 
@@ -639,7 +639,7 @@ describe('users and groups', () => {
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/users', { active: true, source: 'LOCAL', username: 'asha', displayName: 'Asha', email: 'asha@example.in' }));
   });
 
-  it('users: editing changes only the display name and e-mail (PUT /admin/users/{id}, UserRequest)', async () => {
+  it('users: editing changes only the display name and e-mail (PUT /admin/users/by-id?id=, UserRequest)', async () => {
     pages['/admin/users'] = pageOf([{ id: 'u1', username: 'ravi', displayName: 'Ravi', email: 'ravi@example.in', active: true, source: 'LOCAL', groups: ['g1'], lastLogin: '2026-11-01T09:00:00Z' }]);
     show(<Users />);
     fireEvent.click(within(rowWith(await screen.findByText('ravi').then((e) => e.textContent!))).getByRole('button', { name: T('common.edit') }));
@@ -647,7 +647,7 @@ describe('users and groups', () => {
     expect(within(d).queryByLabelText(L('admin.username'))).toBeNull();
     type(d, 'common.name', 'Ravi Kumar');
     fireEvent.click(buttonIn(d, 'common.save'));
-    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/admin/users/u1', { displayName: 'Ravi Kumar', email: 'ravi@example.in' }));
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/admin/users/by-id?id=u1', { displayName: 'Ravi Kumar', email: 'ravi@example.in' }));
   });
 
   it.each([
@@ -679,7 +679,7 @@ describe('users and groups', () => {
     expect(within(d).queryByLabelText(L('admin.groupId'))).toBeNull();
     type(d, 'common.name', 'Senior clerks');
     fireEvent.click(buttonIn(d, 'common.save'));
-    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/admin/groups/g1', { name: 'Senior clerks' }));
+    await waitFor(() => expect(api.put).toHaveBeenCalledWith('/admin/groups/by-id?id=g1', { name: 'Senior clerks' }));
     await waitFor(noDialog);
     api.post.mockRejectedValueOnce(problem(409, 'GROUP_EXISTS', 'group g1 already exists'));
     fireEvent.click(screen.getByRole('button', { name: T('common.new') }));
@@ -701,21 +701,22 @@ describe('users and groups', () => {
     expect(within(rowWith('old')).queryByRole('button', { name: T('admin.disable') })).toBeNull();
     fireEvent.click(within(r1).getByRole('button', { name: T('admin.disable') }));
     reasonAndConfirm('Left the department');
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/users/u1/disable', { reason: 'Left the department' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/users/by-id/disable?id=u1', { reason: 'Left the department' }));
   });
 
   it('groups: members of the typed group are listed, added and removed', async () => {
-    routes['/admin/groups/g1/members'] = [{ id: 'u1', username: 'ravi', displayName: 'Ravi', active: true }];
+    routes['/admin/groups/by-id/members'] = [{ id: 'u1', username: 'ravi', displayName: 'Ravi', active: true }];
     show(<Groups />);
     const section = (await screen.findByRole('heading', { name: T('admin.membership') })).closest('section') as HTMLElement;
     expect((within(section).getByRole('button', { name: T('admin.addMember') }) as HTMLButtonElement).disabled).toBe(true);
     type(section, 'admin.groupId', 'g1');
     expect(await within(section).findByText(/Ravi \(ravi\)/)).toBeTruthy();
+    expect(api.get).toHaveBeenCalledWith('/admin/groups/by-id/members', { id: 'g1' });
     type(section, 'admin.personId', 'u5');
     fireEvent.click(within(section).getByRole('button', { name: T('admin.addMember') }));
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/groups/g1/members/u5'));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/groups/by-id/members/by-user-id?id=g1&userId=u5'));
     fireEvent.click(within(section).getByRole('button', { name: T('common.remove') }));
-    await waitFor(() => expect(api.del).toHaveBeenCalledWith('/admin/groups/g1/members/u1'));
+    await waitFor(() => expect(api.del).toHaveBeenCalledWith('/admin/groups/by-id/members/by-user-id', { id: 'g1', userId: 'u1' }));
   });
 });
 
