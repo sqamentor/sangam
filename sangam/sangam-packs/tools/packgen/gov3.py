@@ -593,7 +593,8 @@ def leave():
     a5 = s.svc('lc_credit', 'Post net credit', C['LEDGER'], {'op': 'CREDIT', 'unit': 'DAYS', 'ledger': 'leave',
                                                             'account': '${elAccount}',
                                                             'amount': '${netCredit}'})
-    s.seq(a1, a2, a3, a4, a5, end_ok(c, s, 'lc_end', 'Credited'))
+    # IFT-3: the credit run ends in the terminal state CLOSED
+    s.seq(a1, a2, a3, a4, a5, s.state('lc_closed', 'CLOSED'), end_ok(c, s, 'lc_end', 'Credited'))
     pk.dmn('leave-yearend', 'EL credit with 300-day cap (synthetic)', 'FIRST', [('Balance', 'leaveBalance', 'number')],
            [('netCredit', 'Net credit', 'number')],
            [(['>= 300'], ['0'], 'at cap: nothing more accrues'), (['> 270'], ['300 - leaveBalance'], 'up to the cap'),

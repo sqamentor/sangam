@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.year-end-closing",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Year-end closing and annual accounts",
     "hi": "वर्षांत समापन और वार्षिक लेखे"
@@ -83,6 +83,8 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-execution"
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection"
   ]
 }
