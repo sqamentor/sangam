@@ -82,6 +82,9 @@ class PaymentLoopTest {
         Map<String, Object> v = AllPacksSmokeTest.bag();
         v.put("amount", 1_500_000L);
         v.put("sim_ledger_available", "available=100000000"); // funds confirmed (SL-113: no default stands in)
+        // IFMS [REPLY]: GPF / advance cases are keyed on employeeId; the party id must not be used when it is set
+        v.put("employeeId", employeeOf(bk));
+        v.put("partyId", "PARTY-" + bk);
         if (directive != null) {
             v.put("sim_pfms_payment", directive);
         }
@@ -95,6 +98,25 @@ class PaymentLoopTest {
             System.err.println(bk + ": driver stopped: " + e);
         }
         return pi.getId();
+    }
+
+    static String employeeOf(String bk) {
+        return "EMP-" + bk.replace('/', '-');
+    }
+
+    /** The keys the fake lookup was asked with: [employeeId, payeeId]. */
+    final List<List<String>> asked = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    private VerifiedPayeeLookup fake(VerifiedPayeeLookup.Result answer) {
+        return (t, e, p, d) -> {
+            asked.add(java.util.Arrays.asList(e, p));
+            return answer;
+        };
+    }
+
+    private void assertKeyedOnEmployee(String bk) {
+        assertEquals(List.of(java.util.Arrays.asList(employeeOf(bk), null)), asked,
+                "resolve() keyed on the case's employeeId only, never on the party id");
     }
 
     private long payments() {
@@ -114,6 +136,29 @@ class PaymentLoopTest {
         assertEquals("ACCOUNT_CLOSED", driver.var("PL/1", "opReasonCode"));
     }
 
+    /** SNA-SPARSH: before the fix ss_reissue re-pushed a refused RBI batch for ever. */
+    @Test
+    void aRefusedSnaSparshBatchStopsAtAPersonAndIsNeverRePushedAutomatically() {
+        install(new SimulatorConnectorGateway());
+        String bk = "PL/SNA";
+        Map<String, Object> v = AllPacksSmokeTest.bag();
+        v.put("amount", 1_500_000L);
+        v.put("sim_ledger_available", "available=100000000");
+        v.put("sim_rail_ekuber", "FAILED:ACCOUNT_CLOSED");
+        engine.getRuntimeService().createProcessInstanceByKey("sangam-ifms-sna-sparsh-release").businessKey(bk)
+                .setVariables(v).processDefinitionTenantId(PackTestTenant.ID).execute();
+        FormAnswers answers = new FormAnswers(engine);
+        try {
+            driver.run(bk, t -> "ss_payCorrect".equals(t.getTaskDefinitionKey()) ? null : answers.answer(t), 150);
+        } catch (RuntimeException e) {
+            System.err.println(bk + ": driver stopped: " + e);
+        }
+        long batches = gateway.journal().stream().filter(r -> "rail.ekuber".equals(r.connector())).count();
+        assertEquals(1, batches, "one RBI batch, no automatic re-push; journal " + gateway.journal().stream()
+                .map(ConnectorRequest::connector).toList() + " open " + open(bk));
+        assertEquals(List.of("ss_payCorrect"), open(bk), "open tasks");
+    }
+
     @Test
     void anUnknownOutcomeBlocksEveryActionUntilTheEvidenceArrives() {
         String pi = bill("PL/2", "UNKNOWN");
@@ -121,9 +166,15 @@ class PaymentLoopTest {
         assertEquals(List.of(), open("PL/2"), "no task while the outcome is unknown");
         assertEquals(1, engine.getRuntimeService().createExecutionQuery().processInstanceBusinessKey("PL/2")
                 .activityId("ex_resolved").count(), "waits for the reconciliation evidence");
-        assertThrows(RuntimeException.class, () -> engine.getRuntimeService()
+        RuntimeException refused = assertThrows(RuntimeException.class, () -> engine.getRuntimeService()
                 .createMessageCorrelation("sangam.withdrawCase").processInstanceId(pi).correlate(),
                 "withdrawal refused while the outcome is unknown");
+        StringBuilder chain = new StringBuilder();
+        for (Throwable x = refused; x != null; x = x.getCause()) {
+            chain.append(x.getMessage()).append(" | ");
+        }
+        // the REST layer maps "409 OUTCOME_UNKNOWN: ..." to HTTP 409 (sangam-rest-core OutcomeUnknownProblemTest)
+        assertTrue(chain.toString().contains("409 OUTCOME_UNKNOWN: "), chain.toString());
         assertFalse(driver.ended("PL/2"));
         assertEquals(1, payments(), "nothing resubmitted");
 
@@ -135,13 +186,23 @@ class PaymentLoopTest {
         assertEquals(1, payments(), "still one payment request");
     }
 
-    /** Submit answers PENDING, every lookup NOT_FOUND: before the fix the resubmission never ended. */
+    /**
+     * pfms.payment as the server binds it (PfmsFileConnector, capability class (a); the IT shows A_IDEMPOTENT_WITH_LOOKUP):
+     * submit answers PENDING, every lookup NOT_FOUND. Before the fix the resubmission never ended.
+     */
     static class NotFoundGateway extends SimulatorConnectorGateway {
         final java.util.concurrent.atomic.AtomicInteger submits = new java.util.concurrent.atomic.AtomicInteger();
+        final java.util.concurrent.atomic.AtomicInteger lookups = new java.util.concurrent.atomic.AtomicInteger();
+
+        @Override
+        public org.sangam.core.layer.CapabilityClass capabilityOf(String connector) {
+            return "pfms.payment".equals(connector) ? org.sangam.core.layer.CapabilityClass.A_IDEMPOTENT_WITH_LOOKUP
+                    : super.capabilityOf(connector);
+        }
 
         @Override
         public ConnectorResult submit(ConnectorRequest r) {
-            if (!"docs.render".equals(r.connector())) {
+            if (!"pfms.payment".equals(r.connector())) {
                 return super.submit(r); // the reconciliation desk's alerts
             }
             submits.incrementAndGet();
@@ -150,9 +211,10 @@ class PaymentLoopTest {
 
         @Override
         public ConnectorResult lookup(String tenantId, String connector, String operationId) {
-            if (!"docs.render".equals(connector)) {
+            if (!"pfms.payment".equals(connector)) {
                 return super.lookup(tenantId, connector, operationId);
             }
+            lookups.incrementAndGet();
             return ConnectorResult.failed("NOT_FOUND", "never reached the external system");
         }
     }
@@ -162,7 +224,7 @@ class PaymentLoopTest {
         NotFoundGateway g = new NotFoundGateway();
         install(g);
         Map<String, Object> v = AllPacksSmokeTest.bag();
-        v.putAll(Map.of("executionConnector", "docs.render", "executionOperation", "execute", "executionStep", "doc",
+        v.putAll(Map.of("executionConnector", "pfms.payment", "executionOperation", "pay", "executionStep", "pay",
                 "verifyApproval", false, "reconcileRequired", false, "ackWindow", "PT1S", "maxLookups", 3,
                 "executionPayloadFields", "applicantRef"));
         engine.getRuntimeService().createProcessInstanceByKey("sangam-core-execution").businessKey("PL/3")
@@ -172,17 +234,19 @@ class PaymentLoopTest {
         } catch (RuntimeException e) {
             // before the fix: the loop runs until the step limit
         }
-        int submits = g.submits.get();
-        assertTrue(submits <= 3, "submits bounded by maxLookups: " + submits + " lookups " + driver.var("PL/3", "opLookups") + " max " + driver.var("PL/3", "maxLookups") + " status " + driver.var("PL/3", "opStatus"));
+        assertEquals(3, g.lookups.get(), "exactly maxLookups lookups");
+        assertEquals(3, g.submits.get(), "the first submit and maxLookups - 1 retries with the same operationId");
+        assertEquals("UNKNOWN", driver.var("PL/3", "opStatus"));
         assertEquals(1, engine.getRuntimeService().createExecutionQuery().processInstanceBusinessKey("PL/3")
                 .activityId("ex_resolved").count(), "the reconciliation item is open for a person");
     }
 
     @Test
     void anUnverifiedPayeeStopsAtAPersonAndNothingIsPaid() {
-        VerifiedPayees.install((t, e, p, d) -> new VerifiedPayeeLookup.NotVerified(
-                VerifiedPayeeLookup.Reason.PAYEE_NOT_VERIFIED, "test"));
+        VerifiedPayees.install(fake(new VerifiedPayeeLookup.NotVerified(
+                VerifiedPayeeLookup.Reason.PAYEE_NOT_VERIFIED, "test")));
         bill("PL/4", null);
+        assertKeyedOnEmployee("PL/4");
         assertEquals(0, payments());
         assertEquals(List.of("bl_payeeHold"), open("PL/4"));
         assertEquals("PAYEE_NOT_VERIFIED", driver.var("PL/4", "payeeNotVerifiedReason"));
@@ -190,9 +254,10 @@ class PaymentLoopTest {
 
     @Test
     void theVerifiedPayeeVersionIsRecordedAndPaid() {
-        VerifiedPayees.install((t, e, p, d) -> new VerifiedPayeeLookup.Verified("PV-7", "A Payee", "123456789012",
-                "SBIN0000001"));
+        VerifiedPayees.install(fake(new VerifiedPayeeLookup.Verified("PV-7", "A Payee", "123456789012",
+                "SBIN0000001")));
         bill("PL/5", null);
+        assertKeyedOnEmployee("PL/5");
         assertTrue(driver.ended("PL/5"), "paid and closed: " + open("PL/5"));
         assertEquals("PV-7", driver.var("PL/5", "payeeVersionId"), "rejection " + driver.var("PL/5",
                 "rejectionReasonCodes") + " state " + driver.var("PL/5", "caseState") + " pao "
