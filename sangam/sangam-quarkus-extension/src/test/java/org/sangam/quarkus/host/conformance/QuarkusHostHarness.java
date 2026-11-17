@@ -103,6 +103,23 @@ public final class QuarkusHostHarness implements HostHarness {
     private CuratedApplication curated;
     private RunningQuarkusApplication running;
 
+    /**
+     * Decision 402(1): the application model is resolved from this module's effective Maven model, so the module's
+     * own dependency management (sshd 2.15.0, angus-mail 2.0.4, ...: the versions the default reactor resolves and the
+     * licence record covers) wins over the imported Quarkus BOM, exactly as in the Maven build. Without it the
+     * bootstrap's raw workspace model took the Quarkus BOM versions (sshd-core 2.19.0), which are neither cached nor
+     * licence-reviewed.
+     */
+    io.quarkus.bootstrap.resolver.maven.MavenArtifactResolver appResolver()
+            throws io.quarkus.bootstrap.resolver.maven.BootstrapMavenException {
+        return io.quarkus.bootstrap.resolver.maven.MavenArtifactResolver.builder()
+                .setOffline(true)
+                .setWorkspaceDiscovery(true)
+                .setCurrentProject(hostModule().toString())
+                .setEffectiveModelBuilder(true)
+                .build();
+    }
+
     @Override
     public String hostName() {
         return QuarkusHost.HOST_NAME;
@@ -122,6 +139,7 @@ public final class QuarkusHostHarness implements HostHarness {
         Path classes = build.resolve("classes");
         try {
             QuarkusBootstrap.Builder bootstrap = QuarkusBootstrap.builder()
+                    .setMavenArtifactResolver(appResolver())
                     .setApplicationRoot(PathList.of(classes, testClasses))
                     .setProjectRoot(hostModule())
                     .setTargetDirectory(build)
