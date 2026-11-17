@@ -432,8 +432,7 @@ public final class ReconciliationEngine implements AutoCloseable, org.sangam.cor
     public static final String HUMAN_PENDING = "pending-human";
 
     private void release(ReconciliationQueue.Item item, OperationLedger.Entry entry) {
-        // SL-180: an item without a ledger operation still names its held work (taskId), which is released too
-        if (item.kind() != ReconciliationQueue.Kind.UNKNOWN_OUTCOME || (item.operationId() == null && item.taskId() == null)) {
+        if (item.kind() != ReconciliationQueue.Kind.UNKNOWN_OUTCOME || item.operationId() == null) {
             return;
         }
         String ai = entry == null ? null : entry.activityInstanceId();
@@ -441,7 +440,7 @@ public final class ReconciliationEngine implements AutoCloseable, org.sangam.cor
             ai = ai.substring(0, ai.indexOf('#'));
         }
         try {
-            releaser.release(item.tenantId(), item.rootId(), item.operationId(), ai, item.taskId());
+            releaser.release(item.tenantId(), item.rootId(), item.operationId(), ai);
         } catch (RuntimeException e) {
             LOG.warn("cannot release held work of operation {}; release it from the operator view", item.operationId(), e);
         }

@@ -340,8 +340,6 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         // reconciled; then the worker's lease ends (as the Operaton adapter's LeaseTable.end), so every later call with
         // the old lease (complete, fail, BPMN error, unlock, extend, step) is stale. The ledger operation goes to
         // UNKNOWN_OUTCOME with its reconciliation item in the same engine transaction; only reconciliation moves it on.
-        // SL-180: the item names the root, so its release finds the held work's process tree
-        String root = rootOf(workId);
         long item = fenced(workId, () -> engine.inEngineTransaction(c -> {
             engine.extendLock(workId, r.workerId(), r.lockVersion(), props.getMaxLockDuration());
             if (engine instanceof org.sangam.engine.OperatonEngineAdapter o) {
@@ -350,7 +348,7 @@ public class EngineAdapterWorkAdapter implements WorkPort {
             }
             Long recorded = ledger.onUnknown(c, op, r.lockVersion(), workId, details);
             return recorded != null ? recorded : reconciliation.open(c, ctx.tenantId(),
-                    ReconciliationQueue.Kind.UNKNOWN_OUTCOME, null, root, workId, PayloadHash.canonical(details));
+                    ReconciliationQueue.Kind.UNKNOWN_OUTCOME, null, null, workId, PayloadHash.canonical(details));
         }));
         auditAfter(ctx, workId, "EXT_OP_UNKNOWN", r.workerId(), r.lockVersion(), r.attemptId(),
                 Map.of("reconciliationItemId", String.valueOf(item)));
@@ -527,21 +525,6 @@ public class EngineAdapterWorkAdapter implements WorkPort {
     }
 
     /** The engine operationId of open work (the one stored with its lease); null without a Sangam adapter. */
-    /** SL-180: the root process instance of the work (null when the engine is not Operaton-backed or the task is gone). */
-    private String rootOf(String workId) {
-        if (!(engine instanceof org.sangam.engine.OperatonEngineAdapter o)) {
-            return null;
-        }
-        org.operaton.bpm.engine.externaltask.ExternalTask t = o.processEngine().getExternalTaskService()
-                .createExternalTaskQuery().externalTaskId(workId).singleResult();
-        if (t == null) {
-            return null;
-        }
-        org.operaton.bpm.engine.runtime.ProcessInstance pi = o.processEngine().getRuntimeService()
-                .createProcessInstanceQuery().processInstanceId(t.getProcessInstanceId()).singleResult();
-        return pi == null || pi.getRootProcessInstanceId() == null ? t.getProcessInstanceId() : pi.getRootProcessInstanceId();
-    }
-
     private UUID operationIdOf(String workId) {
         return engine instanceof SangamEngineAdapter s ? s.operationIdOf(workId) : null;
     }

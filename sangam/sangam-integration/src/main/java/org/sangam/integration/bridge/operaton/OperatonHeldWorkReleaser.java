@@ -24,35 +24,6 @@ public final class OperatonHeldWorkReleaser implements HeldWorkReleaser {
         this.engine = engine;
     }
 
-    /**
-     * SL-180 (owner decision 402): also releases the item's own external task {@code workId} while the outcome-unknown
-     * report still holds it (locked for the maximum, retries left): {@code unlock}, so it is offered again at once under
-     * a new lease instead of after the lock ends. A task of another tenant, or one that is not held, is left alone.
-     */
-    @Override
-    public int release(String tenantId, String rootId, UUID operationId, String activityInstanceId, String workId) {
-        int released = 0;
-        String root = rootId;
-        if (workId != null) {
-            ExternalTask t = engine.getExternalTaskService().createExternalTaskQuery().externalTaskId(workId).singleResult();
-            if (t != null && java.util.Objects.equals(tenantId, t.getTenantId())) {
-                // locked with retries left = held by the report (an expired lock is free anyway; unlock is harmless)
-                Integer retries = t.getRetries();
-                if (t.getLockExpirationTime() != null && (retries == null || retries > 0)) {
-                    engine.getExternalTaskService().unlock(workId);
-                    released++;
-                }
-                if (root == null) {
-                    root = t.getProcessInstanceId();
-                }
-            }
-        }
-        if (root != null && operationId != null) {
-            released += release(tenantId, root, operationId, activityInstanceId);
-        }
-        return released;
-    }
-
     @Override
     public int release(String tenantId, String rootId, UUID operationId, String activityInstanceId) {
         List<String> instances = new ArrayList<>();
