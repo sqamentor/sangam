@@ -115,7 +115,11 @@ def push_ci(commit, branch):
     ref = f"refs/heads/{branch}"
     if not ref.startswith("refs/heads/ci/") or ".." in ref:
         raise SystemExit(f"refused: {ref} is not under refs/heads/ci/ (decision 411: never main or tags)")
-    run(["git", "push", "origin", f"{commit}:{ref}"], capture=False)
+    # The default Windows credential helper can wait forever on a hidden sign-in prompt (seen 2026-11-17:
+    # the push hung with no output). Use the already signed-in gh CLI as the only helper and never prompt.
+    env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GCM_INTERACTIVE="never")
+    run(["git", "-c", "credential.helper=", "-c", "credential.helper=!gh auth git-credential",
+         "push", "origin", f"{commit}:{ref}"], capture=False, env=env)
 
 
 # ---------------------------------------------------------------- reports
