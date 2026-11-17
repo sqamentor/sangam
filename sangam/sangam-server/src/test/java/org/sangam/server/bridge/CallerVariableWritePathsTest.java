@@ -83,6 +83,7 @@ class CallerVariableWritePathsTest {
             Map.entry("../sangam-flowable-ports/src/main/java/org/sangam/ports/variables/MultiInstanceAggregation.java", reason(1, "the aggregate target variable is named by the model")),
             Map.entry("../sangam-geo/src/main/java/org/sangam/geo/bpmn/GeoDelegates.java", guarded(9)),
             Map.entry("../sangam-host-conformance/src/main/java/org/sangam/host/conformance/EquivalenceScenarios.java", reason(1, "a conformance scenario writing the literal feeMinor through the guarded process port")),
+            Map.entry("../sangam-host-conformance/src/main/java/org/sangam/host/conformance/WorkScenarios.java", reason(4, "a conformance scenario writing the literals chargedBy and chargeMinor through the host's guarded work and process ports (RM-30)")),
             Map.entry("../sangam-integration/src/main/java/org/sangam/integration/bridge/ConnectorExternalTaskWorker.java", reason(3, "the result variables are named by the topic binding's resultVariable (configuration); the engine adapter refuses a slot name (decision 387)")),
             Map.entry("../sangam-integration/src/main/java/org/sangam/integration/bridge/operaton/OperatonLifecyclePorts.java", reason(2, "the fixed cancellation reason variable")),
             Map.entry("../sangam-integration/src/main/java/org/sangam/integration/bridge/operaton/OperatonMessageCorrelationPort.java", guarded(6)),
