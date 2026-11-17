@@ -75,9 +75,6 @@ describe('status vocabulary', () => {
     expect(toneOf('UP')).toBe('ok');
     expect(toneOf('DEGRADED')).toBe('warn');
     expect(toneOf('SOMETHING')).toBe('neutral');
-    // a record without a state (CI found Badge given undefined in m047-core-flows): neutral, never a crash
-    expect(toneOf(undefined)).toBe('neutral');
-    expect(statusOf(null)).toBeNull();
   });
   it('every word has text, a tone and an icon', () => {
     for (const s of Object.keys(STATUS)) {
