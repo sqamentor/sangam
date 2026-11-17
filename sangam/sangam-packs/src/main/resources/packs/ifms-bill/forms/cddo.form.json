@@ -1,6 +1,6 @@
 {
   "key": "ifms-bill/cddo",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "pack": "gov.ifms.bill",
   "title": {
     "en": "Cheque-drawing DDO payment",

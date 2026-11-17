@@ -26,7 +26,9 @@ import org.sangam.packs.port.PackRuntime;
  *   <li>{@code inputs}: comma list of variables sent as the payload (default: the material fields); an entry
  *       {@code variable>parameter} sends the variable under the connector's contract name;</li>
  *   <li>{@code resultPrefix}: result data entries are written as {@code <prefix><Key>} and the status as
- *       {@code <prefix>Status} (default prefix = last segment of the connector name);</li>
+ *       {@code <prefix>Status} (default prefix = last segment of the connector name); a returned field named like an
+ *       outcome variable (status, reasonCode, ref, attempt, operationId) is written as {@code <prefix>Returned<Key>},
+ *       so it never replaces the step's outcome;</li>
  *   <li>{@code errorOnFailure}: BPMN error code thrown on a FAILED result (else the status is only recorded);</li>
  *   <li>{@code failedWhenInvalid} ({@code true}): for a validation query, whose answer is {@code valid} with
  *       {@code findings}: an answer {@code valid=false} is a FAILED result of the step, with the code of its first
@@ -88,7 +90,7 @@ public class ConnectorCallDelegate implements JavaDelegate {
         }
         java.util.List<String> docs = Vars.csv(Vars.field(documents, ex));
         r.data().forEach((k, v) -> {
-            String name = prefix + Character.toUpperCase(k.charAt(0)) + k.substring(1);
+            String name = dataVariable(prefix, k);
             if (!docs.contains(k)) {
                 Vars.setDynamic(ex, name, Vars.engineValue(v));
             } else if (v instanceof CharSequence text) {
@@ -102,6 +104,22 @@ public class ConnectorCallDelegate implements JavaDelegate {
         if (err != null && r.status() == OperationStatus.FAILED) {
             throw new BpmnError(err, c + " failed: " + r.reasonCode());
         }
+    }
+
+    /**
+     * The step's own outcome variables, {@code <prefix><Name>}: never written from a returned field (R7-it, 62ee53db:
+     * the party registry's {@code status} replaced {@code payeeStatus}, so every payee check failed).
+     */
+    static final java.util.Set<String> OUTCOME = java.util.Set.of("Status", "ReasonCode", "Ref", "Attempt",
+            "OperationId");
+
+    /**
+     * The variable a returned field {@code key} is written to: {@code <prefix><Key>}, or {@code <prefix>Returned<Key>}
+     * when that name is one of the step's {@link #OUTCOME} variables.
+     */
+    static String dataVariable(String prefix, String key) {
+        String cap = Character.toUpperCase(key.charAt(0)) + key.substring(1);
+        return prefix + (OUTCOME.contains(cap) ? "Returned" + cap : cap);
     }
 
     /** The reason code of an invalid answer that names no error finding. */

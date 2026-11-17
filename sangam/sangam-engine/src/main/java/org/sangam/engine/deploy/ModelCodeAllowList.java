@@ -154,6 +154,7 @@ public final class ModelCodeAllowList {
             "org.sangam.packs.core.MoneyCalculationDelegate",
             "org.sangam.packs.core.NotifyDelegate",
             "org.sangam.packs.core.PackStartListener",
+            "org.sangam.packs.core.PayeeResolutionDelegate",
             "org.sangam.packs.core.PowerLimitGuardListener",
             "org.sangam.packs.core.ProfileValueDelegate",
             "org.sangam.packs.core.RecommendationLevelDelegate",

@@ -53,6 +53,12 @@ public class ExternalOperationDelegate implements JavaDelegate {
     private Expression verifyApproval;
     private Expression reconcileConnector;
     private Expression maxLookups;
+
+    /**
+     * Case variable: the capability class of the operation whose outcome is unknown while its reconciliation item is
+     * open (set on the whole case at OPEN_RECON UNKNOWN_OUTCOME, cleared by APPLY_RESOLUTION).
+     */
+    public static final String UNKNOWN_OUTCOME_CLASS = "unknownOutcomeClass";
     private Expression maxReconAttempts;
     private Expression kind;
 
@@ -200,6 +206,12 @@ public class ExternalOperationDelegate implements JavaDelegate {
             r = ConnectorResult.unknown("no outcome after " + n + " lookups");
         }
         if (r.status() == OperationStatus.FAILED && "NOT_FOUND".equals(r.reasonCode())) {
+            if (n >= max) {
+                // SANGAM-PAYMENT-LOOP (E-31 §6): technical retries are bounded by count. After maxLookups lookups
+                // that found nothing, the outcome is UNKNOWN and a person reconciles it; nothing is resubmitted.
+                apply(ex, ConnectorResult.unknown("not found after " + n + " lookups; retries exhausted"));
+                return;
+            }
             // nothing reached the external system: a controlled retry with the same operationId is safe
             ex.setVariable(Vars.OP_STATUS, "RETRY");
             return;
@@ -210,7 +222,11 @@ public class ExternalOperationDelegate implements JavaDelegate {
     private void openRecon(DelegateExecution ex) {
         String k = Vars.field(kind, ex, "UNKNOWN_OUTCOME");
         if ("UNKNOWN_OUTCOME".equals(k)) {
-            ex.setVariable(Vars.CASE_STATE, CaseState.UNKNOWN_OUTCOME.name());
+            // SANGAM-PAYMENT-LOOP (E-31 §6): the whole case (the callers too) is in UNKNOWN_OUTCOME until the evidence
+            // arrives, so the case's side exits see it: a cancellation of a class (c) operation whose outcome is
+            // unknown is refused (LifecycleStateDelegate), as are retry and reissue
+            Vars.setCaseState(ex, CaseState.UNKNOWN_OUTCOME.name());
+            Vars.setOnCase(ex, UNKNOWN_OUTCOME_CLASS, Vars.str(ex, "opCapability"));
         }
         Map<String, Object> evidence = Vars.map("connector", Vars.str(ex, "opConnector"),
                 "externalRef", Vars.str(ex, "opExternalRef"), "attempt", Vars.str(ex, "opStep") == null ? null
@@ -250,6 +266,8 @@ public class ExternalOperationDelegate implements JavaDelegate {
             }
             default -> throw new ProcessEngineException("422 UNKNOWN_RESOLUTION: " + res);
         }
+        // the evidence arrived: the case's actions are open again
+        Vars.setOnCase(ex, UNKNOWN_OUTCOME_CLASS, null);
         Vars.audit(ex, "RECON_ITEM_RESOLVED", Vars.map("item", Vars.str(ex, "reconItemId"), "action", res,
                 "evidence", evidence, "by", Vars.str(ex, "resolvedBy")));
     }
