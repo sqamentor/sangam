@@ -27,6 +27,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.ModelAndView;
+import org.sangam.core.security.LogSafe;
 
 /**
  * SL-59 / SCALE-ARCHITECTURE 1.6: when no database connection can be had within the pool's acquire wait (2 s,
@@ -117,8 +118,8 @@ public class PoolExhaustionProblems {
         long now = System.currentTimeMillis();
         long last = LAST_LOG.get();
         if (now - last >= LOG_EVERY_MS && LAST_LOG.compareAndSet(last, now)) {
-            LOG.warn("503 {} on {} {}: {} (logged at most every {} s)", CODE, req.getMethod(), req.getRequestURI(),
-                    cause, LOG_EVERY_MS / 1000);
+            LOG.warn("503 {} on {} {}: {} (logged at most every {} s)", CODE, LogSafe.text(req.getMethod()), LogSafe.text(req.getRequestURI()),
+                    LogSafe.text(cause), LOG_EVERY_MS / 1000);
         }
         res.resetBuffer();
         Problems.write(req, res, problem(retryAfterSeconds));

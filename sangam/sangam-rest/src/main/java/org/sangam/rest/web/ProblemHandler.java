@@ -33,6 +33,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.sangam.core.security.LogSafe;
 
 /** Maps every error to RFC 9457 {@code application/problem+json} (ARCHITECTURE §4). */
 @RestControllerAdvice(basePackages = "org.sangam.rest.web")
@@ -44,7 +45,8 @@ public class ProblemHandler {
     @ExceptionHandler(ApiProblem.class)
     public ResponseEntity<Map<String, Object>> api(ApiProblem p, HttpServletRequest req) {
         if (p.status() >= 500) {
-            LOG.warn("{} {} -> {} {}", req.getMethod(), req.getRequestURI(), p.status(), p.code());
+            LOG.warn("{} {} -> {} {}", LogSafe.text(req.getMethod()), LogSafe.text(req.getRequestURI()), p.status(),
+                    LogSafe.text(p.code()));
         }
         return respond(p, req);
     }
@@ -173,7 +175,7 @@ public class ProblemHandler {
         if (refusal != null) {
             return respond(refusal, req);   // wrapped by the engine or an adapter
         }
-        LOG.error("Unhandled error on {} {}", req.getMethod(), req.getRequestURI(), e);
+        LOG.error("Unhandled error on {} {}", LogSafe.text(req.getMethod()), LogSafe.text(req.getRequestURI()), e);
         return respond(new ApiProblem(500, "INTERNAL_ERROR", "An unexpected error occurred; see the server log for the trace id"), req);
     }
 

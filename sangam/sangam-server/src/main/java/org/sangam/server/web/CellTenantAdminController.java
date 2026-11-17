@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.sangam.core.security.LogSafe;
 
 /**
  * Cell tenant-admin API for tenant moves (IR-4; contract {@code sangam-control-plane/.../move/CellOps}), under
@@ -95,7 +96,8 @@ public class CellTenantAdminController {
         if (!mover.checksum(tenant).rowCounts().isEmpty()) {
             throw ApiProblem.conflict("TENANT_NOT_EMPTY", "tenant " + tenant + " already has rows in this cell");
         }
-        LOG.info("Tenant {} prepared for import (move {}) by {}", tenant, moveId, ctx.principalId());
+        LOG.info("Tenant {} prepared for import (move {}) by {}", LogSafe.text(tenant), LogSafe.text(moveId),
+                LogSafe.text(ctx.principalId()));
         return Lists.okRef(tenant, state(states.set(tenant, State.IMPORTING, moveId, null, ctx.principalId())));
     }
 
@@ -234,7 +236,7 @@ public class CellTenantAdminController {
                     + s.state());
         }
         Map<String, Long> deleted = mover.deleteTenant(tenant, true);
-        LOG.info("Partial import of tenant {} dropped (move {}): {}", tenant, s.moveId(), deleted);
+        LOG.info("Partial import of tenant {} dropped (move {}): {}", LogSafe.text(tenant), LogSafe.text(s.moveId()), deleted);
         Map<String, Object> out = state(states.set(tenant, State.ACTIVE, s.moveId(), null, ctx.principalId()));
         out.put("deleted", deleted);
         return Lists.okRef(tenant, out);
@@ -258,7 +260,7 @@ public class CellTenantAdminController {
         }
         Map<String, Long> deleted = mover.deleteTenant(tenant, true);
         mover.deleteExports(tenant);
-        LOG.info("Tenant {} purged after move {}: {}", tenant, s.moveId(), deleted);
+        LOG.info("Tenant {} purged after move {}: {}", LogSafe.text(tenant), LogSafe.text(s.moveId()), deleted);
         Map<String, Object> out = state(states.set(tenant, State.PURGED, s.moveId(), s.targetCell(), ctx.principalId()));
         out.put("deleted", deleted);
         return Lists.okRef(tenant, out);

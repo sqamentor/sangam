@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import org.sangam.core.security.LogSafe;
 
 /**
  * {@link BusinessClock} from the tenant's resolved profile: {@code locale.zone} (default UTC, see
@@ -80,7 +81,7 @@ public final class ProfileBusinessClock implements BusinessClock {
         ZoneId z1 = zoneOn(r, tenantId, utcDate);
         if (z1 == null) {
             if (warned.add(tenantId)) {
-                LOG.warn("Tenant {} has no active profile on {}: business dates in UTC", tenantId, utcDate);
+                LOG.warn("Tenant {} has no active profile on {}: business dates in UTC", LogSafe.text(tenantId), utcDate);
             }
             return ZoneOffset.UTC;
         }

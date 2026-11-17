@@ -59,6 +59,7 @@ import org.sangam.rest.support.TxSupport;
 import org.sangam.server.bridge.CellTenantPlans.Plan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.sangam.core.security.LogSafe;
 
 /**
  * Tenant export / import / checksum / purge for cell-to-cell tenant moves (IR-4; contract
@@ -240,7 +241,7 @@ public final class CellTenantMover {
                 ctx.principalId());
         auditCell(ctx, tenant, "TENANT_EXPORTED", Map.of("moveId", String.valueOf(moveId), "rows", r.rows(),
                 "watermark", r.watermark(), "auditHead", r.head()));
-        LOG.info("Tenant {} exported: {} rows (move {})", tenant, r.rows(), moveId);
+        LOG.info("Tenant {} exported: {} rows (move {})", LogSafe.text(tenant), r.rows(), LogSafe.text(moveId));
         return new ExportHandle(adminBaseUrl + "/api/v1/admin/cell/exports/" + exportId, token, r.rows(),
                 r.watermark(), r.head());
     }

@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import org.sangam.core.security.LogSafe;
 
 /**
  * Owner decision 304: delivery reports of the DLT SMS gateway ({@link DltSmsConnector}), by signed webhook
@@ -167,7 +168,7 @@ public final class DltDeliveryReports {
         try {
             secret = secrets.resolve(ref.trim());
         } catch (RuntimeException e) {
-            LOG.warn("delivery-report secret of connector {} cannot be resolved: {}", connectorId, e.getClass().getSimpleName());
+            LOG.warn("delivery-report secret of connector {} cannot be resolved: {}", LogSafe.text(connectorId), e.getClass().getSimpleName());
             return false;
         }
         if (secret.isEmpty() || secret.get().isBlank()) {
