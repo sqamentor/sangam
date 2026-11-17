@@ -215,14 +215,15 @@ public class ProcessController {
                 Lists.page(page, size)));
     }
 
-    @GetMapping("/process-definitions/{id}")
-    public ProcessPort.ProcessDefinition definition(RequestContext ctx, @PathVariable String id) {
+    /** Decision 393: a definition id is key:version:uuid (may carry ':'), so it is a query parameter. */
+    @GetMapping("/process-definitions/by-id")
+    public ProcessPort.ProcessDefinition definition(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.PROCESS_READ);
         return processes.definition(ctx, id);
     }
 
-    @GetMapping(value = "/process-definitions/{id}/xml", produces = MediaType.APPLICATION_XML_VALUE)
-    public String definitionXml(RequestContext ctx, @PathVariable String id) {
+    @GetMapping(value = "/process-definitions/by-id/xml", produces = MediaType.APPLICATION_XML_VALUE)
+    public String definitionXml(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.PROCESS_READ);
         return processes.definitionXml(ctx, id);
     }

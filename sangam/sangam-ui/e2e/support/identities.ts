@@ -8,7 +8,7 @@
  * own administration API, POST /api/v1/admin/service-principals (tenant.admin; IdentityAdminController.createServicePrincipal,
  * SecurityIdentityAdminBridge.createServicePrincipal). Decisions 358 and 368: each scope is first bound to the principal as
  * a defined role of the tenant (the platform groups are role rows created with the tenant; the role-less scope is
- * defined here through PUT /api/v1/admin/roles/{roleId}, a role that grants nothing), so an undefined scope is refused.
+ * defined here through PUT /api/v1/admin/roles/by-role-id?roleId=, a role that grants nothing), so an undefined scope is refused.
  * The answer carries an API token (sgm_<id>.<secret>, ApiTokenService.issue); the token's scopes are the caller's groups
  * (ApiTokenService.authenticate: roles = scopes; SecurityIdentityFilter keeps them for API_KEY), and GET /me turns the
  * groups into roles (OperatonWorkspaceAdapter.roles): sangam-citizen gives CITIZEN and portal.use, sangam-dpo gives the
@@ -75,15 +75,15 @@ export async function createIdentity(admin: APIRequestContext, name: string, sco
 }
 
 /**
- * Defines `roleId` as a role of the tenant that grants nothing itself (PUT /admin/roles/{roleId}, decision 368), so a
+ * Defines `roleId` as a role of the tenant that grants nothing itself (PUT /admin/roles/by-role-id?roleId=, decision 368; decision 393: role ids may carry ':'), so a
  * service principal may be given it as a scope. Re-running the set-up replaces it with the same definition.
  */
 export async function defineEmptyRole(admin: APIRequestContext, roleId: string): Promise<void> {
-  const res = await admin.put(`admin/roles/${encodeURIComponent(roleId)}`, {
+  const res = await admin.put(`admin/roles/by-role-id?roleId=${encodeURIComponent(roleId)}`, {
     headers: { 'Idempotency-Key': randomUUID() },
     data: { name: roleId, rules: [] },
   });
-  if (res.status() !== 200) throw new Error(`PUT /admin/roles/${roleId} answered ${res.status()} ${await res.text()}`);
+  if (res.status() !== 200) throw new Error(`PUT /admin/roles/by-role-id?roleId=${roleId} answered ${res.status()} ${await res.text()}`);
 }
 
 /** The three identities, each checked against what the specs rely on. */

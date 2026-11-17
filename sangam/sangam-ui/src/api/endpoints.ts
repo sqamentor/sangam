@@ -110,6 +110,14 @@ const packageTags = new Map<string, string | null>();
 /** The incident commands that take an IncidentAction (POST /ops/incidents/{id}/retry | resolve | skip | cancel). */
 export type IncidentVerb = 'retry' | 'resolve' | 'skip' | 'cancel';
 
+/**
+ * Decision 393: collections whose entry id may carry '/' or ':' (user ids are IdP principal ids, group ids IdP group
+ * paths) address an entry on the literal by-id route with the id as a query parameter, not as a path segment.
+ */
+const BY_ID_PATHS = new Set(['/admin/users', '/admin/groups']);
+const itemUrl = (path: string, id: string, action?: string) =>
+  BY_ID_PATHS.has(path) ? `${path}/by-id${action ? `/${action}` : ''}?id=${enc(id)}` : `${path}/${enc(id)}${action ? `/${action}` : ''}`;
+
 export const api = {
   me: {
     get: async () => A.normMe(await http.get<Record<string, unknown>>('/me')),
@@ -269,9 +277,9 @@ export const api = {
   },
   processes: {
     definitions: (q: ListQuery & { latest?: boolean; key?: string }) => http.page<T.ProcessDefinition>('/process-definitions', { ...q, key: q.key ?? q.q }),
-    definition: (id: string) => http.get<T.ProcessDefinition>(`/process-definitions/${enc(id)}`),
+    definition: (id: string) => http.get<T.ProcessDefinition>('/process-definitions/by-id', { id }),
     /** getProcessDefinitionXml produces application/xml only (ProcessController.definitionXml). */
-    xml: async (id: string) => ({ bpmn20Xml: A.xmlOf(await http.text(`/process-definitions/${enc(id)}/xml`, 'application/xml'), 'bpmn20Xml') }),
+    xml: async (id: string) => ({ bpmn20Xml: A.xmlOf(await http.text(`/process-definitions/by-id/xml?id=${enc(id)}`, 'application/xml'), 'bpmn20Xml') }),
     /**
      * /analytics/activities: active = runtime tokens, count = history heatmap. processDefinitionKey is required
      * (400 PROCESS_DEFINITION_KEY_REQUIRED), so a caller asks only once it knows the key; from / to are calendar days.
@@ -279,7 +287,7 @@ export const api = {
     statistics: async (id: string, mode: 'runtime' | 'history', q: Query = {}, definitionKey?: string) =>
       A.normActivityStats(id, await http.get<Record<string, unknown>[]>('/analytics/activities', { processDefinitionKey: definitionKey, ...dayRange(q.from, q.to) }), mode),
     suspendDefinition: (id: string, suspended: boolean, reason: string, includeInstances: boolean) =>
-      http.post<void>(`/process-definitions/${enc(id)}/suspension`, { suspended, reason, includeInstances }),
+      http.post<void>(`/process-definitions/by-id/suspension?id=${enc(id)}`, { suspended, reason, includeInstances }),
     start: (body: { key: string; businessKey?: string; variables?: Record<string, unknown> }, key?: string) =>
       http.post<Record<string, unknown>>('/process-instances', { ...body, variables: A.toVariableMap(body.variables) }, key).then(A.normInstance),
     instances: async (q: ListQuery & T.InstanceQuery & { history?: boolean }) => {
@@ -413,7 +421,7 @@ export const api = {
   decisions: {
     definitions: (q: ListQuery) => http.page<T.DecisionDefinition>('/decision-definitions', { ...q, key: q.q }),
     /** getDecisionDefinitionXml produces application/xml only (CaseDecisionController). */
-    xml: async (id: string) => ({ dmnXml: A.xmlOf(await http.text(`/decision-definitions/${enc(id)}/xml`, 'application/xml'), 'dmnXml') }),
+    xml: async (id: string) => ({ dmnXml: A.xmlOf(await http.text(`/decision-definitions/by-id/xml?id=${enc(id)}`, 'application/xml'), 'dmnXml') }),
     /** listHistoricDecisions needs processInstanceId or caseInstanceId (400 FILTER_REQUIRED); it has no decision-key filter. */
     instances: async (q: ListQuery & { processInstanceId?: string; caseInstanceId?: string }) =>
       A.mapPage(await http.page<Record<string, unknown>>('/history/decisions', { page: q.page, size: q.size, processInstanceId: q.processInstanceId, caseInstanceId: q.caseInstanceId }), A.normDecisionInstance),
@@ -659,9 +667,11 @@ export const api = {
     sodExceptions: (q: ListQuery) => http.page<T.SodException>('/admin/sod-exceptions', q),
     saveSodException: (e: Partial<T.SodException>) => http.post<T.SodException>('/admin/sod-exceptions', e),
     decideSodException: (id: string, approve: boolean, reason: string) => http.post<void>(`/admin/sod-exceptions/${enc(id)}/${approve ? 'approve' : 'reject'}`, { reason }),
-    groupMembers: (id: string) => http.get<T.User[]>(`/admin/groups/${enc(id)}/members`),
+    groupMembers: (id: string) => http.get<T.User[]>('/admin/groups/by-id/members', { id }),
     setMembership: (groupId: string, userId: string, member: boolean) =>
-      member ? http.post<void>(`/admin/groups/${enc(groupId)}/members/${enc(userId)}`) : http.del<void>(`/admin/groups/${enc(groupId)}/members/${enc(userId)}`),
+      member
+        ? http.post<void>(`/admin/groups/by-id/members/by-user-id?id=${enc(groupId)}&userId=${enc(userId)}`)
+        : http.del<void>('/admin/groups/by-id/members/by-user-id', { id: groupId, userId }),
     identityProviders: () => http.get<T.IdentityProvider[]>('/admin/identity-providers'),
     saveIdentityProvider: (p: Partial<T.IdentityProvider>) =>
       p.id ? http.put<T.IdentityProvider>(`/admin/identity-providers/${enc(p.id)}`, p) : http.post<T.IdentityProvider>('/admin/identity-providers', p),
@@ -679,9 +689,10 @@ export const api = {
      * create (POST) or update (PUT of the id); `create` says which, since some entries carry a user-chosen id when new.
      * `id` names the entry when the body sent is not the entry itself (a request schema without the id).
      */
-    save: <R extends { id?: string }>(path: string, r: R, create = !r.id, id = r.id) => (create ? http.post<R>(path, r) : http.put<R>(`${path}/${enc(id!)}`, r)),
-    remove: (path: string, id: string, reason: string) => http.del<void>(`${path}/${enc(id)}`, { reason }),
-    action: <R>(path: string, id: string, action: string, body: unknown = {}) => http.post<R>(`${path}/${enc(id)}/${action}`, body),
+    save: <R extends { id?: string }>(path: string, r: R, create = !r.id, id = r.id) => (create ? http.post<R>(path, r) : http.put<R>(itemUrl(path, id!), r)),
+    remove: (path: string, id: string, reason: string) =>
+      BY_ID_PATHS.has(path) ? http.del<void>(`${path}/by-id`, { id, reason }) : http.del<void>(`${path}/${enc(id)}`, { reason }),
+    action: <R>(path: string, id: string, action: string, body: unknown = {}) => http.post<R>(itemUrl(path, id, action), body),
   },
   /**
    * M-021 test-mode clock (contract tag TestMode, group sangam-admin): getTestClock (admin.read) and changeTestClock

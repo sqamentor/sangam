@@ -120,7 +120,7 @@ describe('P13/P14 process instance: activity tree selection and state filter', (
       '/process-instances/pi1/links': [],
       '/process-instances/pi1/variables': {},
       '/process-instances/pi1': { id: 'pi1', state: 'ACTIVE', definitionId: 'd1', definitionKey: 'leave' },
-      '/process-definitions/d1/xml': '<xml/>',
+      '/process-definitions/by-id/xml?id=d1': '<xml/>',
     };
     show(<InstanceDetail />, '/ops/instances/pi1', '/ops/instances/:id');
   }
@@ -372,8 +372,8 @@ describe('Operations page tab labels', () => {
 describe('P02 diagram overlays and thumbnails', () => {
   it('job-definition, call-activity and plugin overlays are handed to the diagram', async () => {
     routes = {
-      '/process-definitions/d1/xml': '<xml/>',
-      '/process-definitions/d1': { id: 'd1', key: 'leave', name: 'Leave', version: 1 },
+      '/process-definitions/by-id/xml?id=d1': '<xml/>',
+      '/process-definitions/by-id': { id: 'd1', key: 'leave', name: 'Leave', version: 1 },
       '/engine-rest/job-definition': [{ activityId: 'svc', jobType: 'async-continuation', suspended: true }],
       '/engine-rest/process-definition/d1/static-called-process-definitions': [{ id: 'sub1', key: 'sub', calledFromActivityIds: ['call'] }],
     };
@@ -385,14 +385,14 @@ describe('P02 diagram overlays and thumbnails', () => {
   });
 
   it('thumbnails: "show previews" renders a compact diagram per definition from its XML', async () => {
-    routes = { '/process-definitions/d1/xml': '<xml/>' };
+    routes = { '/process-definitions/by-id/xml?id=d1': '<xml/>' };
     pages['/process-definitions'] = [{ id: 'd1', key: 'leave', name: 'Leave', version: 1 }];
     show(<ProcessDefinitions />);
     await screen.findByRole('link', { name: 'Leave' });
     expect(screen.queryByTestId('thumb')).toBeNull();
     fireEvent.click(screen.getByLabelText(new RegExp(esc(T('ops.showPreviews')))));
     expect((await screen.findByTestId('thumb')).getAttribute('title')).toBe('Leave');
-    expect(api.text).toHaveBeenCalledWith('/process-definitions/d1/xml', 'application/xml');
+    expect(api.text).toHaveBeenCalledWith('/process-definitions/by-id/xml?id=d1', 'application/xml');
   });
 });
 

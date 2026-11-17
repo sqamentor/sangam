@@ -30,8 +30,9 @@ schema("InstanceUpdateResult", "Outcome of a named update; recorded as a class-B
 
 _IH_REQ = ["L6", "R19", "R25", "ADR-D-26"]
 _IH_NAME = pp("name", "Handler name declared in the model")
-op("get", "/process-definitions/{id}/handlers", "listInstanceHandlers", "Processes", "Declared query and update handlers",
-   "The sangam:query and sangam:update handlers the deployed model declares.", _IH_REQ, params=[ID],
+op("get", "/process-definitions/by-id/handlers", "listInstanceHandlers", "Processes", "Declared query and update handlers",
+   "The sangam:query and sangam:update handlers the deployed model declares.", _IH_REQ,
+   params=[q("id", desc="Process definition id (key:version:uuid); may carry ':'", required=True)],
    resp=(200, "array:InstanceHandler"), perm="process.read", errors=GET_E)
 op("post", "/process-instances/{id}/queries/{name}", "queryProcessInstance", "Processes", "Run a named query",
    "Evaluates the model's named query read-only over the instance state; nothing changes. 404 for an unknown instance "

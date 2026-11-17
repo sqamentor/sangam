@@ -125,7 +125,7 @@ public interface IdentityAdminPort {
     ServicePrincipal revokeServicePrincipal(RequestContext ctx, String id, String reason);
 
     /**
-     * {@code PUT /api/v1/admin/roles/{roleId}}: defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT
+     * {@code PUT /api/v1/admin/roles/by-role-id?roleId=}: defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT
      * on ROLE {@code roleId}). A requested token scope is bound only when it is such a defined role.
      */
     default RoleDefinition defineRole(RequestContext ctx, String roleId, RoleDefinition role) {
@@ -141,12 +141,12 @@ public interface IdentityAdminPort {
         throw ApiProblem.notInstalled("user administration", "sangam-security");
     }
 
-    /** {@code PUT /api/v1/admin/users/{id}}: display name and e-mail (USER_UPDATED). */
+    /** {@code PUT /api/v1/admin/users/by-id?id=}: display name and e-mail (USER_UPDATED). */
     default User updateUser(RequestContext ctx, String id, UserRequest user) {
         throw ApiProblem.notInstalled("user administration", "sangam-security");
     }
 
-    /** {@code POST /api/v1/admin/users/{id}/disable}: disables the user and revokes its API tokens (USER_DISABLED). */
+    /** {@code POST /api/v1/admin/users/by-id/disable?id=}: disables the user and revokes its API tokens (USER_DISABLED). */
     default User disableUser(RequestContext ctx, String id, String reason) {
         throw ApiProblem.notInstalled("user administration", "sangam-security");
     }
@@ -156,7 +156,7 @@ public interface IdentityAdminPort {
         throw ApiProblem.notInstalled("group administration", "sangam-security");
     }
 
-    /** {@code PUT /api/v1/admin/groups/{id}}: renames a group; memberships and its IdP reference are kept. */
+    /** {@code PUT /api/v1/admin/groups/by-id?id=}: renames a group; memberships and its IdP reference are kept. */
     default Group updateGroup(RequestContext ctx, String id, Group group) {
         throw ApiProblem.notInstalled("group administration", "sangam-security");
     }

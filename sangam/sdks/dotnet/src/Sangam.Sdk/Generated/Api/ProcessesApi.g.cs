@@ -254,22 +254,24 @@ public sealed class ProcessesApi
     /// <summary>
     /// Get a process definition
     /// One definition.
-    /// GET /process-definitions/{id} (operationId getProcessDefinition); permission process.read.
+    /// GET /process-definitions/by-id (operationId getProcessDefinition); permission process.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.ProcessDefinition?> GetProcessDefinitionAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/process-definitions/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Get($"/process-definitions/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<M.ProcessDefinition?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// BPMN XML
     /// The deployed BPMN 2.0 XML.
-    /// GET /process-definitions/{id}/xml (operationId getProcessDefinitionXml); permission process.read.
+    /// GET /process-definitions/by-id/xml (operationId getProcessDefinitionXml); permission process.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<byte[]> GetProcessDefinitionXmlAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/process-definitions/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/xml");
+        var req = ApiRequest.Get($"/process-definitions/by-id/xml");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.BytesAsync(req, options, "application/xml", cancellationToken).ConfigureAwait(false);
     }
 
@@ -324,11 +326,12 @@ public sealed class ProcessesApi
     /// <summary>
     /// Suspend or resume a definition
     /// No new starts while suspended; includeInstances suspends running instances too (R63).
-    /// POST /process-definitions/{id}/suspension (operationId setProcessDefinitionSuspension); permission process.modify; result stored atomically with the state change.
+    /// POST /process-definitions/by-id/suspension (operationId setProcessDefinitionSuspension); permission process.modify; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.ProcessDefinition?> SetProcessDefinitionSuspensionAsync(string id, M.SuspensionRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.ProcessDefinition?> SetProcessDefinitionSuspensionAsync(M.SuspensionRequest body, string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/process-definitions/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/suspension");
+        var req = ApiRequest.Post($"/process-definitions/by-id/suspension");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.ProcessDefinition?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -383,11 +386,12 @@ public sealed class ProcessesApi
     /// <summary>
     /// Declared query and update handlers
     /// The sangam:query and sangam:update handlers the deployed model declares.
-    /// GET /process-definitions/{id}/handlers (operationId listInstanceHandlers); permission process.read.
+    /// GET /process-definitions/by-id/handlers (operationId listInstanceHandlers); permission process.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.InstanceHandler>?> ListInstanceHandlersAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/process-definitions/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/handlers");
+        var req = ApiRequest.Get($"/process-definitions/by-id/handlers");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.InstanceHandler>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 

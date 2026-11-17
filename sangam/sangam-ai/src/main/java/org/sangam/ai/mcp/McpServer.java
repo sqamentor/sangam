@@ -38,7 +38,8 @@ public final class McpServer {
             new Tool("get_task", "Read one task", false, "GET", "/tasks/{id}", List.of("id")),
             new Tool("get_process_instance", "Read one process instance", false, "GET", "/process-instances/{id}", List.of("id")),
             new Tool("list_process_definitions", "List process definitions", false, "GET", "/process-definitions", List.of()),
-            new Tool("get_process_definition_xml", "Read the BPMN of a definition", false, "GET", "/process-definitions/{id}/xml", List.of("id")),
+            // decision 393: a definition id is key:version:uuid, a query parameter on the literal by-id route
+            new Tool("get_process_definition_xml", "Read the BPMN of a definition", false, "GET", "/process-definitions/by-id/xml", List.of("id")),
             // UI-DEMO-1: the business key is a query parameter (it may carry '/'); non-path arguments of a read go to the query
             new Tool("audit_timeline", "Read the audit timeline of a business key", false, "GET", "/audit/timeline", List.of("businessKey")),
             new Tool("list_incidents", "List incidents", false, "GET", "/ops/incidents", List.of()),

@@ -808,14 +808,14 @@ class AdminApi:
         req = ApiRequest("POST", f"/admin/identity-providers/{seg(str(id))}/sync")
         return cast("M.IdentitySyncResult", self._c.json(req, options))
 
-    def define_role(self, role_id: str, body: M.RoleDefinition, *, options: Optional[RequestOptions] = None) -> M.RoleDefinition:
+    def define_role(self, body: M.RoleDefinition, *, role_id: str, options: Optional[RequestOptions] = None) -> M.RoleDefinition:
         """Define a role
 
         Defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT on ROLE roleId; GRANT_CHANGED). A requested token scope is bound to a service principal only when it is a defined role the caller may grant.
 
-        ``PUT /admin/roles/{roleId}`` (operationId ``defineRole``); permission ``policy.admin``; result stored atomically with the state change.
+        ``PUT /admin/roles/by-role-id`` (operationId ``defineRole``); permission ``policy.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("PUT", f"/admin/roles/{seg(str(role_id))}")
+        req = ApiRequest("PUT", f"/admin/roles/by-role-id", query={"roleId": role_id})
         req.body = body
         return cast("M.RoleDefinition", self._c.json(req, options))
 
@@ -861,25 +861,25 @@ class AdminApi:
         req.body = body
         return cast("M.ServicePrincipal", self._c.json(req, options))
 
-    def update_user(self, id: str, body: M.UserRequest, *, options: Optional[RequestOptions] = None) -> M.User:
+    def update_user(self, body: M.UserRequest, *, id: str, options: Optional[RequestOptions] = None) -> M.User:
         """Update a user
 
         Display name and e-mail (USER_UPDATED).
 
-        ``PUT /admin/users/{id}`` (operationId ``updateUser``); permission ``admin.write``; result stored atomically with the state change.
+        ``PUT /admin/users/by-id`` (operationId ``updateUser``); permission ``admin.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("PUT", f"/admin/users/{seg(str(id))}")
+        req = ApiRequest("PUT", f"/admin/users/by-id", query={"id": id})
         req.body = body
         return cast("M.User", self._c.json(req, options))
 
-    def disable_user(self, id: str, body: M.ReasonRequest, *, options: Optional[RequestOptions] = None) -> M.User:
+    def disable_user(self, body: M.ReasonRequest, *, id: str, options: Optional[RequestOptions] = None) -> M.User:
         """Disable a user
 
         USER_DISABLED with the reason; every API token of the user is revoked in the same transaction. 409 SELF_DISABLE for the caller's own user.
 
-        ``POST /admin/users/{id}/disable`` (operationId ``disableUser``); permission ``admin.write``; result stored atomically with the state change.
+        ``POST /admin/users/by-id/disable`` (operationId ``disableUser``); permission ``admin.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/admin/users/{seg(str(id))}/disable")
+        req = ApiRequest("POST", f"/admin/users/by-id/disable", query={"id": id})
         req.body = body
         return cast("M.User", self._c.json(req, options))
 
@@ -991,44 +991,44 @@ class AdminGroupsApi:
         req.body = body
         return cast("M.Group", self._c.json(req, options))
 
-    def list_group_members(self, id: str, *, options: Optional[RequestOptions] = None) -> list[M.User]:
+    def list_group_members(self, *, id: str, options: Optional[RequestOptions] = None) -> list[M.User]:
         """Group members
 
         Members of a group.
 
-        ``GET /admin/groups/{id}/members`` (operationId ``listGroupMembers``); permission ``admin.read``.
+        ``GET /admin/groups/by-id/members`` (operationId ``listGroupMembers``); permission ``admin.read``.
         """
-        req = ApiRequest("GET", f"/admin/groups/{seg(str(id))}/members")
+        req = ApiRequest("GET", f"/admin/groups/by-id/members", query={"id": id})
         return cast("list[M.User]", self._c.json(req, options))
 
-    def add_group_member(self, id: str, user_id: str, *, options: Optional[RequestOptions] = None) -> None:
+    def add_group_member(self, *, id: str, user_id: str, options: Optional[RequestOptions] = None) -> None:
         """Add a group member
 
         MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).
 
-        ``POST /admin/groups/{id}/members/{userId}`` (operationId ``addGroupMember``); permission ``policy.admin``; result stored atomically with the state change.
+        ``POST /admin/groups/by-id/members/by-user-id`` (operationId ``addGroupMember``); permission ``policy.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/admin/groups/{seg(str(id))}/members/{seg(str(user_id))}")
+        req = ApiRequest("POST", f"/admin/groups/by-id/members/by-user-id", query={"id": id, "userId": user_id})
         self._c.none(req, options)
 
-    def remove_group_member(self, id: str, user_id: str, *, options: Optional[RequestOptions] = None) -> None:
+    def remove_group_member(self, *, id: str, user_id: str, options: Optional[RequestOptions] = None) -> None:
         """Remove a group member
 
         MEMBERSHIP_CHANGED; policy_version+1.
 
-        ``DELETE /admin/groups/{id}/members/{userId}`` (operationId ``removeGroupMember``); permission ``policy.admin``; result stored atomically with the state change.
+        ``DELETE /admin/groups/by-id/members/by-user-id`` (operationId ``removeGroupMember``); permission ``policy.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("DELETE", f"/admin/groups/{seg(str(id))}/members/{seg(str(user_id))}")
+        req = ApiRequest("DELETE", f"/admin/groups/by-id/members/by-user-id", query={"id": id, "userId": user_id})
         self._c.none(req, options)
 
-    def update_group(self, id: str, body: M.Group, *, options: Optional[RequestOptions] = None) -> M.Group:
+    def update_group(self, body: M.Group, *, id: str, options: Optional[RequestOptions] = None) -> M.Group:
         """Rename a group
 
         The name only; memberships and the group's IdP or SCIM reference are kept (MEMBERSHIP_CHANGED, updated).
 
-        ``PUT /admin/groups/{id}`` (operationId ``updateGroup``); permission ``policy.admin``; result stored atomically with the state change.
+        ``PUT /admin/groups/by-id`` (operationId ``updateGroup``); permission ``policy.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("PUT", f"/admin/groups/{seg(str(id))}")
+        req = ApiRequest("PUT", f"/admin/groups/by-id", query={"id": id})
         req.body = body
         return cast("M.Group", self._c.json(req, options))
 
@@ -4007,14 +4007,14 @@ class DecisionsApi:
         req = ApiRequest("GET", f"/decision-definitions", query={"key": key, "latest": latest, "page": page, "size": size})
         return cast("Page[M.DecisionDefinition]", self._c.page(req, options, page, size))
 
-    def get_decision_definition_xml(self, id: str, *, options: Optional[RequestOptions] = None) -> bytes:
+    def get_decision_definition_xml(self, *, id: str, options: Optional[RequestOptions] = None) -> bytes:
         """DMN XML
 
         The deployed DMN XML.
 
-        ``GET /decision-definitions/{id}/xml`` (operationId ``getDecisionDefinitionXml``); permission ``process.read``.
+        ``GET /decision-definitions/by-id/xml`` (operationId ``getDecisionDefinitionXml``); permission ``process.read``.
         """
-        req = ApiRequest("GET", f"/decision-definitions/{seg(str(id))}/xml")
+        req = ApiRequest("GET", f"/decision-definitions/by-id/xml", query={"id": id})
         return self._c.raw(req, options, "application/xml")
 
 class DeploymentsApi:
@@ -7743,24 +7743,24 @@ class ProcessesApi:
         req = ApiRequest("GET", f"/process-definitions", query={"key": key, "latest": latest, "deploymentId": deployment_id, "page": page, "size": size})
         return cast("Page[M.ProcessDefinition]", self._c.page(req, options, page, size))
 
-    def get_process_definition(self, id: str, *, options: Optional[RequestOptions] = None) -> M.ProcessDefinition:
+    def get_process_definition(self, *, id: str, options: Optional[RequestOptions] = None) -> M.ProcessDefinition:
         """Get a process definition
 
         One definition.
 
-        ``GET /process-definitions/{id}`` (operationId ``getProcessDefinition``); permission ``process.read``.
+        ``GET /process-definitions/by-id`` (operationId ``getProcessDefinition``); permission ``process.read``.
         """
-        req = ApiRequest("GET", f"/process-definitions/{seg(str(id))}")
+        req = ApiRequest("GET", f"/process-definitions/by-id", query={"id": id})
         return cast("M.ProcessDefinition", self._c.json(req, options))
 
-    def get_process_definition_xml(self, id: str, *, options: Optional[RequestOptions] = None) -> bytes:
+    def get_process_definition_xml(self, *, id: str, options: Optional[RequestOptions] = None) -> bytes:
         """BPMN XML
 
         The deployed BPMN 2.0 XML.
 
-        ``GET /process-definitions/{id}/xml`` (operationId ``getProcessDefinitionXml``); permission ``process.read``.
+        ``GET /process-definitions/by-id/xml`` (operationId ``getProcessDefinitionXml``); permission ``process.read``.
         """
-        req = ApiRequest("GET", f"/process-definitions/{seg(str(id))}/xml")
+        req = ApiRequest("GET", f"/process-definitions/by-id/xml", query={"id": id})
         return self._c.raw(req, options, "application/xml")
 
     def correlate_message(self, body: M.MessageRequest, *, options: Optional[RequestOptions] = None) -> M.MessageResult:
@@ -7806,14 +7806,14 @@ class ProcessesApi:
         req.body = body
         return cast("M.ProcessInstance", self._c.json(req, options))
 
-    def set_process_definition_suspension(self, id: str, body: M.SuspensionRequest, *, options: Optional[RequestOptions] = None) -> M.ProcessDefinition:
+    def set_process_definition_suspension(self, body: M.SuspensionRequest, *, id: str, options: Optional[RequestOptions] = None) -> M.ProcessDefinition:
         """Suspend or resume a definition
 
         No new starts while suspended; includeInstances suspends running instances too (R63).
 
-        ``POST /process-definitions/{id}/suspension`` (operationId ``setProcessDefinitionSuspension``); permission ``process.modify``; result stored atomically with the state change.
+        ``POST /process-definitions/by-id/suspension`` (operationId ``setProcessDefinitionSuspension``); permission ``process.modify``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/process-definitions/{seg(str(id))}/suspension")
+        req = ApiRequest("POST", f"/process-definitions/by-id/suspension", query={"id": id})
         req.body = body
         return cast("M.ProcessDefinition", self._c.json(req, options))
 
@@ -7860,14 +7860,14 @@ class ProcessesApi:
         req = ApiRequest("GET", f"/process-instances/{seg(str(id))}/continuations")
         return cast("M.ProcessContinuationChain", self._c.json(req, options))
 
-    def list_instance_handlers(self, id: str, *, options: Optional[RequestOptions] = None) -> list[M.InstanceHandler]:
+    def list_instance_handlers(self, *, id: str, options: Optional[RequestOptions] = None) -> list[M.InstanceHandler]:
         """Declared query and update handlers
 
         The sangam:query and sangam:update handlers the deployed model declares.
 
-        ``GET /process-definitions/{id}/handlers`` (operationId ``listInstanceHandlers``); permission ``process.read``.
+        ``GET /process-definitions/by-id/handlers`` (operationId ``listInstanceHandlers``); permission ``process.read``.
         """
-        req = ApiRequest("GET", f"/process-definitions/{seg(str(id))}/handlers")
+        req = ApiRequest("GET", f"/process-definitions/by-id/handlers", query={"id": id})
         return cast("list[M.InstanceHandler]", self._c.json(req, options))
 
     def query_process_instance(self, id: str, name: str, body: Optional[M.InstanceQueryRequest] = None, *, options: Optional[RequestOptions] = None) -> M.InstanceQueryResult:
@@ -12590,25 +12590,25 @@ class TenantOperationsSecretsApi:
         req = ApiRequest("GET", f"/ops-admin/secrets")
         return cast("list[Any]", self._c.json(req, options))
 
-    def ops_put_secret(self, ref: str, body: M.OpsSecret, *, options: Optional[RequestOptions] = None) -> None:
+    def ops_put_secret(self, body: M.OpsSecret, *, ref: str, options: Optional[RequestOptions] = None) -> None:
         """Store a secret
 
         Encrypted at rest; write-only.
 
-        ``PUT /ops-admin/secrets/{ref}`` (operationId ``opsPutSecret``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        ``PUT /ops-admin/secrets/by-ref`` (operationId ``opsPutSecret``); permission ``ops.tenant.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("PUT", f"/ops-admin/secrets/{seg(str(ref))}")
+        req = ApiRequest("PUT", f"/ops-admin/secrets/by-ref", query={"ref": ref})
         req.body = body
         self._c.none(req, options)
 
-    def ops_delete_secret(self, ref: str, *, options: Optional[RequestOptions] = None) -> None:
+    def ops_delete_secret(self, *, ref: str, options: Optional[RequestOptions] = None) -> None:
         """Delete a secret
 
         Removes the secret.
 
-        ``DELETE /ops-admin/secrets/{ref}`` (operationId ``opsDeleteSecret``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        ``DELETE /ops-admin/secrets/by-ref`` (operationId ``opsDeleteSecret``); permission ``ops.tenant.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("DELETE", f"/ops-admin/secrets/{seg(str(ref))}")
+        req = ApiRequest("DELETE", f"/ops-admin/secrets/by-ref", query={"ref": ref})
         self._c.none(req, options)
 
     def ui_ops_secrets(self, *, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[Any]:

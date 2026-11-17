@@ -497,13 +497,15 @@ final class AdminApi
      *
      * Defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT on ROLE roleId; GRANT_CHANGED). A requested token scope is bound to a service principal only when it is a defined role the caller may grant.
      *
-     * PUT /admin/roles/{roleId} (operationId defineRole); permission policy.admin; result stored atomically with the state change.
+     * PUT /admin/roles/by-role-id (operationId defineRole); permission policy.admin; result stored atomically with the state change.
      * @param Model\RoleDefinition|array $body request body
+     * @param string $roleId query roleId
      * @return Model\RoleDefinition|null
      */
-    public function defineRole(string $roleId, Model\RoleDefinition|array $body, ?RequestOptions $options = null): ?Model\RoleDefinition
+    public function defineRole(Model\RoleDefinition|array $body, string $roleId, ?RequestOptions $options = null): ?Model\RoleDefinition
     {
-        $req = ApiRequest::put('/admin/roles/' . HttpTransport::seg((string) $roleId));
+        $req = ApiRequest::put('/admin/roles/by-role-id');
+        $req->query('roleId', $roleId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -579,13 +581,15 @@ final class AdminApi
      *
      * Display name and e-mail (USER_UPDATED).
      *
-     * PUT /admin/users/{id} (operationId updateUser); permission admin.write; result stored atomically with the state change.
+     * PUT /admin/users/by-id (operationId updateUser); permission admin.write; result stored atomically with the state change.
      * @param Model\UserRequest|array $body request body
+     * @param string $id query id
      * @return Model\User|null
      */
-    public function updateUser(string $id, Model\UserRequest|array $body, ?RequestOptions $options = null): ?Model\User
+    public function updateUser(Model\UserRequest|array $body, string $id, ?RequestOptions $options = null): ?Model\User
     {
-        $req = ApiRequest::put('/admin/users/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::put('/admin/users/by-id');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -597,13 +601,15 @@ final class AdminApi
      *
      * USER_DISABLED with the reason; every API token of the user is revoked in the same transaction. 409 SELF_DISABLE for the caller's own user.
      *
-     * POST /admin/users/{id}/disable (operationId disableUser); permission admin.write; result stored atomically with the state change.
+     * POST /admin/users/by-id/disable (operationId disableUser); permission admin.write; result stored atomically with the state change.
      * @param Model\ReasonRequest|array $body request body
+     * @param string $id query id
      * @return Model\User|null
      */
-    public function disableUser(string $id, Model\ReasonRequest|array $body, ?RequestOptions $options = null): ?Model\User
+    public function disableUser(Model\ReasonRequest|array $body, string $id, ?RequestOptions $options = null): ?Model\User
     {
-        $req = ApiRequest::post('/admin/users/' . HttpTransport::seg((string) $id) . '/disable');
+        $req = ApiRequest::post('/admin/users/by-id/disable');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }

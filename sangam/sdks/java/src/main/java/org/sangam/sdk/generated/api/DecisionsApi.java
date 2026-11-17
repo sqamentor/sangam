@@ -71,13 +71,14 @@ public final class DecisionsApi {
      *
      * <p>The deployed DMN XML.
      *
-     * <p>{@code GET /decision-definitions/{id}/xml} (operationId {@code getDecisionDefinitionXml}); permission {@code process.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /decision-definitions/by-id/xml} (operationId {@code getDecisionDefinitionXml}); permission {@code process.read}.
+     * @param id query parameter {@code id}. Decision definition id (key:version:uuid); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public byte[] getDecisionDefinitionXml(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/decision-definitions/" + HttpTransport.seg(String.valueOf(id)) + "/xml");
+        ApiRequest req = ApiRequest.get("/decision-definitions/by-id/xml");
+        req.query("id", id);
         return call.bytes(req, options, "application/xml");
     }
 }

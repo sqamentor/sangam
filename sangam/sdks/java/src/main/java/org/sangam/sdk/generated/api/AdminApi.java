@@ -528,15 +528,16 @@ public final class AdminApi {
      *
      * <p>Defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT on ROLE roleId; GRANT_CHANGED). A requested token scope is bound to a service principal only when it is a defined role the caller may grant.
      *
-     * <p>{@code PUT /admin/roles/{roleId}} (operationId {@code defineRole}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param roleId path parameter {@code roleId}
+     * <p>{@code PUT /admin/roles/by-role-id} (operationId {@code defineRole}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param roleId query parameter {@code roleId}. Role id (ROLE_ID_PATTERN allows ':', e.g. pack:clerk); may carry ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public RoleDefinition defineRole(String roleId, RoleDefinition body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/admin/roles/" + HttpTransport.seg(String.valueOf(roleId)));
+    public RoleDefinition defineRole(RoleDefinition body, String roleId, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/admin/roles/by-role-id");
         req.body(body);
+        req.query("roleId", roleId);
         return call.json(req, options, R_defineRole);
     }
 
@@ -607,15 +608,16 @@ public final class AdminApi {
      *
      * <p>Display name and e-mail (USER_UPDATED).
      *
-     * <p>{@code PUT /admin/users/{id}} (operationId {@code updateUser}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code PUT /admin/users/by-id} (operationId {@code updateUser}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. User id (an IdP principal id); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public User updateUser(String id, UserRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/admin/users/" + HttpTransport.seg(String.valueOf(id)));
+    public User updateUser(UserRequest body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/admin/users/by-id");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_updateUser);
     }
 
@@ -624,15 +626,16 @@ public final class AdminApi {
      *
      * <p>USER_DISABLED with the reason; every API token of the user is revoked in the same transaction. 409 SELF_DISABLE for the caller's own user.
      *
-     * <p>{@code POST /admin/users/{id}/disable} (operationId {@code disableUser}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /admin/users/by-id/disable} (operationId {@code disableUser}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. User id (an IdP principal id); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public User disableUser(String id, ReasonRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/admin/users/" + HttpTransport.seg(String.valueOf(id)) + "/disable");
+    public User disableUser(ReasonRequest body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/admin/users/by-id/disable");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_disableUser);
     }
 }

@@ -1039,11 +1039,13 @@ op("post", "/process-instances/{id}/inject", "injectIntoProcessInstance", "Proce
    perm="process.modify", errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "NotImplemented"))
 op("get", "/process-definitions", "listProcessDefinitions", "Processes", "List process definitions", "Deployed BPMN definitions of the tenant (and shared).",
    [], list_=True, params=[q("key"), q("latest", "bool"), q("deploymentId")], resp=(200, "array:ProcessDefinition"), perm="process.read", errors=STD_R)
-op("get", "/process-definitions/{id}", "getProcessDefinition", "Processes", "Get a process definition", "One definition.", [],
-   params=[ID], resp=(200, "ProcessDefinition"), perm="process.read", errors=GET_E)
+# decision 393: a definition id is key:version:uuid (Operaton), so it is a query parameter on literal by-id routes
+PDQ = q("id", desc="Process definition id (key:version:uuid); may carry ':'", required=True)
+op("get", "/process-definitions/by-id", "getProcessDefinition", "Processes", "Get a process definition", "One definition.", [],
+   params=[PDQ], resp=(200, "ProcessDefinition"), perm="process.read", errors=GET_E)
 XML = {"application/xml": {"schema": {"type": "string"}}}
-op("get", "/process-definitions/{id}/xml", "getProcessDefinitionXml", "Processes", "BPMN XML", "The deployed BPMN 2.0 XML.", [],
-   params=[ID], resp=(200, XML), perm="process.read", errors=GET_E)
+op("get", "/process-definitions/by-id/xml", "getProcessDefinitionXml", "Processes", "BPMN XML", "The deployed BPMN 2.0 XML.", [],
+   params=[PDQ], resp=(200, XML), perm="process.read", errors=GET_E)
 op("post", "/messages", "correlateMessage", "Processes", "Correlate a message",
    "Correlates to exactly one waiting instance (or all); refused at back-pressure for starts (VI.2.4).", ["R41", "R38"],
    body="MessageRequest", resp=(200, "MessageResult"), cmd="message.correlate", perm="message.send",
@@ -1076,7 +1078,8 @@ op("post", "/decisions/{key}/evaluate", "evaluateDecision", "Decisions", "Evalua
    errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "Unprocessable"))
 op("get", "/decision-definitions", "listDecisionDefinitions", "Decisions", "List decision definitions", "Deployed DMN decisions.", [],
    list_=True, params=[q("key"), q("latest", "bool")], resp=(200, "array:DecisionDefinition"), perm="process.read", errors=STD_R)
-op("get", "/decision-definitions/{id}/xml", "getDecisionDefinitionXml", "Decisions", "DMN XML", "The deployed DMN XML.", [], params=[ID],
+op("get", "/decision-definitions/by-id/xml", "getDecisionDefinitionXml", "Decisions", "DMN XML", "The deployed DMN XML.", [],
+   params=[q("id", desc="Decision definition id (key:version:uuid); may carry ':'", required=True)],
    resp=(200, XML), perm="process.read", errors=GET_E)
 
 # Deployments
@@ -1488,9 +1491,9 @@ op("get", "/process-instances/{id}/cancel-preview", "previewCancel", "Processes"
 op("post", "/process-instances/{id}/suspension", "setProcessInstanceSuspension", "Processes", "Suspend or resume an instance",
    "Suspension with a mandatory reason; redateDeadlines shifts SLA due dates on resume (D-32, R63).", ["R63", "D-32", "R41", "R42"],
    params=[ID], body="SuspensionRequest", resp=(200, "ProcessInstance"), cmd="process.suspension", perm="process.write")
-op("post", "/process-definitions/{id}/suspension", "setProcessDefinitionSuspension", "Processes", "Suspend or resume a definition",
+op("post", "/process-definitions/by-id/suspension", "setProcessDefinitionSuspension", "Processes", "Suspend or resume a definition",
    "No new starts while suspended; includeInstances suspends running instances too (R63).", ["R63", "R41", "R42"],
-   params=[ID], body="SuspensionRequest", resp=(200, "ProcessDefinition"), cmd="definition.suspension", perm="process.modify")
+   params=[PDQ], body="SuspensionRequest", resp=(200, "ProcessDefinition"), cmd="definition.suspension", perm="process.modify")
 op("post", "/process-instances/{id}/modify/preview", "previewModification", "Processes", "Consequence preview of a modification",
    "What a modification would do, with R49 limits (O03).", ["R49", "R63", "O03"], params=[ID], body="ModifyPreviewRequest",
    resp=(200, "ConsequencePreview"), perm="process.read", errors=("BadRequest",) + GET_E)
@@ -1709,12 +1712,15 @@ op("get", "/admin/users", "listUsers", "Admin", "Users", "Users known to the ten
    resp=(200, "array:User"), perm="admin.read", errors=STD_R)
 op("get", "/admin/groups", "listGroups", "Admin", "Groups", "Groups of the tenant (R67).", ["R67"], list_=True, params=[q("q")],
    resp=(200, "array:Group"), perm="admin.read", errors=STD_R)
-op("get", "/admin/groups/{id}/members", "listGroupMembers", "Admin", "Group members", "Members of a group.", ["R67"], params=[ID],
+# decision 393: user and group ids are IdP principal ids and group paths (may carry '/' or ':'): query parameters
+GIDQ = q("id", desc="Group id (an IdP group path such as /staff/clerks); may carry '/' or ':'", required=True)
+UIDQ = q("userId", desc="User id (an IdP principal id); may carry '/' or ':'", required=True)
+op("get", "/admin/groups/by-id/members", "listGroupMembers", "Admin", "Group members", "Members of a group.", ["R67"], params=[GIDQ],
    resp=(200, "array:User"), perm="admin.read", errors=GET_E)
-GM = [ID, pp("userId")]
-op("post", "/admin/groups/{id}/members/{userId}", "addGroupMember", "Admin", "Add a group member", "MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).",
+GM = [GIDQ, UIDQ]
+op("post", "/admin/groups/by-id/members/by-user-id", "addGroupMember", "Admin", "Add a group member", "MEMBERSHIP_CHANGED; policy_version+1 (VI.4 rule 5).",
    ["R67", "VI.4", "R41"], params=GM, resp=(204, None), cmd="admin.group.member.add", perm="policy.admin")
-op("delete", "/admin/groups/{id}/members/{userId}", "removeGroupMember", "Admin", "Remove a group member", "MEMBERSHIP_CHANGED; policy_version+1.",
+op("delete", "/admin/groups/by-id/members/by-user-id", "removeGroupMember", "Admin", "Remove a group member", "MEMBERSHIP_CHANGED; policy_version+1.",
    ["R67", "VI.4", "R41"], params=GM, resp=(204, None), cmd="admin.group.member.remove", perm="policy.admin")
 op("get", "/admin/identity-providers", "listIdentityProviders", "Admin", "Identity providers", "OIDC, SAML 2.0 and LDAP providers (R50, R67).",
    ["R50", "R67"], resp=(200, "array:IdentityProvider"), perm="tenant.admin", errors=WS_E)
@@ -1726,10 +1732,10 @@ op("post", "/admin/identity-providers/{id}/test", "testIdentityProvider", "Admin
    ["R50"], params=[ID], resp=(200, "IdentityTestResult"), perm="tenant.admin", errors=GET_E)
 op("post", "/admin/identity-providers/{id}/sync", "syncIdentityProvider", "Admin", "Sync users and groups", "Directory sync (R67).",
    ["R67", "R41"], params=[ID], resp=(200, "IdentitySyncResult"), cmd="admin.idp.sync", perm="tenant.admin")
-op("put", "/admin/roles/{roleId}", "defineRole", "Admin", "Define a role",
+op("put", "/admin/roles/by-role-id", "defineRole", "Admin", "Define a role",
    "Defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT on ROLE roleId; GRANT_CHANGED). A requested"
    " token scope is bound to a service principal only when it is a defined role the caller may grant.",
-   ["VI.4", "R41"], params=[pp("roleId")], body="RoleDefinition", resp=(200, "RoleDefinition"), cmd="admin.role.define",
+   ["VI.4", "R41"], params=[q("roleId", desc="Role id (ROLE_ID_PATTERN allows ':', e.g. pack:clerk); may carry ':'", required=True)], body="RoleDefinition", resp=(200, "RoleDefinition"), cmd="admin.role.define",
    perm="policy.admin")
 op("get", "/admin/service-principals", "listServicePrincipals", "Admin", "Service principals", "Worker and integration principals (R26).",
    ["R26", "K14"], resp=(200, "array:ServicePrincipal"), perm="admin.read", errors=WS_E)

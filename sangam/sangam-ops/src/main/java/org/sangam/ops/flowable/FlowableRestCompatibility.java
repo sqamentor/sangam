@@ -108,9 +108,10 @@ public final class FlowableRestCompatibility {
                     "BPMN and DMN only; Flowable-specific extensions are converted by the model importer first"),
             new Entry("GET", RP + "/process-definitions", Level.MAPPED, "GET", "/process-definitions", null),
             new Entry("GET", RP + "/process-definitions/{processDefinitionId}/resourcedata", Level.MAPPED, "GET",
-                    "/process-definitions/{id}/xml", null),
+                    "/process-definitions/by-id/xml", "the definition id is the id query parameter (decision 393)"),
             new Entry("PUT", RP + "/process-definitions/{processDefinitionId}", Level.PARTIAL, "PUT",
-                    "/process-definitions/{id}/suspension", "only suspend and activate; category change has no equivalent"),
+                    "/process-definitions/by-id/suspension", "only suspend and activate; category change has no equivalent; the definition id"
+                            + " is the id query parameter (decision 393)"),
             // decisions and forms
             new Entry("POST", "/service/dmn-rule/execute", Level.MAPPED, "POST", "/decisions/{key}/evaluate",
                     "the decision key moves into the path"),

@@ -1970,7 +1970,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /process-definitions/{id}:
+  /process-definitions/by-id:
     get:
       operationId: getProcessDefinition
       tags:
@@ -1979,7 +1979,7 @@ paths:
       description: One definition.
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -1997,7 +1997,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /process-definitions/{id}/xml:
+  /process-definitions/by-id/xml:
     get:
       operationId: getProcessDefinitionXml
       tags:
@@ -2006,7 +2006,7 @@ paths:
       description: The deployed BPMN 2.0 XML.
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -2502,7 +2502,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /decision-definitions/{id}/xml:
+  /decision-definitions/by-id/xml:
     get:
       operationId: getDecisionDefinitionXml
       tags:
@@ -2511,7 +2511,7 @@ paths:
       description: The deployed DMN XML.
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -8621,7 +8621,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
-  /process-definitions/{id}/suspension:
+  /process-definitions/by-id/suspension:
     post:
       operationId: setProcessDefinitionSuspension
       tags:
@@ -8632,7 +8632,7 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -11550,7 +11550,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /admin/groups/{id}/members:
+  /admin/groups/by-id/members:
     get:
       operationId: listGroupMembers
       tags:
@@ -11559,7 +11559,7 @@ paths:
       description: Members of a group.
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -11581,7 +11581,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /admin/groups/{id}/members/{userId}:
+  /admin/groups/by-id/members/by-user-id:
     post:
       operationId: addGroupMember
       tags:
@@ -11592,12 +11592,12 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
       - name: userId
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -11639,12 +11639,12 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: id
-        in: path
+        in: query
         required: true
         schema:
           type: string
       - name: userId
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -30947,7 +30947,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-  /ops-admin/secrets/{ref}:
+  /ops-admin/secrets/by-ref:
     put:
       operationId: opsPutSecret
       tags:
@@ -30958,7 +30958,7 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: ref
-        in: path
+        in: query
         required: true
         schema:
           type: string
@@ -31005,7 +31005,7 @@ paths:
       x-sangam-idempotent: true
       parameters:
       - name: ref
-        in: path
+        in: query
         required: true
         schema:
           type: string

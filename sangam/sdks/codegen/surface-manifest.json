@@ -73,7 +73,7 @@
    "tag": "Admin",
    "pathPrefix": "",
    "operations": 32,
-   "maxLines": 638
+   "maxLines": 641
   },
   {
    "class": "AdminAssignmentsApi",
@@ -87,7 +87,7 @@
    "tag": "Admin",
    "pathPrefix": "groups",
    "operations": 6,
-   "maxLines": 128
+   "maxLines": 134
   },
   {
    "class": "AdminOrgUnitsApi",
@@ -220,7 +220,7 @@
    "tag": "Decisions",
    "pathPrefix": "",
    "operations": 3,
-   "maxLines": 83
+   "maxLines": 84
   },
   {
    "class": "DeploymentsApi",
@@ -437,7 +437,7 @@
    "tag": "Processes",
    "pathPrefix": "",
    "operations": 33,
-   "maxLines": 653
+   "maxLines": 657
   },
   {
    "class": "ProgrammesApi",
@@ -605,7 +605,7 @@
    "tag": "Tenant operations",
    "pathPrefix": "secrets",
    "operations": 6,
-   "maxLines": 123
+   "maxLines": 125
   },
   {
    "class": "TenantOperationsVariablesApi",
@@ -2026,7 +2026,7 @@
   {
    "operationId": "getProcessDefinition",
    "method": "GET",
-   "path": "/process-definitions/{id}",
+   "path": "/process-definitions/by-id",
    "tag": "Processes",
    "apiClass": "ProcessesApi",
    "java": "ProcessesApi#getProcessDefinition",
@@ -2038,7 +2038,7 @@
   {
    "operationId": "getProcessDefinitionXml",
    "method": "GET",
-   "path": "/process-definitions/{id}/xml",
+   "path": "/process-definitions/by-id/xml",
    "tag": "Processes",
    "apiClass": "ProcessesApi",
    "java": "ProcessesApi#getProcessDefinitionXml",
@@ -2182,7 +2182,7 @@
   {
    "operationId": "getDecisionDefinitionXml",
    "method": "GET",
-   "path": "/decision-definitions/{id}/xml",
+   "path": "/decision-definitions/by-id/xml",
    "tag": "Decisions",
    "apiClass": "DecisionsApi",
    "java": "DecisionsApi#getDecisionDefinitionXml",
@@ -3802,7 +3802,7 @@
   {
    "operationId": "setProcessDefinitionSuspension",
    "method": "POST",
-   "path": "/process-definitions/{id}/suspension",
+   "path": "/process-definitions/by-id/suspension",
    "tag": "Processes",
    "apiClass": "ProcessesApi",
    "java": "ProcessesApi#setProcessDefinitionSuspension",
@@ -4690,7 +4690,7 @@
   {
    "operationId": "listGroupMembers",
    "method": "GET",
-   "path": "/admin/groups/{id}/members",
+   "path": "/admin/groups/by-id/members",
    "tag": "Admin",
    "apiClass": "AdminGroupsApi",
    "java": "AdminGroupsApi#listGroupMembers",
@@ -4702,7 +4702,7 @@
   {
    "operationId": "addGroupMember",
    "method": "POST",
-   "path": "/admin/groups/{id}/members/{userId}",
+   "path": "/admin/groups/by-id/members/by-user-id",
    "tag": "Admin",
    "apiClass": "AdminGroupsApi",
    "java": "AdminGroupsApi#addGroupMember",
@@ -4714,7 +4714,7 @@
   {
    "operationId": "removeGroupMember",
    "method": "DELETE",
-   "path": "/admin/groups/{id}/members/{userId}",
+   "path": "/admin/groups/by-id/members/by-user-id",
    "tag": "Admin",
    "apiClass": "AdminGroupsApi",
    "java": "AdminGroupsApi#removeGroupMember",
@@ -4786,7 +4786,7 @@
   {
    "operationId": "defineRole",
    "method": "PUT",
-   "path": "/admin/roles/{roleId}",
+   "path": "/admin/roles/by-role-id",
    "tag": "Admin",
    "apiClass": "AdminApi",
    "java": "AdminApi#defineRole",
@@ -6274,7 +6274,7 @@
   {
    "operationId": "updateUser",
    "method": "PUT",
-   "path": "/admin/users/{id}",
+   "path": "/admin/users/by-id",
    "tag": "Admin",
    "apiClass": "AdminApi",
    "java": "AdminApi#updateUser",
@@ -6286,7 +6286,7 @@
   {
    "operationId": "disableUser",
    "method": "POST",
-   "path": "/admin/users/{id}/disable",
+   "path": "/admin/users/by-id/disable",
    "tag": "Admin",
    "apiClass": "AdminApi",
    "java": "AdminApi#disableUser",
@@ -6298,7 +6298,7 @@
   {
    "operationId": "updateGroup",
    "method": "PUT",
-   "path": "/admin/groups/{id}",
+   "path": "/admin/groups/by-id",
    "tag": "Admin",
    "apiClass": "AdminGroupsApi",
    "java": "AdminGroupsApi#updateGroup",
@@ -10006,7 +10006,7 @@
   {
    "operationId": "listInstanceHandlers",
    "method": "GET",
-   "path": "/process-definitions/{id}/handlers",
+   "path": "/process-definitions/by-id/handlers",
    "tag": "Processes",
    "apiClass": "ProcessesApi",
    "java": "ProcessesApi#listInstanceHandlers",
@@ -10810,7 +10810,7 @@
   {
    "operationId": "opsPutSecret",
    "method": "PUT",
-   "path": "/ops-admin/secrets/{ref}",
+   "path": "/ops-admin/secrets/by-ref",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsSecretsApi",
    "java": "TenantOperationsSecretsApi#opsPutSecret",
@@ -10822,7 +10822,7 @@
   {
    "operationId": "opsDeleteSecret",
    "method": "DELETE",
-   "path": "/ops-admin/secrets/{ref}",
+   "path": "/ops-admin/secrets/by-ref",
    "tag": "Tenant operations",
    "apiClass": "TenantOperationsSecretsApi",
    "java": "TenantOperationsSecretsApi#opsDeleteSecret",

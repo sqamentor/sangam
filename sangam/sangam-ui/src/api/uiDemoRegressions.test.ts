@@ -89,7 +89,7 @@ describe('UI-DEMO-2: an operation that produces XML or text is asked for in that
     expect(p.bpmn20Xml).toBe('<definitions/>');
     expect(d.dmnXml).toBe('<definitions/>');
     expect(calls.map((c) => c.accept)).toEqual(['application/xml, application/problem+json', 'application/xml, application/problem+json']);
-    for (const [path] of [['/process-definitions/{id}/xml'], ['/decision-definitions/{id}/xml']]) {
+    for (const [path] of [['/process-definitions/by-id/xml'], ['/decision-definitions/by-id/xml']]) {
       const op = operation('get', path);
       expect(op).toMatch(/application\/xml:/);
       expect(op.split("'200'")[1].split(/'\d{3}'/)[0]).not.toMatch(/application\/json:/);
