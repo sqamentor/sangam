@@ -48583,6 +48583,1015 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
   schemas:
+    GeoGeoCheckFenceBody:
+      type: object
+      description: Request body of GeoController.checkFence, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        lat:
+          type: number
+          format: double
+        lon:
+          type: number
+          format: double
+        accuracyM:
+          type: number
+          format: double
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/geo/web/GeoController.java#GeoController.checkFence
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.checkFence
+        var: body
+        node: ''
+    ResourcePatch:
+      type: object
+      description: Request record ResourcePatch (sangam-resources/src/main/java/org/sangam/resources/catalogue/Resource.java), typed from its
+        source.
+      properties:
+        name:
+          type: string
+        orgUnitId:
+          type: string
+        locationId:
+          type: string
+        geoLat:
+          type: string
+        geoLon:
+          type: string
+        capacity:
+          type: integer
+          format: int32
+        unitLabel:
+          type: string
+        calendarId:
+          type: string
+        attributes:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/catalogue/Resource.java
+    GeoGeoPutFeatureBody:
+      type: object
+      description: Request body of GeoController.putFeature, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        code:
+          type: string
+        geometry: {}
+        names:
+          type: object
+          additionalProperties: true
+        properties:
+          type: object
+          additionalProperties: true
+        level:
+          type: string
+        parentCode:
+          type: string
+        orgUnitRef:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/geo/web/GeoController.java#GeoController.putFeature
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.putFeature
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.putFeature
+        var: names
+        node: names
+        declaration: 1
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.putFeature
+        var: props
+        node: properties
+        declaration: 1
+      x-sangam-body-opaque:
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.putFeature
+        use: new BoundaryDataLoader.FeatureInput
+        reason: names by language and free-form feature properties, stored as given
+    FieldWorkUploadBody:
+      type: object
+      description: Request body of FieldWorkController.upload, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        packetId:
+          type: string
+        type:
+          type: string
+        operationId:
+          type: string
+        deviceId:
+          type: string
+        deviceSeq:
+          type: integer
+          format: int64
+        appVersion:
+          type: string
+        assignmentId:
+          type: string
+        baseVersion:
+          type: integer
+          format: int32
+        deviceTime:
+          type: string
+          format: date-time
+        answers:
+          type: object
+          additionalProperties: true
+        notes:
+          type: string
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/CapturePacketMediaRef'
+        fix:
+          $ref: '#/components/schemas/CapturePacketGpsFix'
+        payload:
+          type: object
+          additionalProperties: true
+        prevHash:
+          type: string
+        packetHash:
+          type: string
+        signature:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/field/FieldWorkController.java#FieldWorkController.upload
+        var: packets
+        node: ''
+      - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.upload
+        var: packets
+        node: ''
+      - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.upload
+        var: p
+        node: ''
+        declaration: 1
+      x-sangam-body-records:
+      - class: org.sangam.field.evidence.CapturePacket
+        schema: CapturePacket
+        node: ''
+    RegistryAssetRecordReadingBody:
+      type: object
+      description: Request body of AssetController.recordReading, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        reading:
+          type: string
+          description: Decimal number as a string
+        readAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+        note:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/AssetController.java#AssetController.recordReading
+        var: body
+        node: ''
+    QueueRestPortServicePointRequest:
+      type: object
+      description: Request record QueueRestPortServicePointRequest (sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java),
+        typed from its source.
+      properties:
+        name:
+          type: string
+        resourceId:
+          type: string
+        calendarId:
+          type: string
+        tokenPrefix:
+          type: string
+        slaMinutes:
+          type: integer
+          format: int32
+        priorityDecision:
+          type: string
+        routingDecision:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java
+      required:
+      - slaMinutes
+    RegistryRegistryClosePeriodBody:
+      type: object
+      description: Request body of RegistryController.closePeriod, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        scope:
+          type: string
+        period:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.closePeriod
+        var: body
+        node: ''
+    CapturePacketGpsFix:
+      type: object
+      description: Request record CapturePacketGpsFix (sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java), typed from its
+        source.
+      properties:
+        lat:
+          type: number
+          format: double
+        lon:
+          type: number
+          format: double
+        accuracyM:
+          type: number
+          format: double
+        altitudeM:
+          type: number
+          format: double
+        provider:
+          type: string
+        mockLocation:
+          type: boolean
+        fixTime:
+          type: string
+          format: date-time
+      additionalProperties: true
+      x-sangam-record: sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java
+    QueueRestPortCounterRequest:
+      type: object
+      description: Request record QueueRestPortCounterRequest (sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java), typed
+        from its source.
+      properties:
+        name:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java
+    QueueReasonRequest:
+      type: object
+      description: Request record QueueReasonRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed
+        from its source.
+      properties:
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    FieldWorkPingBody:
+      type: object
+      description: Request body of FieldWorkController.ping, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        at:
+          type: string
+          format: date-time
+        lat:
+          type: number
+          format: double
+        lon:
+          type: number
+          format: double
+        accuracyM:
+          type: number
+          format: double
+        speedMps:
+          type: number
+          format: double
+        headingDeg:
+          type: number
+          format: double
+        source:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/field/FieldWorkController.java#FieldWorkController.ping
+        var: body
+        node: ''
+      - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.ping
+        var: b
+        node: ''
+    RegistryRegisterAppendBody:
+      type: object
+      description: Request body of RegisterController.append, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        scope:
+          type: string
+        date:
+          type: string
+          format: date
+        columns:
+          type: object
+          additionalProperties: true
+        refType:
+          type: string
+        refId:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegisterController.java#RegisterController.append
+        var: body
+        node: ''
+      - method: sangam-registry/src/main/java/org/sangam/registry/register/RegisterBookService.java#RegisterBookService.append
+        var: columns
+        node: columns
+      x-sangam-body-opaque:
+      - method: sangam-registry/src/main/java/org/sangam/registry/register/RegisterBookService.java#RegisterBookService.append
+        use: validate
+        reason: register columns validated against the register's column definitions (tenant-defined)
+    FieldWorkUnitStatusBody:
+      type: object
+      description: Request body of FieldWorkController.unitStatus, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        status:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/field/FieldWorkController.java#FieldWorkController.unitStatus
+        var: body
+        node: ''
+      - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.setUnitStatus
+        var: b
+        node: ''
+    QueueStatusRequest:
+      type: object
+      description: Request record QueueStatusRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed
+        from its source.
+      properties:
+        status:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    OpsUiAdvanceRequest:
+      type: object
+      description: Request record OpsUiAdvanceRequest (sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java), typed from
+        its source.
+      properties:
+        to:
+          type: integer
+          format: int64
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java
+    FieldWorkDevicePolicyBody:
+      type: object
+      description: Request body of FieldWorkController.devicePolicy, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        maxItems:
+          type: integer
+          format: int32
+        maxAgeHours:
+          type: integer
+          format: int32
+        wipeOnRevoke:
+          type: boolean
+        requireSignature:
+          type: boolean
+        maxOfflineHours:
+          type: integer
+          format: int32
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/field/FieldWorkController.java#FieldWorkController.devicePolicy
+        var: body
+        node: ''
+      - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.setDevicePolicy
+        var: b
+        node: ''
+      x-sangam-body-records:
+      - class: org.sangam.field.sync.QueuePolicy
+        schema: QueuePolicy
+        node: ''
+    ResourcesMoveRequest:
+      type: object
+      description: Request record ResourcesMoveRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        newParentId:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    RegistryRegistryTransitionBody:
+      type: object
+      description: Request body of RegistryController.transition, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        expectedVersion:
+          type: integer
+          format: int64
+        reason:
+          type: string
+        until:
+          type: string
+          format: date-time
+        countersignedBy:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.transition
+        var: body
+        node: ''
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.transition
+        var: b
+        node: ''
+        declaration: 1
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.version
+        var: body
+        node: ''
+    RegistryRegistryAllocateBody:
+      type: object
+      description: Request body of RegistryController.allocate, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        date:
+          type: string
+          format: date
+        scope:
+          type: string
+        attributes:
+          type: object
+          additionalProperties: true
+        refType:
+          type: string
+        refId:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.allocate
+        var: body
+        node: ''
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.allocate
+        var: b
+        node: ''
+        declaration: 1
+      - method: sangam-registry/src/main/java/org/sangam/registry/numbering/NumberingService.java#NumberingService.allocate
+        var: attrs
+        node: attributes
+      - method: sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java#NumberSeriesDefinition.format
+        var: attrs
+        node: attributes
+      x-sangam-body-opaque:
+      - method: sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java#NumberSeriesDefinition.format
+        use: attrs.get
+        reason: the attribute a {attr:<name>} token of the series pattern names
+    GeoGeoQueryExternalBody:
+      type: object
+      description: Request body of GeoController.queryExternal, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        operation: {}
+        baseUrl: {}
+        typeName: {}
+        outputFormat: {}
+        layers: {}
+        format: {}
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/geo/web/GeoController.java#GeoController.queryExternal
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.queryExternalLayer
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.queryExternalLayer
+        var: in
+        node: ''
+        declaration: 1
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.query
+        var: input
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.requestInput
+        var: input
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.requestInput
+        var: in
+        node: ''
+        declaration: 1
+      x-sangam-body-opaque:
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.requestInput
+        use: in
+        reason: returned to ExternalLayerGateway.query, which hashes the whole input into the connector operation id and forwards it as the input
+          of the external layer's connector (WFS/WMS parameters such as bbox, count, styles); the connector is chosen per layer, so its parameters
+          are not fixed here, and a caller's baseUrl is always replaced
+    QueueCallRequest:
+      type: object
+      description: Request record QueueCallRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed from
+        its source.
+      properties:
+        tokenId:
+          type: string
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    GeoGeoImportExternalBody:
+      type: object
+      description: Request body of GeoController.importExternal, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        baseUrl: {}
+        typeName: {}
+        outputFormat: {}
+        layers: {}
+        format: {}
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/geo/web/GeoController.java#GeoController.importExternal
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.importExternalLayer
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.importExternalLayer
+        var: in
+        node: ''
+        declaration: 1
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.importFeatures
+        var: input
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.query
+        var: input
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.requestInput
+        var: input
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.requestInput
+        var: in
+        node: ''
+        declaration: 1
+      x-sangam-body-opaque:
+      - method: sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java#ExternalLayerGateway.requestInput
+        use: in
+        reason: returned to ExternalLayerGateway.query, which hashes the whole input into the connector operation id and forwards it as the input
+          of the external layer's connector (WFS/WMS parameters such as bbox, count, styles); the connector is chosen per layer, so its parameters
+          are not fixed here, and a caller's baseUrl is always replaced
+    RegistryInstrumentTransitionBody:
+      type: object
+      description: Request body of InstrumentController.transition, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        expectedVersion:
+          type: integer
+          format: int64
+        reason:
+          type: string
+        until:
+          type: string
+          format: date-time
+        countersignedBy:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/InstrumentController.java#InstrumentController.transition
+        var: body
+        node: ''
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/InstrumentController.java#InstrumentController.transition
+        var: b
+        node: ''
+        declaration: 1
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.version
+        var: body
+        node: ''
+    RosterRestPortMemberRequest:
+      type: object
+      description: Request record RosterRestPortMemberRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java),
+        typed from its source.
+      properties:
+        seatId:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        rotationId:
+          type: string
+        rotationOffset:
+          type: integer
+          format: int32
+        attributes:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java
+      required:
+      - rotationOffset
+    ResourcesResourcesSaveCalendarBody:
+      type: object
+      description: Request body of ResourcesController.saveCalendar, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        hours:
+          type: object
+          additionalProperties: true
+        zone: {}
+        name:
+          type: string
+        businessCalendarId:
+          type: string
+        closedOnHolidays:
+          type: boolean
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java#ResourcesController.saveCalendar
+        var: definition
+        node: ''
+      - method: sangam-resources/src/main/java/org/sangam/resources/rest/ResourcesRestAdapter.java#ResourcesRestAdapter.saveCalendar
+        var: definition
+        node: ''
+      - method: sangam-resources/src/main/java/org/sangam/resources/calendar/AvailabilityCalendar.java#AvailabilityCalendar.fromMap
+        var: m
+        node: ''
+      - method: sangam-resources/src/main/java/org/sangam/resources/calendar/AvailabilityCalendar.java#AvailabilityCalendar.fromMap
+        var: hm
+        node: hours
+        declaration: 1
+      x-sangam-body-opaque:
+      - method: sangam-resources/src/main/java/org/sangam/resources/calendar/AvailabilityCalendar.java#AvailabilityCalendar.fromMap
+        use: hm.entrySet
+        reason: opening hours keyed by day (MONDAY ... SUNDAY, ALL or DAILY), each a list of HH:mm-HH:mm windows
+    GeoGeoPutObjectGeometryBody:
+      type: object
+      description: Request body of GeoController.putObjectGeometry, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        geometry: {}
+        tags:
+          type: array
+          items: {}
+        attribute:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/geo/web/GeoController.java#GeoController.putObjectGeometry
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.putObjectGeometry
+        var: body
+        node: ''
+    QueueRestPortIssueTokenRequest:
+      type: object
+      description: Request record QueueRestPortIssueTokenRequest (sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java),
+        typed from its source.
+      properties:
+        channel:
+          type: string
+        bookingId:
+          type: string
+        partyId:
+          type: string
+        priorityClass:
+          type: string
+        skill:
+          type: string
+        routingKey:
+          type: string
+        attributes:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java
+    QueueOpenRequest:
+      type: object
+      description: Request record QueueOpenRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed from
+        its source.
+      properties:
+        operatorId:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    RegistryRegistryVoidNumberBody:
+      type: object
+      description: Request body of RegistryController.voidNumber, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        number:
+          type: string
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.voidNumber
+        var: body
+        node: ''
+    FieldWorkDeviceStatusBody:
+      type: object
+      description: Request body of FieldWorkController.deviceStatus, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        status:
+          type: string
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/field/FieldWorkController.java#FieldWorkController.deviceStatus
+        var: body
+        node: ''
+      - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.setDeviceStatus
+        var: b
+        node: ''
+    RegistryRegistryMarkUsedBody:
+      type: object
+      description: Request body of RegistryController.markUsed, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        number:
+          type: string
+        refType:
+          type: string
+        refId:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.markUsed
+        var: body
+        node: ''
+    GeoGeoImportBoundariesBody:
+      type: object
+      description: Request body of GeoController.importBoundaries, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        layer:
+          type: object
+          properties:
+            levels:
+              type: array
+              items:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  names:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+            names:
+              type: object
+              additionalProperties: true
+            attributes:
+              type: object
+              additionalProperties: true
+            code:
+              type: string
+            kind:
+              type: string
+            orgUnitLinked:
+              type: boolean
+            indexPrecision:
+              type: integer
+              format: int32
+          additionalProperties: true
+        codeProperty:
+          type: string
+        levelProperty:
+          type: string
+        parentProperty:
+          type: string
+        orgUnitProperty:
+          type: string
+        nameProperties:
+          type: object
+          additionalProperties: true
+        features: {}
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/geo/web/GeoController.java#GeoController.importBoundaries
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java#GeoRestService.importBoundaries
+        var: body
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java#BoundaryDataLoader.read
+        var: root
+        node: ''
+      - method: sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java#BoundaryDataLoader.read
+        var: fc
+        node: features
+        declaration: 1
+      - method: sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java#BoundaryDataLoader.read
+        var: fc
+        node: ''
+        declaration: 1
+      - method: sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java#BoundaryDataLoader.layer
+        var: n
+        node: layer
+      - method: sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java#BoundaryDataLoader.layer
+        var: ls
+        node: layer.levels
+        declaration: 1
+      - method: sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java#BoundaryDataLoader.layer
+        var: l
+        node: layer.levels.[]
+        declaration: 1
+      x-sangam-body-opaque:
+      - method: sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java#BoundaryDataLoader.read
+        use: features
+        reason: a GeoJSON FeatureCollection or Feature (RFC 7946), parsed by GeoJson.features
+    CapturePacketMediaRef:
+      type: object
+      description: Request record CapturePacketMediaRef (sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java), typed from
+        its source.
+      properties:
+        evidenceId:
+          type: string
+        itemId:
+          type: string
+        sha256:
+          type: string
+        mediaType:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        capturedAt:
+          type: string
+          format: date-time
+        fix:
+          $ref: '#/components/schemas/CapturePacketGpsFix'
+      additionalProperties: true
+      x-sangam-record: sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java
+    RegistryRegisterDefineBody:
+      type: object
+      description: Request body of RegisterController.define, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        registerKey:
+          type: string
+        title:
+          type: string
+        series:
+          type: string
+        scopeRequired:
+          type: boolean
+        correctionCountersign:
+          type: boolean
+        extractTemplate:
+          type: string
+        columns:
+          type: object
+          properties:
+            fields:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  type:
+                    type: string
+                  required:
+                    type: boolean
+                  pattern:
+                    type: string
+                  min:
+                    type: string
+                    description: Decimal number as a string
+                  max:
+                    type: string
+                    description: Decimal number as a string
+                  maxLength:
+                    type: integer
+                    format: int32
+                  values:
+                    type: array
+                    items:
+                      type: string
+                    description: A JSON array of strings; a comma-separated string is also read
+                  codeList:
+                    type: string
+                  sensitive:
+                    type: boolean
+                  public:
+                    type: boolean
+                  immutable:
+                    type: boolean
+                  label:
+                    type: string
+                additionalProperties: true
+            additionalAllowed:
+              type: boolean
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegisterController.java#RegisterController.define
+        var: body
+        node: ''
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegisterController.java#RegisterController.define
+        var: def
+        node: ''
+        declaration: 1
+      - method: sangam-registry/src/main/java/org/sangam/registry/register/RegisterBookService.java#RegisterBookService.define
+        var: definition
+        node: ''
+      - method: sangam-registry/src/main/java/org/sangam/registry/register/RegisterDefinition.java#RegisterDefinition.from
+        var: m
+        node: ''
+      - method: sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectSchema.java#ObjectSchema.from
+        var: m
+        node: columns
+      - method: sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectSchema.java#ObjectSchema.from
+        var: fm
+        node: columns.fields.[]
+        declaration: 1
+      - method: sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java#FieldDefinition.from
+        var: m
+        node: columns.fields.[]
+    OpsUiSecretRequest:
+      type: object
+      description: Request record OpsUiSecretRequest (sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java), typed from
+        its source.
+      properties:
+        name:
+          type: string
+        scope:
+          type: string
+        value:
+          type: string
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java
+    ResourcesStatusRequest:
+      type: object
+      description: Request record ResourcesStatusRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          - UNDER_MAINTENANCE
+          - RETIRED
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    QueueCompleteRequest:
+      type: object
+      description: Request record QueueCompleteRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed
+        from its source.
+      properties:
+        outcome:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    RegistryRegistryDefineSeriesBody:
+      type: object
+      description: Request body of RegistryController.defineSeries, read by the service as a JSON object; typed from the keys the service reads
+        (M-051). Members it does not read are accepted and ignored.
+      properties:
+        seriesKey:
+          type: string
+        gapPolicy:
+          type: string
+        reset:
+          type: string
+        pattern:
+          type: string
+        fiscalStartMonth:
+          type: integer
+          format: int32
+        prefix:
+          type: string
+        start:
+          type: integer
+          format: int64
+        blockSize:
+          type: integer
+          format: int32
+        check:
+          type: string
+        maxValue:
+          type: integer
+          format: int64
+        fiscalStartDay:
+          type: integer
+          format: int32
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.defineSeries
+        var: body
+        node: ''
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/RegistryController.java#RegistryController.defineSeries
+        var: def
+        node: ''
+        declaration: 1
+      - method: sangam-registry/src/main/java/org/sangam/registry/numbering/NumberingService.java#NumberingService.define
+        var: definition
+        node: ''
+      - method: sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java#NumberSeriesDefinition.from
+        var: m
+        node: ''
     Problem:
       type: object
       description: RFC 9457 problem details. `type` is derived from `code` (https://sangam.dev/problems/<code-in-kebab-case>).
