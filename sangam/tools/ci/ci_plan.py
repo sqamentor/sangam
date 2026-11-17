@@ -31,7 +31,7 @@ CHUNKS = {
                    "ExplicitOnlyPermissionDialectIT,MysqlUtf8mb4PatchIT,ServerStartsIT,NowPlusMillisDialectIT",
     "B-engine": "E1CorpusCoverageIT,E10PlatformFitIT,E11GapSetIT,E8DstTimerIT,DecimalVariableIT,FetchLockVerificationIT,"
                 "FlowableMigrationStoreIT,FwtWorkerCompatIT,MultiInstanceCompensationIT,E46ConformanceIT,IfmsPacksIT,"
-                "E3LeaseIT,MiwgConformanceIT,BpmnConstructPortsIT",
+                "E3LeaseIT,MiwgConformanceIT,BpmnConstructPortsIT,CmmnConformanceIT",
     "B2-e2": "E2AuthorizationIT",
     "C-e16a": "E16aPatternsIT",
     "D-e16bc": "E16bPatternsIT,E16cPatternIT",
