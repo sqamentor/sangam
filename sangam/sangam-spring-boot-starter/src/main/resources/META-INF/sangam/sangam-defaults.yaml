@@ -41,6 +41,9 @@ spring:
       max-file-size: ${SANGAM_CONTENT_MAX_FILE:256MB}
       max-request-size: ${SANGAM_CONTENT_MAX_REQUEST:260MB}
       file-size-threshold: 1MB
+      # D6: parse the parts when a handler reads them, so an oversized upload is answered as problem JSON
+      # (413 PAYLOAD_TOO_LARGE) instead of a bare 413 from the error dispatch.
+      resolve-lazily: true
 
 operaton:
   bpm:
