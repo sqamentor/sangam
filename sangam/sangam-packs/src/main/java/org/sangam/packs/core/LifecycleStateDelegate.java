@@ -30,6 +30,15 @@ public class LifecycleStateDelegate implements JavaDelegate, ExecutionListener {
     private void apply(DelegateExecution ex) {
         CaseState s = CaseState.valueOf(Vars.field(state, ex).trim());
         String previous = Vars.str(ex, Vars.CASE_STATE);
+        if (s == CaseState.CANCEL_REQUESTED && "C_NEITHER".equals(
+                Vars.str(ex, ExternalOperationDelegate.UNKNOWN_OUTCOME_CLASS))) {
+            // SANGAM-PAYMENT-LOOP (E-31 §6): an operation that is never repeated automatically (class c: a payment)
+            // has an unknown outcome; the money may have left. Withdrawal and cancellation wait for the evidence
+            // (the reconciliation item's resolution); the request is refused and the case stays as it is.
+            throw new org.operaton.bpm.engine.ProcessEngineException("409 OUTCOME_UNKNOWN: the case has an operation "
+                    + "with an unknown outcome (" + Vars.str(ex, "reconItemId") + "); cancellation waits for the "
+                    + "reconciliation evidence");
+        }
         Vars.setCaseState(ex, s.name());
         String ov = Vars.field(outcomeVar, ex);
         if (ov != null) {
