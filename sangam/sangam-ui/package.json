@@ -28,6 +28,7 @@
     "@bpmn-io/form-js-viewer": "1.12.0",
     "@microsoft/teams-js": "2.59.0",
     "bpmn-js": "17.11.1",
+    "cmmn-moddle": "5.0.0",
     "diagram-js": "14.11.3",
     "dmn-js": "16.8.2",
     "i18next": "23.16.8",
