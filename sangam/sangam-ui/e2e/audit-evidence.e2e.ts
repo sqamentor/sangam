@@ -47,7 +47,7 @@ test('the tenant runs on the India pack with its one-year retention floors (C-04
 
   await signInAs(page, seed.identities.complianceOfficer.token);
   await page.goto('/m/compliance');
-  await page.getByRole('tab', { name: t('mod.compliance.evidence') }).click();
+  await page.getByRole('tab', { name: t('mod.compliance.evidence'), exact: true }).click();
   const panel = page.getByRole('tabpanel');
   await expect(panel.getByRole('row').filter({ hasText: 'homeCountry' })).toContainText(pack.homeCountry);
 });

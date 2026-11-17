@@ -36,7 +36,13 @@ test('claim, then complete through the decision dialog', async ({ signedIn: page
 
   await page.getByRole('group', { name: t('task.decisions') }).getByRole('button', { name: t('task.action.COMPLETE') }).click();
   const dialog = page.locator('dialog[open]');
+  // DIAG-TEMP
+  page.on('response', async (r) => { if (/\/tasks\//.test(r.url()) && r.request().method() !== 'GET') console.log('DIAG', r.request().method(), r.url(), r.status(), (await r.text().catch(() => '')).slice(0, 600)); });
+  page.on('console', (m) => console.log('DIAG console', m.type(), m.text().slice(0, 400)));
+  page.on('pageerror', (e) => console.log('DIAG pageerror', String(e).slice(0, 600)));
   await dialog.getByRole('button', { name: t('common.confirm') }).click();
+  await page.waitForTimeout(4000);
+  console.log('DIAG body', (await page.locator('body').innerText().catch((e) => String(e))).slice(0, 2500));
   await expect(page.getByText(t('task.doneTitle'))).toBeVisible();
 
   await expect
@@ -53,5 +59,6 @@ test('a task id that does not exist shows "could not find", never a stack trace'
   // decision 397 (UX-SPEC 6.3): a 404 says "We could not find this" (error.notFound); "You do not have access to
   // this" (error.notAvailable) is the 403 (components/ui.tsx problemKind, problem.test.ts)
   await expect(page.getByText(t('error.notFound'))).toBeVisible();
-  await expect(page.getByText(/Exception|at org\.|stack/i)).toHaveCount(0);
+  // the page content, not the menu (its "Duty conflict exceptions" link is a label, not a trace)
+  await expect(page.getByRole('main').getByText(/Exception|at org\.|stack/i)).toHaveCount(0);
 });
