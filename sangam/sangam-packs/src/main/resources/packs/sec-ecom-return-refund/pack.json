@@ -82,5 +82,11 @@
     "variables": [
       "refundAmount"
     ]
-  }
+  },
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ]
 }

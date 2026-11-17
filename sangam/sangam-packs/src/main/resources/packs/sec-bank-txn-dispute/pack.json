@@ -112,5 +112,11 @@
     "variables": [
       "amount"
     ]
-  }
+  },
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ]
 }
