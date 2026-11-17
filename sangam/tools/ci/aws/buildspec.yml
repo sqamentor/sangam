@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: Apache-2.0
+# Level 3 of the build strategy (owner decisions 412 and 413): AWS CodeBuild project sangam-ci-lanes (ap-south-1,
+# LARGE, privileged Docker for Testcontainers). Source: s3://sangam-ci-<account>/src/sangam-src.zip, made by
+# sangam/tools/ci/route_build.py with `git archive` of HEAD + ci-lane.json. Same selection as ci-lanes.yml through
+# sangam/tools/ci/ci_plan.py; CI_MODULES / CI_DBS / CI_CHUNKS / CI_UI override ci-lane.json. Databases run one after
+# the other on this one host. Vendor terms (decision 122) only from the project environment, never set here.
+version: 0.2
+
+env:
+  shell: bash
+  variables:
+    TZ: UTC
+    MAVEN_ARGS: -B -ntp
+    TESTCONTAINERS_RYUK_DISABLED: "false"
+    JDK_URL: https://api.adoptium.net/v3/binary/version/jdk-25.0.1%2B8/linux/x64/jdk/hotspot/normal/eclipse
+    CI_MODULES: ""
+    CI_DBS: ""
+    CI_CHUNKS: ""
+    CI_UI: ""
+
+phases:
+  install:
+    commands:
+      - set -euo pipefail
+      - curl -fsSL -o /tmp/jdk.tgz "$JDK_URL"
+      - mkdir -p /opt/jdk25 && tar -xzf /tmp/jdk.tgz -C /opt/jdk25 --strip-components=1
+      - export JAVA_HOME=/opt/jdk25 PATH=/opt/jdk25/bin:$PATH && java -version
+  build:
+    commands:
+      - set -euo pipefail
+      - export JAVA_HOME=/opt/jdk25 PATH=/opt/jdk25/bin:$PATH
+      - cd sangam
+      - export P="python3 -I tools/ci/ci_plan.py --file ../ci-lane.json"
+      - $P | tee ../ci-plan.json
+      - mapfile -t args < <($P --print-build-args) && [ "${#args[@]}" -gt 0 ] && bash ./mvnw $MAVEN_ARGS "${args[@]}"
+      - |
+        set -euo pipefail
+        rc=0
+        for db in $(python3 -I -c "import json;print(' '.join(d for d in json.load(open('../ci-plan.json'))['dbs'].split(',') if d))"); do
+          var=$($P --db "$db" --print-terms)
+          if [ -n "$var" ] && [ "${!var:-}" != "Y" ]; then echo "ERROR $db: $var is not Y (decision 122)"; rc=1; continue; fi
+          ref=$($P --db "$db" --print-image); s=$(date +%s); docker pull "$ref"
+          case "$ref" in *@sha256:*) docker tag "$ref" "${ref%@sha256:*}" ;; esac
+          echo "image $db pulled in $(( $(date +%s) - s )) s"
+          mapfile -t args < <($P --db "$db" --print-it-args)
+          if [ "${#args[@]}" -eq 0 ]; then echo "ERROR $db: ci_plan refused"; rc=1; continue; fi
+          SANGAM_IT_DB=$db bash ./mvnw $MAVEN_ARGS "${args[@]}" || rc=1
+          mkdir -p ../reports/it-$db
+          find . -path '*/target/failsafe-reports/*' -name 'TEST-*.xml' -exec cp {} ../reports/it-$db/ \;
+        done
+        exit $rc
+  post_build:
+    commands:
+      # The build phase did `cd sangam` and CodeBuild 0.2 keeps that directory, so use absolute paths here.
+      - mkdir -p "$CODEBUILD_SRC_DIR/reports/build"
+      - find "$CODEBUILD_SRC_DIR/sangam" -path '*/target/surefire-reports/*' -name 'TEST-*.xml' -exec cp {} "$CODEBUILD_SRC_DIR/reports/build/" \;
+
+artifacts:
+  base-directory: reports
+  files:
+    - "**/*"

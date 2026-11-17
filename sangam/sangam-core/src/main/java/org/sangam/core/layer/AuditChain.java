@@ -149,6 +149,16 @@ public final class AuditChain {
     }
 
     /**
+     * The payloads of the events of one type on one chain, in no particular order; an erased or missing payload is
+     * {@code null}, so a caller that counts events fails closed on it.
+     */
+    public static List<String> payloads(Connection c, String tenant, String chainId, String eventType) {
+        return Jdbc.query(c, "SELECT p.payload, p.erased_at FROM AUDIT_EVENT e LEFT JOIN AUDIT_PAYLOAD p"
+                        + " ON p.event_id = e.event_id WHERE e.tenant_id = ? AND e.chain_id = ? AND e.event_type = ?",
+                rs -> rs.getString(2) != null ? null : rs.getString(1), tenant, chainId, eventType);
+    }
+
+    /**
      * Recomputes the chain: gapless {@code seq}, each {@code prev_hash} link, each envelope rebuilt from its columns,
      * each hash, each non-erased payload digest, and the chain head stored on {@code ROOT_SEQ}.
      * Reports the first divergent event.

@@ -96,12 +96,32 @@ public final class QuarkusHostHarness implements HostHarness {
     static final Dependency JACKSON_DATABIND = Dependency.of("com.fasterxml.jackson.core", "jackson-databind",
             UNSUPPORTED_JACKSON);
 
+    /** Quarkus' build-time switch of the default data source's JTA integration. */
+    static final String DATASOURCE_TRANSACTIONS_KEY = "quarkus.datasource.jdbc.transactions";
+
     /** How long the separate JVM may take. */
     static final long FORK_TIMEOUT_MINUTES = 10;
 
     private final Set<Capability> removed = new LinkedHashSet<>();
     private CuratedApplication curated;
     private RunningQuarkusApplication running;
+
+    /**
+     * Decision 402(1): the application model is resolved from this module's effective Maven model, so the module's
+     * own dependency management (sshd 2.15.0, angus-mail 2.0.4, ...: the versions the default reactor resolves and the
+     * licence record covers) wins over the imported Quarkus BOM, exactly as in the Maven build. Without it the
+     * bootstrap's raw workspace model took the Quarkus BOM versions (sshd-core 2.19.0), which are neither cached nor
+     * licence-reviewed.
+     */
+    io.quarkus.bootstrap.resolver.maven.MavenArtifactResolver appResolver()
+            throws io.quarkus.bootstrap.resolver.maven.BootstrapMavenException {
+        return io.quarkus.bootstrap.resolver.maven.MavenArtifactResolver.builder()
+                .setOffline(true)
+                .setWorkspaceDiscovery(true)
+                .setCurrentProject(hostModule().toString())
+                .setEffectiveModelBuilder(true)
+                .build();
+    }
 
     @Override
     public String hostName() {
@@ -122,6 +142,7 @@ public final class QuarkusHostHarness implements HostHarness {
         Path classes = build.resolve("classes");
         try {
             QuarkusBootstrap.Builder bootstrap = QuarkusBootstrap.builder()
+                    .setMavenArtifactResolver(appResolver())
                     .setApplicationRoot(PathList.of(classes, testClasses))
                     .setProjectRoot(hostModule())
                     .setTargetDirectory(build)
@@ -160,6 +181,12 @@ public final class QuarkusHostHarness implements HostHarness {
         if (!excluded.isEmpty()) {
             p.setProperty("quarkus.arc.exclude-types", String.join(",", excluded.stream().sorted().toList()));
         }
+        // the JTA integration of the default data source is fixed when the application is built: an operator who
+        // switches it off does so in the build, so the harness does the same (set at run time, Quarkus ignores it with
+        // "build time fixed to 'enabled'" and the data source stays JTA-integrated)
+        if (removed.contains(Capabilities.SHARED_TRANSACTION)) {
+            p.setProperty(DATASOURCE_TRANSACTIONS_KEY, "disabled");
+        }
         return p;
     }
 
@@ -169,7 +196,8 @@ public final class QuarkusHostHarness implements HostHarness {
         config.put("quarkus.datasource.jdbc.url", "jdbc:h2:mem:quarkus-conformance-" + UUID.randomUUID()
                 + ";DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000;MODE=PostgreSQL");
         if (removed.contains(Capabilities.SHARED_TRANSACTION)) {
-            config.put("quarkus.datasource.jdbc.transactions", "disabled");
+            // also at run time, so the host's own reading (QuarkusHost.sharesEngineConnection) sees the operator's value
+            config.put(DATASOURCE_TRANSACTIONS_KEY, "disabled");
         }
         if (removed.contains(Capabilities.DATABASE_CHECKS)) {
             config.put(ISOLATION_KEY, "serializable");

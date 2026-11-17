@@ -247,6 +247,10 @@ public final class FwtEventsFixture implements AutoCloseable {
 
     @Override
     public void close() {
-        engine.close();
+        try {
+            engine.close();
+        } finally {
+            org.sangam.ports.H2Mem.drop(h2.getURL());   // DB_CLOSE_DELAY=-1 keeps the database until SHUTDOWN (R8-heap)
+        }
     }
 }

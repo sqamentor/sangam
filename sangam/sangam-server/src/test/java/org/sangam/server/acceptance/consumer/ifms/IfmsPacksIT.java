@@ -407,6 +407,35 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
         return ran;
     }
 
+    /** Each running called case of the case (one level): its definition, where it waits, and its status facts. */
+    private List<String> calledCases(String pid) {
+        List<String> out = new ArrayList<>();
+        for (var sub : engine.getRuntimeService().createProcessInstanceQuery().superProcessInstanceId(pid).list()) {
+            Map<String, Object> f = new java.util.TreeMap<>();
+            engine.getRuntimeService().getVariables(sub.getId()).forEach((k, v) -> {
+                if (k.matches("(?i).*(status|reason|message|error|available|amount|head|hold|rail|connector).*")) {
+                    f.put(k, v);
+                }
+            });
+            Object conn = f.get("opConnector");
+            String bound = "";
+            if (conn != null) {
+                // which implementation the tenant binds for the failed operation (descriptor only, nothing invoked)
+                try {
+                    var d = connectors.require(TENANT, String.valueOf(conn)).descriptor();
+                    bound = " connector=" + d.id() + "/" + d.type() + " ops=" + d.operations();
+                } catch (RuntimeException e) {
+                    bound = " connector=" + e;
+                }
+            }
+            out.add(sub.getProcessDefinitionId() + " active=" + engine.getRuntimeService().getActiveActivityIds(sub.getId())
+                    + bound + " materialFields=" + engine.getRuntimeService().getVariable(sub.getId(), "materialFields")
+                    + " vars=" + new java.util.TreeSet<>(engine.getRuntimeService().getVariables(sub.getId()).keySet())
+                    + " " + f);
+        }
+        return out;
+    }
+
     private void assertClosed(String what, Run r) {
         String incidents = engine.getRuntimeService().createIncidentQuery().processInstanceId(r.pid()).list().stream()
                 .map(i -> i.getActivityId() + ": " + i.getIncidentMessage()).toList().toString();
@@ -420,7 +449,8 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
         });
         String report = "[acceptance] " + what + " steps=" + r.steps() + " seats=" + r.seats() + " caseState="
                 + r.finalVars().get("caseState") + " incidents=" + incidents + " active=" + (ended ? "[]"
-                : engine.getRuntimeService().getActiveActivityIds(r.pid())) + " facts=" + facts;
+                : engine.getRuntimeService().getActiveActivityIds(r.pid())) + " called=" + calledCases(r.pid())
+                + " facts=" + facts;
         System.out.println(report + " ended=" + ended);
         assertThat(ended).as(report).isTrue();
         assertThat(incidents).as(report).isEqualTo("[]");

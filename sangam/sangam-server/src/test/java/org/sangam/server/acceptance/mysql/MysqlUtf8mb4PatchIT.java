@@ -30,7 +30,7 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 
 /**
  * SL-94 regression on the real MySQL 8.4 of the matrix lane: engine patch P-2 on the <b>real Operaton 2.2.0 MySQL
- * schema</b> (the engine's own {@code activiti.mysql.create.*.sql}, utf8mb3, 46 string foreign keys), each test in a
+ * schema</b> (the engine's own {@code activiti.mysql.create.*.sql}, utf8mb3, 42 string foreign keys), each test in a
  * fresh database of its own.
  *
  * <p>Red before the fix: P-2 converted one table at a time and MySQL refused the first FK-linked table with error 3780
@@ -42,6 +42,9 @@ class MysqlUtf8mb4PatchIT {
     /** Operaton's own order (DbSqlSession.dbSchemaCreate). */
     private static final List<String> OPERATON_SCRIPTS = List.of("engine", "history", "identity", "case.engine",
             "case.history", "decision.engine", "decision.history");
+
+    /** Named FK constraints the Operaton 2.2.0 MySQL create scripts declare (27 engine, 5 identity, 9 case, 1 decision). */
+    private static final int OPERATON_FKS = 42;
 
     private static final int ER_FK_INCOMPATIBLE_COLUMNS = 3780;
     private static final int ER_NO_REFERENCED_ROW_2 = 1452;
@@ -56,7 +59,10 @@ class MysqlUtf8mb4PatchIT {
         try (Connection c = freshOperatonDatabase()) {
             List<String> fksBefore = foreignKeys(c);
             List<String> indexesBefore = indexes(c);
-            assertEquals(46, fksBefore.size(), "Operaton 2.2.0 MySQL schema: 46 foreign keys");
+            // 42 named FK statements in the seven scripts; the earlier 46 counted the four "-- create foreign key
+            // constraints on ..." comment lines of activiti.mysql.create.case.engine.sql (r7-it 2026-11-17)
+            assertEquals(OPERATON_FKS, declaredForeignKeys(), "the FK statements of the Operaton 2.2.0 MySQL scripts");
+            assertEquals(OPERATON_FKS, fksBefore.size(), "Operaton 2.2.0 MySQL schema: every declared FK exists");
             assertEquals("utf8mb3_bin", tableCollation(c, "ACT_GE_BYTEARRAY"));
 
             // the root cause, as MySQL states it: one table at a time cannot convert an FK-linked pair
@@ -73,7 +79,7 @@ class MysqlUtf8mb4PatchIT {
 
             assertTrue(r.skipped().isEmpty(), "skipped: " + r.skipped());
             assertEquals(new ArrayList<>(new TreeSet<>(actTables(c))), r.converted());
-            assertEquals(46, r.foreignKeysRecreated().size(), r.foreignKeysRecreated().toString());
+            assertEquals(OPERATON_FKS, r.foreignKeysRecreated().size(), r.foreignKeysRecreated().toString());
             assertEquals(List.of(), nonTargetStringColumns(c), "every ACT_* string column is utf8mb4_bin");
             assertEquals(fksBefore, foreignKeys(c), "every FK re-created with its name and definition");
             assertEquals(indexesBefore, indexes(c), "every index (FK backing indexes included) unchanged");
@@ -142,7 +148,7 @@ class MysqlUtf8mb4PatchIT {
     private static Connection freshOperatonDatabase() throws SQLException, IOException {
         JdbcDatabaseContainer<?> ct = AcceptanceDatabase.container();
         String base = "jdbc:mariadb://" + ct.getHost() + ":" + ct.getMappedPort(3306) + "/";
-        String opts = "?permitMysqlScheme&connectionCollation=utf8mb4_bin";
+        String opts = "?permitMysqlScheme&connectionCollation=utf8mb4_bin" + AcceptanceDatabase.MYSQL_TLS; // root is never cached: TLS
         String db = ("sl94_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12)).toLowerCase(Locale.ROOT);
         // Testcontainers' MySQL image: root has the container password; the lane user owns only its own database
         try (Connection root = DriverManager.getConnection(base + opts, "root", AcceptanceDatabase.password())) {
@@ -156,6 +162,18 @@ class MysqlUtf8mb4PatchIT {
             }
         }
         return c;
+    }
+
+    /** The FK constraints the scripts declare, counted from the executed statements (comments stripped). */
+    private static int declaredForeignKeys() throws IOException {
+        java.util.regex.Pattern fk = java.util.regex.Pattern.compile("(?is)\\bconstraint\\s+\\w+\\s+foreign\\s+key\\b");
+        int n = 0;
+        for (String part : OPERATON_SCRIPTS) {
+            for (String stmt : statements("org/operaton/bpm/engine/db/create/activiti.mysql.create." + part + ".sql")) {
+                n += (int) fk.matcher(stmt).results().count();
+            }
+        }
+        return n;
     }
 
     private static List<String> statements(String resource) throws IOException {

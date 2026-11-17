@@ -672,8 +672,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             }
 
             UUID operationId = operationId(tenant, t, rootId, ext);
-            String capability = ext.get("sangam:capabilityClass") != null ? ext.get("sangam:capabilityClass")
-                    : ext.get("sangam:effect");
+            String capability = Optional.ofNullable(ext.get("sangam:capabilityClass")).orElse(ext.get("sangam:effect"));
             SangamLeaseTable.Lease lease = leases.grant(conn, t.getId(), previous,
                     new SangamLeaseTable.Info(tenant, t.getTopicName(), rootId, operationId, capability, scopeStored),
                     workerId, expiresAt, now);

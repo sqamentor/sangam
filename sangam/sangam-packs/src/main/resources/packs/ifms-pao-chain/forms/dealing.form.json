@@ -1,6 +1,6 @@
 {
   "key": "ifms-pao-chain/dealing",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.ifms.pao-chain",
   "title": {
     "en": "Dealing hand check",

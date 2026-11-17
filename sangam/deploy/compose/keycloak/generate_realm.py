@@ -4,6 +4,8 @@ platform realm, SL-70) and the Grafana overview dashboard.
 
 Run from anywhere:  python -I deploy/compose/keycloak/generate_realm.py
 The generated files are committed; edit this script, not the JSON.
+Presentation realms (R8-present; git-ignored output, passwords never in the repository):
+    python -I deploy/compose/keycloak/generate_realm.py --presentation [--dry-run]
 
 Realm content:
   * platform roles (admin, operator, auditor, model lifecycle MODEL_REVIEWER / MODEL_APPROVER, worker);
@@ -365,6 +367,129 @@ def platform_realm(tenant_realm):
     return r
 
 
+# R8-present: presentation seat holders for the GPF, bill and budget-allocation walk-through
+# (docs/PRESENTATION-WALKTHROUGH.md). They are NOT in the committed realm files: `--presentation` writes a separate
+# realm pair into realm-local/ (git-ignored), and their passwords never live in this repository. Passwords come from
+# the environment (SANGAM_PRESENTATION_PASSWORD_<USERNAME>, upper case, "." and "-" as "_") or from the git-ignored
+# file deploy/presentation/presentation-users.local.json ({"<username>": "<password>"}); a missing one is generated
+# (secrets module) and stored in that file. Seats and roles follow the IFMS pack seeds (ifms-gpf, ifms-bill,
+# ifms-budget-allocation: seats DDO-1, HOO-1, BD-1, DH-1, AAO-1, PAO-1, SS-1 in office PAO-OFFICE). No visible name uses a word barred by
+# IFMS SD-544. deploy/presentation/seed_presentation.py reads these same lists (one source).
+PRESENTATION_TENANT = os.environ.get("SANGAM_PRESENTATION_TENANT", "GOI.FIN")
+PRESENTATION_OFFICE = "PAO-OFFICE"
+PRESENTATION_ROLES = [
+    ("DDO", "Drawing and disbursing officer (IFMS pack role)"),
+    ("HOO", "Head of Office (IFMS pack role)"),
+    ("PAO", "Pay and accounts officer (IFMS pack role)"),
+    ("BILL_DISTRIBUTOR", "Bill distributor (IFMS pack role)"),
+    ("DEALING_HAND", "Dealing hand (IFMS pack role)"),
+    ("AAO", "Assistant accounts officer (IFMS pack role)"),
+    ("SECOND_SIGNATORY", "Second signatory (IFMS pack role)"),
+    ("sangam-tenant-admin", "Department (organisation) administrator"),
+    ("sangam-supervisor", "Supervisor: team workload (team.read)"),
+]
+# (username, first name, last name, realm roles, seats) in the tenant realm
+PRESENTATION_USERS = [
+    ("ddo.maker", "Rakesh", "Sharma", ["DDO", "sangam-user"], ["DDO-1"]),
+    ("hoo.office", "Anita", "Verma", ["HOO", "sangam-user"], ["HOO-1"]),
+    ("pao.accounts", "Suresh", "Iyer", ["PAO", "sangam-user"], ["PAO-1"]),
+    # the PAO chain of a bill (ifms-pao-chain: distribute, dealing hand, AAO, PAO, second signature)
+    ("bill.distributor", "Farhan", "Qureshi", ["BILL_DISTRIBUTOR", "sangam-user"], ["BD-1"]),
+    ("dealing.hand", "Lakshmi", "Menon", ["DEALING_HAND", "sangam-user"], ["DH-1"]),
+    ("aao.accounts", "Harpreet", "Singh", ["AAO", "sangam-user"], ["AAO-1"]),
+    ("second.signatory", "Deepa", "Kulkarni", ["SECOND_SIGNATORY", "sangam-user"], ["SS-1"]),
+    # the GPF subscriber: starts a GPF application as an employee, with no seat (IfmsPacksIT employee()); a person
+    # distinct from the DDO who scrutinises it (SoD, IX.5 rule 5)
+    ("gpf.subscriber", "Pooja", "Nair", ["sangam-user"], []),
+    ("org.admin", "Kavita", "Rao", ["sangam-tenant-admin", "sangam-user"], []),
+    ("section.supervisor", "Manoj", "Gupta", ["sangam-supervisor", "sangam-user"], []),
+]
+# in the platform realm (SL-70: only its sangam-admin is a platform administrator)
+PRESENTATION_PLATFORM_USERS = [
+    ("platform.admin", "Neelam", "Joshi", ["sangam-admin", "sangam-user"], []),
+]
+PRESENTATION_PW_FILE = os.path.join(os.path.dirname(COMPOSE), "presentation", "presentation-users.local.json")
+
+
+def presentation_env_name(username):
+    return "SANGAM_PRESENTATION_PASSWORD_" + username.upper().replace(".", "_").replace("-", "_")
+
+
+def presentation_passwords(usernames, generate):
+    """username -> password from env, then the git-ignored file; generates and stores missing ones when asked.
+    Never prints a password."""
+    import secrets
+    stored = {}
+    if os.path.exists(PRESENTATION_PW_FILE):
+        with open(PRESENTATION_PW_FILE, encoding="utf-8") as f:
+            stored = json.load(f)
+    out, changed = {}, False
+    for u in usernames:
+        pw = os.environ.get(presentation_env_name(u)) or stored.get(u)
+        if not pw and generate:
+            pw = secrets.token_urlsafe(18)   # 24 characters; realm policy length(12) and notUsername
+            stored[u] = pw
+            changed = True
+        out[u] = pw
+    if changed:
+        os.makedirs(os.path.dirname(PRESENTATION_PW_FILE), exist_ok=True)
+        with open(PRESENTATION_PW_FILE, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(stored, f, indent=2)
+            f.write("\n")
+    return out
+
+
+def presentation_user(entry, tenant, password):
+    uname, first, last, roles, seats = entry
+    u = user(uname, first, last, roles, [], tenant, seats, {"office": [PRESENTATION_OFFICE]} if seats else None)
+    u["credentials"] = [{"type": "password", "value": password, "temporary": False}] if password else []
+    return u
+
+
+def presentation_realms(tenant_realm, platform, passwords):
+    """Copies of the two realms with the presentation roles and users added."""
+    r = json.loads(json.dumps(tenant_realm))
+    have = {x["name"] for x in r["roles"]["realm"]}
+    r["roles"]["realm"] += [{"name": n, "description": d} for n, d in PRESENTATION_ROLES if n not in have]
+    r["users"] += [presentation_user(e, PRESENTATION_TENANT, passwords.get(e[0])) for e in PRESENTATION_USERS]
+    r["displayName"] = "Sangam"
+    pr = json.loads(json.dumps(platform))
+    pr["users"] += [presentation_user(e, PRESENTATION_TENANT, passwords.get(e[0])) for e in PRESENTATION_PLATFORM_USERS]
+    pr["displayName"] = "Sangam platform"
+    return r, pr
+
+
+def main_presentation(dry_run):
+    """--presentation: realm-local/sangam-realm.json and realm-local/sangam-platform-realm.json (git-ignored).
+    --dry-run: build and check everything, write nothing, generate no password."""
+    r = realm()
+    pr = platform_realm(r)
+    names = [e[0] for e in PRESENTATION_USERS + PRESENTATION_PLATFORM_USERS]
+    pws = presentation_passwords(names, generate=not dry_run)
+    tr, tpr = presentation_realms(r, pr, pws)
+    for realm_json in (tr, tpr):
+        defined = {x["name"] for x in realm_json["roles"]["realm"]}
+        for u in realm_json["users"]:
+            missing = [x for x in u.get("realmRoles", []) if x not in defined]
+            assert not missing, f"{u['username']}: undefined roles {missing}"
+        unames = [u["username"] for u in realm_json["users"]]
+        assert len(set(unames)) == len(unames), "duplicate username"
+    barred = ("demo", "dummy", "fictional")
+    for e in PRESENTATION_USERS + PRESENTATION_PLATFORM_USERS + [(PRESENTATION_TENANT,)] + PRESENTATION_ROLES:
+        assert not any(b in " ".join(map(str, e)).lower() for b in barred), f"IFMS SD-544 word in {e[0]}"
+    without = [n for n in names if not pws.get(n)]
+    print(f"presentation: tenant {PRESENTATION_TENANT}; users {', '.join(names)}; passwords present for "
+          f"{len(names) - len(without)}/{len(names)} (env or {PRESENTATION_PW_FILE}, never printed)")
+    if dry_run:
+        print(f"dry run: tenant realm {len(tr['users'])} users, {len(tr['roles']['realm'])} roles; platform realm "
+              f"{len(tpr['users'])} users; nothing written")
+        return
+    out = os.path.join(HERE, "realm-local")
+    write(os.path.join(out, "sangam-realm.json"), tr)
+    write(os.path.join(out, "sangam-platform-realm.json"), tpr)
+    print(f"written: {out} (git-ignored; holds passwords, never commit or share it)")
+
+
 def write(path, obj):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8", newline="\n") as f:
@@ -373,6 +498,10 @@ def write(path, obj):
 
 
 if __name__ == "__main__":
+    import sys
+    if "--presentation" in sys.argv[1:]:
+        main_presentation("--dry-run" in sys.argv[1:])
+        sys.exit(0)
     r = realm()
     write(os.path.join(HERE, "realm", "sangam-realm.json"), r)
     pr = platform_realm(r)

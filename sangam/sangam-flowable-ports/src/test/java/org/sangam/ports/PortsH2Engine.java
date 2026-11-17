@@ -92,6 +92,10 @@ public final class PortsH2Engine implements AutoCloseable {
     @Override
     public void close() {
         ClockUtil.reset();
-        engine.close();
+        try {
+            engine.close();
+        } finally {
+            H2Mem.drop(jdbcUrl);
+        }
     }
 }

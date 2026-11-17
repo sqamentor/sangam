@@ -37,12 +37,16 @@ class TenantEngineRegistryTest {
         TenantContext.clear();
         SangamClockHolder.reset();
         registry.close();
+        dbs.forEach(org.sangam.ports.H2Mem::drop);   // DB_CLOSE_DELAY=-1 keeps each database until SHUTDOWN (R8-heap)
     }
 
-    private static JdbcDataSource db(String name) {
+    private final java.util.List<String> dbs = new java.util.ArrayList<>();
+
+    private JdbcDataSource db(String name) {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:" + name + System.nanoTime() + ";DB_CLOSE_DELAY=-1");
         ds.setUser("sa");
+        dbs.add(ds.getURL());
         return ds;
     }
 

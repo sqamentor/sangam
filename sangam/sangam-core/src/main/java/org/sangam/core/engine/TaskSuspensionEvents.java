@@ -40,9 +40,59 @@ public final class TaskSuspensionEvents {
      * restart in one JVM) must not keep the listener of its closed predecessor, which would emit every event twice.
      */
     public static void register(String engineName, Listener listener) {
+        purgeReleased();
         List<Listener> l = new CopyOnWriteArrayList<>();
         l.add(listener);
         BY_ENGINE.put(key(engineName), l);
+    }
+
+    /** A listener method of an owner object, called with the owner, so the lambda itself captures nothing. */
+    @FunctionalInterface
+    public interface OwnedListener<T> {
+        void changed(T owner, List<ChangedTask> tasks, boolean suspended);
+    }
+
+    /**
+     * As {@link #register}, but the registry holds {@code owner} only weakly. The owner (e.g. the ports' task event
+     * dispatcher) is kept alive by its engine configuration; once the engine is closed and unreachable, the owner and
+     * the whole engine (MyBatis configuration, caches, deployed models) can be collected, and the entry is purged on
+     * the next registration. A strong registration of a per-engine object, with no engine-close hook to remove it,
+     * kept every closed engine of the JVM reachable from this static map (R8-heap: ~40 MB per engine, test JVMs ran out
+     * of heap). {@code listener} must not capture {@code owner}; pass an unbound method reference.
+     */
+    public static <T> void registerWeakly(String engineName, T owner, OwnedListener<? super T> listener) {
+        register(engineName, new WeakListener<>(owner, listener));
+    }
+
+    private static final class WeakListener<T> implements Listener {
+        private final java.lang.ref.WeakReference<T> owner;
+        private final OwnedListener<? super T> target;
+
+        WeakListener(T owner, OwnedListener<? super T> target) {
+            this.owner = new java.lang.ref.WeakReference<>(java.util.Objects.requireNonNull(owner, "owner"));
+            this.target = java.util.Objects.requireNonNull(target, "listener");
+        }
+
+        @Override
+        public void changed(List<ChangedTask> tasks, boolean suspended) {
+            T o = owner.get();
+            if (o != null) {
+                target.changed(o, tasks, suspended);
+            }
+        }
+
+        boolean released() {
+            return owner.get() == null;
+        }
+    }
+
+    private static boolean released(Listener l) {
+        return l instanceof WeakListener<?> w && w.released();
+    }
+
+    /** Drops the engines whose listeners are all weak and released (their engine was closed and collected). */
+    private static void purgeReleased() {
+        BY_ENGINE.values().removeIf(l -> !l.isEmpty() && l.stream().allMatch(TaskSuspensionEvents::released));
     }
 
     public static void unregister(String engineName, Listener listener) {
@@ -55,7 +105,7 @@ public final class TaskSuspensionEvents {
     /** True when the engine has a listener, so the TaskManager can skip the extra read otherwise. */
     public static boolean hasListeners(String engineName) {
         List<Listener> l = BY_ENGINE.get(key(engineName));
-        return l != null && !l.isEmpty();
+        return l != null && l.stream().anyMatch(x -> !released(x));
     }
 
     /** Reports the tasks of one update to every listener of the engine; nothing when the list is empty. */
