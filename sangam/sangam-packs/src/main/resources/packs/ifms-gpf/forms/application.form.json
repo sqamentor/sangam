@@ -1,6 +1,6 @@
 {
   "key": "ifms-gpf/application",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.ifms.gpf",
   "title": {
     "en": "GPF application",
