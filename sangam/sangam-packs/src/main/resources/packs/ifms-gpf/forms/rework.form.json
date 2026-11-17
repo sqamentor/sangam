@@ -1,0 +1,69 @@
+{
+  "key": "ifms-gpf/rework",
+  "version": "1.0.3",
+  "pack": "gov.ifms.gpf",
+  "title": {
+    "en": "Rework and resubmit",
+    "hi": "संशोधन कर पुनः प्रस्तुत करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "returnReason",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Reason for return",
+        "hi": "वापसी का कारण"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "gpfPurpose",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Purpose of advance / withdrawal",
+        "hi": "अग्रिम / आहरण का प्रयोजन"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "reworkDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resubmit",
+        "label": {
+          "en": "Resubmit",
+          "hi": "पुनः प्रस्तुत करें"
+        }
+      }
+    ]
+  }
+}

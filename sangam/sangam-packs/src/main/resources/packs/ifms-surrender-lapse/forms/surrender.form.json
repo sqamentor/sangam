@@ -1,6 +1,6 @@
 {
   "key": "ifms-surrender-lapse/surrender",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.ifms.surrender-lapse",
   "title": {
     "en": "Surrender of savings",
