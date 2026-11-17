@@ -42,11 +42,17 @@ final class TasksApi
      * @param string|null $sortOrder query sortOrder
      * @param list<string>|null $variableNames query variableNames
      * @param string|null $filterId query filterId
+     * @param int|null $priority query priority
+     * @param int|null $minPriority query minPriority
+     * @param int|null $maxPriority query maxPriority
+     * @param string|null $dueBefore query dueBefore
+     * @param string|null $dueAfter query dueAfter
+     * @param bool|null $overdue query overdue
      * @param int|null $page query page
      * @param int|null $size query size
      * @return Page<Model\Task>
      */
-    public function listTasks(?string $assignee = null, ?bool $mine = null, ?bool $unassigned = null, ?string $candidateGroup = null, ?string $seatId = null, ?string $processInstanceId = null, ?string $caseInstanceId = null, ?string $businessKey = null, ?string $processDefinitionKey = null, ?string $taskDefinitionKey = null, ?string $state = null, ?string $sortBy = null, ?string $currency = null, ?string $sortOrder = null, ?array $variableNames = null, ?string $filterId = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
+    public function listTasks(?string $assignee = null, ?bool $mine = null, ?bool $unassigned = null, ?string $candidateGroup = null, ?string $seatId = null, ?string $processInstanceId = null, ?string $caseInstanceId = null, ?string $businessKey = null, ?string $processDefinitionKey = null, ?string $taskDefinitionKey = null, ?string $state = null, ?string $sortBy = null, ?string $currency = null, ?string $sortOrder = null, ?array $variableNames = null, ?string $filterId = null, ?int $priority = null, ?int $minPriority = null, ?int $maxPriority = null, ?string $dueBefore = null, ?string $dueAfter = null, ?bool $overdue = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
         $req = ApiRequest::get('/tasks');
         $req->query('assignee', $assignee);
@@ -65,6 +71,12 @@ final class TasksApi
         $req->query('sortOrder', $sortOrder);
         $req->query('variableNames', $variableNames);
         $req->query('filterId', $filterId);
+        $req->query('priority', $priority);
+        $req->query('minPriority', $minPriority);
+        $req->query('maxPriority', $maxPriority);
+        $req->query('dueBefore', $dueBefore);
+        $req->query('dueAfter', $dueAfter);
+        $req->query('overdue', $overdue);
         $req->query('page', $page);
         $req->query('size', $size);
         return $this->calls->page($req, $options, Model\Task::class, $page, $size);

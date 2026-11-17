@@ -154,7 +154,7 @@ public class OperatonTaskAdapter implements TaskPort {
             } else if ("ACTIVE".equalsIgnoreCase(f.state())) {
                 q.active();
             }
-            sort(TaskIndex.filter(q, f), f.sortBy(), f.sortOrder());
+            sort(TaskIndex.filter(TaskPriorityDueFilter.apply(q, f), f), f.sortBy(), f.sortOrder());
         } else {
             q.orderByTaskCreateTime().desc();
         }
