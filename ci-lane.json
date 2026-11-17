@@ -1,0 +1,6 @@
+{
+  "modules": "",
+  "dbs": "postgres,oracle,sqlserver,mysql",
+  "chunks": "B-engine",
+  "ui": true
+}
