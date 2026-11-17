@@ -625,3 +625,8 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - (4) PNP-2: host bean approvals stay exact-name only, in all environments.
   - (5) PNP-2: each deployment that uses a host-approved bean is also recorded in the class-B audit chain, done now.
   - Assigned to R8-ux-build for (1) and (2), and to R8-pnp for (3) to (5).
+
+- **405 (owner chat 2026-11-17, "Release, list as limits (Recommended)")**: Sangam 0.1.0 ships today with everything that is green.
+  - Decision 392, the full decision 393 change and decision 402(2) (plain-Java host and four-eyes port) are listed in the release notes as known limitations and land in 0.1.1. Work on them continues.
+  - The other limitations named in IFMS-FIT-AUDIT.md are also listed in the release notes.
+  - Release path: merge the PNP and UX branches and test them; code SL-180; full verify; IfmsPacksIT on Oracle and SQL Server; refresh the IFMS guide and post the contract-change list; owner-signed push; SANGAM-GREEN-SHA.
