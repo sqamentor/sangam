@@ -51,12 +51,18 @@ public class SangamModelValidator {
         void check(String resource, Document doc, List<Finding> out);
     }
 
+    /**
+     * @param adHocEnabled        patch P-1 installed (ad-hoc sub-process parses)
+     * @param standardLoopEnabled patch P-6 installed (standard loop runs)
+     */
     public record Options(boolean adHocEnabled, boolean standardLoopEnabled) {
+        /** Ad-hoc only (the standard loop stays refused): the behaviour before P-6. */
         public Options(boolean adHocEnabled) {
             this(adHocEnabled, false);
         }
     }
 
+    private static final String BPMN_NS = "http://www.omg.org/spec/BPMN/20100524/MODEL";
     private static final String FLOWABLE_NS = "http://flowable.org/bpmn";
     private static final String ACTIVITI_NS = "http://activiti.org/bpmn";
     /** Namespaces whose attributes/elements the engine reads (or that carry no semantics). */
@@ -66,7 +72,14 @@ public class SangamModelValidator {
             "http://www.w3.org/2001/XMLSchema-instance", "http://www.w3.org/XML/1998/namespace",
             "http://www.w3.org/2000/xmlns/", "http://operaton.org/schema/1.0/bpmn", "http://camunda.org/schema/1.0/bpmn",
             "http://sangam.org/schema/1.0/bpmn", FLOWABLE_NS, ACTIVITI_NS);
-    private static final Set<String> UNSUPPORTED_BPMN = Set.of("complexGateway", "standardLoopCharacteristics", "dataStoreReference");
+    /** Not executable on Operaton (FLOWABLE-INTO-OPERATON D-52) and not ported. */
+    private static final Set<String> UNSUPPORTED_BPMN = Set.of("complexGateway");
+    /**
+     * Documentation-only elements (profile status NOT_EXECUTABLE): accepted, with a warning that they have no runtime
+     * effect. A data store reference used to be refused here although the profile said "documentation only"; the MIWG
+     * reference models B.1.0, B.2.0, C.4.0, C.5.0 and C.10.0 use it and were refused (R10-bpmn).
+     */
+    private static final Set<String> DOCUMENTATION_ONLY_BPMN = Set.of("dataStoreReference", "dataStore");
 
     private final Options options;
     private final List<Rule> rules = new ArrayList<>();
@@ -111,11 +124,29 @@ public class SangamModelValidator {
         }
         walk(doc.getDocumentElement(), resource, bpmn, cmmn, out);
         if (bpmn) {
-            // ADR-D-25 / R44: the shared strict-XOR rule (same check as the engine parse listener)
-            for (XorRoutingDom.Gateway g : XorRoutingDom.gateways(doc.getDocumentElement())) {
-                for (String p : g.problems()) {
-                    out.add(new Finding(Severity.ERROR, "ADR-D-25", resource, g.id(), p));
+            // ADR-D-25 / R44: the shared strict-XOR rule (same check as the engine parse listener). Like the engine, it
+            // applies to executable processes only: Operaton parses a process only when isExecutable="true" (absent or
+            // false = descriptive model, never run), so a descriptive gateway without conditions is not a routing risk.
+            // Before R10-bpmn the rule ran over the whole document and refused the MIWG descriptive models.
+            NodeList processes = doc.getDocumentElement().getElementsByTagNameNS(BPMN_NS, "process");
+            for (int i = 0; i < processes.getLength(); i++) {
+                Element process = (Element) processes.item(i);
+                if (!Boolean.parseBoolean(process.getAttribute("isExecutable"))) {
+                    continue;
                 }
+                for (XorRoutingDom.Gateway g : XorRoutingDom.gateways(process)) {
+                    for (String p : g.problems()) {
+                        out.add(new Finding(Severity.ERROR, "ADR-D-25", resource, g.id(), p));
+                    }
+                }
+            }
+            // An <import> of a type the engine has no importer for (XML Schema, BPMN, DMN item definitions) used to fail
+            // the whole deployment in Operaton's parseImports; SangamBpmnParse (P-7) accepts it as documentation.
+            NodeList imports = doc.getDocumentElement().getElementsByTagNameNS(BPMN_NS, "import");
+            for (int i = 0; i < imports.getLength(); i++) {
+                Element imp = (Element) imports.item(i);
+                out.add(new Finding(Severity.WARNING, "DOC-ONLY", resource, null, "import of " + imp.getAttribute("importType")
+                        + " (" + imp.getAttribute("location") + ") is documentation only; imported definitions are not used at run time"));
             }
         }
         for (Rule r : rules) {
@@ -133,6 +164,12 @@ public class SangamModelValidator {
             }
             if (UNSUPPORTED_BPMN.contains(local)) {
                 out.add(new Finding(Severity.ERROR, "D-52", resource, id(el), local + " is not executable on Operaton"));
+            }
+            if ("standardLoopCharacteristics".equals(local) && !options.standardLoopEnabled()) {
+                out.add(new Finding(Severity.ERROR, "D-52", resource, id(el), "standard loop needs patch P-6 (SangamBpmnParseFactory)"));
+            }
+            if (DOCUMENTATION_ONLY_BPMN.contains(local)) {
+                out.add(new Finding(Severity.WARNING, "DOC-ONLY", resource, id(el), local + " is documentation only; it has no runtime effect"));
             }
             if (isEventElement(local) && countEventDefinitions(el) > 1) {
                 out.add(new Finding(Severity.ERROR, "D-52", resource, id, "multiple/parallel-multiple events are not executable on Operaton"));

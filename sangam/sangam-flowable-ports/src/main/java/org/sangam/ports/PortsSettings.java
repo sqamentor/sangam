@@ -18,6 +18,7 @@ public class PortsSettings {
     private Outbox outbox;
 
     private boolean adHocSubProcess = true;            // FLOWABLE-INTO-OPERATON FC-01, patch P-1
+    private boolean standardLoop = true;               // BPMN standardLoopCharacteristics, patch P-6 (R10-bpmn)
     private boolean eventRegistry = true;               // FLOWABLE-INTO-OPERATON FC-02..04, FLOWABLE-INTO-OPERATON FC-43
     private boolean bpmnBehaviourExtensions = true;     // FLOWABLE-INTO-OPERATON FC-12, FLOWABLE-INTO-OPERATON FC-13, FLOWABLE-INTO-OPERATON FC-22
     private boolean skipExpressionsAlwaysEnabled = false;
@@ -42,6 +43,8 @@ public class PortsSettings {
     public void setOutbox(Outbox v) { outbox = v; }
     public boolean isAdHocSubProcess() { return adHocSubProcess; }
     public void setAdHocSubProcess(boolean v) { adHocSubProcess = v; }
+    public boolean isStandardLoop() { return standardLoop; }
+    public void setStandardLoop(boolean v) { standardLoop = v; }
     public boolean isEventRegistry() { return eventRegistry; }
     public void setEventRegistry(boolean v) { eventRegistry = v; }
     public boolean isBpmnBehaviourExtensions() { return bpmnBehaviourExtensions; }
