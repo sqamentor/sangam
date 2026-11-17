@@ -181,9 +181,17 @@ class E5OutboxInboxIT extends ContractSupport {
         assertEquals("CLAIMED", state(a.outboxId(), HISTORY));
         Thread.sleep(800);   // claim lease 500 ms
         int reset = relay.sweep();
-        long mineSwept = inTx(c -> Jdbc.one(c, "SELECT count(*) FROM OUTBOX_DELIVERY WHERE outbox_id = ? AND state = 'PENDING'",
-                rs -> rs.getLong(1), a.outboxId()).orElse(0L));
-        assertEquals(2, mineSwept, "exactly this event's two expired claims swept back to PENDING (sweep total " + reset + ")");
+        // The server's background relay sweeps and claims on the same table (class javadoc), so after the expiry this
+        // event's rows may already be PENDING, re-claimed under a newer epoch, or DONE, whichever sweeper got there
+        // first (CI 44022815109: on SQL Server the server sweeper reset them before ours). The contract is that the dead
+        // claim no longer holds them: no row is still CLAIMED under the epoch the dead node was given.
+        long released = 0;
+        for (Relay.Claimed cl : claimed) {
+            released += inTx(c -> Jdbc.one(c, "SELECT count(*) FROM OUTBOX_DELIVERY WHERE outbox_id = ? AND destination = ?"
+                            + " AND NOT (state = 'CLAIMED' AND claim_epoch = ?)",
+                    rs -> rs.getLong(1), a.outboxId(), cl.destination(), cl.epoch()).orElse(0L));
+        }
+        assertEquals(2, released, "both expired claims of this event released from the dead node (our sweep reset " + reset + ")");
         relay.drain(5);
         for (String d : List.of(HISTORY, WEBHOOK)) {
             assertEquals("DONE", state(a.outboxId(), d));

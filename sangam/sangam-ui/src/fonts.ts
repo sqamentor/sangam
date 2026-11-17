@@ -12,6 +12,7 @@
  * government font file is not bundled, let the site drop the TTF into /fonts/site/ and declare it as a face.
  * Everything is served from 'self' (CSP font-src 'self'), so it works air-gapped.
  */
+import { appPath } from './basePath';
 
 /** A font file the browser may load. `src` must be a same-origin path (air-gapped, CSP font-src 'self'). */
 export interface FontFaceDef {
@@ -56,8 +57,8 @@ export const DEVANAGARI_RANGE = 'U+0900-097F, U+1CD0-1CFF, U+200C-200D, U+20A8, 
  * deploy/fonts/README.md; the build refuses a file whose hash differs (scripts/deploy-fonts.mjs).
  */
 export const BUNDLED_FACES: FontFaceDef[] = [
-  { family: NOTO, src: '/fonts/noto/NotoSans-Regular.ttf', weight: '400', tier: 'osi' },
-  { family: NOTO_DEVA, src: '/fonts/noto/NotoSansDevanagari-Regular.ttf', weight: '400', unicodeRange: DEVANAGARI_RANGE, tier: 'osi' },
+  { family: NOTO, src: appPath('/fonts/noto/NotoSans-Regular.ttf'), weight: '400', tier: 'osi' },
+  { family: NOTO_DEVA, src: appPath('/fonts/noto/NotoSansDevanagari-Regular.ttf'), weight: '400', unicodeRange: DEVANAGARI_RANGE, tier: 'osi' },
 ];
 
 const DEVA: LanguageFonts = { fallback: [NOTO_DEVA, NOTO] };
@@ -184,7 +185,7 @@ export function fontsCss(site: FontsConfig | undefined, cfg: FontsConfig): strin
  * built-in LANGUAGE_FONTS < site drop-in manifest < /config.json `fonts`.
  */
 export async function applyFonts(cfg: FontsConfig = {}): Promise<void> {
-  const site = await readManifest(cfg.manifest ?? '/fonts/site/fonts.json');
+  const site = await readManifest(cfg.manifest ?? appPath('/fonts/site/fonts.json'));
   let el = document.getElementById('sangam-fonts') as HTMLStyleElement | null;
   if (!el) {
     el = document.createElement('style');

@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.sangam.core.engine.IllegalRemoteCallInLockScope;
 import org.sangam.engine.tx.LockScope;
 import org.sangam.integration.sim.SimHttpServer;
 
@@ -57,7 +58,7 @@ class HttpTransportLockScopeTest {
     @Test
     void aCallWhileL2IsHeldFailsClearlyAndSendsNothing() {
         LockScope.enter();
-        LockScope.IllegalRemoteCallInLockScope e = assertThrows(LockScope.IllegalRemoteCallInLockScope.class,
+        IllegalRemoteCallInLockScope e = assertThrows(IllegalRemoteCallInLockScope.class,
                 () -> HttpTransport.forSimulator().execute("t1",
                         HttpTransport.Call.get(server.uri("/ping?token=s3cr3t"), Map.of()), 0));
         assertTrue(e.getMessage().startsWith("IllegalRemoteCallInLockScope: HTTP GET http://"), e.getMessage());
@@ -72,7 +73,7 @@ class HttpTransportLockScopeTest {
         LockScope.enter();
         LockScope.enter();
         LockScope.exit();
-        assertThrows(LockScope.IllegalRemoteCallInLockScope.class, () -> HttpTransport.forSimulator().execute("t1",
+        assertThrows(IllegalRemoteCallInLockScope.class, () -> HttpTransport.forSimulator().execute("t1",
                 HttpTransport.Call.get(server.uri("/ping"), Map.of()), 0), "a nested command still holds the lock");
         LockScope.exit();
         assertInstanceOf(HttpTransport.Outcome.Response.class, HttpTransport.forSimulator().execute("t1",
