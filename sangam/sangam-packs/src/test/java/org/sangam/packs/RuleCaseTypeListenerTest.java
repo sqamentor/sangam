@@ -172,11 +172,14 @@ class RuleCaseTypeListenerTest {
     void aManifestWithoutACaseTypeConsultsTheTableWithoutOne() {
         deployPack("1.1.0", "");
         try {
-            // the table has no row for an absent case type and this seat, so the default row (no power) applies,
-            // even though the case says RESTRUCTURING
+            // decision 402 (9): the table reads caseType but the manifest declares none, so the guard refuses by
+            // name before the table is consulted (never the engine's null-input error), whatever the case says
             Task task = sanctionTask(start("RESTRUCTURING", 50_000L));
             ProcessEngineException ex = assertThrows(ProcessEngineException.class, () -> approve(task));
             assertTrue(ex.getMessage().contains("422 POWER_LIMIT_EXCEEDED"), ex.getMessage());
+            assertTrue(ex.getMessage().contains("POWER_RULE_CASE_TYPE_UNDECLARED"), ex.getMessage());
+            assertTrue(!ex.getMessage().contains("SANGAM-DMN-NULL-INPUT"), ex.getMessage());
+            assertEquals(1, engine.getTaskService().createTaskQuery().taskId(task.getId()).count(), "the task stays open");
         } finally {
             engine.getRepositoryService().createDeploymentQuery().deploymentName("pack:test.rct@1.1.0").list()
                     .forEach(d -> engine.getRepositoryService().deleteDeployment(d.getId(), true));

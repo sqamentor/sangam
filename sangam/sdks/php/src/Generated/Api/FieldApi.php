@@ -88,13 +88,15 @@ final class FieldApi
      *
      * A template (latest version, or a given version).
      *
-     * GET /field/templates/{key} (operationId fieldWorkTemplate); permission field.capture.
+     * GET /field/templates/by-key (operationId fieldWorkTemplate); permission field.capture.
+     * @param string $key query key
      * @param int|null $version query version
      * @return array<string, mixed>
      */
     public function fieldWorkTemplate(string $key, ?int $version = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/field/templates/' . HttpTransport::seg((string) $key));
+        $req = ApiRequest::get('/field/templates/by-key');
+        $req->query('key', $key);
         $req->query('version', $version);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
@@ -104,11 +106,13 @@ final class FieldApi
      *
      * Retire a template version.
      *
-     * POST /field/templates/{key}/{version}/retire (operationId fieldWorkRetireTemplate); permission field.admin; result stored atomically with the state change.
+     * POST /field/templates/by-key/{version}/retire (operationId fieldWorkRetireTemplate); permission field.admin; result stored atomically with the state change.
+     * @param string $key query key
      */
-    public function fieldWorkRetireTemplate(string $key, string $version, ?RequestOptions $options = null): void
+    public function fieldWorkRetireTemplate(string $version, string $key, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::post('/field/templates/' . HttpTransport::seg((string) $key) . '/' . HttpTransport::seg((string) $version) . '/retire');
+        $req = ApiRequest::post('/field/templates/by-key/' . HttpTransport::seg((string) $version) . '/retire');
+        $req->query('key', $key);
         $this->calls->none($req, $options);
     }
 
@@ -149,12 +153,14 @@ final class FieldApi
      *
      * Run one schedule now.
      *
-     * POST /field/schedules/{id}/run (operationId fieldWorkRunSchedule); permission field.admin; result stored atomically with the state change.
+     * POST /field/schedules/by-id/run (operationId fieldWorkRunSchedule); permission field.admin; result stored atomically with the state change.
+     * @param string $id query id
      * @return array<string, mixed>
      */
     public function fieldWorkRunSchedule(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/field/schedules/' . HttpTransport::seg((string) $id) . '/run');
+        $req = ApiRequest::post('/field/schedules/by-id/run');
+        $req->query('id', $id);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -241,13 +247,15 @@ final class FieldApi
      *
      * Set a device status (active, lost, revoked: revoke wipes the local queue).
      *
-     * POST /field/devices/{id}/status (operationId fieldWorkDeviceStatus); permission field.admin; result stored atomically with the state change.
+     * POST /field/devices/by-id/status (operationId fieldWorkDeviceStatus); permission field.admin; result stored atomically with the state change.
      * @param Model\FieldWorkDeviceStatusBody|array $body request body
+     * @param string $id query id
      * @return array<string, mixed>
      */
-    public function fieldWorkDeviceStatus(string $id, Model\FieldWorkDeviceStatusBody|array $body, ?RequestOptions $options = null): array
+    public function fieldWorkDeviceStatus(Model\FieldWorkDeviceStatusBody|array $body, string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/field/devices/' . HttpTransport::seg((string) $id) . '/status');
+        $req = ApiRequest::post('/field/devices/by-id/status');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -259,13 +267,15 @@ final class FieldApi
      *
      * Set a device's offline queue policy.
      *
-     * POST /field/devices/{id}/policy (operationId fieldWorkDevicePolicy); permission field.admin; result stored atomically with the state change.
+     * POST /field/devices/by-id/policy (operationId fieldWorkDevicePolicy); permission field.admin; result stored atomically with the state change.
      * @param Model\FieldWorkDevicePolicyBody|array $body request body
+     * @param string $id query id
      * @return array<string, mixed>
      */
-    public function fieldWorkDevicePolicy(string $id, Model\FieldWorkDevicePolicyBody|array $body, ?RequestOptions $options = null): array
+    public function fieldWorkDevicePolicy(Model\FieldWorkDevicePolicyBody|array $body, string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/field/devices/' . HttpTransport::seg((string) $id) . '/policy');
+        $req = ApiRequest::post('/field/devices/by-id/policy');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -277,12 +287,14 @@ final class FieldApi
      *
      * Verify a device's packet hash chain.
      *
-     * GET /field/devices/{id}/chain (operationId fieldWorkChain); permission field.review.
+     * GET /field/devices/by-id/chain (operationId fieldWorkChain); permission field.review.
+     * @param string $id query id
      * @return array<string, mixed>
      */
     public function fieldWorkChain(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/field/devices/' . HttpTransport::seg((string) $id) . '/chain');
+        $req = ApiRequest::get('/field/devices/by-id/chain');
+        $req->query('id', $id);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -291,13 +303,15 @@ final class FieldApi
      *
      * Upload offline packets from a device (idempotent per packet).
      *
-     * POST /field/sync/{deviceId}/upload (operationId fieldWorkUpload); permission field.capture; result stored atomically with the state change.
+     * POST /field/sync/by-device-id/upload (operationId fieldWorkUpload); permission field.capture; result stored atomically with the state change.
      * @param array $body request body
+     * @param string $deviceId query deviceId
      * @return list<mixed>
      */
-    public function fieldWorkUpload(string $deviceId, array $body, ?RequestOptions $options = null): array
+    public function fieldWorkUpload(array $body, string $deviceId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/field/sync/' . HttpTransport::seg((string) $deviceId) . '/upload');
+        $req = ApiRequest::post('/field/sync/by-device-id/upload');
+        $req->query('deviceId', $deviceId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -309,13 +323,15 @@ final class FieldApi
      *
      * Pull server changes for a device since a cursor.
      *
-     * GET /field/sync/{deviceId}/pull (operationId fieldWorkPull); permission field.capture.
+     * GET /field/sync/by-device-id/pull (operationId fieldWorkPull); permission field.capture.
+     * @param string $deviceId query deviceId
      * @param int|null $cursor query cursor
      * @return array<string, mixed>
      */
     public function fieldWorkPull(string $deviceId, ?int $cursor = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/field/sync/' . HttpTransport::seg((string) $deviceId) . '/pull');
+        $req = ApiRequest::get('/field/sync/by-device-id/pull');
+        $req->query('deviceId', $deviceId);
         $req->query('cursor', $cursor);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
@@ -389,12 +405,14 @@ final class FieldApi
      *
      * Evidence metadata and integrity report.
      *
-     * GET /field/evidence/{id} (operationId fieldWorkEvidence); permission field.capture.
+     * GET /field/evidence/by-id (operationId fieldWorkEvidence); permission field.capture.
+     * @param string $id query id
      * @return array<string, mixed>
      */
     public function fieldWorkEvidence(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/field/evidence/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::get('/field/evidence/by-id');
+        $req->query('id', $id);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -403,12 +421,14 @@ final class FieldApi
      *
      * Evidence content (streamed).
      *
-     * GET /field/evidence/{id}/content (operationId fieldWorkEvidenceContent); permission field.capture.
+     * GET /field/evidence/by-id/content (operationId fieldWorkEvidenceContent); permission field.capture.
+     * @param string $id query id
      * @return string
      */
     public function fieldWorkEvidenceContent(string $id, ?RequestOptions $options = null): string
     {
-        $req = ApiRequest::get('/field/evidence/' . HttpTransport::seg((string) $id) . '/content');
+        $req = ApiRequest::get('/field/evidence/by-id/content');
+        $req->query('id', $id);
         return $this->calls->raw($req, $options, 'application/octet-stream');
     }
 
@@ -417,12 +437,14 @@ final class FieldApi
      *
      * Re-run the integrity checks of an evidence item.
      *
-     * POST /field/evidence/{id}/reverify (operationId fieldWorkReverifyEvidence); permission field.review; result stored atomically with the state change.
+     * POST /field/evidence/by-id/reverify (operationId fieldWorkReverifyEvidence); permission field.review; result stored atomically with the state change.
+     * @param string $id query id
      * @return array<string, mixed>
      */
     public function fieldWorkReverifyEvidence(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/field/evidence/' . HttpTransport::seg((string) $id) . '/reverify');
+        $req = ApiRequest::post('/field/evidence/by-id/reverify');
+        $req->query('id', $id);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 

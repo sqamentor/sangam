@@ -301,6 +301,8 @@ OPT = {
     'RETRY_SAME_OPERATION': ('Retry with the same operation id', 'उसी संचालन आईडी से पुनः प्रयास'),
     'abstain': ('Abstain', 'तटस्थ'), 'correct': ('Correct and resubmit', 'सुधार कर पुनः प्रस्तुत करें'),
     'withdraw': ('Withdraw', 'वापस लें'), 'resubmit': ('Resubmit', 'पुनः प्रस्तुत करें'),
+    'reissue': ('Reissue after correction', 'सुधार के बाद पुनः जारी करें'), 'cancel': ('Cancel', 'रद्द करें'),
+    'checkAgain': ('Check again', 'फिर से जाँचें'),
     'verified': ('Verified', 'सत्यापित'), 'doubtful': ('Doubtful', 'संदिग्ध'), 'failed': ('Not verified', 'असत्यापित'),
     'supply': ('Supply information', 'सूचना प्रदान करें'), 'transfer': ('Transfer (s.6(3))', 'अंतरित करें (धारा 6(3))'),
     'additionalFee': ('Seek additional fee (s.7(3))', 'अतिरिक्त शुल्क मांगें (धारा 7(3))'),

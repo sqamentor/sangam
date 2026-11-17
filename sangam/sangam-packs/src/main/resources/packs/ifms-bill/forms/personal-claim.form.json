@@ -1,6 +1,6 @@
 {
   "key": "ifms-bill/personal-claim",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "pack": "gov.ifms.bill",
   "title": {
     "en": "Personal claim (TA, LTC, medical, CEA)",

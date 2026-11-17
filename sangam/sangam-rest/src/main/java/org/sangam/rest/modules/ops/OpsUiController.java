@@ -33,7 +33,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -176,8 +175,9 @@ public class OpsUiController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/ops/variables/{id}")
-    public ResponseEntity<Void> deleteVariable(RequestContext ctx, @PathVariable String id, @RequestParam(required = false) String reason) {
+    /** Decision 393: the value can carry '/' or ':', refused encoded in a path segment, so it is a required query parameter. */
+    @DeleteMapping("/ops/variables/by-id")
+    public ResponseEntity<Void> deleteVariable(RequestContext ctx, @RequestParam("id") String id, @RequestParam(required = false) String reason) {
         permissions.require(ctx, OpsController.ADMIN);
         requireReason(reason);
         api.variables().delete(ScopedVariables.tenantScope(ctx.tenantId()), id, ctx.principalId());
@@ -191,13 +191,13 @@ public class OpsUiController {
                 .map(s -> new SecretRow(s.ref(), "TENANT", s.version(), s.updatedAt(), s.updatedBy(), s.reason())).toList(), page, size);
     }
 
-    /** The value is write-only and is never returned. The path names the secret; a differing body name is refused. */
-    @PutMapping("/ops/secrets/{name}")
-    public ResponseEntity<Void> putSecret(RequestContext ctx, @PathVariable String name, @RequestBody SecretRequest b) {
+    /** The value is write-only and is never returned. The name query parameter names the secret (decision 393: it can carry '/' or ':'); a differing body name is refused. */
+    @PutMapping("/ops/secrets/by-name")
+    public ResponseEntity<Void> putSecret(RequestContext ctx, @RequestParam("name") String name, @RequestBody SecretRequest b) {
         permissions.require(ctx, OpsController.ADMIN);
         requireReason(b.reason());
         if (b.name() != null && !b.name().equals(name)) {
-            throw ApiProblem.badRequest("VALIDATION_FAILED", "the body name differs from the path");
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "the body name differs from the name parameter");
         }
         if (b.scope() != null && !b.scope().isBlank() && !b.scope().equalsIgnoreCase("TENANT")) {
             throw ApiProblem.badRequest("SCOPE_NOT_SUPPORTED", "secrets belong to the tenant");
@@ -207,8 +207,9 @@ public class OpsUiController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/ops/secrets/{name}")
-    public ResponseEntity<Void> deleteSecret(RequestContext ctx, @PathVariable String name, @RequestParam(required = false) String reason) {
+    /** Decision 393: the value can carry '/' or ':', refused encoded in a path segment, so it is a required query parameter. */
+    @DeleteMapping("/ops/secrets/by-name")
+    public ResponseEntity<Void> deleteSecret(RequestContext ctx, @RequestParam("name") String name, @RequestParam(required = false) String reason) {
         permissions.require(ctx, OpsController.ADMIN);
         requireReason(reason);
         api.secrets().delete(ctx.tenantId(), name, ctx.principalId());
@@ -222,8 +223,9 @@ public class OpsUiController {
         return Lists.ok(sequenceRows(ctx.tenantId()));
     }
 
-    @PostMapping("/ops/sequences/{name}/advance")
-    public ResponseEntity<Void> advance(RequestContext ctx, @PathVariable String name, @RequestBody AdvanceRequest b) {
+    /** Decision 393: the value can carry '/' or ':', refused encoded in a path segment, so it is a required query parameter. */
+    @PostMapping("/ops/sequences/by-name/advance")
+    public ResponseEntity<Void> advance(RequestContext ctx, @RequestParam("name") String name, @RequestBody AdvanceRequest b) {
         permissions.require(ctx, OpsController.ADMIN);
         requireReason(b.reason());
         if (b.to() == null) {

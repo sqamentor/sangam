@@ -57,11 +57,13 @@ final class ResourcesApi
      *
      * ResourcesController.retireType (sangam-rest).
      *
-     * DELETE /resources/types/{typeId} (operationId resourcesResourcesRetireType); permission resources.admin; result stored atomically with the state change.
+     * DELETE /resources/types/by-type-id (operationId resourcesResourcesRetireType); permission resources.admin; result stored atomically with the state change.
+     * @param string $typeId query typeId
      */
     public function resourcesResourcesRetireType(string $typeId, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/resources/types/' . HttpTransport::seg((string) $typeId));
+        $req = ApiRequest::delete('/resources/types/by-type-id');
+        $req->query('typeId', $typeId);
         $this->calls->none($req, $options);
     }
 
@@ -70,13 +72,15 @@ final class ResourcesApi
      *
      * ResourcesController.saveCalendar (sangam-rest).
      *
-     * PUT /resources/calendars/{calendarId} (operationId resourcesResourcesSaveCalendar); permission resources.admin; result stored atomically with the state change.
+     * PUT /resources/calendars/by-calendar-id (operationId resourcesResourcesSaveCalendar); permission resources.admin; result stored atomically with the state change.
      * @param Model\ResourcesResourcesSaveCalendarBody|array $body request body
+     * @param string $calendarId query calendarId
      * @return array<string, mixed>
      */
-    public function resourcesResourcesSaveCalendar(string $calendarId, Model\ResourcesResourcesSaveCalendarBody|array $body, ?RequestOptions $options = null): array
+    public function resourcesResourcesSaveCalendar(Model\ResourcesResourcesSaveCalendarBody|array $body, string $calendarId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::put('/resources/calendars/' . HttpTransport::seg((string) $calendarId));
+        $req = ApiRequest::put('/resources/calendars/by-calendar-id');
+        $req->query('calendarId', $calendarId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -88,12 +92,14 @@ final class ResourcesApi
      *
      * ResourcesController.calendar (sangam-rest).
      *
-     * GET /resources/calendars/{calendarId} (operationId resourcesResourcesCalendar); permission resources.read.
+     * GET /resources/calendars/by-calendar-id (operationId resourcesResourcesCalendar); permission resources.read.
+     * @param string $calendarId query calendarId
      * @return array<string, mixed>
      */
     public function resourcesResourcesCalendar(string $calendarId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/resources/calendars/' . HttpTransport::seg((string) $calendarId));
+        $req = ApiRequest::get('/resources/calendars/by-calendar-id');
+        $req->query('calendarId', $calendarId);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -153,11 +159,13 @@ final class ResourcesApi
      *
      * ResourcesController.deleteSlotTemplate (sangam-rest).
      *
-     * DELETE /resources/slot-templates/{templateId} (operationId resourcesResourcesDeleteSlotTemplate); permission resources.admin; result stored atomically with the state change.
+     * DELETE /resources/slot-templates/by-template-id (operationId resourcesResourcesDeleteSlotTemplate); permission resources.admin; result stored atomically with the state change.
+     * @param string $templateId query templateId
      */
     public function resourcesResourcesDeleteSlotTemplate(string $templateId, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/resources/slot-templates/' . HttpTransport::seg((string) $templateId));
+        $req = ApiRequest::delete('/resources/slot-templates/by-template-id');
+        $req->query('templateId', $templateId);
         $this->calls->none($req, $options);
     }
 
@@ -184,12 +192,14 @@ final class ResourcesApi
      *
      * ResourcesController.history (sangam-rest).
      *
-     * GET /resources/history/{entityType}/{entityId} (operationId resourcesResourcesHistory); permission resources.read.
+     * GET /resources/history/{entityType}/by-entity-id (operationId resourcesResourcesHistory); permission resources.read.
+     * @param string $entityId query entityId
      * @return list<array<string, mixed>>
      */
     public function resourcesResourcesHistory(string $entityType, string $entityId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/resources/history/' . HttpTransport::seg((string) $entityType) . '/' . HttpTransport::seg((string) $entityId));
+        $req = ApiRequest::get('/resources/history/' . HttpTransport::seg((string) $entityType) . '/by-entity-id');
+        $req->query('entityId', $entityId);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 

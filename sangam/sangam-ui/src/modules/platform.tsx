@@ -648,21 +648,21 @@ const variables: ScreenDef = {
   filters: [f.select('scope', ['GLOBAL', 'TENANT', 'PACKAGE', 'PROCESS']), f.text('name')],
   columns: [c('scope'), c('name'), c('value', 'fld.value'), c('version')], rowKey: ['id', 'name'],
   create: { id: 'save', label: 'act.create', method: 'PUT', path: '/ops/variables', fields: [f.select('scope', ['GLOBAL', 'TENANT', 'PACKAGE', 'PROCESS'], undefined, true), f.text('name', undefined, true), f.text('value', 'fld.value', true)], reason: 'body' },
-  actions: [{ id: 'delete', label: 'common.delete', method: 'DELETE', path: '/ops/variables/{id}', reason: 'query', danger: true, noJson: true }],
+  actions: [{ id: 'delete', label: 'common.delete', method: 'DELETE', path: '/ops/variables/by-id?id={id}', reason: 'query', danger: true, noJson: true }],
 };
 const secrets: ScreenDef = {
   id: 'secrets', title: 'mod.ops2.secrets', description: 'mod.ops2.secretsDesc', list: '/ops/secrets',
   columns: [c('name'), c('scope'), c('version'), c('updatedAt'), c('updatedBy')], rowKey: ['name', 'id'],
-  create: { id: 'set', label: 'act.create', method: 'PUT', path: '/ops/secrets/{name}', fields: [f.text('name', undefined, true), f.text('scope'), f.text('value', 'fld.secretValue', true, { sensitive: true })], reason: 'body', noJson: true },
+  create: { id: 'set', label: 'act.create', method: 'PUT', path: '/ops/secrets/by-name?name={name}', fields: [f.text('name', undefined, true), f.text('scope'), f.text('value', 'fld.secretValue', true, { sensitive: true })], reason: 'body', noJson: true },
   actions: [
-    { id: 'rotate', label: 'admin.rotate', method: 'PUT', path: '/ops/secrets/{name}', fields: [f.text('value', 'fld.secretValue', true, { sensitive: true })], reason: 'body', noJson: true },
-    { id: 'delete', label: 'common.delete', method: 'DELETE', path: '/ops/secrets/{name}', reason: 'query', danger: true, noJson: true },
+    { id: 'rotate', label: 'admin.rotate', method: 'PUT', path: '/ops/secrets/by-name?name={name}', fields: [f.text('value', 'fld.secretValue', true, { sensitive: true })], reason: 'body', noJson: true },
+    { id: 'delete', label: 'common.delete', method: 'DELETE', path: '/ops/secrets/by-name?name={name}', reason: 'query', danger: true, noJson: true },
   ],
 };
 const sequences: ScreenDef = {
   id: 'seq', title: 'mod.ops2.sequences', list: '/ops/sequences', unpaged: true,
   columns: [c('name'), c('current'), c('table')], rowKey: ['name'],
-  actions: [{ id: 'advance', label: 'act.update', path: '/ops/sequences/{name}/advance', fields: [f.num('to', 'fld.value', true)], reason: 'body', noJson: true, hint: 'mod.ops2.sequenceHint' }],
+  actions: [{ id: 'advance', label: 'act.update', path: '/ops/sequences/by-name/advance?name={name}', fields: [f.num('to', 'fld.value', true)], reason: 'body', noJson: true, hint: 'mod.ops2.sequenceHint' }],
 };
 const indexJobs: ScreenDef = {
   id: 'index', title: 'mod.ops2.index', list: '/ops/index-jobs',

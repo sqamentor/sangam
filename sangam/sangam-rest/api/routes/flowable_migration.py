@@ -80,7 +80,7 @@ SCHEMAS["FlowableMigrationRollbackRequest"]["properties"]["reason"].update({"min
 
 _FM = "/ops/flowable-migrations"
 _FM_ERR = ("BadRequest", "Unauthorized", "Forbidden")
-_FM_ID = pp("id", "Run id")
+_FM_ID = q("id", desc="Run id (caller-chosen); may carry '/' or ':'", required=True)
 
 
 def _fm_extra(path, method, conflict=True):
@@ -100,16 +100,16 @@ op("post", _FM, "createFlowableMigration", _FM_TAG, "Create a Flowable migration
    body="FlowableMigrationRequest", resp=(201, "FlowableMigrationReport"), created=True,
    cmd="ops.flowable-migration.create", perm=_FM_PERM, errors=_FM_ERR)
 _fm_extra(_FM, "post")
-op("get", _FM + "/{id}", "getFlowableMigration", _FM_TAG, "Get a Flowable migration run", "The run's report." + _FM_ADMIN,
+op("get", _FM + "/by-id", "getFlowableMigration", _FM_TAG, "Get a Flowable migration run", "The run's report." + _FM_ADMIN,
    _FM_REQ, params=[_FM_ID], resp=(200, "FlowableMigrationReport"), perm=_FM_PERM,
    errors=("Unauthorized", "Forbidden", "NotFound"))
-_fm_extra(_FM + "/{id}", "get", conflict=False)
-op("get", _FM + "/{id}/items", "listFlowableMigrationItems", _FM_TAG, "Items of a Flowable migration run",
+_fm_extra(_FM + "/by-id", "get", conflict=False)
+op("get", _FM + "/by-id/items", "listFlowableMigrationItems", _FM_TAG, "Items of a Flowable migration run",
    "Source instances of the run with status and findings." + _FM_ADMIN, _FM_REQ, list_=True,
    params=[_FM_ID, {"name": "status", "in": "query", "required": False, "description": "Only items in this status",
                     "schema": {"type": "string", "enum": _FM_ITEM_STATES}}],
    resp=(200, "array:FlowableMigrationItem"), perm=_FM_PERM, errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound"))
-_fm_extra(_FM + "/{id}/items", "get", conflict=False)
+_fm_extra(_FM + "/by-id/items", "get", conflict=False)
 for _step, _opid, _summary, _desc in (
         ("freeze", "freezeFlowableMigration", "Freeze the source",
          "From DRY_RUN: freezes the Flowable workers and rechecks every planned instance's fingerprint. When the "
@@ -126,16 +126,16 @@ for _step, _opid, _summary, _desc in (
         ("release", "releaseFlowableMigration", "Release the source freeze",
          "From DRY_RUN, FROZEN (back to DRY_RUN), ROLLED_BACK or CUT_OVER: lifts the Flowable freeze. After CUT_OVER "
          "it is refused, with a problem, while a migrated instance still exists on Flowable.")):
-    op("post", _FM + "/{id}/" + _step, _opid, _FM_TAG, _summary,
+    op("post", _FM + "/by-id/" + _step, _opid, _FM_TAG, _summary,
        _desc + " No body; 200 with the report and its problems list." + _FM_ADMIN, _FM_REQ, params=[_FM_ID],
        resp=(200, "FlowableMigrationReport"), cmd="ops.flowable-migration." + _step, perm=_FM_PERM,
        errors=("Unauthorized", "Forbidden", "NotFound"))
-    _fm_extra(_FM + "/{id}/" + _step, "post")
-op("post", _FM + "/{id}/rollback", "rollbackFlowableMigration", _FM_TAG, "Roll back the run",
+    _fm_extra(_FM + "/by-id/" + _step, "post")
+op("post", _FM + "/by-id/rollback", "rollbackFlowableMigration", _FM_TAG, "Roll back the run",
    "From APPLYING, APPLIED, RECONCILED or RECONCILE_FAILED, while Flowable is still frozen: deletes the run's Sangam "
    "instances (ROLLED_BACK). Refused as a whole, with problems and no change, when Flowable is no longer frozen or a "
    "target instance has moved on. 400 REASON_REQUIRED without a reason."
    + _FM_ADMIN, _FM_REQ, params=[_FM_ID], body="FlowableMigrationRollbackRequest",
    resp=(200, "FlowableMigrationReport"), cmd="ops.flowable-migration.rollback", perm=_FM_PERM,
    errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound"))
-_fm_extra(_FM + "/{id}/rollback", "post")
+_fm_extra(_FM + "/by-id/rollback", "post")

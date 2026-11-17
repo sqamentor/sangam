@@ -59,20 +59,23 @@ public class QueueController {
     public record CompleteRequest(String outcome) {
     }
 
-    @PutMapping("/service-points/{servicePointId}")
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PutMapping("/service-points/by-service-point-id")
     public ResponseEntity<QueueModel.ServicePoint> defineServicePoint(RequestContext ctx,
-            @PathVariable String servicePointId, @RequestBody QueueRestPort.ServicePointRequest body) {
+            @RequestParam("servicePointId") String servicePointId, @RequestBody QueueRestPort.ServicePointRequest body) {
         return Lists.okRef(servicePointId, port.defineServicePoint(admin(ctx), servicePointId, body));
     }
 
-    @PostMapping("/service-points/{servicePointId}/status")
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/service-points/by-service-point-id/status")
     public ResponseEntity<QueueModel.ServicePoint> setServicePointStatus(RequestContext ctx,
-            @PathVariable String servicePointId, @RequestBody StatusRequest body) {
+            @RequestParam("servicePointId") String servicePointId, @RequestBody StatusRequest body) {
         return Lists.okRef(servicePointId, port.setServicePointStatus(admin(ctx), servicePointId, body.status()));
     }
 
-    @GetMapping("/service-points/{servicePointId}")
-    public QueueModel.ServicePoint servicePoint(RequestContext ctx, @PathVariable String servicePointId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/service-points/by-service-point-id")
+    public QueueModel.ServicePoint servicePoint(RequestContext ctx, @RequestParam("servicePointId") String servicePointId) {
         return port.servicePoint(read(ctx), servicePointId);
     }
 
@@ -83,43 +86,50 @@ public class QueueController {
         return Lists.ok(port.servicePoints(read(ctx), pr.page(), pr.size()));
     }
 
-    @PutMapping("/service-points/{servicePointId}/counters/{counterId}")
-    public ResponseEntity<QueueModel.Counter> defineCounter(RequestContext ctx, @PathVariable String servicePointId,
-            @PathVariable String counterId, @RequestBody QueueRestPort.CounterRequest body) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PutMapping("/service-points/by-service-point-id/counters/by-counter-id")
+    public ResponseEntity<QueueModel.Counter> defineCounter(RequestContext ctx, @RequestParam("servicePointId") String servicePointId,
+            @RequestParam("counterId") String counterId, @RequestBody QueueRestPort.CounterRequest body) {
         return Lists.okRef(counterId, port.defineCounter(admin(ctx), servicePointId, counterId, body));
     }
 
-    @GetMapping("/service-points/{servicePointId}/counters")
-    public ResponseEntity<List<QueueModel.Counter>> counters(RequestContext ctx, @PathVariable String servicePointId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/service-points/by-service-point-id/counters")
+    public ResponseEntity<List<QueueModel.Counter>> counters(RequestContext ctx, @RequestParam("servicePointId") String servicePointId) {
         return Lists.ok(port.counters(read(ctx), servicePointId));
     }
 
-    @PostMapping("/counters/{counterId}/open")
-    public ResponseEntity<QueueModel.Counter> openCounter(RequestContext ctx, @PathVariable String counterId,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/counters/by-counter-id/open")
+    public ResponseEntity<QueueModel.Counter> openCounter(RequestContext ctx, @RequestParam("counterId") String counterId,
                                                           @RequestBody OpenRequest body) {
         return Lists.okRef(counterId, port.openCounter(operate(ctx), counterId, body.operatorId()));
     }
 
-    @PostMapping("/counters/{counterId}/pause")
-    public ResponseEntity<QueueModel.Counter> pauseCounter(RequestContext ctx, @PathVariable String counterId,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/counters/by-counter-id/pause")
+    public ResponseEntity<QueueModel.Counter> pauseCounter(RequestContext ctx, @RequestParam("counterId") String counterId,
                                                            @RequestBody ReasonRequest body) {
         return Lists.okRef(counterId, port.pauseCounter(operate(ctx), counterId, body.reason()));
     }
 
-    @PostMapping("/counters/{counterId}/close")
-    public ResponseEntity<QueueModel.Counter> closeCounter(RequestContext ctx, @PathVariable String counterId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/counters/by-counter-id/close")
+    public ResponseEntity<QueueModel.Counter> closeCounter(RequestContext ctx, @RequestParam("counterId") String counterId) {
         return Lists.okRef(counterId, port.closeCounter(operate(ctx), counterId));
     }
 
-    @PostMapping("/service-points/{servicePointId}/tokens")
-    public ResponseEntity<QueueModel.Token> issueToken(RequestContext ctx, @PathVariable String servicePointId,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/service-points/by-service-point-id/tokens")
+    public ResponseEntity<QueueModel.Token> issueToken(RequestContext ctx, @RequestParam("servicePointId") String servicePointId,
                                                        @RequestBody QueueRestPort.IssueTokenRequest body) {
         QueueModel.Token t = port.issueToken(write(ctx), servicePointId, body);
         return Lists.created("/api/v1/queues/tokens/" + t.tokenId(), t.tokenId(), t);
     }
 
-    @GetMapping("/service-points/{servicePointId}/tokens")
-    public ResponseEntity<List<QueueModel.Token>> tokens(RequestContext ctx, @PathVariable String servicePointId,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/service-points/by-service-point-id/tokens")
+    public ResponseEntity<List<QueueModel.Token>> tokens(RequestContext ctx, @RequestParam("servicePointId") String servicePointId,
             @RequestParam(required = false) String state,
             @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
         SecurityIdentity id = read(ctx);
@@ -150,70 +160,81 @@ public class QueueController {
         return Lists.okRef(tokenId, port.cancel(write(ctx), tokenId, body.reason()));
     }
 
-    @PostMapping("/counters/{counterId}/call-next")
-    public ResponseEntity<QueueModel.Token> callNext(RequestContext ctx, @PathVariable String counterId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/counters/by-counter-id/call-next")
+    public ResponseEntity<QueueModel.Token> callNext(RequestContext ctx, @RequestParam("counterId") String counterId) {
         return port.callNext(operate(ctx), counterId)
                 .map(t -> Lists.okRef(t.tokenId(), t))
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
-    @PostMapping("/counters/{counterId}/call")
-    public ResponseEntity<QueueModel.Token> callToken(RequestContext ctx, @PathVariable String counterId,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/counters/by-counter-id/call")
+    public ResponseEntity<QueueModel.Token> callToken(RequestContext ctx, @RequestParam("counterId") String counterId,
                                                       @RequestBody CallRequest body) {
         return Lists.okRef(body.tokenId(), port.callToken(operate(ctx), counterId, body.tokenId(), body.reason()));
     }
 
-    @PostMapping("/counters/{counterId}/recall")
-    public ResponseEntity<QueueModel.Token> recall(RequestContext ctx, @PathVariable String counterId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/counters/by-counter-id/recall")
+    public ResponseEntity<QueueModel.Token> recall(RequestContext ctx, @RequestParam("counterId") String counterId) {
         QueueModel.Token t = port.recall(operate(ctx), counterId);
         return Lists.okRef(t.tokenId(), t);
     }
 
-    @PostMapping("/counters/{counterId}/skip")
-    public ResponseEntity<QueueModel.Token> skip(RequestContext ctx, @PathVariable String counterId,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/counters/by-counter-id/skip")
+    public ResponseEntity<QueueModel.Token> skip(RequestContext ctx, @RequestParam("counterId") String counterId,
                                                  @RequestBody ReasonRequest body) {
         QueueModel.Token t = port.skip(operate(ctx), counterId, body.reason());
         return Lists.okRef(t.tokenId(), t);
     }
 
-    @PostMapping("/counters/{counterId}/start-serving")
-    public ResponseEntity<QueueModel.Token> startServing(RequestContext ctx, @PathVariable String counterId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/counters/by-counter-id/start-serving")
+    public ResponseEntity<QueueModel.Token> startServing(RequestContext ctx, @RequestParam("counterId") String counterId) {
         QueueModel.Token t = port.startServing(operate(ctx), counterId);
         return Lists.okRef(t.tokenId(), t);
     }
 
-    @PostMapping("/counters/{counterId}/complete")
-    public ResponseEntity<QueueModel.Token> complete(RequestContext ctx, @PathVariable String counterId,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/counters/by-counter-id/complete")
+    public ResponseEntity<QueueModel.Token> complete(RequestContext ctx, @RequestParam("counterId") String counterId,
                                                      @RequestBody CompleteRequest body) {
         QueueModel.Token t = port.complete(operate(ctx), counterId, body.outcome());
         return Lists.okRef(t.tokenId(), t);
     }
 
-    @PostMapping("/service-points/{servicePointId}/no-show-sweep")
-    public Map<String, Object> noShowSweep(RequestContext ctx, @PathVariable String servicePointId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/service-points/by-service-point-id/no-show-sweep")
+    public Map<String, Object> noShowSweep(RequestContext ctx, @RequestParam("servicePointId") String servicePointId) {
         return Map.of("noShows", port.noShowSweep(admin(ctx), servicePointId));
     }
 
-    @GetMapping("/service-points/{servicePointId}/sla-breaches")
-    public ResponseEntity<List<QueueModel.Token>> slaBreaches(RequestContext ctx, @PathVariable String servicePointId) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/service-points/by-service-point-id/sla-breaches")
+    public ResponseEntity<List<QueueModel.Token>> slaBreaches(RequestContext ctx, @RequestParam("servicePointId") String servicePointId) {
         return Lists.ok(port.slaBreaches(read(ctx), servicePointId));
     }
 
-    @GetMapping("/service-points/{servicePointId}/stats")
-    public QueueModel.QueueStats stats(RequestContext ctx, @PathVariable String servicePointId,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/service-points/by-service-point-id/stats")
+    public QueueModel.QueueStats stats(RequestContext ctx, @RequestParam("servicePointId") String servicePointId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
         return port.stats(read(ctx), servicePointId, from, to);
     }
 
-    @GetMapping("/service-points/{servicePointId}/display")
-    public QueueModel.DisplaySnapshot display(RequestContext ctx, @PathVariable String servicePointId,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/service-points/by-service-point-id/display")
+    public QueueModel.DisplaySnapshot display(RequestContext ctx, @RequestParam("servicePointId") String servicePointId,
             @RequestParam(required = false, defaultValue = "10") int next) {
         return port.displaySnapshot(read(ctx), servicePointId, Math.min(Math.max(next, 1), 100));
     }
 
-    @GetMapping("/service-points/{servicePointId}/call-events")
-    public ResponseEntity<List<QueueModel.CallEvent>> callEvents(RequestContext ctx, @PathVariable String servicePointId,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/service-points/by-service-point-id/call-events")
+    public ResponseEntity<List<QueueModel.CallEvent>> callEvents(RequestContext ctx, @RequestParam("servicePointId") String servicePointId,
             @RequestParam(required = false, defaultValue = "0") long after,
             @RequestParam(required = false, defaultValue = "100") int limit) {
         return Lists.ok(port.callEvents(read(ctx), servicePointId, after, Math.min(Math.max(limit, 1), 1000)));

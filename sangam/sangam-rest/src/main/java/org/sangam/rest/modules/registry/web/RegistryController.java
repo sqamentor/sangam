@@ -65,18 +65,21 @@ public class RegistryController {
         return support.tx((c, ctx) -> types.list(c, ctx.tenant(), kind));
     }
 
-    @GetMapping("/types/{typeKey}")
-    public Map<String, Object> currentType(@PathVariable String typeKey) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/types/by-type-key")
+    public Map<String, Object> currentType(@RequestParam("typeKey") String typeKey) {
         return support.tx((c, ctx) -> types.current(c, ctx.tenant(), typeKey).toMap());
     }
 
-    @GetMapping("/types/{typeKey}/versions/{version}")
-    public Map<String, Object> typeVersion(@PathVariable String typeKey, @PathVariable int version) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/types/by-type-key/versions/{version}")
+    public Map<String, Object> typeVersion(@RequestParam("typeKey") String typeKey, @PathVariable int version) {
         return support.tx((c, ctx) -> types.version(c, ctx.tenant(), typeKey, version).toMap());
     }
 
-    @PostMapping("/types/{typeKey}/versions/{version}/retire")
-    public ResponseEntity<Void> retireType(@PathVariable String typeKey, @PathVariable int version) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/types/by-type-key/versions/{version}/retire")
+    public ResponseEntity<Void> retireType(@RequestParam("typeKey") String typeKey, @PathVariable int version) {
         support.tx((c, ctx) -> {
             types.retire(c, ctx, typeKey, version);
             return null;
@@ -127,8 +130,9 @@ public class RegistryController {
                 Maps.str(body, "displayName"), Maps.str(body, "reason")).toMap());
     }
 
-    @PostMapping("/objects/{id}/transitions/{name}")
-    public Map<String, Object> transition(@PathVariable String id, @PathVariable String name,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/objects/{id}/transitions/by-name")
+    public Map<String, Object> transition(@PathVariable String id, @RequestParam("name") String name,
                                           @RequestHeader(value = IDEM, required = false) String idem,
                                           @RequestHeader(value = "If-Match", required = false) String ifMatch,
                                           @RequestBody(required = false) Map<String, Object> body) {
@@ -167,8 +171,9 @@ public class RegistryController {
 
     // ---------------------------------------------------------------------------------------------- numbers
 
-    @PutMapping("/number-series/{seriesKey}")
-    public Map<String, Object> defineSeries(@PathVariable String seriesKey, @RequestBody Map<String, Object> body) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PutMapping("/number-series/by-series-key")
+    public Map<String, Object> defineSeries(@RequestParam("seriesKey") String seriesKey, @RequestBody Map<String, Object> body) {
         Map<String, Object> def = new java.util.LinkedHashMap<>(body);
         def.put("seriesKey", seriesKey);
         return support.tx((c, ctx) -> numbering.define(c, ctx, def).toMap());
@@ -179,13 +184,15 @@ public class RegistryController {
         return support.tx((c, ctx) -> numbering.listSeries(c, ctx.tenant()).stream().map(NumberSeriesDefinition::toMap).toList());
     }
 
-    @GetMapping("/number-series/{seriesKey}")
-    public Map<String, Object> series(@PathVariable String seriesKey) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/number-series/by-series-key")
+    public Map<String, Object> series(@RequestParam("seriesKey") String seriesKey) {
         return support.tx((c, ctx) -> numbering.series(c, ctx.tenant(), seriesKey).toMap());
     }
 
-    @PostMapping("/number-series/{seriesKey}/allocate")
-    public ResponseEntity<Map<String, Object>> allocate(@PathVariable String seriesKey,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/number-series/by-series-key/allocate")
+    public ResponseEntity<Map<String, Object>> allocate(@RequestParam("seriesKey") String seriesKey,
                                                         @RequestHeader(value = IDEM, required = false) String idem,
                                                         @RequestBody(required = false) Map<String, Object> body) {
         Map<String, Object> b = body == null ? Map.of() : body;
@@ -195,8 +202,9 @@ public class RegistryController {
         return ResponseEntity.status(201).body(a.toMap());
     }
 
-    @PostMapping("/number-series/{seriesKey}/void")
-    public ResponseEntity<Void> voidNumber(@PathVariable String seriesKey, @RequestBody Map<String, Object> body) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/number-series/by-series-key/void")
+    public ResponseEntity<Void> voidNumber(@RequestParam("seriesKey") String seriesKey, @RequestBody Map<String, Object> body) {
         support.tx((c, ctx) -> {
             numbering.voidNumber(c, ctx, seriesKey, Maps.required(body, "number"), Maps.required(body, "reason"));
             return null;
@@ -204,8 +212,9 @@ public class RegistryController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/number-series/{seriesKey}/mark-used")
-    public ResponseEntity<Void> markUsed(@PathVariable String seriesKey, @RequestBody Map<String, Object> body) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/number-series/by-series-key/mark-used")
+    public ResponseEntity<Void> markUsed(@RequestParam("seriesKey") String seriesKey, @RequestBody Map<String, Object> body) {
         support.tx((c, ctx) -> {
             numbering.markUsed(c, ctx, seriesKey, Maps.required(body, "number"), Maps.str(body, "refType"), Maps.str(body, "refId"));
             return null;
@@ -213,8 +222,9 @@ public class RegistryController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/number-series/{seriesKey}/close-period")
-    public ResponseEntity<Void> closePeriod(@PathVariable String seriesKey, @RequestBody Map<String, Object> body) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/number-series/by-series-key/close-period")
+    public ResponseEntity<Void> closePeriod(@RequestParam("seriesKey") String seriesKey, @RequestBody Map<String, Object> body) {
         support.tx((c, ctx) -> {
             numbering.closePeriod(c, ctx, seriesKey, Maps.str(body, "scope"), Maps.required(body, "period"));
             return null;
@@ -222,14 +232,16 @@ public class RegistryController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/number-series/{seriesKey}/gaps")
-    public NumberingService.GapReport gaps(@PathVariable String seriesKey, @RequestParam(required = false) String scope,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/number-series/by-series-key/gaps")
+    public NumberingService.GapReport gaps(@RequestParam("seriesKey") String seriesKey, @RequestParam(required = false) String scope,
                                            @RequestParam String period) {
         return support.tx((c, ctx) -> numbering.gapReport(c, ctx, seriesKey, scope, period));
     }
 
-    @GetMapping("/number-series/{seriesKey}/allocations")
-    public List<NumberingService.AllocationRow> allocations(@PathVariable String seriesKey,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/number-series/by-series-key/allocations")
+    public List<NumberingService.AllocationRow> allocations(@RequestParam("seriesKey") String seriesKey,
                                                             @RequestParam(required = false) String scope,
                                                             @RequestParam String period,
                                                             @RequestParam(defaultValue = "0") int page,

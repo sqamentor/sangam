@@ -18,11 +18,12 @@ public sealed class RegistryNumberSeriesApi
     /// <summary>
     /// Define series
     /// RegistryController.defineSeries (sangam-rest).
-    /// PUT /registry/number-series/{seriesKey} (operationId registryRegistryDefineSeries); permission registry.write; result stored atomically with the state change.
+    /// PUT /registry/number-series/by-series-key (operationId registryRegistryDefineSeries); permission registry.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryDefineSeriesAsync(string seriesKey, M.RegistryRegistryDefineSeriesBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryDefineSeriesAsync(M.RegistryRegistryDefineSeriesBody body, string seriesKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/registry/number-series/{HttpTransport.Seg(GeneratedCalls.Str(seriesKey)!)}");
+        var req = ApiRequest.Put($"/registry/number-series/by-series-key");
+        req.WithQuery("seriesKey", GeneratedCalls.Q(seriesKey));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -30,11 +31,12 @@ public sealed class RegistryNumberSeriesApi
     /// <summary>
     /// Series
     /// RegistryController.series (sangam-rest).
-    /// GET /registry/number-series/{seriesKey} (operationId registryRegistrySeries); permission registry.read.
+    /// GET /registry/number-series/by-series-key (operationId registryRegistrySeries); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistrySeriesAsync(string seriesKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/registry/number-series/{HttpTransport.Seg(GeneratedCalls.Str(seriesKey)!)}");
+        var req = ApiRequest.Get($"/registry/number-series/by-series-key");
+        req.WithQuery("seriesKey", GeneratedCalls.Q(seriesKey));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -52,11 +54,12 @@ public sealed class RegistryNumberSeriesApi
     /// <summary>
     /// Allocate
     /// RegistryController.allocate (sangam-rest).
-    /// POST /registry/number-series/{seriesKey}/allocate (operationId registryRegistryAllocate); permission registry.write; result stored atomically with the state change.
+    /// POST /registry/number-series/by-series-key/allocate (operationId registryRegistryAllocate); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryAllocateAsync(string seriesKey, M.RegistryRegistryAllocateBody? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/registry/number-series/{HttpTransport.Seg(GeneratedCalls.Str(seriesKey)!)}/allocate");
+        var req = ApiRequest.Post($"/registry/number-series/by-series-key/allocate");
+        req.WithQuery("seriesKey", GeneratedCalls.Q(seriesKey));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -64,11 +67,12 @@ public sealed class RegistryNumberSeriesApi
     /// <summary>
     /// Void number
     /// RegistryController.voidNumber (sangam-rest).
-    /// POST /registry/number-series/{seriesKey}/void (operationId registryRegistryVoidNumber); permission registry.write; result stored atomically with the state change.
+    /// POST /registry/number-series/by-series-key/void (operationId registryRegistryVoidNumber); permission registry.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task RegistryRegistryVoidNumberAsync(string seriesKey, M.RegistryRegistryVoidNumberBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task RegistryRegistryVoidNumberAsync(M.RegistryRegistryVoidNumberBody body, string seriesKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/registry/number-series/{HttpTransport.Seg(GeneratedCalls.Str(seriesKey)!)}/void");
+        var req = ApiRequest.Post($"/registry/number-series/by-series-key/void");
+        req.WithQuery("seriesKey", GeneratedCalls.Q(seriesKey));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -76,11 +80,12 @@ public sealed class RegistryNumberSeriesApi
     /// <summary>
     /// Mark used
     /// RegistryController.markUsed (sangam-rest).
-    /// POST /registry/number-series/{seriesKey}/mark-used (operationId registryRegistryMarkUsed); permission registry.write; result stored atomically with the state change.
+    /// POST /registry/number-series/by-series-key/mark-used (operationId registryRegistryMarkUsed); permission registry.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task RegistryRegistryMarkUsedAsync(string seriesKey, M.RegistryRegistryMarkUsedBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task RegistryRegistryMarkUsedAsync(M.RegistryRegistryMarkUsedBody body, string seriesKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/registry/number-series/{HttpTransport.Seg(GeneratedCalls.Str(seriesKey)!)}/mark-used");
+        var req = ApiRequest.Post($"/registry/number-series/by-series-key/mark-used");
+        req.WithQuery("seriesKey", GeneratedCalls.Q(seriesKey));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -88,11 +93,12 @@ public sealed class RegistryNumberSeriesApi
     /// <summary>
     /// Close period
     /// RegistryController.closePeriod (sangam-rest).
-    /// POST /registry/number-series/{seriesKey}/close-period (operationId registryRegistryClosePeriod); permission registry.write; result stored atomically with the state change.
+    /// POST /registry/number-series/by-series-key/close-period (operationId registryRegistryClosePeriod); permission registry.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task RegistryRegistryClosePeriodAsync(string seriesKey, M.RegistryRegistryClosePeriodBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task RegistryRegistryClosePeriodAsync(M.RegistryRegistryClosePeriodBody body, string seriesKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/registry/number-series/{HttpTransport.Seg(GeneratedCalls.Str(seriesKey)!)}/close-period");
+        var req = ApiRequest.Post($"/registry/number-series/by-series-key/close-period");
+        req.WithQuery("seriesKey", GeneratedCalls.Q(seriesKey));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -100,11 +106,12 @@ public sealed class RegistryNumberSeriesApi
     /// <summary>
     /// Gaps
     /// RegistryController.gaps (sangam-rest).
-    /// GET /registry/number-series/{seriesKey}/gaps (operationId registryRegistryGaps); permission registry.read.
+    /// GET /registry/number-series/by-series-key/gaps (operationId registryRegistryGaps); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryGapsAsync(string seriesKey, string period, string? scope = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/registry/number-series/{HttpTransport.Seg(GeneratedCalls.Str(seriesKey)!)}/gaps");
+        var req = ApiRequest.Get($"/registry/number-series/by-series-key/gaps");
+        req.WithQuery("seriesKey", GeneratedCalls.Q(seriesKey));
         req.WithQuery("scope", GeneratedCalls.Q(scope));
         req.WithQuery("period", GeneratedCalls.Q(period));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
@@ -113,11 +120,12 @@ public sealed class RegistryNumberSeriesApi
     /// <summary>
     /// Allocations
     /// RegistryController.allocations (sangam-rest).
-    /// GET /registry/number-series/{seriesKey}/allocations (operationId registryRegistryAllocations); permission registry.read.
+    /// GET /registry/number-series/by-series-key/allocations (operationId registryRegistryAllocations); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RegistryRegistryAllocationsAsync(string seriesKey, string period, string? scope = null, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/registry/number-series/{HttpTransport.Seg(GeneratedCalls.Str(seriesKey)!)}/allocations");
+        var req = ApiRequest.Get($"/registry/number-series/by-series-key/allocations");
+        req.WithQuery("seriesKey", GeneratedCalls.Q(seriesKey));
         req.WithQuery("scope", GeneratedCalls.Q(scope));
         req.WithQuery("period", GeneratedCalls.Q(period));
         req.WithQuery("page", GeneratedCalls.Q(page));

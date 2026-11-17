@@ -39,7 +39,7 @@ const accounts: ScreenDef = {
   id: 'accounts',
   title: 'mod.ledger.accounts',
   description: 'mod.ledger.accountsDesc',
-  list: '/ledger/{ledger}/accounts',
+  list: '/ledger/by-ledger/accounts?ledger={ledger}',
   filters: [ledgerFilter, f.text('period'), f.text('line', 'fld.headOfAccount'), f.text('holder'), f.text('stage')],
   requireFilters: ['ledger'],
   emptyHint: 'mod.ledger.pickLedger',
@@ -63,7 +63,7 @@ const accounts: ScreenDef = {
     {
       id: 'operation',
       label: 'act.ledgerOperation',
-      path: '/ledger/{ledger}/operations',
+      path: '/ledger/by-ledger/operations?ledger={ledger}',
       fields: [
         f.select('operation', OPS, undefined, true),
         { key: 'account', label: 'fld.account', type: 'group', components: accountFields.map((x) => ({ ...x, key: `account.${x.key}` })) },
@@ -81,29 +81,29 @@ const accounts: ScreenDef = {
       hint: 'mod.ledger.operationHint',
     },
     // M-051: CloseRequest(nextPeriod, asOf) (LedgerController.java:108); the period is the path only
-    { id: 'close', label: 'act.closePeriod', path: '/ledger/{ledger}/periods/close', fields: [f.q(f.text('period', undefined, true)), f.text('nextPeriod'), f.date('asOf')], showResult: true, danger: true, hint: 'mod.ledger.closeHint' },
-    { id: 'reconcile', label: 'act.reconcile', path: '/ledger/{ledger}/reconcile', fields: [f.text('period', undefined, true)], showResult: true },
+    { id: 'close', label: 'act.closePeriod', path: '/ledger/by-ledger/periods/close?ledger={ledger}', fields: [f.q(f.text('period', undefined, true)), f.text('nextPeriod'), f.date('asOf')], showResult: true, danger: true, hint: 'mod.ledger.closeHint' },
+    { id: 'reconcile', label: 'act.reconcile', path: '/ledger/by-ledger/reconcile?ledger={ledger}', fields: [f.text('period', undefined, true)], showResult: true },
   ],
 };
 
 const freezes: ScreenDef = {
   id: 'freezes',
   title: 'mod.ledger.freezes',
-  list: '/ledger/{ledger}/freeze-orders',
+  list: '/ledger/by-ledger/freeze-orders?ledger={ledger}',
   unpaged: true,
   filters: [ledgerFilter],
   requireFilters: ['ledger'],
   columns: [c('id'), c('period'), c('linePrefix'), c('holderPrefix'), c('stage'), c('reason'), c('orderedBy'), c('at')],
   rowKey: ['id'],
-  create: { id: 'freeze', label: 'act.freeze', path: '/ledger/{ledger}/freeze-orders', fields: [f.text('id', 'fld.orderRef'), f.text('period'), f.text('linePrefix'), f.text('holderPrefix'), f.text('stage')], reason: 'body', danger: true, hint: 'mod.ledger.freezeHint' },
-  actions: [{ id: 'release', label: 'act.releaseFreeze', method: 'DELETE', path: '/ledger/{ledger}/freeze-orders/{id}', reason: 'query' }],
+  create: { id: 'freeze', label: 'act.freeze', path: '/ledger/by-ledger/freeze-orders?ledger={ledger}', fields: [f.text('id', 'fld.orderRef'), f.text('period'), f.text('linePrefix'), f.text('holderPrefix'), f.text('stage')], reason: 'body', danger: true, hint: 'mod.ledger.freezeHint' },
+  actions: [{ id: 'release', label: 'act.releaseFreeze', method: 'DELETE', path: '/ledger/by-ledger/freeze-orders/by-id?ledger={ledger}&id={id}', reason: 'query' }],
 };
 
 const holds: ScreenDef = {
   id: 'holds',
   title: 'mod.ledger.holds',
   description: 'mod.ledger.holdsDesc',
-  list: '/ledger/{ledger}/holds',
+  list: '/ledger/by-ledger/holds?ledger={ledger}',
   unpaged: true,
   filters: [ledgerFilter, f.text('period'), f.text('line', 'fld.headOfAccount'), f.text('holder')],
   requireFilters: ['ledger'],
@@ -120,7 +120,7 @@ export function LedgerChain() {
   const [line, setLine] = useState('');
   const [period, setPeriod] = useState('');
   const [q, setQ] = useState<{ ledger: string; line: string; period: string } | null>(null);
-  const data = useAsync(() => http.page<Row>(`/ledger/${encodeURIComponent(q!.ledger)}/accounts`, { line: q!.line, period: q!.period || undefined, size: 100 }), [JSON.stringify(q)], !!q);
+  const data = useAsync(() => http.page<Row>('/ledger/by-ledger/accounts', { ledger: q!.ledger, line: q!.line, period: q!.period || undefined, size: 100 }), [JSON.stringify(q)], !!q);
   const rows = data.data?.items ?? [];
   return (
     <Section title={t('mod.ledger.chain')}>
@@ -171,30 +171,30 @@ const billingLedger = f.text('ledger', 'fld.receivableLedger', true, { descripti
 const billAccounts: ScreenDef = {
   id: 'accounts',
   title: 'mod.billing.accounts',
-  list: '/billing/{ledger}/accounts',
+  list: '/billing/by-ledger/accounts?ledger={ledger}',
   unpaged: true,
   filters: [billingLedger, f.text('cycle')],
   requireFilters: ['ledger'],
   columns: [c('key', 'fld.consumer'), c('value', 'fld.accounts')],
   rowKey: ['key', 'consumer'],
   toolbar: [
-    { id: 'invoice', label: 'act.raiseInvoice', path: '/billing/{ledger}/invoices', fields: [f.text('consumer', undefined, true), f.text('cycle', undefined, true), f.text('tariffId', undefined, true), f.text('period'), f.json('measures', 'fld.measures'), f.money('units'), f.num('dueDays')], showResult: true, hint: 'mod.billing.invoiceHint' },
-    { id: 'collect', label: 'act.recordCollection', path: '/billing/{ledger}/collections', fields: [f.text('consumer', undefined, true), f.text('channel', undefined, true), f.text('paymentRef', undefined, true), f.money('amount', undefined, true)], showResult: true, hint: 'mod.billing.collectHint' },
-    { id: 'waiver', label: 'act.recordWaiver', path: '/billing/{ledger}/waivers', fields: [f.text('consumer', undefined, true), f.text('head'), f.text('cycle'), f.text('period'), f.money('amount', undefined, true), f.text('orderRef', undefined, true)], showResult: true, danger: true },
-    { id: 'refund', label: 'act.refund', path: '/billing/{ledger}/refunds', fields: [f.text('consumer', undefined, true), f.text('head'), f.text('cycle'), f.text('period'), f.text('channel', undefined, true), f.text('paymentRef', undefined, true), f.money('amount', undefined, true)], showResult: true, danger: true, hint: 'mod.billing.refundHint' },
+    { id: 'invoice', label: 'act.raiseInvoice', path: '/billing/by-ledger/invoices?ledger={ledger}', fields: [f.text('consumer', undefined, true), f.text('cycle', undefined, true), f.text('tariffId', undefined, true), f.text('period'), f.json('measures', 'fld.measures'), f.money('units'), f.num('dueDays')], showResult: true, hint: 'mod.billing.invoiceHint' },
+    { id: 'collect', label: 'act.recordCollection', path: '/billing/by-ledger/collections?ledger={ledger}', fields: [f.text('consumer', undefined, true), f.text('channel', undefined, true), f.text('paymentRef', undefined, true), f.money('amount', undefined, true)], showResult: true, hint: 'mod.billing.collectHint' },
+    { id: 'waiver', label: 'act.recordWaiver', path: '/billing/by-ledger/waivers?ledger={ledger}', fields: [f.text('consumer', undefined, true), f.text('head'), f.text('cycle'), f.text('period'), f.money('amount', undefined, true), f.text('orderRef', undefined, true)], showResult: true, danger: true },
+    { id: 'refund', label: 'act.refund', path: '/billing/by-ledger/refunds?ledger={ledger}', fields: [f.text('consumer', undefined, true), f.text('head'), f.text('cycle'), f.text('period'), f.text('channel', undefined, true), f.text('paymentRef', undefined, true), f.money('amount', undefined, true)], showResult: true, danger: true, hint: 'mod.billing.refundHint' },
   ],
 };
 
 const arrears: ScreenDef = {
   id: 'arrears',
   title: 'mod.billing.arrears',
-  list: '/billing/{ledger}/consumers/{consumer}/arrears',
+  list: '/billing/by-ledger/consumers/by-consumer/arrears?ledger={ledger}&consumer={consumer}',
   unpaged: true,
   filters: [billingLedger, f.text('consumer', undefined, true)],
   requireFilters: ['ledger', 'consumer'],
   columns: [c('key', 'fld.head'), c('value', 'fld.amount')],
   rowKey: ['key'],
-  toolbar: [{ id: 'penalty', label: 'act.levyPenalties', path: '/billing/{ledger}/consumers/{consumer}/penalties', fields: [f.text('tariffId', undefined, true), f.text('period')], showResult: true }],
+  toolbar: [{ id: 'penalty', label: 'act.levyPenalties', path: '/billing/by-ledger/consumers/by-consumer/penalties?ledger={ledger}&consumer={consumer}', fields: [f.text('tariffId', undefined, true), f.text('period')], showResult: true }],
 };
 
 export function BillingPage() {

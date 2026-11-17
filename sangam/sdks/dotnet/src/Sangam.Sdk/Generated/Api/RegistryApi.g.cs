@@ -42,33 +42,36 @@ public sealed class RegistryApi
     /// <summary>
     /// Current type
     /// RegistryController.currentType (sangam-rest).
-    /// GET /registry/types/{typeKey} (operationId registryRegistryCurrentType); permission registry.read.
+    /// GET /registry/types/by-type-key (operationId registryRegistryCurrentType); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryCurrentTypeAsync(string typeKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/registry/types/{HttpTransport.Seg(GeneratedCalls.Str(typeKey)!)}");
+        var req = ApiRequest.Get($"/registry/types/by-type-key");
+        req.WithQuery("typeKey", GeneratedCalls.Q(typeKey));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Type version
     /// RegistryController.typeVersion (sangam-rest).
-    /// GET /registry/types/{typeKey}/versions/{version} (operationId registryRegistryTypeVersion); permission registry.read.
+    /// GET /registry/types/by-type-key/versions/{version} (operationId registryRegistryTypeVersion); permission registry.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryTypeVersionAsync(string typeKey, string version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryTypeVersionAsync(string version, string typeKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/registry/types/{HttpTransport.Seg(GeneratedCalls.Str(typeKey)!)}/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}");
+        var req = ApiRequest.Get($"/registry/types/by-type-key/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}");
+        req.WithQuery("typeKey", GeneratedCalls.Q(typeKey));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Retire type
     /// RegistryController.retireType (sangam-rest).
-    /// POST /registry/types/{typeKey}/versions/{version}/retire (operationId registryRegistryRetireType); permission registry.write; result stored atomically with the state change.
+    /// POST /registry/types/by-type-key/versions/{version}/retire (operationId registryRegistryRetireType); permission registry.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task RegistryRegistryRetireTypeAsync(string typeKey, string version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task RegistryRegistryRetireTypeAsync(string version, string typeKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/registry/types/{HttpTransport.Seg(GeneratedCalls.Str(typeKey)!)}/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/retire");
+        var req = ApiRequest.Post($"/registry/types/by-type-key/versions/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/retire");
+        req.WithQuery("typeKey", GeneratedCalls.Q(typeKey));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 }

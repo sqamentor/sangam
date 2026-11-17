@@ -90,11 +90,12 @@ public sealed class TenantOperationsVariablesApi
     /// <summary>
     /// Delete a variable
     /// Needs a reason.
-    /// DELETE /ops/variables/{id} (operationId uiOpsDeleteVariable); permission ops.tenant.admin; result stored atomically with the state change.
+    /// DELETE /ops/variables/by-id (operationId uiOpsDeleteVariable); permission ops.tenant.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task UiOpsDeleteVariableAsync(string id, string reason, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/ops/variables/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
+        var req = ApiRequest.Delete($"/ops/variables/by-id");
+        req.WithQuery("id", GeneratedCalls.Q(id));
         req.WithQuery("reason", GeneratedCalls.Q(reason));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }

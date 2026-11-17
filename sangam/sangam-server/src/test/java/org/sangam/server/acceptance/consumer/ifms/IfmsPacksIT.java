@@ -432,6 +432,18 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
                     + bound + " materialFields=" + engine.getRuntimeService().getVariable(sub.getId(), "materialFields")
                     + " vars=" + new java.util.TreeSet<>(engine.getRuntimeService().getVariables(sub.getId()).keySet())
                     + " " + f);
+            // the core block the called case waits in (core execution: where the payment stands)
+            for (var core : engine.getRuntimeService().createProcessInstanceQuery().superProcessInstanceId(sub.getId())
+                    .list()) {
+                Map<String, Object> cf = new java.util.TreeMap<>();
+                engine.getRuntimeService().getVariables(core.getId()).forEach((k, v) -> {
+                    if (k.startsWith("op") || k.startsWith("recon") || k.equals("caseState")) {
+                        cf.put(k, v);
+                    }
+                });
+                out.add("  core " + core.getProcessDefinitionId() + " active="
+                        + engine.getRuntimeService().getActiveActivityIds(core.getId()) + " " + cf);
+            }
         }
         return out;
     }

@@ -15,6 +15,7 @@ import org.operaton.bpm.engine.repository.ProcessDefinition;
 
 import org.sangam.core.power.LegacyPowerContracts;
 import org.sangam.core.power.ManifestOperationMetadata;
+import org.sangam.core.power.OperationMetadata;
 import org.sangam.core.power.PowerLimitEvaluator;
 import org.sangam.core.power.PowerOutcome;
 import org.sangam.core.power.PowerRequest;
@@ -32,7 +33,8 @@ import org.sangam.packs.port.PackRuntime;
  *       variable such as {@code powersDecisionKey} is never read for them. No declaration: denied.</li>
  *   <li>The limit table is the one current on the action date (the tenant's own table first, decision 202), with
  *       inputs {@code seatRole}, {@code amount} and {@code caseType}; the case type is the manifest's
- *       {@code ruleCaseType} for the action (decision 222, derived by packgen from the calling process) or absent, and
+ *       {@code ruleCaseType} for the action (decision 222, derived by packgen from the calling process) or absent (a
+ *       table that reads caseType with none declared is refused as POWER_RULE_CASE_TYPE_UNDECLARED, decision 402), and
  *       a case variable of that name is never used. Its single row ({@code powerLimit}, optional
  *       {@code allowed} and {@code noMonetaryLimit}) maps through {@link LegacyPowerContracts#listenerRow}.</li>
  *   <li>The amount is the case's exact decimal {@code amount} (minor units of the pack currency); a monetary action
@@ -84,6 +86,14 @@ public class PowerLimitGuardListener implements TaskListener {
             in.put("seatRole", role);
             in.put("amount", amount == null ? BigDecimal.ZERO : amount); // exact: band boundaries (SG-01)
             // decision 222: the table's caseType is the manifest's ruleCaseType or none, never a case variable
+            // decision 402 (9): a table keyed by caseType with no declared ruleCaseType is refused by name, never
+            // consulted with a null case type (the evaluator turns this into a 422 refusal)
+            if (cls.ruleCaseType() == null && Decisions.readsInput(services, tenant, cls.limitTableKey(),
+                    OperationMetadata.Classification.CASE_TYPE_INPUT)) {
+                throw new IllegalStateException("POWER_RULE_CASE_TYPE_UNDECLARED: limit table " + cls.limitTableKey()
+                        + " reads caseType but the pack manifest declares no ruleCaseType for action "
+                        + request.action());
+            }
             Decisions.Evaluation ev = Decisions.evaluate(services, tenant, cls.limitTableKey(), cls.ruleInputs(in));
             evaluated[0] = ev;
             row.putAll(ev.single());

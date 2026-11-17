@@ -63,15 +63,16 @@ public final class QueuesApi {
      *
      * <p>QueueController.defineServicePoint (sangam-rest).
      *
-     * <p>{@code PUT /queues/service-points/{servicePointId}} (operationId {@code queuesQueueDefineServicePoint}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param servicePointId path parameter {@code servicePointId}
+     * <p>{@code PUT /queues/service-points/by-service-point-id} (operationId {@code queuesQueueDefineServicePoint}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param servicePointId query parameter {@code servicePointId}. Service point id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> queuesQueueDefineServicePoint(String servicePointId, QueueRestPortServicePointRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/queues/service-points/" + HttpTransport.seg(String.valueOf(servicePointId)));
+    public java.util.Map<String, Object> queuesQueueDefineServicePoint(QueueRestPortServicePointRequest body, String servicePointId, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/queues/service-points/by-service-point-id");
         req.body(body);
+        req.query("servicePointId", servicePointId);
         return call.json(req, options, R_queuesQueueDefineServicePoint);
     }
 
@@ -80,13 +81,14 @@ public final class QueuesApi {
      *
      * <p>QueueController.servicePoint (sangam-rest).
      *
-     * <p>{@code GET /queues/service-points/{servicePointId}} (operationId {@code queuesQueueServicePoint}); permission {@code resources.read}.
-     * @param servicePointId path parameter {@code servicePointId}
+     * <p>{@code GET /queues/service-points/by-service-point-id} (operationId {@code queuesQueueServicePoint}); permission {@code resources.read}.
+     * @param servicePointId query parameter {@code servicePointId}. Service point id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> queuesQueueServicePoint(String servicePointId, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/queues/service-points/" + HttpTransport.seg(String.valueOf(servicePointId)));
+        ApiRequest req = ApiRequest.get("/queues/service-points/by-service-point-id");
+        req.query("servicePointId", servicePointId);
         return call.json(req, options, R_queuesQueueServicePoint);
     }
 
@@ -95,15 +97,16 @@ public final class QueuesApi {
      *
      * <p>QueueController.setServicePointStatus (sangam-rest).
      *
-     * <p>{@code POST /queues/service-points/{servicePointId}/status} (operationId {@code queuesQueueSetServicePointStatus}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param servicePointId path parameter {@code servicePointId}
+     * <p>{@code POST /queues/service-points/by-service-point-id/status} (operationId {@code queuesQueueSetServicePointStatus}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param servicePointId query parameter {@code servicePointId}. Service point id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> queuesQueueSetServicePointStatus(String servicePointId, QueueStatusRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/queues/service-points/" + HttpTransport.seg(String.valueOf(servicePointId)) + "/status");
+    public java.util.Map<String, Object> queuesQueueSetServicePointStatus(QueueStatusRequest body, String servicePointId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/queues/service-points/by-service-point-id/status");
         req.body(body);
+        req.query("servicePointId", servicePointId);
         return call.json(req, options, R_queuesQueueSetServicePointStatus);
     }
 
@@ -130,16 +133,18 @@ public final class QueuesApi {
      *
      * <p>QueueController.defineCounter (sangam-rest).
      *
-     * <p>{@code PUT /queues/service-points/{servicePointId}/counters/{counterId}} (operationId {@code queuesQueueDefineCounter}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param servicePointId path parameter {@code servicePointId}
-     * @param counterId path parameter {@code counterId}
+     * <p>{@code PUT /queues/service-points/by-service-point-id/counters/by-counter-id} (operationId {@code queuesQueueDefineCounter}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param servicePointId query parameter {@code servicePointId}. Service point id; may carry '/' or ':'
+     * @param counterId query parameter {@code counterId}. Counter id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> queuesQueueDefineCounter(String servicePointId, String counterId, QueueRestPortCounterRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/queues/service-points/" + HttpTransport.seg(String.valueOf(servicePointId)) + "/counters/" + HttpTransport.seg(String.valueOf(counterId)));
+    public java.util.Map<String, Object> queuesQueueDefineCounter(QueueRestPortCounterRequest body, String servicePointId, String counterId, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/queues/service-points/by-service-point-id/counters/by-counter-id");
         req.body(body);
+        req.query("servicePointId", servicePointId);
+        req.query("counterId", counterId);
         return call.json(req, options, R_queuesQueueDefineCounter);
     }
 
@@ -148,13 +153,14 @@ public final class QueuesApi {
      *
      * <p>QueueController.counters (sangam-rest).
      *
-     * <p>{@code GET /queues/service-points/{servicePointId}/counters} (operationId {@code queuesQueueCounters}); permission {@code resources.read}.
-     * @param servicePointId path parameter {@code servicePointId}
+     * <p>{@code GET /queues/service-points/by-service-point-id/counters} (operationId {@code queuesQueueCounters}); permission {@code resources.read}.
+     * @param servicePointId query parameter {@code servicePointId}. Service point id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<java.util.Map<String, Object>> queuesQueueCounters(String servicePointId, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/queues/service-points/" + HttpTransport.seg(String.valueOf(servicePointId)) + "/counters");
+        ApiRequest req = ApiRequest.get("/queues/service-points/by-service-point-id/counters");
+        req.query("servicePointId", servicePointId);
         return call.json(req, options, R_queuesQueueCounters);
     }
 
@@ -163,15 +169,16 @@ public final class QueuesApi {
      *
      * <p>QueueController.openCounter (sangam-rest).
      *
-     * <p>{@code POST /queues/counters/{counterId}/open} (operationId {@code queuesQueueOpenCounter}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param counterId path parameter {@code counterId}
+     * <p>{@code POST /queues/counters/by-counter-id/open} (operationId {@code queuesQueueOpenCounter}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param counterId query parameter {@code counterId}. Counter id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> queuesQueueOpenCounter(String counterId, QueueOpenRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/queues/counters/" + HttpTransport.seg(String.valueOf(counterId)) + "/open");
+    public java.util.Map<String, Object> queuesQueueOpenCounter(QueueOpenRequest body, String counterId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/queues/counters/by-counter-id/open");
         req.body(body);
+        req.query("counterId", counterId);
         return call.json(req, options, R_queuesQueueOpenCounter);
     }
 
@@ -180,15 +187,16 @@ public final class QueuesApi {
      *
      * <p>QueueController.pauseCounter (sangam-rest).
      *
-     * <p>{@code POST /queues/counters/{counterId}/pause} (operationId {@code queuesQueuePauseCounter}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param counterId path parameter {@code counterId}
+     * <p>{@code POST /queues/counters/by-counter-id/pause} (operationId {@code queuesQueuePauseCounter}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param counterId query parameter {@code counterId}. Counter id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> queuesQueuePauseCounter(String counterId, QueueReasonRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/queues/counters/" + HttpTransport.seg(String.valueOf(counterId)) + "/pause");
+    public java.util.Map<String, Object> queuesQueuePauseCounter(QueueReasonRequest body, String counterId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/queues/counters/by-counter-id/pause");
         req.body(body);
+        req.query("counterId", counterId);
         return call.json(req, options, R_queuesQueuePauseCounter);
     }
 
@@ -197,13 +205,14 @@ public final class QueuesApi {
      *
      * <p>QueueController.closeCounter (sangam-rest).
      *
-     * <p>{@code POST /queues/counters/{counterId}/close} (operationId {@code queuesQueueCloseCounter}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param counterId path parameter {@code counterId}
+     * <p>{@code POST /queues/counters/by-counter-id/close} (operationId {@code queuesQueueCloseCounter}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param counterId query parameter {@code counterId}. Counter id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> queuesQueueCloseCounter(String counterId, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/queues/counters/" + HttpTransport.seg(String.valueOf(counterId)) + "/close");
+        ApiRequest req = ApiRequest.post("/queues/counters/by-counter-id/close");
+        req.query("counterId", counterId);
         return call.json(req, options, R_queuesQueueCloseCounter);
     }
 
@@ -212,15 +221,16 @@ public final class QueuesApi {
      *
      * <p>QueueController.issueToken (sangam-rest).
      *
-     * <p>{@code POST /queues/service-points/{servicePointId}/tokens} (operationId {@code queuesQueueIssueToken}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param servicePointId path parameter {@code servicePointId}
+     * <p>{@code POST /queues/service-points/by-service-point-id/tokens} (operationId {@code queuesQueueIssueToken}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param servicePointId query parameter {@code servicePointId}. Service point id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
-    public java.util.Map<String, Object> queuesQueueIssueToken(String servicePointId, QueueRestPortIssueTokenRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/queues/service-points/" + HttpTransport.seg(String.valueOf(servicePointId)) + "/tokens");
+    public java.util.Map<String, Object> queuesQueueIssueToken(QueueRestPortIssueTokenRequest body, String servicePointId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/queues/service-points/by-service-point-id/tokens");
         req.body(body);
+        req.query("servicePointId", servicePointId);
         return call.json(req, options, R_queuesQueueIssueToken);
     }
 
@@ -229,8 +239,8 @@ public final class QueuesApi {
      *
      * <p>QueueController.tokens (sangam-rest).
      *
-     * <p>{@code GET /queues/service-points/{servicePointId}/tokens} (operationId {@code queuesQueueTokens}); permission {@code resources.read}.
-     * @param servicePointId path parameter {@code servicePointId}
+     * <p>{@code GET /queues/service-points/by-service-point-id/tokens} (operationId {@code queuesQueueTokens}); permission {@code resources.read}.
+     * @param servicePointId query parameter {@code servicePointId}. Service point id; may carry '/' or ':'
      * @param state query parameter {@code state}, or null
      * @param page query parameter {@code page}, or null
      * @param size query parameter {@code size}, or null
@@ -238,7 +248,8 @@ public final class QueuesApi {
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<java.util.Map<String, Object>> queuesQueueTokens(String servicePointId, String state, Integer page, Integer size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/queues/service-points/" + HttpTransport.seg(String.valueOf(servicePointId)) + "/tokens");
+        ApiRequest req = ApiRequest.get("/queues/service-points/by-service-point-id/tokens");
+        req.query("servicePointId", servicePointId);
         req.query("state", state);
         req.query("page", page);
         req.query("size", size);
@@ -314,13 +325,14 @@ public final class QueuesApi {
      *
      * <p>QueueController.callNext (sangam-rest).
      *
-     * <p>{@code POST /queues/counters/{counterId}/call-next} (operationId {@code queuesQueueCallNext}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param counterId path parameter {@code counterId}
+     * <p>{@code POST /queues/counters/by-counter-id/call-next} (operationId {@code queuesQueueCallNext}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param counterId query parameter {@code counterId}. Counter id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> queuesQueueCallNext(String counterId, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/queues/counters/" + HttpTransport.seg(String.valueOf(counterId)) + "/call-next");
+        ApiRequest req = ApiRequest.post("/queues/counters/by-counter-id/call-next");
+        req.query("counterId", counterId);
         return call.json(req, options, R_queuesQueueCallNext);
     }
 
@@ -329,15 +341,16 @@ public final class QueuesApi {
      *
      * <p>QueueController.callToken (sangam-rest).
      *
-     * <p>{@code POST /queues/counters/{counterId}/call} (operationId {@code queuesQueueCallToken}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param counterId path parameter {@code counterId}
+     * <p>{@code POST /queues/counters/by-counter-id/call} (operationId {@code queuesQueueCallToken}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param counterId query parameter {@code counterId}. Counter id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> queuesQueueCallToken(String counterId, QueueCallRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/queues/counters/" + HttpTransport.seg(String.valueOf(counterId)) + "/call");
+    public java.util.Map<String, Object> queuesQueueCallToken(QueueCallRequest body, String counterId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/queues/counters/by-counter-id/call");
         req.body(body);
+        req.query("counterId", counterId);
         return call.json(req, options, R_queuesQueueCallToken);
     }
 
@@ -346,13 +359,14 @@ public final class QueuesApi {
      *
      * <p>QueueController.recall (sangam-rest).
      *
-     * <p>{@code POST /queues/counters/{counterId}/recall} (operationId {@code queuesQueueRecall}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param counterId path parameter {@code counterId}
+     * <p>{@code POST /queues/counters/by-counter-id/recall} (operationId {@code queuesQueueRecall}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param counterId query parameter {@code counterId}. Counter id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> queuesQueueRecall(String counterId, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/queues/counters/" + HttpTransport.seg(String.valueOf(counterId)) + "/recall");
+        ApiRequest req = ApiRequest.post("/queues/counters/by-counter-id/recall");
+        req.query("counterId", counterId);
         return call.json(req, options, R_queuesQueueRecall);
     }
 
@@ -361,15 +375,16 @@ public final class QueuesApi {
      *
      * <p>QueueController.skip (sangam-rest).
      *
-     * <p>{@code POST /queues/counters/{counterId}/skip} (operationId {@code queuesQueueSkip}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param counterId path parameter {@code counterId}
+     * <p>{@code POST /queues/counters/by-counter-id/skip} (operationId {@code queuesQueueSkip}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param counterId query parameter {@code counterId}. Counter id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> queuesQueueSkip(String counterId, QueueReasonRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/queues/counters/" + HttpTransport.seg(String.valueOf(counterId)) + "/skip");
+    public java.util.Map<String, Object> queuesQueueSkip(QueueReasonRequest body, String counterId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/queues/counters/by-counter-id/skip");
         req.body(body);
+        req.query("counterId", counterId);
         return call.json(req, options, R_queuesQueueSkip);
     }
 
@@ -378,13 +393,14 @@ public final class QueuesApi {
      *
      * <p>QueueController.startServing (sangam-rest).
      *
-     * <p>{@code POST /queues/counters/{counterId}/start-serving} (operationId {@code queuesQueueStartServing}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param counterId path parameter {@code counterId}
+     * <p>{@code POST /queues/counters/by-counter-id/start-serving} (operationId {@code queuesQueueStartServing}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param counterId query parameter {@code counterId}. Counter id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> queuesQueueStartServing(String counterId, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/queues/counters/" + HttpTransport.seg(String.valueOf(counterId)) + "/start-serving");
+        ApiRequest req = ApiRequest.post("/queues/counters/by-counter-id/start-serving");
+        req.query("counterId", counterId);
         return call.json(req, options, R_queuesQueueStartServing);
     }
 
@@ -393,15 +409,16 @@ public final class QueuesApi {
      *
      * <p>QueueController.complete (sangam-rest).
      *
-     * <p>{@code POST /queues/counters/{counterId}/complete} (operationId {@code queuesQueueComplete}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param counterId path parameter {@code counterId}
+     * <p>{@code POST /queues/counters/by-counter-id/complete} (operationId {@code queuesQueueComplete}); permission {@code resources.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param counterId query parameter {@code counterId}. Counter id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> queuesQueueComplete(String counterId, QueueCompleteRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/queues/counters/" + HttpTransport.seg(String.valueOf(counterId)) + "/complete");
+    public java.util.Map<String, Object> queuesQueueComplete(QueueCompleteRequest body, String counterId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/queues/counters/by-counter-id/complete");
         req.body(body);
+        req.query("counterId", counterId);
         return call.json(req, options, R_queuesQueueComplete);
     }
 
@@ -410,13 +427,14 @@ public final class QueuesApi {
      *
      * <p>QueueController.noShowSweep (sangam-rest).
      *
-     * <p>{@code POST /queues/service-points/{servicePointId}/no-show-sweep} (operationId {@code queuesQueueNoShowSweep}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param servicePointId path parameter {@code servicePointId}
+     * <p>{@code POST /queues/service-points/by-service-point-id/no-show-sweep} (operationId {@code queuesQueueNoShowSweep}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param servicePointId query parameter {@code servicePointId}. Service point id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> queuesQueueNoShowSweep(String servicePointId, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/queues/service-points/" + HttpTransport.seg(String.valueOf(servicePointId)) + "/no-show-sweep");
+        ApiRequest req = ApiRequest.post("/queues/service-points/by-service-point-id/no-show-sweep");
+        req.query("servicePointId", servicePointId);
         return call.json(req, options, R_queuesQueueNoShowSweep);
     }
 
@@ -425,13 +443,14 @@ public final class QueuesApi {
      *
      * <p>QueueController.slaBreaches (sangam-rest).
      *
-     * <p>{@code GET /queues/service-points/{servicePointId}/sla-breaches} (operationId {@code queuesQueueSlaBreaches}); permission {@code resources.read}.
-     * @param servicePointId path parameter {@code servicePointId}
+     * <p>{@code GET /queues/service-points/by-service-point-id/sla-breaches} (operationId {@code queuesQueueSlaBreaches}); permission {@code resources.read}.
+     * @param servicePointId query parameter {@code servicePointId}. Service point id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<java.util.Map<String, Object>> queuesQueueSlaBreaches(String servicePointId, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/queues/service-points/" + HttpTransport.seg(String.valueOf(servicePointId)) + "/sla-breaches");
+        ApiRequest req = ApiRequest.get("/queues/service-points/by-service-point-id/sla-breaches");
+        req.query("servicePointId", servicePointId);
         return call.json(req, options, R_queuesQueueSlaBreaches);
     }
 
@@ -440,15 +459,16 @@ public final class QueuesApi {
      *
      * <p>QueueController.stats (sangam-rest).
      *
-     * <p>{@code GET /queues/service-points/{servicePointId}/stats} (operationId {@code queuesQueueStats}); permission {@code resources.read}.
-     * @param servicePointId path parameter {@code servicePointId}
+     * <p>{@code GET /queues/service-points/by-service-point-id/stats} (operationId {@code queuesQueueStats}); permission {@code resources.read}.
+     * @param servicePointId query parameter {@code servicePointId}. Service point id; may carry '/' or ':'
      * @param from query parameter {@code from}
      * @param to query parameter {@code to}
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> queuesQueueStats(String servicePointId, java.time.Instant from, java.time.Instant to, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/queues/service-points/" + HttpTransport.seg(String.valueOf(servicePointId)) + "/stats");
+        ApiRequest req = ApiRequest.get("/queues/service-points/by-service-point-id/stats");
+        req.query("servicePointId", servicePointId);
         req.query("from", from);
         req.query("to", to);
         return call.json(req, options, R_queuesQueueStats);
@@ -459,14 +479,15 @@ public final class QueuesApi {
      *
      * <p>QueueController.display (sangam-rest).
      *
-     * <p>{@code GET /queues/service-points/{servicePointId}/display} (operationId {@code queuesQueueDisplay}); permission {@code resources.read}.
-     * @param servicePointId path parameter {@code servicePointId}
+     * <p>{@code GET /queues/service-points/by-service-point-id/display} (operationId {@code queuesQueueDisplay}); permission {@code resources.read}.
+     * @param servicePointId query parameter {@code servicePointId}. Service point id; may carry '/' or ':'
      * @param next query parameter {@code next}, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> queuesQueueDisplay(String servicePointId, Integer next, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/queues/service-points/" + HttpTransport.seg(String.valueOf(servicePointId)) + "/display");
+        ApiRequest req = ApiRequest.get("/queues/service-points/by-service-point-id/display");
+        req.query("servicePointId", servicePointId);
         req.query("next", next);
         return call.json(req, options, R_queuesQueueDisplay);
     }
@@ -476,15 +497,16 @@ public final class QueuesApi {
      *
      * <p>QueueController.callEvents (sangam-rest).
      *
-     * <p>{@code GET /queues/service-points/{servicePointId}/call-events} (operationId {@code queuesQueueCallEvents}); permission {@code resources.read}.
-     * @param servicePointId path parameter {@code servicePointId}
+     * <p>{@code GET /queues/service-points/by-service-point-id/call-events} (operationId {@code queuesQueueCallEvents}); permission {@code resources.read}.
+     * @param servicePointId query parameter {@code servicePointId}. Service point id; may carry '/' or ':'
      * @param after query parameter {@code after}, or null
      * @param limit query parameter {@code limit}, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<java.util.Map<String, Object>> queuesQueueCallEvents(String servicePointId, Long after, Integer limit, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/queues/service-points/" + HttpTransport.seg(String.valueOf(servicePointId)) + "/call-events");
+        ApiRequest req = ApiRequest.get("/queues/service-points/by-service-point-id/call-events");
+        req.query("servicePointId", servicePointId);
         req.query("after", after);
         req.query("limit", limit);
         return call.json(req, options, R_queuesQueueCallEvents);
