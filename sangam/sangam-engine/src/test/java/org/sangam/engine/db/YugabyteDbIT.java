@@ -112,6 +112,9 @@ class YugabyteDbIT {
         if (yb != null) {
             yb.stop();
         }
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        yb = null;
+        ds = null;
     }
 
     @Test

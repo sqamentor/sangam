@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -409,5 +410,11 @@ class PackMoneyGuardTest {
         assertEquals(4, p.size(), p.toString());
         assertTrue(isMoney("amount") && isMoney("lastPay") && isMoney("authBandMax") && isMoney("powerLimit"));
         assertTrue(!isMoney("leaveBalance") && !isMoney("qualifyingService") && !isMoney("foirPct"));
+    }
+
+    @AfterAll
+    static void releaseStatics() {
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        convention = null;
     }
 }

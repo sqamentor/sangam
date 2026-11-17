@@ -16,6 +16,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.sangam.config.catalogue.DocumentTypeCatalogue;
@@ -233,5 +234,11 @@ class BillConnectorContractTest {
         in.put("asOf", LocalDate.of(2026, 11, 5).toString());
         in.values().removeIf(java.util.Objects::isNull);
         return new ConnectorRequest(tenant, UUID.randomUUID(), "a", 1, null, null, op, in, null);
+    }
+
+    @AfterAll
+    static void releaseStatics() {
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        connector = null;
     }
 }

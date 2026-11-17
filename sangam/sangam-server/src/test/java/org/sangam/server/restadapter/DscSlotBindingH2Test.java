@@ -166,6 +166,12 @@ class DscSlotBindingH2Test {
         fx.close();
         PackRuntime.reset();
         DocumentSlotNames.reset();
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        fx = null;
+        audit = null;
+        documents = null;
+        slots = null;
+        tasks = null;
     }
 
     final List<String> signed = new java.util.ArrayList<>();
