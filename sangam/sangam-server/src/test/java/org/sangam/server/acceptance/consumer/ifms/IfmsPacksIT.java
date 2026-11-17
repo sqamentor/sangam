@@ -413,7 +413,7 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
         for (var sub : engine.getRuntimeService().createProcessInstanceQuery().superProcessInstanceId(pid).list()) {
             Map<String, Object> f = new java.util.TreeMap<>();
             engine.getRuntimeService().getVariables(sub.getId()).forEach((k, v) -> {
-                if (k.matches("(?i).*(status|reason|available|amount|head|hold).*")) {
+                if (k.matches("(?i).*(status|reason|message|error|available|amount|head|hold|rail|connector).*")) {
                     f.put(k, v);
                 }
             });
