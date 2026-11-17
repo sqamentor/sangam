@@ -1,0 +1,6 @@
+BPMN MIWG reference models (A.*, B.*, C.*), copied unchanged from the Reference folder of
+https://github.com/bpmn-miwg/bpmn-miwg-test-suite at commit ebfa3e545b9765a39ece3fc861b3cdf7b3c15bf8 (2026-11-04).
+Copyright the OMG BPMN Model Interchange Working Group and contributors.
+Licensed under Creative Commons Attribution 3.0 Unported (see LICENSE-MIWG.txt); used by the Sangam MIWG
+conformance harness (MiwgConformanceH2Test, MiwgConformanceIT, sangam-ui miwgRoundTrip.test.ts). Owner approval
+for the download: 2026-11-17 (R10-bpmn).
