@@ -123,7 +123,7 @@ public final class ProcessContinuations {
     /** The continuation chain of {@code instanceId} in the caller's tenant (one instance, no links, if never continued). */
     public Chain chain(SecurityIdentity actor, String instanceId) {
         String tenant = tenantOf(actor);
-        return adapter.inEngineTransaction(conn -> {
+        return adapter.inEngineReadTransaction(conn -> {
             Optional<String> root = Jdbc.one(conn, "SELECT chain_root_id FROM PROCESS_CONTINUATION WHERE tenant_id = ? "
                     + "AND (predecessor_id = ? OR successor_id = ?)", rs -> rs.getString(1), tenant, instanceId, instanceId);
             if (root.isEmpty()) {

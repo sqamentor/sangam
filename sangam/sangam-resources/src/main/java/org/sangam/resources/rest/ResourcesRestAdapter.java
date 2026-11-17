@@ -59,7 +59,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public List<ResourceType> types(SecurityIdentity actor) {
-        return tx.inTransaction(c -> catalogue.types(c, actor.tenantId()));
+        return tx.read(c -> catalogue.types(c, actor.tenantId()));
     }
 
     @Override
@@ -87,7 +87,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public Resource resource(SecurityIdentity actor, String resourceId) {
-        return tx.inTransaction(c -> catalogue.visible(c, actor, resourceId));
+        return tx.read(c -> catalogue.visible(c, actor, resourceId));
     }
 
     @Override
@@ -107,7 +107,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public List<Resource> children(SecurityIdentity actor, String resourceId) {
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             catalogue.visible(c, actor, resourceId);
             return catalogue.children(c, actor, resourceId);
         });
@@ -120,7 +120,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public AvailabilityCalendar calendar(SecurityIdentity actor, String calendarId) {
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             ctx.guard().require(c, actor, ResourcesContext.RT_RESOURCE, ResourcesContext.P_READ, "calendar:" + calendarId);
             return calendars.findCalendar(c, actor.tenantId(), calendarId)
                 .orElseThrow(() -> ResourcesException.notFound("calendar", calendarId));
@@ -156,7 +156,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public List<CalendarService.Slot> slots(SecurityIdentity actor, String resourceId, Instant from, Instant to) {
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             Resource r = catalogue.visible(c, actor, resourceId);
             return calendars.slots(c, actor.tenantId(), r, catalogue.type(c, actor.tenantId(), r.typeId()), new Interval(from, to));
         });
@@ -166,7 +166,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public List<BookingModel.SlotAvailability> availability(SecurityIdentity actor, String resourceId, Instant from, Instant to) {
-        return tx.inTransaction(c -> bookings.availability(c, actor, resourceId, from, to));
+        return tx.read(c -> bookings.availability(c, actor, resourceId, from, to));
     }
 
     @Override
@@ -200,12 +200,12 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public BookingModel.Booking booking(SecurityIdentity actor, String bookingId) {
-        return tx.inTransaction(c -> bookings.visible(c, actor, bookingId));
+        return tx.read(c -> bookings.visible(c, actor, bookingId));
     }
 
     @Override
     public BookingModel.Booking bookingByRef(SecurityIdentity actor, String bookingRef) {
-        return tx.inTransaction(c -> bookings.visibleByRef(c, actor, bookingRef));
+        return tx.read(c -> bookings.visibleByRef(c, actor, bookingRef));
     }
 
     @Override
@@ -245,7 +245,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public List<Map<String, Object>> history(SecurityIdentity actor, String entityType, String entityId) {
-        return tx.inTransaction(c -> bookings.history(c, actor, entityType, entityId, this::requireVisible));
+        return tx.read(c -> bookings.history(c, actor, entityType, entityId, this::requireVisible));
     }
 
     // ------------------------------------------------------------------ waitlist and draws
@@ -263,7 +263,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public EntryView waitlistEntry(SecurityIdentity actor, String entryId) {
-        return tx.inTransaction(c -> new EntryView(waitlist.visible(c, actor, entryId),
+        return tx.read(c -> new EntryView(waitlist.visible(c, actor, entryId),
                 waitlist.position(c, actor.tenantId(), entryId)));
     }
 
@@ -284,7 +284,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public BookingModel.Draw drawResult(SecurityIdentity actor, String drawId) {
-        return tx.inTransaction(c -> waitlist.findDraw(c, actor, drawId)
+        return tx.read(c -> waitlist.findDraw(c, actor, drawId)
                 .orElseThrow(() -> ResourcesException.notFound("draw", drawId)));
     }
 
@@ -320,7 +320,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public BookingModel.Allotment allotment(SecurityIdentity actor, String allotmentId) {
-        return tx.inTransaction(c -> allotments.visible(c, actor, allotmentId));
+        return tx.read(c -> allotments.visible(c, actor, allotmentId));
     }
 
     @Override
@@ -347,7 +347,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public List<BookingModel.Allotment> overdue(SecurityIdentity actor, int limit) {
-        return tx.inTransaction(c -> allotments.overdue(c, actor, limit));
+        return tx.read(c -> allotments.overdue(c, actor, limit));
     }
 
     // ------------------------------------------------------------------ operations
@@ -366,26 +366,26 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public VisibleQuery.CappedCount countResources(SecurityIdentity actor, Resource.Query query, int cap) {
-        return tx.inTransaction(c -> catalogue.count(c, actor, query, cap));
+        return tx.read(c -> catalogue.count(c, actor, query, cap));
     }
 
     @Override
     public VisibleQuery.CappedCount countBookings(SecurityIdentity actor, String resourceId, String requesterId, String state,
                                                   Instant from, Instant to, boolean mine, int cap) {
-        return tx.inTransaction(c -> bookings.count(c, actor, resourceId, requesterId,
+        return tx.read(c -> bookings.count(c, actor, resourceId, requesterId,
                 state == null ? null : BookingModel.State.valueOf(state), from, to, mine, cap));
     }
 
     @Override
     public VisibleQuery.CappedCount countWaitlist(SecurityIdentity actor, String scopeKey, String state, int cap) {
-        return tx.inTransaction(c -> waitlist.count(c, actor, scopeKey,
+        return tx.read(c -> waitlist.count(c, actor, scopeKey,
                 state == null ? null : BookingModel.WaitState.valueOf(state), cap));
     }
 
     @Override
     public VisibleQuery.CappedCount countAllotments(SecurityIdentity actor, String resourceId, String holderId, String state,
                                                     int cap) {
-        return tx.inTransaction(c -> allotments.count(c, actor, resourceId, holderId,
+        return tx.read(c -> allotments.count(c, actor, resourceId, holderId,
                 state == null ? null : BookingModel.AllotState.valueOf(state), cap));
     }
 

@@ -136,11 +136,11 @@ public class OperatonDeploymentAdapter implements DeploymentPort {
     @Override
     public byte[] resource(RequestContext ctx, String deploymentId, String resourceName) {
         require(ctx, deploymentId);
-        List<String> names = OperatonSupport.call(() -> repository.getDeploymentResourceNames(deploymentId));
+        List<String> names = OperatonSupport.readCall(() -> repository.getDeploymentResourceNames(deploymentId));
         if (!names.contains(resourceName)) {
             throw ApiProblem.notFound("deployment resource", resourceName);
         }
-        try (InputStream in = OperatonSupport.call(() -> repository.getResourceAsStream(deploymentId, resourceName))) {
+        try (InputStream in = OperatonSupport.readCall(() -> repository.getResourceAsStream(deploymentId, resourceName))) {
             return in.readAllBytes();
         } catch (IOException e) {
             throw new ApiProblem(500, "RESOURCE_READ_FAILED", e.getMessage());
@@ -184,13 +184,13 @@ public class OperatonDeploymentAdapter implements DeploymentPort {
 
     private Deployment map(org.operaton.bpm.engine.repository.Deployment d) {
         String id = d.getId();
-        List<String> resources = OperatonSupport.call(() -> repository.getDeploymentResourceNames(id));
+        List<String> resources = OperatonSupport.readCall(() -> repository.getDeploymentResourceNames(id));
         List<DeployedDefinition> defs = new ArrayList<>();
-        OperatonSupport.call(() -> repository.createProcessDefinitionQuery().deploymentId(id).list())
+        OperatonSupport.readCall(() -> repository.createProcessDefinitionQuery().deploymentId(id).list())
                 .forEach(p -> defs.add(new DeployedDefinition(p.getId(), p.getKey(), "bpmn", p.getVersion(), p.getName())));
-        OperatonSupport.call(() -> repository.createDecisionDefinitionQuery().deploymentId(id).list())
+        OperatonSupport.readCall(() -> repository.createDecisionDefinitionQuery().deploymentId(id).list())
                 .forEach(p -> defs.add(new DeployedDefinition(p.getId(), p.getKey(), "dmn", p.getVersion(), p.getName())));
-        OperatonSupport.call(() -> repository.createCaseDefinitionQuery().deploymentId(id).list())
+        OperatonSupport.readCall(() -> repository.createCaseDefinitionQuery().deploymentId(id).list())
                 .forEach(p -> defs.add(new DeployedDefinition(p.getId(), p.getKey(), "cmmn", p.getVersion(), p.getName())));
         for (String name : resources) {
             if (name.endsWith(".form")) {

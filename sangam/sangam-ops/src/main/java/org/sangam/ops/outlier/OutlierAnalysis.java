@@ -109,7 +109,7 @@ public final class OutlierAnalysis {
             return List.of();
         }
         String tenantId = who.tenantId();
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             org.sangam.core.layer.SqlPredicate visible = instances.get().visible(c, who);
             List<Object> qp = new ArrayList<>(Arrays.asList(tenantId, processKey, activityId));
             qp.addAll(visible.params());

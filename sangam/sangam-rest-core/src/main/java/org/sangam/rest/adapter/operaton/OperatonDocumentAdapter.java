@@ -205,10 +205,10 @@ public class OperatonDocumentAdapter implements DocumentPort {
         }
         List<Attachment> all = new ArrayList<>();
         if (f.taskId() != null) {
-            all.addAll(OperatonSupport.call(() -> tasks.getTaskAttachments(f.taskId())));
+            all.addAll(OperatonSupport.readCall(() -> tasks.getTaskAttachments(f.taskId())));
         }
         if (f.processInstanceId() != null) {
-            all.addAll(OperatonSupport.call(() -> tasks.getProcessInstanceAttachments(f.processInstanceId())));
+            all.addAll(OperatonSupport.readCall(() -> tasks.getProcessInstanceAttachments(f.processInstanceId())));
         }
         List<Document> docs = all.stream()
                 .filter(a -> visible(ctx, a))
@@ -231,7 +231,7 @@ public class OperatonDocumentAdapter implements DocumentPort {
             a = findVersion(ctx, a, version);
         }
         String id = a.getId();
-        try (InputStream in = OperatonSupport.call(() -> tasks.getAttachmentContent(id))) {
+        try (InputStream in = OperatonSupport.readCall(() -> tasks.getAttachmentContent(id))) {
             if (in == null) {
                 throw ApiProblem.notFound("document content", id);
             }
@@ -311,7 +311,7 @@ public class OperatonDocumentAdapter implements DocumentPort {
     }
 
     private Attachment require(RequestContext ctx, String id) {
-        Attachment a = OperatonSupport.call(() -> tasks.getAttachment(id));
+        Attachment a = OperatonSupport.readCall(() -> tasks.getAttachment(id));
         if (a == null || !visible(ctx, a)) {
             throw ApiProblem.notFound("document", id);
         }

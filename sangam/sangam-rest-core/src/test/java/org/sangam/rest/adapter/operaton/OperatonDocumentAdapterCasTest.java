@@ -131,6 +131,11 @@ class OperatonDocumentAdapterCasTest {
             }
 
             @Override
+            public <T> T inReadTx(org.sangam.core.api.ReadSupplier<T> work) {
+                return work.read();
+            }
+
+            @Override
             public <T> T withReadConnection(org.sangam.core.api.ReadWork<T> work) {
                 return work.read(connection());
             }

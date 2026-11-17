@@ -21,6 +21,12 @@ public final class RegistryRestSupport {
         RegistryContext current();
     }
 
+    /** The read twin of the {@code tx} callback (round 9): a read path never calls the shared write callback. */
+    @FunctionalInterface
+    public interface Read<T> {
+        T read(Connection c, RegistryContext ctx);
+    }
+
     private final Transactions transactions;
     private final CallerResolver caller;
 
@@ -42,6 +48,19 @@ public final class RegistryRestSupport {
         return transactions.inTransaction(c -> work.apply(c, withPurpose));
     }
 
+    /** {@link #tx(BiFunction)} for work that only reads. */
+    public <T> T rtx(Read<T> work) {
+        RegistryContext ctx = caller.current();
+        return transactions.read(c -> work.read(c, ctx));
+    }
+
+    /** {@link #tx(String, BiFunction)} for work that only reads. */
+    public <T> T rtx(String purpose, Read<T> work) {
+        RegistryContext ctx = caller.current();
+        RegistryContext withPurpose = purpose == null || purpose.isBlank() ? ctx : ctx.withPurpose(purpose);
+        return transactions.read(c -> work.read(c, withPurpose));
+    }
+
     /** Same, with the request's {@code Idempotency-Key} as the operationId (R41). */
     public <T> T txOp(String idempotencyKey, BiFunction<Connection, RegistryContext, T> work) {
         RegistryContext ctx = caller.current();
@@ -53,5 +72,11 @@ public final class RegistryRestSupport {
     public <T> T publicTx(String tenant, BiFunction<Connection, RegistryContext, T> work) {
         RegistryContext ctx = RegistryContext.of(tenant, "system:public-verification").withPurpose("PUBLIC_VERIFICATION");
         return transactions.inTransaction(c -> work.apply(c, ctx));
+    }
+
+    /** {@link #publicTx} for work that only reads. */
+    public <T> T publicRead(String tenant, Read<T> work) {
+        RegistryContext ctx = RegistryContext.of(tenant, "system:public-verification").withPurpose("PUBLIC_VERIFICATION");
+        return transactions.read(c -> work.read(c, ctx));
     }
 }

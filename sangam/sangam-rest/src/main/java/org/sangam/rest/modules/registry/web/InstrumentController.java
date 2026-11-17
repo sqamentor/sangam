@@ -143,12 +143,12 @@ public class InstrumentController {
 
     @GetMapping("/{id}/endorsements")
     public List<InstrumentService.Endorsement> endorsements(@PathVariable String id) {
-        return support.tx((c, ctx) -> instruments.endorsements(c, ctx, id));
+        return support.rtx((c, ctx) -> instruments.endorsements(c, ctx, id));
     }
 
     @GetMapping("/{id}/documents")
     public List<InstrumentService.Document> documents(@PathVariable String id) {
-        return support.tx((c, ctx) -> instruments.documentsOf(c, ctx, id));
+        return support.rtx((c, ctx) -> instruments.documentsOf(c, ctx, id));
     }
 
     @PostMapping("/{id}/documents/regenerate")
@@ -179,7 +179,7 @@ public class InstrumentController {
     /** Public verification by code (tenant as a query parameter; no authentication; masked minimal view). Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @GetMapping("/public/by-tenant/verify")
     public VerificationService.Result verifyCode(@RequestParam("tenant") String tenant, @RequestParam String code) {
-        return support.publicTx(tenant, (c, ctx) -> verification.verifyCode(c, ctx, code));
+        return support.publicRead(tenant, (c, ctx) -> verification.verifyCode(c, ctx, code));
     }
 
     /** Public verification of a scanned QR token (the tenant is inside the signed payload). */

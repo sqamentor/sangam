@@ -460,7 +460,7 @@ public class OperatonHistoryAdapter implements HistoryPort {
         if (ctx.tenantId() != null) {
             q.tenantIdIn(ctx.tenantId());
         }
-        List<org.operaton.bpm.engine.history.HistoricProcessInstance> found = OperatonSupport.call(() -> q.listPage(0, 2));
+        List<org.operaton.bpm.engine.history.HistoricProcessInstance> found = OperatonSupport.readCall(() -> q.listPage(0, 2));
         if (found.isEmpty()) {
             return NO_MATCH;
         }

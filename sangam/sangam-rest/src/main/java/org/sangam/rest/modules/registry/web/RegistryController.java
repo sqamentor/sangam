@@ -62,19 +62,19 @@ public class RegistryController {
 
     @GetMapping("/types")
     public List<ObjectTypeService.TypeVersion> listTypes(@RequestParam(required = false) String kind) {
-        return support.tx((c, ctx) -> types.list(c, ctx.tenant(), kind));
+        return support.rtx((c, ctx) -> types.list(c, ctx.tenant(), kind));
     }
 
     /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @GetMapping("/types/by-type-key")
     public Map<String, Object> currentType(@RequestParam("typeKey") String typeKey) {
-        return support.tx((c, ctx) -> types.current(c, ctx.tenant(), typeKey).toMap());
+        return support.rtx((c, ctx) -> types.current(c, ctx.tenant(), typeKey).toMap());
     }
 
     /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @GetMapping("/types/by-type-key/versions/{version}")
     public Map<String, Object> typeVersion(@RequestParam("typeKey") String typeKey, @PathVariable int version) {
-        return support.tx((c, ctx) -> types.version(c, ctx.tenant(), typeKey, version).toMap());
+        return support.rtx((c, ctx) -> types.version(c, ctx.tenant(), typeKey, version).toMap());
     }
 
     /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
@@ -106,20 +106,20 @@ public class RegistryController {
                                           @RequestParam(required = false) String subjectRef,
                                           @RequestParam(defaultValue = "0") int page,
                                           @RequestParam(defaultValue = "50") int size) {
-        return support.tx((c, ctx) -> objects.list(c, ctx, new RegisteredObjectService.Query(typeKey, kind, state,
+        return support.rtx((c, ctx) -> objects.list(c, ctx, new RegisteredObjectService.Query(typeKey, kind, state,
                 holderPartyId, parentId, number, subjectRef, page, size)).stream().map(RegisteredObject::toMap).toList());
     }
 
     @GetMapping("/objects/{id}")
     public ResponseEntity<Map<String, Object>> get(@PathVariable String id) {
-        RegisteredObject o = support.tx((c, ctx) -> objects.get(c, ctx, id));
+        RegisteredObject o = support.rtx((c, ctx) -> objects.get(c, ctx, id));
         return ResponseEntity.ok().header("ETag", "\"" + o.version() + "\"").body(o.toMap());
     }
 
     /** UI-DEMO-1: number series produce '/' ("{prefix}/{scope}/{fy}/{seq:6}"), so the number is a query parameter. */
     @GetMapping("/objects/by-number")
     public Map<String, Object> byNumber(@RequestParam String number, @RequestParam(required = false) String typeKey) {
-        return support.tx((c, ctx) -> objects.byNumber(c, ctx, typeKey, number).toMap());
+        return support.rtx((c, ctx) -> objects.byNumber(c, ctx, typeKey, number).toMap());
     }
 
     @PatchMapping("/objects/{id}")
@@ -143,7 +143,7 @@ public class RegistryController {
 
     @GetMapping("/objects/{id}/transitions")
     public List<String> availableTransitions(@PathVariable String id) {
-        return support.tx((c, ctx) -> {
+        return support.rtx((c, ctx) -> {
             RegisteredObject o = objects.get(c, ctx, id);
             return objects.typeOf(c, o).lifecycle().available(o.state());
         });
@@ -151,17 +151,17 @@ public class RegistryController {
 
     @GetMapping("/objects/{id}/versions")
     public List<RegisteredObjectService.Version> history(@PathVariable String id) {
-        return support.tx((c, ctx) -> objects.history(c, ctx, id));
+        return support.rtx((c, ctx) -> objects.history(c, ctx, id));
     }
 
     @GetMapping("/objects/{id}/as-of")
     public RegisteredObjectService.Version asOf(@PathVariable String id, @RequestParam String at) {
-        return support.tx((c, ctx) -> objects.asOf(c, ctx, id, Instant.parse(at)));
+        return support.rtx((c, ctx) -> objects.asOf(c, ctx, id, Instant.parse(at)));
     }
 
     @GetMapping("/objects/{id}/audit/verify")
     public Object verifyAudit(@PathVariable String id) {
-        return support.tx((c, ctx) -> objects.verifyAudit(c, ctx, id));
+        return support.rtx((c, ctx) -> objects.verifyAudit(c, ctx, id));
     }
 
     @PostMapping("/objects/mirror")
@@ -181,13 +181,13 @@ public class RegistryController {
 
     @GetMapping("/number-series")
     public List<Map<String, Object>> listSeries() {
-        return support.tx((c, ctx) -> numbering.listSeries(c, ctx.tenant()).stream().map(NumberSeriesDefinition::toMap).toList());
+        return support.rtx((c, ctx) -> numbering.listSeries(c, ctx.tenant()).stream().map(NumberSeriesDefinition::toMap).toList());
     }
 
     /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @GetMapping("/number-series/by-series-key")
     public Map<String, Object> series(@RequestParam("seriesKey") String seriesKey) {
-        return support.tx((c, ctx) -> numbering.series(c, ctx.tenant(), seriesKey).toMap());
+        return support.rtx((c, ctx) -> numbering.series(c, ctx.tenant(), seriesKey).toMap());
     }
 
     /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
@@ -236,7 +236,7 @@ public class RegistryController {
     @GetMapping("/number-series/by-series-key/gaps")
     public NumberingService.GapReport gaps(@RequestParam("seriesKey") String seriesKey, @RequestParam(required = false) String scope,
                                            @RequestParam String period) {
-        return support.tx((c, ctx) -> numbering.gapReport(c, ctx, seriesKey, scope, period));
+        return support.rtx((c, ctx) -> numbering.gapReport(c, ctx, seriesKey, scope, period));
     }
 
     /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
@@ -246,7 +246,7 @@ public class RegistryController {
                                                             @RequestParam String period,
                                                             @RequestParam(defaultValue = "0") int page,
                                                             @RequestParam(defaultValue = "100") int size) {
-        return support.tx((c, ctx) -> numbering.allocations(c, ctx, seriesKey, scope, period, page, size));
+        return support.rtx((c, ctx) -> numbering.allocations(c, ctx, seriesKey, scope, period, page, size));
     }
 
     static Long version(String ifMatch, Map<String, Object> body) {

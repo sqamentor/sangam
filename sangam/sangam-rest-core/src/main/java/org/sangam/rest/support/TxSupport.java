@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.support;
 
+import org.sangam.core.api.ReadSupplier;
 import org.sangam.core.api.ReadWork;
 import java.sql.Connection;
 import java.util.function.Function;
@@ -79,6 +80,9 @@ public abstract class TxSupport {
      * Implementations repeat the transaction handling; they never go through {@link #inTxWithStatus}.
      */
     public abstract <T> T withReadConnection(ReadWork<T> work);
+
+    /** {@link #inTx} for work that only reads (round 9): joins or starts a transaction around {@code work}. */
+    public abstract <T> T inReadTx(ReadSupplier<T> work);
 
     /** {@link #inNewTx} for work that only reads, handed the new transaction's connection (round 9). */
     public abstract <T> T inNewReadTx(ReadWork<T> work);

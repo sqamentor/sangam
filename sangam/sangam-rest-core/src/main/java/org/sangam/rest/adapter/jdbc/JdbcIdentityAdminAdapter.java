@@ -303,7 +303,7 @@ public final class JdbcIdentityAdminAdapter implements IdentityAdminPort {
             JdbcSupport.oneOf(status, "status", SOD_STATUSES);
         }
         String tenant = JdbcSupport.tenant(ctx);
-        List<SodException> all = tx.inTx(() -> {
+        List<SodException> all = tx.inReadTx(() -> {
             // Expiry is applied on read and persisted.
             tx.withConnection(c -> Jdbc.update(c, "UPDATE SEC_SOD_EXCEPTION SET status='EXPIRED' WHERE tenant_id=?"
                     + " AND status IN ('PENDING','APPROVED') AND expires_at IS NOT NULL AND expires_at < "

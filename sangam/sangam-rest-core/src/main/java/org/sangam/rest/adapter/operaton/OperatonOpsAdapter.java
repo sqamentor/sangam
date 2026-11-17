@@ -148,7 +148,7 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
 
     @Override
     public Incident incident(RequestContext ctx, String id) {
-        org.operaton.bpm.engine.runtime.Incident i = OperatonSupport.call(
+        org.operaton.bpm.engine.runtime.Incident i = OperatonSupport.readCall(
                 () -> runtimeService.createIncidentQuery().incidentId(id).singleResult());
         if (i == null) {
             throw ApiProblem.notFound("incident", id);
@@ -608,7 +608,7 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
         Object[] params = state == null ? new Object[]{ctx.tenantId(), TYPE_PREFIX + "%"}
                 : new Object[]{ctx.tenantId(), TYPE_PREFIX + "%", state.toUpperCase(Locale.ROOT)};
         long cap = props.getCountCap();
-        return tx.withConnection(c -> {
+        return tx.withReadConnection(c -> {
             List<Batch> items = limited(c, "SELECT " + BATCH_COLS + " FROM PORT_BATCH WHERE " + where
                     + " ORDER BY created_at DESC, id", page.firstResult(), page.size(), OperatonOpsAdapter::batchRow, params)
                     .stream().map(BatchRow::view).toList();
@@ -632,7 +632,7 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
                 : " AND state=?");
         Object[] params = s == null || "PENDING".equals(s) ? new Object[]{id} : new Object[]{id, s};
         long cap = props.getCountCap();
-        return tx.withConnection(c -> {
+        return tx.withReadConnection(c -> {
             List<BatchItem> items = limited(c, "SELECT item_seq, item_ref, state, result FROM PORT_BATCH_ITEM WHERE "
                     + where + " ORDER BY item_seq", page.firstResult(), page.size(), OperatonOpsAdapter::item, params);
             long n = limited(c, "SELECT item_seq FROM PORT_BATCH_ITEM WHERE " + where, 0,
@@ -736,7 +736,7 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
     }
 
     private BatchRow requireBatch(RequestContext ctx, String id) {
-        return tx.withConnection(c -> loadBatch(c, ctx.tenantId(), id)).orElseThrow(() -> ApiProblem.notFound("batch", id));
+        return tx.withReadConnection(c -> loadBatch(c, ctx.tenantId(), id)).orElseThrow(() -> ApiProblem.notFound("batch", id));
     }
 
     private static java.util.Optional<BatchRow> loadBatch(java.sql.Connection c, String tenant, String id) {
@@ -1305,7 +1305,7 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
 
     @Override
     public CleanupStatus cleanupStatus(RequestContext ctx) {
-        return OperatonSupport.call(() -> {
+        return OperatonSupport.readCall(() -> {
             List<org.operaton.bpm.engine.runtime.Job> jobs = historyService.findHistoryCleanupJobs();
             org.operaton.bpm.engine.runtime.Job j = jobs.isEmpty() ? null : jobs.get(0);
             var report = historyService.createCleanableHistoricProcessInstanceReport();

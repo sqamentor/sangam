@@ -381,7 +381,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
 
     private CandidateSeat candidate(RequestContext ctx, String seatId, String seatName, boolean outOfHierarchy,
                                     boolean proposed) {
-        long workload = OperatonSupport.call(() -> tenant(ctx, tasks.createTaskQuery()).taskCandidateGroup(seatId)
+        long workload = OperatonSupport.readCall(() -> tenant(ctx, tasks.createTaskQuery()).taskCandidateGroup(seatId)
                 .count());
         List<AdminPort.Assignment> holders = seatAssignments(ctx, seatId);
         String holder = holders.stream().filter(a -> "SUBSTANTIVE".equals(a.kind()))
@@ -417,7 +417,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
 
     @Override
     public List<LifecycleEvent> lifecycle(RequestContext ctx, String taskId) {
-        HistoricTaskInstance h = OperatonSupport.call(() ->
+        HistoricTaskInstance h = OperatonSupport.readCall(() ->
                 history.createHistoricTaskInstanceQuery().taskId(taskId).singleResult());
         if (h == null) {
             throw ApiProblem.notFound("task", taskId);
@@ -425,7 +425,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
         OperatonSupport.checkTenant(ctx, h.getTenantId(), "task", taskId);
         List<LifecycleEvent> out = new ArrayList<>();
         out.add(new LifecycleEvent(OperatonSupport.instant(h.getStartTime()), "CREATED", null, null, null));
-        for (var l : OperatonSupport.call(() -> history.createHistoricIdentityLinkLogQuery().taskId(taskId)
+        for (var l : OperatonSupport.readCall(() -> history.createHistoricIdentityLinkLogQuery().taskId(taskId)
                 .orderByTime().asc().list())) {
             String who = l.getUserId() != null ? l.getUserId() : l.getGroupId();
             String type = l.getType() == null ? "LINK" : l.getType().toUpperCase(java.util.Locale.ROOT);
@@ -453,7 +453,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
     }
 
     private String processInstanceOf(RequestContext ctx, String taskId) {
-        HistoricTaskInstance h = OperatonSupport.call(() ->
+        HistoricTaskInstance h = OperatonSupport.readCall(() ->
                 history.createHistoricTaskInstanceQuery().taskId(taskId).singleResult());
         if (h == null) {
             throw ApiProblem.notFound("task", taskId);
@@ -596,7 +596,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
             pq.tenantIdIn(ctx.tenantId()).includeProcessDefinitionsWithoutTenantId();
             cq.tenantIdIn(ctx.tenantId()).includeCaseDefinitionsWithoutTenantId();
         }
-        for (ProcessDefinition d : OperatonSupport.call(() -> pq.listPage(0, LIST_LIMIT))) {
+        for (ProcessDefinition d : OperatonSupport.readCall(() -> pq.listPage(0, LIST_LIMIT))) {
             String formKey;
             try {
                 formKey = forms.getStartFormKey(d.getId());
@@ -606,7 +606,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
             out.add(new CatalogueEntry(d.getKey(), d.getName() != null ? d.getName() : d.getKey(), "PROCESS", formKey,
                     d.getDescription()));
         }
-        for (CaseDefinition d : OperatonSupport.call(() -> cq.listPage(0, LIST_LIMIT))) {
+        for (CaseDefinition d : OperatonSupport.readCall(() -> cq.listPage(0, LIST_LIMIT))) {
             out.add(new CatalogueEntry(d.getKey(), d.getName() != null ? d.getName() : d.getKey(), "CASE", null, null));
         }
         out.sort(Comparator.comparing(CatalogueEntry::name, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
@@ -644,13 +644,13 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
 
     /** Tenant check for a case (or process) instance id, running or finished. */
     private void scopeTenant(RequestContext ctx, String instanceId) {
-        var hc = OperatonSupport.call(() -> history.createHistoricCaseInstanceQuery().caseInstanceId(instanceId)
+        var hc = OperatonSupport.readCall(() -> history.createHistoricCaseInstanceQuery().caseInstanceId(instanceId)
                 .singleResult());
         if (hc != null) {
             OperatonSupport.checkTenant(ctx, hc.getTenantId(), "case instance", instanceId);
             return;
         }
-        var hp = OperatonSupport.call(() -> history.createHistoricProcessInstanceQuery().processInstanceId(instanceId)
+        var hp = OperatonSupport.readCall(() -> history.createHistoricProcessInstanceQuery().processInstanceId(instanceId)
                 .singleResult());
         if (hp == null) {
             throw ApiProblem.notFound("case instance", instanceId);
@@ -662,11 +662,11 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
     public List<Participant> participants(RequestContext ctx, String caseInstanceId) {
         scopeTenant(ctx, caseInstanceId);
         Map<String, Participant> out = new LinkedHashMap<>();
-        var hc = OperatonSupport.call(() -> history.createHistoricCaseInstanceQuery().caseInstanceId(caseInstanceId)
+        var hc = OperatonSupport.readCall(() -> history.createHistoricCaseInstanceQuery().caseInstanceId(caseInstanceId)
                 .singleResult());
         boolean isCase = hc != null;
         String applicant = applicantOf(caseInstanceId, isCase);
-        String initiator = isCase ? hc.getCreateUserId() : OperatonSupport.call(() -> history
+        String initiator = isCase ? hc.getCreateUserId() : OperatonSupport.readCall(() -> history
                 .createHistoricProcessInstanceQuery().processInstanceId(caseInstanceId).singleResult()).getStartUserId();
         if (initiator != null) {
             out.put(initiator, new Participant(initiator, initiator, "INITIATOR", initiator.equals(applicant)));
@@ -680,7 +680,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
         } else {
             tq.processInstanceId(caseInstanceId);
         }
-        for (HistoricTaskInstance t : OperatonSupport.call(() -> tq.listPage(0, LIST_LIMIT))) {
+        for (HistoricTaskInstance t : OperatonSupport.readCall(() -> tq.listPage(0, LIST_LIMIT))) {
             if (t.getAssignee() != null) {
                 out.putIfAbsent(t.getAssignee(), new Participant(t.getAssignee(), t.getAssignee(), "ASSIGNEE",
                         t.getAssignee().equals(applicant)));
@@ -688,7 +688,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
             if (t.getOwner() != null) {
                 out.putIfAbsent(t.getOwner(), new Participant(t.getOwner(), t.getOwner(), "OWNER", false));
             }
-            for (var l : OperatonSupport.call(() -> history.createHistoricIdentityLinkLogQuery().taskId(t.getId())
+            for (var l : OperatonSupport.readCall(() -> history.createHistoricIdentityLinkLogQuery().taskId(t.getId())
                     .type(IdentityLinkType.CANDIDATE).list())) {
                 if (l.getGroupId() != null) {
                     out.putIfAbsent("group:" + l.getGroupId(), new Participant(l.getGroupId(), l.getGroupId(),
@@ -717,8 +717,8 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
         TaskQuery q = involved(ctx, tenant(ctx, tasks.createTaskQuery())).active().orderByDueDate().asc();
         List<FieldVisit> out = new ArrayList<>();
         Map<String, String> businessKeys = new HashMap<>();
-        for (org.operaton.bpm.engine.task.Task t : OperatonSupport.call(() -> q.listPage(0, LIST_LIMIT))) {
-            Map<String, Object> vars = OperatonSupport.call(() -> tasks.getVariables(t.getId(),
+        for (org.operaton.bpm.engine.task.Task t : OperatonSupport.readCall(() -> q.listPage(0, LIST_LIMIT))) {
+            Map<String, Object> vars = OperatonSupport.readCall(() -> tasks.getVariables(t.getId(),
                     List.of(FIELD_VISIT, ADDRESS, CHECKLIST)));
             if (!Boolean.TRUE.equals(asBoolean(vars.get(FIELD_VISIT)))) {
                 continue;

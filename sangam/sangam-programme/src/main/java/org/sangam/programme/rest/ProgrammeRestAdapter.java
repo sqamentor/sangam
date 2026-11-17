@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.programme.rest;
 
+import org.sangam.core.api.ReadWork;
 import org.sangam.core.layer.SqlPredicate;
 import org.sangam.core.layer.Transactions;
 import org.sangam.core.security.SecurityPorts;
@@ -59,6 +60,10 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
         return tx.inTransaction(work);
     }
 
+    private <T> T readRun(ReadWork<T> work) {
+        return tx.read(work);
+    }
+
     private void require(Connection c, ApiContext ctx, String type, String permission, String id) {
         auth.require(c, ctx.identity(), type, permission, id);
     }
@@ -90,7 +95,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public IndicatorRegistry.Current publishedConfig(ApiContext ctx) {
-        return run(c -> {
+        return readRun(c -> {
             require(c, ctx, PROGRAMME, "ADMIN", ALL);
             return m.registry().current(c, ctx.tenant()).orElseThrow(() -> new ProgrammeException(
                     ProgrammeException.Code.NOT_FOUND, "no programme configuration published for the tenant"));
@@ -99,7 +104,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public List<Map<String, Object>> configHistory(ApiContext ctx) {
-        return run(c -> {
+        return readRun(c -> {
             require(c, ctx, PROGRAMME, "ADMIN", ALL);
             return m.registry().history(c, ctx.tenant());
         });
@@ -120,7 +125,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public List<PeriodService.Period> listPeriods(ApiContext ctx, IndicatorDefinition.Frequency frequency, String fiscalYear) {
-        return run(c -> {
+        return readRun(c -> {
             require(c, ctx, PROGRAMME, "READ", ALL);
             return m.periods().list(c, ctx.tenant(), frequency, fiscalYear);
         });
@@ -166,7 +171,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public ProgrammeService.Programme getProgramme(ApiContext ctx, String id) {
-        return run(c -> {
+        return readRun(c -> {
             requireProgramme(c, ctx, "READ", id);
             return m.programmes().get(c, ctx.tenant(), id);
         });
@@ -174,7 +179,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public ProgrammeService.Node programmeTree(ApiContext ctx, String id) {
-        return run(c -> {
+        return readRun(c -> {
             requireProgramme(c, ctx, "READ", id);
             return filterTree(c, ctx, m.programmes().tree(c, ctx.tenant(), id));
         });
@@ -191,7 +196,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
     @Override
     public Paging.PageResult<ProgrammeService.Programme> listProgrammes(ApiContext ctx, String kind, String parentId, ProgrammeService.Status status,
                                                                        Paging.PageRequest page) {
-        return run(c -> {
+        return readRun(c -> {
             SqlPredicate visible = auth.visible(c, ctx.identity(), PROGRAMME, "READ", "p");
             return m.programmes().list(c, ctx.tenant(), kind, parentId, status, visible, page);
         });
@@ -254,7 +259,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public List<TargetService.Target> listTargets(ApiContext ctx, String programmeId, String periodId, String orgUnit, boolean approvedOnly) {
-        return run(c -> {
+        return readRun(c -> {
             requireProgramme(c, ctx, "READ", programmeId);
             return m.targets().list(c, ctx.tenant(), programmeId, periodId, orgUnit, approvedOnly);
         });
@@ -282,7 +287,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public List<MilestoneService.Milestone> listMilestones(ApiContext ctx, String programmeId, String orgUnit) {
-        return run(c -> {
+        return readRun(c -> {
             requireProgramme(c, ctx, "READ", programmeId);
             return m.milestones().list(c, ctx.tenant(), programmeId, orgUnit);
         });
@@ -301,7 +306,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
     @Override
     public Paging.PageResult<ReturnService.ReturnRow> listReturns(ApiContext ctx, String returnKey, String periodId, String orgUnit,
                                                                   ReturnService.State state, Paging.PageRequest page) {
-        return run(c -> {
+        return readRun(c -> {
             SqlPredicate visible = auth.visible(c, ctx.identity(), RETURN, "READ", "r");
             return m.returns().list(c, ctx.tenant(), returnKey, periodId, orgUnit, state, visible, page);
         });
@@ -309,7 +314,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public ReturnDetail getReturn(ApiContext ctx, String returnId) {
-        return run(c -> {
+        return readRun(c -> {
             ReturnService.ReturnRow r = requireReturn(c, ctx, "READ", returnId);
             return new ReturnDetail(r, m.returns().values(c, ctx.tenant(), returnId), m.returns().findings(c, ctx.tenant(), returnId),
                     m.returns().events(c, ctx.tenant(), returnId));
@@ -384,7 +389,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public List<ReturnService.ReturnRow> defaulters(ApiContext ctx, String returnKey, String periodId, LocalDate asOf, int limit) {
-        return run(c -> {
+        return readRun(c -> {
             // module-wide read of pendency (defaulter lists cross offices); no per-row post-filtering (A-3)
             require(c, ctx, RETURN, "READ", ALL);
             LocalDate d = asOf != null ? asOf : org.sangam.programme.support.Db.today(c, m.dialect());
@@ -419,7 +424,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public List<RollupService.Achievement> achievements(ApiContext ctx, String programmeId, String periodId, String orgUnit) {
-        return run(c -> {
+        return readRun(c -> {
             requireProgramme(c, ctx, "READ", programmeId);
             return m.rollup().atNode(c, ctx.tenant(), programmeId, periodId, orgUnit);
         });
@@ -428,7 +433,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
     @Override
     public List<RollupService.Achievement> achievementChildren(ApiContext ctx, String programmeId, String indicatorKey, String periodId,
                                                                String orgUnit) {
-        return run(c -> {
+        return readRun(c -> {
             requireProgramme(c, ctx, "READ", programmeId);
             return m.rollup().children(c, ctx.tenant(), programmeId, indicatorKey, periodId, orgUnit);
         });
@@ -436,7 +441,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public List<RollupService.Achievement> series(ApiContext ctx, String programmeId, String indicatorKey, String orgUnit, String fiscalYear) {
-        return run(c -> {
+        return readRun(c -> {
             requireProgramme(c, ctx, "READ", programmeId);
             return m.rollup().series(c, ctx.tenant(), programmeId, indicatorKey, orgUnit, fiscalYear);
         });
@@ -465,7 +470,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public ProgressService.Progress progress(ApiContext ctx, String programmeId, String periodId, String orgUnit) {
-        return run(c -> {
+        return readRun(c -> {
             requireProgramme(c, ctx, "READ", programmeId);
             return m.progress().progress(c, ctx.tenant(), programmeId, periodId, orgUnit);
         });
@@ -473,7 +478,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public List<ProgressService.Progress> childProgress(ApiContext ctx, String programmeId, String periodId, String orgUnit) {
-        return run(c -> {
+        return readRun(c -> {
             requireProgramme(c, ctx, "READ", programmeId);
             return m.progress().childProgress(c, ctx.tenant(), programmeId, periodId, orgUnit);
         });
@@ -492,7 +497,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public List<VarianceService.Alert> openAlerts(ApiContext ctx, String programmeId, VarianceService.Kind kind, int limit) {
-        return run(c -> {
+        return readRun(c -> {
             requireProgramme(c, ctx, "READ", programmeId);
             return m.variance().open(c, ctx.tenant(), programmeId, kind, limit);
         });
@@ -519,7 +524,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public Optional<DashboardFeed.Snapshot> dashboard(ApiContext ctx, String programmeId, String periodId, String orgUnit) {
-        return run(c -> {
+        return readRun(c -> {
             requireProgramme(c, ctx, "READ", programmeId);
             return m.dashboard().get(c, ctx.tenant(), programmeId, periodId, orgUnit);
         });
@@ -527,7 +532,7 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
 
     @Override
     public List<DashboardFeed.Snapshot> dashboardChildren(ApiContext ctx, String programmeId, String periodId, String orgUnit) {
-        return run(c -> {
+        return readRun(c -> {
             requireProgramme(c, ctx, "READ", programmeId);
             return m.dashboard().children(c, ctx.tenant(), programmeId, periodId, orgUnit);
         });

@@ -82,7 +82,7 @@ public class BreakGlassController {
                                                           @RequestParam(required = false) Integer size) {
         permissions.require(ctx, Permissions.ADMIN_READ);
         Page.PageRequest p = Lists.page(page, size);
-        Page<Map<String, Object>> out = tx((s, c) -> {
+        Page<Map<String, Object>> out = rtx((s, c) -> {
             List<BreakGlassService.Grant> items = s.list(c, SecurityIdentities.of(ctx), status, reviewStatus,
                     p.firstResult(), p.size());
             long total = s.count(c, SecurityIdentities.of(ctx), status, reviewStatus);
@@ -160,6 +160,22 @@ public class BreakGlassController {
         }
         try {
             return Transactions.of(dataSource.getObject()).inTransaction(c -> work.run(sec.breakGlass(), c));
+        } catch (SangamSecurityException e) {
+            throw new ApiProblem(e.httpStatus(), e.code(), e.getMessage());
+        }
+    }
+
+    private interface Read<T> {
+        T read(BreakGlassService service, java.sql.Connection c);
+    }
+
+    private <T> T rtx(Read<T> work) {
+        SangamSecurity sec = security.getIfAvailable();
+        if (sec == null) {
+            throw ApiProblem.notInstalled("break-glass access", "sangam-security");
+        }
+        try {
+            return Transactions.of(dataSource.getObject()).read(c -> work.read(sec.breakGlass(), c));
         } catch (SangamSecurityException e) {
             throw new ApiProblem(e.httpStatus(), e.code(), e.getMessage());
         }

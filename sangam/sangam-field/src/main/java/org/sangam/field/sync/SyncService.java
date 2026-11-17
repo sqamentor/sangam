@@ -282,7 +282,7 @@ public final class SyncService {
     // ------------------------------------------------------------------ pull
 
     public PullResult pull(String tenantId, String principalId, String deviceId, long cursor) {
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             DeviceRegistry.Device d = devices.requireActive(c, tenantId, deviceId, principalId);
             List<Object> params = new ArrayList<>(List.of(tenantId, cursor, principalId));
             String unitClause = "";

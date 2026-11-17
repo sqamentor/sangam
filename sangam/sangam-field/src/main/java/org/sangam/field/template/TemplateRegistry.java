@@ -78,7 +78,7 @@ public final class TemplateRegistry {
 
     /** {@code version} null = latest ACTIVE version. */
     public Optional<TemplateRow> find(String tenantId, String key, Integer version) {
-        return tx.inTransaction(c -> find(c, tenantId, key, version));
+        return tx.read(c -> find(c, tenantId, key, version));
     }
 
     public Optional<TemplateRow> find(java.sql.Connection c, String tenantId, String key, Integer version) {
@@ -96,7 +96,7 @@ public final class TemplateRegistry {
 
     /** Latest ACTIVE version of every key. */
     public List<TemplateRow> listLatest(String tenantId) {
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             List<TemplateRow> all = Jdbc.query(c, "SELECT * FROM FLD_TEMPLATE WHERE tenant_id = ? AND status = 'ACTIVE' "
                     + "ORDER BY template_key, version DESC", TemplateRegistry::map, tenantId);
             List<TemplateRow> out = new ArrayList<>();

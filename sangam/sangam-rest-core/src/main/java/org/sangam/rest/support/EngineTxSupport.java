@@ -84,11 +84,38 @@ public final class EngineTxSupport extends TxSupport {
             return work.apply(joined);
         }
         try {
-            return engine.inEngineTransaction(c -> {
+            return engine.inEngineReadTransaction(c -> {
                 Frame f = new Frame(c, null);
                 current.set(f);
                 try {
                     T value = work.apply(f);
+                    if (f.rollbackOnly) {
+                        throw new RollbackOnly(value);
+                    }
+                    return value;
+                } finally {
+                    current.remove();
+                }
+            });
+        } catch (RollbackOnly r) {
+            @SuppressWarnings("unchecked")
+            T value = (T) r.value;
+            return value;
+        }
+    }
+
+    @Override
+    public <T> T inReadTx(org.sangam.core.api.ReadSupplier<T> work) {
+        Frame joined = current.get();
+        if (joined != null) {
+            return work.read();
+        }
+        try {
+            return engine.inEngineReadTransaction(c -> {
+                Frame f = new Frame(c, null);
+                current.set(f);
+                try {
+                    T value = work.read();
                     if (f.rollbackOnly) {
                         throw new RollbackOnly(value);
                     }

@@ -249,7 +249,7 @@ public final class SecurityPermissionBridge implements PermissionPort {
             return false;
         }
         try {
-            return tx.withConnection(c -> security.compiler().holdsExplicitGrant(c, id, m.resourceType(), m.permission()));
+            return tx.withReadConnection(c -> security.compiler().holdsExplicitGrant(c, id, m.resourceType(), m.permission()));
         } catch (RuntimeException e) {
             LOG.debug("explicit grant check {} on {} failed: {}", m.permission(), m.resourceType(), e.toString());
             return false;

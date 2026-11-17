@@ -118,7 +118,7 @@ public final class ScopedVariables {
             return c.values;
         }
         Map<String, Object> m = new LinkedHashMap<>();
-        List<Object[]> rows = tx.inTransaction(x -> Jdbc.query(x, "SELECT name,value_json FROM OPS_VARIABLE WHERE scope_id=?", rs -> new Object[]{rs.getString(1), rs.getString(2)}, scope));
+        List<Object[]> rows = tx.read(x -> Jdbc.query(x, "SELECT name,value_json FROM OPS_VARIABLE WHERE scope_id=?", rs -> new Object[]{rs.getString(1), rs.getString(2)}, scope));
         rows.forEach(r -> m.put((String) r[0], Json.readMap((String) r[1]).get("v")));
         Map<String, Object> frozen = java.util.Collections.unmodifiableMap(m);
         cache.put(scope, new Cached(frozen, now));
@@ -130,7 +130,7 @@ public final class ScopedVariables {
     }
 
     public java.util.List<Entry> entries(String scope) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT scope_id,scope_type,tenant_id,name,value_json,version,updated_by,updated_at,reason FROM OPS_VARIABLE WHERE scope_id=? ORDER BY name",
+        return tx.read(c -> Jdbc.query(c, "SELECT scope_id,scope_type,tenant_id,name,value_json,version,updated_by,updated_at,reason FROM OPS_VARIABLE WHERE scope_id=? ORDER BY name",
                 rs -> new Entry(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), Json.readMap(rs.getString(5)).get("v"), rs.getLong(6), rs.getString(7),
                         Jdbc.instant(rs, "updated_at"), rs.getString(9)), scope));
     }

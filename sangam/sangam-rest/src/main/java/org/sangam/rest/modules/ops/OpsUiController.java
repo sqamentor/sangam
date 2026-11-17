@@ -130,7 +130,7 @@ public class OpsUiController {
         if (processDefinitionKey == null || processDefinitionKey.isBlank()) {
             return Lists.ok(List.of());
         }
-        List<String> activities = activityId != null ? List.of(activityId) : api.tx().inTransaction(c -> Jdbc.query(c,
+        List<String> activities = activityId != null ? List.of(activityId) : api.tx().read(c -> Jdbc.query(c,
                 "SELECT ACT_ID_ FROM ACT_HI_ACTINST WHERE TENANT_ID_=? AND PROC_DEF_KEY_=? AND END_TIME_ IS NOT NULL GROUP BY ACT_ID_ ORDER BY COUNT(*) DESC",
                 rs -> rs.getString(1), ctx.tenantId(), processDefinitionKey));
         List<OutlierRow> rows = new ArrayList<>();

@@ -72,7 +72,7 @@ public final class AiBindings {
 
     /** Lists a tenant's runs, newest first; {@code principalOrNull} narrows to one owner. */
     public static List<AgentRuntime.Run> runs(AgentRuntime runtime, Transactions tx, String tenant, String principalOrNull, int limit) {
-        List<String> ids = tx.inTransaction(c -> principalOrNull == null
+        List<String> ids = tx.read(c -> principalOrNull == null
                 ? Jdbc.query(c, "SELECT run_id FROM AI_AGENT_RUN WHERE tenant_id=? ORDER BY created_at DESC", rs -> rs.getString(1), tenant)
                 : Jdbc.query(c, "SELECT run_id FROM AI_AGENT_RUN WHERE tenant_id=? AND principal_id=? ORDER BY created_at DESC",
                 rs -> rs.getString(1), tenant, principalOrNull));
