@@ -208,12 +208,14 @@ final class OnboardingApi
      *
      * The tenant's configuration, signed. No secrets, no go-live evidence.
      *
-     * GET /onboarding/tenants/{tenant}/bundle (operationId exportTenantBundle); permission tenant.admin.
+     * GET /onboarding/tenants/by-tenant/bundle (operationId exportTenantBundle); permission tenant.admin.
+     * @param string $tenant query tenant
      * @return Model\TenantBundle|null
      */
     public function exportTenantBundle(string $tenant, ?RequestOptions $options = null): ?Model\TenantBundle
     {
-        $req = ApiRequest::get('/onboarding/tenants/' . HttpTransport::seg((string) $tenant) . '/bundle');
+        $req = ApiRequest::get('/onboarding/tenants/by-tenant/bundle');
+        $req->query('tenant', $tenant);
         return $this->calls->model($req, $options, Model\TenantBundle::class);
     }
 
@@ -258,12 +260,14 @@ final class OnboardingApi
      *
      * The tenant's signed bundle labelled with this environment (sangam.onboarding.environment). 409 PROMOTION_ENVIRONMENT_NOT_SET without a label.
      *
-     * GET /onboarding/promotions/{tenant}/bundle (operationId exportPromotionBundle); permission tenant.admin.
+     * GET /onboarding/promotions/by-tenant/bundle (operationId exportPromotionBundle); permission tenant.admin.
+     * @param string $tenant query tenant
      * @return Model\TenantBundle|null
      */
     public function exportPromotionBundle(string $tenant, ?RequestOptions $options = null): ?Model\TenantBundle
     {
-        $req = ApiRequest::get('/onboarding/promotions/' . HttpTransport::seg((string) $tenant) . '/bundle');
+        $req = ApiRequest::get('/onboarding/promotions/by-tenant/bundle');
+        $req->query('tenant', $tenant);
         return $this->calls->model($req, $options, Model\TenantBundle::class);
     }
 

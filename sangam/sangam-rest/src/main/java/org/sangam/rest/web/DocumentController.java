@@ -91,21 +91,21 @@ public class DocumentController {
                 name), Lists.page(page, size)));
     }
 
-    @GetMapping("/documents/{id}")
-    public DocumentPort.Document get(RequestContext ctx, @PathVariable String id) {
+    @GetMapping("/documents/by-id")
+    public DocumentPort.Document get(RequestContext ctx, @RequestParam("id") String id) {
         permissions.require(ctx, Permissions.DOCUMENT_READ);
         return documents.get(ctx, id);
     }
 
-    @GetMapping("/documents/{id}/content")
-    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> content(RequestContext ctx, @PathVariable String id,
+    @GetMapping("/documents/by-id/content")
+    public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> content(RequestContext ctx, @RequestParam("id") String id,
                                           @RequestParam(required = false) Integer version) {
         permissions.require(ctx, Permissions.DOCUMENT_READ);
         return download(documents.content(ctx, id, version));
     }
 
-    @PostMapping(value = "/documents/{id}/versions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<DocumentPort.Document> newVersion(RequestContext ctx, @PathVariable String id,
+    @PostMapping(value = "/documents/by-id/versions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<DocumentPort.Document> newVersion(RequestContext ctx, @RequestParam("id") String id,
             @RequestPart("file") MultipartFile file, @RequestParam(required = false) String name,
             @RequestParam(required = false) String documentType,
             @RequestParam(required = false, defaultValue = "false") boolean replaceSlot) throws IOException {
@@ -119,8 +119,8 @@ public class DocumentController {
         return Lists.created("/api/v1/documents/" + d.id(), d.id(), d);
     }
 
-    @DeleteMapping("/documents/{id}")
-    public ResponseEntity<Void> delete(RequestContext ctx, @PathVariable String id,
+    @DeleteMapping("/documents/by-id")
+    public ResponseEntity<Void> delete(RequestContext ctx, @RequestParam("id") String id,
                                        @RequestParam(required = false) String reason) {
         permissions.require(ctx, Permissions.DOCUMENT_WRITE);
         ProcessController.requireReason(reason);
@@ -146,8 +146,8 @@ public class DocumentController {
         return Lists.created("/api/v1/links/" + l.id(), l.id(), l);
     }
 
-    @DeleteMapping("/links/{id}")
-    public ResponseEntity<Void> deleteLink(RequestContext ctx, @PathVariable String id,
+    @DeleteMapping("/links/by-id")
+    public ResponseEntity<Void> deleteLink(RequestContext ctx, @RequestParam("id") String id,
                                            @RequestParam(required = false) String reason) {
         permissions.require(ctx, Permissions.PROCESS_WRITE);
         links.delete(ctx, id, reason);

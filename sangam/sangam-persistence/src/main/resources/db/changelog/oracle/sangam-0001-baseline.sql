@@ -6529,6 +6529,11 @@ CREATE INDEX CMP_OTP_CLIENT ON CMP_OTP_CHALLENGE (tenant_id, client_hash, issued
 ALTER TABLE AI_KB_CHUNK ADD (ocr_transcript_id VARCHAR2(64 CHAR));
 --rollback ALTER TABLE AI_KB_CHUNK DROP COLUMN ocr_transcript_id;
 
+--changeset sangam:0046-02-sec_scim_resource-alter dbms:oracle
+--comment: decision 393 (a): the Sangam person or group id behind an opaque SCIM id
+ALTER TABLE SEC_SCIM_RESOURCE ADD (person_id VARCHAR2(64 CHAR));
+--rollback ALTER TABLE SEC_SCIM_RESOURCE DROP COLUMN person_id;
+
 --changeset sangam:0033-01-cfg_master_code-data dbms:oracle
 --comment: SL-84 root master codes: parent_code '' becomes the absent-key value '-'
 UPDATE CFG_MASTER_CODE SET parent_code = '-' WHERE parent_code = '';
@@ -6543,6 +6548,11 @@ UPDATE RES_TOKEN_SEQ SET series = '-' WHERE series = '';
 --comment: UTC conversion gate row ENGINE_WORK, OPEN (integrator ruling 2026-11-13, option C)
 INSERT INTO OPS_UTC_GATE (gate_id, state, run_id, changed_by, changed_at, version) VALUES ('ENGINE_WORK', 'OPEN', NULL, 'changelog', CURRENT_TIMESTAMP, 0);
 --rollback DELETE FROM OPS_UTC_GATE WHERE gate_id = 'ENGINE_WORK';
+
+--changeset sangam:0046-03-sec_scim_resource-data dbms:oracle
+--comment: decision 393 (a): backfill SEC_SCIM_RESOURCE.person_id from resource_id, then unique per tenant and type
+UPDATE SEC_SCIM_RESOURCE SET person_id = resource_id WHERE person_id IS NULL; CREATE UNIQUE INDEX SEC_SCIM_PERSON ON SEC_SCIM_RESOURCE (tenant_id, resource_type, person_id);
+--rollback DROP INDEX SEC_SCIM_PERSON;
 
 --changeset sangam:0035-01-ch_message-nullable dbms:oracle
 --comment: SL-87 attachment-only conversation message: body may be empty

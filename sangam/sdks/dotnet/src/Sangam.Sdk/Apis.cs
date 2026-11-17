@@ -213,7 +213,7 @@ public sealed class ProcessesApi : ApiBase
         CallAsync<CaseInstance>(ApiRequest.Post("/case-instances").WithBody(request).WithIdempotencyKey(idempotencyKey), ct);
 
     public Task<CaseInstance?> GetCaseAsync(string caseInstanceId, CancellationToken ct = default) =>
-        CallAsync<CaseInstance>(ApiRequest.Get("/case-instances/" + Seg(caseInstanceId)), ct);
+        CallAsync<CaseInstance>(ApiRequest.Get("/case-instances/by-id").WithQuery("id", caseInstanceId), ct);
 }
 
 /// <summary>DMN decisions; evaluation is side-effect free (no Idempotency-Key needed).</summary>
@@ -222,7 +222,7 @@ public sealed class DecisionsApi : ApiBase
     public DecisionsApi(HttpTransport http) : base(http) { }
 
     public Task<DecisionEvaluateResult?> EvaluateAsync(string decisionKey, DecisionEvaluateRequest request, CancellationToken ct = default) =>
-        CallAsync<DecisionEvaluateResult>(ApiRequest.Post("/decisions/" + Seg(decisionKey) + "/evaluate").WithBody(request), ct);
+        CallAsync<DecisionEvaluateResult>(ApiRequest.Post("/decisions/by-key/evaluate").WithQuery("key", decisionKey).WithBody(request), ct);
 }
 
 /// <summary>Audit timeline and hash-chain verification (R42, AC-01).</summary>

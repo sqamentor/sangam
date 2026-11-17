@@ -236,44 +236,44 @@ describe('M-047 case workspace', () => {
   const open = () => show(<CaseWorkspace />, '/cases/c1', '/cases/:id');
 
   it('manual start of an enabled plan item sends the CaseExecutionCommand with the reason', async () => {
-    routes['/case-instances/c1'] = kase('ACTIVE');
+    routes['/case-instances/by-id?id=c1'] = kase('ACTIVE');
     open();
     fireEvent.click(await screen.findByRole('button', { name: T('case.start') }));
     const d = dialog();
     fireEvent.change(within(d).getByLabelText(L('common.reason')), { target: { value: 'Visit is due now' } });
     fireEvent.click(confirmIn(d));
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/case-instances/c1/executions/p1/commands', { action: 'manualStart', reason: 'Visit is due now' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/case-instances/by-id/executions/by-execution-id/commands?id=c1&executionId=p1', { action: 'manualStart', reason: 'Visit is due now' }));
   });
 
   it('a closed case is reactivated with a reason (FC-59)', async () => {
-    routes['/case-instances/c1'] = kase('COMPLETED');
-    // the server answers GET /case-instances/{id} with a CaseInstance that always has a state (CasePort.CaseInstance,
+    routes['/case-instances/by-id?id=c1'] = kase('COMPLETED');
+    // the server answers GET /case-instances/by-id with a CaseInstance that always has a state (CasePort.CaseInstance,
     // OperatonCaseAdapter.state); the default [] of this harness has none, so Badge got undefined
-    routes['/case-instances/c2'] = { ...kase('ACTIVE'), id: 'c2', businessKey: 'CASE-2', reactivatedFrom: 'c1' };
+    routes['/case-instances/by-id?id=c2'] = { ...kase('ACTIVE'), id: 'c2', businessKey: 'CASE-2', reactivatedFrom: 'c1' };
     api.post.mockResolvedValue({ id: 'c2' });
     open();
     fireEvent.click(await screen.findByRole('button', { name: T('case.reactivate') }));
     const d = dialog();
     fireEvent.change(within(d).getByLabelText(L('common.reason')), { target: { value: 'New evidence came in' } });
     fireEvent.click(confirmIn(d));
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/case-instances/c1/reactivation', { reason: 'New evidence came in' }, KEY));
-    // the reply is the new linked case; the workspace moves to it and reads it (GET /case-instances/c2), so the test
-    // waits for that page instead of ending while the read is still in flight
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/case-instances/by-id/reactivation?id=c1', { reason: 'New evidence came in' }, KEY));
+    // the reply is the new linked case; the workspace moves to it and reads it, so the test waits for that page
+    // instead of ending while the read is still in flight
     expect(await screen.findByRole('heading', { name: `${T('cases.workspace')}: CASE-2` })).toBeTruthy();
-    expect(api.get).toHaveBeenCalledWith('/case-instances/c2');
+    expect(api.get).toHaveBeenCalledWith('/case-instances/by-id?id=c2');
   });
 
   it('a comment is posted as {text}', async () => {
-    routes['/case-instances/c1'] = kase('ACTIVE');
+    routes['/case-instances/by-id?id=c1'] = kase('ACTIVE');
     open();
     fireEvent.click(await screen.findByRole('tab', { name: T('task.tab.comments') }));
     fireEvent.change(screen.getByLabelText(T('task.addComment')), { target: { value: 'Looks fine' } });
     fireEvent.click(screen.getByRole('button', { name: T('task.postComment') }));
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/case-instances/c1/comments', { text: 'Looks fine' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/case-instances/by-id/comments?id=c1', { text: 'Looks fine' }));
   });
 
   it('a refused plan-item command keeps the dialog open with the refusal', async () => {
-    routes['/case-instances/c1'] = kase('ACTIVE');
+    routes['/case-instances/by-id?id=c1'] = kase('ACTIVE');
     api.post.mockRejectedValue(problem(409));
     open();
     fireEvent.click(await screen.findByRole('button', { name: T('case.start') }));

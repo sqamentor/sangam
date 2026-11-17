@@ -3285,10 +3285,10 @@ export class CasesApi {
    *
    * Case with plan item instances.
    *
-   * `GET /case-instances/{id}` (operationId `getCaseInstance`); permission `case.read`.
+   * `GET /case-instances/by-id` (operationId `getCaseInstance`); permission `case.read`.
    */
-  async getCaseInstance(id: string, options?: RequestOptions): Promise<M.CaseInstance> {
-    const req: ApiRequest = { method: 'GET', path: `/case-instances/${seg(String(id))}` };
+  async getCaseInstance(params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CaseInstance> {
+    const req: ApiRequest = { method: 'GET', path: `/case-instances/by-id`, query: { id: params?.id } };
     return this.calls.json<M.CaseInstance>(req, options);
   }
 
@@ -3297,10 +3297,10 @@ export class CasesApi {
    *
    * Case variables (K11).
    *
-   * `GET /case-instances/{id}/variables` (operationId `getCaseVariables`); permission `case.read`.
+   * `GET /case-instances/by-id/variables` (operationId `getCaseVariables`); permission `case.read`.
    */
-  async getCaseVariables(id: string, options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/case-instances/${seg(String(id))}/variables` };
+  async getCaseVariables(params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/case-instances/by-id/variables`, query: { id: params?.id } };
     return this.calls.json<Record<string, unknown>>(req, options);
   }
 
@@ -3309,10 +3309,10 @@ export class CasesApi {
    *
    * complete | close | terminate | reactivate (linked new case).
    *
-   * `POST /case-instances/{id}/commands` (operationId `commandCaseInstance`); permission `case.write`; result stored atomically with the state change.
+   * `POST /case-instances/by-id/commands` (operationId `commandCaseInstance`); permission `case.write`; result stored atomically with the state change.
    */
-  async commandCaseInstance(id: string, body: M.CaseInstanceCommand, options?: RequestOptions): Promise<M.CaseInstance> {
-    const req: ApiRequest = { method: 'POST', path: `/case-instances/${seg(String(id))}/commands` };
+  async commandCaseInstance(body: M.CaseInstanceCommand, params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CaseInstance> {
+    const req: ApiRequest = { method: 'POST', path: `/case-instances/by-id/commands`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CaseInstance>(req, options);
   }
@@ -3322,10 +3322,10 @@ export class CasesApi {
    *
    * start | complete | disable | reenable | terminate | manualStart (discretionary items).
    *
-   * `POST /case-instances/{id}/executions/{executionId}/commands` (operationId `commandCaseExecution`); permission `case.write`; result stored atomically with the state change.
+   * `POST /case-instances/by-id/executions/by-execution-id/commands` (operationId `commandCaseExecution`); permission `case.write`; result stored atomically with the state change.
    */
-  async commandCaseExecution(id: string, executionId: string, body: M.CaseExecutionCommand, options?: RequestOptions): Promise<M.CaseInstance> {
-    const req: ApiRequest = { method: 'POST', path: `/case-instances/${seg(String(id))}/executions/${seg(String(executionId))}/commands` };
+  async commandCaseExecution(body: M.CaseExecutionCommand, params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */; executionId: string /* Case execution (plan item) id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CaseInstance> {
+    const req: ApiRequest = { method: 'POST', path: `/case-instances/by-id/executions/by-execution-id/commands`, query: { id: params?.id, executionId: params?.executionId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CaseInstance>(req, options);
   }
@@ -3347,10 +3347,10 @@ export class CasesApi {
    *
    * Comments on the case (R76 case workspace).
    *
-   * `GET /case-instances/{id}/comments` (operationId `listCaseComments`); permission `case.read`.
+   * `GET /case-instances/by-id/comments` (operationId `listCaseComments`); permission `case.read`.
    */
-  async listCaseComments(id: string, options?: RequestOptions): Promise<Array<M.CaseComment>> {
-    const req: ApiRequest = { method: 'GET', path: `/case-instances/${seg(String(id))}/comments` };
+  async listCaseComments(params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.CaseComment>> {
+    const req: ApiRequest = { method: 'GET', path: `/case-instances/by-id/comments`, query: { id: params?.id } };
     return this.calls.json<Array<M.CaseComment>>(req, options);
   }
 
@@ -3359,10 +3359,10 @@ export class CasesApi {
    *
    * Adds a comment.
    *
-   * `POST /case-instances/{id}/comments` (operationId `addCaseComment`); permission `case.write`; result stored atomically with the state change.
+   * `POST /case-instances/by-id/comments` (operationId `addCaseComment`); permission `case.write`; result stored atomically with the state change.
    */
-  async addCaseComment(id: string, body: M.AddCaseCommentRequest, options?: RequestOptions): Promise<M.CaseComment> {
-    const req: ApiRequest = { method: 'POST', path: `/case-instances/${seg(String(id))}/comments` };
+  async addCaseComment(body: M.AddCaseCommentRequest, params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CaseComment> {
+    const req: ApiRequest = { method: 'POST', path: `/case-instances/by-id/comments`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CaseComment>(req, options);
   }
@@ -3372,10 +3372,10 @@ export class CasesApi {
    *
    * Participants, including external experts and parties (UP-09, UP-22).
    *
-   * `GET /case-instances/{id}/participants` (operationId `listCaseParticipants`); permission `case.read`.
+   * `GET /case-instances/by-id/participants` (operationId `listCaseParticipants`); permission `case.read`.
    */
-  async listCaseParticipants(id: string, options?: RequestOptions): Promise<Array<M.Participant>> {
-    const req: ApiRequest = { method: 'GET', path: `/case-instances/${seg(String(id))}/participants` };
+  async listCaseParticipants(params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.Participant>> {
+    const req: ApiRequest = { method: 'GET', path: `/case-instances/by-id/participants`, query: { id: params?.id } };
     return this.calls.json<Array<M.Participant>>(req, options);
   }
 
@@ -3384,10 +3384,10 @@ export class CasesApi {
    *
    * Starts a linked new case of the same definition with the old variables; audited on both chains.
    *
-   * `POST /case-instances/{id}/reactivation` (operationId `reactivateCase`); permission `case.write`; result stored atomically with the state change.
+   * `POST /case-instances/by-id/reactivation` (operationId `reactivateCase`); permission `case.write`; result stored atomically with the state change.
    */
-  async reactivateCase(id: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.CaseInstance> {
-    const req: ApiRequest = { method: 'POST', path: `/case-instances/${seg(String(id))}/reactivation` };
+  async reactivateCase(body: M.ReasonRequest, params: { id: string /* Case instance id from the case engine; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CaseInstance> {
+    const req: ApiRequest = { method: 'POST', path: `/case-instances/by-id/reactivation`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CaseInstance>(req, options);
   }
@@ -4216,10 +4216,10 @@ export class ComplianceApi {
    *
    * The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
    *
-   * `GET /compliance/process-roots/{rootId}/legal-holds` (operationId `listComplianceLegalHolds`); permission `compliance.read`.
+   * `GET /compliance/process-roots/by-root-id/legal-holds` (operationId `listComplianceLegalHolds`); permission `compliance.read`.
    */
-  async listComplianceLegalHolds(rootId: string, options?: RequestOptions): Promise<Array<M.ComplianceLegalHold>> {
-    const req: ApiRequest = { method: 'GET', path: `/compliance/process-roots/${seg(String(rootId))}/legal-holds` };
+  async listComplianceLegalHolds(params: { rootId: string /* Process root id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.ComplianceLegalHold>> {
+    const req: ApiRequest = { method: 'GET', path: `/compliance/process-roots/by-root-id/legal-holds`, query: { rootId: params?.rootId } };
     return this.calls.json<Array<M.ComplianceLegalHold>>(req, options);
   }
 
@@ -4228,10 +4228,10 @@ export class ComplianceApi {
    *
    * Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
    *
-   * `POST /compliance/process-roots/{rootId}/legal-holds` (operationId `placeComplianceLegalHold`); permission `compliance.modify`; result stored atomically with the state change.
+   * `POST /compliance/process-roots/by-root-id/legal-holds` (operationId `placeComplianceLegalHold`); permission `compliance.modify`; result stored atomically with the state change.
    */
-  async placeComplianceLegalHold(rootId: string, body: M.ComplianceLegalHoldRequest, options?: RequestOptions): Promise<M.ComplianceLegalHold> {
-    const req: ApiRequest = { method: 'POST', path: `/compliance/process-roots/${seg(String(rootId))}/legal-holds` };
+  async placeComplianceLegalHold(body: M.ComplianceLegalHoldRequest, params: { rootId: string /* Process root id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.ComplianceLegalHold> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/process-roots/by-root-id/legal-holds`, query: { rootId: params?.rootId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ComplianceLegalHold>(req, options);
   }
@@ -4241,10 +4241,10 @@ export class ComplianceApi {
    *
    * Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.
    *
-   * `POST /compliance/process-roots/{rootId}/legal-holds/{holdId}/release` (operationId `releaseComplianceLegalHold`); permission `compliance.modify`; result stored atomically with the state change.
+   * `POST /compliance/process-roots/by-root-id/legal-holds/by-hold-id/release` (operationId `releaseComplianceLegalHold`); permission `compliance.modify`; result stored atomically with the state change.
    */
-  async releaseComplianceLegalHold(rootId: string, holdId: string, body: M.ComplianceLegalHoldRelease, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/compliance/process-roots/${seg(String(rootId))}/legal-holds/${seg(String(holdId))}/release` };
+  async releaseComplianceLegalHold(body: M.ComplianceLegalHoldRelease, params: { rootId: string /* Process root id; may carry '/' or ':' */; holdId: string /* Legal hold id (a breach hold is breach:<id>); may carry '/' or ':' */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/process-roots/by-root-id/legal-holds/by-hold-id/release`, query: { rootId: params?.rootId, holdId: params?.holdId } };
     if (body !== undefined) req.body = body;
     await this.calls.none(req, options);
   }
@@ -4620,10 +4620,10 @@ export class DecisionsApi {
    *
    * Evaluates the latest (or given) version; ROUTING/AUTHORITY evaluations with a businessKey are recorded as class-B events (X.2.3.2).
    *
-   * `POST /decisions/{key}/evaluate` (operationId `evaluateDecision`); permission `decision.evaluate`.
+   * `POST /decisions/by-key/evaluate` (operationId `evaluateDecision`); permission `decision.evaluate`.
    */
-  async evaluateDecision(key: string, body: M.DecisionEvaluateRequest, options?: RequestOptions): Promise<M.DecisionEvaluateResult> {
-    const req: ApiRequest = { method: 'POST', path: `/decisions/${seg(String(key))}/evaluate` };
+  async evaluateDecision(body: M.DecisionEvaluateRequest, params: { key: string /* DMN decision key from the deployed model; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.DecisionEvaluateResult> {
+    const req: ApiRequest = { method: 'POST', path: `/decisions/by-key/evaluate`, query: { key: params?.key } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.DecisionEvaluateResult>(req, options);
   }
@@ -4841,10 +4841,10 @@ export class DocumentsApi {
    *
    * Latest version metadata.
    *
-   * `GET /documents/{id}` (operationId `getDocument`); permission `document.read`.
+   * `GET /documents/by-id` (operationId `getDocument`); permission `document.read`.
    */
-  async getDocument(id: string, options?: RequestOptions): Promise<M.Document> {
-    const req: ApiRequest = { method: 'GET', path: `/documents/${seg(String(id))}` };
+  async getDocument(params: { id: string /* Document id (an engine attachment or content item id); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Document> {
+    const req: ApiRequest = { method: 'GET', path: `/documents/by-id`, query: { id: params?.id } };
     return this.calls.json<M.Document>(req, options);
   }
 
@@ -4853,10 +4853,10 @@ export class DocumentsApi {
    *
    * Deletes (subject to retention and legal hold, R29, R61).
    *
-   * `DELETE /documents/{id}` (operationId `deleteDocument`); permission `document.write`; result stored atomically with the state change.
+   * `DELETE /documents/by-id` (operationId `deleteDocument`); permission `document.write`; result stored atomically with the state change.
    */
-  async deleteDocument(id: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/documents/${seg(String(id))}`, query: { reason: params?.reason } };
+  async deleteDocument(params: { id: string /* Document id (an engine attachment or content item id); may carry '/' or ':' */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/documents/by-id`, query: { id: params?.id, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 
@@ -4865,10 +4865,10 @@ export class DocumentsApi {
    *
    * Content of the latest or given version.
    *
-   * `GET /documents/{id}/content` (operationId `getDocumentContent`); permission `document.read`.
+   * `GET /documents/by-id/content` (operationId `getDocumentContent`); permission `document.read`.
    */
-  async getDocumentContent(id: string, params?: { version?: number }, options?: RequestOptions): Promise<Uint8Array> {
-    const req: ApiRequest = { method: 'GET', path: `/documents/${seg(String(id))}/content`, query: { version: params?.version } };
+  async getDocumentContent(params: { id: string /* Document id (an engine attachment or content item id); may carry '/' or ':' */; version?: number }, options?: RequestOptions): Promise<Uint8Array> {
+    const req: ApiRequest = { method: 'GET', path: `/documents/by-id/content`, query: { id: params?.id, version: params?.version } };
     return this.calls.bytes(req, options, 'application/octet-stream');
   }
 
@@ -4877,10 +4877,10 @@ export class DocumentsApi {
    *
    * Adds an immutable version (R74). A slot applies when the document belongs to a process instance. DSC document slot (decisions 267 to 269): with a documentType for which the pack of the process instance declares a slot, a PDF fills that slot in the same transaction as the store, audited in DOCUMENT_UPLOADED or DOCUMENT_VERSION_ADDED with slot and document_type. Only the assignee of an open task of that instance with task.write may set or replace a slot (403 DOCUMENT_SLOT_NOT_TASK_HOLDER); a slot holding another document is 409 DOCUMENT_SLOT_OCCUPIED unless replaceSlot is true. Nothing is stored on either refusal. A slot changed after the signing task was created is refused at completion.
    *
-   * `POST /documents/{id}/versions` (operationId `addDocumentVersion`); permission `document.write`; result stored atomically with the state change.
+   * `POST /documents/by-id/versions` (operationId `addDocumentVersion`); permission `document.write`; result stored atomically with the state change.
    */
-  async addDocumentVersion(id: string, body: FormData, options?: RequestOptions): Promise<M.Document> {
-    const req: ApiRequest = { method: 'POST', path: `/documents/${seg(String(id))}/versions` };
+  async addDocumentVersion(body: FormData, params: { id: string /* Document id (an engine attachment or content item id); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Document> {
+    const req: ApiRequest = { method: 'POST', path: `/documents/by-id/versions`, query: { id: params?.id } };
     if (body !== undefined) req.rawBody = body;
     return this.calls.json<M.Document>(req, options);
   }
@@ -4890,10 +4890,10 @@ export class DocumentsApi {
    *
    * Every immutable version (R74).
    *
-   * `GET /documents/{id}/versions` (operationId `listDocumentVersions`); permission `document.read`.
+   * `GET /documents/by-id/versions` (operationId `listDocumentVersions`); permission `document.read`.
    */
-  async listDocumentVersions(id: string, options?: RequestOptions): Promise<Array<M.Document>> {
-    const req: ApiRequest = { method: 'GET', path: `/documents/${seg(String(id))}/versions` };
+  async listDocumentVersions(params: { id: string /* Document id (an engine attachment or content item id); may carry '/' or ':' */ }, options?: RequestOptions): Promise<Array<M.Document>> {
+    const req: ApiRequest = { method: 'GET', path: `/documents/by-id/versions`, query: { id: params?.id } };
     return this.calls.json<Array<M.Document>>(req, options);
   }
 
@@ -4902,10 +4902,10 @@ export class DocumentsApi {
    *
    * A held document cannot be deleted or disposed of (R61, R29).
    *
-   * `POST /documents/{id}/legal-hold` (operationId `setDocumentLegalHold`); permission `document.legal-hold`; result stored atomically with the state change.
+   * `POST /documents/by-id/legal-hold` (operationId `setDocumentLegalHold`); permission `document.legal-hold`; result stored atomically with the state change.
    */
-  async setDocumentLegalHold(id: string, body: M.LegalHoldRequest, options?: RequestOptions): Promise<M.Document> {
-    const req: ApiRequest = { method: 'POST', path: `/documents/${seg(String(id))}/legal-hold` };
+  async setDocumentLegalHold(body: M.LegalHoldRequest, params: { id: string /* Document id (an engine attachment or content item id); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Document> {
+    const req: ApiRequest = { method: 'POST', path: `/documents/by-id/legal-hold`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Document>(req, options);
   }
@@ -4913,7 +4913,7 @@ export class DocumentsApi {
   /**
    * Document templates
    *
-   * Output templates (R74, S12); the id 'templates' is reserved for /documents/{id}.
+   * Output templates (R74, S12); (a literal route next to /documents/by-id).
    *
    * `GET /documents/templates` (operationId `listDocumentTemplates`); permission `document.read`.
    */
@@ -6687,10 +6687,10 @@ export class LinksApi {
    *
    * Removes an explicit link.
    *
-   * `DELETE /links/{id}` (operationId `deleteLink`); permission `process.write`; result stored atomically with the state change.
+   * `DELETE /links/by-id` (operationId `deleteLink`); permission `process.write`; result stored atomically with the state change.
    */
-  async deleteLink(id: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/links/${seg(String(id))}`, query: { reason: params?.reason } };
+  async deleteLink(params: { id: string /* Link id (a derived link is derived:<type>:<source>:<target>); may carry '/' or ':' */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/links/by-id`, query: { id: params?.id, reason: params?.reason } };
     await this.calls.none(req, options);
   }
 }
@@ -6948,10 +6948,10 @@ export class ModellerApi {
    *
    * Installs a kind package entry into the caller's tenant: the catalogue checks first (index signature, licence allow-list, platform version, artefact SHA-256), then the package import (T70: the bundle's own hash and signatures; the package lands APPROVED, activation still needs a deployer and the ENV_BINDING values). 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds are never installed), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_ARTIFACT_PATH_INVALID, CATALOGUE_EGRESS_DENIED, or a package import refusal (PACKAGE_HASH_MISMATCH, signatures); 409 PACKAGE_EXISTS.
    *
-   * `POST /catalogue/{id}/{version}/install` (operationId `installCatalogueEntry`); permission `package.deploy`; result stored atomically with the state change.
+   * `POST /catalogue/by-id/by-version/install` (operationId `installCatalogueEntry`); permission `package.deploy`; result stored atomically with the state change.
    */
-  async installCatalogueEntry(id: string, version: string, body?: M.CatalogueInstallRequest, options?: RequestOptions): Promise<M.Package> {
-    const req: ApiRequest = { method: 'POST', path: `/catalogue/${seg(String(id))}/${seg(String(version))}/install` };
+  async installCatalogueEntry(body: M.CatalogueInstallRequest | undefined, params: { id: string /* Catalogue entry id from the remote index; may carry '/' or ':' */; version: string /* Catalogue entry version from the remote index; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Package> {
+    const req: ApiRequest = { method: 'POST', path: `/catalogue/by-id/by-version/install`, query: { id: params?.id, version: params?.version } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Package>(req, options);
   }
@@ -6961,10 +6961,10 @@ export class ModellerApi {
    *
    * Decision 380 P2 (b): publishes the connector element templates of a kind connector-template entry in the caller's tenant after the same catalogue checks as a package install (index signature, licence allow-list, platform version, artefact SHA-256). The artefact is data only ({templates: [{id, name, description, appliesTo, fields}]}, the format of the built-in connector templates); every template id is the entry id or starts with it and a dot, so an entry never replaces a built-in or another entry's template, and no field may be named like a credential. Only changed templates get a new version, with one CATALOGUE_TEMPLATES_INSTALLED audit event in the same transaction; a repeated install writes nothing. 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds), CATALOGUE_KIND_MISMATCH (a package entry), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_EGRESS_DENIED; 501 when the modeller template store is not installed.
    *
-   * `POST /catalogue/{id}/{version}/install-templates` (operationId `installCatalogueTemplates`); permission `package.author`; result stored atomically with the state change.
+   * `POST /catalogue/by-id/by-version/install-templates` (operationId `installCatalogueTemplates`); permission `package.author`; result stored atomically with the state change.
    */
-  async installCatalogueTemplates(id: string, version: string, body?: M.CatalogueInstallRequest, options?: RequestOptions): Promise<M.CatalogueTemplatesInstalled> {
-    const req: ApiRequest = { method: 'POST', path: `/catalogue/${seg(String(id))}/${seg(String(version))}/install-templates` };
+  async installCatalogueTemplates(body: M.CatalogueInstallRequest | undefined, params: { id: string /* Catalogue entry id from the remote index; may carry '/' or ':' */; version: string /* Catalogue entry version from the remote index; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.CatalogueTemplatesInstalled> {
+    const req: ApiRequest = { method: 'POST', path: `/catalogue/by-id/by-version/install-templates`, query: { id: params?.id, version: params?.version } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CatalogueTemplatesInstalled>(req, options);
   }
@@ -7545,10 +7545,10 @@ export class OnboardingApi {
    *
    * The tenant's configuration, signed. No secrets, no go-live evidence.
    *
-   * `GET /onboarding/tenants/{tenant}/bundle` (operationId `exportTenantBundle`); permission `tenant.admin`.
+   * `GET /onboarding/tenants/by-tenant/bundle` (operationId `exportTenantBundle`); permission `tenant.admin`.
    */
-  async exportTenantBundle(tenant: string, options?: RequestOptions): Promise<M.TenantBundle> {
-    const req: ApiRequest = { method: 'GET', path: `/onboarding/tenants/${seg(String(tenant))}/bundle` };
+  async exportTenantBundle(params: { tenant: string /* Tenant id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.TenantBundle> {
+    const req: ApiRequest = { method: 'GET', path: `/onboarding/tenants/by-tenant/bundle`, query: { tenant: params?.tenant } };
     return this.calls.json<M.TenantBundle>(req, options);
   }
 
@@ -7583,10 +7583,10 @@ export class OnboardingApi {
    *
    * The tenant's signed bundle labelled with this environment (sangam.onboarding.environment). 409 PROMOTION_ENVIRONMENT_NOT_SET without a label.
    *
-   * `GET /onboarding/promotions/{tenant}/bundle` (operationId `exportPromotionBundle`); permission `tenant.admin`.
+   * `GET /onboarding/promotions/by-tenant/bundle` (operationId `exportPromotionBundle`); permission `tenant.admin`.
    */
-  async exportPromotionBundle(tenant: string, options?: RequestOptions): Promise<M.TenantBundle> {
-    const req: ApiRequest = { method: 'GET', path: `/onboarding/promotions/${seg(String(tenant))}/bundle` };
+  async exportPromotionBundle(params: { tenant: string /* Tenant id; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.TenantBundle> {
+    const req: ApiRequest = { method: 'GET', path: `/onboarding/promotions/by-tenant/bundle`, query: { tenant: params?.tenant } };
     return this.calls.json<M.TenantBundle>(req, options);
   }
 
@@ -8699,10 +8699,10 @@ export class PortalApi {
    *
    * Status, stage, clarifications and messages; officers appear only as seat designations (PER-8).
    *
-   * `GET /portal/applications/{id}` (operationId `getMyApplication`); permission `portal.use`.
+   * `GET /portal/applications/by-id` (operationId `getMyApplication`); permission `portal.use`.
    */
-  async getMyApplication(id: string, options?: RequestOptions): Promise<M.Application> {
-    const req: ApiRequest = { method: 'GET', path: `/portal/applications/${seg(String(id))}` };
+  async getMyApplication(params: { id: string /* Application id from the portal adapter; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Application> {
+    const req: ApiRequest = { method: 'GET', path: `/portal/applications/by-id`, query: { id: params?.id } };
     return this.calls.json<M.Application>(req, options);
   }
 
@@ -8711,10 +8711,10 @@ export class PortalApi {
    *
    * Text plus files (CLARIFICATION_RECEIVED, C04).
    *
-   * `POST /portal/applications/{id}/clarifications/{clarificationId}/reply` (operationId `replyToClarification`); permission `portal.use`; result stored atomically with the state change.
+   * `POST /portal/applications/by-id/clarifications/by-clarification-id/reply` (operationId `replyToClarification`); permission `portal.use`; result stored atomically with the state change.
    */
-  async replyToClarification(id: string, clarificationId: string, body: FormData, options?: RequestOptions): Promise<M.Application> {
-    const req: ApiRequest = { method: 'POST', path: `/portal/applications/${seg(String(id))}/clarifications/${seg(String(clarificationId))}/reply` };
+  async replyToClarification(body: FormData, params: { id: string /* Application id from the portal adapter; may carry '/' or ':' */; clarificationId: string /* Clarification id (an engine task id); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Application> {
+    const req: ApiRequest = { method: 'POST', path: `/portal/applications/by-id/clarifications/by-clarification-id/reply`, query: { id: params?.id, clarificationId: params?.clarificationId } };
     if (body !== undefined) req.rawBody = body;
     return this.calls.json<M.Application>(req, options);
   }
@@ -8724,10 +8724,10 @@ export class PortalApi {
    *
    * CASE_WITHDRAWN.
    *
-   * `POST /portal/applications/{id}/withdraw` (operationId `withdrawApplication`); permission `portal.use`; result stored atomically with the state change.
+   * `POST /portal/applications/by-id/withdraw` (operationId `withdrawApplication`); permission `portal.use`; result stored atomically with the state change.
    */
-  async withdrawApplication(id: string, body: M.WithdrawRequest, options?: RequestOptions): Promise<M.Application> {
-    const req: ApiRequest = { method: 'POST', path: `/portal/applications/${seg(String(id))}/withdraw` };
+  async withdrawApplication(body: M.WithdrawRequest, params: { id: string /* Application id from the portal adapter; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Application> {
+    const req: ApiRequest = { method: 'POST', path: `/portal/applications/by-id/withdraw`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Application>(req, options);
   }
@@ -8737,10 +8737,10 @@ export class PortalApi {
    *
    * APPEAL_FILED.
    *
-   * `POST /portal/applications/{id}/appeal` (operationId `appealApplication`); permission `portal.use`; result stored atomically with the state change.
+   * `POST /portal/applications/by-id/appeal` (operationId `appealApplication`); permission `portal.use`; result stored atomically with the state change.
    */
-  async appealApplication(id: string, body: M.AppealRequest, options?: RequestOptions): Promise<M.Application> {
-    const req: ApiRequest = { method: 'POST', path: `/portal/applications/${seg(String(id))}/appeal` };
+  async appealApplication(body: M.AppealRequest, params: { id: string /* Application id from the portal adapter; may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.Application> {
+    const req: ApiRequest = { method: 'POST', path: `/portal/applications/by-id/appeal`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Application>(req, options);
   }
@@ -8750,10 +8750,10 @@ export class PortalApi {
    *
    * Certificate, sanction or rejection order (C05).
    *
-   * `GET /portal/applications/{id}/outcome` (operationId `downloadOutcome`); permission `portal.use`.
+   * `GET /portal/applications/by-id/outcome` (operationId `downloadOutcome`); permission `portal.use`.
    */
-  async downloadOutcome(id: string, options?: RequestOptions): Promise<Uint8Array> {
-    const req: ApiRequest = { method: 'GET', path: `/portal/applications/${seg(String(id))}/outcome` };
+  async downloadOutcome(params: { id: string /* Application id from the portal adapter; may carry '/' or ':' */ }, options?: RequestOptions): Promise<Uint8Array> {
+    const req: ApiRequest = { method: 'GET', path: `/portal/applications/by-id/outcome`, query: { id: params?.id } };
     return this.calls.bytes(req, options, 'application/octet-stream');
   }
 
@@ -8966,10 +8966,10 @@ export class ProcessesApi {
    *
    * Enabled and active activities of an ad-hoc scope.
    *
-   * `GET /process-instances/{id}/ad-hoc/{adHocActivityId}` (operationId `getAdHocState`); permission `process.read`.
+   * `GET /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id` (operationId `getAdHocState`); permission `process.read`.
    */
-  async getAdHocState(id: string, adHocActivityId: string, options?: RequestOptions): Promise<M.AdHocState> {
-    const req: ApiRequest = { method: 'GET', path: `/process-instances/${seg(String(id))}/ad-hoc/${seg(String(adHocActivityId))}` };
+  async getAdHocState(id: string, params: { adHocActivityId: string /* Id of the ad-hoc sub-process activity (a BPMN element id from the deployed model); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.AdHocState> {
+    const req: ApiRequest = { method: 'GET', path: `/process-instances/${seg(String(id))}/ad-hoc/by-ad-hoc-activity-id`, query: { adHocActivityId: params?.adHocActivityId } };
     return this.calls.json<M.AdHocState>(req, options);
   }
 
@@ -8978,10 +8978,10 @@ export class ProcessesApi {
    *
    * Starts an enabled activity in the ad-hoc scope.
    *
-   * `POST /process-instances/{id}/ad-hoc/{adHocActivityId}/start` (operationId `startAdHocActivity`); permission `process.write`; result stored atomically with the state change.
+   * `POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/start` (operationId `startAdHocActivity`); permission `process.write`; result stored atomically with the state change.
    */
-  async startAdHocActivity(id: string, adHocActivityId: string, body: M.StartAdHocActivityRequest, options?: RequestOptions): Promise<M.AdHocState> {
-    const req: ApiRequest = { method: 'POST', path: `/process-instances/${seg(String(id))}/ad-hoc/${seg(String(adHocActivityId))}/start` };
+  async startAdHocActivity(id: string, body: M.StartAdHocActivityRequest, params: { adHocActivityId: string /* Id of the ad-hoc sub-process activity (a BPMN element id from the deployed model); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.AdHocState> {
+    const req: ApiRequest = { method: 'POST', path: `/process-instances/${seg(String(id))}/ad-hoc/by-ad-hoc-activity-id/start`, query: { adHocActivityId: params?.adHocActivityId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.AdHocState>(req, options);
   }
@@ -8991,10 +8991,10 @@ export class ProcessesApi {
    *
    * Completes the ad-hoc sub-process when its completion condition allows.
    *
-   * `POST /process-instances/{id}/ad-hoc/{adHocActivityId}/complete` (operationId `completeAdHoc`); permission `process.write`; result stored atomically with the state change.
+   * `POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/complete` (operationId `completeAdHoc`); permission `process.write`; result stored atomically with the state change.
    */
-  async completeAdHoc(id: string, adHocActivityId: string, params?: { reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<M.AdHocState> {
-    const req: ApiRequest = { method: 'POST', path: `/process-instances/${seg(String(id))}/ad-hoc/${seg(String(adHocActivityId))}/complete`, query: { reason: params?.reason } };
+  async completeAdHoc(id: string, params: { adHocActivityId: string /* Id of the ad-hoc sub-process activity (a BPMN element id from the deployed model); may carry '/' or ':' */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<M.AdHocState> {
+    const req: ApiRequest = { method: 'POST', path: `/process-instances/${seg(String(id))}/ad-hoc/by-ad-hoc-activity-id/complete`, query: { adHocActivityId: params?.adHocActivityId, reason: params?.reason } };
     return this.calls.json<M.AdHocState>(req, options);
   }
 
@@ -9272,10 +9272,10 @@ export class ProgrammesApi {
    *
    * Open, close or lock a reporting period.
    *
-   * `POST /programme-periods/{id}/state` (operationId `programmeChangePeriodState`); permission `programme.admin`; result stored atomically with the state change.
+   * `POST /programme-periods/by-id/state` (operationId `programmeChangePeriodState`); permission `programme.admin`; result stored atomically with the state change.
    */
-  async programmeChangePeriodState(id: string, body: M.PgPeriodStateRequest, options?: RequestOptions): Promise<M.PgPeriod> {
-    const req: ApiRequest = { method: 'POST', path: `/programme-periods/${seg(String(id))}/state` };
+  async programmeChangePeriodState(body: M.PgPeriodStateRequest, params: { id: string /* Reporting period id (<frequency>:<start>, PeriodService); may carry '/' or ':' */ }, options?: RequestOptions): Promise<M.PgPeriod> {
+    const req: ApiRequest = { method: 'POST', path: `/programme-periods/by-id/state`, query: { id: params?.id } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.PgPeriod>(req, options);
   }
@@ -13878,7 +13878,7 @@ export class SCIMApi {
    *
    * `GET /scim/v2/Users` (operationId `scimListUsers`); permission `scim.provision`.
    */
-  async scimListUsers(params?: { filter?: string /* SCIM filter: eq, co, sw on userName / externalId / displayName (others: 400 invalidFilter) */; startIndex?: number /* 1-based */; count?: number /* Page size, at most 200 */; attributes?: string; excludedAttributes?: string }, options?: RequestOptions): Promise<Uint8Array> {
+  async scimListUsers(params?: { filter?: string /* SCIM filter: eq, co, sw on id / userName / externalId / displayName (others: 400 invalidFilter) */; startIndex?: number /* 1-based */; count?: number /* Page size, at most 200 */; attributes?: string; excludedAttributes?: string }, options?: RequestOptions): Promise<Uint8Array> {
     const req: ApiRequest = { method: 'GET', path: `/scim/v2/Users`, query: { filter: params?.filter, startIndex: params?.startIndex, count: params?.count, attributes: params?.attributes, excludedAttributes: params?.excludedAttributes } };
     return this.calls.bytes(req, options, 'application/scim+json');
   }
@@ -13953,7 +13953,7 @@ export class SCIMApi {
    *
    * `GET /scim/v2/Groups` (operationId `scimListGroups`); permission `scim.provision`.
    */
-  async scimListGroups(params?: { filter?: string /* SCIM filter: eq, co, sw on userName / externalId / displayName (others: 400 invalidFilter) */; startIndex?: number /* 1-based */; count?: number /* Page size, at most 200 */; attributes?: string; excludedAttributes?: string }, options?: RequestOptions): Promise<Uint8Array> {
+  async scimListGroups(params?: { filter?: string /* SCIM filter: eq, co, sw on id / userName / externalId / displayName (others: 400 invalidFilter) */; startIndex?: number /* 1-based */; count?: number /* Page size, at most 200 */; attributes?: string; excludedAttributes?: string }, options?: RequestOptions): Promise<Uint8Array> {
     const req: ApiRequest = { method: 'GET', path: `/scim/v2/Groups`, query: { filter: params?.filter, startIndex: params?.startIndex, count: params?.count, attributes: params?.attributes, excludedAttributes: params?.excludedAttributes } };
     return this.calls.bytes(req, options, 'application/scim+json');
   }

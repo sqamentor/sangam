@@ -234,7 +234,7 @@ class PlugAndPlayIT extends AbstractAcceptanceIT {
         String source = s.at("/source").asText();
         assumeTrue(maker().send("GET", "/api/v1/onboarding/runs?tenant=" + source, null).body().size() > 0,
                 "AT-1 did not onboard its tenant; AT-7 needs it");
-        JsonNode exported = maker().call("GET", "/api/v1/onboarding/tenants/" + source + "/bundle", null);
+        JsonNode exported = maker().call("GET", "/api/v1/onboarding/tenants/by-tenant/bundle?tenant=" + source, null);
         assertThat(exported.path("signature").isMissingNode()).as("the bundle must be signed").isFalse();
         Map<String, Object> imp = AccHttp.JSON.convertValue(s.path("import"), Map.class);
         imp.put("bundle", exported);
@@ -250,7 +250,7 @@ class PlugAndPlayIT extends AbstractAcceptanceIT {
         imp.put("dryRun", true);
         maker().call("POST", "/api/v1/onboarding/bundles/import", imp, 422);
 
-        JsonNode target = maker().call("GET", "/api/v1/onboarding/tenants/" + s.at("/import/targetTenant").asText() + "/bundle", null);
+        JsonNode target = maker().call("GET", "/api/v1/onboarding/tenants/by-tenant/bundle?tenant=" + s.at("/import/targetTenant").asText(), null);
         JsonNode diff = maker().call("POST", "/api/v1/onboarding/bundles/diff", Map.of("left", exported, "right", target));
         for (JsonNode e : diff) {
             String path = e.path("path").asText();

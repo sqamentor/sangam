@@ -7,7 +7,7 @@ import java.util.Locale;
 
 /**
  * The SCIM list filter subset Sangam supports (RFC 7644 section 3.4.2.2, as published in the contract): comparisons
- * {@code eq}, {@code co} and {@code sw} on {@code userName}, {@code externalId} and {@code displayName}, joined by
+ * {@code eq}, {@code co} and {@code sw} on {@code id} (the opaque SCIM id, case-exact), {@code userName}, {@code externalId} and {@code displayName}, joined by
  * {@code and}. Attribute names and operators are case-insensitive; an attribute may carry the core schema URN prefix.
  * Anything else ({@code or}, {@code not}, grouping, value paths, other operators or attributes) is 400
  * {@code invalidFilter}, never silently ignored.
@@ -17,7 +17,7 @@ public final class ScimFilter {
     /** Longest filter text accepted. */
     public static final int MAX_LENGTH = 1000;
 
-    public enum Attribute { USER_NAME, EXTERNAL_ID, DISPLAY_NAME }
+    public enum Attribute { ID, USER_NAME, EXTERNAL_ID, DISPLAY_NAME }
 
     public enum Op { EQ, CO, SW }
 
@@ -88,10 +88,11 @@ public final class ScimFilter {
             n = n.substring(CORE_GROUP.length());
         }
         return switch (n) {
+            case "id" -> Attribute.ID;
             case "username" -> Attribute.USER_NAME;
             case "externalid" -> Attribute.EXTERNAL_ID;
             case "displayname" -> Attribute.DISPLAY_NAME;
-            default -> throw ScimException.invalidFilter("attribute '" + name + "' cannot be filtered (userName, externalId, displayName)");
+            default -> throw ScimException.invalidFilter("attribute '" + name + "' cannot be filtered (id, userName, externalId, displayName)");
         };
     }
 

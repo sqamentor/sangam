@@ -25,13 +25,15 @@ final class DecisionsApi
      *
      * Evaluates the latest (or given) version; ROUTING/AUTHORITY evaluations with a businessKey are recorded as class-B events (X.2.3.2).
      *
-     * POST /decisions/{key}/evaluate (operationId evaluateDecision); permission decision.evaluate.
+     * POST /decisions/by-key/evaluate (operationId evaluateDecision); permission decision.evaluate.
      * @param Model\DecisionEvaluateRequest|array $body request body
+     * @param string $key query key
      * @return Model\DecisionEvaluateResult|null
      */
-    public function evaluateDecision(string $key, Model\DecisionEvaluateRequest|array $body, ?RequestOptions $options = null): ?Model\DecisionEvaluateResult
+    public function evaluateDecision(Model\DecisionEvaluateRequest|array $body, string $key, ?RequestOptions $options = null): ?Model\DecisionEvaluateResult
     {
-        $req = ApiRequest::post('/decisions/' . HttpTransport::seg((string) $key) . '/evaluate');
+        $req = ApiRequest::post('/decisions/by-key/evaluate');
+        $req->query('key', $key);
         if ($body !== null) {
             $req->body($body);
         }

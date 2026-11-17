@@ -53,6 +53,9 @@ class P3LandHoldingNotStatedTest {
     @AfterAll
     static void tearDown() {
         engine.close();
+        // R8-heap2: a test class stays loaded for the whole run; its statics must not keep a closed engine
+        engine = null;
+        driver = null;
         PackRuntime.reset();
     }
 

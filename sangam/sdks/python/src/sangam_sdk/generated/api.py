@@ -2851,45 +2851,45 @@ class CasesApi:
         req = ApiRequest("GET", f"/case-instances", query={"key": key, "businessKey": business_key, "active": active, "page": page, "size": size})
         return cast("Page[M.CaseInstance]", self._c.page(req, options, page, size))
 
-    def get_case_instance(self, id: str, *, options: Optional[RequestOptions] = None) -> M.CaseInstance:
+    def get_case_instance(self, *, id: str, options: Optional[RequestOptions] = None) -> M.CaseInstance:
         """Get a case
 
         Case with plan item instances.
 
-        ``GET /case-instances/{id}`` (operationId ``getCaseInstance``); permission ``case.read``.
+        ``GET /case-instances/by-id`` (operationId ``getCaseInstance``); permission ``case.read``.
         """
-        req = ApiRequest("GET", f"/case-instances/{seg(str(id))}")
+        req = ApiRequest("GET", f"/case-instances/by-id", query={"id": id})
         return cast("M.CaseInstance", self._c.json(req, options))
 
-    def get_case_variables(self, id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
+    def get_case_variables(self, *, id: str, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Case variables
 
         Case variables (K11).
 
-        ``GET /case-instances/{id}/variables`` (operationId ``getCaseVariables``); permission ``case.read``.
+        ``GET /case-instances/by-id/variables`` (operationId ``getCaseVariables``); permission ``case.read``.
         """
-        req = ApiRequest("GET", f"/case-instances/{seg(str(id))}/variables")
+        req = ApiRequest("GET", f"/case-instances/by-id/variables", query={"id": id})
         return cast("dict[str, Any]", self._c.json(req, options))
 
-    def command_case_instance(self, id: str, body: M.CaseInstanceCommand, *, options: Optional[RequestOptions] = None) -> M.CaseInstance:
+    def command_case_instance(self, body: M.CaseInstanceCommand, *, id: str, options: Optional[RequestOptions] = None) -> M.CaseInstance:
         """Case command
 
         complete | close | terminate | reactivate (linked new case).
 
-        ``POST /case-instances/{id}/commands`` (operationId ``commandCaseInstance``); permission ``case.write``; result stored atomically with the state change.
+        ``POST /case-instances/by-id/commands`` (operationId ``commandCaseInstance``); permission ``case.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/case-instances/{seg(str(id))}/commands")
+        req = ApiRequest("POST", f"/case-instances/by-id/commands", query={"id": id})
         req.body = body
         return cast("M.CaseInstance", self._c.json(req, options))
 
-    def command_case_execution(self, id: str, execution_id: str, body: M.CaseExecutionCommand, *, options: Optional[RequestOptions] = None) -> M.CaseInstance:
+    def command_case_execution(self, body: M.CaseExecutionCommand, *, id: str, execution_id: str, options: Optional[RequestOptions] = None) -> M.CaseInstance:
         """Plan item command
 
         start | complete | disable | reenable | terminate | manualStart (discretionary items).
 
-        ``POST /case-instances/{id}/executions/{executionId}/commands`` (operationId ``commandCaseExecution``); permission ``case.write``; result stored atomically with the state change.
+        ``POST /case-instances/by-id/executions/by-execution-id/commands`` (operationId ``commandCaseExecution``); permission ``case.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/case-instances/{seg(str(id))}/executions/{seg(str(execution_id))}/commands")
+        req = ApiRequest("POST", f"/case-instances/by-id/executions/by-execution-id/commands", query={"id": id, "executionId": execution_id})
         req.body = body
         return cast("M.CaseInstance", self._c.json(req, options))
 
@@ -2903,45 +2903,45 @@ class CasesApi:
         req = ApiRequest("GET", f"/case-definitions", query={"key": key, "latest": latest, "page": page, "size": size})
         return cast("Page[M.CaseDefinition]", self._c.page(req, options, page, size))
 
-    def list_case_comments(self, id: str, *, options: Optional[RequestOptions] = None) -> list[M.CaseComment]:
+    def list_case_comments(self, *, id: str, options: Optional[RequestOptions] = None) -> list[M.CaseComment]:
         """Case comments
 
         Comments on the case (R76 case workspace).
 
-        ``GET /case-instances/{id}/comments`` (operationId ``listCaseComments``); permission ``case.read``.
+        ``GET /case-instances/by-id/comments`` (operationId ``listCaseComments``); permission ``case.read``.
         """
-        req = ApiRequest("GET", f"/case-instances/{seg(str(id))}/comments")
+        req = ApiRequest("GET", f"/case-instances/by-id/comments", query={"id": id})
         return cast("list[M.CaseComment]", self._c.json(req, options))
 
-    def add_case_comment(self, id: str, body: M.AddCaseCommentRequest, *, options: Optional[RequestOptions] = None) -> M.CaseComment:
+    def add_case_comment(self, body: M.AddCaseCommentRequest, *, id: str, options: Optional[RequestOptions] = None) -> M.CaseComment:
         """Add a case comment
 
         Adds a comment.
 
-        ``POST /case-instances/{id}/comments`` (operationId ``addCaseComment``); permission ``case.write``; result stored atomically with the state change.
+        ``POST /case-instances/by-id/comments`` (operationId ``addCaseComment``); permission ``case.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/case-instances/{seg(str(id))}/comments")
+        req = ApiRequest("POST", f"/case-instances/by-id/comments", query={"id": id})
         req.body = body
         return cast("M.CaseComment", self._c.json(req, options))
 
-    def list_case_participants(self, id: str, *, options: Optional[RequestOptions] = None) -> list[M.Participant]:
+    def list_case_participants(self, *, id: str, options: Optional[RequestOptions] = None) -> list[M.Participant]:
         """Case participants
 
         Participants, including external experts and parties (UP-09, UP-22).
 
-        ``GET /case-instances/{id}/participants`` (operationId ``listCaseParticipants``); permission ``case.read``.
+        ``GET /case-instances/by-id/participants`` (operationId ``listCaseParticipants``); permission ``case.read``.
         """
-        req = ApiRequest("GET", f"/case-instances/{seg(str(id))}/participants")
+        req = ApiRequest("GET", f"/case-instances/by-id/participants", query={"id": id})
         return cast("list[M.Participant]", self._c.json(req, options))
 
-    def reactivate_case(self, id: str, body: M.ReasonRequest, *, options: Optional[RequestOptions] = None) -> M.CaseInstance:
+    def reactivate_case(self, body: M.ReasonRequest, *, id: str, options: Optional[RequestOptions] = None) -> M.CaseInstance:
         """Reactivate a case
 
         Starts a linked new case of the same definition with the old variables; audited on both chains.
 
-        ``POST /case-instances/{id}/reactivation`` (operationId ``reactivateCase``); permission ``case.write``; result stored atomically with the state change.
+        ``POST /case-instances/by-id/reactivation`` (operationId ``reactivateCase``); permission ``case.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/case-instances/{seg(str(id))}/reactivation")
+        req = ApiRequest("POST", f"/case-instances/by-id/reactivation", query={"id": id})
         req.body = body
         return cast("M.CaseInstance", self._c.json(req, options))
 
@@ -3641,35 +3641,35 @@ class ComplianceApi:
         req.body = body
         return cast("M.ComplianceOtpVerification", self._c.json(req, options))
 
-    def list_compliance_legal_holds(self, root_id: str, *, options: Optional[RequestOptions] = None) -> list[M.ComplianceLegalHold]:
+    def list_compliance_legal_holds(self, *, root_id: str, options: Optional[RequestOptions] = None) -> list[M.ComplianceLegalHold]:
         """Active legal holds of a process root
 
         The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
 
-        ``GET /compliance/process-roots/{rootId}/legal-holds`` (operationId ``listComplianceLegalHolds``); permission ``compliance.read``.
+        ``GET /compliance/process-roots/by-root-id/legal-holds`` (operationId ``listComplianceLegalHolds``); permission ``compliance.read``.
         """
-        req = ApiRequest("GET", f"/compliance/process-roots/{seg(str(root_id))}/legal-holds")
+        req = ApiRequest("GET", f"/compliance/process-roots/by-root-id/legal-holds", query={"rootId": root_id})
         return cast("list[M.ComplianceLegalHold]", self._c.json(req, options))
 
-    def place_compliance_legal_hold(self, root_id: str, body: M.ComplianceLegalHoldRequest, *, options: Optional[RequestOptions] = None) -> M.ComplianceLegalHold:
+    def place_compliance_legal_hold(self, body: M.ComplianceLegalHoldRequest, *, root_id: str, options: Optional[RequestOptions] = None) -> M.ComplianceLegalHold:
         """Place a legal hold on a process root
 
         Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
 
-        ``POST /compliance/process-roots/{rootId}/legal-holds`` (operationId ``placeComplianceLegalHold``); permission ``compliance.modify``; result stored atomically with the state change.
+        ``POST /compliance/process-roots/by-root-id/legal-holds`` (operationId ``placeComplianceLegalHold``); permission ``compliance.modify``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/compliance/process-roots/{seg(str(root_id))}/legal-holds")
+        req = ApiRequest("POST", f"/compliance/process-roots/by-root-id/legal-holds", query={"rootId": root_id})
         req.body = body
         return cast("M.ComplianceLegalHold", self._c.json(req, options))
 
-    def release_compliance_legal_hold(self, root_id: str, hold_id: str, body: M.ComplianceLegalHoldRelease, *, options: Optional[RequestOptions] = None) -> None:
+    def release_compliance_legal_hold(self, body: M.ComplianceLegalHoldRelease, *, root_id: str, hold_id: str, options: Optional[RequestOptions] = None) -> None:
         """Release a legal hold
 
         Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.
 
-        ``POST /compliance/process-roots/{rootId}/legal-holds/{holdId}/release`` (operationId ``releaseComplianceLegalHold``); permission ``compliance.modify``; result stored atomically with the state change.
+        ``POST /compliance/process-roots/by-root-id/legal-holds/by-hold-id/release`` (operationId ``releaseComplianceLegalHold``); permission ``compliance.modify``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/compliance/process-roots/{seg(str(root_id))}/legal-holds/{seg(str(hold_id))}/release")
+        req = ApiRequest("POST", f"/compliance/process-roots/by-root-id/legal-holds/by-hold-id/release", query={"rootId": root_id, "holdId": hold_id})
         req.body = body
         self._c.none(req, options)
 
@@ -3986,14 +3986,14 @@ class DecisionsApi:
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
 
-    def evaluate_decision(self, key: str, body: M.DecisionEvaluateRequest, *, options: Optional[RequestOptions] = None) -> M.DecisionEvaluateResult:
+    def evaluate_decision(self, body: M.DecisionEvaluateRequest, *, key: str, options: Optional[RequestOptions] = None) -> M.DecisionEvaluateResult:
         """Evaluate a decision
 
         Evaluates the latest (or given) version; ROUTING/AUTHORITY evaluations with a businessKey are recorded as class-B events (X.2.3.2).
 
-        ``POST /decisions/{key}/evaluate`` (operationId ``evaluateDecision``); permission ``decision.evaluate``.
+        ``POST /decisions/by-key/evaluate`` (operationId ``evaluateDecision``); permission ``decision.evaluate``.
         """
-        req = ApiRequest("POST", f"/decisions/{seg(str(key))}/evaluate")
+        req = ApiRequest("POST", f"/decisions/by-key/evaluate", query={"key": key})
         req.body = body
         return cast("M.DecisionEvaluateResult", self._c.json(req, options))
 
@@ -4179,72 +4179,72 @@ class DocumentsApi:
         req = ApiRequest("GET", f"/documents", query={"taskId": task_id, "processInstanceId": process_instance_id, "caseInstanceId": case_instance_id, "name": name, "page": page, "size": size})
         return cast("Page[M.Document]", self._c.page(req, options, page, size))
 
-    def get_document(self, id: str, *, options: Optional[RequestOptions] = None) -> M.Document:
+    def get_document(self, *, id: str, options: Optional[RequestOptions] = None) -> M.Document:
         """Document metadata
 
         Latest version metadata.
 
-        ``GET /documents/{id}`` (operationId ``getDocument``); permission ``document.read``.
+        ``GET /documents/by-id`` (operationId ``getDocument``); permission ``document.read``.
         """
-        req = ApiRequest("GET", f"/documents/{seg(str(id))}")
+        req = ApiRequest("GET", f"/documents/by-id", query={"id": id})
         return cast("M.Document", self._c.json(req, options))
 
-    def delete_document(self, id: str, *, reason: Optional[str] = None, options: Optional[RequestOptions] = None) -> None:
+    def delete_document(self, *, id: str, reason: Optional[str] = None, options: Optional[RequestOptions] = None) -> None:
         """Delete a document
 
         Deletes (subject to retention and legal hold, R29, R61).
 
-        ``DELETE /documents/{id}`` (operationId ``deleteDocument``); permission ``document.write``; result stored atomically with the state change.
+        ``DELETE /documents/by-id`` (operationId ``deleteDocument``); permission ``document.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("DELETE", f"/documents/{seg(str(id))}", query={"reason": reason})
+        req = ApiRequest("DELETE", f"/documents/by-id", query={"id": id, "reason": reason})
         self._c.none(req, options)
 
-    def get_document_content(self, id: str, *, version: Optional[int] = None, options: Optional[RequestOptions] = None) -> bytes:
+    def get_document_content(self, *, id: str, version: Optional[int] = None, options: Optional[RequestOptions] = None) -> bytes:
         """Document content
 
         Content of the latest or given version.
 
-        ``GET /documents/{id}/content`` (operationId ``getDocumentContent``); permission ``document.read``.
+        ``GET /documents/by-id/content`` (operationId ``getDocumentContent``); permission ``document.read``.
         """
-        req = ApiRequest("GET", f"/documents/{seg(str(id))}/content", query={"version": version})
+        req = ApiRequest("GET", f"/documents/by-id/content", query={"id": id, "version": version})
         return self._c.raw(req, options, "application/octet-stream")
 
-    def add_document_version(self, id: str, body: Mapping[str, Any], *, options: Optional[RequestOptions] = None) -> M.Document:
+    def add_document_version(self, body: Mapping[str, Any], *, id: str, options: Optional[RequestOptions] = None) -> M.Document:
         """New document version
 
         Adds an immutable version (R74). A slot applies when the document belongs to a process instance. DSC document slot (decisions 267 to 269): with a documentType for which the pack of the process instance declares a slot, a PDF fills that slot in the same transaction as the store, audited in DOCUMENT_UPLOADED or DOCUMENT_VERSION_ADDED with slot and document_type. Only the assignee of an open task of that instance with task.write may set or replace a slot (403 DOCUMENT_SLOT_NOT_TASK_HOLDER); a slot holding another document is 409 DOCUMENT_SLOT_OCCUPIED unless replaceSlot is true. Nothing is stored on either refusal. A slot changed after the signing task was created is refused at completion.
 
-        ``POST /documents/{id}/versions`` (operationId ``addDocumentVersion``); permission ``document.write``; result stored atomically with the state change.
+        ``POST /documents/by-id/versions`` (operationId ``addDocumentVersion``); permission ``document.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/documents/{seg(str(id))}/versions")
+        req = ApiRequest("POST", f"/documents/by-id/versions", query={"id": id})
         _multipart(req, body)
         return cast("M.Document", self._c.json(req, options))
 
-    def list_document_versions(self, id: str, *, options: Optional[RequestOptions] = None) -> list[M.Document]:
+    def list_document_versions(self, *, id: str, options: Optional[RequestOptions] = None) -> list[M.Document]:
         """Document versions
 
         Every immutable version (R74).
 
-        ``GET /documents/{id}/versions`` (operationId ``listDocumentVersions``); permission ``document.read``.
+        ``GET /documents/by-id/versions`` (operationId ``listDocumentVersions``); permission ``document.read``.
         """
-        req = ApiRequest("GET", f"/documents/{seg(str(id))}/versions")
+        req = ApiRequest("GET", f"/documents/by-id/versions", query={"id": id})
         return cast("list[M.Document]", self._c.json(req, options))
 
-    def set_document_legal_hold(self, id: str, body: M.LegalHoldRequest, *, options: Optional[RequestOptions] = None) -> M.Document:
+    def set_document_legal_hold(self, body: M.LegalHoldRequest, *, id: str, options: Optional[RequestOptions] = None) -> M.Document:
         """Set or release a legal hold
 
         A held document cannot be deleted or disposed of (R61, R29).
 
-        ``POST /documents/{id}/legal-hold`` (operationId ``setDocumentLegalHold``); permission ``document.legal-hold``; result stored atomically with the state change.
+        ``POST /documents/by-id/legal-hold`` (operationId ``setDocumentLegalHold``); permission ``document.legal-hold``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/documents/{seg(str(id))}/legal-hold")
+        req = ApiRequest("POST", f"/documents/by-id/legal-hold", query={"id": id})
         req.body = body
         return cast("M.Document", self._c.json(req, options))
 
     def list_document_templates(self, *, options: Optional[RequestOptions] = None) -> list[M.DocumentTemplate]:
         """Document templates
 
-        Output templates (R74, S12); the id 'templates' is reserved for /documents/{id}.
+        Output templates (R74, S12); (a literal route next to /documents/by-id).
 
         ``GET /documents/templates`` (operationId ``listDocumentTemplates``); permission ``document.read``.
         """
@@ -5752,14 +5752,14 @@ class LinksApi:
         req.body = body
         return cast("M.EntityLink", self._c.json(req, options))
 
-    def delete_link(self, id: str, *, reason: Optional[str] = None, options: Optional[RequestOptions] = None) -> None:
+    def delete_link(self, *, id: str, reason: Optional[str] = None, options: Optional[RequestOptions] = None) -> None:
         """Delete a link
 
         Removes an explicit link.
 
-        ``DELETE /links/{id}`` (operationId ``deleteLink``); permission ``process.write``; result stored atomically with the state change.
+        ``DELETE /links/by-id`` (operationId ``deleteLink``); permission ``process.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("DELETE", f"/links/{seg(str(id))}", query={"reason": reason})
+        req = ApiRequest("DELETE", f"/links/by-id", query={"id": id, "reason": reason})
         self._c.none(req, options)
 
 class LowCodeApi:
@@ -5976,25 +5976,25 @@ class ModellerApi:
         req = ApiRequest("GET", f"/catalogue")
         return cast("list[M.CatalogueExtensionEntry]", self._c.json(req, options))
 
-    def install_catalogue_entry(self, id: str, version: str, body: Optional[M.CatalogueInstallRequest] = None, *, options: Optional[RequestOptions] = None) -> M.Package:
+    def install_catalogue_entry(self, body: Optional[M.CatalogueInstallRequest] = None, *, id: str, version: str, options: Optional[RequestOptions] = None) -> M.Package:
         """Install a catalogue entry
 
         Installs a kind package entry into the caller's tenant: the catalogue checks first (index signature, licence allow-list, platform version, artefact SHA-256), then the package import (T70: the bundle's own hash and signatures; the package lands APPROVED, activation still needs a deployer and the ENV_BINDING values). 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds are never installed), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_ARTIFACT_PATH_INVALID, CATALOGUE_EGRESS_DENIED, or a package import refusal (PACKAGE_HASH_MISMATCH, signatures); 409 PACKAGE_EXISTS.
 
-        ``POST /catalogue/{id}/{version}/install`` (operationId ``installCatalogueEntry``); permission ``package.deploy``; result stored atomically with the state change.
+        ``POST /catalogue/by-id/by-version/install`` (operationId ``installCatalogueEntry``); permission ``package.deploy``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/catalogue/{seg(str(id))}/{seg(str(version))}/install")
+        req = ApiRequest("POST", f"/catalogue/by-id/by-version/install", query={"id": id, "version": version})
         req.body = body
         return cast("M.Package", self._c.json(req, options))
 
-    def install_catalogue_templates(self, id: str, version: str, body: Optional[M.CatalogueInstallRequest] = None, *, options: Optional[RequestOptions] = None) -> M.CatalogueTemplatesInstalled:
+    def install_catalogue_templates(self, body: Optional[M.CatalogueInstallRequest] = None, *, id: str, version: str, options: Optional[RequestOptions] = None) -> M.CatalogueTemplatesInstalled:
         """Install the connector templates of a catalogue entry
 
         Decision 380 P2 (b): publishes the connector element templates of a kind connector-template entry in the caller's tenant after the same catalogue checks as a package install (index signature, licence allow-list, platform version, artefact SHA-256). The artefact is data only ({templates: [{id, name, description, appliesTo, fields}]}, the format of the built-in connector templates); every template id is the entry id or starts with it and a dot, so an entry never replaces a built-in or another entry's template, and no field may be named like a credential. Only changed templates get a new version, with one CATALOGUE_TEMPLATES_INSTALLED audit event in the same transaction; a repeated install writes nothing. 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds), CATALOGUE_KIND_MISMATCH (a package entry), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_EGRESS_DENIED; 501 when the modeller template store is not installed.
 
-        ``POST /catalogue/{id}/{version}/install-templates`` (operationId ``installCatalogueTemplates``); permission ``package.author``; result stored atomically with the state change.
+        ``POST /catalogue/by-id/by-version/install-templates`` (operationId ``installCatalogueTemplates``); permission ``package.author``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/catalogue/{seg(str(id))}/{seg(str(version))}/install-templates")
+        req = ApiRequest("POST", f"/catalogue/by-id/by-version/install-templates", query={"id": id, "version": version})
         req.body = body
         return cast("M.CatalogueTemplatesInstalled", self._c.json(req, options))
 
@@ -6480,14 +6480,14 @@ class OnboardingApi:
         req.body = body
         return cast("M.PackResolution", self._c.json(req, options))
 
-    def export_tenant_bundle(self, tenant: str, *, options: Optional[RequestOptions] = None) -> M.TenantBundle:
+    def export_tenant_bundle(self, *, tenant: str, options: Optional[RequestOptions] = None) -> M.TenantBundle:
         """Export a bundle
 
         The tenant's configuration, signed. No secrets, no go-live evidence.
 
-        ``GET /onboarding/tenants/{tenant}/bundle`` (operationId ``exportTenantBundle``); permission ``tenant.admin``.
+        ``GET /onboarding/tenants/by-tenant/bundle`` (operationId ``exportTenantBundle``); permission ``tenant.admin``.
         """
-        req = ApiRequest("GET", f"/onboarding/tenants/{seg(str(tenant))}/bundle")
+        req = ApiRequest("GET", f"/onboarding/tenants/by-tenant/bundle", query={"tenant": tenant})
         return cast("M.TenantBundle", self._c.json(req, options))
 
     def import_tenant_bundle(self, body: M.BundleImportRequest, *, options: Optional[RequestOptions] = None) -> M.BundleImportResult:
@@ -6512,14 +6512,14 @@ class OnboardingApi:
         req.body = body
         return cast("list[M.BundleDiffEntry]", self._c.json(req, options))
 
-    def export_promotion_bundle(self, tenant: str, *, options: Optional[RequestOptions] = None) -> M.TenantBundle:
+    def export_promotion_bundle(self, *, tenant: str, options: Optional[RequestOptions] = None) -> M.TenantBundle:
         """Export for promotion
 
         The tenant's signed bundle labelled with this environment (sangam.onboarding.environment). 409 PROMOTION_ENVIRONMENT_NOT_SET without a label.
 
-        ``GET /onboarding/promotions/{tenant}/bundle`` (operationId ``exportPromotionBundle``); permission ``tenant.admin``.
+        ``GET /onboarding/promotions/by-tenant/bundle`` (operationId ``exportPromotionBundle``); permission ``tenant.admin``.
         """
-        req = ApiRequest("GET", f"/onboarding/promotions/{seg(str(tenant))}/bundle")
+        req = ApiRequest("GET", f"/onboarding/promotions/by-tenant/bundle", query={"tenant": tenant})
         return cast("M.TenantBundle", self._c.json(req, options))
 
     def plan_promotion(self, body: M.PromotionPlanRequest, *, options: Optional[RequestOptions] = None) -> M.PromotionPlan:
@@ -7465,57 +7465,57 @@ class PortalApi:
         req = ApiRequest("GET", f"/portal/notifications")
         return cast("list[M.PortalNotification]", self._c.json(req, options))
 
-    def get_my_application(self, id: str, *, options: Optional[RequestOptions] = None) -> M.Application:
+    def get_my_application(self, *, id: str, options: Optional[RequestOptions] = None) -> M.Application:
         """Application status
 
         Status, stage, clarifications and messages; officers appear only as seat designations (PER-8).
 
-        ``GET /portal/applications/{id}`` (operationId ``getMyApplication``); permission ``portal.use``.
+        ``GET /portal/applications/by-id`` (operationId ``getMyApplication``); permission ``portal.use``.
         """
-        req = ApiRequest("GET", f"/portal/applications/{seg(str(id))}")
+        req = ApiRequest("GET", f"/portal/applications/by-id", query={"id": id})
         return cast("M.Application", self._c.json(req, options))
 
-    def reply_to_clarification(self, id: str, clarification_id: str, body: Mapping[str, Any], *, options: Optional[RequestOptions] = None) -> M.Application:
+    def reply_to_clarification(self, body: Mapping[str, Any], *, id: str, clarification_id: str, options: Optional[RequestOptions] = None) -> M.Application:
         """Reply to a clarification
 
         Text plus files (CLARIFICATION_RECEIVED, C04).
 
-        ``POST /portal/applications/{id}/clarifications/{clarificationId}/reply`` (operationId ``replyToClarification``); permission ``portal.use``; result stored atomically with the state change.
+        ``POST /portal/applications/by-id/clarifications/by-clarification-id/reply`` (operationId ``replyToClarification``); permission ``portal.use``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/portal/applications/{seg(str(id))}/clarifications/{seg(str(clarification_id))}/reply")
+        req = ApiRequest("POST", f"/portal/applications/by-id/clarifications/by-clarification-id/reply", query={"id": id, "clarificationId": clarification_id})
         _multipart(req, body)
         return cast("M.Application", self._c.json(req, options))
 
-    def withdraw_application(self, id: str, body: M.WithdrawRequest, *, options: Optional[RequestOptions] = None) -> M.Application:
+    def withdraw_application(self, body: M.WithdrawRequest, *, id: str, options: Optional[RequestOptions] = None) -> M.Application:
         """Withdraw an application
 
         CASE_WITHDRAWN.
 
-        ``POST /portal/applications/{id}/withdraw`` (operationId ``withdrawApplication``); permission ``portal.use``; result stored atomically with the state change.
+        ``POST /portal/applications/by-id/withdraw`` (operationId ``withdrawApplication``); permission ``portal.use``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/portal/applications/{seg(str(id))}/withdraw")
+        req = ApiRequest("POST", f"/portal/applications/by-id/withdraw", query={"id": id})
         req.body = body
         return cast("M.Application", self._c.json(req, options))
 
-    def appeal_application(self, id: str, body: M.AppealRequest, *, options: Optional[RequestOptions] = None) -> M.Application:
+    def appeal_application(self, body: M.AppealRequest, *, id: str, options: Optional[RequestOptions] = None) -> M.Application:
         """Appeal a decision
 
         APPEAL_FILED.
 
-        ``POST /portal/applications/{id}/appeal`` (operationId ``appealApplication``); permission ``portal.use``; result stored atomically with the state change.
+        ``POST /portal/applications/by-id/appeal`` (operationId ``appealApplication``); permission ``portal.use``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/portal/applications/{seg(str(id))}/appeal")
+        req = ApiRequest("POST", f"/portal/applications/by-id/appeal", query={"id": id})
         req.body = body
         return cast("M.Application", self._c.json(req, options))
 
-    def download_outcome(self, id: str, *, options: Optional[RequestOptions] = None) -> bytes:
+    def download_outcome(self, *, id: str, options: Optional[RequestOptions] = None) -> bytes:
         """Outcome document
 
         Certificate, sanction or rejection order (C05).
 
-        ``GET /portal/applications/{id}/outcome`` (operationId ``downloadOutcome``); permission ``portal.use``.
+        ``GET /portal/applications/by-id/outcome`` (operationId ``downloadOutcome``); permission ``portal.use``.
         """
-        req = ApiRequest("GET", f"/portal/applications/{seg(str(id))}/outcome")
+        req = ApiRequest("GET", f"/portal/applications/by-id/outcome", query={"id": id})
         return self._c.raw(req, options, "application/octet-stream")
 
     def list_my_grievances(self, *, options: Optional[RequestOptions] = None) -> list[M.Grievance]:
@@ -7691,35 +7691,35 @@ class ProcessesApi:
         req = ApiRequest("GET", f"/process-instances/{seg(str(id))}/attachments")
         return cast("list[M.Document]", self._c.json(req, options))
 
-    def get_ad_hoc_state(self, id: str, ad_hoc_activity_id: str, *, options: Optional[RequestOptions] = None) -> M.AdHocState:
+    def get_ad_hoc_state(self, id: str, *, ad_hoc_activity_id: str, options: Optional[RequestOptions] = None) -> M.AdHocState:
         """Ad-hoc sub-process state
 
         Enabled and active activities of an ad-hoc scope.
 
-        ``GET /process-instances/{id}/ad-hoc/{adHocActivityId}`` (operationId ``getAdHocState``); permission ``process.read``.
+        ``GET /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id`` (operationId ``getAdHocState``); permission ``process.read``.
         """
-        req = ApiRequest("GET", f"/process-instances/{seg(str(id))}/ad-hoc/{seg(str(ad_hoc_activity_id))}")
+        req = ApiRequest("GET", f"/process-instances/{seg(str(id))}/ad-hoc/by-ad-hoc-activity-id", query={"adHocActivityId": ad_hoc_activity_id})
         return cast("M.AdHocState", self._c.json(req, options))
 
-    def start_ad_hoc_activity(self, id: str, ad_hoc_activity_id: str, body: M.StartAdHocActivityRequest, *, options: Optional[RequestOptions] = None) -> M.AdHocState:
+    def start_ad_hoc_activity(self, id: str, body: M.StartAdHocActivityRequest, *, ad_hoc_activity_id: str, options: Optional[RequestOptions] = None) -> M.AdHocState:
         """Start an ad-hoc activity
 
         Starts an enabled activity in the ad-hoc scope.
 
-        ``POST /process-instances/{id}/ad-hoc/{adHocActivityId}/start`` (operationId ``startAdHocActivity``); permission ``process.write``; result stored atomically with the state change.
+        ``POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/start`` (operationId ``startAdHocActivity``); permission ``process.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/process-instances/{seg(str(id))}/ad-hoc/{seg(str(ad_hoc_activity_id))}/start")
+        req = ApiRequest("POST", f"/process-instances/{seg(str(id))}/ad-hoc/by-ad-hoc-activity-id/start", query={"adHocActivityId": ad_hoc_activity_id})
         req.body = body
         return cast("M.AdHocState", self._c.json(req, options))
 
-    def complete_ad_hoc(self, id: str, ad_hoc_activity_id: str, *, reason: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.AdHocState:
+    def complete_ad_hoc(self, id: str, *, ad_hoc_activity_id: str, reason: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.AdHocState:
         """Complete an ad-hoc scope
 
         Completes the ad-hoc sub-process when its completion condition allows.
 
-        ``POST /process-instances/{id}/ad-hoc/{adHocActivityId}/complete`` (operationId ``completeAdHoc``); permission ``process.write``; result stored atomically with the state change.
+        ``POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/complete`` (operationId ``completeAdHoc``); permission ``process.write``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/process-instances/{seg(str(id))}/ad-hoc/{seg(str(ad_hoc_activity_id))}/complete", query={"reason": reason})
+        req = ApiRequest("POST", f"/process-instances/{seg(str(id))}/ad-hoc/by-ad-hoc-activity-id/complete", query={"adHocActivityId": ad_hoc_activity_id, "reason": reason})
         return cast("M.AdHocState", self._c.json(req, options))
 
     def inject_into_process_instance(self, id: str, body: M.InjectionRequest, *, options: Optional[RequestOptions] = None) -> M.InjectionResult:
@@ -7950,14 +7950,14 @@ class ProgrammesApi:
         req = ApiRequest("GET", f"/programme-periods", query={"frequency": frequency, "fiscalYear": fiscal_year})
         return cast("list[M.PgPeriod]", self._c.json(req, options))
 
-    def programme_change_period_state(self, id: str, body: M.PgPeriodStateRequest, *, options: Optional[RequestOptions] = None) -> M.PgPeriod:
+    def programme_change_period_state(self, body: M.PgPeriodStateRequest, *, id: str, options: Optional[RequestOptions] = None) -> M.PgPeriod:
         """Open, close or lock a reporting period
 
         Open, close or lock a reporting period.
 
-        ``POST /programme-periods/{id}/state`` (operationId ``programmeChangePeriodState``); permission ``programme.admin``; result stored atomically with the state change.
+        ``POST /programme-periods/by-id/state`` (operationId ``programmeChangePeriodState``); permission ``programme.admin``; result stored atomically with the state change.
         """
-        req = ApiRequest("POST", f"/programme-periods/{seg(str(id))}/state")
+        req = ApiRequest("POST", f"/programme-periods/by-id/state", query={"id": id})
         req.body = body
         return cast("M.PgPeriod", self._c.json(req, options))
 

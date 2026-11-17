@@ -239,7 +239,7 @@ export const api = {
       f.append('file', file, file.name);
       return http.upload<Record<string, unknown>>(`/tasks/${enc(id)}/attachments`, f, key).then(A.normDocument);
     },
-    downloadAttachment: (_taskId: string, docId: string, name: string) => download(`/documents/${enc(docId)}/content`, undefined, name),
+    downloadAttachment: (_taskId: string, docId: string, name: string) => download(`/documents/by-id/content?id=${enc(docId)}`, undefined, name),
     comments: async (id: string) => ((await http.get<Record<string, unknown>[]>(`/tasks/${enc(id)}/comments`)) ?? []).map(A.normComment),
     addComment: (id: string, text: string, key?: string) =>
       http.post<Record<string, unknown>>(`/tasks/${enc(id)}/comments`, { message: text }, key).then(A.normComment),
@@ -370,11 +370,11 @@ export const api = {
         key,
       ),
     /** FC-01 ad-hoc sub-process. */
-    adHoc: (id: string, adHocId: string) => http.get<Record<string, unknown>>(`/process-instances/${enc(id)}/ad-hoc/${enc(adHocId)}`),
+    adHoc: (id: string, adHocId: string) => http.get<Record<string, unknown>>(`/process-instances/${enc(id)}/ad-hoc/by-ad-hoc-activity-id?adHocActivityId=${enc(adHocId)}`),
     adHocStart: (id: string, adHocId: string, activityId: string, key?: string) =>
-      http.post<Record<string, unknown>>(`/process-instances/${enc(id)}/ad-hoc/${enc(adHocId)}/start`, { activityId }, key),
+      http.post<Record<string, unknown>>(`/process-instances/${enc(id)}/ad-hoc/by-ad-hoc-activity-id/start?adHocActivityId=${enc(adHocId)}`, { activityId }, key),
     adHocComplete: (id: string, adHocId: string, reason: string, key?: string) =>
-      http.post<Record<string, unknown>>(`/process-instances/${enc(id)}/ad-hoc/${enc(adHocId)}/complete?reason=${enc(reason)}`, {}, key),
+      http.post<Record<string, unknown>>(`/process-instances/${enc(id)}/ad-hoc/by-ad-hoc-activity-id/complete?adHocActivityId=${enc(adHocId)}&reason=${enc(reason)}`, {}, key),
     /** R43 resubmit with version history. */
     resubmit: (id: string, body: { variables: Record<string, unknown>; reason?: string; expectedVersion?: number }, key?: string) =>
       http.post<Record<string, unknown>>(`/process-instances/${enc(id)}/resubmit`, { ...body, variables: A.toVariableMap(body.variables) }, key).then(A.normCaseVersion),
@@ -407,17 +407,17 @@ export const api = {
   cases: {
     list: (q: ListQuery & { state?: string }) =>
       http.page<T.CaseInstance>('/case-instances', { page: q.page, size: q.size, businessKey: q.q, active: q.state ? q.state === 'ACTIVE' : undefined, state: q.state }),
-    get: (id: string) => http.get<T.CaseInstance>(`/case-instances/${enc(id)}`),
+    get: (id: string) => http.get<T.CaseInstance>(`/case-instances/by-id?id=${enc(id)}`),
     start: (body: { key: string; businessKey?: string; variables?: Record<string, unknown> }, key?: string) =>
       http.post<T.CaseInstance>('/case-instances', { ...body, variables: A.toVariableMap(body.variables) }, key),
     /** CaseExecutionCommand {action: manualStart|complete|disable|reenable|terminate, reason}. */
     planItemAction: (id: string, planItemId: string, action: 'manual-start' | 'complete' | 'disable' | 'reenable' | 'terminate', reason: string) =>
-      http.post<void>(`/case-instances/${enc(id)}/executions/${enc(planItemId)}/commands`, { action: action === 'manual-start' ? 'manualStart' : action, reason }),
-    reactivate: (id: string, reason: string, key?: string) => http.post<T.CaseInstance>(`/case-instances/${enc(id)}/reactivation`, { reason }, key), // (FC-59)
+      http.post<void>(`/case-instances/by-id/executions/by-execution-id/commands?id=${enc(id)}&executionId=${enc(planItemId)}`, { action: action === 'manual-start' ? 'manualStart' : action, reason }),
+    reactivate: (id: string, reason: string, key?: string) => http.post<T.CaseInstance>(`/case-instances/by-id/reactivation?id=${enc(id)}`, { reason }, key), // (FC-59)
     documents: async (id: string) => A.mapPage(await http.page<Record<string, unknown>>('/documents', { caseInstanceId: id, size: 100 }), A.normDocument).items,
-    comments: (id: string) => http.get<T.Comment[]>(`/case-instances/${enc(id)}/comments`),
-    addComment: (id: string, text: string) => http.post<T.Comment>(`/case-instances/${enc(id)}/comments`, { text }),
-    participants: (id: string) => http.get<{ id: string; name: string; role: string; external?: boolean }[]>(`/case-instances/${enc(id)}/participants`),
+    comments: (id: string) => http.get<T.Comment[]>(`/case-instances/by-id/comments?id=${enc(id)}`),
+    addComment: (id: string, text: string) => http.post<T.Comment>(`/case-instances/by-id/comments?id=${enc(id)}`, { text }),
+    participants: (id: string) => http.get<{ id: string; name: string; role: string; external?: boolean }[]>(`/case-instances/by-id/participants?id=${enc(id)}`),
   },
   decisions: {
     definitions: (q: ListQuery) => http.page<T.DecisionDefinition>('/decision-definitions', { ...q, key: q.q }),
@@ -427,7 +427,7 @@ export const api = {
     instances: async (q: ListQuery & { processInstanceId?: string; caseInstanceId?: string }) =>
       A.mapPage(await http.page<Record<string, unknown>>('/history/decisions', { page: q.page, size: q.size, processInstanceId: q.processInstanceId, caseInstanceId: q.caseInstanceId }), A.normDecisionInstance),
     evaluate: (key: string, variables: Record<string, unknown>) =>
-      http.post<{ outputs: Record<string, unknown>[] }>(`/decisions/${enc(key)}/evaluate`, { variables: A.toVariableMap(variables) }),
+      http.post<{ outputs: Record<string, unknown>[] }>(`/decisions/by-key/evaluate?key=${enc(key)}`, { variables: A.toVariableMap(variables) }),
   },
 
   // ------------------------------------------------------------ deployments, packages, modeller (R43, R69)
@@ -757,9 +757,9 @@ export const api = {
     /** listDocuments is scoped: one of taskId, processInstanceId or caseInstanceId is required (400 SCOPE_REQUIRED). */
     list: async (q: ListQuery & DocumentScope) =>
       A.mapPage(await http.page<Record<string, unknown>>('/documents', { page: q.page, size: q.size, name: q.q, taskId: q.taskId, processInstanceId: q.processInstanceId, caseInstanceId: q.caseInstanceId }), A.normDocument),
-    versions: (id: string) => http.get<T.Attachment[]>(`/documents/${enc(id)}/versions`),
-    content: (id: string, name: string, version?: number) => download(`/documents/${enc(id)}/content`, { version }, name),
-    setHold: (id: string, hold: boolean, reason: string) => http.post<void>(`/documents/${enc(id)}/legal-hold`, { hold, reason }),
+    versions: (id: string) => http.get<T.Attachment[]>(`/documents/by-id/versions?id=${enc(id)}`),
+    content: (id: string, name: string, version?: number) => download(`/documents/by-id/content?id=${enc(id)}`, { version }, name),
+    setHold: (id: string, hold: boolean, reason: string) => http.post<void>(`/documents/by-id/legal-hold?id=${enc(id)}`, { hold, reason }),
     templates: () => http.get<{ id: string; name: string; languages: string[]; format: 'PDFA' | 'DOCX' | 'HTML'; version: number }[]>('/documents/templates'),
     generate: (templateId: string, businessKey: string, language: string, key?: string) =>
       http.post<Record<string, unknown>>('/documents/generate', { templateId, businessKey, language }, key).then(A.normDocument),
@@ -772,7 +772,7 @@ export const api = {
       http.upload<Record<string, unknown>>('/documents', documentForm(file, o), key).then(A.normDocument),
     /** addDocumentVersion: the same slot rules; a new version of the document the slot holds needs no replace. */
     addVersion: (id: string, file: File, o: { name?: string; documentType?: string; replaceSlot?: boolean }, key?: string) =>
-      http.upload<Record<string, unknown>>(`/documents/${enc(id)}/versions`, documentForm(file, o), key).then(A.normDocument),
+      http.upload<Record<string, unknown>>(`/documents/by-id/versions?id=${enc(id)}`, documentForm(file, o), key).then(A.normDocument),
   },
 
   // ------------------------------------------------------------ pages and data objects (R77, R78, EC-03, EC-06)
@@ -833,16 +833,16 @@ export const api = {
     withdrawConsent: (consentId: string, purposes: string[], key?: string) =>
       http.post<T.MyConsent>(`/compliance/consents/${enc(consentId)}/withdraw`, { purposes }, key),
     mine: (q: ListQuery = {}) => http.page<T.Application>('/portal/applications', q),
-    get: (id: string) => http.get<T.Application>(`/portal/applications/${enc(id)}`),
+    get: (id: string) => http.get<T.Application>(`/portal/applications/by-id?id=${enc(id)}`),
     reply: (id: string, clarificationId: string, text: string, files: File[], key?: string) => {
       const f = new FormData();
       f.append('text', text);
       files.forEach((x) => f.append('files', x, x.name));
-      return http.upload<void>(`/portal/applications/${enc(id)}/clarifications/${enc(clarificationId)}/reply`, f, key);
+      return http.upload<void>(`/portal/applications/by-id/clarifications/by-clarification-id/reply?id=${enc(id)}&clarificationId=${enc(clarificationId)}`, f, key);
     },
-    withdraw: (id: string, reason: string, key?: string) => http.post<void>(`/portal/applications/${enc(id)}/withdraw`, { reason }, key),
-    appeal: (id: string, grounds: string, key?: string) => http.post<void>(`/portal/applications/${enc(id)}/appeal`, { grounds }, key),
-    outcome: (id: string) => download(`/portal/applications/${enc(id)}/outcome`, undefined, `outcome-${id}.pdf`),
+    withdraw: (id: string, reason: string, key?: string) => http.post<void>(`/portal/applications/by-id/withdraw?id=${enc(id)}`, { reason }, key),
+    appeal: (id: string, grounds: string, key?: string) => http.post<void>(`/portal/applications/by-id/appeal?id=${enc(id)}`, { grounds }, key),
+    outcome: (id: string) => download(`/portal/applications/by-id/outcome?id=${enc(id)}`, undefined, `outcome-${id}.pdf`),
     grievances: () => http.get<{ id: string; reference: string; subject: string; status: string; filedAt: string; dueAt: string }[]>('/portal/grievances'),
     fileGrievance: (body: { subject: string; text: string; kind: 'GRIEVANCE' | 'DATA_RIGHTS' }, key?: string) => http.post<{ reference: string }>('/portal/grievances', body, key),
   },

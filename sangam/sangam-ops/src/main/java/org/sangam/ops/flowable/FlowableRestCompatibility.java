@@ -113,8 +113,8 @@ public final class FlowableRestCompatibility {
                     "/process-definitions/by-id/suspension", "only suspend and activate; category change has no equivalent; the definition id"
                             + " is the id query parameter (decision 393)"),
             // decisions and forms
-            new Entry("POST", "/service/dmn-rule/execute", Level.MAPPED, "POST", "/decisions/{key}/evaluate",
-                    "the decision key moves into the path"),
+            new Entry("POST", "/service/dmn-rule/execute", Level.MAPPED, "POST", "/decisions/by-key/evaluate",
+                    "the decision key moves into the key query parameter"),
             new Entry("GET", "/service/form/form-definitions", Level.PARTIAL, "GET", "/forms/by-key",
                     "forms are read one key at a time; Flowable form JSON is not served"),
             // history

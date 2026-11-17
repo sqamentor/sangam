@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * DMN evaluation ({@code POST /decisions/{key}/evaluate}). ROUTING / AUTHORITY evaluations with a business key are
+ * DMN evaluation ({@code POST /decisions/by-key/evaluate?key=}). ROUTING / AUTHORITY evaluations with a business key are
  * recorded as class-B {@code ROUTING_DECISION} / {@code AUTHORITY_DECISION} events (X.2.3.2).
  */
 public interface DecisionPort {

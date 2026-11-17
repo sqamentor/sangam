@@ -68,13 +68,14 @@ public final class LinksApi {
      *
      * <p>Removes an explicit link.
      *
-     * <p>{@code DELETE /links/{id}} (operationId {@code deleteLink}); permission {@code process.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code DELETE /links/by-id} (operationId {@code deleteLink}); permission {@code process.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Link id (a derived link is derived:&lt;type&gt;:&lt;source&gt;:&lt;target&gt;); may carry '/' or ':'
      * @param reason query parameter {@code reason}, or null. Mandatory reason (audited, R42)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void deleteLink(String id, String reason, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/links/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.delete("/links/by-id");
+        req.query("id", id);
         req.query("reason", reason);
         call.none(req, options);
     }

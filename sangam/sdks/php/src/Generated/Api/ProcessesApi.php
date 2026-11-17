@@ -271,12 +271,14 @@ final class ProcessesApi
      *
      * Enabled and active activities of an ad-hoc scope.
      *
-     * GET /process-instances/{id}/ad-hoc/{adHocActivityId} (operationId getAdHocState); permission process.read.
+     * GET /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id (operationId getAdHocState); permission process.read.
+     * @param string $adHocActivityId query adHocActivityId
      * @return Model\AdHocState|null
      */
     public function getAdHocState(string $id, string $adHocActivityId, ?RequestOptions $options = null): ?Model\AdHocState
     {
-        $req = ApiRequest::get('/process-instances/' . HttpTransport::seg((string) $id) . '/ad-hoc/' . HttpTransport::seg((string) $adHocActivityId));
+        $req = ApiRequest::get('/process-instances/' . HttpTransport::seg((string) $id) . '/ad-hoc/by-ad-hoc-activity-id');
+        $req->query('adHocActivityId', $adHocActivityId);
         return $this->calls->model($req, $options, Model\AdHocState::class);
     }
 
@@ -285,13 +287,15 @@ final class ProcessesApi
      *
      * Starts an enabled activity in the ad-hoc scope.
      *
-     * POST /process-instances/{id}/ad-hoc/{adHocActivityId}/start (operationId startAdHocActivity); permission process.write; result stored atomically with the state change.
+     * POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/start (operationId startAdHocActivity); permission process.write; result stored atomically with the state change.
      * @param Model\StartAdHocActivityRequest|array $body request body
+     * @param string $adHocActivityId query adHocActivityId
      * @return Model\AdHocState|null
      */
-    public function startAdHocActivity(string $id, string $adHocActivityId, Model\StartAdHocActivityRequest|array $body, ?RequestOptions $options = null): ?Model\AdHocState
+    public function startAdHocActivity(string $id, Model\StartAdHocActivityRequest|array $body, string $adHocActivityId, ?RequestOptions $options = null): ?Model\AdHocState
     {
-        $req = ApiRequest::post('/process-instances/' . HttpTransport::seg((string) $id) . '/ad-hoc/' . HttpTransport::seg((string) $adHocActivityId) . '/start');
+        $req = ApiRequest::post('/process-instances/' . HttpTransport::seg((string) $id) . '/ad-hoc/by-ad-hoc-activity-id/start');
+        $req->query('adHocActivityId', $adHocActivityId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -303,13 +307,15 @@ final class ProcessesApi
      *
      * Completes the ad-hoc sub-process when its completion condition allows.
      *
-     * POST /process-instances/{id}/ad-hoc/{adHocActivityId}/complete (operationId completeAdHoc); permission process.write; result stored atomically with the state change.
+     * POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/complete (operationId completeAdHoc); permission process.write; result stored atomically with the state change.
+     * @param string $adHocActivityId query adHocActivityId
      * @param string|null $reason query reason
      * @return Model\AdHocState|null
      */
     public function completeAdHoc(string $id, string $adHocActivityId, ?string $reason = null, ?RequestOptions $options = null): ?Model\AdHocState
     {
-        $req = ApiRequest::post('/process-instances/' . HttpTransport::seg((string) $id) . '/ad-hoc/' . HttpTransport::seg((string) $adHocActivityId) . '/complete');
+        $req = ApiRequest::post('/process-instances/' . HttpTransport::seg((string) $id) . '/ad-hoc/by-ad-hoc-activity-id/complete');
+        $req->query('adHocActivityId', $adHocActivityId);
         $req->query('reason', $reason);
         return $this->calls->model($req, $options, Model\AdHocState::class);
     }

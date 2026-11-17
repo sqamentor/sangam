@@ -306,7 +306,7 @@ def bill():
                defaults='billType=CONTINGENT;headOfAccount=2054-00-001-01-00-13;amount=0;'
                'payee=;payeeAccount=;sanctionRef=;ddoCode=DDO-1;ledgerId=BUDGET;'
                'partyId=;ifsc=;docPaymentRail=DEFAULT;'
-               'paoOutcome=PASSED;caseType=BILL;routingDecisionKey=ifms-bill-authority;scrutinySeat=DDO-1;'
+               'dealingSeat=DH-1;paoOutcome=PASSED;caseType=BILL;routingDecisionKey=ifms-bill-authority;scrutinySeat=DDO-1;'
                'executionStep=pay;reconcileRequired=true;outputTemplate=payment-advice;appealAllowed=false;'
                'encumbranceLedger=BUDGET;releaseConnector=ledger.release')
     bind = s.conn('bl_profile', 'Bind profile version', 'config.profile', 'profile.binding', 'query', 'billType', 'prof')
@@ -360,7 +360,11 @@ def bill():
     # SL-113: the funds check fails closed: no default stands in for it (availability_query clears the result first)
     fe, fa = availability_query(s, 'bl_funds', 'Funds at the control dimension', 'ledger.available', 'available',
                                 'ledgerId,headOfAccount,ddoCode')
-    pr = s.user('bl_payeeReview', 'Confirm payee: account held by several parties | आदाता की पुष्टि', 'PAO-1',
+    # Owner decision (option A, R8 payee-review SoD): the dealing hand confirms the payee of an account held by several
+    # parties. At PAO-1 the PAO pass (pc_pao, SoD against every earlier actor) was always refused with 422
+    # SOD_VIOLATION, so a reviewed bill could never be paid; AAO-1 fails the same way at pc_aao. The checker (DH-1)
+    # stays apart from the approver (PAO-1) (K5, IX.5 rule 5). The bill defaults carry dealingSeat (the PAO chain's).
+    pr = s.user('bl_payeeReview', 'Confirm payee: account held by several parties | आदाता की पुष्टि', '${dealingSeat}',
                 form='ifms-bill/payee-review', decision=('payeeDecision', ['approve', 'reject']),
                 fields=['payee', 'payeeAccount', 'remarks*'], sod=True)
     s.flow(vg, pr, payee_multiple, 'several beneficiaries on the account', priority=6)

@@ -2207,6 +2207,214 @@ corrections:
     reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:315 client objectType, no check; sangam-field/src/main/java/org/sangam/field/sync/DeviceRegistry.java:77 client deviceId kept); batch M5 geo and field (lane R8-393m)"
     decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
   - method: GET
+    path: /process-instances/{id}/ad-hoc/{adHocActivityId}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/process-instances/{id}/ad-hoc/{adHocActivityId}: the value as a path parameter"
+    to: "/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id?adHocActivityId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (a BPMN element id from the deployed model; no Sangam check); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /process-instances/{id}/ad-hoc/{adHocActivityId}/start
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/process-instances/{id}/ad-hoc/{adHocActivityId}/start: the value as a path parameter"
+    to: "/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/start?adHocActivityId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (a BPMN element id from the deployed model; no Sangam check); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /process-instances/{id}/ad-hoc/{adHocActivityId}/complete
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/process-instances/{id}/ad-hoc/{adHocActivityId}/complete: the value as a path parameter"
+    to: "/process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/complete?adHocActivityId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (a BPMN element id from the deployed model; no Sangam check); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /case-instances/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/case-instances/{id}: the value as a path parameter"
+    to: "/case-instances/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (case engine ids are not proven free of / and : (OperatonCaseAdapter, PortsCaseBridge)); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /case-instances/{id}/variables
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/case-instances/{id}/variables: the value as a path parameter"
+    to: "/case-instances/by-id/variables?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (case engine ids are not proven free of / and : (OperatonCaseAdapter, PortsCaseBridge)); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /case-instances/{id}/commands
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/case-instances/{id}/commands: the value as a path parameter"
+    to: "/case-instances/by-id/commands?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (case engine ids are not proven free of / and : (OperatonCaseAdapter, PortsCaseBridge)); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /case-instances/{id}/executions/{executionId}/commands
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/case-instances/{id}/executions/{executionId}/commands: the value as a path parameter"
+    to: "/case-instances/by-id/executions/by-execution-id/commands?id=&executionId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (case engine ids are not proven free of / and : (OperatonCaseAdapter, PortsCaseBridge)); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /case-instances/{id}/comments
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/case-instances/{id}/comments: the value as a path parameter"
+    to: "/case-instances/by-id/comments?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (case engine ids are not proven free of / and : (OperatonCaseAdapter, PortsCaseBridge)); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /case-instances/{id}/comments
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/case-instances/{id}/comments: the value as a path parameter"
+    to: "/case-instances/by-id/comments?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (case engine ids are not proven free of / and : (OperatonCaseAdapter, PortsCaseBridge)); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /case-instances/{id}/participants
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/case-instances/{id}/participants: the value as a path parameter"
+    to: "/case-instances/by-id/participants?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (case engine ids are not proven free of / and : (OperatonCaseAdapter, PortsCaseBridge)); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /case-instances/{id}/reactivation
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/case-instances/{id}/reactivation: the value as a path parameter"
+    to: "/case-instances/by-id/reactivation?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (case engine ids are not proven free of / and : (OperatonCaseAdapter, PortsCaseBridge)); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /decisions/{key}/evaluate
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/decisions/{key}/evaluate: the value as a path parameter"
+    to: "/decisions/by-key/evaluate?key= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (a DMN decision key from the deployed model; no Sangam check); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /documents/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/documents/{id}: the value as a path parameter"
+    to: "/documents/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (engine attachment or content item ids are not proven free of / and :); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /documents/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/documents/{id}: the value as a path parameter"
+    to: "/documents/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (engine attachment or content item ids are not proven free of / and :); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /documents/{id}/content
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/documents/{id}/content: the value as a path parameter"
+    to: "/documents/by-id/content?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (engine attachment or content item ids are not proven free of / and :); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /documents/{id}/versions
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/documents/{id}/versions: the value as a path parameter"
+    to: "/documents/by-id/versions?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (engine attachment or content item ids are not proven free of / and :); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /documents/{id}/versions
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/documents/{id}/versions: the value as a path parameter"
+    to: "/documents/by-id/versions?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (engine attachment or content item ids are not proven free of / and :); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /documents/{id}/legal-hold
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/documents/{id}/legal-hold: the value as a path parameter"
+    to: "/documents/by-id/legal-hold?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (engine attachment or content item ids are not proven free of / and :); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: DELETE
+    path: /links/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/links/{id}: the value as a path parameter"
+    to: "/links/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (derived link ids are derived:<type>:<source>:<target> (OperatonLinkAdapter.java:241)); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /portal/applications/{id}
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/portal/applications/{id}: the value as a path parameter"
+    to: "/portal/applications/by-id?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (application ids come from the portal adapter and are not proven); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /portal/applications/{id}/clarifications/{clarificationId}/reply
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/portal/applications/{id}/clarifications/{clarificationId}/reply: the value as a path parameter"
+    to: "/portal/applications/by-id/clarifications/by-clarification-id/reply?id=&clarificationId= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (application and clarification ids are not proven); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /portal/applications/{id}/withdraw
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/portal/applications/{id}/withdraw: the value as a path parameter"
+    to: "/portal/applications/by-id/withdraw?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (application ids come from the portal adapter and are not proven); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /portal/applications/{id}/appeal
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/portal/applications/{id}/appeal: the value as a path parameter"
+    to: "/portal/applications/by-id/appeal?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (application ids come from the portal adapter and are not proven); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /portal/applications/{id}/outcome
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/portal/applications/{id}/outcome: the value as a path parameter"
+    to: "/portal/applications/by-id/outcome?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (application ids come from the portal adapter and are not proven); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
+    path: /onboarding/tenants/{tenant}/bundle
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/onboarding/tenants/{tenant}/bundle: the value as a path parameter"
+    to: "/onboarding/tenants/by-tenant/bundle?tenant= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (onboarding start does not check the tenant id (OnboardingService.java:153-163)); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: POST
+    path: /programme-periods/{id}/state
+    corrected: 2026-11-17
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "/programme-periods/{id}/state: the value as a path parameter"
+    to: "/programme-periods/by-id/state?id= (literal route, the value as a query parameter; the old route is removed)"
+    reason: "decision 393: the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the value can carry '/' or ':' (period ids are <frequency>:<start> (PeriodService.java:45)); batch C5 (lane R8-393mc)"
+    decision: "owner 393 / 406 / 410 (0.1.0 unreleased)"
+  - method: GET
     path: /process-definitions/{id}
     corrected: 2026-11-17
     baseline: baseline/sangam-api-0.1.0.yaml

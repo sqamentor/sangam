@@ -147,11 +147,12 @@ public sealed class OnboardingApi
     /// <summary>
     /// Export a bundle
     /// The tenant's configuration, signed. No secrets, no go-live evidence.
-    /// GET /onboarding/tenants/{tenant}/bundle (operationId exportTenantBundle); permission tenant.admin.
+    /// GET /onboarding/tenants/by-tenant/bundle (operationId exportTenantBundle); permission tenant.admin.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.TenantBundle?> ExportTenantBundleAsync(string tenant, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/onboarding/tenants/{HttpTransport.Seg(GeneratedCalls.Str(tenant)!)}/bundle");
+        var req = ApiRequest.Get($"/onboarding/tenants/by-tenant/bundle");
+        req.WithQuery("tenant", GeneratedCalls.Q(tenant));
         return await _calls.JsonAsync<M.TenantBundle?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -182,11 +183,12 @@ public sealed class OnboardingApi
     /// <summary>
     /// Export for promotion
     /// The tenant's signed bundle labelled with this environment (sangam.onboarding.environment). 409 PROMOTION_ENVIRONMENT_NOT_SET without a label.
-    /// GET /onboarding/promotions/{tenant}/bundle (operationId exportPromotionBundle); permission tenant.admin.
+    /// GET /onboarding/promotions/by-tenant/bundle (operationId exportPromotionBundle); permission tenant.admin.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.TenantBundle?> ExportPromotionBundleAsync(string tenant, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/onboarding/promotions/{HttpTransport.Seg(GeneratedCalls.Str(tenant)!)}/bundle");
+        var req = ApiRequest.Get($"/onboarding/promotions/by-tenant/bundle");
+        req.WithQuery("tenant", GeneratedCalls.Q(tenant));
         return await _calls.JsonAsync<M.TenantBundle?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 

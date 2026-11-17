@@ -127,16 +127,16 @@ class ScimAcceptanceIT {
             }
             try {
                 String big = "{\"title\":\"" + "x".repeat(10_000) + "\"}";   // beyond VARCHAR2(4000): CLOB on Oracle
-                assertTrue(store.insert(c, t, ScimStore.USER, "p1", "Alice.Rao", "Alice Rao", "ext_1", big, now));
-                assertTrue(store.insert(c, t, ScimStore.USER, "p2", "bob%x", "Bob [ops]", null, null, now));
-                assertTrue(store.insert(c, t, ScimStore.USER, "p3", "carol", "Carol", "EXT_1", null, now),
+                assertTrue(store.insert(c, t, ScimStore.USER, "p1", "p1", "Alice.Rao", "Alice Rao", "ext_1", big, now));
+                assertTrue(store.insert(c, t, ScimStore.USER, "p2", "p2", "bob%x", "Bob [ops]", null, null, now));
+                assertTrue(store.insert(c, t, ScimStore.USER, "p3", "p3", "carol", "Carol", "EXT_1", null, now),
                         "externalId is case-exact");
-                assertFalse(store.insert(c, t, ScimStore.USER, "p4", "ALICE.RAO", null, null, null, now),
+                assertFalse(store.insert(c, t, ScimStore.USER, "p4", "p4", "ALICE.RAO", null, null, null, now),
                         "userName is unique ignoring case");
-                assertFalse(store.insert(c, t, ScimStore.USER, "p5", "dave", null, "ext_1", null, now), "externalId is unique");
-                assertTrue(store.insert(c, t, ScimStore.GROUP, "g1", null, "Clerks", null, null, now),
+                assertFalse(store.insert(c, t, ScimStore.USER, "p5", "p5", "dave", null, "ext_1", null, now), "externalId is unique");
+                assertTrue(store.insert(c, t, ScimStore.GROUP, "g1", "g1", null, "Clerks", null, null, now),
                         "two resources without externalId: NOT NULL keys, no second-NULL clash on SQL Server");
-                assertTrue(store.insert(c, t, ScimStore.GROUP, "g2", null, "Clerks", null, null, now),
+                assertTrue(store.insert(c, t, ScimStore.GROUP, "g2", "g2", null, "Clerks", null, null, now),
                         "group displayName is not unique");
 
                 assertEquals(big, store.find(c, t, ScimStore.USER, "p1").orElseThrow().attributes());

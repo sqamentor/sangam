@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * Delegation-of-powers tables (IX.5 rule 3, K6, A04): versioned DMN tables of financial and administrative powers per
  * seat, with four-eyes approval (author ≠ approver) and an effective date. Distinct from person-to-person delegation
- * ({@code /admin/delegations}). An ACTIVE table is deployed so that {@code POST /decisions/{key}/evaluate} uses it.
+ * ({@code /admin/delegations}). An ACTIVE table is deployed so that {@code POST /decisions/by-key/evaluate?key=} uses it.
  */
 public interface PowerTablePort {
 

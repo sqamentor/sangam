@@ -23,6 +23,8 @@ class ScimFilterTest {
                 ScimFilter.parse("EXTERNALID SW \"ab\" AND displayname co \"Ra\""));
         assertEquals(List.of(new Clause(Attribute.USER_NAME, Op.EQ, "x")),
                 ScimFilter.parse("urn:ietf:params:scim:schemas:core:2.0:User:userName eq \"x\""), "core URN prefix");
+        assertEquals(List.of(new Clause(Attribute.ID, Op.EQ, "0190a1b2-c3d4")), ScimFilter.parse("id eq \"0190a1b2-c3d4\""),
+                "the opaque SCIM id (decision 393 (a))");
         assertEquals(List.of(), ScimFilter.parse("  "));
         assertEquals(List.of(), ScimFilter.parse(null));
     }

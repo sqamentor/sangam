@@ -191,22 +191,24 @@ public sealed class ProcessesApi
     /// <summary>
     /// Ad-hoc sub-process state
     /// Enabled and active activities of an ad-hoc scope.
-    /// GET /process-instances/{id}/ad-hoc/{adHocActivityId} (operationId getAdHocState); permission process.read.
+    /// GET /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id (operationId getAdHocState); permission process.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.AdHocState?> GetAdHocStateAsync(string id, string adHocActivityId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/process-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/ad-hoc/{HttpTransport.Seg(GeneratedCalls.Str(adHocActivityId)!)}");
+        var req = ApiRequest.Get($"/process-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/ad-hoc/by-ad-hoc-activity-id");
+        req.WithQuery("adHocActivityId", GeneratedCalls.Q(adHocActivityId));
         return await _calls.JsonAsync<M.AdHocState?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Start an ad-hoc activity
     /// Starts an enabled activity in the ad-hoc scope.
-    /// POST /process-instances/{id}/ad-hoc/{adHocActivityId}/start (operationId startAdHocActivity); permission process.write; result stored atomically with the state change.
+    /// POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/start (operationId startAdHocActivity); permission process.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.AdHocState?> StartAdHocActivityAsync(string id, string adHocActivityId, M.StartAdHocActivityRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.AdHocState?> StartAdHocActivityAsync(string id, M.StartAdHocActivityRequest body, string adHocActivityId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/process-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/ad-hoc/{HttpTransport.Seg(GeneratedCalls.Str(adHocActivityId)!)}/start");
+        var req = ApiRequest.Post($"/process-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/ad-hoc/by-ad-hoc-activity-id/start");
+        req.WithQuery("adHocActivityId", GeneratedCalls.Q(adHocActivityId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.AdHocState?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -214,11 +216,12 @@ public sealed class ProcessesApi
     /// <summary>
     /// Complete an ad-hoc scope
     /// Completes the ad-hoc sub-process when its completion condition allows.
-    /// POST /process-instances/{id}/ad-hoc/{adHocActivityId}/complete (operationId completeAdHoc); permission process.write; result stored atomically with the state change.
+    /// POST /process-instances/{id}/ad-hoc/by-ad-hoc-activity-id/complete (operationId completeAdHoc); permission process.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.AdHocState?> CompleteAdHocAsync(string id, string adHocActivityId, string? reason = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/process-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/ad-hoc/{HttpTransport.Seg(GeneratedCalls.Str(adHocActivityId)!)}/complete");
+        var req = ApiRequest.Post($"/process-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/ad-hoc/by-ad-hoc-activity-id/complete");
+        req.WithQuery("adHocActivityId", GeneratedCalls.Q(adHocActivityId));
         req.WithQuery("reason", GeneratedCalls.Q(reason));
         return await _calls.JsonAsync<M.AdHocState?>(req, options, cancellationToken).ConfigureAwait(false);
     }

@@ -241,7 +241,7 @@ export class ProcessesApi extends ApiGroup {
 /** DMN decisions; evaluation is side-effect free. */
 export class DecisionsApi extends ApiGroup {
   evaluate(decisionKey: string, request: DecisionEvaluateRequest, o?: CallOptions): Promise<DecisionEvaluateResult> {
-    return this.postJson(`/decisions/${seg(decisionKey)}/evaluate`, request, o);
+    return this.http.call(this.req('POST', '/decisions/by-key/evaluate', request, o, { key: decisionKey }));
   }
 }
 

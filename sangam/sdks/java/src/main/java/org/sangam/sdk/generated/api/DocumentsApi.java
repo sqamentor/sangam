@@ -81,13 +81,14 @@ public final class DocumentsApi {
      *
      * <p>Latest version metadata.
      *
-     * <p>{@code GET /documents/{id}} (operationId {@code getDocument}); permission {@code document.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /documents/by-id} (operationId {@code getDocument}); permission {@code document.read}.
+     * @param id query parameter {@code id}. Document id (an engine attachment or content item id); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public Document getDocument(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/documents/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.get("/documents/by-id");
+        req.query("id", id);
         return call.json(req, options, R_getDocument);
     }
 
@@ -96,13 +97,14 @@ public final class DocumentsApi {
      *
      * <p>Deletes (subject to retention and legal hold, R29, R61).
      *
-     * <p>{@code DELETE /documents/{id}} (operationId {@code deleteDocument}); permission {@code document.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code DELETE /documents/by-id} (operationId {@code deleteDocument}); permission {@code document.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Document id (an engine attachment or content item id); may carry '/' or ':'
      * @param reason query parameter {@code reason}, or null. Mandatory reason (audited, R42)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
     public void deleteDocument(String id, String reason, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/documents/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.delete("/documents/by-id");
+        req.query("id", id);
         req.query("reason", reason);
         call.none(req, options);
     }
@@ -112,14 +114,15 @@ public final class DocumentsApi {
      *
      * <p>Content of the latest or given version.
      *
-     * <p>{@code GET /documents/{id}/content} (operationId {@code getDocumentContent}); permission {@code document.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /documents/by-id/content} (operationId {@code getDocumentContent}); permission {@code document.read}.
+     * @param id query parameter {@code id}. Document id (an engine attachment or content item id); may carry '/' or ':'
      * @param version query parameter {@code version}, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public byte[] getDocumentContent(String id, Integer version, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/documents/" + HttpTransport.seg(String.valueOf(id)) + "/content");
+        ApiRequest req = ApiRequest.get("/documents/by-id/content");
+        req.query("id", id);
         req.query("version", version);
         return call.bytes(req, options, "application/octet-stream");
     }
@@ -129,15 +132,16 @@ public final class DocumentsApi {
      *
      * <p>Adds an immutable version (R74). A slot applies when the document belongs to a process instance. DSC document slot (decisions 267 to 269): with a documentType for which the pack of the process instance declares a slot, a PDF fills that slot in the same transaction as the store, audited in DOCUMENT_UPLOADED or DOCUMENT_VERSION_ADDED with slot and document_type. Only the assignee of an open task of that instance with task.write may set or replace a slot (403 DOCUMENT_SLOT_NOT_TASK_HOLDER); a slot holding another document is 409 DOCUMENT_SLOT_OCCUPIED unless replaceSlot is true. Nothing is stored on either refusal. A slot changed after the signing task was created is refused at completion.
      *
-     * <p>{@code POST /documents/{id}/versions} (operationId {@code addDocumentVersion}); permission {@code document.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /documents/by-id/versions} (operationId {@code addDocumentVersion}); permission {@code document.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body (multipart parts by name: FilePart or byte[] values are files, a list repeats the part)
+     * @param id query parameter {@code id}. Document id (an engine attachment or content item id); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
-    public Document addDocumentVersion(String id, java.util.Map<String, Object> body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/documents/" + HttpTransport.seg(String.valueOf(id)) + "/versions");
+    public Document addDocumentVersion(java.util.Map<String, Object> body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/documents/by-id/versions");
         GeneratedCalls.multipart(req, body, options);
+        req.query("id", id);
         return call.json(req, options, R_addDocumentVersion);
     }
 
@@ -146,13 +150,14 @@ public final class DocumentsApi {
      *
      * <p>Every immutable version (R74).
      *
-     * <p>{@code GET /documents/{id}/versions} (operationId {@code listDocumentVersions}); permission {@code document.read}.
-     * @param id path parameter {@code id}
+     * <p>{@code GET /documents/by-id/versions} (operationId {@code listDocumentVersions}); permission {@code document.read}.
+     * @param id query parameter {@code id}. Document id (an engine attachment or content item id); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<Document> listDocumentVersions(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/documents/" + HttpTransport.seg(String.valueOf(id)) + "/versions");
+        ApiRequest req = ApiRequest.get("/documents/by-id/versions");
+        req.query("id", id);
         return call.json(req, options, R_listDocumentVersions);
     }
 
@@ -161,22 +166,23 @@ public final class DocumentsApi {
      *
      * <p>A held document cannot be deleted or disposed of (R61, R29).
      *
-     * <p>{@code POST /documents/{id}/legal-hold} (operationId {@code setDocumentLegalHold}); permission {@code document.legal-hold}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
+     * <p>{@code POST /documents/by-id/legal-hold} (operationId {@code setDocumentLegalHold}); permission {@code document.legal-hold}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. Document id (an engine attachment or content item id); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public Document setDocumentLegalHold(String id, LegalHoldRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/documents/" + HttpTransport.seg(String.valueOf(id)) + "/legal-hold");
+    public Document setDocumentLegalHold(LegalHoldRequest body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/documents/by-id/legal-hold");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_setDocumentLegalHold);
     }
 
     /**
      * Document templates
      *
-     * <p>Output templates (R74, S12); the id 'templates' is reserved for /documents/{id}.
+     * <p>Output templates (R74, S12); (a literal route next to /documents/by-id).
      *
      * <p>{@code GET /documents/templates} (operationId {@code listDocumentTemplates}); permission {@code document.read}.
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null

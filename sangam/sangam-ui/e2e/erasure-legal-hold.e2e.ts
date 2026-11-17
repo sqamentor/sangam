@@ -122,32 +122,32 @@ test('a legal hold is placed on a process root that holds the data principal\'s 
     const rootId = ((await started.json()) as { id: string }).id;
 
     // a kind outside the list, and an unknown root, are refused by name
-    const badKind = await officer.post(`compliance/process-roots/${rootId}/legal-holds`, { headers: key(), data: { kind: 'rti', reason: 'reply pending' } });
+    const badKind = await officer.post(`compliance/process-roots/by-root-id/legal-holds?rootId=${encodeURIComponent(`${rootId}`)}`, { headers: key(), data: { kind: 'rti', reason: 'reply pending' } });
     expect(badKind.status(), await badKind.text()).toBe(400);
-    const unknown = await officer.post(`compliance/process-roots/no-such-root-${randomUUID()}/legal-holds`, { headers: key(), data: { kind: 'RTI', reason: 'reply pending' } });
+    const unknown = await officer.post(`compliance/process-roots/by-root-id/legal-holds?rootId=${encodeURIComponent(`no-such-root-${randomUUID()}`)}`, { headers: key(), data: { kind: 'RTI', reason: 'reply pending' } });
     expect(unknown.status(), await unknown.text()).toBe(404);
 
     // someone without compliance.modify cannot hold
-    const denied = await roleless.post(`compliance/process-roots/${rootId}/legal-holds`, { headers: key(), data: { kind: 'RTI', reason: 'reply pending' } });
+    const denied = await roleless.post(`compliance/process-roots/by-root-id/legal-holds?rootId=${encodeURIComponent(`${rootId}`)}`, { headers: key(), data: { kind: 'RTI', reason: 'reply pending' } });
     expect(denied.status(), await denied.text()).toBe(403);
 
     // the officer places the hold; it is listed
-    const placed = await officer.post(`compliance/process-roots/${rootId}/legal-holds`, { headers: key(), data: { kind: 'RTI', reference: 'RTI/E2E/1', reason: 'reply pending' } });
+    const placed = await officer.post(`compliance/process-roots/by-root-id/legal-holds?rootId=${encodeURIComponent(`${rootId}`)}`, { headers: key(), data: { kind: 'RTI', reference: 'RTI/E2E/1', reason: 'reply pending' } });
     expect(placed.status(), await placed.text()).toBe(201);
     const hold = (await placed.json()) as LegalHold;
     expect(hold.rootId).toBe(rootId);
     expect(hold.reason).toBe('RTI RTI/E2E/1: reply pending');
-    const listed = await officer.get(`compliance/process-roots/${rootId}/legal-holds`);
+    const listed = await officer.get(`compliance/process-roots/by-root-id/legal-holds?rootId=${encodeURIComponent(`${rootId}`)}`);
     expect(listed.status(), await listed.text()).toBe(200);
     expect(((await listed.json()) as LegalHold[]).map((h) => h.holdId)).toContain(hold.holdId);
 
     // the placer cannot release it (four eyes); a different person can
-    const self = await officer.post(`compliance/process-roots/${rootId}/legal-holds/${hold.holdId}/release`, { headers: key(), data: { reason: 'reply sent' } });
+    const self = await officer.post(`compliance/process-roots/by-root-id/legal-holds/by-hold-id/release?rootId=${encodeURIComponent(`${rootId}`)}&holdId=${encodeURIComponent(hold.holdId)}`, { headers: key(), data: { reason: 'reply sent' } });
     expect(self.status(), await self.text()).toBe(422);
     expect(((await self.json()) as { code?: string }).code).toBe('FOUR_EYES_REQUIRED');
-    const released = await api.ctx.post(`compliance/process-roots/${rootId}/legal-holds/${hold.holdId}/release`, { headers: key(), data: { reason: 'reply sent' } });
+    const released = await api.ctx.post(`compliance/process-roots/by-root-id/legal-holds/by-hold-id/release?rootId=${encodeURIComponent(`${rootId}`)}&holdId=${encodeURIComponent(hold.holdId)}`, { headers: key(), data: { reason: 'reply sent' } });
     expect(released.status(), await released.text()).toBe(204);
-    const after = await officer.get(`compliance/process-roots/${rootId}/legal-holds`);
+    const after = await officer.get(`compliance/process-roots/by-root-id/legal-holds?rootId=${encodeURIComponent(`${rootId}`)}`);
     expect(((await after.json()) as LegalHold[]).map((h) => h.holdId)).not.toContain(hold.holdId);
   } finally {
     await Promise.all([officer.dispose(), roleless.dispose()]);
@@ -173,7 +173,7 @@ test('erasure end to end on a dedicated citizen: approved, the free root is eras
     };
     const free = await root('FREE');
     const held = await root('HELD');
-    const placed = await officer.post(`compliance/process-roots/${held}/legal-holds`, { headers: key(), data: { kind: 'LITIGATION', reference: 'E2E/ERASE/1', reason: 'case pending' } });
+    const placed = await officer.post(`compliance/process-roots/by-root-id/legal-holds?rootId=${encodeURIComponent(`${held}`)}`, { headers: key(), data: { kind: 'LITIGATION', reference: 'E2E/ERASE/1', reason: 'case pending' } });
     expect(placed.status(), await placed.text()).toBe(201);
     const hold = (await placed.json()) as LegalHold;
 
@@ -231,7 +231,7 @@ test('erasure end to end on a dedicated citizen: approved, the free root is eras
     expect(JSON.stringify(kept.sangamApplicantId)).toContain(own.userId);
 
     // the hold is released by a different person than the one who placed it (four eyes), leaving nothing held
-    const released = await api.ctx.post(`compliance/process-roots/${held}/legal-holds/${hold.holdId}/release`, { headers: key(), data: { reason: 'e2e done' } });
+    const released = await api.ctx.post(`compliance/process-roots/by-root-id/legal-holds/by-hold-id/release?rootId=${encodeURIComponent(`${held}`)}&holdId=${encodeURIComponent(hold.holdId)}`, { headers: key(), data: { reason: 'e2e done' } });
     expect(released.status(), await released.text()).toBe(204);
   } finally {
     await Promise.all([citizen.dispose(), officer.dispose()]);

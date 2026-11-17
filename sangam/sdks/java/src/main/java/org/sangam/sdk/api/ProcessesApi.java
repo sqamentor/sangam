@@ -73,6 +73,6 @@ public final class ProcessesApi extends ApiSupport {
     }
 
     public CaseInstance getCase(String caseInstanceId) {
-        return call(ApiRequest.get("/case-instances/" + seg(caseInstanceId)), CaseInstance.class);
+        return call(ApiRequest.get("/case-instances/by-id").query("id", caseInstanceId), CaseInstance.class);
     }
 }

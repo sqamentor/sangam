@@ -67,12 +67,14 @@ final class DocumentsApi
      *
      * Latest version metadata.
      *
-     * GET /documents/{id} (operationId getDocument); permission document.read.
+     * GET /documents/by-id (operationId getDocument); permission document.read.
+     * @param string $id query id
      * @return Model\Document|null
      */
     public function getDocument(string $id, ?RequestOptions $options = null): ?Model\Document
     {
-        $req = ApiRequest::get('/documents/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::get('/documents/by-id');
+        $req->query('id', $id);
         return $this->calls->model($req, $options, Model\Document::class);
     }
 
@@ -81,12 +83,14 @@ final class DocumentsApi
      *
      * Deletes (subject to retention and legal hold, R29, R61).
      *
-     * DELETE /documents/{id} (operationId deleteDocument); permission document.write; result stored atomically with the state change.
+     * DELETE /documents/by-id (operationId deleteDocument); permission document.write; result stored atomically with the state change.
+     * @param string $id query id
      * @param string|null $reason query reason
      */
     public function deleteDocument(string $id, ?string $reason = null, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/documents/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::delete('/documents/by-id');
+        $req->query('id', $id);
         $req->query('reason', $reason);
         $this->calls->none($req, $options);
     }
@@ -96,13 +100,15 @@ final class DocumentsApi
      *
      * Content of the latest or given version.
      *
-     * GET /documents/{id}/content (operationId getDocumentContent); permission document.read.
+     * GET /documents/by-id/content (operationId getDocumentContent); permission document.read.
+     * @param string $id query id
      * @param int|null $version query version
      * @return string
      */
     public function getDocumentContent(string $id, ?int $version = null, ?RequestOptions $options = null): string
     {
-        $req = ApiRequest::get('/documents/' . HttpTransport::seg((string) $id) . '/content');
+        $req = ApiRequest::get('/documents/by-id/content');
+        $req->query('id', $id);
         $req->query('version', $version);
         return $this->calls->raw($req, $options, 'application/octet-stream');
     }
@@ -112,13 +118,15 @@ final class DocumentsApi
      *
      * Adds an immutable version (R74). A slot applies when the document belongs to a process instance. DSC document slot (decisions 267 to 269): with a documentType for which the pack of the process instance declares a slot, a PDF fills that slot in the same transaction as the store, audited in DOCUMENT_UPLOADED or DOCUMENT_VERSION_ADDED with slot and document_type. Only the assignee of an open task of that instance with task.write may set or replace a slot (403 DOCUMENT_SLOT_NOT_TASK_HOLDER); a slot holding another document is 409 DOCUMENT_SLOT_OCCUPIED unless replaceSlot is true. Nothing is stored on either refusal. A slot changed after the signing task was created is refused at completion.
      *
-     * POST /documents/{id}/versions (operationId addDocumentVersion); permission document.write; result stored atomically with the state change.
+     * POST /documents/by-id/versions (operationId addDocumentVersion); permission document.write; result stored atomically with the state change.
      * @param array<string, mixed> $body request body (parts by name; values that are files: ['file' => bytes])
+     * @param string $id query id
      * @return Model\Document|null
      */
-    public function addDocumentVersion(string $id, array $body, ?RequestOptions $options = null): ?Model\Document
+    public function addDocumentVersion(array $body, string $id, ?RequestOptions $options = null): ?Model\Document
     {
-        $req = ApiRequest::post('/documents/' . HttpTransport::seg((string) $id) . '/versions');
+        $req = ApiRequest::post('/documents/by-id/versions');
+        $req->query('id', $id);
         Support::multipart($req, $body);
         return $this->calls->model($req, $options, Model\Document::class);
     }
@@ -128,12 +136,14 @@ final class DocumentsApi
      *
      * Every immutable version (R74).
      *
-     * GET /documents/{id}/versions (operationId listDocumentVersions); permission document.read.
+     * GET /documents/by-id/versions (operationId listDocumentVersions); permission document.read.
+     * @param string $id query id
      * @return list<Model\Document>
      */
     public function listDocumentVersions(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/documents/' . HttpTransport::seg((string) $id) . '/versions');
+        $req = ApiRequest::get('/documents/by-id/versions');
+        $req->query('id', $id);
         return $this->calls->models($req, $options, Model\Document::class);
     }
 
@@ -142,13 +152,15 @@ final class DocumentsApi
      *
      * A held document cannot be deleted or disposed of (R61, R29).
      *
-     * POST /documents/{id}/legal-hold (operationId setDocumentLegalHold); permission document.legal-hold; result stored atomically with the state change.
+     * POST /documents/by-id/legal-hold (operationId setDocumentLegalHold); permission document.legal-hold; result stored atomically with the state change.
      * @param Model\LegalHoldRequest|array $body request body
+     * @param string $id query id
      * @return Model\Document|null
      */
-    public function setDocumentLegalHold(string $id, Model\LegalHoldRequest|array $body, ?RequestOptions $options = null): ?Model\Document
+    public function setDocumentLegalHold(Model\LegalHoldRequest|array $body, string $id, ?RequestOptions $options = null): ?Model\Document
     {
-        $req = ApiRequest::post('/documents/' . HttpTransport::seg((string) $id) . '/legal-hold');
+        $req = ApiRequest::post('/documents/by-id/legal-hold');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -158,7 +170,7 @@ final class DocumentsApi
     /**
      * Document templates
      *
-     * Output templates (R74, S12); the id 'templates' is reserved for /documents/{id}.
+     * Output templates (R74, S12); (a literal route next to /documents/by-id).
      *
      * GET /documents/templates (operationId listDocumentTemplates); permission document.read.
      * @return list<Model\DocumentTemplate>
