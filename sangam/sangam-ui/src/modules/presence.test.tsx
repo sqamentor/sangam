@@ -88,7 +88,7 @@ describe('M-101 ModelPresenceBar against the stream', () => {
     render(<ModelPresenceBar file="pkg/1" selfId="me" />);
     await waitFor(() => expect(screen.getByText(/Asha/)).toBeTruthy());
     const [url, init] = fetchMock.mock.calls[0];
-    expect(String(url)).toBe('/api/v1/models/pkg%2F1/presence/stream');
+    expect(String(url)).toBe('/api/v1/models/by-file/presence/stream?file=pkg%2F1');
     expect((init.headers as Headers).get('Authorization')).toBe('Bearer tok-1');
     expect((init.headers as Headers).get('Accept')).toBe('text/event-stream');
   });

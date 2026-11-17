@@ -250,7 +250,7 @@ describe('event registry', () => {
     fireEvent.click(buttonIn(s, 'common.send'));
     await waitFor(() =>
       expect(api.post).toHaveBeenCalledWith(
-        '/events/grievance-in',
+        '/events/by-channel?channel=grievance-in',
         { specversion: '1.0', id: expect.any(String), source: 'sangam-ui', type: 'sangam.test', datacontenttype: 'application/json', data: { ref: 'G-1' } },
         KEY,
       ),
