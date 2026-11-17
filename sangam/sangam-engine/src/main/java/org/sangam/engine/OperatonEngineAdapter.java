@@ -99,6 +99,8 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(OperatonEngineAdapter.class);
     private static final int SWEEP_LIMIT = 500;
+    /** Page size of the due-job query in {@link #executeDueJobs()}. */
+    static final int DUE_JOB_PAGE = 100;
 
     private final ProcessEngine engine;
     private final ProcessEngineConfigurationImpl configuration;
@@ -1081,31 +1083,38 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         int executed = 0;
         Map<String, Integer> perDefinition = new HashMap<>();
         Set<String> skipped = new HashSet<>();
-        while (executed < settings.getMaxJobExecutionsPerCall()) {
-            List<Job> due = managementService.createJobQuery().executable().active().orderByJobId().asc().listPage(0, 100);
-            boolean progressed = false;
-            for (Job job : due) {
-                if (executed >= settings.getMaxJobExecutionsPerCall()) {
+        // A pass pages through every due job: a definition at its limit can fill a whole page (its jobs stay due), and
+        // stopping there starved every due job sorted after it (E46 WF-2 deemed timer on MySQL, CI 44022815109). Jobs
+        // executed in a pass may leave the result and shift later pages; the next pass picks up whatever was passed over.
+        boolean progressed = true;
+        while (progressed && executed < settings.getMaxJobExecutionsPerCall()) {
+            progressed = false;
+            for (int first = 0; executed < settings.getMaxJobExecutionsPerCall(); first += DUE_JOB_PAGE) {
+                List<Job> due = managementService.createJobQuery().executable().active().orderByJobId().asc()
+                        .listPage(first, DUE_JOB_PAGE);
+                for (Job job : due) {
+                    if (executed >= settings.getMaxJobExecutionsPerCall()) {
+                        break;
+                    }
+                    String def = job.getJobDefinitionId() == null ? "-" : job.getJobDefinitionId();
+                    int n = perDefinition.getOrDefault(def, 0);
+                    if (n >= settings.getMaxExecutionsPerJobDefinitionPerCall()) {
+                        skipped.add(def);
+                        continue;
+                    }
+                    perDefinition.put(def, n + 1);
+                    c.metrics().jobsAcquired(1); // sangam_jobs_acquired_total (adapter acquisition path)
+                    try {
+                        managementService.executeJob(job.getId());
+                    } catch (RuntimeException e) {
+                        LOG.debug("job {} failed; the engine handles its retries", job.getId(), e);
+                    }
+                    executed++;
+                    progressed = true;
+                }
+                if (due.size() < DUE_JOB_PAGE) {
                     break;
                 }
-                String def = job.getJobDefinitionId() == null ? "-" : job.getJobDefinitionId();
-                int n = perDefinition.getOrDefault(def, 0);
-                if (n >= settings.getMaxExecutionsPerJobDefinitionPerCall()) {
-                    skipped.add(def);
-                    continue;
-                }
-                perDefinition.put(def, n + 1);
-                c.metrics().jobsAcquired(1); // sangam_jobs_acquired_total (adapter acquisition path)
-                try {
-                    managementService.executeJob(job.getId());
-                } catch (RuntimeException e) {
-                    LOG.debug("job {} failed; the engine handles its retries", job.getId(), e);
-                }
-                executed++;
-                progressed = true;
-            }
-            if (!progressed) {
-                break;
             }
         }
         if (executed >= settings.getMaxJobExecutionsPerCall() || !skipped.isEmpty()) {
