@@ -102,11 +102,23 @@ class D393ModuleRoutesH2Test {
                     && "No such endpoint".equals(Json.tree(r.body()).path("detail").asText())) {
                 wrong.add(where + ": no such route: " + r.body());
             }
-            if (r.statusCode() == 401 || r.statusCode() == 403) {
+            if ((r.statusCode() == 401 || r.statusCode() == 403) && !answeredBy(r, c[1])) {
                 wrong.add(where + ": refused before the controller: " + r.body());
             }
         }
         return wrong;
+    }
+
+    /**
+     * A 401 or 403 is the application's own answer (a permission, group or device check in the controller or its
+     * service) when its problem names the requested route as {@code instance}; a refusal before routing does not.
+     */
+    static boolean answeredBy(HttpResponse<String> r, String pathAndQuery) {
+        if (r.body().isEmpty()) {
+            return false;
+        }
+        String path = pathAndQuery.contains("?") ? pathAndQuery.substring(0, pathAndQuery.indexOf('?')) : pathAndQuery;
+        return ("/api/v1" + path).equals(Json.tree(r.body()).path("instance").asText());
     }
 
     /** The old shape: the value as an encoded path segment never reaches the application. */
@@ -134,8 +146,14 @@ class D393ModuleRoutesH2Test {
     }
 
     @Test
-    void m1OpsSecretNamesWithASlashOrAColonRoundTrip() throws Exception {
-        for (String v : VALUES) {
+    void m1OpsSecretNamesWithASlashRoundTripAndAColonIsRefusedByTheApplication() throws Exception {
+        // SecretAdmin.checkRef allows '/' but not ':' ([A-Za-z0-9][A-Za-z0-9_./-]{0,200}): a ':' name reaches the
+        // application and is refused there with 400 VALIDATION_FAILED; a '/' name round-trips.
+        HttpResponse<String> colon = send("PUT", "/ops/secrets/by-name" + q("name", "d393:a:b"),
+                "{\"name\":\"d393:a:b\",\"value\":\"s3cret\",\"reason\":\"d393 M1\"}");
+        assertEquals(400, colon.statusCode(), colon.body());
+        assertEquals("VALIDATION_FAILED", Json.tree(colon.body()).path("code").asText(), colon.body());
+        for (String v : new String[]{"d393/a/b"}) {
             HttpResponse<String> put = send("PUT", "/ops/secrets/by-name" + q("name", v),
                     "{\"name\":\"" + v + "\",\"value\":\"s3cret\",\"reason\":\"d393 M1\"}");
             assertEquals(204, put.statusCode(), v + ": " + put.body());
@@ -160,7 +178,7 @@ class D393ModuleRoutesH2Test {
             calls.add(new String[]{"POST", "/registry/assets/d393-x1/meters/by-meter-type/readings" + q("meterType", v), "{}"});
             calls.add(new String[]{"GET", "/registry/assets/d393-x1/meters/by-meter-type/readings" + q("meterType", v), null});
             calls.add(new String[]{"GET", "/registry/custody/items/by-label" + q("label", v), null});
-            calls.add(new String[]{"GET", "/registry/instruments/public/by-tenant/verify" + q("tenant", v), null});
+            calls.add(new String[]{"GET", "/registry/instruments/public/by-tenant/verify" + q("tenant", v, "code", "d393-code"), null});
             calls.add(new String[]{"POST", "/registry/instruments/d393-x1/transitions/by-name" + q("name", v), "{}"});
             calls.add(new String[]{"PUT", "/registry/number-series/by-series-key" + q("seriesKey", v), "{}"});
             calls.add(new String[]{"GET", "/registry/number-series/by-series-key" + q("seriesKey", v), null});
@@ -171,7 +189,7 @@ class D393ModuleRoutesH2Test {
             calls.add(new String[]{"POST", "/registry/number-series/by-series-key/mark-used" + q("seriesKey", v), "{}"});
             calls.add(new String[]{"POST", "/registry/number-series/by-series-key/void" + q("seriesKey", v), "{}"});
             calls.add(new String[]{"POST", "/registry/objects/d393-x1/transitions/by-name" + q("name", v), "{}"});
-            calls.add(new String[]{"GET", "/registry/registers/public/by-tenant/extracts/verify" + q("tenant", v), null});
+            calls.add(new String[]{"GET", "/registry/registers/public/by-tenant/extracts/verify" + q("tenant", v, "code", "d393-code"), null});
             calls.add(new String[]{"PUT", "/registry/registers/by-register-key" + q("registerKey", v), "{}"});
             calls.add(new String[]{"GET", "/registry/registers/by-register-key" + q("registerKey", v), null});
             calls.add(new String[]{"GET", "/registry/registers/by-register-key/books" + q("registerKey", v), null});
