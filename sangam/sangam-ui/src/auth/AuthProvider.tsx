@@ -6,6 +6,7 @@
  * - The selected seat travels as X-Sangam-Seat on every call; the server re-validates it on every command (K7).
  * Role-aware menus are a convenience only; the server is the security boundary (X.4.7).
  */
+import { appPath } from '../basePath';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { UserManager, WebStorageStateStore, type User as OidcUser } from 'oidc-client-ts';
 import { addHeaderProvider, setTokenProvider, setUnauthenticatedHandler, ApiError } from '../api/client';
@@ -75,6 +76,11 @@ function rolesFromClaims(c: Record<string, unknown>): Role[] {
  * console uses config().oidc.redirectPath; the optional Teams app (decision 162) uses its own page as the redirect of
  * its sign-in pop-up, and stores the signed-in user where this provider reads it (same store key: authority + client).
  */
+/** The console's OIDC redirect URI: the callback route under the app's base path (basePath.ts). */
+export function oidcRedirectUri(): string {
+  return window.location.origin + appPath(config().oidc.redirectPath);
+}
+
 export function createUserManager(redirectUri: string): UserManager {
   const c = config();
   const store = safeSession() ?? undefined;
@@ -82,7 +88,7 @@ export function createUserManager(redirectUri: string): UserManager {
     authority: c.oidc.authority,
     client_id: c.oidc.clientId,
     redirect_uri: redirectUri,
-    post_logout_redirect_uri: window.location.origin + c.oidc.postLogoutPath,
+    post_logout_redirect_uri: window.location.origin + appPath(c.oidc.postLogoutPath),
     response_type: 'code',
     scope: c.oidc.scope,
     automaticSilentRenew: true,
@@ -92,7 +98,7 @@ export function createUserManager(redirectUri: string): UserManager {
 
 let userManager: UserManager | null = null;
 function manager(): UserManager {
-  if (!userManager) userManager = createUserManager(window.location.origin + config().oidc.redirectPath);
+  if (!userManager) userManager = createUserManager(oidcRedirectUri());
   return userManager;
 }
 
@@ -165,7 +171,7 @@ export function AuthProvider({ children, providerSignOut = true }: { children: R
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (window.location.pathname === config().oidc.redirectPath) return; // handled by the callback route
+      if (window.location.pathname === appPath(config().oidc.redirectPath)) return; // handled by the callback route
       let token: string | null;
       if (mode === 'dev') token = safeSession()?.getItem(DEV_TOKEN_KEY) ?? null;
       else {
