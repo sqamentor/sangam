@@ -10,7 +10,7 @@ Decision (--level auto):
 
 Level 1 builds nothing here: it prints the decision; the lane runs its own heavy-lock script.
 Level 2: makes a commit = HEAD + ci-lane.json (git plumbing; the working tree and index are not touched), pushes it
-  with `git push origin <sha>:refs/heads/ci/<lane>-<shortsha>` (only refs/heads/ci/..., never main or a tag), waits
+  with `git push origin <sha>:refs/heads/ci/<lane>-<shortsha>-<cisha6>` (only refs/heads/ci/..., never main or a tag), waits
   with `gh run watch`, downloads the report artifacts and prints the test counts per job.
 Level 3: `git archive` of the same commit to s3://sangam-ci-<account>/src/sangam-src.zip, `aws codebuild start-build`
   on project sangam-ci-lanes with CI_MODULES/CI_DBS/CI_CHUNKS/CI_UI overrides, waits, downloads the reports from the
@@ -104,10 +104,12 @@ def lane_commit(selection, lane):
     return head, commit
 
 
-def ci_branch(lane, head):
-    br = f"ci/{lane.lower()}-{head[:8]}"
+def ci_branch(lane, head, commit):
+    # The CI commit = HEAD + ci-lane.json, so a rerun of the same HEAD with another selection has a different commit.
+    # Naming the branch by HEAD alone made such a rerun a non-fast-forward push (seen 2026-11-17); add the CI commit.
+    br = f"ci/{lane.lower()}-{head[:8]}-{commit[:6]}"
     if not BRANCH_RX.match(br):
-        raise SystemExit(f"refused: branch name {br!r} is not ci/<lane>-<shortsha>")
+        raise SystemExit(f"refused: branch name {br!r} is not ci/<lane>-<shortsha>-<cisha6>")
     return br
 
 
@@ -115,7 +117,11 @@ def push_ci(commit, branch):
     ref = f"refs/heads/{branch}"
     if not ref.startswith("refs/heads/ci/") or ".." in ref:
         raise SystemExit(f"refused: {ref} is not under refs/heads/ci/ (decision 411: never main or tags)")
-    run(["git", "push", "origin", f"{commit}:{ref}"], capture=False)
+    # The default Windows credential helper can wait forever on a hidden sign-in prompt (seen 2026-11-17:
+    # the push hung with no output). Use the already signed-in gh CLI as the only helper and never prompt.
+    env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GCM_INTERACTIVE="never")
+    run(["git", "-c", "credential.helper=", "-c", "credential.helper=!gh auth git-credential",
+         "push", "origin", f"{commit}:{ref}"], capture=False, env=env)
 
 
 # ---------------------------------------------------------------- reports
@@ -150,7 +156,7 @@ def print_counts(counts):
 # ---------------------------------------------------------------- level 2
 def github(selection, lane, out_dir):
     head, commit = lane_commit(selection, lane)
-    branch = ci_branch(lane, head)
+    branch = ci_branch(lane, head, commit)
     push_ci(commit, branch)
     run_id = None
     for _ in range(60):
