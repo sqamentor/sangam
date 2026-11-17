@@ -734,6 +734,7 @@ corrections:
     to: "RosterRestPortDecisionRequest: approved required"
     reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
     decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
     path: /compliance/lawful-requests/{id}/verify
     corrected: 2026-11-15
     baseline: baseline/sangam-api-0.1.0.yaml
