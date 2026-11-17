@@ -611,3 +611,9 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - (8) Compliance pack ships as 1.1.1.
   - (9) A named refusal at run time for a manifest that uses a case-type table without declaring ruleCaseType.
   - (10) The REST start endpoint refuses a process that is not startable in the tasklist.
+
+- **403 (owner chat 2026-11-17, standing instruction)**:
+  - Miss nothing that was proposed or planned for Sangam, from the start until now.
+  - Above all, make Sangam end-to-end 100% suitable for IFMS, together with every plug-and-play provision.
+  - Use all agents, plus extra ones, to finish as fast as possible, aiming for a stable release today, within a few hours.
+  - Nothing is coded or developed below 98% confidence; this raises the floor from 97% to 98%.
