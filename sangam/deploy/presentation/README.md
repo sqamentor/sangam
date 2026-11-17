@@ -57,6 +57,7 @@ Server:
 | `SANGAM_OIDC_ISSUER` | same issuer as the front |
 | `SANGAM_SECURITY_OIDC_AUDIENCE` | `sangam-server` |
 | `SANGAM_SECURITY_OIDC_TENANT_CLAIM`, `..._ROLES_CLAIM`, `..._SEATS_CLAIM` | `tenant`, `roles`, `seats` |
+| `SANGAM_SECURITY_JITPROVISIONINGTENANTS` | `GOI.FIN`: a person is created at first sign-in, id = `preferred_username` |
 | `SANGAM_SECURITY_PLATFORM_ISSUER` | issuer of a **separate** platform realm; empty means nobody is platform administrator |
 | `SANGAM_PORT`, `SANGAM_MANAGEMENT_PORT` | 8080, 8081 |
 
@@ -68,59 +69,76 @@ Server:
 
 ## 4. Keycloak (what IFMS configures in realm `oneifms`)
 
-Sangam reads roles from `realm_access.roles`, from `resource_access.<client>.roles` and from a plain `roles` claim
-(`KeycloakClaimsMapper`), so IFMS realm roles work as they are. It needs, in every access token for Sangam:
+The binding contract is the joint-ledger entry **[CONTRACT] SANGAM-HOSTING-KEYCLOAK**; this section is the same.
+
+How Sangam reads a token (settled from code):
+
+- The principal is the `preferred_username` claim (`sangam.security.claims.principal`, `SangamSecurityProperties`;
+  `JwtPrincipalConverter` falls back to `sub` only when the claim is empty). It is the IdP subject that Sangam maps to a
+  person (`PrincipalResolver.resolve` → `PersonService.findBySubject`).
+- With JIT provisioning for the tenant (`SANGAM_SECURITY_JITPROVISIONINGTENANTS=GOI.FIN`), the first sign-in creates the
+  person with person id = `preferred_username` (`PersonService.provisionJit`). Without it, sign-in is
+  `401 NOT_LINKED`. Do not create these users by hand in Sangam first: a LOCAL user has no subject, and JIT then
+  refuses the clashing person id (`USER_EXISTS`).
+- Seats come from Sangam's postings, not from the token (`PrincipalResolver.enrich` reads `postings.seatsOf`). A
+  `seats` claim is harmless but not used for task routing.
+- Roles: `realm_access.roles`, `resource_access.<client>.roles` and a plain `roles` claim (`KeycloakClaimsMapper`),
+  mirrored as IdP memberships. IFMS realm roles work as they are.
+
+Claims needed in every access token for Sangam:
 
 | Claim | Source in Keycloak | Required |
 |---|---|---|
 | `aud` contains `sangam-server` | audience mapper (included client audience `sangam-server`) | yes, else 401 |
-| `tenant` | user attribute `tenant`, single value, e.g. `GOI.FIN` | yes, else 401 `TENANT_CLAIM_MISSING` |
-| `seats` | user attribute `seat`, multi-valued, e.g. `DDO-1` | for seat holders |
-| `office` | user attribute `office` | for seat holders |
-| `roles` | realm roles mapper, claim `roles`, multi-valued | yes |
-| `preferred_username` | standard | yes (the principal) |
+| `tenant` | user attribute `tenant`, single value, `GOI.FIN` | yes, else 401 `TENANT_CLAIM_MISSING` |
+| `preferred_username` | standard (profile scope) | yes: the person id |
+| `roles` or `realm_access.roles` | realm roles | yes |
+| `name`, `email` | standard | display name and e-mail of the JIT person |
 
 Clients:
 
-1. `sangam-ui`: public, standard flow, PKCE S256, redirect URI `https://<public host>/sangam/*`, web origin
-   `https://<public host>`, post-logout redirect `https://<public host>/sangam/*`; with the mappers above.
-2. `sangam-server`: confidential or bearer-only, used only as the audience.
+1. `sangam-ui`: public, standard flow only, PKCE S256, redirect URI `https://<public host>/sangam/*`, web origin
+   `https://<public host>`, post-logout redirect `https://<public host>/sangam/*`; with the tenant and audience
+   mappers.
+2. `sangam-server`: bearer-only (or confidential with no flows), used only as the audience.
 
-Realm roles: `sangam-user` (every user), `DDO`, `HOO`, `PAO` (IFMS pack roles), `sangam-tenant-admin`,
-`sangam-supervisor`. If `oneifms` already has roles with these names for IFMS itself, Sangam sees them too; that is
-intended for `DDO`, `HOO` and `PAO`.
+Realm roles: `sangam-user` (every user), the IFMS pack roles `DDO`, `HOO`, `PAO`, `BILL_DISTRIBUTOR`, `DEALING_HAND`,
+`AAO`, `SECOND_SIGNATORY`, and `sangam-tenant-admin`, `sangam-supervisor`.
 
 Platform administrator: SL-70 refuses a platform issuer equal to the tenant issuer, so a platform administrator needs a
-second realm (for example `sangam-platform`, with the same `sangam-ui` client and `sangam-admin` role). Without it,
-leave `SANGAM_SECURITY_PLATFORM_ISSUER` empty: the presentation then has no platform administrator.
+second realm (for example `sangam-platform`, with the same `sangam-ui` client, the audience mapper, a `tenant` attribute
+and the role `sangam-admin`). Without it, leave `SANGAM_SECURITY_PLATFORM_ISSUER` empty: the presentation then has no
+platform administrator.
 
-## 5. Seed (once, idempotent)
+## 5. Seed (idempotent; run, sign in once as each person, run again)
 
 ```
 python -I deploy/presentation/seed_presentation.py --dry-run   # plan, no network
 python -I deploy/presentation/seed_presentation.py             # apply
 ```
 
-It creates or updates the presentation users in Keycloak (password from `SANGAM_PRESENTATION_PASSWORD_<USERNAME>`)
-and posts each seat holder to its seat in Sangam (`POST /admin/assignments`, skipped when one is already active). The
-user list is `PRESENTATION_USERS` in `deploy/compose/keycloak/generate_realm.py`; for a local Keycloak the same users
+1. Keycloak: roles, then each presentation user (created or updated; password from
+   `SANGAM_PRESENTATION_PASSWORD_<USERNAME>`).
+2. Sangam: org unit `PAO-OFFICE`, the pack roles and the ten seats of the IFMS pack seed (`ifms-gpf/seed.json`), in
+   reporting order; a 409 means already there. The server does **not** install pack seeds itself: `PackDeployer` loads
+   seats and holders only into the simulator seat directory (`InMemorySeatDirectory`), so the pack-seed holders
+   (`gp.ddo-1` and so on) never reach a hosted database and do not collide with the presentation holders.
+3. Sangam: one SUBSTANTIVE posting per seat holder, from today. A posting needs the person (`requirePerson`), which JIT
+   creates at first sign-in, so the first run reports who has not signed in; sign in once as each, then run again.
+   SUBSTANTIVE posts directly (`SecurityAdminBridge.createAssignment` → `PostingService.post`); there is no second
+   approval. A regular seat takes one substantive holder at a time (`SEAT_OCCUPIED`); the seed reports an occupied seat
+   instead of ending anyone's posting.
+
+The user list is `PRESENTATION_USERS` in `deploy/compose/keycloak/generate_realm.py`; for a local Keycloak the same users
 come from `generate_realm.py --presentation` (output in the git-ignored `realm-local/`).
 
-Before the seed: the tenant exists (`POST /api/v1/admin/tenants`) and the packs `sangam.core`, `gov.ifms.gpf`,
-`gov.ifms.bill`, `gov.ifms.budget-allocation`, `gov.ifms.pao-chain` are deployed for it, so seats `DDO-1`, `HOO-1`
-and `PAO-1` exist (pack seeds).
+Before the seed: the tenant `GOI.FIN` exists (`POST /api/v1/admin/tenants`) and the packs `sangam.core`, `gov.ifms.gpf`,
+`gov.ifms.bill`, `gov.ifms.budget-allocation`, `gov.ifms.pao-chain` are deployed for it.
 
-## 6. Open points (below 98% confidence)
+## 6. Who acts at each step (from the pack data)
 
-1. **UI base path.** The UI reads `/config.json` from the site root and its router has no base name
-   (`sangam-ui/src/config.ts` `loadConfig`, `sangam-ui/src/app/App.tsx` `BrowserRouter`, `sangam-ui/src/fonts.ts`).
-   Under `/sangam/` the browser would ask `<public host>/config.json`, which is IFMS's, and no route would match.
-   A UI change is needed: `fetch(import.meta.env.BASE_URL + 'config.json')`, `<BrowserRouter
-   basename={import.meta.env.BASE_URL}>`, and base-relative font URLs. This lane changes no product code; it is listed
-   for a UI lane. Assets already follow `SANGAM_UI_BASE` (`vite.config.ts` `base`).
-2. Whether the seat directory matches a holder by `preferred_username` or by `sub`: the seed posts the username as
-   `personId` (as the pack seeds do), not verified against a running server.
-3. Whether `POST /admin/assignments` needs a second administrator's approval (`/admin/assignments/{id}/approve`
-   exists). If it does, approve the three postings once from the Assignments screen.
-4. The pack seeds also post their own holders (for example `gp.ddo-1`) to the same seats; with two holders the task
-   goes to the seat and either may claim it. Not verified on screen.
+- GPF: started by the subscriber (no seat; the initiator seat is then `citizen`, `PackStartListener`), scrutiny at
+  `DDO-1` (pack setting `scrutinySeat=DDO-1`), sanction by the role `HOO` (`ifms-gpf-authority.dmn` competentRole),
+  i.e. `HOO-1`; a return goes to `DDO-1` (`ifms-gpf-return-target.dmn`).
+- Bill, PAO chain: `BD-1` distributes, `DH-1` checks, `AAO-1` checks, `PAO-1` passes, objects or returns, `SS-1`
+  second signature; payee confirmation at `PAO-1`; reply to an objection at the initiator seat.
