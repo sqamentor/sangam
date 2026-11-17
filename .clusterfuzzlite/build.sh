@@ -15,6 +15,10 @@ cp -r sangam-packs/target/test-classes "$OUT/lib/test-classes"
 cp -r sangam-packs/target/classes "$OUT/lib/classes"
 tr ':' '\n' < "$WORK/cp.txt" | while read -r jar; do [ -f "$jar" ] && cp "$jar" "$OUT/lib/"; done
 cp -r /opt/jdk25 "$OUT/jdk"
+# Surefire supplies junit-platform-engine at test time; it is not on the test classpath, and Jazzer's JUnit runner
+# needs it. Same version as the root pom's JUnit BOM.
+junit_version=$(sed -n 's:.*<version.junit>\(.*\)</version.junit>.*::p' pom.xml)
+bash ./mvnw -B -ntp -q dependency:copy -Dartifact="org.junit.platform:junit-platform-engine:$junit_version"   -DoutputDirectory="$OUT/lib"
 
 RUNTIME_CP='$this_dir/lib/test-classes:$this_dir/lib/classes'
 for jar in "$OUT"/lib/*.jar; do RUNTIME_CP="$RUNTIME_CP:\$this_dir/lib/$(basename "$jar")"; done
