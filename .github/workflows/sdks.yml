@@ -58,7 +58,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: graalvm/setup-graalvm@d6eca2595046623d69d636041513c80abf745406 # v1.6.9
         with:
-          java-version: "25.0.1"
+          # 25.0.2, the same GraalVM as deploy/docker/sdk-worker-native.Dockerfile: native-maven-plugin 1.1.18 bundles a
+          # metadata repository with a reachability-metadata schema, which GraalVM CE ships (lib/svm/schemas) from
+          # jdk-25.0.2 on; 25.0.1 fails compile-no-fork (run 44110575416).
+          java-version: "25.0.2"
           distribution: graalvm-community
           cache: maven
           github-token: ${{ secrets.GITHUB_TOKEN }}

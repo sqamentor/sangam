@@ -60,7 +60,7 @@ export async function registerPortalService(admin: APIRequestContext, name: stri
 
 /** GET /portal/services/{key}/notice as the caller. */
 export async function portalNotice(ctx: APIRequestContext, serviceKey: string): Promise<PortalNoticeBody> {
-  return (await must(`GET /portal/services/${serviceKey}/notice`, await ctx.get(`portal/services/${encodeURIComponent(serviceKey)}/notice`, { params: { lang: 'en' } }), [200])) as PortalNoticeBody;
+  return (await must(`GET /portal/services/by-key/notice?key=${serviceKey}`, await ctx.get('portal/services/by-key/notice', { params: { key: serviceKey, lang: 'en' } }), [200])) as PortalNoticeBody;
 }
 
 /** POST /portal/applications (final submit) with `consent`; the raw response, so a spec can assert a refusal. */

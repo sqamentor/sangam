@@ -65,8 +65,8 @@ test('signed out, the public privacy policy shows the rights links, the DPO cont
 });
 
 test('the published consent notice itemises the data and the purpose and carries the three links and the DPO (D-01, D-21)', async ({ api: admin, seed }) => {
-  const res = await admin.ctx.get(`compliance/notices/${encodeURIComponent(seed.compliance.noticeKey)}`, {
-    params: { version: seed.compliance.noticeVersion, lang: 'en' },
+  const res = await admin.ctx.get('compliance/notices/by-key', {
+    params: { key: seed.compliance.noticeKey, version: seed.compliance.noticeVersion, lang: 'en' },
   });
   expect(res.status(), await res.text()).toBe(200);
   const notice = (await res.json()) as Rendered;
@@ -88,12 +88,12 @@ test('a notice whose purpose text waives a right is refused and not published (D
   // active, so that the refusal can only come from the lint and not from "purpose is inactive"
   await definePurpose(admin.ctx, code, { name: 'E2E lint check', description: `By applying you agree that this consent is ${phrase}.` }, true);
   try {
-    const res = await admin.ctx.post(`compliance/notices/${noticeKey}/publish`, { headers: { 'Idempotency-Key': randomUUID() }, data: { purposes: [code] } });
+    const res = await admin.ctx.post('compliance/notices/by-key/publish', { params: { key: noticeKey }, headers: { 'Idempotency-Key': randomUUID() }, data: { purposes: [code] } });
     const problem = await res.text();
     expect(res.status(), problem).toBe(422);
     expect(problem).toContain('NOTICE_INVALID');
     expect(problem).toContain(phrase!);
-    const after = await admin.ctx.get(`compliance/notices/${noticeKey}`);
+    const after = await admin.ctx.get('compliance/notices/by-key', { params: { key: noticeKey } });
     expect(after.status(), await after.text()).toBe(404);
   } finally {
     // the purpose would otherwise stay on the tenant's public privacy policy
