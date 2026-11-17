@@ -135,7 +135,7 @@ public class CaseExternalTaskService {
             CaseExternalTask t = lockedBy(EngineTx.connection(), id, workerId);
             var cmd = engine.getCaseService().withCaseExecution(t.caseExecutionId());
             if (variables != null && !variables.isEmpty()) {
-                cmd.setVariables(variables);
+                cmd.setVariables(org.sangam.core.engine.DocumentSlotNames.checked(variables));
             }
             cmd.complete();
             return null;
