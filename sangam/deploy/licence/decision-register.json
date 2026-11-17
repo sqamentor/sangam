@@ -2670,6 +2670,13 @@
    ],
    "spdx": "MIT"
   },
+  "pkg:npm/cmmn-moddle@5.0.0": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
   "pkg:npm/component-event@0.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -3020,7 +3027,21 @@
    ],
    "spdx": "MIT"
   },
+  "pkg:npm/moddle-xml@7.5.0": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
   "pkg:npm/moddle-xml@9.0.6": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
+  "pkg:npm/moddle@4.1.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
