@@ -33,7 +33,7 @@ vi.mock('../plugins/host', () => ({ PluginSlot: () => null, usePlugins: () => []
 import { ApiError } from '../api/client';
 import { initI18n } from '../i18n';
 import type { AuditEvent } from '../api/types';
-import { Documents, Timeline, verifyLinkage } from './audit/Audit';
+import { AuditSearch, Documents, Timeline, verifyLinkage } from './audit/Audit';
 import { Reconciliation, ReconciliationDetail } from './ops/IncidentsRecon';
 import { BatchDetail, Migration } from './ops/BatchMigration';
 import { AnalyticsDashboard } from './analytics/Analytics';
@@ -182,6 +182,32 @@ describe('M-047 audit verify', () => {
     open();
     fireEvent.click(await screen.findByRole('button', { name: T('audit.verify') }));
     expect(await screen.findByText(T('error.notAvailable'))).toBeTruthy();
+  });
+});
+
+/** R9-e2e (a11y.e2e.ts /audit, axe link-name): an event with no business key has no timeline and gets no empty link. */
+describe('audit search', () => {
+  it('links a business key to its timeline and shows a dash, not an empty link, for an event without one', async () => {
+    api.page.mockResolvedValue({
+      items: [
+        { id: 'e1', seq: 1, time: '2026-11-17T10:00:00Z', type: 'TASK_COMPLETED', businessKey: 'BK-1', actor: 'demo' },
+        { id: 'e2', seq: 2, time: '2026-11-17T10:01:00Z', type: 'TENANT_CONFIG_CHANGED', actor: 'admin' },
+      ],
+      page: 0,
+      size: 25,
+      total: 2,
+      capped: false,
+    });
+    show(<AuditSearch />, '/audit');
+    const link = await screen.findByRole('link', { name: 'BK-1' });
+    expect(link.getAttribute('href')).toBe('/audit/timeline/BK-1');
+    expect(screen.getAllByRole('link').filter((a) => a.getAttribute('href')?.startsWith('/audit/timeline'))).toHaveLength(1);
+    const second = screen.getAllByRole('row').find((r) => within(r).queryByText('admin'));
+    // the business-key cell (second column) says "—" and holds no link
+    const bkCell = second ? within(second).getAllByRole('cell')[1] : undefined;
+    expect(bkCell?.textContent).toBe('—');
+    expect(bkCell && within(bkCell).queryByRole('link')).toBeNull();
+    expect(screen.queryAllByRole('link').filter((a) => !(a.textContent ?? '').trim())).toEqual([]);
   });
 });
 
