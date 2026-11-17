@@ -27,7 +27,8 @@ import org.slf4j.LoggerFactory;
 public class JdbcIdempotencyAdapter implements IdempotencyPort {
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcIdempotencyAdapter.class);
-    private static final ObjectMapper JSON = new ObjectMapper();
+    /** Exact-number convention (decisions 138, 381(4)): a fraction in a stored body reads as BigDecimal. */
+    static final ObjectMapper JSON = org.sangam.rest.support.ExactJson.mapper();
 
     private final TxSupport tx;
     private final IdempotencyStore store;
