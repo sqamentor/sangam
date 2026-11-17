@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.BiFunction;
+import org.sangam.core.security.LogSafe;
 
 /**
  * Queries a registered {@link ExternalLayer} through its connector and, for WFS layers with an {@code importLayer},
@@ -59,7 +60,8 @@ public final class ExternalLayerGateway {
         // outside the operation ledger. Only a request the connector itself declares read-only is invoked.
         if (!declaresReadOnly(conn, request)) {
             LOG.log(System.Logger.Level.WARNING, "API read refused ({0}): tenant {1}, external layer {2}, connector {3},"
-                    + " operation {4}", SangamConnector.OPERATION_NOT_READ_ONLY, tenantId, layerRef, x.connectorId(), op);
+                    + " operation {4}", SangamConnector.OPERATION_NOT_READ_ONLY, LogSafe.text(tenantId), LogSafe.text(layerRef),
+                    LogSafe.text(x.connectorId()), LogSafe.text(op));
             throw new GeoException(SangamConnector.OPERATION_NOT_READ_ONLY, "connector " + x.connectorId()
                     + " does not declare operation '" + op + "' read-only; an external-layer query never calls it");
         }
