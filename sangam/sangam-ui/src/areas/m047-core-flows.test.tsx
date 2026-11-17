@@ -247,6 +247,7 @@ describe('M-047 case workspace', () => {
 
   it('a closed case is reactivated with a reason (FC-59)', async () => {
     routes['/case-instances/by-id?id=c1'] = kase('COMPLETED');
+    routes['/case-instances/by-id?id=c2'] = { ...kase('ACTIVE'), id: 'c2' }; // the workspace opens the new linked case
     api.post.mockResolvedValue({ id: 'c2' });
     open();
     fireEvent.click(await screen.findByRole('button', { name: T('case.reactivate') }));
