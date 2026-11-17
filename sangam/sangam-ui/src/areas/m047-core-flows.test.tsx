@@ -247,6 +247,9 @@ describe('M-047 case workspace', () => {
 
   it('a closed case is reactivated with a reason (FC-59)', async () => {
     routes['/case-instances/c1'] = kase('COMPLETED');
+    // the server answers GET /case-instances/{id} with a CaseInstance that always has a state (CasePort.CaseInstance,
+    // OperatonCaseAdapter.state); the default [] of this harness has none, so Badge got undefined
+    routes['/case-instances/c2'] = { ...kase('ACTIVE'), id: 'c2', businessKey: 'CASE-2', reactivatedFrom: 'c1' };
     api.post.mockResolvedValue({ id: 'c2' });
     open();
     fireEvent.click(await screen.findByRole('button', { name: T('case.reactivate') }));
@@ -254,6 +257,10 @@ describe('M-047 case workspace', () => {
     fireEvent.change(within(d).getByLabelText(L('common.reason')), { target: { value: 'New evidence came in' } });
     fireEvent.click(confirmIn(d));
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/case-instances/c1/reactivation', { reason: 'New evidence came in' }, KEY));
+    // the reply is the new linked case; the workspace moves to it and reads it (GET /case-instances/c2), so the test
+    // waits for that page instead of ending while the read is still in flight
+    expect(await screen.findByRole('heading', { name: `${T('cases.workspace')}: CASE-2` })).toBeTruthy();
+    expect(api.get).toHaveBeenCalledWith('/case-instances/c2');
   });
 
   it('a comment is posted as {text}', async () => {
