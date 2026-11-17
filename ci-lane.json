@@ -1,0 +1,6 @@
+{
+  "modules": "sangam-flowable-ports",
+  "dbs": "postgres,oracle,sqlserver,mysql",
+  "chunks": "A-contracts",
+  "ui": true
+}
