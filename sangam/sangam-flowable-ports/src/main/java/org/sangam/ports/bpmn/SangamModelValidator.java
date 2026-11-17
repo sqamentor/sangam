@@ -51,7 +51,10 @@ public class SangamModelValidator {
         void check(String resource, Document doc, List<Finding> out);
     }
 
-    public record Options(boolean adHocEnabled) {
+    public record Options(boolean adHocEnabled, boolean standardLoopEnabled) {
+        public Options(boolean adHocEnabled) {
+            this(adHocEnabled, false);
+        }
     }
 
     private static final String FLOWABLE_NS = "http://flowable.org/bpmn";
