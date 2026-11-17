@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.sangam.core.engine.IllegalRemoteCallInLockScope;
 import org.sangam.engine.tx.LockScope;
 import org.sangam.integration.connector.EgressPolicy;
 import org.sangam.integration.connector.SecretResolver;
@@ -112,7 +113,7 @@ class PackageGitSyncTest {
     void noGitCallWhileAnEngineLockIsHeld() {
         LockScope.enter();
         try {
-            assertThrows(LockScope.IllegalRemoteCallInLockScope.class, () -> loopback().pull("t1",
+            assertThrows(IllegalRemoteCallInLockScope.class, () -> loopback().pull("t1",
                     remote("https://127.0.0.1/x.git", null, null, null, null)));
         } finally {
             LockScope.exit();

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
+import { routerBasename } from '../basePath';
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
@@ -371,7 +372,7 @@ function Gate() {
 
 export function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={routerBasename()}>
       <Gate />
     </BrowserRouter>
   );
