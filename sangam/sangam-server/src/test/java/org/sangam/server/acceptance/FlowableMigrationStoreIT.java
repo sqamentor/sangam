@@ -8,10 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -19,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.ops.flowable.DefinitionMapping;
-import org.sangam.ops.flowable.FlowableMigrationSchema;
+import org.sangam.persistence.SangamSchema;
 import org.sangam.ops.flowable.FlowableMigrationStore;
 import org.sangam.ops.flowable.FlowableMigrationStore.Item;
 import org.sangam.ops.flowable.FlowableMigrationStore.ItemStatus;
@@ -35,8 +33,10 @@ import org.sangam.ops.flowable.InstancePlan.VariableValue;
  * NVARCHAR(MAX) on SQL Server), null binds in {@code COALESCE(?, target_instance_id)}, the status IN list, the
  * cross-run duplicate check (JOIN) and the counters. Plain JDBC on {@link AcceptanceDatabase}; no server is started.
  *
- * <p>Status: written, NOT_RUN on every lane (Oracle and SQL Server included). The OPS_FMIG tables are not yet in the
- * product changelog (table REQUEST to the generator owner); until they are, the test creates them and drops them again.
+ * <p>The OPS_FMIG tables come from the product changelog (changesets 0045-*), applied here as the server applies it. The
+ * test used to create them itself and drop only OPS_FMIG_RUN and OPS_FMIG_ITEM; run before any server start, it left
+ * OPS_FMIG_ACK without a Liquibase record, and every later server start failed on changeset 0045-07 (ORA-00955,
+ * SQL Server 2714: GitHub run 44018172018).
  */
 class FlowableMigrationStoreIT {
 
@@ -50,16 +50,6 @@ class FlowableMigrationStoreIT {
         };
     }
 
-    private static boolean tableExists(Connection c, String table) throws SQLException {
-        for (String name : List.of(table, table.toLowerCase(Locale.ROOT))) {
-            try (ResultSet rs = c.getMetaData().getTables(null, null, name, new String[]{"TABLE"})) {
-                if (rs.next()) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 
     private static InstancePlan plan(String sourceId) {
         return new InstancePlan(sourceId, "order:1:100", "order", 1, "acme", "order:1:target", "ORD-" + sourceId, false,
@@ -80,10 +70,7 @@ class FlowableMigrationStoreIT {
         try (Connection c = DriverManager.getConnection(AcceptanceDatabase.jdbcUrl(), AcceptanceDatabase.username(),
                 AcceptanceDatabase.password())) {
             c.setAutoCommit(true);
-            boolean created = !tableExists(c, "OPS_FMIG_RUN");
-            if (created) {
-                FlowableMigrationSchema.create(c, d);
-            }
+            SangamSchema.apply(c, SangamSchema.MASTER_CHANGELOG, null);   // idempotent: what the server applies
             try {
                 List<DefinitionMapping> mappings = List.of(new DefinitionMapping("order", 1, "order", 1, Map.of("old", "new")));
                 store.createRun(c, new Run(runA, "acme", system, null, "Europe/Berlin", RunState.DRY_RUN, mappings,
@@ -133,10 +120,6 @@ class FlowableMigrationStoreIT {
             } finally {
                 Jdbc.update(c, "DELETE FROM OPS_FMIG_ITEM WHERE run_id IN (?,?)", runA, runB);
                 Jdbc.update(c, "DELETE FROM OPS_FMIG_RUN WHERE run_id IN (?,?)", runA, runB);
-                if (created) {
-                    Jdbc.update(c, "DROP TABLE OPS_FMIG_ITEM");
-                    Jdbc.update(c, "DROP TABLE OPS_FMIG_RUN");
-                }
             }
         }
     }

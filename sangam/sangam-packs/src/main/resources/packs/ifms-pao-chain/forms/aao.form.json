@@ -1,6 +1,6 @@
 {
   "key": "ifms-pao-chain/aao",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.ifms.pao-chain",
   "title": {
     "en": "AAO check",

@@ -284,7 +284,7 @@ public final class AcceptanceDatabase {
      * {@code sslMode=trust} succeeds). The harness talks TLS to the container's own self-signed certificate, as a
      * production MySQL connection does over TLS; it does not fetch the RSA key over an unauthenticated channel.
      */
-    static final String MYSQL_TLS = "&sslMode=trust";
+    public static final String MYSQL_TLS = "&sslMode=trust";
 
     private static void createSqlServerDatabase(JdbcDatabaseContainer<?> c) {
         try (Connection conn = DriverManager.getConnection(c.getJdbcUrl() + ";encrypt=true;trustServerCertificate=true",
