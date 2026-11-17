@@ -90,4 +90,61 @@ class CmmnConformanceIT extends EngineScenarioSupport {
             ctx.check("row removed", svc.list(SCENARIO_TENANT, cid).isEmpty());
         });
     }
+
+    private static String migCase(String aId) {
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/CMMN/20151109/MODEL" targetNamespace="t" id="d">
+                  <case id="r10-mig">
+                    <casePlanModel id="plan" autoComplete="false">
+                      <planItem id="%1$s" definitionRef="a"/>
+                      <planItem id="PI_b" definitionRef="b">
+                        <entryCriterion id="ec" sentryRef="s"/>
+                      </planItem>
+                      <sentry id="s">
+                        <planItemOnPart id="op" sourceRef="%1$s"><standardEvent>complete</standardEvent></planItemOnPart>
+                      </sentry>
+                      <humanTask id="a" name="A"/>
+                      <humanTask id="b" name="B"/>
+                    </casePlanModel>
+                  </case>
+                </definitions>
+                """.formatted(aId);
+    }
+
+    private String latestCaseDefinition(String key) {
+        return engine.getRepositoryService().createCaseDefinitionQuery().caseDefinitionKey(key)
+                .latestVersion().singleResult().getId();
+    }
+
+    /** P-5 migration A1: rebind with audit; a renamed plan item is rejected and nothing changes. */
+    @Test
+    void caseMigration() {
+        scenario("CMMN-P5-MIGRATION", ctx -> {
+            deployCmmn("r10-mig-v1", migCase("PI_a"));
+            String v1 = latestCaseDefinition("r10-mig");
+            String cid = adapter.startCase(SCENARIO_TENANT, "r10-mig", key("MIG"), vars());
+            deployCmmn("r10-mig-v2", migCase("PI_a"));
+            String v2 = latestCaseDefinition("r10-mig");
+            var svc = new org.sangam.ports.cmmn.CaseMigrationService(engine);
+            var rec = svc.migrate(cid, v2, "acc-officer", "R10 conformance");
+            ctx.check("audit names actor and source", "acc-officer".equals(rec.migratedBy()) && v1.equals(rec.sourceDefinitionId()));
+            ctx.check("every execution on v2", engine.getCaseService().createCaseExecutionQuery().caseInstanceId(cid).list()
+                    .stream().allMatch(e -> v2.equals(e.getCaseDefinitionId())));
+            List<TaskView> open = tasks(cid, null);
+            ctx.require("task A open", open.size() == 1);
+            adapter.completeTask(open.get(0).id(), vars());
+            ctx.check("sentry fired on v2", tasks(cid, null).size() == 1);
+            deployCmmn("r10-mig-v3", migCase("PI_renamed"));
+            String v3 = latestCaseDefinition("r10-mig");
+            boolean rejected = false;
+            try {
+                svc.migrate(cid, v3, "acc-officer", "rename");
+            } catch (org.sangam.ports.cmmn.CaseMigrationService.CaseMigrationException e) {
+                rejected = true;
+            }
+            ctx.check("rename rejected", rejected);
+            ctx.check("one audit row", svc.history(cid).size() == 1);
+        });
+    }
 }

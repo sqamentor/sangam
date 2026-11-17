@@ -6379,6 +6379,23 @@ CREATE INDEX PORT_CASE_EXT_TASK_FETCH ON PORT_CASE_EXT_TASK (topic, lock_exp_tim
 CREATE INDEX PORT_CASE_EXT_TASK_CASE ON PORT_CASE_EXT_TASK (tenant_id, case_inst_id);
 --rollback DROP TABLE PORT_CASE_EXT_TASK;
 
+--changeset sangam:0048-02-port_case_migration dbms:oracle
+--comment: P-5 case migration audit
+CREATE TABLE PORT_CASE_MIGRATION (
+  id_ VARCHAR2(64 CHAR) NOT NULL,
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  case_inst_id VARCHAR2(64 CHAR) NOT NULL,
+  source_def_id VARCHAR2(64 CHAR) NOT NULL,
+  target_def_id VARCHAR2(64 CHAR) NOT NULL,
+  migrated_by VARCHAR2(255 CHAR) NOT NULL,
+  reason VARCHAR2(255 CHAR) NOT NULL,
+  executions NUMBER(10) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_PORT_CASE_MIGRATION PRIMARY KEY (id_)
+);
+CREATE INDEX PORT_CASE_MIGRATION_CASE ON PORT_CASE_MIGRATION (tenant_id, case_inst_id);
+--rollback DROP TABLE PORT_CASE_MIGRATION;
+
 --changeset sangam:0016-03-form_draft-alter dbms:oracle
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD (form_version_hash VARCHAR2(64 CHAR));

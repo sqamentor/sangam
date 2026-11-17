@@ -1419,6 +1419,12 @@ TABLES = [
     ], ["id_"], [("PORT_CASE_EXT_TASK_EXEC", True, ["case_exec_id"]),
                  ("PORT_CASE_EXT_TASK_FETCH", False, ["topic", "lock_exp_time"]),
                  ("PORT_CASE_EXT_TASK_CASE", False, ["tenant_id", "case_inst_id"])]),
+    # PATCHES.md P-5 case migration (ruling A1): one audit row per migration - who, from, to, why.
+    ("0048-02", "P-5 case migration audit", "PORT_CASE_MIGRATION", [
+        ("id_", "{str64}", "NOT NULL"), ("tenant_id", "{str64}", "NOT NULL"), ("case_inst_id", "{str64}", "NOT NULL"),
+        ("source_def_id", "{str64}", "NOT NULL"), ("target_def_id", "{str64}", "NOT NULL"), ("migrated_by", "{str}", "NOT NULL"),
+        ("reason", "{str}", "NOT NULL"), ("executions", "{int}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"),
+    ], ["id_"], [("PORT_CASE_MIGRATION_CASE", False, ["tenant_id", "case_inst_id"])]),
 ]
 
 # Column additions to tables created above, each its own changeset (applied changesets are never edited).
