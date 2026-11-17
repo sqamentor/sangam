@@ -32,18 +32,21 @@
   "connectors": [
     {
       "id": "ai.extract",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Extraction (external task sangam.ai.extract)"
     },
     {
       "id": "ai.feedback",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Evaluation feedback"
     },
     {
       "id": "records.apply",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Apply reviewed data"

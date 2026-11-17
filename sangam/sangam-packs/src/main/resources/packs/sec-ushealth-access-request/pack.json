@@ -60,12 +60,14 @@
   "connectors": [
     {
       "id": "fhir.ehiExport",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "EHI export (FHIR)"
     },
     {
       "id": "notify.mail",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Notice to the requester"

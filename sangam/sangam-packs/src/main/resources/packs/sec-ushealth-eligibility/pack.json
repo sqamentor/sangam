@@ -48,12 +48,14 @@
   "connectors": [
     {
       "id": "npi.registry",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "NPPES NPI lookup"
     },
     {
       "id": "x12.eligibility",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "270/271 eligibility"

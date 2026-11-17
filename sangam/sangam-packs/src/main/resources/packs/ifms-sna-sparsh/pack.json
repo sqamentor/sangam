@@ -48,48 +48,56 @@
   "connectors": [
     {
       "id": "config.profile",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Profile values of the tenant (sangam-config)"
     },
     {
       "id": "config.documentType",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
     },
     {
       "id": "config.classification",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Classification validation (head of account)"
     },
     {
       "id": "config.series",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Number series (token, voucher)"
     },
     {
       "id": "ledger.available",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-LEDGER",
       "purpose": "Mother sanction balance (sangam-ledger, idempotent by operationId)"
     },
     {
       "id": "ledger.consume",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-LEDGER",
       "purpose": "Daily sanction against the mother sanction (sangam-ledger, idempotent by operationId)"
     },
     {
       "id": "rail.ekuber",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-RBI",
       "purpose": "Batch to RBI"
     },
     {
       "id": "pfms.childSanction",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Child sanction / DN-CN notifications"

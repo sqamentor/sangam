@@ -60,36 +60,42 @@
   "connectors": [
     {
       "id": "gem.order",
+      "moneyMovement": "NONE",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "GeM order / contract"
     },
     {
       "id": "gem.rejectGoods",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Rejection of goods on GeM"
     },
     {
       "id": "ifms.budget",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Budget"
     },
     {
       "id": "ifms.encumber",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Encumbrance"
     },
     {
       "id": "ifms.release",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Release"
     },
     {
       "id": "config.profile",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Profile values of the tenant (sangam-config)"

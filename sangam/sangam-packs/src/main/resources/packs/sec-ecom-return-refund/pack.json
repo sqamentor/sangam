@@ -40,18 +40,21 @@
   "connectors": [
     {
       "id": "shipping.pickup",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Reverse pickup"
     },
     {
       "id": "order.replacement",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Replacement order"
     },
     {
       "id": "pg.refund",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Refund to source"

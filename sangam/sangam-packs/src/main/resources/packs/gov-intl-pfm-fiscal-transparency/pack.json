@@ -48,12 +48,14 @@
   "connectors": [
     {
       "id": "ledger.report",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Ledger extract for the publication"
     },
     {
       "id": "opendata.publish",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Publication on the open-data portal"

@@ -44,18 +44,21 @@
   "connectors": [
     {
       "id": "dlt.consent",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "DLT consent register"
     },
     {
       "id": "dlt.preference",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Preference register"
     },
     {
       "id": "dlt.action",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Action on sender"

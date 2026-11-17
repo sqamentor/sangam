@@ -40,12 +40,14 @@
   "connectors": [
     {
       "id": "payer.eligibility",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Eligibility"
     },
     {
       "id": "provider.callback",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Decision to the provider"

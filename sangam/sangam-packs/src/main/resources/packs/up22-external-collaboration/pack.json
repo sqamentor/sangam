@@ -36,12 +36,14 @@
   "connectors": [
     {
       "id": "portal.inviteExternal",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Magic-link invitation"
     },
     {
       "id": "vendor.create",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Vendor master"

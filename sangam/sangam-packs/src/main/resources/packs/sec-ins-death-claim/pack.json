@@ -52,12 +52,14 @@
   "connectors": [
     {
       "id": "policy.coverCheck",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Policy status"
     },
     {
       "id": "claims.pay",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Claim payment"

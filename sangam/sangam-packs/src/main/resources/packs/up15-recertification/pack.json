@@ -32,12 +32,14 @@
   "connectors": [
     {
       "id": "iam.entitiesDue",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Entities due"
     },
     {
       "id": "iam.revoke",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Revocation"
