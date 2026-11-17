@@ -50,3 +50,11 @@ python -I sangam/tools/ci/route_build.py --lane r8-ci --github-exhausted ...  # 
 - **Level 1.** The helper prints the decision only. The lane then runs its own script under the heavy lock.
 
 Old `ci/*` branches can be deleted by the owner; they carry no product history.
+
+## Push gate exemption (decision 411)
+
+`tools/governance/push-approval.mjs check` lets a push through without a signed approval only when the ref matches
+`refs/heads/ci/<name>` and the remote is `sqamentor/sangam` (https or ssh). It still refuses deletions and pushes
+that are not fast-forwards. Each exempt push is written to the push ledger as `CI_EXEMPT`, with the commit and the
+ref. Every other ref (main, release/*, tags, `ci`, `cix`) needs the owner-signed approval as before. The tests are
+in `tools/governance/selftest-push-approval.mjs`.

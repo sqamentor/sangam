@@ -115,7 +115,7 @@ def push_ci(commit, branch):
     ref = f"refs/heads/{branch}"
     if not ref.startswith("refs/heads/ci/") or ".." in ref:
         raise SystemExit(f"refused: {ref} is not under refs/heads/ci/ (decision 411: never main or tags)")
-    run(["git", "push", "--force", "origin", f"{commit}:{ref}"], capture=False)
+    run(["git", "push", "origin", f"{commit}:{ref}"], capture=False)
 
 
 # ---------------------------------------------------------------- reports
