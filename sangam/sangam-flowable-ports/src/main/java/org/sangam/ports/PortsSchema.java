@@ -49,6 +49,21 @@ public final class PortsSchema {
             "CREATE UNIQUE INDEX PORT_CASE_EXT_TASK_EXEC ON PORT_CASE_EXT_TASK (case_exec_id)",
             "CREATE INDEX PORT_CASE_EXT_TASK_FETCH ON PORT_CASE_EXT_TASK (topic, lock_exp_time)",
             "CREATE INDEX PORT_CASE_EXT_TASK_CASE ON PORT_CASE_EXT_TASK (tenant_id, case_inst_id)",
+            // ------------------------------------------------ case migration audit (PATCHES.md P-5, ruling A1)
+            """
+            CREATE TABLE PORT_CASE_MIGRATION (
+              id_           {str64} NOT NULL,
+              tenant_id     {str64} NOT NULL,
+              case_inst_id  {str64} NOT NULL,
+              source_def_id {str64} NOT NULL,
+              target_def_id {str64} NOT NULL,
+              migrated_by   {str} NOT NULL,
+              reason        {str} NOT NULL,
+              executions    {int} NOT NULL,
+              created_at    {ts} NOT NULL,
+              PRIMARY KEY (id_)
+            )""",
+            "CREATE INDEX PORT_CASE_MIGRATION_CASE ON PORT_CASE_MIGRATION (tenant_id, case_inst_id)",
             // ------------------------------------------------ event registry (FLOWABLE-INTO-OPERATON FC-02, FLOWABLE-INTO-OPERATON FC-03, FLOWABLE-INTO-OPERATON FC-43); FLOWABLE-INTO-OPERATON FC-04 uses UNIQUE_START (WS-INTEGRATION)
             """
             CREATE TABLE EVT_CHANNEL_DEF (

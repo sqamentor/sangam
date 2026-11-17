@@ -6379,6 +6379,23 @@ CREATE INDEX PORT_CASE_EXT_TASK_FETCH ON PORT_CASE_EXT_TASK (topic, lock_exp_tim
 CREATE INDEX PORT_CASE_EXT_TASK_CASE ON PORT_CASE_EXT_TASK (tenant_id, case_inst_id);
 --rollback DROP TABLE PORT_CASE_EXT_TASK;
 
+--changeset sangam:0048-02-port_case_migration dbms:mysql,mariadb
+--comment: P-5 case migration audit
+CREATE TABLE PORT_CASE_MIGRATION (
+  id_ VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  case_inst_id VARCHAR(64) NOT NULL,
+  source_def_id VARCHAR(64) NOT NULL,
+  target_def_id VARCHAR(64) NOT NULL,
+  migrated_by VARCHAR(255) NOT NULL,
+  reason VARCHAR(255) NOT NULL,
+  executions INT NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_PORT_CASE_MIGRATION PRIMARY KEY (id_)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX PORT_CASE_MIGRATION_CASE ON PORT_CASE_MIGRATION (tenant_id, case_inst_id);
+--rollback DROP TABLE PORT_CASE_MIGRATION;
+
 --changeset sangam:0016-03-form_draft-alter dbms:mysql,mariadb
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD COLUMN form_version_hash VARCHAR(64);
