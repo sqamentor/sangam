@@ -78,7 +78,7 @@ class StandardLoopH2Test {
     void doWhileRepeatsWhileTheConditionHoldsAndExposesLoopCounter() {
         deploy("dowhile", "<standardLoopCharacteristics><loopCondition xsi:type=\"tFormalExpression\">${loopCounter &lt; 3}</loopCondition></standardLoopCharacteristics>");
         String pid = h2.engine.getRuntimeService().startProcessInstanceByKey("dowhile").getId();
-        assertEquals(List.of(0, 1, 2, 3), drive(pid, Map.of()), "do-while: runs, then tests loopCounter (completed iterations)");
+        assertEquals(List.of(0, 1, 2), drive(pid, Map.of()), "do-while: runs, then tests loopCounter = completed iterations (1, 2, 3)");
         assertEquals(List.of("after"), tasks(pid).stream().map(Task::getTaskDefinitionKey).toList());
     }
 
