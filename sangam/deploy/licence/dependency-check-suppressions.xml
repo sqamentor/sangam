@@ -25,4 +25,33 @@
     <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf-java@.*$</packageUrl>
     <cve>CVE-2026-0994</cve>
   </suppress>
+  <!-- Non-Java CVEs matched through the broad OpenTelemetry / Paho CPEs (SECURITY-DEPS-PLAN 2026-11-17, code-scanning
+       alerts 28-34). Each entry names the exact artifact version and the exact CVEs; a new version is matched again. -->
+  <suppress until="2027-05-31Z">
+    <notes>CVE-2025-10543 affects the Go client eclipse/paho.mqtt.golang (up to 1.5.0), not the Java client;
+      org.eclipse.paho.client.mqttv3 1.2.5 (the latest Java release) only matches cpe:eclipse:paho. Sangam's MQTT
+      adapters use the Java client. Reviewed 2026-11-17 (alert 34).</notes>
+    <packageUrl regex="true">^pkg:maven/org\.eclipse\.paho/org\.eclipse\.paho\.client\.mqttv3@1\.2\.5$</packageUrl>
+    <cve>CVE-2025-10543</cve>
+  </suppress>
+  <suppress until="2027-05-31Z">
+    <notes>CVE-2026-54285 is in opentelemetry-js W3CBaggagePropagator (npm, fixed in JS 2.8.0); opentelemetry-api
+      1.62.0 is the Java API and only matches cpe:opentelemetry. Reviewed 2026-11-17 (alert 28).</notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry/opentelemetry-api@1\.62\.0$</packageUrl>
+    <cve>CVE-2026-54285</cve>
+  </suppress>
+  <suppress until="2027-05-31Z">
+    <notes>opentelemetry-proto 1.10.0-alpha holds the generated Java protobuf classes only; every CVE below is in
+      another language's SDK and matches through cpe:opentelemetry: CVE-2026-54285 opentelemetry-js
+      W3CBaggagePropagator (fixed JS 2.8.0); CVE-2026-44967 opentelemetry-cpp OTLP HTTP exporter (before 1.27.0);
+      CVE-2026-41178 opentelemetry-go baggage Parse; CVE-2026-40894 OpenTelemetry .NET Api/Propagators (up to
+      1.15.2); CVE-2026-39882 opentelemetry-go OTLP HTTP exporter (before 1.43.0). Reviewed 2026-11-17 (alerts
+      29-33).</notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.proto/opentelemetry-proto@1\.10\.0-alpha$</packageUrl>
+    <cve>CVE-2026-54285</cve>
+    <cve>CVE-2026-44967</cve>
+    <cve>CVE-2026-41178</cve>
+    <cve>CVE-2026-40894</cve>
+    <cve>CVE-2026-39882</cve>
+  </suppress>
 </suppressions>

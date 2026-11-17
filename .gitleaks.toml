@@ -100,7 +100,9 @@ paths = ['''^sangam/sangam-server/README\.md$''']
 regexes = ['''Bearer sangam-dev-token-change-me"''']
 
 # 7. The fixed ASN.1 prefix of every Ed25519 PKCS#8 key (21 characters, no key byte): two wiring tests assert that a
-#    literal key is refused in favour of a secret:// reference.
+#    literal key is refused in favour of a secret:// reference. Round 9: the four wiring tests now use an obviously
+#    fake literal; this entry stays for the history (gitleaks reads every commit) and names the two tests that
+#    carried the same prefix later (code-scanning alerts 777, 779).
 [[allowlists]]
 description = "Ed25519 PKCS#8 ASN.1 prefix used to test that a literal key is refused"
 targetRules = ["generic-api-key"]
@@ -109,5 +111,18 @@ regexTarget = "secret"
 paths = [
   '''^sangam/sangam-server/src/test/java/org/sangam/server/config/PackageSigningWiringTest\.java$''',
   '''^sangam/sangam-server/src/test/java/org/sangam/server/config/AuditCheckpointWiringTest\.java$''',
+  '''^sangam/sangam-server/src/test/java/org/sangam/server/config/HistoryArchiveWiringTest\.java$''',
+  '''^sangam/sangam-assembly/src/test/java/org/sangam/assembly/history/HistoryArchiveAssemblyTest\.java$''',
 ]
 regexes = ['''^MC4CAQAwBQYDK2VwBCIEI$''']
+
+# 8. A message string in a null check: the generic-api-key rule reads `key, "the ASP signing key"` (requireNonNull of
+#    a PrivateKey parameter) as an assignment. The line holds no key material; the match must be exactly that call, so
+#    a value pasted into the same file is still reported. (Round 9, code-scanning alert 778.)
+[[allowlists]]
+description = "requireNonNull message naming the ASP signing key (no key material)"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "line"
+paths = ['''^sangam/sangam-integration/src/main/java/org/sangam/integration/connector/gov/EsignRequestSigner\.java$''']
+regexes = ['''^\s*this\.key = Objects\.requireNonNull\(key, "the ASP signing key"\);\s*$''']
