@@ -174,7 +174,7 @@ class TckRunnerTest {
 
     private static DmnEngine engine(Mode mode, List<Path> models, Path main) throws IOException {
         if (mode == Mode.OPERATON) {
-            return DmnEngineConfiguration.createDefaultDmnEngineConfiguration().buildEngine();
+            return Engines.operatonEngine(); // Operaton 2.2.0 + SangamFeel + PriorityHitPolicies (production configuration)
         }
         HybridDmnEngineConfiguration cfg = new HybridDmnEngineConfiguration(mode == Mode.HYBRID_ALL
                 ? HybridDmnEngineConfiguration.Routing.ALL : HybridDmnEngineConfiguration.Routing.BOXED_ONLY);

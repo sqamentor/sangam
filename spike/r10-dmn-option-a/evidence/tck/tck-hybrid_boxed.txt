@@ -1,4 +1,4 @@
-mode HYBRID_BOXED: 3561 result nodes {ERROR=252, FAIL=230, PASS=3078, STRICT=1}
-  compliance-level-2 {ERROR=18, FAIL=6, PASS=102}
-  compliance-level-3 {ERROR=233, FAIL=201, PASS=2950, STRICT=1}
+mode HYBRID_BOXED: 3561 result nodes {ERROR=233, FAIL=234, PASS=3093, STRICT=1}
+  compliance-level-2 {ERROR=3, FAIL=10, PASS=113}
+  compliance-level-3 {ERROR=229, FAIL=201, PASS=2954, STRICT=1}
   non-compliant {ERROR=1, FAIL=23, PASS=26}
