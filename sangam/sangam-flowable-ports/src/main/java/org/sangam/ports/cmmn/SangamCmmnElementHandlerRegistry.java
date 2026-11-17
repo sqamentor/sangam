@@ -4,7 +4,9 @@ package org.sangam.ports.cmmn;
 import org.operaton.bpm.engine.impl.cmmn.behavior.CmmnActivityBehavior;
 import org.operaton.bpm.engine.impl.cmmn.handler.DefaultCmmnElementHandlerRegistry;
 import org.operaton.bpm.engine.impl.cmmn.handler.EventListenerItemHandler;
+import org.operaton.bpm.engine.impl.cmmn.handler.TaskItemHandler;
 import org.operaton.bpm.model.cmmn.instance.EventListener;
+import org.operaton.bpm.model.cmmn.instance.Task;
 
 /**
  * FLOWABLE-INTO-OPERATON FC-55 / FLOWABLE-INTO-OPERATON D-08: Operaton 2.2.0 leaves CMMN event listeners unregistered
@@ -31,6 +33,15 @@ public class SangamCmmnElementHandlerRegistry extends DefaultCmmnElementHandlerR
      */
     public static void install(DefaultCmmnElementHandlerRegistry registry) {
         registry.getPlanItemElementHandlers().put(EventListener.class, new SangamEventListenerItemHandler());
+        registry.getPlanItemElementHandlers().put(Task.class, new SangamTaskItemHandler());
+    }
+
+    /** P-5: plain task handler whose behaviour keeps a {@code sangam:topic} task ACTIVE (case external task). */
+    public static class SangamTaskItemHandler extends TaskItemHandler {
+        @Override
+        protected CmmnActivityBehavior getActivityBehavior() {
+            return new SangamTaskActivityBehavior();
+        }
     }
 
     /** The item handler: Operaton's, with the Sangam behaviour. */

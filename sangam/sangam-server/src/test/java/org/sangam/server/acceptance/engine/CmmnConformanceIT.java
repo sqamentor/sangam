@@ -51,4 +51,43 @@ class CmmnConformanceIT extends EngineScenarioSupport {
                     tasks(cid, null).isEmpty());
         });
     }
+
+    private static final String EXT_CASE = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <definitions xmlns="http://www.omg.org/spec/CMMN/20151109/MODEL"
+                         xmlns:sangam="http://sangam.org/schema/1.0/cmmn" targetNamespace="t" id="d">
+              <case id="r10-ext-task">
+                <casePlanModel id="plan" autoComplete="false">
+                  <planItem id="PI_kyc" definitionRef="kyc"/>
+                  <task id="kyc" name="KYC check" sangam:topic="r10-kyc"/>
+                </casePlanModel>
+              </case>
+            </definitions>
+            """;
+
+    /** P-5 / FC-11 native: case external task row, fetch-and-lock, owner-only complete, on the real database. */
+    @Test
+    void caseExternalTask() {
+        scenario("CMMN-P5-EXTERNAL-TASK", ctx -> {
+            deployCmmn("r10-ext-task", EXT_CASE);
+            String cid = adapter.startCase(SCENARIO_TENANT, "r10-ext-task", key("EXT"), vars());
+            var svc = new org.sangam.ports.cmmn.CaseExternalTaskService(engine);
+            var got = svc.fetchAndLock(SCENARIO_TENANT, "r10-w1", 5,
+                    List.of(new org.sangam.ports.cmmn.CaseExternalTaskService.Topic("r10-kyc", 60_000)));
+            ctx.require("one task fetched (got " + got.size() + ")", got.size() == 1);
+            ctx.check("task belongs to the case", cid.equals(got.get(0).caseInstanceId()));
+            ctx.check("second worker gets nothing", svc.fetchAndLock(SCENARIO_TENANT, "r10-w2", 5,
+                    List.of(new org.sangam.ports.cmmn.CaseExternalTaskService.Topic("r10-kyc", 60_000))).isEmpty());
+            boolean rejected = false;
+            try {
+                svc.complete(got.get(0).id(), "r10-w2", Map.of());
+            } catch (org.sangam.ports.cmmn.CaseExternalTaskService.CaseExternalTaskException e) {
+                rejected = true;
+            }
+            ctx.check("non-owner complete rejected", rejected);
+            svc.complete(got.get(0).id(), "r10-w1", Map.of("kycOk", true));
+            ctx.check("variable set on the case", Boolean.TRUE.equals(engine.getCaseService().getVariable(cid, "kycOk")));
+            ctx.check("row removed", svc.list(SCENARIO_TENANT, cid).isEmpty());
+        });
+    }
 }
