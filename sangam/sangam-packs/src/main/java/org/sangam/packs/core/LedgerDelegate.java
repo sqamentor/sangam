@@ -3,6 +3,7 @@ package org.sangam.packs.core;
 
 import java.math.BigDecimal;
 
+import org.operaton.bpm.engine.ProcessEngineException;
 import org.operaton.bpm.engine.delegate.BpmnError;
 import org.operaton.bpm.engine.delegate.DelegateExecution;
 import org.operaton.bpm.engine.delegate.Expression;
@@ -65,7 +66,7 @@ public class LedgerDelegate implements JavaDelegate {
         }
         switch (Vars.field(op, ex, "BALANCE")) {
             case "ENCUMBER" -> {
-                p = store.post(Vars.tenantKey(ex), l, acct, u, amt.negate(), ref, false);
+                p = refuseReuse(store.post(Vars.tenantKey(ex), l, acct, u, amt.negate(), ref, false), l, acct, ref);
                 if (!p.applied()) {
                     ex.setVariable(rv, toPack(p.balanceAfter(), u, money));
                     Vars.audit(ex, "RULE_EVALUATED", Vars.map("ledger", l, "account", acct, "result",
@@ -78,13 +79,29 @@ public class LedgerDelegate implements JavaDelegate {
                 ex.setVariable(l + "EncumbranceRef", ref);
             }
             case "RELEASE" -> p = store.reverse(Vars.tenantKey(ex), l, acct, ref);
-            case "CREDIT" -> p = store.post(Vars.tenantKey(ex), l, acct, u, amt, ref, true);
+            case "CREDIT" -> p = refuseReuse(store.post(Vars.tenantKey(ex), l, acct, u, amt, ref, true), l, acct, ref);
             default -> p = new LedgerStore.Posting(true, null, store.balance(Vars.tenantKey(ex), l, acct));
         }
         ex.setVariable(rv, toPack(p.balanceAfter(), u, money));
         Vars.audit(ex, "LEDGER_POSTED", Vars.map("ledger", l, "account", acct, "op", Vars.field(op, ex, "BALANCE"),
                 "amount", amt.toPlainString(), "balanceAfter", p.balanceAfter().toPlainString(),
                 "note", p.reason()));
+    }
+
+    /**
+     * Owner decision 9: a reference reused with another amount, or reused after its reversal, is a conflict of the
+     * caller (409), not a business outcome such as insufficient balance, so it is never routed as a BPMN error.
+     */
+    static LedgerStore.Posting refuseReuse(LedgerStore.Posting p, String ledger, String account, String ref) {
+        if (!p.applied() && LedgerStore.REFERENCE_CONFLICT.equals(p.reason())) {
+            throw new ProcessEngineException("409 REFERENCE_CONFLICT: ledger " + ledger + " account " + account
+                    + " already has posting " + ref + " with another amount");
+        }
+        if (!p.applied() && LedgerStore.REFERENCE_REVERSED.equals(p.reason())) {
+            throw new ProcessEngineException("409 REFERENCE_REVERSED: ledger " + ledger + " account " + account
+                    + " posting " + ref + " was reversed and cannot be posted again");
+        }
+        return p;
     }
 
     /** Integer minor units of {@code currency} to the store's major units, exactly. */
