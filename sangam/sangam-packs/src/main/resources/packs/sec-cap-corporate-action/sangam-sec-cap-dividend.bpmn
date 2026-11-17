@@ -19,7 +19,7 @@
     <serviceTask id="cd_benpos" name="Beneficiary positions at the record date" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOAD</operaton:string></operaton:field><operaton:field name="connector"><operaton:string>depository.benpos</operaton:string></operaton:field><operaton:field name="sampleSize"><operaton:string>3</operaton:string></operaton:field></extensionElements></serviceTask>
     <userTask id="cd_review" name="Review payment outcome before the 30-day limit" operaton:candidateGroups="${csSeat}" operaton:formKey="sangam:sec-cap-corporate-action/review" operaton:dueDate="${paymentDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <serviceTask id="cd_unpaid" name="Move unpaid amounts to the unpaid dividend account (7 days)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>bank.unpaidDividend</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>transfer</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>companyName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>unpaid</operaton:string></operaton:field><operaton:field name="step"><operaton:string>unpaid-dividend</operaton:string></operaton:field></extensionElements></serviceTask>
-    <callActivity id="cd_unpaid_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="cd_unpaid_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
     <exclusiveGateway id="cd_unpaid_sgw" name="Sanctioned?" default="cd_unpaid_sgw_no"></exclusiveGateway>
     <endEvent id="cd_unpaid_notReleased" name="Not released"></endEvent>
     <sequenceFlow id="cd_unpaid_sanction_f" sourceRef="cd_unpaid_sanction" targetRef="cd_unpaid_sgw"/>
@@ -40,10 +40,18 @@
     <sequenceFlow id="sec_cap_dividend_f11" sourceRef="cd_aggregate" targetRef="cd_doneGw"/>
     <sequenceFlow id="sec_cap_dividend_f12" name="not yet" sourceRef="cd_doneGw" targetRef="cd_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_cap_dividend_f13" sourceRef="cd_recordDate" targetRef="cd_benpos"/>
-    <sequenceFlow id="sec_cap_dividend_f14" sourceRef="cd_benpos" targetRef="cd_open"/>
+    <sequenceFlow id="sec_cap_dividend_f14" sourceRef="cd_benpos" targetRef="cd_seal"/>
     <sequenceFlow id="sec_cap_dividend_f15" name="complete" sourceRef="cd_doneGw" targetRef="cd_review"/>
     <sequenceFlow id="sec_cap_dividend_f16" sourceRef="cd_review" targetRef="cd_unpaid_sanction"/>
     <sequenceFlow id="sec_cap_dividend_f17" sourceRef="cd_unpaid" targetRef="cd_end"/>
+      <serviceTask id="cd_seal" name="Seal the batch items (count, total, fingerprints; owner decision E1)" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>SEAL</operaton:string></operaton:field><operaton:field name="currency"><operaton:string>INR</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Dividend payment</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="cd_bsanction" name="Sanction the sealed batch (core sanction, owner decision E1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="cd_bsgw" name="Batch sanctioned?" default="cd_bsgw_no"></exclusiveGateway>
+    <endEvent id="cd_bnotReleased" name="Batch not released"></endEvent>
+    <sequenceFlow id="cd_seal_f" sourceRef="cd_seal" targetRef="cd_bsanction"/>
+    <sequenceFlow id="cd_bsanction_f" sourceRef="cd_bsanction" targetRef="cd_bsgw"/>
+    <sequenceFlow id="cd_bsgw_yes" name="sanctioned" sourceRef="cd_bsgw" targetRef="cd_open"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="cd_bsgw_no" name="not sanctioned" sourceRef="cd_bsgw" targetRef="cd_bnotReleased"/>
   </process>
   <bpmndi:BPMNDiagram id="sec_cap_dividend_diagram">
     <bpmndi:BPMNPlane id="sec_cap_dividend_plane" bpmnElement="sangam-sec-cap-dividend">

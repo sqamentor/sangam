@@ -93,10 +93,18 @@
     <sequenceFlow id="land_acquisition_f41" sourceRef="la_poll" targetRef="la_aggregate"/>
     <sequenceFlow id="land_acquisition_f42" sourceRef="la_aggregate" targetRef="la_doneGw"/>
     <sequenceFlow id="land_acquisition_f43" name="not yet" sourceRef="la_doneGw" targetRef="la_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
-    <sequenceFlow id="land_acquisition_f44" sourceRef="la_awardees" targetRef="la_open"/>
+    <sequenceFlow id="land_acquisition_f44" sourceRef="la_awardees" targetRef="la_seal"/>
     <sequenceFlow id="land_acquisition_f45" name="compensation paid" sourceRef="la_doneGw" targetRef="la_possession"/>
     <sequenceFlow id="land_acquisition_f46" sourceRef="la_possession" targetRef="la_close"/>
     <sequenceFlow id="land_acquisition_f47" sourceRef="la_close" targetRef="la_end"/>
+      <serviceTask id="la_seal" name="Seal the batch items (count, total, fingerprints; owner decision E1)" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>SEAL</operaton:string></operaton:field><operaton:field name="currency"><operaton:string>INR</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Land acquisition compensation</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="la_bsanction" name="Sanction the sealed batch (core sanction, owner decision E1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="la_bsgw" name="Batch sanctioned?" default="la_bsgw_no"></exclusiveGateway>
+    <endEvent id="la_bnotReleased" name="Batch not released"></endEvent>
+    <sequenceFlow id="la_seal_f" sourceRef="la_seal" targetRef="la_bsanction"/>
+    <sequenceFlow id="la_bsanction_f" sourceRef="la_bsanction" targetRef="la_bsgw"/>
+    <sequenceFlow id="la_bsgw_yes" name="sanctioned" sourceRef="la_bsgw" targetRef="la_open"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="la_bsgw_no" name="not sanctioned" sourceRef="la_bsgw" targetRef="la_bnotReleased"/>
   </process>
   <bpmndi:BPMNDiagram id="land_acquisition_diagram">
     <bpmndi:BPMNPlane id="land_acquisition_plane" bpmnElement="sangam-land-acquisition">

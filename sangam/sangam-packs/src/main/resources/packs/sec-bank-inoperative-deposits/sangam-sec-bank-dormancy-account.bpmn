@@ -4,7 +4,7 @@
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_dormancy_accoun" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.2">
   <message id="msg_sangam_account_reactivated" name="sangam.account.reactivated"/>
   <process id="sangam-sec-bank-dormancy-account" name="Dormancy of one account" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2" operaton:isStartableInTasklist="false">
-    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.inoperative-deposits</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.2</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.inoperative-deposits</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.2</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key,amount,payeeAccount,currency,purpose</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="da_start" name="Account inactive"></startEvent>
     <serviceTask id="da_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>yearsInactive=2;applicantRef=@key;opsSeat=OPS-CHECKER</operaton:string></operaton:field></extensionElements></serviceTask>
     <businessRuleTask id="da_rule" name="Inoperative / unclaimed (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-bank-dormancy</operaton:string></operaton:field></extensionElements></businessRuleTask>
@@ -36,9 +36,11 @@
     <sequenceFlow id="sec_bank_dormancy_accoun_f12" sourceRef="da_mark" targetRef="da_endInoperative"/>
     <sequenceFlow id="sec_bank_dormancy_accoun_f13" name="10 years" sourceRef="da_g2" targetRef="da_approve"><conditionExpression xsi:type="tFormalExpression">${dormancyAction == 'DEA'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_bank_dormancy_accoun_f14" sourceRef="da_approve" targetRef="da_apGw"/>
-    <sequenceFlow id="sec_bank_dormancy_accoun_f15" name="approve" sourceRef="da_apGw" targetRef="da_transfer"><conditionExpression xsi:type="tFormalExpression">${deaDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f15" name="approve" sourceRef="da_apGw" targetRef="da_transfer_release"><conditionExpression xsi:type="tFormalExpression">${deaDecision == 'approve'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_bank_dormancy_accoun_f16" name="retain (dispute / legal hold)" sourceRef="da_apGw" targetRef="da_mark"/>
     <sequenceFlow id="sec_bank_dormancy_accoun_f17" sourceRef="da_transfer" targetRef="da_endTransferred"/>
+      <serviceTask id="da_transfer_release" name="Release under the batch sanction (owner decision E1)" operaton:class="org.sangam.packs.core.BatchItemReleaseDelegate"></serviceTask>
+    <sequenceFlow id="da_transfer_release_f" sourceRef="da_transfer_release" targetRef="da_transfer"/>
   </process>
   <bpmndi:BPMNDiagram id="sec_bank_dormancy_accoun_diagram">
     <bpmndi:BPMNPlane id="sec_bank_dormancy_accoun_plane" bpmnElement="sangam-sec-bank-dormancy-account">

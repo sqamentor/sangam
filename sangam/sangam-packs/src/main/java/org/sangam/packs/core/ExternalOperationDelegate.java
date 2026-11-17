@@ -124,6 +124,15 @@ public class ExternalOperationDelegate implements JavaDelegate {
                 throw new BpmnError("APPROVAL_INVALIDATED", "material payload changed after approval: " + changed);
             }
         }
+        if (moneyOut) {
+            // owner decisions E2 (a deemed approval never releases money) and E3 (amount, payee account, currency
+            // and purpose bound in the approval)
+            String held = MoneyOutApproval.refusal(conn(ex), ex::getVariable);
+            if (held != null) {
+                Vars.audit(ex, "APPROVAL_INVALIDATED", Vars.map("reason", held, "step", s));
+                throw new BpmnError(MoneyOutApproval.ERROR, held);
+            }
+        }
         int attempt = Vars.intVal(ex, s + "Attempt", 1);
         String last = Vars.str(ex, s + "LastStatus");
         if ("FAILED".equals(last) || "CANCELLED".equals(last)) {

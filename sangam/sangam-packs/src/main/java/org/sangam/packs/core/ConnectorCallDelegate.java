@@ -66,7 +66,8 @@ public class ConnectorCallDelegate implements JavaDelegate {
             String held = MoneyOutApproval.refusal(c, ex::getVariable);
             if (held != null) {
                 Vars.audit(ex, MoneyOutApproval.ERROR, Vars.map("reason", held, "connector", c));
-                throw new org.operaton.bpm.engine.delegate.BpmnError(MoneyOutApproval.ERROR, held);
+                // held as an incident with the reason, never a BPMN error a model could leave uncaught
+                throw new org.operaton.bpm.engine.ProcessEngineException(MoneyOutApproval.HELD + ": " + held);
             }
             String s = Vars.field(step, ex, c + ":" + opName);
             int attempt = Vars.intVal(ex, prefix + "Attempt", 1);
