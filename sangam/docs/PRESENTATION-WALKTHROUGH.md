@@ -13,8 +13,8 @@ screen you should see and the expected result. Steps that a known open defect af
 - The tenant is `GOI.FIN`, office `PAO-OFFICE`. Deployed packs: `sangam.core`, `gov.ifms.gpf`, `gov.ifms.bill`,
   `gov.ifms.budget-allocation`, `gov.ifms.pao-chain`.
 - Use a private browser window per person, so two sign-ins do not share one session.
-- Hosted under `/sangam/`: the UI base-path change is lane R8-present item 1 (config.json, router base name, font
-  paths); check it is merged before the session. Locally at the root path this does not apply.
+- Hosted under `/sangam/`: the UI reads config.json, fonts and the OIDC callback under its base, and its router uses
+  the base as base name (`sangam-ui/src/basePath.ts`); the front image builds it with `SANGAM_UI_BASE=/sangam/`. Locally at the root path this does not apply.
 - Each person signs in once before the session, then the seed runs again (persons are created at first sign-in;
   README section 5).
 
@@ -114,7 +114,7 @@ shown.
 
 | Step | Defect | State |
 |---|---|---|
-| Hosting under `/sangam/` | UI base path (config.json, router, fonts) | R8-present item 1; check it is merged |
+| Hosting under `/sangam/` | UI base path (config.json, router, fonts) | unblocked (`basePath.ts`) |
 | 5.1 GPF return and rework | IFT-4 | unblocked (005d726d) |
 | 6.4 bill PAO return | IFT-1/IFT-5 | unblocked (9b73a430) |
 | 6.5 payment | payment loop, PFMS field mapping | BLOCKED: L-packs payment-loop work |
