@@ -120,6 +120,12 @@ class ProfileTablesDeploymentTest {
         if (engine != null) {
             engine.close();
         }
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        engine = null;
+        store = null;
+        admin = null;
+        an = null;
+        deployer = null;
     }
 
     static String ruleRef(String tenant) {

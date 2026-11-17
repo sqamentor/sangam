@@ -100,6 +100,10 @@ class TaskIndexSortH2Test {
     @AfterAll
     static void tearDown() {
         fx.close();
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        IndexListener.recorder = null;
+        fx = null;
+        tasks = null;
     }
 
     static List<TaskPort.Task> list(String sortBy, String order, String currency) {

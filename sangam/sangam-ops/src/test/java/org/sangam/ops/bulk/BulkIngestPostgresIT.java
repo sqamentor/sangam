@@ -63,6 +63,10 @@ class BulkIngestPostgresIT {
         if (pg != null) {
             pg.stop();
         }
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        pg = null;
+        ds = null;
+        tx = null;
     }
 
     static final class Crash extends Error {

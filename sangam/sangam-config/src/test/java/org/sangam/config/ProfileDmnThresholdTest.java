@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
@@ -159,5 +160,11 @@ class ProfileDmnThresholdTest {
             out.add(m);
         }
         return out;
+    }
+
+    @AfterAll
+    static void releaseStatics() {
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        goi = null;
     }
 }

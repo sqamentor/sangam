@@ -62,6 +62,9 @@ class PlacementSwitchAuthorizationTest {
     @AfterAll
     static void stop() {
         context.close();
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        context = null;
+        chain = null;
     }
 
     @AfterEach

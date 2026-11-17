@@ -88,6 +88,10 @@ class WorkStepJournalH2Test {
     @AfterAll
     static void tearDown() {
         fx.close();
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        fx = null;
+        work = null;
+        steps = null;
     }
 
     static WorkPort.ExternalWork lease(String tenant, String worker, String bk) {

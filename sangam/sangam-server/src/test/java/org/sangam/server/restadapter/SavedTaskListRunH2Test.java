@@ -66,6 +66,10 @@ class SavedTaskListRunH2Test {
     @AfterAll
     static void tearDown() {
         fx.close();
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        fx = null;
+        controller = null;
+        lists = null;
     }
 
     private static void task(TaskService ts, String id, String tenant, String group, String assignee) {

@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.sangam.cell.rollup.CrossCellPublisher;
 import org.sangam.cell.rollup.MiniJson;
@@ -157,5 +158,11 @@ class EventContractTest {
             }
         }
         return doc;
+    }
+
+    @AfterAll
+    static void releaseStatics() {
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        doc = null;
     }
 }
