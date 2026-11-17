@@ -41,11 +41,12 @@ public sealed class RegistryAssetsApi
     /// <summary>
     /// Get class
     /// AssetController.getClass (sangam-rest).
-    /// GET /registry/assets/classes/{classKey} (operationId registryAssetGetClass); permission registry.read.
+    /// GET /registry/assets/classes/by-class-key (operationId registryAssetGetClass); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetGetClassAsync(string classKey, bool? resolved = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/registry/assets/classes/{HttpTransport.Seg(GeneratedCalls.Str(classKey)!)}");
+        var req = ApiRequest.Get($"/registry/assets/classes/by-class-key");
+        req.WithQuery("classKey", GeneratedCalls.Q(classKey));
         req.WithQuery("resolved", GeneratedCalls.Q(resolved));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -107,11 +108,12 @@ public sealed class RegistryAssetsApi
     /// <summary>
     /// By tag
     /// AssetController.byTag (sangam-rest).
-    /// GET /registry/assets/by-tag/{tag} (operationId registryAssetByTag); permission registry.read.
+    /// GET /registry/assets/by-tag (operationId registryAssetByTag); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetByTagAsync(string tag, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/registry/assets/by-tag/{HttpTransport.Seg(GeneratedCalls.Str(tag)!)}");
+        var req = ApiRequest.Get($"/registry/assets/by-tag");
+        req.WithQuery("tag", GeneratedCalls.Q(tag));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -244,11 +246,12 @@ public sealed class RegistryAssetsApi
     /// <summary>
     /// Record reading
     /// AssetController.recordReading (sangam-rest).
-    /// POST /registry/assets/{id}/meters/{meterType}/readings (operationId registryAssetRecordReading); permission registry.write; result stored atomically with the state change.
+    /// POST /registry/assets/{id}/meters/by-meter-type/readings (operationId registryAssetRecordReading); permission registry.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetRecordReadingAsync(string id, string meterType, M.RegistryAssetRecordReadingBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetRecordReadingAsync(string id, M.RegistryAssetRecordReadingBody body, string meterType, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/registry/assets/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/meters/{HttpTransport.Seg(GeneratedCalls.Str(meterType)!)}/readings");
+        var req = ApiRequest.Post($"/registry/assets/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/meters/by-meter-type/readings");
+        req.WithQuery("meterType", GeneratedCalls.Q(meterType));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -256,11 +259,12 @@ public sealed class RegistryAssetsApi
     /// <summary>
     /// Readings
     /// AssetController.readings (sangam-rest).
-    /// GET /registry/assets/{id}/meters/{meterType}/readings (operationId registryAssetReadings); permission registry.read.
+    /// GET /registry/assets/{id}/meters/by-meter-type/readings (operationId registryAssetReadings); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RegistryAssetReadingsAsync(string id, string meterType, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/registry/assets/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/meters/{HttpTransport.Seg(GeneratedCalls.Str(meterType)!)}/readings");
+        var req = ApiRequest.Get($"/registry/assets/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/meters/by-meter-type/readings");
+        req.WithQuery("meterType", GeneratedCalls.Q(meterType));
         req.WithQuery("page", GeneratedCalls.Q(page));
         req.WithQuery("size", GeneratedCalls.Q(size));
         return await _calls.PageAsync<global::System.Collections.Generic.Dictionary<string, object?>>(req, options, page, size, cancellationToken).ConfigureAwait(false);

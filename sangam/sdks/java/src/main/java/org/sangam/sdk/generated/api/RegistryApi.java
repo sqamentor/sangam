@@ -65,13 +65,14 @@ public final class RegistryApi {
      *
      * <p>RegistryController.currentType (sangam-rest).
      *
-     * <p>{@code GET /registry/types/{typeKey}} (operationId {@code registryRegistryCurrentType}); permission {@code registry.read}.
-     * @param typeKey path parameter {@code typeKey}
+     * <p>{@code GET /registry/types/by-type-key} (operationId {@code registryRegistryCurrentType}); permission {@code registry.read}.
+     * @param typeKey query parameter {@code typeKey}. Type key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> registryRegistryCurrentType(String typeKey, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/registry/types/" + HttpTransport.seg(String.valueOf(typeKey)));
+        ApiRequest req = ApiRequest.get("/registry/types/by-type-key");
+        req.query("typeKey", typeKey);
         return call.json(req, options, R_registryRegistryCurrentType);
     }
 
@@ -80,14 +81,15 @@ public final class RegistryApi {
      *
      * <p>RegistryController.typeVersion (sangam-rest).
      *
-     * <p>{@code GET /registry/types/{typeKey}/versions/{version}} (operationId {@code registryRegistryTypeVersion}); permission {@code registry.read}.
-     * @param typeKey path parameter {@code typeKey}
+     * <p>{@code GET /registry/types/by-type-key/versions/{version}} (operationId {@code registryRegistryTypeVersion}); permission {@code registry.read}.
      * @param version path parameter {@code version}
+     * @param typeKey query parameter {@code typeKey}. Type key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> registryRegistryTypeVersion(String typeKey, String version, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/registry/types/" + HttpTransport.seg(String.valueOf(typeKey)) + "/versions/" + HttpTransport.seg(String.valueOf(version)));
+    public java.util.Map<String, Object> registryRegistryTypeVersion(String version, String typeKey, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/registry/types/by-type-key/versions/" + HttpTransport.seg(String.valueOf(version)));
+        req.query("typeKey", typeKey);
         return call.json(req, options, R_registryRegistryTypeVersion);
     }
 
@@ -96,13 +98,14 @@ public final class RegistryApi {
      *
      * <p>RegistryController.retireType (sangam-rest).
      *
-     * <p>{@code POST /registry/types/{typeKey}/versions/{version}/retire} (operationId {@code registryRegistryRetireType}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param typeKey path parameter {@code typeKey}
+     * <p>{@code POST /registry/types/by-type-key/versions/{version}/retire} (operationId {@code registryRegistryRetireType}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param version path parameter {@code version}
+     * @param typeKey query parameter {@code typeKey}. Type key; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      */
-    public void registryRegistryRetireType(String typeKey, String version, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/registry/types/" + HttpTransport.seg(String.valueOf(typeKey)) + "/versions/" + HttpTransport.seg(String.valueOf(version)) + "/retire");
+    public void registryRegistryRetireType(String version, String typeKey, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/registry/types/by-type-key/versions/" + HttpTransport.seg(String.valueOf(version)) + "/retire");
+        req.query("typeKey", typeKey);
         call.none(req, options);
     }
 }

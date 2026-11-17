@@ -65,11 +65,12 @@ public sealed class TenantOperationsSecretsApi
     /// <summary>
     /// Set a secret
     /// The value is write-only.
-    /// PUT /ops/secrets/{name} (operationId uiOpsPutSecret); permission ops.tenant.admin; result stored atomically with the state change.
+    /// PUT /ops/secrets/by-name (operationId uiOpsPutSecret); permission ops.tenant.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task UiOpsPutSecretAsync(string name, M.OpsUiSecretRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task UiOpsPutSecretAsync(M.OpsUiSecretRequest body, string name, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/ops/secrets/{HttpTransport.Seg(GeneratedCalls.Str(name)!)}");
+        var req = ApiRequest.Put($"/ops/secrets/by-name");
+        req.WithQuery("name", GeneratedCalls.Q(name));
         if (body is not null) req.WithBody(body);
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -77,11 +78,12 @@ public sealed class TenantOperationsSecretsApi
     /// <summary>
     /// Delete a secret
     /// Needs a reason.
-    /// DELETE /ops/secrets/{name} (operationId uiOpsDeleteSecret); permission ops.tenant.admin; result stored atomically with the state change.
+    /// DELETE /ops/secrets/by-name (operationId uiOpsDeleteSecret); permission ops.tenant.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task UiOpsDeleteSecretAsync(string name, string reason, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Delete($"/ops/secrets/{HttpTransport.Seg(GeneratedCalls.Str(name)!)}");
+        var req = ApiRequest.Delete($"/ops/secrets/by-name");
+        req.WithQuery("name", GeneratedCalls.Q(name));
         req.WithQuery("reason", GeneratedCalls.Q(reason));
         await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }

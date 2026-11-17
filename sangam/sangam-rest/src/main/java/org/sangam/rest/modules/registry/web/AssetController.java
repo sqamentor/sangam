@@ -54,8 +54,9 @@ public class AssetController {
         return support.tx((c, ctx) -> assets.listClasses(c, ctx));
     }
 
-    @GetMapping("/classes/{classKey}")
-    public Map<String, Object> getClass(@PathVariable String classKey,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/classes/by-class-key")
+    public Map<String, Object> getClass(@RequestParam("classKey") String classKey,
                                         @RequestParam(defaultValue = "true") boolean resolved) {
         return support.tx((c, ctx) -> {
             AssetClassDefinition d = resolved ? assets.resolveClass(c, ctx.tenant(), classKey) : assets.rawClass(c, ctx.tenant(), classKey);
@@ -88,8 +89,9 @@ public class AssetController {
         return support.tx((c, ctx) -> assets.view(c, ctx, id).toMap());
     }
 
-    @GetMapping("/by-tag/{tag}")
-    public Map<String, Object> byTag(@PathVariable String tag) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/by-tag")
+    public Map<String, Object> byTag(@RequestParam("tag") String tag) {
         return support.tx((c, ctx) -> assets.byTag(c, ctx, tag).toMap());
     }
 
@@ -171,17 +173,19 @@ public class AssetController {
         return support.txOp(key, (c, ctx) -> maintenance.addMeter(c, ctx, id, body).toMap());
     }
 
-    @PostMapping("/{id}/meters/{meterType}/readings")
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/{id}/meters/by-meter-type/readings")
     public Map<String, Object> recordReading(@RequestHeader(value = IDEM, required = false) String key,
-                                             @PathVariable String id, @PathVariable String meterType,
+                                             @PathVariable String id, @RequestParam("meterType") String meterType,
                                              @RequestBody Map<String, Object> body) {
         return support.txOp(key, (c, ctx) -> maintenance.recordReading(c, ctx, id, meterType,
                 Maps.decimal(body, "reading"), Maps.instant(body, "readAt"), Maps.str(body, "source", "MANUAL"),
                 Maps.str(body, "note")).toMap());
     }
 
-    @GetMapping("/{id}/meters/{meterType}/readings")
-    public List<Map<String, Object>> readings(@PathVariable String id, @PathVariable String meterType,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/{id}/meters/by-meter-type/readings")
+    public List<Map<String, Object>> readings(@PathVariable String id, @RequestParam("meterType") String meterType,
                                               @RequestParam(defaultValue = "0") int page,
                                               @RequestParam(defaultValue = "50") int size) {
         return support.tx((c, ctx) -> maintenance.readings(c, ctx, id, meterType, page, size).stream()

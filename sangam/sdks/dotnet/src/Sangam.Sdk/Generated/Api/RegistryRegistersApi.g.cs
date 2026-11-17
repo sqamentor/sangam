@@ -18,11 +18,12 @@ public sealed class RegistryRegistersApi
     /// <summary>
     /// Define
     /// RegisterController.define (sangam-rest).
-    /// PUT /registry/registers/{registerKey} (operationId registryRegisterDefine); permission registry.write; result stored atomically with the state change.
+    /// PUT /registry/registers/by-register-key (operationId registryRegisterDefine); permission registry.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterDefineAsync(string registerKey, M.RegistryRegisterDefineBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterDefineAsync(M.RegistryRegisterDefineBody body, string registerKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Put($"/registry/registers/{HttpTransport.Seg(GeneratedCalls.Str(registerKey)!)}");
+        var req = ApiRequest.Put($"/registry/registers/by-register-key");
+        req.WithQuery("registerKey", GeneratedCalls.Q(registerKey));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -30,11 +31,12 @@ public sealed class RegistryRegistersApi
     /// <summary>
     /// Definition
     /// RegisterController.definition (sangam-rest).
-    /// GET /registry/registers/{registerKey} (operationId registryRegisterDefinition); permission registry.read.
+    /// GET /registry/registers/by-register-key (operationId registryRegisterDefinition); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterDefinitionAsync(string registerKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/registry/registers/{HttpTransport.Seg(GeneratedCalls.Str(registerKey)!)}");
+        var req = ApiRequest.Get($"/registry/registers/by-register-key");
+        req.WithQuery("registerKey", GeneratedCalls.Q(registerKey));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -52,11 +54,12 @@ public sealed class RegistryRegistersApi
     /// <summary>
     /// Append
     /// RegisterController.append (sangam-rest).
-    /// POST /registry/registers/{registerKey}/entries (operationId registryRegisterAppend); permission registry.write; result stored atomically with the state change.
+    /// POST /registry/registers/by-register-key/entries (operationId registryRegisterAppend); permission registry.write; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterAppendAsync(string registerKey, M.RegistryRegisterAppendBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterAppendAsync(M.RegistryRegisterAppendBody body, string registerKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Post($"/registry/registers/{HttpTransport.Seg(GeneratedCalls.Str(registerKey)!)}/entries");
+        var req = ApiRequest.Post($"/registry/registers/by-register-key/entries");
+        req.WithQuery("registerKey", GeneratedCalls.Q(registerKey));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -64,11 +67,12 @@ public sealed class RegistryRegistersApi
     /// <summary>
     /// Books
     /// RegisterController.books (sangam-rest).
-    /// GET /registry/registers/{registerKey}/books (operationId registryRegisterBooks); permission registry.read.
+    /// GET /registry/registers/by-register-key/books (operationId registryRegisterBooks); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RegistryRegisterBooksAsync(string registerKey, string? scope = null, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/registry/registers/{HttpTransport.Seg(GeneratedCalls.Str(registerKey)!)}/books");
+        var req = ApiRequest.Get($"/registry/registers/by-register-key/books");
+        req.WithQuery("registerKey", GeneratedCalls.Q(registerKey));
         req.WithQuery("scope", GeneratedCalls.Q(scope));
         req.WithQuery("page", GeneratedCalls.Q(page));
         req.WithQuery("size", GeneratedCalls.Q(size));
@@ -184,11 +188,12 @@ public sealed class RegistryRegistersApi
     /// <summary>
     /// Verify extract
     /// RegisterController.verifyExtract (sangam-rest).
-    /// GET /registry/registers/public/{tenant}/extracts/verify (operationId registryRegisterVerifyExtract).
+    /// GET /registry/registers/public/by-tenant/extracts/verify (operationId registryRegisterVerifyExtract).
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterVerifyExtractAsync(string tenant, string code, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/registry/registers/public/{HttpTransport.Seg(GeneratedCalls.Str(tenant)!)}/extracts/verify");
+        var req = ApiRequest.Get($"/registry/registers/public/by-tenant/extracts/verify");
+        req.WithQuery("tenant", GeneratedCalls.Q(tenant));
         req.WithQuery("code", GeneratedCalls.Q(code));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }

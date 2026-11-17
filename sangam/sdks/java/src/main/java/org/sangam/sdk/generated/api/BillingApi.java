@@ -47,14 +47,15 @@ public final class BillingApi {
      *
      * <p>Consumers holding demand accounts in the ledger.
      *
-     * <p>{@code GET /billing/{ledger}/accounts} (operationId {@code listBillingAccounts}); permission {@code billing.read}.
-     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
+     * <p>{@code GET /billing/by-ledger/accounts} (operationId {@code listBillingAccounts}); permission {@code billing.read}.
+     * @param ledger query parameter {@code ledger}. receivable ledger id (e.g. DEMAND); may carry '/' or ':'
      * @param cycle query parameter {@code cycle}, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> listBillingAccounts(String ledger, String cycle, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/accounts");
+        ApiRequest req = ApiRequest.get("/billing/by-ledger/accounts");
+        req.query("ledger", ledger);
         req.query("cycle", cycle);
         return call.json(req, options, R_listBillingAccounts);
     }
@@ -64,15 +65,16 @@ public final class BillingApi {
      *
      * <p>Computes the tariff (fixed, per unit, slab, percent, DMN) and raises the demand per head.
      *
-     * <p>{@code POST /billing/{ledger}/invoices} (operationId {@code raiseBillingInvoice}); permission {@code billing.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
+     * <p>{@code POST /billing/by-ledger/invoices} (operationId {@code raiseBillingInvoice}); permission {@code billing.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param ledger query parameter {@code ledger}. receivable ledger id (e.g. DEMAND); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> raiseBillingInvoice(String ledger, BillingInvoiceRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/invoices");
+    public java.util.Map<String, Object> raiseBillingInvoice(BillingInvoiceRequest body, String ledger, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/billing/by-ledger/invoices");
         req.body(body);
+        req.query("ledger", ledger);
         return call.json(req, options, R_raiseBillingInvoice);
     }
 
@@ -81,15 +83,16 @@ public final class BillingApi {
      *
      * <p>Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt. A payment the channel cannot confirm is refused here; staff record it with acceptUnverifiedPayment (decision 141).
      *
-     * <p>{@code POST /billing/{ledger}/collections} (operationId {@code recordBillingCollection}); permission {@code billing.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
+     * <p>{@code POST /billing/by-ledger/collections} (operationId {@code recordBillingCollection}); permission {@code billing.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param ledger query parameter {@code ledger}. receivable ledger id (e.g. DEMAND); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> recordBillingCollection(String ledger, BillingCollectionRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/collections");
+    public java.util.Map<String, Object> recordBillingCollection(BillingCollectionRequest body, String ledger, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/billing/by-ledger/collections");
         req.body(body);
+        req.query("ledger", ledger);
         return call.json(req, options, R_recordBillingCollection);
     }
 
@@ -98,14 +101,16 @@ public final class BillingApi {
      *
      * <p>Outstanding and overdue demand.
      *
-     * <p>{@code GET /billing/{ledger}/consumers/{consumer}/arrears} (operationId {@code getBillingArrears}); permission {@code billing.read}.
-     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
-     * @param consumer path parameter {@code consumer}
+     * <p>{@code GET /billing/by-ledger/consumers/by-consumer/arrears} (operationId {@code getBillingArrears}); permission {@code billing.read}.
+     * @param ledger query parameter {@code ledger}. receivable ledger id (e.g. DEMAND); may carry '/' or ':'
+     * @param consumer query parameter {@code consumer}. consumer id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> getBillingArrears(String ledger, String consumer, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/consumers/" + HttpTransport.seg(String.valueOf(consumer)) + "/arrears");
+        ApiRequest req = ApiRequest.get("/billing/by-ledger/consumers/by-consumer/arrears");
+        req.query("ledger", ledger);
+        req.query("consumer", consumer);
         return call.json(req, options, R_getBillingArrears);
     }
 
@@ -114,16 +119,18 @@ public final class BillingApi {
      *
      * <p>Penalty / interest per the tariff (grace days, rate).
      *
-     * <p>{@code POST /billing/{ledger}/consumers/{consumer}/penalties} (operationId {@code levyBillingPenalties}); permission {@code billing.write}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
-     * @param consumer path parameter {@code consumer}
+     * <p>{@code POST /billing/by-ledger/consumers/by-consumer/penalties} (operationId {@code levyBillingPenalties}); permission {@code billing.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param ledger query parameter {@code ledger}. receivable ledger id (e.g. DEMAND); may carry '/' or ':'
+     * @param consumer query parameter {@code consumer}. consumer id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> levyBillingPenalties(String ledger, String consumer, BillingPenaltyRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/consumers/" + HttpTransport.seg(String.valueOf(consumer)) + "/penalties");
+    public java.util.Map<String, Object> levyBillingPenalties(BillingPenaltyRequest body, String ledger, String consumer, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/billing/by-ledger/consumers/by-consumer/penalties");
         req.body(body);
+        req.query("ledger", ledger);
+        req.query("consumer", consumer);
         return call.json(req, options, R_levyBillingPenalties);
     }
 
@@ -132,15 +139,16 @@ public final class BillingApi {
      *
      * <p>Writes off outstanding demand under an approved order.
      *
-     * <p>{@code POST /billing/{ledger}/waivers} (operationId {@code recordBillingWaiver}); permission {@code billing.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
+     * <p>{@code POST /billing/by-ledger/waivers} (operationId {@code recordBillingWaiver}); permission {@code billing.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param ledger query parameter {@code ledger}. receivable ledger id (e.g. DEMAND); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> recordBillingWaiver(String ledger, BillingWaiverRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/waivers");
+    public java.util.Map<String, Object> recordBillingWaiver(BillingWaiverRequest body, String ledger, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/billing/by-ledger/waivers");
         req.body(body);
+        req.query("ledger", ledger);
         return call.json(req, options, R_recordBillingWaiver);
     }
 
@@ -149,15 +157,16 @@ public final class BillingApi {
      *
      * <p>Reverses consumption and calls the payment rail once per operation (the Idempotency-Key).
      *
-     * <p>{@code POST /billing/{ledger}/refunds} (operationId {@code refundBillingCollection}); permission {@code billing.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
+     * <p>{@code POST /billing/by-ledger/refunds} (operationId {@code refundBillingCollection}); permission {@code billing.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param ledger query parameter {@code ledger}. receivable ledger id (e.g. DEMAND); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public BillingRefundResult refundBillingCollection(String ledger, BillingRefundRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/refunds");
+    public BillingRefundResult refundBillingCollection(BillingRefundRequest body, String ledger, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/billing/by-ledger/refunds");
         req.body(body);
+        req.query("ledger", ledger);
         return call.json(req, options, R_refundBillingCollection);
     }
 
@@ -166,15 +175,16 @@ public final class BillingApi {
      *
      * <p>Records a payment its channel cannot confirm now, in state PAYMENT_ACCEPTED_UNVERIFIED, with an audit record of the same name. Requires the ACCEPT_UNVERIFIED action on this channel, tenant and office (permission billing.accept-unverified, scoped); a generic billing permission is not enough (403 NOT_PERMITTED). Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Nothing is posted to the ledger. 403 CHANNEL_NOT_ENABLED when the channel is not configured for unverified acceptance or its operating policy is unresolved. 400 VALIDATION_FAILED when the currency is not the ledger currency or the amount is not a MoneyAmount of it. 409 DUPLICATE when the channel and paymentRef were already accepted in the tenant, with the existing id (a retry with the same Idempotency-Key returns the stored answer). 422 LIMIT_EXCEEDED when the amount exceeds the policy limit.
      *
-     * <p>{@code POST /billing/{ledger}/unverified-payments} (operationId {@code acceptUnverifiedPayment}); permission {@code billing.accept-unverified}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
+     * <p>{@code POST /billing/by-ledger/unverified-payments} (operationId {@code acceptUnverifiedPayment}); permission {@code billing.accept-unverified}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param ledger query parameter {@code ledger}. receivable ledger id (e.g. DEMAND); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response
      */
-    public UnverifiedPayment acceptUnverifiedPayment(String ledger, UnverifiedPaymentRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/unverified-payments");
+    public UnverifiedPayment acceptUnverifiedPayment(UnverifiedPaymentRequest body, String ledger, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/billing/by-ledger/unverified-payments");
         req.body(body);
+        req.query("ledger", ledger);
         return call.json(req, options, R_acceptUnverifiedPayment);
     }
 
@@ -183,8 +193,8 @@ public final class BillingApi {
      *
      * <p>Payments accepted unverified, oldest first, for reconciliation and ageing. Every filter applies before paging (size default 50, at most 500), with X-Total-Count.
      *
-     * <p>{@code GET /billing/{ledger}/unverified-payments} (operationId {@code listUnverifiedPayments}); permission {@code billing.read}.
-     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
+     * <p>{@code GET /billing/by-ledger/unverified-payments} (operationId {@code listUnverifiedPayments}); permission {@code billing.read}.
+     * @param ledger query parameter {@code ledger}. receivable ledger id (e.g. DEMAND); may carry '/' or ':'
      * @param state query parameter {@code state}, or null.  One of: PAYMENT_ACCEPTED_UNVERIFIED, VERIFIED, REJECTED, REVERSED.
      * @param channel query parameter {@code channel}, or null
      * @param office query parameter {@code office}, or null
@@ -195,7 +205,8 @@ public final class BillingApi {
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<UnverifiedPayment> listUnverifiedPayments(String ledger, String state, String channel, String office, Integer minAgeDays, Long page, Long size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/unverified-payments");
+        ApiRequest req = ApiRequest.get("/billing/by-ledger/unverified-payments");
+        req.query("ledger", ledger);
         req.query("state", state);
         req.query("channel", channel);
         req.query("office", office);
@@ -210,14 +221,15 @@ public final class BillingApi {
      *
      * <p>One record with its resolution.
      *
-     * <p>{@code GET /billing/{ledger}/unverified-payments/{id}} (operationId {@code getUnverifiedPayment}); permission {@code billing.read}.
-     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
+     * <p>{@code GET /billing/by-ledger/unverified-payments/{id}} (operationId {@code getUnverifiedPayment}); permission {@code billing.read}.
      * @param id path parameter {@code id}
+     * @param ledger query parameter {@code ledger}. receivable ledger id (e.g. DEMAND); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public UnverifiedPayment getUnverifiedPayment(String ledger, String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/unverified-payments/" + HttpTransport.seg(String.valueOf(id)));
+    public UnverifiedPayment getUnverifiedPayment(String id, String ledger, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/billing/by-ledger/unverified-payments/" + HttpTransport.seg(String.valueOf(id)));
+        req.query("ledger", ledger);
         return call.json(req, options, R_getUnverifiedPayment);
     }
 
@@ -226,16 +238,17 @@ public final class BillingApi {
      *
      * <p>Manual resolution of a pending payment to VERIFIED, REJECTED or REVERSED; rail reconciliation is the normal path to VERIFIED and runs as the system job, not through this operation. Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Maker-checker: the resolver must be a different principal from the acceptor (403 NOT_PERMITTED otherwise, decision 194). The state and the caller's authorisation are rechecked atomically with the transition (403 NOT_PERMITTED). A payment already resolved is 409 INVALID_TRANSITION and changes nothing. A manual VERIFIED needs verificationRef and evidenceRef (400 VALIDATION_FAILED otherwise) and is audited as its own event PAYMENT_UNVERIFIED_MANUALLY_VERIFIED (decision 196); REJECTED and REVERSED are audited as PAYMENT_UNVERIFIED_RESOLVED and post the penalty accrual paused since acceptance (decision 195).
      *
-     * <p>{@code POST /billing/{ledger}/unverified-payments/{id}/resolution} (operationId {@code resolveUnverifiedPayment}); permission {@code billing.resolve-unverified}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
+     * <p>{@code POST /billing/by-ledger/unverified-payments/{id}/resolution} (operationId {@code resolveUnverifiedPayment}); permission {@code billing.resolve-unverified}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
      * @param body request body
+     * @param ledger query parameter {@code ledger}. receivable ledger id (e.g. DEMAND); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public UnverifiedPayment resolveUnverifiedPayment(String ledger, String id, UnverifiedPaymentResolveRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/unverified-payments/" + HttpTransport.seg(String.valueOf(id)) + "/resolution");
+    public UnverifiedPayment resolveUnverifiedPayment(String id, UnverifiedPaymentResolveRequest body, String ledger, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/billing/by-ledger/unverified-payments/" + HttpTransport.seg(String.valueOf(id)) + "/resolution");
         req.body(body);
+        req.query("ledger", ledger);
         return call.json(req, options, R_resolveUnverifiedPayment);
     }
 }

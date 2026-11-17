@@ -61,11 +61,13 @@ final class RostersApi
      *
      * RosterController.deleteShift (sangam-rest).
      *
-     * DELETE /rosters/shifts/{shiftId} (operationId rostersRosterDeleteShift); permission resources.admin; result stored atomically with the state change.
+     * DELETE /rosters/shifts/by-shift-id (operationId rostersRosterDeleteShift); permission resources.admin; result stored atomically with the state change.
+     * @param string $shiftId query shiftId
      */
     public function rostersRosterDeleteShift(string $shiftId, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/rosters/shifts/' . HttpTransport::seg((string) $shiftId));
+        $req = ApiRequest::delete('/rosters/shifts/by-shift-id');
+        $req->query('shiftId', $shiftId);
         $this->calls->none($req, $options);
     }
 
@@ -110,11 +112,13 @@ final class RostersApi
      *
      * RosterController.deleteRotation (sangam-rest).
      *
-     * DELETE /rosters/rotations/{rotationId} (operationId rostersRosterDeleteRotation); permission resources.admin; result stored atomically with the state change.
+     * DELETE /rosters/rotations/by-rotation-id (operationId rostersRosterDeleteRotation); permission resources.admin; result stored atomically with the state change.
+     * @param string $rotationId query rotationId
      */
     public function rostersRosterDeleteRotation(string $rotationId, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/rosters/rotations/' . HttpTransport::seg((string) $rotationId));
+        $req = ApiRequest::delete('/rosters/rotations/by-rotation-id');
+        $req->query('rotationId', $rotationId);
         $this->calls->none($req, $options);
     }
 
@@ -229,13 +233,15 @@ final class RostersApi
      *
      * RosterController.setMember (sangam-rest).
      *
-     * PUT /rosters/periods/{periodId}/members/{personId} (operationId rostersRosterSetMember); permission resources.admin; result stored atomically with the state change.
+     * PUT /rosters/periods/{periodId}/members/by-person-id (operationId rostersRosterSetMember); permission resources.admin; result stored atomically with the state change.
      * @param Model\RosterRestPortMemberRequest|array $body request body
+     * @param string $personId query personId
      * @return array<string, mixed>
      */
-    public function rostersRosterSetMember(string $periodId, string $personId, Model\RosterRestPortMemberRequest|array $body, ?RequestOptions $options = null): array
+    public function rostersRosterSetMember(string $periodId, Model\RosterRestPortMemberRequest|array $body, string $personId, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::put('/rosters/periods/' . HttpTransport::seg((string) $periodId) . '/members/' . HttpTransport::seg((string) $personId));
+        $req = ApiRequest::put('/rosters/periods/' . HttpTransport::seg((string) $periodId) . '/members/by-person-id');
+        $req->query('personId', $personId);
         if ($body !== null) {
             $req->body($body);
         }
@@ -247,11 +253,13 @@ final class RostersApi
      *
      * RosterController.removeMember (sangam-rest).
      *
-     * DELETE /rosters/periods/{periodId}/members/{personId} (operationId rostersRosterRemoveMember); permission resources.admin; result stored atomically with the state change.
+     * DELETE /rosters/periods/{periodId}/members/by-person-id (operationId rostersRosterRemoveMember); permission resources.admin; result stored atomically with the state change.
+     * @param string $personId query personId
      */
     public function rostersRosterRemoveMember(string $periodId, string $personId, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/rosters/periods/' . HttpTransport::seg((string) $periodId) . '/members/' . HttpTransport::seg((string) $personId));
+        $req = ApiRequest::delete('/rosters/periods/' . HttpTransport::seg((string) $periodId) . '/members/by-person-id');
+        $req->query('personId', $personId);
         $this->calls->none($req, $options);
     }
 
@@ -296,11 +304,13 @@ final class RostersApi
      *
      * RosterController.removeDemand (sangam-rest).
      *
-     * DELETE /rosters/periods/{periodId}/demand/{demandId} (operationId rostersRosterRemoveDemand); permission resources.admin; result stored atomically with the state change.
+     * DELETE /rosters/periods/{periodId}/demand/by-demand-id (operationId rostersRosterRemoveDemand); permission resources.admin; result stored atomically with the state change.
+     * @param string $demandId query demandId
      */
     public function rostersRosterRemoveDemand(string $periodId, string $demandId, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/rosters/periods/' . HttpTransport::seg((string) $periodId) . '/demand/' . HttpTransport::seg((string) $demandId));
+        $req = ApiRequest::delete('/rosters/periods/' . HttpTransport::seg((string) $periodId) . '/demand/by-demand-id');
+        $req->query('demandId', $demandId);
         $this->calls->none($req, $options);
     }
 
@@ -528,7 +538,8 @@ final class RostersApi
      *
      * RosterController.personalRoster (sangam-rest).
      *
-     * GET /rosters/people/{personId}/duties (operationId rostersRosterPersonalRoster); permission resources.read.
+     * GET /rosters/people/by-person-id/duties (operationId rostersRosterPersonalRoster); permission resources.read.
+     * @param string $personId query personId
      * @param string $from query from
      * @param string $to query to
      * @param int|null $page query page
@@ -537,7 +548,8 @@ final class RostersApi
      */
     public function rostersRosterPersonalRoster(string $personId, string $from, string $to, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/rosters/people/' . HttpTransport::seg((string) $personId) . '/duties');
+        $req = ApiRequest::get('/rosters/people/by-person-id/duties');
+        $req->query('personId', $personId);
         $req->query('from', $from);
         $req->query('to', $to);
         $req->query('page', $page);

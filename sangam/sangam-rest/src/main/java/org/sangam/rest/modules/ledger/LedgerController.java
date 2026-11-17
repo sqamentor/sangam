@@ -115,8 +115,9 @@ public class LedgerController {
     public record ReconcileRow(String accountId, AccountKey key, List<String> values) {
     }
 
-    @GetMapping("/{ledger}/accounts")
-    public ResponseEntity<List<AccountView>> accounts(RequestContext ctx, @PathVariable String ledger,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/by-ledger/accounts")
+    public ResponseEntity<List<AccountView>> accounts(RequestContext ctx, @RequestParam("ledger") String ledger,
             @RequestParam(required = false) String period, @RequestParam(required = false) String line,
             @RequestParam(required = false) String holder, @RequestParam(required = false) String stage) {
         permissions.require(ctx, READ);
@@ -147,8 +148,9 @@ public class LedgerController {
         throw ApiProblem.notFound("ledger account", accountId);
     }
 
-    @PostMapping("/{ledger}/operations")
-    public ResponseEntity<ResultView> apply(RequestContext ctx, @PathVariable String ledger,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/by-ledger/operations")
+    public ResponseEntity<ResultView> apply(RequestContext ctx, @RequestParam("ledger") String ledger,
                                                       @RequestBody OperationRequest body) {
         permissions.require(ctx, WRITE);
         if (body == null || body.operation() == null || body.account() == null) {
@@ -176,8 +178,9 @@ public class LedgerController {
         return Lists.okRef(reference, ResultView.of(res));
     }
 
-    @PostMapping("/{ledger}/freeze-orders")
-    public ResponseEntity<FreezeOrder> freeze(RequestContext ctx, @PathVariable String ledger,
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @PostMapping("/by-ledger/freeze-orders")
+    public ResponseEntity<FreezeOrder> freeze(RequestContext ctx, @RequestParam("ledger") String ledger,
                                               @RequestBody FreezeRequest body) {
         permissions.require(ctx, ADMIN);
         if (body == null || body.reason() == null || body.reason().isBlank()) {
@@ -187,17 +190,20 @@ public class LedgerController {
         FreezeOrder o = new FreezeOrder(ctx.tenantId(), id, ledger, body.period(), body.linePrefix(), body.holderPrefix(),
                 body.stage(), body.reason(), ctx.principalId(), Instant.now());
         service().freeze(o);
-        return Lists.created("/api/v1/ledger/" + ledger + "/freeze-orders/" + id, id, o);
+        return Lists.created("/api/v1/ledger/by-ledger/freeze-orders/by-id?ledger=" + java.net.URLEncoder.encode(ledger, java.nio.charset.StandardCharsets.UTF_8)
+                + "&id=" + java.net.URLEncoder.encode(id, java.nio.charset.StandardCharsets.UTF_8), id, o);
     }
 
-    @GetMapping("/{ledger}/freeze-orders")
-    public ResponseEntity<List<FreezeOrder>> freezes(RequestContext ctx, @PathVariable String ledger) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @GetMapping("/by-ledger/freeze-orders")
+    public ResponseEntity<List<FreezeOrder>> freezes(RequestContext ctx, @RequestParam("ledger") String ledger) {
         permissions.require(ctx, READ);
         return Lists.ok(service().freezes(ctx.tenantId()).stream().filter(f -> ledger.equals(f.ledger())).toList());
     }
 
-    @DeleteMapping("/{ledger}/freeze-orders/{id}")
-    public ResponseEntity<Void> releaseFreeze(RequestContext ctx, @PathVariable String ledger, @PathVariable String id) {
+    /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
+    @DeleteMapping("/by-ledger/freeze-orders/by-id")
+    public ResponseEntity<Void> releaseFreeze(RequestContext ctx, @RequestParam("ledger") String ledger, @RequestParam("id") String id) {
         permissions.require(ctx, ADMIN);
         if (!service().releaseFreeze(ctx.tenantId(), id)) {
             throw ApiProblem.notFound("freeze order", id);
@@ -205,9 +211,12 @@ public class LedgerController {
         return ResponseEntity.noContent().build();
     }
 
-    /** UI-DEMO-1: a fiscal-year label can carry '/' ("2026/2027"), refused encoded in a path segment, so it is a query parameter. */
-    @PostMapping("/{ledger}/periods/close")
-    public ResponseEntity<List<ResultView>> closePeriod(RequestContext ctx, @PathVariable String ledger,
+    /**
+     * UI-DEMO-1: a fiscal-year label can carry '/' ("2026/2027"), refused encoded in a path segment, so it is a query parameter.
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
+    @PostMapping("/by-ledger/periods/close")
+    public ResponseEntity<List<ResultView>> closePeriod(RequestContext ctx, @RequestParam("ledger") String ledger,
             @RequestParam String period, @RequestBody(required = false) CloseRequest body) {
         permissions.require(ctx, ADMIN);
         definitions.ensure(ctx.tenantId());
@@ -217,9 +226,12 @@ public class LedgerController {
         return Lists.okRef(ledger + ":" + period, res.stream().map(ResultView::of).toList());
     }
 
-    /** Requests parked for funds on matching accounts ({@code holdIfShort}). */
-    @GetMapping("/{ledger}/holds")
-    public ResponseEntity<List<LedgerRequest>> holds(RequestContext ctx, @PathVariable String ledger,
+    /**
+     * Requests parked for funds on matching accounts ({@code holdIfShort}).
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
+    @GetMapping("/by-ledger/holds")
+    public ResponseEntity<List<LedgerRequest>> holds(RequestContext ctx, @RequestParam("ledger") String ledger,
             @RequestParam(required = false) String period, @RequestParam(required = false) String line,
             @RequestParam(required = false) String holder, @RequestParam(required = false) String stage) {
         permissions.require(ctx, READ);
@@ -231,9 +243,12 @@ public class LedgerController {
         return Lists.ok(out);
     }
 
-    /** Mirror versus external balances (SHADOW ledgers); a ledger without an external port reports none. */
-    @PostMapping("/{ledger}/reconcile")
-    public ResponseEntity<List<ReconcileRow>> reconcile(RequestContext ctx, @PathVariable String ledger,
+    /**
+     * Mirror versus external balances (SHADOW ledgers); a ledger without an external port reports none.
+     * Decision 393: the value can carry '/' or ':', so it is a required query parameter.
+     */
+    @PostMapping("/by-ledger/reconcile")
+    public ResponseEntity<List<ReconcileRow>> reconcile(RequestContext ctx, @RequestParam("ledger") String ledger,
                                                         @RequestBody ReconcileRequest body) {
         permissions.require(ctx, ADMIN);
         if (body == null || body.period() == null) {

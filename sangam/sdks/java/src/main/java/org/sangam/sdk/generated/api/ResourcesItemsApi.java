@@ -91,13 +91,14 @@ public final class ResourcesItemsApi {
      *
      * <p>ResourcesController.resource (sangam-rest).
      *
-     * <p>{@code GET /resources/items/{resourceId}} (operationId {@code resourcesResourcesResource}); permission {@code resources.read}.
-     * @param resourceId path parameter {@code resourceId}
+     * <p>{@code GET /resources/items/by-resource-id} (operationId {@code resourcesResourcesResource}); permission {@code resources.read}.
+     * @param resourceId query parameter {@code resourceId}. Resource id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> resourcesResourcesResource(String resourceId, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/resources/items/" + HttpTransport.seg(String.valueOf(resourceId)));
+        ApiRequest req = ApiRequest.get("/resources/items/by-resource-id");
+        req.query("resourceId", resourceId);
         return call.json(req, options, R_resourcesResourcesResource);
     }
 
@@ -106,16 +107,17 @@ public final class ResourcesItemsApi {
      *
      * <p>ResourcesController.updateResource (sangam-rest).
      *
-     * <p>{@code PATCH /resources/items/{resourceId}} (operationId {@code resourcesResourcesUpdateResource}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param resourceId path parameter {@code resourceId}
+     * <p>{@code PATCH /resources/items/by-resource-id} (operationId {@code resourcesResourcesUpdateResource}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param resourceId query parameter {@code resourceId}. Resource id; may carry '/' or ':'
      * @param version query parameter {@code version}
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> resourcesResourcesUpdateResource(String resourceId, ResourcePatch body, Long version, RequestOptions options) {
-        ApiRequest req = ApiRequest.patch("/resources/items/" + HttpTransport.seg(String.valueOf(resourceId)));
+    public java.util.Map<String, Object> resourcesResourcesUpdateResource(ResourcePatch body, String resourceId, Long version, RequestOptions options) {
+        ApiRequest req = ApiRequest.patch("/resources/items/by-resource-id");
         req.body(body);
+        req.query("resourceId", resourceId);
         req.query("version", version);
         return call.json(req, options, R_resourcesResourcesUpdateResource);
     }
@@ -125,15 +127,16 @@ public final class ResourcesItemsApi {
      *
      * <p>ResourcesController.setStatus (sangam-rest).
      *
-     * <p>{@code POST /resources/items/{resourceId}/status} (operationId {@code resourcesResourcesSetStatus}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param resourceId path parameter {@code resourceId}
+     * <p>{@code POST /resources/items/by-resource-id/status} (operationId {@code resourcesResourcesSetStatus}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param resourceId query parameter {@code resourceId}. Resource id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> resourcesResourcesSetStatus(String resourceId, ResourcesStatusRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/resources/items/" + HttpTransport.seg(String.valueOf(resourceId)) + "/status");
+    public java.util.Map<String, Object> resourcesResourcesSetStatus(ResourcesStatusRequest body, String resourceId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/resources/items/by-resource-id/status");
         req.body(body);
+        req.query("resourceId", resourceId);
         return call.json(req, options, R_resourcesResourcesSetStatus);
     }
 
@@ -142,15 +145,16 @@ public final class ResourcesItemsApi {
      *
      * <p>ResourcesController.move (sangam-rest).
      *
-     * <p>{@code POST /resources/items/{resourceId}/move} (operationId {@code resourcesResourcesMove}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param resourceId path parameter {@code resourceId}
+     * <p>{@code POST /resources/items/by-resource-id/move} (operationId {@code resourcesResourcesMove}); permission {@code resources.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param resourceId query parameter {@code resourceId}. Resource id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> resourcesResourcesMove(String resourceId, ResourcesMoveRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/resources/items/" + HttpTransport.seg(String.valueOf(resourceId)) + "/move");
+    public java.util.Map<String, Object> resourcesResourcesMove(ResourcesMoveRequest body, String resourceId, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/resources/items/by-resource-id/move");
         req.body(body);
+        req.query("resourceId", resourceId);
         return call.json(req, options, R_resourcesResourcesMove);
     }
 
@@ -159,13 +163,14 @@ public final class ResourcesItemsApi {
      *
      * <p>ResourcesController.children (sangam-rest).
      *
-     * <p>{@code GET /resources/items/{resourceId}/children} (operationId {@code resourcesResourcesChildren}); permission {@code resources.read}.
-     * @param resourceId path parameter {@code resourceId}
+     * <p>{@code GET /resources/items/by-resource-id/children} (operationId {@code resourcesResourcesChildren}); permission {@code resources.read}.
+     * @param resourceId query parameter {@code resourceId}. Resource id; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<java.util.Map<String, Object>> resourcesResourcesChildren(String resourceId, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/resources/items/" + HttpTransport.seg(String.valueOf(resourceId)) + "/children");
+        ApiRequest req = ApiRequest.get("/resources/items/by-resource-id/children");
+        req.query("resourceId", resourceId);
         return call.json(req, options, R_resourcesResourcesChildren);
     }
 
@@ -174,15 +179,16 @@ public final class ResourcesItemsApi {
      *
      * <p>ResourcesController.slots (sangam-rest).
      *
-     * <p>{@code GET /resources/items/{resourceId}/slots} (operationId {@code resourcesResourcesSlots}); permission {@code resources.read}.
-     * @param resourceId path parameter {@code resourceId}
+     * <p>{@code GET /resources/items/by-resource-id/slots} (operationId {@code resourcesResourcesSlots}); permission {@code resources.read}.
+     * @param resourceId query parameter {@code resourceId}. Resource id; may carry '/' or ':'
      * @param from query parameter {@code from}
      * @param to query parameter {@code to}
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<java.util.Map<String, Object>> resourcesResourcesSlots(String resourceId, java.time.Instant from, java.time.Instant to, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/resources/items/" + HttpTransport.seg(String.valueOf(resourceId)) + "/slots");
+        ApiRequest req = ApiRequest.get("/resources/items/by-resource-id/slots");
+        req.query("resourceId", resourceId);
         req.query("from", from);
         req.query("to", to);
         return call.json(req, options, R_resourcesResourcesSlots);
@@ -193,15 +199,16 @@ public final class ResourcesItemsApi {
      *
      * <p>ResourcesController.availability (sangam-rest).
      *
-     * <p>{@code GET /resources/items/{resourceId}/availability} (operationId {@code resourcesResourcesAvailability}); permission {@code resources.read}.
-     * @param resourceId path parameter {@code resourceId}
+     * <p>{@code GET /resources/items/by-resource-id/availability} (operationId {@code resourcesResourcesAvailability}); permission {@code resources.read}.
+     * @param resourceId query parameter {@code resourceId}. Resource id; may carry '/' or ':'
      * @param from query parameter {@code from}
      * @param to query parameter {@code to}
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.List<java.util.Map<String, Object>> resourcesResourcesAvailability(String resourceId, java.time.Instant from, java.time.Instant to, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/resources/items/" + HttpTransport.seg(String.valueOf(resourceId)) + "/availability");
+        ApiRequest req = ApiRequest.get("/resources/items/by-resource-id/availability");
+        req.query("resourceId", resourceId);
         req.query("from", from);
         req.query("to", to);
         return call.json(req, options, R_resourcesResourcesAvailability);

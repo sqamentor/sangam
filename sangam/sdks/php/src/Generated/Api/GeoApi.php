@@ -57,12 +57,14 @@ final class GeoApi
      *
      * GeoController.layer (sangam-rest).
      *
-     * GET /geo/layers/{layer} (operationId geoGeoLayer); permission geo.read.
+     * GET /geo/layers/by-layer (operationId geoGeoLayer); permission geo.read.
+     * @param string $layer query layer
      * @return array<string, mixed>
      */
     public function geoGeoLayer(string $layer, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/geo/layers/' . HttpTransport::seg((string) $layer));
+        $req = ApiRequest::get('/geo/layers/by-layer');
+        $req->query('layer', $layer);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -71,13 +73,15 @@ final class GeoApi
      *
      * GeoController.importBoundaries (sangam-rest).
      *
-     * POST /geo/layers/{layer}/import (operationId geoGeoImportBoundaries); permission geo.write; result stored atomically with the state change.
+     * POST /geo/layers/by-layer/import (operationId geoGeoImportBoundaries); permission geo.write; result stored atomically with the state change.
      * @param Model\GeoGeoImportBoundariesBody|array $body request body
+     * @param string $layer query layer
      * @return array<string, mixed>
      */
-    public function geoGeoImportBoundaries(string $layer, Model\GeoGeoImportBoundariesBody|array $body, ?RequestOptions $options = null): array
+    public function geoGeoImportBoundaries(Model\GeoGeoImportBoundariesBody|array $body, string $layer, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/geo/layers/' . HttpTransport::seg((string) $layer) . '/import');
+        $req = ApiRequest::post('/geo/layers/by-layer/import');
+        $req->query('layer', $layer);
         if ($body !== null) {
             $req->body($body);
         }
@@ -89,7 +93,8 @@ final class GeoApi
      *
      * GeoController.features (sangam-rest).
      *
-     * GET /geo/layers/{layer}/features (operationId geoGeoFeatures); permission geo.read.
+     * GET /geo/layers/by-layer/features (operationId geoGeoFeatures); permission geo.read.
+     * @param string $layer query layer
      * @param string|null $level query level
      * @param string|null $parentId query parentId
      * @param bool|null $history query history
@@ -99,7 +104,8 @@ final class GeoApi
      */
     public function geoGeoFeatures(string $layer, ?string $level = null, ?string $parentId = null, ?bool $history = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
-        $req = ApiRequest::get('/geo/layers/' . HttpTransport::seg((string) $layer) . '/features');
+        $req = ApiRequest::get('/geo/layers/by-layer/features');
+        $req->query('layer', $layer);
         $req->query('level', $level);
         $req->query('parentId', $parentId);
         $req->query('history', $history);
@@ -113,13 +119,15 @@ final class GeoApi
      *
      * GeoController.putFeature (sangam-rest).
      *
-     * POST /geo/layers/{layer}/features (operationId geoGeoPutFeature); permission geo.write; result stored atomically with the state change.
+     * POST /geo/layers/by-layer/features (operationId geoGeoPutFeature); permission geo.write; result stored atomically with the state change.
      * @param Model\GeoGeoPutFeatureBody|array $body request body
+     * @param string $layer query layer
      * @return array<string, mixed>
      */
-    public function geoGeoPutFeature(string $layer, Model\GeoGeoPutFeatureBody|array $body, ?RequestOptions $options = null): array
+    public function geoGeoPutFeature(Model\GeoGeoPutFeatureBody|array $body, string $layer, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/geo/layers/' . HttpTransport::seg((string) $layer) . '/features');
+        $req = ApiRequest::post('/geo/layers/by-layer/features');
+        $req->query('layer', $layer);
         if ($body !== null) {
             $req->body($body);
         }
@@ -131,13 +139,15 @@ final class GeoApi
      *
      * GeoController.feature (sangam-rest).
      *
-     * GET /geo/features/{id} (operationId geoGeoFeature); permission geo.read.
+     * GET /geo/features/by-id (operationId geoGeoFeature); permission geo.read.
+     * @param string $id query id
      * @param bool|null $geometry query geometry
      * @return array<string, mixed>
      */
     public function geoGeoFeature(string $id, ?bool $geometry = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/geo/features/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::get('/geo/features/by-id');
+        $req->query('id', $id);
         $req->query('geometry', $geometry);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
@@ -147,11 +157,13 @@ final class GeoApi
      *
      * GeoController.retire (sangam-rest).
      *
-     * DELETE /geo/features/{id} (operationId geoGeoRetire); permission geo.write; result stored atomically with the state change.
+     * DELETE /geo/features/by-id (operationId geoGeoRetire); permission geo.write; result stored atomically with the state change.
+     * @param string $id query id
      */
     public function geoGeoRetire(string $id, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/geo/features/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::delete('/geo/features/by-id');
+        $req->query('id', $id);
         $this->calls->none($req, $options);
     }
 
@@ -160,12 +172,14 @@ final class GeoApi
      *
      * GeoController.lineage (sangam-rest).
      *
-     * GET /geo/features/{id}/lineage (operationId geoGeoLineage); permission geo.read.
+     * GET /geo/features/by-id/lineage (operationId geoGeoLineage); permission geo.read.
+     * @param string $id query id
      * @return list<array<string, mixed>>
      */
     public function geoGeoLineage(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/geo/features/' . HttpTransport::seg((string) $id) . '/lineage');
+        $req = ApiRequest::get('/geo/features/by-id/lineage');
+        $req->query('id', $id);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -260,12 +274,14 @@ final class GeoApi
      *
      * GeoController.fence (sangam-rest).
      *
-     * GET /geo/fences/{id} (operationId geoGeoFence); permission geo.read.
+     * GET /geo/fences/by-id (operationId geoGeoFence); permission geo.read.
+     * @param string $id query id
      * @return array<string, mixed>
      */
     public function geoGeoFence(string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/geo/fences/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::get('/geo/fences/by-id');
+        $req->query('id', $id);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
 
@@ -274,11 +290,13 @@ final class GeoApi
      *
      * GeoController.deactivateFence (sangam-rest).
      *
-     * DELETE /geo/fences/{id} (operationId geoGeoDeactivateFence); permission geo.write; result stored atomically with the state change.
+     * DELETE /geo/fences/by-id (operationId geoGeoDeactivateFence); permission geo.write; result stored atomically with the state change.
+     * @param string $id query id
      */
     public function geoGeoDeactivateFence(string $id, ?RequestOptions $options = null): void
     {
-        $req = ApiRequest::delete('/geo/fences/' . HttpTransport::seg((string) $id));
+        $req = ApiRequest::delete('/geo/fences/by-id');
+        $req->query('id', $id);
         $this->calls->none($req, $options);
     }
 
@@ -287,13 +305,15 @@ final class GeoApi
      *
      * GeoController.checkFence (sangam-rest).
      *
-     * POST /geo/fences/{id}/check (operationId geoGeoCheckFence); permission geo.write.
+     * POST /geo/fences/by-id/check (operationId geoGeoCheckFence); permission geo.write.
      * @param Model\GeoGeoCheckFenceBody|array $body request body
+     * @param string $id query id
      * @return array<string, mixed>
      */
-    public function geoGeoCheckFence(string $id, Model\GeoGeoCheckFenceBody|array $body, ?RequestOptions $options = null): array
+    public function geoGeoCheckFence(Model\GeoGeoCheckFenceBody|array $body, string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/geo/fences/' . HttpTransport::seg((string) $id) . '/check');
+        $req = ApiRequest::post('/geo/fences/by-id/check');
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -305,13 +325,17 @@ final class GeoApi
      *
      * GeoController.putObjectGeometry (sangam-rest).
      *
-     * PUT /geo/objects/{type}/{id}/geometry (operationId geoGeoPutObjectGeometry); permission geo.write; result stored atomically with the state change.
+     * PUT /geo/objects/by-type/by-id/geometry (operationId geoGeoPutObjectGeometry); permission geo.write; result stored atomically with the state change.
      * @param Model\GeoGeoPutObjectGeometryBody|array $body request body
+     * @param string $type query type
+     * @param string $id query id
      * @return array<string, mixed>
      */
-    public function geoGeoPutObjectGeometry(string $type, string $id, Model\GeoGeoPutObjectGeometryBody|array $body, ?RequestOptions $options = null): array
+    public function geoGeoPutObjectGeometry(Model\GeoGeoPutObjectGeometryBody|array $body, string $type, string $id, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::put('/geo/objects/' . HttpTransport::seg((string) $type) . '/' . HttpTransport::seg((string) $id) . '/geometry');
+        $req = ApiRequest::put('/geo/objects/by-type/by-id/geometry');
+        $req->query('type', $type);
+        $req->query('id', $id);
         if ($body !== null) {
             $req->body($body);
         }
@@ -323,13 +347,17 @@ final class GeoApi
      *
      * GeoController.objectGeometry (sangam-rest).
      *
-     * GET /geo/objects/{type}/{id}/geometry (operationId geoGeoObjectGeometry); permission geo.read.
+     * GET /geo/objects/by-type/by-id/geometry (operationId geoGeoObjectGeometry); permission geo.read.
+     * @param string $type query type
+     * @param string $id query id
      * @param string|null $attribute query attribute
      * @return array<string, mixed>
      */
     public function geoGeoObjectGeometry(string $type, string $id, ?string $attribute = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::get('/geo/objects/' . HttpTransport::seg((string) $type) . '/' . HttpTransport::seg((string) $id) . '/geometry');
+        $req = ApiRequest::get('/geo/objects/by-type/by-id/geometry');
+        $req->query('type', $type);
+        $req->query('id', $id);
         $req->query('attribute', $attribute);
         return Support::arr($this->calls->json($req, $options)) ?? [];
     }
@@ -371,12 +399,14 @@ final class GeoApi
      *
      * GeoController.queryExternal (sangam-rest).
      *
-     * POST /geo/external-layers/{ref}/query (operationId geoGeoQueryExternal); permission geo.write.
+     * POST /geo/external-layers/by-ref/query (operationId geoGeoQueryExternal); permission geo.write.
+     * @param string $ref query ref
      * @return array<string, mixed>
      */
     public function geoGeoQueryExternal(string $ref, Model\GeoGeoQueryExternalBody|array|null $body = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/geo/external-layers/' . HttpTransport::seg((string) $ref) . '/query');
+        $req = ApiRequest::post('/geo/external-layers/by-ref/query');
+        $req->query('ref', $ref);
         if ($body !== null) {
             $req->body($body);
         }
@@ -388,12 +418,14 @@ final class GeoApi
      *
      * GeoController.importExternal (sangam-rest).
      *
-     * POST /geo/external-layers/{ref}/import (operationId geoGeoImportExternal); permission geo.write; result stored atomically with the state change.
+     * POST /geo/external-layers/by-ref/import (operationId geoGeoImportExternal); permission geo.write; result stored atomically with the state change.
+     * @param string $ref query ref
      * @return array<string, mixed>
      */
     public function geoGeoImportExternal(string $ref, Model\GeoGeoImportExternalBody|array|null $body = null, ?RequestOptions $options = null): array
     {
-        $req = ApiRequest::post('/geo/external-layers/' . HttpTransport::seg((string) $ref) . '/import');
+        $req = ApiRequest::post('/geo/external-layers/by-ref/import');
+        $req->query('ref', $ref);
         if ($body !== null) {
             $req->body($body);
         }

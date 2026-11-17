@@ -73,13 +73,14 @@ public final class TenantOperationsFlowableMigrationsApi {
      *
      * <p>The run's report. Tenant administrators only (ops.tenant.admin).
      *
-     * <p>{@code GET /ops/flowable-migrations/{id}} (operationId {@code getFlowableMigration}); permission {@code ops.tenant.admin}.
-     * @param id path parameter {@code id}. Run id
+     * <p>{@code GET /ops/flowable-migrations/by-id} (operationId {@code getFlowableMigration}); permission {@code ops.tenant.admin}.
+     * @param id query parameter {@code id}. Run id (caller-chosen); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public FlowableMigrationReport getFlowableMigration(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ops/flowable-migrations/" + HttpTransport.seg(String.valueOf(id)));
+        ApiRequest req = ApiRequest.get("/ops/flowable-migrations/by-id");
+        req.query("id", id);
         return call.json(req, options, R_getFlowableMigration);
     }
 
@@ -88,8 +89,8 @@ public final class TenantOperationsFlowableMigrationsApi {
      *
      * <p>Source instances of the run with status and findings. Tenant administrators only (ops.tenant.admin).
      *
-     * <p>{@code GET /ops/flowable-migrations/{id}/items} (operationId {@code listFlowableMigrationItems}); permission {@code ops.tenant.admin}.
-     * @param id path parameter {@code id}. Run id
+     * <p>{@code GET /ops/flowable-migrations/by-id/items} (operationId {@code listFlowableMigrationItems}); permission {@code ops.tenant.admin}.
+     * @param id query parameter {@code id}. Run id (caller-chosen); may carry '/' or ':'
      * @param status query parameter {@code status}, or null. Only items in this status One of: PLANNED, REJECTED, APPLYING, APPLIED, FAILED, MATCHED, MISMATCHED, ROLLED_BACK.
      * @param page query parameter {@code page}, or null. 0-based page index
      * @param size query parameter {@code size}, or null. Page size
@@ -97,7 +98,8 @@ public final class TenantOperationsFlowableMigrationsApi {
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<FlowableMigrationItem> listFlowableMigrationItems(String id, String status, Long page, Long size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ops/flowable-migrations/" + HttpTransport.seg(String.valueOf(id)) + "/items");
+        ApiRequest req = ApiRequest.get("/ops/flowable-migrations/by-id/items");
+        req.query("id", id);
         req.query("status", status);
         req.query("page", page);
         req.query("size", size);
@@ -109,13 +111,14 @@ public final class TenantOperationsFlowableMigrationsApi {
      *
      * <p>From DRY_RUN: freezes the Flowable workers and rechecks every planned instance's fingerprint. When the workers are not drained or an instance changed or vanished, the problems are listed and the run stays DRY_RUN; otherwise FROZEN. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
      *
-     * <p>{@code POST /ops/flowable-migrations/{id}/freeze} (operationId {@code freezeFlowableMigration}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}. Run id
+     * <p>{@code POST /ops/flowable-migrations/by-id/freeze} (operationId {@code freezeFlowableMigration}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Run id (caller-chosen); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public FlowableMigrationReport freezeFlowableMigration(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ops/flowable-migrations/" + HttpTransport.seg(String.valueOf(id)) + "/freeze");
+        ApiRequest req = ApiRequest.post("/ops/flowable-migrations/by-id/freeze");
+        req.query("id", id);
         return call.json(req, options, R_freezeFlowableMigration);
     }
 
@@ -124,13 +127,14 @@ public final class TenantOperationsFlowableMigrationsApi {
      *
      * <p>From FROZEN, APPLYING or APPLIED: creates the Sangam instances, idempotent per item (APPLYING, then APPLIED). No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
      *
-     * <p>{@code POST /ops/flowable-migrations/{id}/apply} (operationId {@code applyFlowableMigration}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}. Run id
+     * <p>{@code POST /ops/flowable-migrations/by-id/apply} (operationId {@code applyFlowableMigration}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Run id (caller-chosen); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public FlowableMigrationReport applyFlowableMigration(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ops/flowable-migrations/" + HttpTransport.seg(String.valueOf(id)) + "/apply");
+        ApiRequest req = ApiRequest.post("/ops/flowable-migrations/by-id/apply");
+        req.query("id", id);
         return call.json(req, options, R_applyFlowableMigration);
     }
 
@@ -139,13 +143,14 @@ public final class TenantOperationsFlowableMigrationsApi {
      *
      * <p>Compares every applied instance with its plan (RECONCILED or RECONCILE_FAILED). No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
      *
-     * <p>{@code POST /ops/flowable-migrations/{id}/reconcile} (operationId {@code reconcileFlowableMigration}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}. Run id
+     * <p>{@code POST /ops/flowable-migrations/by-id/reconcile} (operationId {@code reconcileFlowableMigration}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Run id (caller-chosen); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public FlowableMigrationReport reconcileFlowableMigration(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ops/flowable-migrations/" + HttpTransport.seg(String.valueOf(id)) + "/reconcile");
+        ApiRequest req = ApiRequest.post("/ops/flowable-migrations/by-id/reconcile");
+        req.query("id", id);
         return call.json(req, options, R_reconcileFlowableMigration);
     }
 
@@ -154,13 +159,14 @@ public final class TenantOperationsFlowableMigrationsApi {
      *
      * <p>From RECONCILED: CUT_OVER. Then end the migrated instances on Flowable and release; rejected instances stay on Flowable. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
      *
-     * <p>{@code POST /ops/flowable-migrations/{id}/cut-over} (operationId {@code cutOverFlowableMigration}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}. Run id
+     * <p>{@code POST /ops/flowable-migrations/by-id/cut-over} (operationId {@code cutOverFlowableMigration}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Run id (caller-chosen); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public FlowableMigrationReport cutOverFlowableMigration(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ops/flowable-migrations/" + HttpTransport.seg(String.valueOf(id)) + "/cut-over");
+        ApiRequest req = ApiRequest.post("/ops/flowable-migrations/by-id/cut-over");
+        req.query("id", id);
         return call.json(req, options, R_cutOverFlowableMigration);
     }
 
@@ -169,13 +175,14 @@ public final class TenantOperationsFlowableMigrationsApi {
      *
      * <p>From DRY_RUN, FROZEN (back to DRY_RUN), ROLLED_BACK or CUT_OVER: lifts the Flowable freeze. After CUT_OVER it is refused, with a problem, while a migrated instance still exists on Flowable. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
      *
-     * <p>{@code POST /ops/flowable-migrations/{id}/release} (operationId {@code releaseFlowableMigration}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}. Run id
+     * <p>{@code POST /ops/flowable-migrations/by-id/release} (operationId {@code releaseFlowableMigration}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id query parameter {@code id}. Run id (caller-chosen); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public FlowableMigrationReport releaseFlowableMigration(String id, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ops/flowable-migrations/" + HttpTransport.seg(String.valueOf(id)) + "/release");
+        ApiRequest req = ApiRequest.post("/ops/flowable-migrations/by-id/release");
+        req.query("id", id);
         return call.json(req, options, R_releaseFlowableMigration);
     }
 
@@ -184,15 +191,16 @@ public final class TenantOperationsFlowableMigrationsApi {
      *
      * <p>From APPLYING, APPLIED, RECONCILED or RECONCILE_FAILED, while Flowable is still frozen: deletes the run's Sangam instances (ROLLED_BACK). Refused as a whole, with problems and no change, when Flowable is no longer frozen or a target instance has moved on. 400 REASON_REQUIRED without a reason. Tenant administrators only (ops.tenant.admin).
      *
-     * <p>{@code POST /ops/flowable-migrations/{id}/rollback} (operationId {@code rollbackFlowableMigration}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}. Run id
+     * <p>{@code POST /ops/flowable-migrations/by-id/rollback} (operationId {@code rollbackFlowableMigration}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
+     * @param id query parameter {@code id}. Run id (caller-chosen); may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public FlowableMigrationReport rollbackFlowableMigration(String id, FlowableMigrationRollbackRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ops/flowable-migrations/" + HttpTransport.seg(String.valueOf(id)) + "/rollback");
+    public FlowableMigrationReport rollbackFlowableMigration(FlowableMigrationRollbackRequest body, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ops/flowable-migrations/by-id/rollback");
         req.body(body);
+        req.query("id", id);
         return call.json(req, options, R_rollbackFlowableMigration);
     }
 }

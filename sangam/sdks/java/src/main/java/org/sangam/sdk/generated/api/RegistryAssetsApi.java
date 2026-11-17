@@ -109,14 +109,15 @@ public final class RegistryAssetsApi {
      *
      * <p>AssetController.getClass (sangam-rest).
      *
-     * <p>{@code GET /registry/assets/classes/{classKey}} (operationId {@code registryAssetGetClass}); permission {@code registry.read}.
-     * @param classKey path parameter {@code classKey}
+     * <p>{@code GET /registry/assets/classes/by-class-key} (operationId {@code registryAssetGetClass}); permission {@code registry.read}.
+     * @param classKey query parameter {@code classKey}. Class key; may carry '/' or ':'
      * @param resolved query parameter {@code resolved}, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> registryAssetGetClass(String classKey, Boolean resolved, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/registry/assets/classes/" + HttpTransport.seg(String.valueOf(classKey)));
+        ApiRequest req = ApiRequest.get("/registry/assets/classes/by-class-key");
+        req.query("classKey", classKey);
         req.query("resolved", resolved);
         return call.json(req, options, R_registryAssetGetClass);
     }
@@ -204,13 +205,14 @@ public final class RegistryAssetsApi {
      *
      * <p>AssetController.byTag (sangam-rest).
      *
-     * <p>{@code GET /registry/assets/by-tag/{tag}} (operationId {@code registryAssetByTag}); permission {@code registry.read}.
-     * @param tag path parameter {@code tag}
+     * <p>{@code GET /registry/assets/by-tag} (operationId {@code registryAssetByTag}); permission {@code registry.read}.
+     * @param tag query parameter {@code tag}. Tag; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
     public java.util.Map<String, Object> registryAssetByTag(String tag, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/registry/assets/by-tag/" + HttpTransport.seg(String.valueOf(tag)));
+        ApiRequest req = ApiRequest.get("/registry/assets/by-tag");
+        req.query("tag", tag);
         return call.json(req, options, R_registryAssetByTag);
     }
 
@@ -394,16 +396,17 @@ public final class RegistryAssetsApi {
      *
      * <p>AssetController.recordReading (sangam-rest).
      *
-     * <p>{@code POST /registry/assets/{id}/meters/{meterType}/readings} (operationId {@code registryAssetRecordReading}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * <p>{@code POST /registry/assets/{id}/meters/by-meter-type/readings} (operationId {@code registryAssetRecordReading}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
-     * @param meterType path parameter {@code meterType}
      * @param body request body
+     * @param meterType query parameter {@code meterType}. Meter type; may carry '/' or ':'
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> registryAssetRecordReading(String id, String meterType, RegistryAssetRecordReadingBody body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/registry/assets/" + HttpTransport.seg(String.valueOf(id)) + "/meters/" + HttpTransport.seg(String.valueOf(meterType)) + "/readings");
+    public java.util.Map<String, Object> registryAssetRecordReading(String id, RegistryAssetRecordReadingBody body, String meterType, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/registry/assets/" + HttpTransport.seg(String.valueOf(id)) + "/meters/by-meter-type/readings");
         req.body(body);
+        req.query("meterType", meterType);
         return call.json(req, options, R_registryAssetRecordReading);
     }
 
@@ -412,16 +415,17 @@ public final class RegistryAssetsApi {
      *
      * <p>AssetController.readings (sangam-rest).
      *
-     * <p>{@code GET /registry/assets/{id}/meters/{meterType}/readings} (operationId {@code registryAssetReadings}); permission {@code registry.read}.
+     * <p>{@code GET /registry/assets/{id}/meters/by-meter-type/readings} (operationId {@code registryAssetReadings}); permission {@code registry.read}.
      * @param id path parameter {@code id}
-     * @param meterType path parameter {@code meterType}
+     * @param meterType query parameter {@code meterType}. Meter type; may carry '/' or ':'
      * @param page query parameter {@code page}, or null
      * @param size query parameter {@code size}, or null
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response with the A-16 count headers
      */
     public org.sangam.sdk.model.Page<java.util.Map<String, Object>> registryAssetReadings(String id, String meterType, Integer page, Integer size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/registry/assets/" + HttpTransport.seg(String.valueOf(id)) + "/meters/" + HttpTransport.seg(String.valueOf(meterType)) + "/readings");
+        ApiRequest req = ApiRequest.get("/registry/assets/" + HttpTransport.seg(String.valueOf(id)) + "/meters/by-meter-type/readings");
+        req.query("meterType", meterType);
         req.query("page", page);
         req.query("size", size);
         return call.page(req, options, R_registryAssetReadings, page, size);
