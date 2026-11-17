@@ -238,7 +238,7 @@ jobs:
       - name: DIAG error contexts
         if: failure()
         working-directory: sangam/sangam-ui
-        run: for f in $(find test-results -name error-context.md | sort); do echo "=== $f"; head -c 6000 "$f"; echo; done
+        run: for f in $(find test-results -name error-context.md | sort); do echo "=== $f"; grep -v "^s*- /url:" "$f" | head -c 30000; echo; done
       - name: Server log on failure
         if: failure()
         run: docker logs sangam-server
