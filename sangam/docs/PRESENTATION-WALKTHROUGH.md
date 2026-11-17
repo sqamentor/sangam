@@ -27,11 +27,14 @@ screen you should see and the expected result. Steps that a known open defect af
 | Ramesh Meena (PRS-RJ-0006) | `ramesh.meena` | Head of Office (DDO approver) | HOO-1 |
 | Deepak Saini (PRS-RJ-0012) | `deepak.saini` | Dealing hand (treasury scrutiny) | DH-1 |
 | Sunita Rathore (PRS-RJ-0013) | `sunita.rathore` | Pay and accounts officer (passing officer) | PAO-1 |
-| Harish Mathur (PRS-RJ-0001) | `harish.mathur` | Financial adviser (FD allotment) | FA-1 |
+| Harish Mathur (PRS-RJ-0001) | `harish.mathur` | Financial adviser (FD allotment; treasury personas act on the budget seats in Sangam only, IFMS finding 3 gap), State HQ (Jaipur, INFERRED) | FA-1 |
+| Govind Khandelwal (PRS-RJ-0024) | `govind.khandelwal` | Bill distributor, TR-JPR-01 Treasury Jaipur City | BD-1 |
+| Mukesh Swami (PRS-RJ-0025) | `mukesh.swami` | Assistant accounts officer, TR-JPR-01 | AAO-1 |
+| Sarita Champawat (PRS-RJ-0026) | `sarita.champawat` | Second signatory, TR-JPR-01 | SS-1 |
 | Anil Choudhary (PRS-RJ-0019) | `anil.choudhary` | Employee, GPF subscriber | none |
-| Pradeep Saxena (PRS-RJ-0007) | `pradeep.saxena` | Auditor (read only) | none |
-| Rajendra Prasad Sharma (PRS-RJ-0022) | `rajendra.sharma` | Department administrator | none |
-| Meenakshi Kanwar (PRS-RJ-0023) | `meenakshi.kanwar` | Department administrator | none |
+| Pradeep Saxena (PRS-RJ-0007) | `pradeep.saxena` | Auditor (read only), State HQ (Jaipur, INFERRED) | none |
+| Rajendra Prasad Sharma (PRS-RJ-0022) | `rajendra.sharma` | Department administrator, State HQ (Jaipur, INFERRED) | none |
+| Meenakshi Kanwar (PRS-RJ-0023) | `meenakshi.kanwar` | Department administrator, State HQ (Jaipur, INFERRED) | none |
 | Neelam Joshi | `platform.admin` | Platform administrator (platform realm) | none |
 
 ## 1. Sign in as each role
@@ -73,7 +76,7 @@ Anil Choudhary starts the case and the DDO scrutinises it: two different people,
 | # | Action | Expected screen and result |
 |---|---|---|
 | 4.1 | As `ramesh.meena`: Tasks, then "Sanction / approval". | The sanction task (competent role HOO, `ifms-gpf-authority.dmn`), with the scrutiny remark. |
-| 4.2 | Choose Sanction. | A GPF bill is raised (`GPF bill` call); it continues in step 6 from 6.3, where the BD-1 and AAO-1 persona gap stops it. |
+| 4.2 | Choose Sanction. | A GPF bill is raised (`GPF bill` call); it continues in step 6 from 6.3. |
 
 ## 5. A return and its rework
 
@@ -89,9 +92,9 @@ Unblocked: IFT-4 is merged (005d726d, `gov.ifms.gpf` 1.0.3). Reject stays final.
 | # | Action | Expected screen and result |
 |---|---|---|
 | 6.1 | As `kavita.sharma`: Start, "Bill" (`sangam-ifms-bill`), choose a bill type, head of account, payee, amount. Submit. | The checks run: bill type, head of account, duplicate claim, payee record. A failed check ends with a stated reason (for example BILL_INVALID). |
-| 6.2 | If asked "Confirm payee: account held by several parties": confirm the payee. | The bill continues. |
-| 6.3 | PAO chain: "Assign bill in FIFO order" (BD-1); `deepak.saini` "Dealing hand check" (DH-1); "AAO check" (AAO-1); `sunita.rathore` "PAO pass, object or return" (PAO-1): Pass. | Each task appears for the next seat in turn. On pass, the approval is bound at the PAO pass (IFT-5) and execution starts. **BLOCKED (persona gap):** E-67 has no Jaipur persona for BD-1 (bill distributor) or AAO-1, so the chain waits at "Assign bill" with nobody to take it. Needs IFMS personas for those seats, or an owner ruling. |
-| 6.3a | If asked: "Second signature (DSC)" (SS-1). | No persona for SS-1 either (gap); needs the DSC agent too. |
+| 6.2 | If asked "Confirm payee: account held by several parties": confirm the payee (PAO-1, `sunita.rathore`; INFERRED, the pack hard-codes this seat). | The bill continues. **BLOCKED (pack defect, fix in progress in L-packs):** payee review and the PAO pass in 6.3 are both on seat PAO-1, and the PAO pass guard refuses the same seat (422 SOD_VIOLATION) every time payee review has happened. |
+| 6.3 | PAO chain: "Assign bill in FIFO order" (BD-1); `deepak.saini` "Dealing hand check" (DH-1); "AAO check" (AAO-1); `sunita.rathore` "PAO pass, object or return" (PAO-1): Pass. | Each task appears for the next seat in turn. On pass, the approval is bound at the PAO pass (IFT-5) and execution starts. BD-1 `govind.khandelwal`, AAO-1 `mukesh.swami` (joint ledger SANGAM-PERSONA-ADD). |
+| 6.3a | If asked: as `sarita.champawat`, "Second signature (DSC)" (SS-1). | Needs the DSC agent on the presenting machine. |
 | 6.4 | Alternative: at 6.3 the PAO objects or returns. As `kavita.sharma` (the initiator seat): "Reply to objection / correct", correct, resubmit. | The bill returns to the PAO chain; on the next pass the approval is bound and execution runs. Unblocked: IFT-1/IFT-5 merged (9b73a430, `gov.ifms.pao-chain` 1.0.3). |
 | 6.5 | Payment through the rail. | Expected: payment advice and voucher, case CLOSED. **BLOCKED (payment loop, PFMS field mapping):** the bill sends its own payload, PfmsFileConnector needs bill id, amount and beneficiary name, account and IFSC, answers INVALID_INPUT, and the bill reissues the payment without a human step. Fix in progress in L-packs (`feat/round8-payloop`: pay-correct task, payee resolution, GPF inputs from `employeeId`). Do not show this step live until it is merged. |
 
@@ -121,5 +124,5 @@ FA-1 as the starting seat is INFERRED in the pack (SL-57, IFMS R-99 v0.2 s6.1); 
 | 5.1 GPF return and rework | IFT-4 | unblocked (005d726d) |
 | 6.4 bill PAO return | IFT-1/IFT-5 fixed (9b73a430); reached only through 6.3 | waits on the 6.3 persona gap |
 | 6.5 payment | payment loop, PFMS field mapping | BLOCKED: L-packs payment-loop work |
-| 6.3 bill PAO chain | no Jaipur persona for BD-1, AAO-1, SS-1 (E-67 gap) | BLOCKED: needs IFMS personas or a ruling |
+| 6.2 payee review then 6.3 PAO pass | both on seat PAO-1; the PAO pass guard refuses the same seat | BLOCKED: pack defect, fix in progress in L-packs |
 | 2.2 GPF start inputs | payment-loop work moves them to `employeeId` | at risk: check the deployed form |

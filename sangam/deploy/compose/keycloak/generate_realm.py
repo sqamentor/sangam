@@ -381,6 +381,9 @@ PRESENTATION_ROLES = [
     ("DEALING_HAND", "Dealing hand (IFMS pack role)"),
     ("PAO", "Pay and accounts officer (IFMS pack role)"),
     ("FA", "Financial adviser (IFMS pack role)"),
+    ("BILL_DISTRIBUTOR", "Bill distributor (IFMS pack role)"),
+    ("AAO", "Assistant accounts officer (IFMS pack role)"),
+    ("SECOND_SIGNATORY", "Second signatory (IFMS pack role)"),
     ("sangam-tenant-admin", "Department (organisation) administrator"),
     ("sangam-auditor", "Read audit timelines and verify audit chains (READ_AUDIT)"),
 ]
@@ -395,6 +398,11 @@ PRESENTATION_USERS = [
     ("deepak.saini", "Deepak", "Saini", ["DEALING_HAND", "sangam-user"], ["DH-1"], "PRS-RJ-0012"),
     ("sunita.rathore", "Sunita", "Rathore", ["PAO", "sangam-user"], ["PAO-1"], "PRS-RJ-0013"),
     ("harish.mathur", "Harish", "Mathur", ["FA", "sangam-user"], ["FA-1"], "PRS-RJ-0001"),
+    # joint ledger [ANSWER] SANGAM-PERSONA-ADD: IFMS office TR-JPR-01 (Treasury Jaipur City); in Sangam these seats
+    # belong to the pack seed's org unit PAO-OFFICE (ifms-gpf seed.json), which packs define and this seed does not change
+    ("govind.khandelwal", "Govind", "Khandelwal", ["BILL_DISTRIBUTOR", "sangam-user"], ["BD-1"], "PRS-RJ-0024"),
+    ("mukesh.swami", "Mukesh", "Swami", ["AAO", "sangam-user"], ["AAO-1"], "PRS-RJ-0025"),
+    ("sarita.champawat", "Sarita", "Champawat", ["SECOND_SIGNATORY", "sangam-user"], ["SS-1"], "PRS-RJ-0026"),
     # GPF subscriber: starts a GPF application as an employee, no seat (IfmsPacksIT employee()); not the DDO (SoD)
     ("anil.choudhary", "Anil", "Choudhary", ["sangam-user"], [], "PRS-RJ-0019"),
     ("pradeep.saxena", "Pradeep", "Saxena", ["sangam-auditor", "sangam-user"], [], "PRS-RJ-0007"),
