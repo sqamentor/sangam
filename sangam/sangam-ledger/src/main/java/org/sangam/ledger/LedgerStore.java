@@ -13,10 +13,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Atomic, idempotent storage of ledger balances. {@link #post} applies every leg of a posting or none, idempotently by
- * {@code (tenant, reference)}: a repeated reference returns the first outcome (R41). Legs are applied in account-id
+ * {@code (tenant, reference)}: a repeated reference with the same legs returns the first outcome (R41); the same
+ * reference with other legs or amounts is refused with {@link #REFERENCE_CONFLICT} and changes nothing (owner
+ * decision 9). Legs are applied in account-id
  * order to avoid deadlocks; guards are evaluated under the row lock, so concurrent requests can never oversell.
  */
 public interface LedgerStore {
+
+    /** Reason of a refused posting whose reference is already used by a posting with other legs or amounts (409). */
+    String REFERENCE_CONFLICT = "REFERENCE_CONFLICT";
 
     /** Stored outcome of a posting. */
     record PostResult(boolean applied, boolean duplicate, String reason, List<Balance> after) {
@@ -69,6 +74,10 @@ public interface LedgerStore {
             String rk = e.tenant() + "|" + e.reference();
             PostResult prior = results.get(rk);
             if (prior != null) {
+                if (!JdbcLedgerStore.canonicalLegs(JdbcLedgerStore.legsJson(entries.get(rk).legs()))
+                        .equals(JdbcLedgerStore.canonicalLegs(JdbcLedgerStore.legsJson(e.legs())))) {
+                    return new PostResult(false, false, REFERENCE_CONFLICT, List.of());
+                }
                 return new PostResult(prior.applied(), true, prior.reason(), prior.after());
             }
             Map<String, Balance> next = new TreeMap<>();

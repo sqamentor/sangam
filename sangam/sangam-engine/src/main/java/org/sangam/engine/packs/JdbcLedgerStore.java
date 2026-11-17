@@ -17,11 +17,12 @@ import org.sangam.packs.port.LedgerStore;
  * JDBC {@link LedgerStore} (GP-11, GP-48) over {@code PACK_LEDGER_ACCOUNT} and {@code PACK_LEDGER_POSTING}, with the
  * semantics of the WS-PACKS simulator ({@code InMemoryLedgerStore}):
  * <ul>
- *   <li>postings are idempotent by reference per account: a repeat returns {@code applied=true,
- *       reason=DUPLICATE_REFERENCE} and changes nothing;</li>
+ *   <li>postings are idempotent by reference per account: an exact repeat (same delta) returns {@code applied=true,
+ *       reason=DUPLICATE_REFERENCE} and changes nothing; the same reference with another delta is refused
+ *       ({@code REFERENCE_CONFLICT}, owner decision 9);</li>
  *   <li>{@code allowNegative=false} rejects a posting that would go below zero ({@code INSUFFICIENT_BALANCE});</li>
  *   <li>{@code reverse} undoes a posting by reference, once ({@code NOTHING_TO_REVERSE} otherwise); a reversed
- *       reference may be posted again;</li>
+ *       reference is closed: posting it again is refused ({@code REFERENCE_REVERSED}, owner decision 9);</li>
  *   <li>each account has an explicit {@code unit} column (fixed on first use): ISO 4217 currency = integer minor
  *       units of that currency, otherwise a quantity unit at {@value LedgerStore#QUANTITY_EXPONENT} decimal places
  *       (SD-398). A posting in another unit is refused ({@code UNIT_MISMATCH}).</li>
@@ -32,6 +33,10 @@ import org.sangam.packs.port.LedgerStore;
 public final class JdbcLedgerStore implements LedgerStore {
 
     private static final String[] ACCOUNT_COLS = {"tenant_id", "ledger", "account", "unit", "balance", "version", "updated_at"};
+
+    /** Stored posting of a reference: its state and delta in integer units. */
+    private record Prior(String state, long delta) {
+    }
 
     private final ProductJdbc jdbc;
     private final SangamClock clock;
@@ -79,24 +84,26 @@ public final class JdbcLedgerStore implements LedgerStore {
             if (!current.unit().equals(unit)) {
                 return new Posting(false, "UNIT_MISMATCH", current.value());
             }
-            Optional<String> state = postingState(c, tenantId, ledger, account, reference);
-            if (state.isPresent() && "POSTED".equals(state.get())) {
-                return new Posting(true, "DUPLICATE_REFERENCE", current.value());
+            // the account row lock serializes posts of one reference, so this read cannot race a concurrent post
+            Optional<Prior> prior = Jdbc.one(c, "SELECT state, delta FROM PACK_LEDGER_POSTING WHERE tenant_id = ? AND "
+                    + "ledger = ? AND account = ? AND reference = ?", rs -> new Prior(rs.getString(1), rs.getLong(2)),
+                    tenantId, ledger, account, reference);
+            if (prior.isPresent()) {
+                Prior p = prior.get();
+                if (!"POSTED".equals(p.state())) {
+                    return new Posting(false, LedgerStore.REFERENCE_REVERSED, current.value());
+                }
+                return p.delta() == d ? new Posting(true, "DUPLICATE_REFERENCE", current.value())
+                        : new Posting(false, LedgerStore.REFERENCE_CONFLICT, current.value());
             }
             long after = Math.addExact(current.balance(), d);
             if (!allowNegative && after < 0) {
                 return new Posting(false, "INSUFFICIENT_BALANCE", current.value());
             }
             setBalance(c, tenantId, ledger, account, after);
-            if (state.isPresent()) { // reversed earlier: posted again
-                Jdbc.update(c, "UPDATE PACK_LEDGER_POSTING SET delta = ?, state = 'POSTED', balance_after = ?, "
-                                + "created_at = ?, reversed_at = NULL WHERE tenant_id = ? AND ledger = ? AND account = ? "
-                                + "AND reference = ?", d, after, clock.now(), tenantId, ledger, account, reference);
-            } else {
-                Jdbc.update(c, "INSERT INTO PACK_LEDGER_POSTING (tenant_id, ledger, account, reference, delta, state, "
-                                + "balance_after, created_at) VALUES (?,?,?,?,?,'POSTED',?,?)",
-                        tenantId, ledger, account, reference, d, after, clock.now());
-            }
+            Jdbc.update(c, "INSERT INTO PACK_LEDGER_POSTING (tenant_id, ledger, account, reference, delta, state, "
+                            + "balance_after, created_at) VALUES (?,?,?,?,?,'POSTED',?,?)",
+                    tenantId, ledger, account, reference, d, after, clock.now());
             return new Posting(true, null, LedgerStore.amount(after, unit));
         });
     }
@@ -139,11 +146,6 @@ public final class JdbcLedgerStore implements LedgerStore {
         jdbc.dialect(c).insertIfAbsent(c, "PACK_LEDGER_ACCOUNT", ACCOUNT_COLS, "version", tenantId, ledger, account, unit, 0L, 0L,
                 clock.now());
         return lockExisting(c, tenantId, ledger, account).orElseThrow();
-    }
-
-    private Optional<String> postingState(Connection c, String tenantId, String ledger, String account, String reference) {
-        return Jdbc.one(c, "SELECT state FROM PACK_LEDGER_POSTING WHERE tenant_id = ? AND ledger = ? AND account = ? "
-                + "AND reference = ?", rs -> rs.getString(1), tenantId, ledger, account, reference);
     }
 
     private void setBalance(Connection c, String tenantId, String ledger, String account, long balance) {

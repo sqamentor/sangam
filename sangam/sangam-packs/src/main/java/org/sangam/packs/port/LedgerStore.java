@@ -22,13 +22,21 @@ public interface LedgerStore {
     /** Decimal places of a quantity (non-money) unit, e.g. half days of leave. */
     int QUANTITY_EXPONENT = 4;
 
+    /** Refusal: the reference is already posted on the account with another delta (409, owner decision 9). */
+    String REFERENCE_CONFLICT = "REFERENCE_CONFLICT";
+
+    /** Refusal: the reference was reversed; a reversed reference is closed and never posted again (409). */
+    String REFERENCE_REVERSED = "REFERENCE_REVERSED";
+
     BigDecimal balance(String tenantId, String ledger, String account);
 
     /**
      * Posts {@code delta} (in {@code unit}) to the account.
      *
      * @param allowNegative false rejects a posting that would take the balance below zero
-     * @return the result; {@code applied=false} with {@code reason=INSUFFICIENT_BALANCE} or {@code UNIT_MISMATCH}
+     * @return the result; an exact replay of a live posting is {@code applied=true, reason=DUPLICATE_REFERENCE};
+     *     {@code applied=false} with {@code reason=INSUFFICIENT_BALANCE}, {@code UNIT_MISMATCH},
+     *     {@link #REFERENCE_CONFLICT} or {@link #REFERENCE_REVERSED}
      */
     Posting post(String tenantId, String ledger, String account, String unit, BigDecimal delta, String reference,
                  boolean allowNegative);

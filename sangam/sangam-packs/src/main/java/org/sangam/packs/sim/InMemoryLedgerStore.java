@@ -8,7 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.sangam.packs.port.LedgerStore;
 
 /**
- * In-memory {@link LedgerStore}; postings idempotent by reference, account updates serialised per account. Same unit
+ * In-memory {@link LedgerStore}; postings idempotent by reference (exact replay only: another delta is
+ * {@code REFERENCE_CONFLICT}, a reversed reference {@code REFERENCE_REVERSED}), account updates serialised per account. Same unit
  * rules as the JDBC store: integer units per account, explicit unit fixed on first use.
  */
 public class InMemoryLedgerStore implements LedgerStore {
@@ -48,8 +49,13 @@ public class InMemoryLedgerStore implements LedgerStore {
             return new Posting(false, "UNIT_MISMATCH", value(a));
         }
         String p = a + "|" + reference;
-        if (postings.containsKey(p)) {
-            return new Posting(true, "DUPLICATE_REFERENCE", value(a));
+        Long prior = postings.get(p);
+        if (prior != null) {
+            return prior == d ? new Posting(true, "DUPLICATE_REFERENCE", value(a))
+                    : new Posting(false, LedgerStore.REFERENCE_CONFLICT, value(a));
+        }
+        if (postings.containsKey(p + "|reversed")) {
+            return new Posting(false, LedgerStore.REFERENCE_REVERSED, value(a));
         }
         long after = Math.addExact(balances.getOrDefault(a, 0L), d);
         if (!allowNegative && after < 0) {
