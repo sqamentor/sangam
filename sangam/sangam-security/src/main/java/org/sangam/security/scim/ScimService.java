@@ -247,7 +247,7 @@ public final class ScimService {
         ArrayNode memberOf = u.putArray("groups");
         for (String g : groups.groupsOf(c, t, id)) {
             store.find(c, t, ScimStore.GROUP, g).ifPresent(gr -> memberOf.addObject().put("value", g)
-                    .put("display", gr.displayName()).put("$ref", ScimResources.BASE + "Groups/" + g));
+                    .put("display", gr.displayName()).put("$ref", ScimResources.location("Groups", g)));
         }
         ObjectNode ext = u.putObject(ScimResources.SANGAM_USER);
         ext.put("personId", id);
@@ -364,7 +364,7 @@ public final class ScimService {
             Optional<ScimStore.Row> u = store.find(c, t, ScimStore.USER, m);
             if (u.isPresent()) {
                 o.put("display", u.get().displayName() != null ? u.get().displayName() : u.get().userName());
-                o.put("$ref", ScimResources.BASE + "Users/" + m);
+                o.put("$ref", ScimResources.location("Users", m));
             }
         }
         g.set("meta", ScimResources.meta("Group", id, row));

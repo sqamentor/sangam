@@ -31,6 +31,25 @@ public final class ScimResources {
     public static final String ERROR = "urn:ietf:params:scim:api:messages:2.0:Error";
     /** Base of {@code meta.location}; the web adapter may prefix the server's external URL. */
     public static final String BASE = "/scim/v2/";
+
+    /**
+     * The resource URI of a SCIM resource (RFC 7644 section 3.2): the id is one path segment, so every octet outside
+     * the RFC 3986 unreserved set is percent-encoded. An id carrying '/' or ':' (an adopted person id) stays one
+     * segment and the location resolves to the same resource.
+     */
+    public static String location(String collection, String id) {
+        StringBuilder s = new StringBuilder(BASE).append(collection).append('/');
+        for (byte b : id.getBytes(java.nio.charset.StandardCharsets.UTF_8)) {
+            int c = b & 0xff;
+            if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-' || c == '.' || c == '_' || c == '~') {
+                s.append((char) c);
+            } else {
+                s.append('%').append(Character.toUpperCase(Character.forDigit(c >> 4, 16)))
+                        .append(Character.toUpperCase(Character.forDigit(c & 0xf, 16)));
+            }
+        }
+        return s.toString();
+    }
     /** The core attributes Sangam keeps verbatim in {@code SEC_SCIM_RESOURCE.attributes}. */
     public static final List<String> KEPT = List.of("name", "emails", "phoneNumbers", "locale", "preferredLanguage",
             "timezone", "title");
@@ -265,7 +284,7 @@ public final class ScimResources {
         meta.put("resourceType", type);
         meta.put("created", row.created().toString());
         meta.put("lastModified", row.updated().toString());
-        meta.put("location", BASE + (type.equals("User") ? "Users/" : "Groups/") + id);
+        meta.put("location", location(type.equals("User") ? "Users" : "Groups", id));
         meta.put("version", etag(row.version()));
         return meta;
     }

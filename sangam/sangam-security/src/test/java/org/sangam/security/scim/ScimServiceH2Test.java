@@ -186,6 +186,16 @@ class ScimServiceH2Test {
     }
 
     @Test
+    void theLocationOfAnAdoptedPersonWhoseIdCarriesASlashOrAColonIsOneEncodedSegment() throws Exception {
+        Jdbc.update(c, "INSERT INTO SEC_PERSON(tenant_id, person_id, display_name, external_subject, status) VALUES (?,?,?,?,'ACTIVE')",
+                T, "ldap/ou:a", "Directory", "sub-l");
+        ObjectNode u = scim.createUser(c, idp, user("lena", "sub-l"));
+        assertEquals("ldap/ou:a", u.get("id").asText());
+        assertEquals("/scim/v2/Users/ldap%2Fou%3Aa", u.get("meta").get("location").asText(),
+                "the id is one percent-encoded path segment (RFC 7644 section 3.2)");
+    }
+
+    @Test
     void anExistingPersonWithTheSameSubjectIsAdoptedNotDuplicated() throws Exception {
         Jdbc.update(c, "INSERT INTO SEC_PERSON(tenant_id, person_id, display_name, external_subject, status) VALUES (?,?,?,?,'ACTIVE')",
                 T, "p-old", "Old", "sub-o");
