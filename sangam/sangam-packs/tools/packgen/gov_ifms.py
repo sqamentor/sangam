@@ -954,10 +954,21 @@ def sna_sparsh():
     con = s.conn('ss_consume', 'Consume mother sanction', 'ledger.consume', 'consume', 'submit', 'ledgerId,slsCode,amount,operationId',
                  'con', step='consume')
     s.flow(cut, ex)
-    fail = s.setv('ss_reissue', 'Re-push with reissue tag', values='reissueTag=true')
-    outcome(s, 'ss_exGw', 'executionOutcome', {'DONE': con}, fail)
+    # SANGAM-PAYMENT-LOOP (IFMS E-31 §6): a batch RBI refused or returned (or an unknown outcome the reconciliation
+    # confirmed as failed) is never re-pushed automatically. It goes to the PD checker, who re-pushes after correction
+    # (reissue tag, a new operation) or cancels; while the outcome is unknown the case waits in core execution.
+    corr = s.user('ss_payCorrect', 'RBI batch refused or returned: correct and re-push, or cancel | '
+                  'आरबीआई बैच अस्वीकृत / वापस: सुधार कर पुनः भेजें या रद्द करें', '${pdCheckerSeat}',
+                  form='ifms-sna-sparsh/pay-correct', decision=('payCorrectDecision', ['reissue', 'cancel']),
+                  fields=['opReasonCode', 'slsCode', 'amount', 'remarks*'])
+    outcome(s, 'ss_exGw', 'executionOutcome', {'DONE': con}, corr)
     s.flow(ex, 'ss_exGw')
+    cg2 = s.xgw('ss_payCorrectGw')
+    s.flow(corr, cg2)
+    fail = s.setv('ss_reissue', 'Re-push with reissue tag', values='reissueTag=true')
+    s.flow(cg2, fail, "payCorrectDecision == 'reissue'", 're-push after correction')
     s.flow(fail, ex)
+    s.flow(cg2, withdraw(p, s, 'ss_payCancel'), None, 'cancel', default=True)
     cl = core(s, 'ss_close', 'Reconciliation per SLS and closure (core)', 'closure')
     s.seq(con, cl, end_ok(p, s, 'ss_end'))
     s.flow(ret, s.end('ss_endRet', 'Returned'))

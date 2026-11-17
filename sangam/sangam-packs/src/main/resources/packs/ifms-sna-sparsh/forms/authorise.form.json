@@ -1,6 +1,6 @@
 {
   "key": "ifms-sna-sparsh/authorise",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "pack": "gov.ifms.sna-sparsh",
   "title": {
     "en": "Payment authorisation (DSC)",
