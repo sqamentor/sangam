@@ -363,3 +363,13 @@ def check_held(packs_root, held_packs=None):
     if bad:
         raise SystemExit('decision 390 (2): a pack version environments hold changed content; ship it under a new '
                          'version (releases.SHIPS): ' + ', '.join(f'{p}@{v}' for p, v in bad))
+# R8-ifms-tests (IFT-1..IFT-4, integrator rulings under decisions 403 and 407): approval bound before core execution,
+# execution outcome and closure (monthly accounts, year-end closing, audit para), terminal state CLOSED (year-end lapse,
+# leave credit), GPF return to rework. 1.0.2 already carried other content and may be deployed in a dev environment,
+# so the new content ships as 1.0.3 (decision 390 (4), as gov.ifms.bill).
+for _pid in ('gov.ifms.monthly-accounts', 'gov.ifms.year-end-closing', 'gov.ifms.audit-para-settlement',
+             'gov.ifms.surrender-lapse', 'gov.leave', 'gov.ifms.gpf'):
+    SHIPS[_pid] = ('1.0.1', '1.0.3')
+# R8-ifms-tests IFT-5: approval bound at the PAO pass before core execution (bill PAO chain, SNA-SPARSH).
+SHIPS['gov.ifms.pao-chain'] = ('1.0.1', '1.0.3')
+SHIPS['gov.ifms.sna-sparsh'] = ('1.0.1', '1.0.3')
