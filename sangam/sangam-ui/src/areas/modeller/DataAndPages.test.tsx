@@ -196,6 +196,6 @@ describe('page runtime', () => {
   it('a missing page is shown by name', async () => {
     routes['/pages/district-dash'] = problem(404, 'PAGE_NOT_FOUND');
     show(<PageRuntime />, '/pages/district-dash', '/pages/:key');
-    expect(await screen.findByText(T('error.notAvailable'))).toBeTruthy();
+    expect(await screen.findByText(T('error.notFound'))).toBeTruthy();
   });
 });

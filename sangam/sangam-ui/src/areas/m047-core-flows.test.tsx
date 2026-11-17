@@ -185,10 +185,10 @@ describe('M-047 TaskDetail decisions', () => {
     expect(screen.getByText(T('task.sodDisabled'))).toBeTruthy();
   });
 
-  it('a hidden task (403/404) reads "not available" and links back to the inbox', async () => {
+  it('a missing task (404) reads "could not find" and links back to the inbox', async () => {
     routes['/tasks/t1'] = problem(404);
     open();
-    expect(await screen.findByText(T('error.notAvailable'))).toBeTruthy();
+    expect(await screen.findByText(T('error.notFound'))).toBeTruthy();
     expect(screen.getByRole('link', { name: T('task.backToInbox') })).toBeTruthy();
     expect(api.post).not.toHaveBeenCalled();
   });

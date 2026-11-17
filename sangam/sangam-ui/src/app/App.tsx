@@ -162,6 +162,8 @@ const PortalConsents = named(pv, 'PortalConsents');
 const PortalNotices = named(pv, 'PortalNotices');
 const PublicPrivacy = named(po, 'PublicPrivacy');
 const Accessibility = named(hp, 'Accessibility');
+const Glossary = named(hp, 'Glossary');
+const Shortcuts = named(hp, 'Shortcuts');
 const About = named(hp, 'About');
 
 /** Role guard; with `access`, a caller holding one of its endpoint permissions passes too (M-028, access.ts). */
@@ -180,7 +182,8 @@ function Guard({ roles, access, children }: { roles?: Role[]; access?: Access; c
 
 function Home() {
   const { hasRole } = useAuth();
-  const first = NAV.find((a) => hasRole(...a.roles));
+  // Help is open to everyone; a caller with no job group at all lands on About.
+  const first = NAV.find((a) => a.roles.length > 0 && hasRole(...a.roles));
   return <Navigate to={first ? '/welcome' : '/help/about'} replace />;
 }
 
@@ -215,7 +218,9 @@ function AuthedRoutes() {
           <Route path="/x/:pluginId/:id" element={<PluginPage />} />
           <Route path="/account" element={<Account />} />
           <Route path="/ops/engine" element={g(['PLATFORM_OPERATOR'], <OperatonOpsPage />)} />
-          <Route path="/ops/task-dashboard" element={g(['PLATFORM_OPERATOR'], <TaskDashboard />)} />
+          {/* decision 397: route words match the menu labels; the old addresses redirect */}
+          <Route path="/team" element={g(['PLATFORM_OPERATOR'], <TaskDashboard />)} />
+          <Route path="/ops/task-dashboard" element={<Navigate to="/team" replace />} />
           <Route path="/admin/engine" element={g(['PLATFORM_ADMIN'], <EngineAdminPage />)} />
           <Route path="/admin/config" element={g(ADMIN, <ConfigPage />)} />
           {m('/admin/onboarding', <OnboardingWizard />)}
@@ -267,7 +272,8 @@ function AuthedRoutes() {
           <Route path="/ops/notifications" element={g(OPS, <NotificationFailures />)} />
           <Route path="/ops/deployments" element={g([...OPS, ...MODEL], <Deployments />)} />
           <Route path="/ops/cleanup" element={g(OPS, <Cleanup />)} />
-          <Route path="/ops/debugger" element={g([...OPS, ...MODEL], <Debugger />)} />
+          <Route path="/design/test" element={g([...OPS, ...MODEL], <Debugger />)} />
+          <Route path="/ops/debugger" element={<Navigate to="/design/test" replace />} />
           <Route path="/ops/audit-log" element={g([...OPS, 'AUDITOR'], <OperatorAudit />)} />
 
           <Route path="/admin/tenants" element={g(ADMIN, <Tenants />)} />
@@ -319,6 +325,8 @@ function AuthedRoutes() {
 
           <Route path="/help/accessibility" element={<Accessibility />} />
           <Route path="/help/about" element={<About />} />
+          <Route path="/help/glossary" element={<Glossary />} />
+          <Route path="/help/shortcuts" element={<Shortcuts />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
