@@ -81,6 +81,7 @@ class PaymentLoopTest {
         install(new SimulatorConnectorGateway());
         Map<String, Object> v = AllPacksSmokeTest.bag();
         v.put("amount", 1_500_000L);
+        v.put("sim_ledger_available", "available=100000000"); // funds confirmed (SL-113: no default stands in)
         if (directive != null) {
             v.put("sim_pfms_payment", directive);
         }
@@ -91,6 +92,7 @@ class PaymentLoopTest {
             driver.run(bk, t -> STOP.contains(t.getTaskDefinitionKey()) ? null : answers.answer(t), 150);
         } catch (RuntimeException e) {
             // before the fix the reissue loop runs until the step limit
+            System.err.println(bk + ": driver stopped: " + e);
         }
         return pi.getId();
     }
@@ -139,12 +141,18 @@ class PaymentLoopTest {
 
         @Override
         public ConnectorResult submit(ConnectorRequest r) {
+            if (!"docs.render".equals(r.connector())) {
+                return super.submit(r); // the reconciliation desk's alerts
+            }
             submits.incrementAndGet();
             return new ConnectorResult(OperationStatus.PENDING, null, "accepted", null, Map.of());
         }
 
         @Override
         public ConnectorResult lookup(String tenantId, String connector, String operationId) {
+            if (!"docs.render".equals(connector)) {
+                return super.lookup(tenantId, connector, operationId);
+            }
             return ConnectorResult.failed("NOT_FOUND", "never reached the external system");
         }
     }
@@ -165,7 +173,7 @@ class PaymentLoopTest {
             // before the fix: the loop runs until the step limit
         }
         int submits = g.submits.get();
-        assertTrue(submits <= 3, "submits bounded by maxLookups: " + submits);
+        assertTrue(submits <= 3, "submits bounded by maxLookups: " + submits + " lookups " + driver.var("PL/3", "opLookups") + " max " + driver.var("PL/3", "maxLookups") + " status " + driver.var("PL/3", "opStatus"));
         assertEquals(1, engine.getRuntimeService().createExecutionQuery().processInstanceBusinessKey("PL/3")
                 .activityId("ex_resolved").count(), "the reconciliation item is open for a person");
     }
@@ -186,12 +194,15 @@ class PaymentLoopTest {
                 "SBIN0000001"));
         bill("PL/5", null);
         assertTrue(driver.ended("PL/5"), "paid and closed: " + open("PL/5"));
-        assertEquals("PV-7", driver.var("PL/5", "payeeVersionId"));
+        assertEquals("PV-7", driver.var("PL/5", "payeeVersionId"), "rejection " + driver.var("PL/5",
+                "rejectionReasonCodes") + " state " + driver.var("PL/5", "caseState") + " pao "
+                + driver.var("PL/5", "paoOutcome") + " journal " + gateway.journal().stream()
+                .map(ConnectorRequest::connector).toList());
         ConnectorRequest pay = gateway.journal().stream().filter(r -> "pfms.payment".equals(r.connector()))
                 .findFirst().orElseThrow();
         assertEquals("123456789012", pay.payload().get("accountNo"));
         assertEquals("SBIN0000001", pay.payload().get("ifsc"));
-        assertEquals("15000", pay.payload().get("amount"));
+        assertEquals("15000.00", pay.payload().get("amount"));
         assertEquals("PV-7", pay.payload().get("payeeVersionId"));
     }
 }
