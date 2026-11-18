@@ -88,7 +88,7 @@ class MavenCache(unittest.TestCase):
     def test_no_uncached_wrapper_fetch_loop(self):
         for name in sorted(os.listdir(WORKFLOWS)):
             with open(os.path.join(WORKFLOWS, name), encoding="utf-8") as f:
-                self.assertNotIn("Fetch the Maven distribution", f.read(), name)
+                self.assertFalse("Fetch the Maven distribution" in f.read(), f"{name}: uncached wrapper fetch loop")
 
 
 class Distribution(unittest.TestCase):
