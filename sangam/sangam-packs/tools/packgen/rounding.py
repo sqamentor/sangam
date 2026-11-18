@@ -219,6 +219,13 @@ POLICIES = {
         placeholder=('SYNTHETIC refund rounding: nearest paisa',
                      'the institution's refund rounding was not verified; deploy it as a tenant override '
                      '(decision 139)')),
+    'sec-ecom-commission-rounding': dict(
+        title='Marketplace commission rounding (order value x commission %)',
+        rows=demo('marketplace commission', 'HALF_UP', 1, 'line', 'line value',
+                  why='SEC-SCM-001: value rules are company policy (SYNTHETIC); quantity is a decimal field'),
+        placeholder=('SYNTHETIC commission rounding: nearest paisa',
+                     'the marketplace's commission rounding was not verified; deploy it as a tenant override '
+                     '(decision 139)')),
     'gem-amount-rounding': dict(
         title='GeM purchase value rounding (quantity x unit price)',
         rows=demo('purchase value', 'HALF_UP', 1, 'line', 'line value'),

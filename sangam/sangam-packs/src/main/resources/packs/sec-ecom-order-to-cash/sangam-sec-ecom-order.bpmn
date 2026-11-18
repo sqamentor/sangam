@@ -31,6 +31,10 @@
     <callActivity id="eo_refund_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.MoneyFieldsDelegate"><operaton:field name="captureVar"><operaton:string>payRef</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Refund of the order to its source</operaton:string></operaton:field></operaton:executionListener><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
     <exclusiveGateway id="eo_refund_sgw" name="Sanctioned?" default="eo_refund_sgw_no"></exclusiveGateway>
     <endEvent id="eo_refund_notReleased" name="Not released"></endEvent>
+    <sequenceFlow id="eo_f9013" sourceRef="eo_net" targetRef="eo_settle_sanction"/>
+    <sequenceFlow id="eo_f9011" sourceRef="eo_commission" targetRef="eo_net"/>
+    <sequenceFlow id="eo_f9012" name="unknown: held at the sanction (no payable amount)" sourceRef="eo_commGw" targetRef="eo_settle_sanction"/>
+    <sequenceFlow id="eo_f9010" name="known" sourceRef="eo_commGw" targetRef="eo_commission"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('commissionPct') != null}</conditionExpression></sequenceFlow>
     <sequenceFlow id="eo_refund_sanction_f" sourceRef="eo_refund_sanction" targetRef="eo_refund_sgw"/>
     <sequenceFlow id="eo_refund_sgw_yes" name="sanctioned" sourceRef="eo_refund_sgw" targetRef="eo_refund"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="eo_refund_sgw_no" name="not sanctioned" sourceRef="eo_refund_sgw" targetRef="eo_refund_notReleased"/>
@@ -53,7 +57,10 @@
     <businessRuleTask id="eo_commission" name="Commission (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ecom-commission</operaton:string></operaton:field></extensionElements></businessRuleTask>
     <serviceTask id="eo_settleCfg" name="Settlement" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>executionConnector=nodal.settle;executionStep=seller-settlement;executionPayloadFields=sellerId,amount,commissionPct</operaton:string></operaton:field></extensionElements></serviceTask>
     <callActivity id="eo_settle" name="Settle with the seller (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
-    <callActivity id="eo_settle_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="eo_commGw" name="Commission rate known?" default="eo_f9012"></exclusiveGateway>
+    <serviceTask id="eo_commission" name="Commission = order value x commission % (decision 139 policy)" operaton:class="org.sangam.packs.core.MoneyCalculationDelegate"><extensionElements><operaton:field name="result"><operaton:string>commissionAmount</operaton:string></operaton:field><operaton:field name="formula"><operaton:string>amount * commissionPct / 100</operaton:string></operaton:field><operaton:field name="policy"><operaton:string>sec-ecom-commission-rounding</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="eo_net" name="Seller payable = order value less commission" operaton:class="org.sangam.packs.core.MoneyCalculationDelegate"><extensionElements><operaton:field name="result"><operaton:string>payableAmount</operaton:string></operaton:field><operaton:field name="op"><operaton:string>SUM</operaton:string></operaton:field><operaton:field name="formula"><operaton:string>amount - commissionAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="eo_settle_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.MoneyFieldsDelegate"><operaton:field name="amount"><operaton:string>payableAmount</operaton:string></operaton:field><operaton:field name="payeeKeys"><operaton:string>sellerId</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Settlement to the seller net of the marketplace commission</operaton:string></operaton:field></operaton:executionListener><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
     <exclusiveGateway id="eo_settle_sgw" name="Sanctioned?" default="eo_settle_sgw_no"></exclusiveGateway>
     <endEvent id="eo_settle_notReleased" name="Not released"></endEvent>
     <sequenceFlow id="eo_settle_sanction_f" sourceRef="eo_settle_sanction" targetRef="eo_settle_sgw"/>
@@ -108,7 +115,7 @@
     <sequenceFlow id="sec_ecom_order_f42" sourceRef="eo_codOptMerge" targetRef="eo_returnWindow"/>
     <sequenceFlow id="sec_ecom_order_f43" sourceRef="eo_returnWindow" targetRef="eo_commission"/>
     <sequenceFlow id="sec_ecom_order_f44" sourceRef="eo_commission" targetRef="eo_settleCfg"/>
-    <sequenceFlow id="sec_ecom_order_f45" sourceRef="eo_settleCfg" targetRef="eo_settle_sanction"/>
+    <sequenceFlow id="sec_ecom_order_f45" sourceRef="eo_settleCfg" targetRef="eo_commGw"/>
     <sequenceFlow id="sec_ecom_order_f46" sourceRef="eo_settle" targetRef="eo_end"/>
     <subProcess id="eo_cancel" name="Cancelled by the consumer before shipment" triggeredByEvent="true">
       <startEvent id="eo_cxStart" name="Cancellation request" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_order_cancel"/></startEvent>
@@ -129,6 +136,9 @@
   </process>
   <bpmndi:BPMNDiagram id="sec_ecom_order_diagram">
     <bpmndi:BPMNPlane id="sec_ecom_order_plane" bpmnElement="sangam-sec-ecom-order">
+      <bpmndi:BPMNShape id="eo_net_di" bpmnElement="eo_net"><dc:Bounds x="3965" y="-110" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_commission_di" bpmnElement="eo_commission"><dc:Bounds x="3835" y="-110" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_commGw_di" bpmnElement="eo_commGw" isMarkerVisible="true"><dc:Bounds x="3765" y="-10" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="eo_start_di" bpmnElement="eo_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="eo_defaults_di" bpmnElement="eo_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="eo_fraud_clear_di" bpmnElement="eo_fraud_clear"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
