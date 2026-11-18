@@ -377,7 +377,8 @@ public final class DmnModelLint {
             }
             return out;
         } catch (java.io.IOException e) {
-            throw new ProcessEngineException("ADR-D-26: cannot read pack manifest '" + resource + "': " + e.getMessage(), e);
+            throw new ProcessEngineException("ADR-D-26: DMN deployment refused, cannot read the money variables of pack "
+                    + "manifest '" + resource + "': " + e.getMessage(), e);
         }
     }
 
