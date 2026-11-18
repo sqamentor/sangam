@@ -37,7 +37,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
-        with: { distribution: temurin, java-version: "21.0.8", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+        with: { distribution: temurin, java-version: "21.0.8" }
+      - uses: ./.github/actions/maven-cache
       - name: Build + test sdks/java
         working-directory: sangam
         run: |
@@ -63,8 +64,8 @@ jobs:
           # jdk-25.0.2 on; 25.0.1 fails compile-no-fork (run 44110575416).
           java-version: "25.0.2"
           distribution: graalvm-community
-          cache: maven
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/maven-cache
       - name: Native metadata matches the SDK model
         run: python3 -I sangam/deploy/native/sdk-worker/generate_native_config.py --check
       - name: Build native executable
@@ -285,6 +286,7 @@ jobs:
           go test ./...
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with: { distribution: temurin, java-version: "21.0.8" }
+      - uses: ./.github/actions/maven-cache
       - name: Fetch openapi-generator-cli 7.10.0 (Maven Central, strict checksum)
         run: |
           mvn -B -ntp -C org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy             -Dartifact=org.openapitools:openapi-generator-cli:7.10.0 -DoutputDirectory="$RUNNER_TEMP/oag"
@@ -344,6 +346,7 @@ jobs:
         run: cargo test --locked
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with: { distribution: temurin, java-version: "21.0.8" }
+      - uses: ./.github/actions/maven-cache
       - name: Fetch openapi-generator-cli 7.10.0 (Maven Central, strict checksum)
         run: |
           mvn -B -ntp -C org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy             -Dartifact=org.openapitools:openapi-generator-cli:7.10.0 -DoutputDirectory="$RUNNER_TEMP/oag"
@@ -359,7 +362,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
-        with: { distribution: temurin, java-version: "21.0.8", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+        with: { distribution: temurin, java-version: "21.0.8" }
+      - uses: ./.github/actions/maven-cache
       - name: Kotlin extensions over the Java SDK
         working-directory: sangam
         run: |
@@ -384,7 +388,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
-        with: { distribution: temurin, java-version: "25.0.5+8", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+        with: { distribution: temurin, java-version: "25.0.5+8" }
+      - uses: ./.github/actions/maven-cache
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         id: dotnet
         with: { dotnet-version: "8.0.404" }

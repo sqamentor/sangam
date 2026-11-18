@@ -59,9 +59,41 @@ jobs:
           python3 -I sangam/tools/ci/ci_plan.py --modules "$IN_MODULES" --dbs "$IN_DBS" --chunks "$IN_CHUNKS" \
             --ui "$IN_UI" --file ci-lane.json --github-output "$GITHUB_OUTPUT" | tee -a "$GITHUB_STEP_SUMMARY"
 
+  deps:
+    # Single writer of the shared Maven cache (.github/actions/maven-cache) for this run. Root cause of the Maven
+    # Central HTTP 429 failures (2026-11-18): each ci/* branch is a new cache scope that sees only main's caches, and
+    # main had no Maven cache, so build + every IT leg cold-fetched ~290 MiB and the wrapper distribution in parallel.
+    # This job resolves once; build and the IT legs wait for it and restore read-only.
+    name: Maven dependencies (cache writer)
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: sangam
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: "25.0.5+8"
+      - uses: ./.github/actions/maven-cache
+        with:
+          save: "true"
+      - name: Resolve dependencies and plugins once (all IT profiles)
+        # test-compile lets the reactor resolve sibling modules; go-offline then resolves every dependency and plugin
+        # of every module, including the IT profiles' (failsafe, JDBC drivers, Testcontainers modules).
+        run: |
+          set -euo pipefail
+          bash "$GITHUB_WORKSPACE/.github/actions/maven-cache/resolve-once.sh" -DskipTests -Psangam-db-it,sangam-it-only,oracle-it test-compile dependency:go-offline
+      - name: Maven fetch count (Maven Central 429 evidence)
+        if: always()
+        run: bash "$GITHUB_WORKSPACE/.github/actions/maven-cache/fetch-count.sh"
+
   build:
     name: Build + unit tests (H2)
-    needs: plan
+    needs: [plan, deps]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     defaults:
@@ -74,17 +106,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "25.0.5+8"
-          cache: maven
-          cache-dependency-path: sangam/**/pom.xml
-      - name: Fetch the Maven distribution (retries on rate limits)
-        # Parallel lane runs hit HTTP 429 from Maven Central on the wrapper download (run 44021442186), which
-        # failed the build before compiling anything. Fetch it once with back-off before the real build.
-        run: |
-          for i in 1 2 3 4 5 6; do
-            if bash ./mvnw -B -ntp -v >/dev/null 2>/tmp/mvnw-fetch.err; then echo "maven ready (attempt $i)"; exit 0; fi
-            tail -3 /tmp/mvnw-fetch.err; s=$(( i * 20 )); echo "maven fetch failed, retry in ${s}s"; sleep $s
-          done
-          echo "maven distribution could not be fetched after 6 attempts"; exit 1
+      - uses: ./.github/actions/maven-cache
       - name: Maven verify (unit tests on H2)
         env:
           IN_MODULES: ${{ inputs.modules }}
@@ -98,6 +120,9 @@ jobs:
           [ "${#args[@]}" -gt 0 ] || { echo "ci_plan refused the selection (see its message above); nothing built"; exit 2; }
           echo "mvnw ${args[*]}"
           bash ./mvnw $MAVEN_ARGS "${args[@]}"
+      - name: Maven fetch count (Maven Central 429 evidence)
+        if: always()
+        run: bash "$GITHUB_WORKSPACE/.github/actions/maven-cache/fetch-count.sh"
       - name: Reports
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -111,7 +136,7 @@ jobs:
 
   it:
     name: IT ${{ matrix.db }}
-    needs: plan
+    needs: [plan, deps]
     if: needs.plan.outputs.has_it == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 150
@@ -141,17 +166,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "25.0.5+8"
-          cache: maven
-          cache-dependency-path: sangam/**/pom.xml
-      - name: Fetch the Maven distribution (retries on rate limits)
-        # Parallel lane runs hit HTTP 429 from Maven Central on the wrapper download (run 44021442186), which
-        # failed the build before compiling anything. Fetch it once with back-off before the real build.
-        run: |
-          for i in 1 2 3 4 5 6; do
-            if bash ./mvnw -B -ntp -v >/dev/null 2>/tmp/mvnw-fetch.err; then echo "maven ready (attempt $i)"; exit 0; fi
-            tail -3 /tmp/mvnw-fetch.err; s=$(( i * 20 )); echo "maven fetch failed, retry in ${s}s"; sleep $s
-          done
-          echo "maven distribution could not be fetched after 6 attempts"; exit 1
+      - uses: ./.github/actions/maven-cache
       - name: Free disk space for large DB images
         if: matrix.db == 'oracle' || matrix.db == 'sqlserver' || matrix.db == 'sqlserver2025'
         run: |
@@ -178,6 +193,9 @@ jobs:
           [ "${#args[@]}" -gt 0 ] || { echo "ci_plan refused the selection (see its message above); nothing built"; exit 2; }
           echo "mvnw ${args[*]}"
           bash ./mvnw $MAVEN_ARGS "${args[@]}"
+      - name: Maven fetch count (Maven Central 429 evidence)
+        if: always()
+        run: bash "$GITHUB_WORKSPACE/.github/actions/maven-cache/fetch-count.sh"
       - name: Reports
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
