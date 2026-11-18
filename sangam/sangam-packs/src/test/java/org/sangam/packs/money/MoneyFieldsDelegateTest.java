@@ -114,6 +114,20 @@ class MoneyFieldsDelegateTest {
     }
 
     @Test
+    void anAmountAboveItsCapOrWithoutTheCapIsHeld() {
+        // e-mandate MAX type: the actual debit, never more than the registered maximum
+        Map<String, Object> ok = run("amount=debitAmount;cap=amount;payeeKeys=payeePartyId;purpose=Mandate debit",
+                "INR", vars("payeePartyId", "M-1", "debitAmount", 400L, "amount", 500L));
+        assertEquals(400L, ((Number) ok.get("amount")).longValue());
+        String over = held(() -> run("amount=debitAmount;cap=amount;payeeKeys=payeePartyId;purpose=Mandate debit",
+                "INR", vars("payeePartyId", "M-1", "debitAmount", 600L, "amount", 500L)));
+        assertTrue(over.contains("exceeds"), over);
+        String noCap = held(() -> run("amount=debitAmount;cap=mandateMax;payeeKeys=payeePartyId;purpose=Mandate debit",
+                "INR", vars("payeePartyId", "M-1", "debitAmount", 400L)));
+        assertTrue(noCap.contains("mandateMax"), noCap);
+    }
+
+    @Test
     void aNameIsNeverAPayeeAccount() {
         String why = held(() -> run("payeeKeys=payeePartyId;purpose=Bill payment", "INR",
                 vars("amount", 100L, "payee", "M/s Supplier", "account", "1234")));

@@ -45,6 +45,8 @@ import org.sangam.packs.port.VerifiedPayees;
  *   <li>{@code currency} (M1): the tenant / jurisdiction profile's currency ({@link TenantCurrencies}), else the
  *       {@code money.currency} the deployed pack declares; neither: held. Never a silent default.</li>
  *   <li>{@code purpose}: required literal.</li>
+ *   <li>{@code cap} (optional): the variable holding the most this step may pay (for example a mandate's registered
+ *       maximum); the amount above it, or the cap variable missing, is held.</li>
  * </ul>
  * A hold is a {@link ProcessEngineException} {@code MONEY_OUT_HELD: <reason>} (audit {@code MONEY_FIELDS_HELD}): the
  * case does not move to the approval and nothing is paid.
@@ -60,6 +62,7 @@ public class MoneyFieldsDelegate implements JavaDelegate, ExecutionListener {
     private Expression captureVar;
     private Expression statutoryParty;
     private Expression purpose;
+    private Expression cap;
 
     @Override
     public void notify(DelegateExecution ex) {
@@ -82,6 +85,23 @@ public class MoneyFieldsDelegate implements JavaDelegate, ExecutionListener {
                     + "'statutoryParty'");
         }
         BigDecimal paid = paidAmount(ex, amountVar);
+        String capVar = Vars.field(cap, ex);
+        if (!blank(capVar)) {
+            BigDecimal limit;
+            try {
+                Object raw = ex.getVariable(capVar);
+                limit = raw == null ? null : Vars.decimal(raw);
+            } catch (RuntimeException e) {
+                throw hold(ex, "cap '" + capVar + "' is not a number");
+            }
+            if (limit == null) {
+                throw hold(ex, "no cap in '" + capVar + "' for amount '" + amountVar + "'");
+            }
+            if (paid.compareTo(limit) > 0) {
+                throw hold(ex, "amount '" + amountVar + "' = " + paid.toPlainString() + " exceeds its cap '" + capVar
+                        + "' = " + limit.toPlainString());
+            }
+        }
         String ccy = currencyOf(ex);
         String account;
         String payeeVersion = null;
