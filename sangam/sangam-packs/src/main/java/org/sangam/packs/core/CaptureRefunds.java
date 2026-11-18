@@ -76,7 +76,8 @@ public final class CaptureRefunds {
      * Start listener of the refund: binds the money fields (as {@link MoneyFieldsDelegate} with {@code captureVar}),
      * checks the capture record and records the release as the approval of this refund.
      */
-    public static class Release extends MoneyFieldsDelegate {
+    // implements ExecutionListener (inherited) is stated so the model-code allow-list review sees this class (SL-160)
+    public static class Release extends MoneyFieldsDelegate implements ExecutionListener {
         @Override
         public void execute(DelegateExecution ex) {
             super.execute(ex);
