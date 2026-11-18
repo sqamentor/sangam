@@ -11,10 +11,10 @@
         <inputEntry id="contract-price-escalation_r0_i1"><text>-</text></inputEntry>
         <outputEntry id="contract-price-escalation_r0_o0"><text>0</text></outputEntry>
       </rule>
-      <rule id="contract-price-escalation_r1"><description>beyond 5%, on 85% of value; rounded down once to a whole minor unit</description>
+      <rule id="contract-price-escalation_r1"><description>beyond 5%, on 85% of value; exact (DEC-5: no rounding in DMN)</description>
         <inputEntry id="contract-price-escalation_r1_i0"><text>-</text></inputEntry>
         <inputEntry id="contract-price-escalation_r1_i1"><text>-</text></inputEntry>
-        <outputEntry id="contract-price-escalation_r1_o0"><text>floor((escalationIndex - 5) / 100 * contractValue * 0.85)</text></outputEntry>
+        <outputEntry id="contract-price-escalation_r1_o0"><text>(escalationIndex - 5) / 100 * contractValue * 0.85</text></outputEntry>
       </rule>
     </decisionTable>
   </decision>

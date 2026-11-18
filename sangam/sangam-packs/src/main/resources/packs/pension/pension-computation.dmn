@@ -16,10 +16,10 @@
         <inputEntry id="pension-computation_r0_i0"><text>&gt;= 10</text></inputEntry>
         <inputEntry id="pension-computation_r0_i1"><text>-</text></inputEntry>
         <inputEntry id="pension-computation_r0_i2"><text>-</text></inputEntry>
-        <outputEntry id="pension-computation_r0_o0"><text>ceiling(min([max([max([lastPay, averageEmoluments]) * 0.5, 900000]), 12500000]))</text></outputEntry>
+        <outputEntry id="pension-computation_r0_o0"><text>min([max([max([lastPay, averageEmoluments]) * 0.5, 900000]), 12500000])</text></outputEntry>
         <outputEntry id="pension-computation_r0_o1"><text>true</text></outputEntry>
-        <outputEntry id="pension-computation_r0_o2"><text>ceiling(min([lastPay * 0.25 * min([floor(qualifyingService * 2), 66]), 250000000]))</text></outputEntry>
-        <outputEntry id="pension-computation_r0_o3"><text>ceiling(max([lastPay * 0.3, 900000]))</text></outputEntry>
+        <outputEntry id="pension-computation_r0_o2"><text>min([lastPay * 0.25 * min([floor(qualifyingService * 2), 66]), 250000000])</text></outputEntry>
+        <outputEntry id="pension-computation_r0_o3"><text>max([lastPay * 0.3, 900000])</text></outputEntry>
         <outputEntry id="pension-computation_r0_o4"><text>"CCS (Pension) Rules 2021: 50% of last emoluments or average emoluments, whichever is more beneficial; minimum 9,000, maximum 50% of the highest pay (1,25,000); gratuity 1/4 per six-monthly period, max 16.5 x emoluments, ceiling 25 lakh [U ceiling date]"</text></outputEntry>
       </rule>
       <rule id="pension-computation_r1"><description>service gratuity only</description>
@@ -28,8 +28,8 @@
         <inputEntry id="pension-computation_r1_i2"><text>-</text></inputEntry>
         <outputEntry id="pension-computation_r1_o0"><text>0</text></outputEntry>
         <outputEntry id="pension-computation_r1_o1"><text>false</text></outputEntry>
-        <outputEntry id="pension-computation_r1_o2"><text>ceiling(lastPay * 0.5 * floor(qualifyingService * 2))</text></outputEntry>
-        <outputEntry id="pension-computation_r1_o3"><text>ceiling(max([lastPay * 0.3, 900000]))</text></outputEntry>
+        <outputEntry id="pension-computation_r1_o2"><text>lastPay * 0.5 * floor(qualifyingService * 2)</text></outputEntry>
+        <outputEntry id="pension-computation_r1_o3"><text>max([lastPay * 0.3, 900000])</text></outputEntry>
         <outputEntry id="pension-computation_r1_o4"><text>"CCS (Pension) Rules 2021: service gratuity below 10 years (half a month per six-monthly period) [U]"</text></outputEntry>
       </rule>
     </decisionTable>
