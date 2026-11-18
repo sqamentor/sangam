@@ -205,27 +205,6 @@ POLICIES = {
         placeholder=('SYNTHETIC line value rounding: nearest paisa',
                      'the company\'s order value rounding (line versus order total) was not verified; deploy it as a '
                      'tenant override (decision 139)')),
-    'up14-payable-rounding': dict(
-        title='Payable rounding (invoiced quantity x invoice price)',
-        rows=demo('payable after the three-way match', 'HALF_UP', 1, 'line', 'line value',
-                  why='SEC-SCM-001: value rules are company policy (SYNTHETIC); quantity is a decimal field'),
-        placeholder=('SYNTHETIC payable rounding: nearest paisa',
-                     'the company's payable rounding (line versus invoice total) was not verified; deploy it as a '
-                     'tenant override (decision 139)')),
-    'sec-edu-refund-rounding': dict(
-        title='Withdrawal refund rounding (fee x refund %)',
-        rows=demo('withdrawal refund', 'HALF_UP', 1, 'line', 'line value',
-                  why='SEC-SCM-001: value rules are company policy (SYNTHETIC); quantity is a decimal field'),
-        placeholder=('SYNTHETIC refund rounding: nearest paisa',
-                     'the institution's refund rounding was not verified; deploy it as a tenant override '
-                     '(decision 139)')),
-    'sec-ecom-commission-rounding': dict(
-        title='Marketplace commission rounding (order value x commission %)',
-        rows=demo('marketplace commission', 'HALF_UP', 1, 'line', 'line value',
-                  why='SEC-SCM-001: value rules are company policy (SYNTHETIC); quantity is a decimal field'),
-        placeholder=('SYNTHETIC commission rounding: nearest paisa',
-                     'the marketplace's commission rounding was not verified; deploy it as a tenant override '
-                     '(decision 139)')),
     'gem-amount-rounding': dict(
         title='GeM purchase value rounding (quantity x unit price)',
         rows=demo('purchase value', 'HALF_UP', 1, 'line', 'line value'),
