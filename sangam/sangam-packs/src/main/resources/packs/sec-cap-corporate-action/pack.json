@@ -83,7 +83,8 @@
     "currency": "INR",
     "exponent": 2,
     "variables": [
-      "dividendPerShare"
+      "dividendPerShare",
+      "unpaidAmount"
     ]
   },
   "documentSlots": [

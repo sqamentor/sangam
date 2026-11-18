@@ -108,6 +108,8 @@
     "currency": "INR",
     "exponent": 2,
     "currencyReason": "owner decision M1: the pack applies RBI's Depositor Education and Awareness (DEA) Fund scheme, which is in rupees, so the pack declares INR",
-    "variables": []
+    "variables": [
+      "payableAmount"
+    ]
   }
 }
