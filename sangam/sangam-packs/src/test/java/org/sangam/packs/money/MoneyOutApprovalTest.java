@@ -228,6 +228,73 @@ class MoneyOutApprovalTest {
                 .singleResult(), "an OUT connector without a recorded approval is held with APPROVAL_INVALIDATED");
     }
 
+    @Test
+    void aRefundInACompensationHandlerIsNotABypass() {
+        // before the fix the guard walked sequence flows only, so a handler reached by an association was never seen
+        String handler = pay("pg.refund").replace("<serviceTask id=\"pay\"", "<serviceTask id=\"pay\" isForCompensation=\"true\"");
+        List<String> v = guard("<startEvent id=\"s\"/><serviceTask id=\"charge\"/>"
+                + "<boundaryEvent id=\"cb\" attachedToRef=\"charge\"><compensateEventDefinition/></boundaryEvent>" + handler
+                + "<endEvent id=\"e\"/>" + flow("f1", "s", "charge") + flow("f2", "charge", "e")
+                + "<association id=\"a1\" sourceRef=\"cb\" targetRef=\"pay\"/>");
+        assertEquals(1, v.size(), v.toString());
+    }
+
+    // ---- a held payment stops as an incident, never a quiet end ----
+
+    /** Stands for the earlier form: a refused payment raised as a BPMN error that nothing catches. */
+    public static class ThrowsBpmnError implements org.operaton.bpm.engine.delegate.JavaDelegate {
+        @Override
+        public void execute(org.operaton.bpm.engine.delegate.DelegateExecution ex) {
+            throw new org.operaton.bpm.engine.delegate.BpmnError("APPROVAL_INVALIDATED", "no approval");
+        }
+    }
+
+    private static String asyncPay(String processId, String cls, String connectorField) {
+        return HEAD.replace("id=\"p\"", "id=\"" + processId + "\"") + "<startEvent id=\"s\"/>"
+                + "<serviceTask id=\"pay\" operaton:asyncBefore=\"true\" operaton:class=\"" + cls + "\">"
+                + connectorField + "</serviceTask><endEvent id=\"e\"/>" + flow("f1", "s", "pay") + flow("f2", "pay", "e")
+                + "</process></definitions>";
+    }
+
+    private static String runPayJob(String processId, String bpmn) {
+        engine.getRepositoryService().createDeployment().addString(processId + ".bpmn", bpmn)
+                .tenantId(org.sangam.packs.PackTestTenant.ID).deploy();
+        Map<String, Object> v = new HashMap<>();
+        v.put("amount", 100);
+        String id = engine.getRuntimeService().createProcessInstanceByKey(processId).businessKey(processId + "-1")
+                .setVariables(v).processDefinitionTenantId(org.sangam.packs.PackTestTenant.ID).execute().getId();
+        var job = engine.getManagementService().createJobQuery().processInstanceId(id).singleResult();
+        engine.getManagementService().setJobRetries(job.getId(), 1);
+        try {
+            engine.getManagementService().executeJob(job.getId());
+        } catch (RuntimeException expected) {
+            // the held payment fails its job
+        }
+        return id;
+    }
+
+    @Test
+    void anUncaughtBpmnErrorEndsTheCaseQuietlyWhichIsWhyAHeldPaymentIsNoLongerOne() {
+        String id = runPayJob("t-old-bpmn-error", asyncPay("t-old-bpmn-error", ThrowsBpmnError.class.getName(), ""));
+        assertEquals(null, engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(id).singleResult(),
+                "the old form: the case is gone");
+        assertEquals(0, engine.getRuntimeService().createIncidentQuery().processInstanceId(id).count(),
+                "and nothing records why");
+    }
+
+    @Test
+    void aHeldPaymentStaysOpenAsAnIncidentWithItsReason() {
+        String field = "<extensionElements><operaton:field name=\"connector\"><operaton:string>pfms.payment</operaton:string>"
+                + "</operaton:field><operaton:field name=\"mode\"><operaton:string>submit</operaton:string></operaton:field>"
+                + "</extensionElements>";
+        String id = runPayJob("t-held", asyncPay("t-held", "org.sangam.packs.core.ConnectorCallDelegate", field));
+        assertNotNull(engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(id).singleResult(),
+                "the case stays open");
+        var incident = engine.getRuntimeService().createIncidentQuery().processInstanceId(id).singleResult();
+        assertNotNull(incident, "an incident holds the payment");
+        assertTrue(incident.getIncidentMessage().contains("MONEY_OUT_HELD"), incident.getIncidentMessage());
+    }
+
     // ---- E2 / E3 on the shared rule ----
 
     private static Map<String, Object> approvedCase(String approvedBy) {
