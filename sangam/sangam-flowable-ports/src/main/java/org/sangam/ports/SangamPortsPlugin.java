@@ -150,7 +150,7 @@ public class SangamPortsPlugin implements ProcessEnginePlugin {
 
         if (settings.isPreDeployValidator()) {
             List<Deployer> pre = cfg.getCustomPreDeployers() == null ? new ArrayList<>() : new ArrayList<>(cfg.getCustomPreDeployers());
-            pre.add(new SangamModelValidator(new SangamModelValidator.Options(settings.isAdHocSubProcess(), settings.isStandardLoop())).deployer());
+            pre.add(new SangamModelValidator(SangamModelValidator.Options.of(settings)).deployer());
             cfg.setCustomPreDeployers(pre);
         }
 

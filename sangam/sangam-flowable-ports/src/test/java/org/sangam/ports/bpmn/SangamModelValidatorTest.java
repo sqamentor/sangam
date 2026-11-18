@@ -70,6 +70,17 @@ class SangamModelValidatorTest {
     }
 
     @Test
+    void optionsFromSettingsCarryEveryInstalledPatch() {
+        org.sangam.ports.PortsSettings settings = new org.sangam.ports.PortsSettings();
+        assertEquals(new SangamModelValidator.Options(true, true), SangamModelValidator.Options.of(settings));
+        settings.setStandardLoop(false);
+        assertEquals(new SangamModelValidator.Options(true, false), SangamModelValidator.Options.of(settings));
+        settings.setAdHocSubProcess(false);
+        settings.setStandardLoop(true);
+        assertEquals(new SangamModelValidator.Options(false, true), SangamModelValidator.Options.of(settings));
+    }
+
+    @Test
     void rejectsDoctypeAndIgnoresOtherResources() {
         SangamModelValidator v = new SangamModelValidator(new SangamModelValidator.Options(true));
         byte[] evil = ("<?xml version=\"1.0\"?><!DOCTYPE d [<!ENTITY x \"y\">]>" + HEAD + TAIL).getBytes(StandardCharsets.UTF_8);

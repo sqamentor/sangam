@@ -60,6 +60,14 @@ public class SangamModelValidator {
         public Options(boolean adHocEnabled) {
             this(adHocEnabled, false);
         }
+
+        /**
+         * The options matching the patches the settings install; every deploy path (engine deployer and app bundles)
+         * builds its validator from this, so the paths cannot disagree on what is refused.
+         */
+        public static Options of(org.sangam.ports.PortsSettings settings) {
+            return new Options(settings.isAdHocSubProcess(), settings.isStandardLoop());
+        }
     }
 
     private static final String BPMN_NS = "http://www.omg.org/spec/BPMN/20100524/MODEL";
