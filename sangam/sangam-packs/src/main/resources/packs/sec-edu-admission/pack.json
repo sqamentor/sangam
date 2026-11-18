@@ -34,6 +34,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-edu-admission/seed.json"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-edu-admission/sec-edu-refund-rounding.dmn"
     }
   ],
   "seed": "packs/sec-edu-admission/seed.json",
@@ -106,6 +110,16 @@
     "currency": "INR",
     "exponent": 2,
     "currencyReason": "owner decision M1: the pack applies the UGC refund schedule and DigiLocker / APAAR, Indian systems in rupees, so the pack declares INR",
-    "variables": []
-  }
+    "variables": [
+      "feeAmount",
+      "refundAmount"
+    ]
+  },
+  "placeholders": [
+    {
+      "decision": "sec-edu-refund-rounding",
+      "rule": "SYNTHETIC refund rounding: nearest paisa",
+      "reason": "the institution's refund rounding was not verified; deploy it as a tenant override (decision 139)"
+    }
+  ]
 }
