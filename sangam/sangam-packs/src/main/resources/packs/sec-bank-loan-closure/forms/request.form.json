@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-loan-closure/request",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.bank.loan-closure",
   "title": {
     "en": "Loan closure",

@@ -1,6 +1,6 @@
 {
   "key": "grievance/lodge",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.grievance",
   "title": {
     "en": "Lodge grievance",

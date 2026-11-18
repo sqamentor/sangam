@@ -1,6 +1,6 @@
 {
   "key": "up18-capa/investigate",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "universal.up18-capa",
   "title": {
     "en": "Investigate root cause",

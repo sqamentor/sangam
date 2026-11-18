@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-prior-auth/appeal",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ushealth.prior-auth",
   "title": {
     "en": "Prepare and file the appeal (reconsideration)",

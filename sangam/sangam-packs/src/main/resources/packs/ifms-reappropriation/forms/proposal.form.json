@@ -1,6 +1,6 @@
 {
   "key": "ifms-reappropriation/proposal",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.ifms.reappropriation",
   "title": {
     "en": "Re-appropriation proposal",

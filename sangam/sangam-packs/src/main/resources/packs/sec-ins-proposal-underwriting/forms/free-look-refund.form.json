@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-proposal-underwriting/free-look-refund",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ins.proposal-underwriting",
   "title": {
     "en": "Free-look refund: deductions",

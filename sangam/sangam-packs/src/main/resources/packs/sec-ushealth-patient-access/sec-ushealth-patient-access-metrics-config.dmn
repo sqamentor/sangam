@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ushealth_patient_access_metrics_config" name="Patient Access API usage metrics report (UNVERIFIED; tenant overridable)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- US-HLT-061 (requirement summary read; CMS-0057-F cited, not read). Override per tenant or payer program with the confirmed rule (GP-37). -->
-  <decision id="sec-ushealth-patient-access-metrics-config" name="Patient Access API usage metrics report (UNVERIFIED; tenant overridable)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-ushealth-patient-access-metrics-config" name="Patient Access API usage metrics report (UNVERIFIED; tenant overridable)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-ushealth-patient-access-metrics-config_t" hitPolicy="FIRST">
       <input id="sec-ushealth-patient-access-metrics-config_i0" label="Payer program"><inputExpression id="sec-ushealth-patient-access-metrics-config_ie0" typeRef="string"><text>payerProgram</text></inputExpression></input>
       <output id="sec-ushealth-patient-access-metrics-config_o0" label="Report due within" name="metricsReportSpec" typeRef="string"/>

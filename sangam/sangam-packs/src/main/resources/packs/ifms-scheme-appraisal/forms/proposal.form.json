@@ -1,6 +1,6 @@
 {
   "key": "ifms-scheme-appraisal/proposal",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.ifms.scheme-appraisal",
   "title": {
     "en": "Scheme proposal",

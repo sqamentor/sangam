@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-baa/review",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ushealth.baa",
   "title": {
     "en": "Periodic review: renew or terminate",

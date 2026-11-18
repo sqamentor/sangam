@@ -1,6 +1,6 @@
 {
   "key": "sec-hr-posh-complaint/report",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.hr.posh-complaint",
   "title": {
     "en": "Inquiry report to the employer (10 days)",

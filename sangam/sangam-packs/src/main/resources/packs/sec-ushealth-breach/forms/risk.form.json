@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-breach/risk",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ushealth.breach",
   "title": {
     "en": "Four-factor risk assessment",

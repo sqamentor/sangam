@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_tender_authority" name="Tender NIT / award authority" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="tender-authority" name="Tender NIT / award authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
+  <decision id="tender-authority" name="Tender NIT / award authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
     <decisionTable id="tender-authority_t" hitPolicy="FIRST">
       <input id="tender-authority_i0" label="Case type"><inputExpression id="tender-authority_ie0" typeRef="string"><text>caseType</text></inputExpression></input>
       <input id="tender-authority_i1" label="Amount"><inputExpression id="tender-authority_ie1" typeRef="number"><text>amount</text></inputExpression></input>

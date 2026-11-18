@@ -1,6 +1,6 @@
 {
   "key": "gem-purchase/crac",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.gem-purchase",
   "title": {
     "en": "Inspect and accept (CRAC)",

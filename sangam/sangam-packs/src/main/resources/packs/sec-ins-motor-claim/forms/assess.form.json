@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-motor-claim/assess",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ins.motor-claim",
   "title": {
     "en": "Assess claim",

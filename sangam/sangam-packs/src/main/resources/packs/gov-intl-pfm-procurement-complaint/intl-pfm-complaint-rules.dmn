@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_intl_pfm_complaint_rules" name="Complaint periods and suspension (SYNTHETIC; per country)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- SYNTHETIC: country law or policy. Deploy the confirmed table as a tenant override. -->
-  <decision id="intl-pfm-complaint-rules" name="Complaint periods and suspension (SYNTHETIC; per country)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="intl-pfm-complaint-rules" name="Complaint periods and suspension (SYNTHETIC; per country)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="intl-pfm-complaint-rules_t" hitPolicy="FIRST">
       <input id="intl-pfm-complaint-rules_i0" label="Tender"><inputExpression id="intl-pfm-complaint-rules_ie0" typeRef="string"><text>tenderId</text></inputExpression></input>
       <output id="intl-pfm-complaint-rules_o0" label="Decide within" name="complaintDecisionSpec" typeRef="string"/>

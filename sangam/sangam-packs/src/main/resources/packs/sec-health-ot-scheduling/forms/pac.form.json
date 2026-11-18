@@ -1,6 +1,6 @@
 {
   "key": "sec-health-ot-scheduling/pac",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.health.ot-scheduling",
   "title": {
     "en": "Pre-anaesthetic check",

@@ -1,6 +1,6 @@
 {
   "key": "records/appraisal",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.records",
   "title": {
     "en": "Appraisal before destruction",

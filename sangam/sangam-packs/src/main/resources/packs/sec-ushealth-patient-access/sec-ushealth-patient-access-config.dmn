@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ushealth_patient_access_config" name="Patient Access API: scope, availability and retention of the prior authorization information (UNVERIFIED; tenant overridable)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- US-HLT-061 (requirement summary read; CMS-0057-F and 42 CFR 422.119 cited, not read). Override per tenant with the confirmed rule (GP-37). -->
-  <decision id="sec-ushealth-patient-access-config" name="Patient Access API: scope, availability and retention of the prior authorization information (UNVERIFIED; tenant overridable)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-ushealth-patient-access-config" name="Patient Access API: scope, availability and retention of the prior authorization information (UNVERIFIED; tenant overridable)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-ushealth-patient-access-config_t" hitPolicy="FIRST">
       <input id="sec-ushealth-patient-access-config_i0" label="Item category"><inputExpression id="sec-ushealth-patient-access-config_ie0" typeRef="string"><text>itemCategory</text></inputExpression></input>
       <output id="sec-ushealth-patient-access-config_o0" label="Part of the prior authorization information" name="paScope" typeRef="string"/>

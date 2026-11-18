@@ -1,6 +1,6 @@
 {
   "key": "sec-hr-employee-exit/gratuity",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.hr.employee-exit",
   "title": {
     "en": "Gratuity (30 days)",

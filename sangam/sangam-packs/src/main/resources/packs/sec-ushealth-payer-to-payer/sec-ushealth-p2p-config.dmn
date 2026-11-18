@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ushealth_p2p_config" name="Payer API timeframes (CMS-0057-F; tenant overridable)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- US-HLT-063, US-HLT-064 (verify). Override per tenant or payer program. -->
-  <decision id="sec-ushealth-p2p-config" name="Payer API timeframes (CMS-0057-F; tenant overridable)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-ushealth-p2p-config" name="Payer API timeframes (CMS-0057-F; tenant overridable)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-ushealth-p2p-config_t" hitPolicy="FIRST">
       <input id="sec-ushealth-p2p-config_i0" label="Payer program"><inputExpression id="sec-ushealth-p2p-config_ie0" typeRef="string"><text>payerProgram</text></inputExpression></input>
       <output id="sec-ushealth-p2p-config_o0" label="Look-back period of the data exchanged" name="p2pLookback" typeRef="string"/>

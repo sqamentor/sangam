@@ -1,6 +1,6 @@
 {
   "key": "sec-eu-gdpr-dsr/extend",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.eu.gdpr-dsr",
   "title": {
     "en": "Tell the data subject of the extension and why",

@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-emandate/check",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.bank.emandate",
   "title": {
     "en": "Approve mandate (checker)",

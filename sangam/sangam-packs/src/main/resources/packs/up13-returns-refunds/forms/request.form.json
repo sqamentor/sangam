@@ -1,6 +1,6 @@
 {
   "key": "up13-returns-refunds/request",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "universal.up13-returns-refunds",
   "title": {
     "en": "Return request",

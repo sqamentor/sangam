@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-health-claim/request",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ins.health-claim",
   "title": {
     "en": "Health claim request",
