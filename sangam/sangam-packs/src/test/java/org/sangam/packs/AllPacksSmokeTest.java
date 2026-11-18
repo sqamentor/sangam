@@ -61,7 +61,12 @@ class AllPacksSmokeTest {
                 "qualification", "socialCategory", "district", "schemeId", "serviceCode", "licenceType", "leaveType",
                 "category", "subjectHead", "amendmentType", "deviceId", "entityId",
                 // required start-form fields a decision reads (strict FEEL refuses an undefined variable, ADR-D-26)
-                "planPeriod", "projectId", "phiScope")) {
+                "planPeriod", "projectId", "phiScope",
+                // registry party keys a money approval binds its payee by (owner decision E3, MoneyFieldsDelegate
+                // payeeKeys); the test registry (VerifiedPayees.SIMULATOR) holds a verified record for each
+                "payeePartyId", "slsCode", "remitterPartyId", "unpaidDividendPartyId", "sellerId",
+                // the capture a refund to source returns to (owner decision M5, CaptureRefunds)
+                "emdCaptureRef")) {
             v.put(s, "X-" + s);
         }
         v.put("schemeId", "HOUSING-GRANT");
@@ -87,6 +92,7 @@ class AllPacksSmokeTest {
                 "assetValue", "refundAmount", "poPrice", "invoicePrice", "amendmentAmount", "emdAmount", "debtAmount")) {
             v.put(n, 100_000L);
         }
+        v.put("debitAmount", 100_000L); // a variable mandate's actual debit (owner item 3)
         for (String n : List.of("age", "durationYears", "leaveDays", "extensionDays", "delayDays", "retentionYears",
                 "riskScore")) {
             v.put(n, 3);
@@ -143,6 +149,23 @@ class AllPacksSmokeTest {
                 continue; // core blocks are call activities with inputs from the calling pack
             }
             String bk = "SMOKE/" + pd.getKey();
+            boolean batchItem = model.getModelElementsByType(org.operaton.bpm.model.bpmn.instance.ServiceTask.class)
+                    .stream().anyMatch(t -> org.sangam.packs.core.BatchItemReleaseDelegate.class.getName()
+                            .equals(t.getOperatonClass()));
+            if (batchItem) {
+                // owner decision E1: a batch item payment is started only by its parent's FAN_OUT under the batch
+                // sanction (driven by the parent's own tests); started on its own it must be held, never paid
+                try {
+                    engine.getRuntimeService().startProcessInstanceByKey(pd.getKey(), bk, bag());
+                    driver.runJobs();
+                    failures.add(pd.getKey() + ": a batch item started without a batch sanction was not held");
+                } catch (RuntimeException e) {
+                    if (!rootMessage(e).contains("carries no batch sanction")) {
+                        failures.add(pd.getKey() + ": " + rootMessage(e));
+                    }
+                }
+                continue;
+            }
             try {
                 Map<String, Object> vars = bag();
                 vars.put("campaignId", "SMOKE/sangam-recruitment-campaign");

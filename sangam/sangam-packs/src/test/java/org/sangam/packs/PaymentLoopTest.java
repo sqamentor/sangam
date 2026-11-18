@@ -117,8 +117,13 @@ class PaymentLoopTest {
         };
     }
 
-    private void assertKeyedOnEmployee(String bk) {
-        assertEquals(List.of(java.util.Arrays.asList(employeeOf(bk), null)), asked,
+    /**
+     * Every look-up is keyed on the case's employeeId only, and there are exactly {@code times} of them: integrator
+     * ruling R1 verifies the payee before the PAO pass (bl_payeeVerifyPre), binds it at the PAO pass (pc_pao,
+     * MoneyFieldsDelegate) and re-resolves it on the payment date (bl_payeeVerify).
+     */
+    private void assertKeyedOnEmployee(String bk, int times) {
+        assertEquals(java.util.Collections.nCopies(times, java.util.Arrays.asList(employeeOf(bk), null)), asked,
                 "resolve() keyed on the case's employeeId only, never on the party id");
     }
 
@@ -261,6 +266,9 @@ class PaymentLoopTest {
         v.putAll(Map.of("executionConnector", "pfms.payment", "executionOperation", "pay", "executionStep", "pay",
                 "verifyApproval", false, "reconcileRequired", false, "ackWindow", "PT1S", "maxLookups", 3,
                 "executionPayloadFields", "applicantRef"));
+        // owner decisions A1 / E3: pfms.payment is money out, so core execution pays only under a bound human
+        // approval of amount, payee account, currency and purpose (verifyApproval=false relaxes IN / NONE only)
+        PackTestApprovals.bindHumanApproval(v);
         engine.getRuntimeService().createProcessInstanceByKey("sangam-core-execution").businessKey("PL/3")
                 .setVariables(v).processDefinitionTenantId(PackTestTenant.ID).execute();
         try {
@@ -280,7 +288,7 @@ class PaymentLoopTest {
         VerifiedPayees.install(fake(new VerifiedPayeeLookup.NotVerified(
                 VerifiedPayeeLookup.Reason.PAYEE_NOT_VERIFIED, "test")));
         bill("PL/4", null);
-        assertKeyedOnEmployee("PL/4");
+        assertKeyedOnEmployee("PL/4", 1); // before the PAO pass: stopped there
         assertEquals(0, payments());
         assertEquals(List.of("bl_payeeHold"), open("PL/4"));
         assertEquals("PAYEE_NOT_VERIFIED", driver.var("PL/4", "payeeNotVerifiedReason"));
@@ -291,7 +299,7 @@ class PaymentLoopTest {
         VerifiedPayees.install(fake(new VerifiedPayeeLookup.Verified("PV-7", "A Payee", "123456789012",
                 "SBIN0000001")));
         bill("PL/5", null);
-        assertKeyedOnEmployee("PL/5");
+        assertKeyedOnEmployee("PL/5", 3);
         assertTrue(driver.ended("PL/5"), "paid and closed: " + open("PL/5"));
         assertEquals("PV-7", driver.var("PL/5", "payeeVersionId"), "rejection " + driver.var("PL/5",
                 "rejectionReasonCodes") + " state " + driver.var("PL/5", "caseState") + " pao "
@@ -313,10 +321,14 @@ class PaymentLoopTest {
     @Test
     void aPayeeAccountChangedAfterThePaoPassIsNotPaidWithoutAFreshApproval() {
         String bk = "PL/R1";
+        // the registry answers the old account to the first two look-ups (before the PAO pass and at the PAO pass,
+        // which binds it); every later
+        // look-up, from the payment date on, sees the changed account. (A history query for finished pc_pao tasks
+        // cannot tell the two apart: the payment-date look-up runs in the transaction that completes pc_pao, before
+        // its history row is flushed, so it still counted 0 passes and the old account was paid.)
+        java.util.concurrent.atomic.AtomicInteger lookups = new java.util.concurrent.atomic.AtomicInteger();
         VerifiedPayees.install((t, e, p, d) -> {
-            long paoPasses = engine.getHistoryService().createHistoricTaskInstanceQuery()
-                    .processInstanceBusinessKey(bk).taskDefinitionKey("pc_pao").finished().count();
-            return paoPasses == 0
+            return lookups.getAndIncrement() < 2
                     ? new VerifiedPayeeLookup.Verified("PV-OLD", "A Payee", "111111111111", "SBIN0000001")
                     : new VerifiedPayeeLookup.Verified("PV-NEW", "A Payee", "222222222222", "SBIN0000002");
         });
