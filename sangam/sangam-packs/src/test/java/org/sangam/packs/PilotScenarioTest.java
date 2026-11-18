@@ -149,10 +149,17 @@ class PilotScenarioTest {
             case "sn_sanction" -> asSeat(t, "sanctionDecision", "approve");
             default -> null;
         }, 80);
-        assertEquals(List.of("sc_scrutiny", "p3_recommend", "sn_sanction"), done);
+        // C4/E1: the grant sanction approves the total; each of the 3 instalments is paid on its own sanction
+        assertEquals(List.of("sc_scrutiny", "p3_recommend", "sn_sanction", "sn_sanction", "sn_sanction",
+                "sn_sanction"), done);
         assertTrue(driver.ended(bk), "still running");
         assertEquals("CLOSED", driver.var(bk, "caseState"));
         assertEquals(3L, ((Number) driver.var(bk, "instalmentNo")).longValue());
+        // the last money-out approval bound the instalment actually paid, not the grant total
+        assertEquals(((Number) driver.var(bk, "instalmentAmount")).longValue(),
+                ((Number) driver.var(bk, "amount")).longValue());
+        assertTrue(((Number) driver.var(bk, "grantTotal")).longValue()
+                > ((Number) driver.var(bk, "instalmentAmount")).longValue());
     }
 
     @Test
