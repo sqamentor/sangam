@@ -224,8 +224,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "25.0.5+8"
-          cache: maven
-          cache-dependency-path: sangam/**/pom.xml
+      - uses: ./.github/actions/maven-cache
       - name: Free disk space for large DB images
         if: steps.terms.outputs.run == 'true' && (matrix.db == 'oracle' || matrix.db == 'sqlserver' || matrix.db == 'sqlserver2025')
         run: |

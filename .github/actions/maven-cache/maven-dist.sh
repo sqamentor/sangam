@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
 # Provide the pinned Maven distribution to mvnw from the shared cache. Downloads only on a cache miss, with curl's
-# bounded retries (no --retry-delay, so curl honours Retry-After on HTTP 429/503), and refuses any bytes whose SHA-256
+# bounded retries (no fixed retry delay, so curl honours Retry-After on HTTP 429/503), and refuses any bytes whose SHA-256
 # differs from distributionSha256Sum. mvnw then installs from file:// and checks the SHA-256 again itself.
 set -euo pipefail
 props=sangam/.mvn/wrapper/maven-wrapper.properties

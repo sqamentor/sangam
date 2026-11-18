@@ -105,8 +105,10 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ matrix.java-exact }}
-          cache: maven
-          cache-dependency-path: sangam/**/pom.xml
+      - uses: ./.github/actions/maven-cache
+        with:
+          # one writer: main only (every ci/* branch and PR restores main's cache), one matrix leg
+          save: ${{ github.ref == 'refs/heads/main' && strategy.job-index == 0 && 'true' || 'false' }}
       - name: Provenance (start, SG-16)
         run: python3 -I tools/provenance/run_provenance.py start --db h2 --out target/run-provenance
       - name: Build and unit tests
