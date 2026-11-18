@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Owner ruling G1 (DAT-1, 2026-11-18): a zoned date-time handed to a Sangam DMN engine is normalised to a UTC instant
- * at the Sangam boundary ({@link SangamValueMapper}), so two variables holding the same instant in different zones
+ * at the Sangam boundary ({@link SangamFeelEngine}: caller variables only), so two variables holding the same instant in different zones
  * are equal, and a decision sees the instant in UTC. Literal date-time equality is refused at deploy
  * ({@code SANGAM-DMN-DATETIME-EQ}).
  */

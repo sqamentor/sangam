@@ -20,8 +20,7 @@ import scala.Option;
  *   <li>FEEL to Java: a whole number that fits a {@code long} is a {@link Long} (unchanged behaviour), every other
  *       number is a {@link BigDecimal} (never a {@code Double});</li>
  *   <li>Java to FEEL: {@link BigDecimal} is taken as is; {@link Money} is its exact major-unit amount (minor units
- *       moved by the currency exponent, no rounding). A {@code ZonedDateTime}, {@code OffsetDateTime} or
- *       {@code Instant} is its UTC instant (owner ruling G1, DAT-1). Other values fall through to the stock mappers.</li>
+ *       moved by the currency exponent, no rounding). Other values fall through to the stock mappers.</li>
  * </ul>
  * Registered for every Sangam DMN engine by {@link SangamFeel#install}.
  */
@@ -47,16 +46,6 @@ public final class SangamValueMapper implements CustomValueMapper {
         }
         if (x instanceof Money m) {
             return Option.apply(new ValNumber(decimal(m.toMajor())));
-        }
-        // Owner ruling G1 (DAT-1): a zoned date-time enters FEEL as its UTC instant, so equality compares instants.
-        if (x instanceof java.time.ZonedDateTime z) {
-            return Option.apply(new org.camunda.feel.syntaxtree.ValDateTime(z.withZoneSameInstant(java.time.ZoneOffset.UTC)));
-        }
-        if (x instanceof java.time.OffsetDateTime o) {
-            return Option.apply(new org.camunda.feel.syntaxtree.ValDateTime(o.atZoneSameInstant(java.time.ZoneOffset.UTC)));
-        }
-        if (x instanceof java.time.Instant i) {
-            return Option.apply(new org.camunda.feel.syntaxtree.ValDateTime(java.time.ZonedDateTime.ofInstant(i, java.time.ZoneOffset.UTC)));
         }
         return Option.empty();
     }
