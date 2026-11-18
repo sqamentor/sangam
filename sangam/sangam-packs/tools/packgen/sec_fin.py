@@ -943,7 +943,7 @@ def bank_dispute():
     st = start_form(p, s, 'dp_start', 'Dispute reported', 'sec-bank-txn-dispute/report', 'Transaction dispute | लेनदेन विवाद',
                     ['customerId*', 'disputeType*', 'txnRef*', 'amount*', 'channel*', 'reportedWithinDays', 'description'])
     d = s.setv('dp_defaults', 'Configuration',
-               defaults='disputeType=FAILED_TXN;channel=UPI;txnRef=@customerId;reportedWithinDays=1;'
+               defaults='disputeType=FAILED_TXN;channel=UPI;reportedWithinDays=1;'
                         'tatBreached=false;opsSeat=DISPUTE-DESK;executionConnector=cbs.reversal;executionStep=reversal;'
                         'verifyApproval=false;reconcileRequired=false;executionPayloadFields=customerId,txnRef,amount;'
                         'applicantRef=@customerId')

@@ -42,7 +42,6 @@ ALLOWED = {
     ('sangam-sec-bank-emandate', 'mandateType'): 'the mandate type the customer chose (input of npci.mandate)',
     ('sangam-sec-bank-loan-origination', 'kfsValidity'): 'configuration / credit-policy DMN output, not a docs.kfs '
                                                          'answer',
-    ('sangam-sec-bank-txn-dispute', 'txnRef'): 'input of switch.status (copied from customerId)',
     ('sangam-sec-ecom-seller-onboarding', 'sellerName'): 'input of marketplace.createSeller (copied from supplierName)',
     ('sangam-sec-health-abdm-consent', 'hiTypes'): 'input of abdm.hiRequest (requested record types)',
     ('sangam-sec-health-abdm-consent', 'consentValidity'): 'input of abdm.consentRequest (requested validity)',
