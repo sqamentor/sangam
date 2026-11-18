@@ -67,7 +67,8 @@ public final class MoneyPathGuard {
         return out;
     }
 
-    private record State(String node, String connector) {
+    /** {@code approved}: an approval lies on this path since the last money-out step (E1: one sanction, one payment). */
+    private record State(String node, String connector, boolean approved) {
     }
 
     private static List<String> checkProcess(String res, Element proc, Function<String, MoneyMovement> mm,
@@ -80,7 +81,7 @@ public final class MoneyPathGuard {
         boolean movesMoney = false;
         Set<State> seen = new HashSet<>();
         Deque<State> todo = new ArrayDeque<>();
-        starts.forEach(s -> todo.push(new State(s, null)));
+        starts.forEach(s -> todo.push(new State(s, null, false)));
         while (!todo.isEmpty()) {
             State st = todo.pop();
             if (!seen.add(st)) {
@@ -88,9 +89,10 @@ public final class MoneyPathGuard {
             }
             Element el = nodes.get(st.node());
             String carried = st.connector();
+            boolean approved = st.approved();
             if (el != null) {
                 if (isApproval(el)) {
-                    continue; // every path past an approval is bound (the runtime re-verifies the payload hash)
+                    approved = true; // bound until the next money-out step (the runtime re-verifies the payload hash)
                 }
                 String set = setsExecutionConnector(el);
                 if (set != null) {
@@ -100,13 +102,16 @@ public final class MoneyPathGuard {
                 if (moving != null) {
                     movesMoney = true;
                 }
-                if (moving != null) {
+                if (moving != null && !approved) {
                     violations.add(res + ": process " + proc.getAttribute("id") + " reaches " + st.node() + " ("
                             + moving + ", moneyMovement OUT) on a path without a recorded approval (owner decision A1)");
                 }
+                if (moving != null) {
+                    approved = false; // the sanction is spent: a further payment (loop, retry, reissue) needs its own
+                }
             }
             for (String n : succ.getOrDefault(st.node(), List.of())) {
-                todo.push(new State(n, carried));
+                todo.push(new State(n, carried, approved));
             }
         }
         if (movesMoney || anyMoneyOut(nodes, mm, topics)) {
