@@ -2,7 +2,6 @@
 package org.sangam.ports.dmn;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import java.util.Map;
@@ -11,10 +10,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.operaton.bpm.dmn.engine.DmnDecisionResult;
-import org.operaton.bpm.engine.ProcessEngineException;
 import org.sangam.ports.PortsH2Engine;
 
-/** FC-53 decision services and FC-54 PRIORITY / OUTPUT ORDER hit policies, per tenant and per version. */
+/** FC-54 PRIORITY / OUTPUT ORDER hit policies, per tenant and per version. (FC-53 decision services: removed, owner decision D3 2026-11-18.) */
 class DmnPortsH2Test {
 
     private static final String DMN_NS = "https://www.omg.org/spec/DMN/20191111/MODEL/";
@@ -32,35 +30,6 @@ class DmnPortsH2Test {
                     </decisionTable>
                   </decision>
                 </definitions>""".formatted(DMN_NS, hitPolicy, outputValues);
-    }
-
-    private static String serviceModel(String largeApprover) {
-        return """
-                <definitions xmlns="%s" id="svcDefs" name="Svc" namespace="t">
-                  <inputData id="amount" name="amount"/>
-                  <decision id="base" name="Base">
-                    <decisionTable id="dtb">
-                      <input id="bi"><inputExpression id="bie" typeRef="integer"><text>amount</text></inputExpression></input>
-                      <output id="bo" name="band" typeRef="string"/>
-                      <rule id="br1"><inputEntry id="be1"><text>&lt; 100</text></inputEntry><outputEntry id="bx1"><text>"small"</text></outputEntry></rule>
-                      <rule id="br2"><inputEntry id="be2"><text>&gt;= 100</text></inputEntry><outputEntry id="bx2"><text>"large"</text></outputEntry></rule>
-                    </decisionTable>
-                  </decision>
-                  <decision id="approval" name="Approval">
-                    <informationRequirement id="ir1"><requiredDecision href="#base"/></informationRequirement>
-                    <decisionTable id="dta">
-                      <input id="ai"><inputExpression id="aie" typeRef="string"><text>band</text></inputExpression></input>
-                      <output id="ao" name="approver" typeRef="string"/>
-                      <rule id="ar1"><inputEntry id="ae1"><text>"small"</text></inputEntry><outputEntry id="ax1"><text>"clerk"</text></outputEntry></rule>
-                      <rule id="ar2"><inputEntry id="ae2"><text>"large"</text></inputEntry><outputEntry id="ax2"><text>"%s"</text></outputEntry></rule>
-                    </decisionTable>
-                  </decision>
-                  <decisionService id="approve" name="Approve">
-                    <outputDecision href="#approval"/>
-                    <encapsulatedDecision href="#base"/>
-                    <inputData href="#amount"/>
-                  </decisionService>
-                </definitions>""".formatted(DMN_NS, largeApprover);
     }
 
     private PortsH2Engine h2;
@@ -120,28 +89,5 @@ class DmnPortsH2Test {
         deploy("risk.dmn", priorityTable("PRIORITY", "\"medium\",\"high\",\"low\""), "t1");
         assertEquals("medium", evaluate("t1", 5000).getSingleResult().getSingleEntry(), "latest version's order");
         assertEquals("high", evaluateById(v1, 5000).getSingleResult().getSingleEntry(), "version 1 keeps its order");
-    }
-
-    @Test
-    void decisionServiceEvaluatesOutputDecisionsWithTheirRequiredDecisions() {
-        deploy("svc.dmn", serviceModel("manager"), null);
-        deploy("svc.dmn", serviceModel("director"), "t1");
-        DecisionServiceEvaluator ev = new DecisionServiceEvaluator(h2.engine);
-
-        List<DecisionServiceEvaluator.DecisionServiceDefinition> svcs = ev.services("svcDefs", null);
-        assertEquals(1, svcs.size());
-        assertEquals("approve", svcs.get(0).id());
-        assertEquals(List.of("approval"), svcs.get(0).outputDecisions());
-        assertEquals(List.of("base"), svcs.get(0).encapsulatedDecisions());
-        assertEquals(List.of("amount"), svcs.get(0).inputData());
-
-        assertEquals(Map.of("approval", List.of(Map.of("approver", "clerk"))), ev.evaluate("svcDefs", "approve", null, Map.of("amount", 5)));
-        assertEquals(Map.of("approval", List.of(Map.of("approver", "manager"))), ev.evaluate("svcDefs", "approve", null, Map.of("amount", 500)));
-        assertEquals(Map.of("approval", List.of(Map.of("approver", "director"))), ev.evaluate("svcDefs", "approve", "t1", Map.of("amount", 500)),
-                "tenant's own definition");
-
-        assertThrows(ProcessEngineException.class, () -> ev.evaluate("svcDefs", "nope", null, Map.of("amount", 5)));
-        assertThrows(ProcessEngineException.class, () -> ev.services("svcDefs", "t-unknown"));
-        assertThrows(ProcessEngineException.class, () -> ev.services("missing", null));
     }
 }

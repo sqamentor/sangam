@@ -27,12 +27,16 @@ import org.w3c.dom.NodeList;
  *       price, charge, ...). Binary floating point cannot hold decimal money; use {@code long} (minor units) or
  *       {@code number} (exact decimal).</li>
  *   <li><b>SG-33 warning</b>: any other {@code double}/{@code float}: {@code number} is recommended.</li>
- *   <li><b>SG-35 warning</b>: an equality test on a zoned {@code date and time}. DMN 1.3 compares date-times on the
+ *   <li><b>SG-35 error</b> (owner ruling G1, 2026-11-18; a warning before): an equality test on a zoned {@code date and time}. DMN 1.3 compares date-times on the
  *       time line (OMG issue DMN13-35), but the pinned feel-scala engine's {@code =} also compares the zone, so
  *       the same instant in two zones is "not equal". Compare instants with {@code <}, {@code >}, a range, or
  *       subtraction ({@code a - b = duration("PT0S")}).</li>
  *   <li><b>Decision 158 warning</b> {@code SANGAM-DMN-TIME-IANA}: a time literal with an IANA zone id, deprecated as
  *       of DMN 1.6.</li>
+ *   <li><b>Owner DEC-5 error</b> {@code SANGAM-DMN-MONEY-ROUNDING}: {@code decimal(...)} in an output entry, default
+ *       output entry or literal expression whose output is money. DMN never rounds money; the financial core does.</li>
+ *   <li><b>Owner D2 error</b> {@code SANGAM-DMN-UNSUPPORTED}: business knowledge models, decision services, boxed
+ *       contexts, relations, invocations and function definitions are not supported.</li>
  * </ul>
  */
 public final class DmnModelLint {
@@ -54,6 +58,11 @@ public final class DmnModelLint {
      */
     static final Pattern TIME_IANA = Pattern.compile(
             "(?i)(time\\(\\s*\"|@\")\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?@[A-Za-z][A-Za-z0-9_+\\-]*(/[A-Za-z0-9_+\\-]+)*\"");
+
+    /** Owner D2: DMN elements Sangam does not support; deploy refuses them. */
+    static final String[] UNSUPPORTED = {"businessKnowledgeModel", "decisionService", "context", "relation",
+        "invocation", "functionDefinition"};
+    private static final Pattern DECIMAL_CALL = Pattern.compile("(?<![\\w.])decimal\\s*\\(");
 
     private DmnModelLint() {
     }
@@ -94,9 +103,10 @@ public final class DmnModelLint {
                 String t = n.getTextContent();
                 if (t != null && (ZONED_DT_EQ.matcher(t).find() || isBareZonedEntry(n, t))) {
                     String owner = n.getParentNode() instanceof Element p ? p.getAttribute("id") : "";
-                    out.add(new Finding(false, "SANGAM-DMN-DATETIME-EQ", resource, owner, "equality on a zoned date "
-                            + "and time also compares the zone in the pinned FEEL engine; compare instants with < > "
-                            + "or subtraction (ADR-D-26, DMN13-35)"));
+                    out.add(new Finding(true, "SANGAM-DMN-DATETIME-EQ", resource, owner, "date-time = or != against a "
+                            + "zoned literal is refused (owner ruling G1): the FEEL engine's = also compares the zone, so "
+                            + "the same instant in two zones is 'not equal'. Compare instants with < > a range, or "
+                            + "a - b = duration(\"PT0S\"); date-time inputs reach the decision as UTC instants"));
                 }
                 if (t != null && TIME_IANA.matcher(t).find()) {
                     String owner = n.getParentNode() instanceof Element p ? p.getAttribute("id") : "";
@@ -106,7 +116,77 @@ public final class DmnModelLint {
                 }
             }
         }
+        for (String tag : UNSUPPORTED) {
+            NodeList nl = doc.getElementsByTagNameNS("*", tag);
+            for (int i = 0; i < nl.getLength(); i++) {
+                Element e = (Element) nl.item(i);
+                out.add(new Finding(true, "SANGAM-DMN-UNSUPPORTED", resource, tag + " " + e.getAttribute("id"),
+                        "'" + tag + "' is not supported by Sangam (owner decision D2, ADR-DMN-ENGINE); use decision "
+                        + "tables and literal expressions"));
+            }
+        }
+        for (String tag : new String[] {"outputEntry", "defaultOutputEntry", "literalExpression"}) {
+            NodeList nl = doc.getElementsByTagNameNS("*", tag);
+            for (int i = 0; i < nl.getLength(); i++) {
+                Element e = (Element) nl.item(i);
+                if (!DECIMAL_CALL.matcher(e.getTextContent()).find()) {
+                    continue;
+                }
+                String subject = moneySubject(e);
+                if (subject != null && isMoney(subject)) {
+                    out.add(new Finding(true, "SANGAM-DMN-MONEY-ROUNDING", resource, tag + " " + e.getAttribute("id"),
+                            "'" + subject + "' is money and is rounded with decimal(); DMN never rounds money, the "
+                            + "financial core does (owner DEC-5)"));
+                }
+            }
+        }
         return out;
+    }
+
+    /** The output (or literal decision) a value expression produces: its name and label. */
+    private static String moneySubject(Element e) {
+        if ("defaultOutputEntry".equals(e.getLocalName())) {
+            return e.getParentNode() instanceof Element o ? subject(o) : null;
+        }
+        if ("outputEntry".equals(e.getLocalName())) {
+            if (!(e.getParentNode() instanceof Element rule) || !(rule.getParentNode() instanceof Element table)) {
+                return null;
+            }
+            int idx = 0;
+            for (Node n = rule.getFirstChild(); n != null && n != e; n = n.getNextSibling()) {
+                if (n instanceof Element s && "outputEntry".equals(s.getLocalName())) {
+                    idx++;
+                }
+            }
+            int k = 0;
+            for (Node n = table.getFirstChild(); n != null; n = n.getNextSibling()) {
+                if (n instanceof Element o && "output".equals(o.getLocalName()) && k++ == idx) {
+                    String s = subject(o);
+                    if (s.isEmpty() && table.getParentNode() instanceof Element d) {
+                        s = decisionSubject(d);
+                    }
+                    return s;
+                }
+            }
+            return null;
+        }
+        Node p = e.getParentNode();
+        while (p instanceof Element pe && !"decision".equals(pe.getLocalName())) {
+            p = pe.getParentNode();
+        }
+        return p instanceof Element d ? decisionSubject(d) : null;
+    }
+
+    private static String decisionSubject(Element decision) {
+        StringBuilder s = new StringBuilder();
+        append(s, decision.getAttribute("name"));
+        append(s, decision.getAttribute("label"));
+        for (Node n = decision.getFirstChild(); n != null; n = n.getNextSibling()) {
+            if (n instanceof Element v && "variable".equals(v.getLocalName())) {
+                append(s, v.getAttribute("name"));
+            }
+        }
+        return s.toString().trim();
     }
 
     /** An input entry that is just a zoned date-time literal is an implicit '='. */

@@ -249,6 +249,10 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
                 s.getDeployAllowedBeans(), components.auditSink(), () -> components.workTenants().systemAuditScope()));
         cfg.setCustomPreDeployers(preDeployers);
         cfg.setDmnEngineConfiguration(dmn);
+        if (cfg.getDmnHistoryEventProducer() == null) {
+            // ADR-DMN-ENGINE D1 / HIT-8: history accepts the exact COLLECT aggregate of DecisionTableRules
+            cfg.setDmnHistoryEventProducer(new org.sangam.engine.history.ExactCollectDmnHistoryEventProducer());
+        }
 
         // deploy-time validation
         List<BpmnParseListener> bpmn = cfg.getCustomPostBPMNParseListeners() == null ? new ArrayList<>()

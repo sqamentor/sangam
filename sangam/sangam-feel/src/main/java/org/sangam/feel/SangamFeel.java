@@ -62,6 +62,7 @@ public final class SangamFeel {
             l.add(0, new StrictNullInputListener());
         }
         dmn.setCustomPreDecisionEvaluationListeners(l);
+        DecisionTableRules.install(dmn); // ADR-DMN-ENGINE D1: HIT-8 exact COLLECT aggregation, GAP-2 default output entry
         Dmn16Support.install(dmn); // decision 158: DMN 1.6 documents (namespace 20240513), validated as DMN 1.5 form
         dmn.getTransformer().getDataTypeTransformerRegistry()
                 .addTransformer(NumberDataTypeTransformer.TYPE, new NumberDataTypeTransformer());
