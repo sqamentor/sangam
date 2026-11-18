@@ -138,6 +138,12 @@
   ],
   "currency": "INR",
   "powers": {
+    "pm_bsanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    },
     "ps_sanction": {
       "monetary": true,
       "currency": "INR",

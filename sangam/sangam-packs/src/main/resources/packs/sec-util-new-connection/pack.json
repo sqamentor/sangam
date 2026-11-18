@@ -42,6 +42,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-util-new-connection/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-util-new-connection/pack.json"
     }
   ],
   "seed": "packs/sec-util-new-connection/seed.json",
@@ -102,5 +106,14 @@
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "uc_comp_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  }
 }

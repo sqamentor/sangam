@@ -46,6 +46,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-bank-txn-dispute/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-bank-txn-dispute/pack.json"
     }
   ],
   "seed": "packs/sec-bank-txn-dispute/seed.json",
@@ -120,5 +124,20 @@
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "dp_compensate_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    },
+    "dp_reversal_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  }
 }

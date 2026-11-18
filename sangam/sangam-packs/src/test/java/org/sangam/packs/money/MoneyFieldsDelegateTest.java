@@ -45,6 +45,11 @@ class MoneyFieldsDelegateTest {
                 .withAudit(new LoggingAuditSink()));
     }
 
+    @org.junit.jupiter.api.BeforeEach
+    void noTenantCurrencyBefore() {
+        TenantCurrencies.install(null); // the shared set-up installs the test tenant's currency; this class sets its own
+    }
+
     @AfterEach
     void noTenantCurrency() {
         TenantCurrencies.install(null);

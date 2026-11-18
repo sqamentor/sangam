@@ -141,6 +141,19 @@ class DeclareTest(unittest.TestCase):
         self.assertEqual(1, len(missing))
         self.assertIn("['A', 'B']", next(iter(missing)))
 
+    def test_a_sanction_that_binds_the_money_fields_is_monetary(self):
+        # owner decisions E3 / 193: MoneyFieldsDelegate on the call copies the paid figure into `amount` for this action,
+        # so its power limit applies to the money it releases even when the process assigns no `amount` itself
+        missing = set()
+        mf = ('<callActivity id="c" calledElement="sangam-core-sanction"><extensionElements>'
+              '<operaton:executionListener event="start" class="org.sangam.packs.core.MoneyFieldsDelegate">'
+              '<operaton:field name="amount"><operaton:string>refundAmount</operaton:string></operaton:field>'
+              '</operaton:executionListener></extensionElements></callActivity>')
+        body = '<startEvent id="s"/>' + mf + flow('f1', 's', 'c')
+        block = powers.declare(self.Pack, {'p': HEAD + body + TAIL}, {'sangam-core-powers': self.UNKEYED}, missing)
+        self.assertEqual({'c': {'monetary': True, 'currency': 'INR', 'limitTable': 'sangam-core-powers'}}, block)
+        self.assertFalse(missing)
+
 
 if __name__ == '__main__':
     unittest.main()

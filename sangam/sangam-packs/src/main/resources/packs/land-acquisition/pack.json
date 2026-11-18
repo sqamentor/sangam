@@ -120,6 +120,12 @@
   ],
   "currency": "INR",
   "powers": {
+    "la_bsanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "LAND"
+    },
     "la_decide": {
       "monetary": true,
       "currency": "INR",
