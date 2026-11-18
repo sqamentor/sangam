@@ -32,6 +32,10 @@
       "path": "packs/sec-ins-proposal-underwriting/forms/consent.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/sec-ins-proposal-underwriting/forms/free-look-refund.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/sec-ins-proposal-underwriting/seed.json"
     }
@@ -102,7 +106,11 @@
     "currency": "INR",
     "exponent": 2,
     "variables": [
+      "medicalCostDeduction",
       "premiumAmount",
+      "refundAmount",
+      "riskPremiumDeduction",
+      "stampDutyDeduction",
       "sumAssured"
     ]
   },
