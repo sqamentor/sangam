@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: Apache-2.0
+# Shared Maven cache for every job that runs Maven (root cause of the Maven Central HTTP 429 failures, 2026-11-18).
+# Before: each job had its own setup-java `cache: maven` keyed on the exact pom hash, without a fallback key, and every
+# lane run is on a new ci/* branch whose cache scope sees only main, which had no Maven cache. So each of the ~6
+# parallel ci-lanes jobs and every main-workflow Maven job cold-fetched ~290 MiB from repo.maven.apache.org, and the
+# wrapper fetched the Maven distribution again in each job.
+# Now: one cache (local repository + the wrapper distribution), a stable key (pom + wrapper hash) with a prefix fallback,
+# written by exactly one job per scope (input save: 'true'; ci-lanes `deps` on ci/*, ci-build on main) and restored
+# read-only everywhere else. The distribution keeps both supply-chain checks: this step verifies the pinned
+# distributionSha256Sum, and mvnw verifies it again when it installs from the cached file (MVNW_REPOURL=file://...).
+name: Sangam Maven cache
+description: Restore (and in the single writer job, save) the Maven repository and the verified Maven distribution.
+inputs:
+  save:
+    description: "'true' only in the one writer job of a workflow run; every other job restores read-only"
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - name: Maven cache (writer)
+      if: inputs.save == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.m2/repository
+          !~/.m2/repository/org/sangam
+          ~/.cache/sangam-maven-dist
+        key: sangam-maven-v1-${{ runner.os }}-${{ hashFiles('sangam/**/pom.xml', 'sangam/.mvn/wrapper/maven-wrapper.properties') }}
+        restore-keys: sangam-maven-v1-${{ runner.os }}-
+    - name: Maven cache (restore only)
+      if: inputs.save != 'true'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.m2/repository
+          !~/.m2/repository/org/sangam
+          ~/.cache/sangam-maven-dist
+        key: sangam-maven-v1-${{ runner.os }}-${{ hashFiles('sangam/**/pom.xml', 'sangam/.mvn/wrapper/maven-wrapper.properties') }}
+        restore-keys: sangam-maven-v1-${{ runner.os }}-
+    - name: Verified Maven distribution (from the cache)
+      shell: bash
+      run: bash "$GITHUB_ACTION_PATH/maven-dist.sh"
