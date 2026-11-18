@@ -108,6 +108,70 @@ class DmnModelLintTest {
         assertTrue(lit.stream().anyMatch(x -> x.error() && "SANGAM-DMN-MONEY-ROUNDING".equals(x.code())), lit.toString());
     }
 
+    /** Integrator ruling on DEC-5 (2026-11-18): floor() and ceiling() on money are rounding, refused like decimal(). */
+    @Test
+    void floorAndCeilingOnMoneyAreRefused() {
+        String rule = "<decision id=\"x\" name=\"x\"><decisionTable id=\"xt\"><input id=\"i\"><inputExpression id=\"ie\" "
+                + "typeRef=\"number\"><text>%s</text></inputExpression></input><output id=\"o\" name=\"%s\" "
+                + "typeRef=\"number\"/><rule id=\"r\"><inputEntry id=\"re\"><text>-</text></inputEntry><outputEntry "
+                + "id=\"ro\"><text>%s</text></outputEntry></rule></decisionTable></decision>";
+        for (String call : new String[] {"floor(basic * 0.1)", "ceiling(basic * 0.1)", "ceiling(min([basic, 5]))"}) {
+            List<DmnModelLint.Finding> f = lint(rule.formatted("basic", "ldAmount", call));
+            assertTrue(f.stream().anyMatch(x -> x.error() && "SANGAM-DMN-MONEY-ROUNDING".equals(x.code())), call + " " + f);
+        }
+        List<DmnModelLint.Finding> in = lint(rule.formatted("floor(contractValue)", "band", "\"a\""));
+        assertTrue(in.stream().anyMatch(x -> x.error() && "SANGAM-DMN-MONEY-ROUNDING".equals(x.code())),
+                "rounding a money input expression: " + in);
+        assertTrue(lint(rule.formatted("basic", "halfYears", "floor(service * 2)")).isEmpty(), "non-money floor is fine");
+        assertTrue(lint(rule.formatted("basic", "note", "\"HBA ceiling (34 x basic pay) to confirm\"")).isEmpty(),
+                "a word inside a string literal is not a call");
+    }
+
+    /**
+     * Integrator ruling 2 (2026-11-18): money is identified from the pack's declared money fields (pack.json
+     * money.variables), the word list only as a fallback; rounding is refused when its argument is money or it is the
+     * whole money output, and a non-money count inside a money figure stays allowed.
+     */
+    @Test
+    void declaredMoneyFromThePackDrivesDetection() {
+        String rule = "<definitions xmlns=\"https://www.omg.org/spec/DMN/20191111/MODEL/\" id=\"d\" name=\"d\" "
+                + "namespace=\"t\"><decision id=\"x\" name=\"x\"><decisionTable id=\"xt\"><input id=\"i\"><inputExpression "
+                + "id=\"ie\" typeRef=\"number\"><text>basicRate</text></inputExpression></input><output id=\"o\" "
+                + "name=\"terminalBenefit\" typeRef=\"number\"/><rule id=\"r\"><inputEntry id=\"re\"><text>-</text>"
+                + "</inputEntry><outputEntry id=\"ro\"><text>%s</text></outputEntry></rule></decisionTable></decision>"
+                + "</definitions>";
+        byte[] whole = rule.formatted("ceiling(basicRate * 2)").getBytes(StandardCharsets.UTF_8);
+        assertTrue(DmnModelLint.check("t.dmn", whole).isEmpty(), "no money word: the fallback cannot see it");
+        assertTrue(DmnModelLint.check("t.dmn", whole, java.util.Set.of("terminalBenefit")).stream()
+                .anyMatch(x -> x.error() && "SANGAM-DMN-MONEY-ROUNDING".equals(x.code())), "declared money output");
+        byte[] inner = rule.formatted("basicRate * floor(service * 2)").getBytes(StandardCharsets.UTF_8);
+        assertTrue(DmnModelLint.check("t.dmn", inner, java.util.Set.of("terminalBenefit")).isEmpty(),
+                "a non-money count rounded inside an exact money figure is allowed");
+        byte[] arg = rule.formatted("2 * floor(basicRate)").getBytes(StandardCharsets.UTF_8);
+        assertTrue(DmnModelLint.check("t.dmn", arg, java.util.Set.of("basicRate")).stream()
+                .anyMatch(x -> x.error() && "SANGAM-DMN-MONEY-ROUNDING".equals(x.code())), "declared money argument");
+        assertTrue(DmnModelLint.isMoney("retirementGratuity") && DmnModelLint.isMoney("commutationValue"),
+                "fallback words include gratuity and commutation");
+        assertEquals(java.util.Set.of("amount", "retirementGratuity"), DmnModelLint.declaredMoney("pack.json",
+                "{\"money\":{\"variables\":[\"amount\",\"retirementGratuity\"]}}".getBytes(StandardCharsets.UTF_8)));
+    }
+
+    /** Integrator follow-up to G1: equality on a computed date-time (conversion of a variable, now()) is refused too. */
+    @Test
+    void computedDateTimeEqualityIsRefused() {
+        for (String expr : new String[] {"date and time(s) = d", "d != date and time(s)", "now() = d",
+                "date and time(date(s), time(t)) = d"}) {
+            List<DmnModelLint.Finding> f = lint("<decision id=\"c\" name=\"c\"><literalExpression><text>" + expr
+                    + "</text></literalExpression></decision>");
+            assertTrue(f.stream().anyMatch(x -> x.error() && "SANGAM-DMN-DATETIME-EQ".equals(x.code())), expr + " " + f);
+        }
+        List<DmnModelLint.Finding> bare = lint(table("string", "t", "ok", "string", "date and time(s)"));
+        assertTrue(bare.stream().anyMatch(x -> x.error() && "SANGAM-DMN-DATETIME-EQ".equals(x.code())), bare.toString());
+        assertTrue(lint(table("string", "t", "ok", "string", "&lt; date and time(s)")).isEmpty(), "ordering is fine");
+        assertTrue(lint("<decision id=\"o\" name=\"o\"><literalExpression><text>date and time(s) &lt;= d"
+                + "</text></literalExpression></decision>").isEmpty(), "<= is ordering, not equality");
+    }
+
     /** Owner D2 (2026-11-18): BKM, boxed context, relation, invocation, function and decision services are not supported. */
     @Test
     void unsupportedDmnElementsAreRefused() {
@@ -125,6 +189,13 @@ class DmnModelLintTest {
         }
     }
 
+    /** The money variables declared by the pack.json next to a shipped model (as DeployRule reads them), or none. */
+    private static java.util.Set<String> packMoney(Path dmn) throws IOException {
+        Path manifest = dmn.getParent().resolve("pack.json");
+        return Files.isRegularFile(manifest) ? DmnModelLint.declaredMoney(manifest.toString(), Files.readAllBytes(manifest))
+                : java.util.Set.of();
+    }
+
     /** Every shipped pack/corpus DMN passes the deploy rule (176 files migrated from double to number). */
     @Test
     void shippedModelsHaveNoMoneyDoubles() throws IOException {
@@ -136,7 +207,8 @@ class DmnModelLintTest {
                 n++;
                 String xml = Files.readString(p);
                 assertFalse(xml.matches("(?s).*typeRef=\"(double|float)\".*"), p + " still uses double/float");
-                for (DmnModelLint.Finding f : DmnModelLint.check(p.toString(), xml.getBytes(StandardCharsets.UTF_8))) {
+                for (DmnModelLint.Finding f : DmnModelLint.check(p.toString(), xml.getBytes(StandardCharsets.UTF_8),
+                        packMoney(p))) {
                     if (f.error()) {
                         errors.add(f.toString());
                     }

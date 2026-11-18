@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
  * <ol>
  *   <li>a DMN column has typeRef {@code double} or {@code float} (binary floating point);</li>
  *   <li>a money DMN column (by the naming convention) is not {@code number}, or one of its literal entries is not a
- *       whole number, or a money output expression does not round once to a whole minor unit;</li>
+ *       whole number, or a money output expression rounds money (DEC-5: the DMN gives the exact figure);</li>
  *   <li>a money form field is not type {@code money} (or {@code readonly}) with the pack currency and its exponent;</li>
  *   <li>a money value in an acceptance scenario ({@code startVariables}, run answers) or in a {@code SetVariables}
  *       default / value of a BPMN is not a whole number;</li>
@@ -175,14 +175,50 @@ class PackMoneyGuardTest {
                                     + "' is not a whole number of minor units");
                         }
                     }
-                } else if (!isInput && !v.matches("[A-Za-z_]\\w*") && ROUNDING.stream().noneMatch(v::startsWith)) {
+                } else if (!isInput && roundsMoney(v)) {
                     out.add(where + " rule " + rule + ": money output expression '" + v
-                            + "' does not round once to a whole minor unit");
+                            + "' rounds money (DEC-5: the DMN gives the exact figure; the Java money step holds a "
+                            + "figure that is not a whole minor unit)");
                 }
             }
             rule++;
         }
         return out;
+    }
+
+    /**
+     * DEC-5 (integrator ruling 2026-11-18): a money output expression rounds money when it is one rounding call, or a
+     * rounding call's argument names a money variable. A non-money count rounded inside it (floor(qualifyingService
+     * * 2)) is not money rounding.
+     */
+    static boolean roundsMoney(String expr) {
+        String t = expr.replaceAll("\"(?:[^\"\\\\]|\\\\.)*\"", "\"\"").trim();
+        for (String head : ROUNDING) {
+            int from = 0;
+            int s;
+            while ((s = t.indexOf(head, from)) >= 0) {
+                from = s + head.length();
+                if (s > 0 && (Character.isLetterOrDigit(t.charAt(s - 1)) || t.charAt(s - 1) == '.')) {
+                    continue;
+                }
+                int depth = 1;
+                int c = from;
+                while (c < t.length() && depth > 0) {
+                    char ch = t.charAt(c++);
+                    depth += ch == '(' ? 1 : ch == ')' ? -1 : 0;
+                }
+                if (s == 0 && c == t.length()) {
+                    return true;
+                }
+                Matcher w = Pattern.compile("[A-Za-z_]\\w*").matcher(t.substring(from, Math.max(from, c - 1)));
+                while (w.find()) {
+                    if (isMoney(w.group())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     static boolean wholeNumber(JsonNode v) {
@@ -400,13 +436,15 @@ class PackMoneyGuardTest {
                 + "<output id=\"o1\" label=\"F\" name=\"ldAmount\" typeRef=\"number\"/>"
                 + "<rule id=\"r0\"><inputEntry id=\"x\"><text>&gt; 2500000.5</text></inputEntry>"
                 + "<outputEntry id=\"y\"><text>250000000</text></outputEntry>"
-                + "<outputEntry id=\"z\"><text>contractValue * 0.1</text></outputEntry></rule>"
+                + "<outputEntry id=\"z\"><text>floor(contractValue * 0.1)</text></outputEntry></rule>"
                 + "</decisionTable></decision></definitions>";
         List<String> p = dmnProblems("bad.dmn", bad, new HashSet<>());
         assertTrue(p.stream().anyMatch(s -> s.contains("typeRef double")), p.toString());
         assertTrue(p.stream().anyMatch(s -> s.contains("money input amount has typeRef double")), p.toString());
         assertTrue(p.stream().anyMatch(s -> s.contains("2500000.5")), p.toString());
-        assertTrue(p.stream().anyMatch(s -> s.contains("does not round once")), p.toString());
+        assertTrue(p.stream().anyMatch(s -> s.contains("rounds money")), p.toString());
+        assertTrue(!roundsMoney("contractValue * 0.1") && !roundsMoney("lastPay * 0.5 * floor(qualifyingService * 2)")
+                && roundsMoney("ceiling(min([lastPay, 5]))") && roundsMoney("2 * floor(lastPay / 3)"), "DEC-5 rounding rule");
         assertEquals(4, p.size(), p.toString());
         assertTrue(isMoney("amount") && isMoney("lastPay") && isMoney("authBandMax") && isMoney("powerLimit"));
         assertTrue(!isMoney("leaveBalance") && !isMoney("qualifyingService") && !isMoney("foirPct"));
