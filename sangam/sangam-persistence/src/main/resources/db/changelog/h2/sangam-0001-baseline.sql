@@ -16,7 +16,7 @@ CREATE TABLE SANGAM_LEASE (
   attempt_no INTEGER NOT NULL,
   worker_id VARCHAR(255),
   expires_at_ms BIGINT,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   cancel_requested SMALLINT NOT NULL,
   capability_class VARCHAR(32),
   exclusive_scope VARCHAR(255),
@@ -116,7 +116,7 @@ CREATE TABLE SANGAM_ENGINE_INCIDENT (
   engine_work_id VARCHAR(64),
   operation_id VARCHAR(64),
   message CHARACTER LARGE OBJECT,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL,
   closed_at TIMESTAMP WITH TIME ZONE,
   close_reason VARCHAR(32),
@@ -873,7 +873,7 @@ CREATE TABLE ATTACHMENT (
   size_bytes BIGINT NOT NULL,
   declared_mime VARCHAR(255) NOT NULL,
   sniffed_mime VARCHAR(255),
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   scan_engine VARCHAR(64),
   scan_result VARCHAR(1000),
   created_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -920,7 +920,7 @@ CREATE TABLE PACKAGE_VERSION (
   package_key VARCHAR(255) NOT NULL,
   version INTEGER NOT NULL,
   package_hash VARBINARY(32) NOT NULL,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   manifest_json CHARACTER LARGE OBJECT NOT NULL,
   signature BINARY LARGE OBJECT,
   author VARCHAR(255) NOT NULL,
@@ -1418,7 +1418,7 @@ CREATE TABLE PACK_LEDGER_POSTING (
   account VARCHAR(255) NOT NULL,
   reference VARCHAR(255) NOT NULL,
   delta BIGINT NOT NULL,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   balance_after BIGINT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL,
   reversed_at TIMESTAMP WITH TIME ZONE,
@@ -1469,7 +1469,7 @@ CREATE TABLE SANGAM_PAUSE (
   paused_by VARCHAR(255) NOT NULL,
   reason VARCHAR(1000),
   total_paused_ms BIGINT NOT NULL,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   resumed_at_ms BIGINT,
   CONSTRAINT PK_SANGAM_PAUSE PRIMARY KEY (process_instance_id)
 );
@@ -5724,7 +5724,7 @@ CREATE TABLE EXEC_PARTITION (
   owner_incarnation VARCHAR(64),
   owner_epoch BIGINT DEFAULT 0 NOT NULL,
   lease_expires_at TIMESTAMP WITH TIME ZONE,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   drain_deadline TIMESTAMP WITH TIME ZONE,
   map_epoch BIGINT NOT NULL,
   CONSTRAINT PK_EXEC_PARTITION PRIMARY KEY (partition_id)
@@ -5736,7 +5736,7 @@ CREATE TABLE EXEC_PARTITION (
 CREATE TABLE EXEC_SLOT (
   slot INTEGER NOT NULL,
   partition_id INTEGER NOT NULL,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   from_partition INTEGER,
   move_started_at TIMESTAMP WITH TIME ZONE,
   map_epoch BIGINT NOT NULL,
@@ -5751,7 +5751,7 @@ CREATE TABLE EXEC_MAP (
   cluster_id VARCHAR(64) NOT NULL,
   current_map_epoch BIGINT NOT NULL,
   target_map_epoch BIGINT,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   coordinator_node VARCHAR(64),
   coordinator_epoch BIGINT DEFAULT 0 NOT NULL,
   coordinator_expires_at TIMESTAMP WITH TIME ZONE,
@@ -6064,7 +6064,7 @@ CREATE TABLE OPS_UTC_RUN (
   source_zone VARCHAR(64) NOT NULL,
   cutover_at TIMESTAMP WITH TIME ZONE NOT NULL,
   fingerprint VARCHAR(64) NOT NULL,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   rows_read BIGINT DEFAULT 0 NOT NULL,
   converted BIGINT DEFAULT 0 NOT NULL,
   already_utc BIGINT DEFAULT 0 NOT NULL,
@@ -6395,6 +6395,22 @@ CREATE TABLE PORT_CASE_MIGRATION (
 );
 CREATE INDEX PORT_CASE_MIGRATION_CASE ON PORT_CASE_MIGRATION (tenant_id, case_inst_id);
 --rollback DROP TABLE PORT_CASE_MIGRATION;
+
+--changeset sangam:0048-03-port_case_file_item dbms:h2
+--comment: C1 CMMN case file item lifecycle state
+CREATE TABLE PORT_CASE_FILE_ITEM (
+  tenant_id VARCHAR(64) NOT NULL,
+  case_inst_id VARCHAR(64) NOT NULL,
+  item_id VARCHAR(255) NOT NULL,
+  variable_name VARCHAR(255) NOT NULL,
+  definition_type VARCHAR(255),
+  state VARCHAR(64) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  version_ BIGINT NOT NULL,
+  CONSTRAINT PK_PORT_CASE_FILE_ITEM PRIMARY KEY (case_inst_id, item_id)
+);
+CREATE INDEX PORT_CASE_FILE_ITEM_TENANT ON PORT_CASE_FILE_ITEM (tenant_id, case_inst_id);
+--rollback DROP TABLE PORT_CASE_FILE_ITEM;
 
 --changeset sangam:0016-03-form_draft-alter dbms:h2
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int

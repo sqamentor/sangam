@@ -34,6 +34,7 @@ public class SangamCmmnElementHandlerRegistry extends DefaultCmmnElementHandlerR
     public static void install(DefaultCmmnElementHandlerRegistry registry) {
         registry.getPlanItemElementHandlers().put(EventListener.class, new SangamEventListenerItemHandler());
         registry.getPlanItemElementHandlers().put(Task.class, new SangamTaskItemHandler());
+        registry.setSentryHandler(new SangamSentryHandler()); // owner ruling C1: caseFileItemOnPart
     }
 
     /** P-5: plain task handler whose behaviour keeps a {@code sangam:topic} task ACTIVE (case external task). */

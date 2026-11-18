@@ -147,4 +147,47 @@ class CmmnConformanceIT extends EngineScenarioSupport {
             ctx.check("one audit row", svc.history(cid).size() == 1);
         });
     }
+
+    private static final String CASE_FILE_CASE = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <definitions xmlns="http://www.omg.org/spec/CMMN/20151109/MODEL" targetNamespace="t" id="d">
+              <caseFileItemDefinition id="cfidApp" name="Application" definitionType="http://www.omg.org/spec/CMMN/DefinitionType/Unspecified"/>
+              <case id="r10-case-file">
+                <caseFileModel id="cfm">
+                  <caseFileItem id="cfiApp" name="application" definitionRef="cfidApp"/>
+                </caseFileModel>
+                <casePlanModel id="plan" autoComplete="false">
+                  <planItem id="PI_review" definitionRef="review">
+                    <entryCriterion id="ec" sentryRef="s"/>
+                  </planItem>
+                  <sentry id="s">
+                    <caseFileItemOnPart id="op" sourceRef="cfiApp"><standardEvent>create</standardEvent></caseFileItemOnPart>
+                  </sentry>
+                  <humanTask id="review" name="Review application"/>
+                </casePlanModel>
+              </case>
+            </definitions>
+            """;
+
+    /** Owner ruling C1: case file item create fires the sentry; lifecycle state recorded by the engine. */
+    @Test
+    void caseFileItem() {
+        scenario("CMMN-C1-CASE-FILE-ITEM", ctx -> {
+            deployCmmn("r10-case-file", CASE_FILE_CASE);
+            String cid = adapter.startCase(SCENARIO_TENANT, "r10-case-file", key("CFI"), vars());
+            ctx.check("no review before the item exists", tasks(cid, null).isEmpty());
+            engine.getCaseService().setVariable(cid, "application", "A-1");
+            ctx.check("create fired the sentry", tasks(cid, null).size() == 1);
+            var states = new org.sangam.ports.cmmn.CaseFileItemService(engine).states(cid);
+            ctx.check("state AVAILABLE recorded (" + states + ")", states.size() == 1 && "AVAILABLE".equals(states.get(0).state()));
+            boolean refused = false;
+            try {
+                deployCmmn("r10-case-file-bad", CASE_FILE_CASE.replace("r10-case-file", "r10-case-file-bad")
+                        .replace("<standardEvent>create</standardEvent>", "<standardEvent>addChild</standardEvent>"));
+            } catch (RuntimeException e) {
+                refused = true;
+            }
+            ctx.check("addChild refused at deploy", refused);
+        });
+    }
 }

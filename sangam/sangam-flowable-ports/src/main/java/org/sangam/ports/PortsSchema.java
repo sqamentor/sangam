@@ -64,6 +64,20 @@ public final class PortsSchema {
               PRIMARY KEY (id_)
             )""",
             "CREATE INDEX PORT_CASE_MIGRATION_CASE ON PORT_CASE_MIGRATION (tenant_id, case_inst_id)",
+            // ------------------------------------------------ CMMN case file item lifecycle (owner ruling C1), engine-written
+            """
+            CREATE TABLE PORT_CASE_FILE_ITEM (
+              tenant_id       {str64} NOT NULL,
+              case_inst_id    {str64} NOT NULL,
+              item_id         {str} NOT NULL,
+              variable_name   {str} NOT NULL,
+              definition_type {str},
+              state           {str64} NOT NULL,
+              updated_at      {ts} NOT NULL,
+              version_        {long} NOT NULL,
+              PRIMARY KEY (case_inst_id, item_id)
+            )""",
+            "CREATE INDEX PORT_CASE_FILE_ITEM_TENANT ON PORT_CASE_FILE_ITEM (tenant_id, case_inst_id)",
             // ------------------------------------------------ event registry (FLOWABLE-INTO-OPERATON FC-02, FLOWABLE-INTO-OPERATON FC-03, FLOWABLE-INTO-OPERATON FC-43); FLOWABLE-INTO-OPERATON FC-04 uses UNIQUE_START (WS-INTEGRATION)
             """
             CREATE TABLE EVT_CHANNEL_DEF (

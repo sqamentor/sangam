@@ -65,6 +65,27 @@ public class PortsCmmnTransformListener implements CmmnTransformListener {
         lifecycleListeners.add(l);
     }
 
+    /** Owner ruling C1: records case file item transitions in PORT_CASE_FILE_ITEM (engine-written). */
+    @Override
+    public void transformCasePlanModel(org.operaton.bpm.model.cmmn.instance.CasePlanModel casePlanModel, CmmnActivity activity) {
+        casePlanModel(casePlanModel, activity);
+    }
+
+    @Override
+    public void transformCasePlanModel(org.operaton.bpm.model.cmmn.impl.instance.CasePlanModel casePlanModel, CmmnActivity activity) {
+        casePlanModel(casePlanModel, activity);
+    }
+
+    private static final String CASE_FILE_ATTACHED = "sangam.caseFileAttached";
+
+    private static void casePlanModel(org.operaton.bpm.model.xml.instance.ModelElementInstance casePlanModel, CmmnActivity activity) {
+        if (casePlanModel != null && activity != null && activity.getProperty(CASE_FILE_ATTACHED) == null
+                && casePlanModel.getParentElement() instanceof org.operaton.bpm.model.cmmn.instance.Case c) {
+            activity.setProperty(CASE_FILE_ATTACHED, Boolean.TRUE);
+            CaseFileItemService.attach(c, activity);
+        }
+    }
+
     @Override
     public void transformHumanTask(PlanItem planItem, HumanTask humanTask, CmmnActivity activity) {
         repetition(planItem, activity);
