@@ -208,7 +208,7 @@
     <version.cyclonedx-maven-plugin>2.9.3</version.cyclonedx-maven-plugin>
     <version.versions-maven-plugin>2.25.2</version.versions-maven-plugin>
     <version.jazzer>0.30.0</version.jazzer>
-    <version.cucumber>8.0.4</version.cucumber>
+    <version.cucumber>8.1.0</version.cucumber>
     <!-- M-095: empty unless -Psangam-coverage sets it (JaCoCo prepare-agent). Surefire reads it as @{argLine}, so the
          agent and the UTC/tmpdir flags below are both kept. -->
     <argLine></argLine>
@@ -498,19 +498,19 @@
         <version>${version.cucumber}</version>
         <scope>test</scope>
       </dependency>
-      <!-- Cucumber 8.0.4 asks for these two as version ranges (messages [32.0.0,35.0.0), query [15.0.0,17.0.0)). A range
+      <!-- Cucumber 8.0.4 asked for these two as version ranges (messages [32.0.0,35.0.0), query [15.0.0,17.0.0)). A range
            is resolved from repository metadata, so the result depends on the day of the build and an offline build
-           fails. Pinned to the versions of the approved batch-1 download, inside both ranges. -->
+           fails. Pinned to the versions cucumber-jvm 8.1.0 itself pins (messages 35.0.0, query 16.4.0, UP-L7). -->
       <dependency>
         <groupId>io.cucumber</groupId>
         <artifactId>messages</artifactId>
-        <version>34.2.1</version>
+        <version>35.0.0</version>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>io.cucumber</groupId>
         <artifactId>query</artifactId>
-        <version>16.1.1</version>
+        <version>16.4.0</version>
         <scope>test</scope>
       </dependency>
     </dependencies>
