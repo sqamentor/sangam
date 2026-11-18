@@ -73,6 +73,9 @@ public final class BatchSeal {
         }
         ex.setVariable(COUNT, fps.size());
         ex.setVariable(TOTAL, total.toPlainString());
+        // integrator ruling R2 (owner rules E1-E3): a batch sanction is monetary and its amount is the sealed total;
+        // the case amount (minor units) is what PowerLimitGuardListener holds against the officer's delegated limit
+        ex.setVariable("amount", total.longValueExact());
         ex.setVariable(HASH, Vars.hash(new LinkedHashMap<>(fps)));
         Vars.setJsonDocument(ex, FINGERPRINTS, fps);
         ex.setVariable(Vars.MATERIAL_FIELDS, SEALED_FIELDS);

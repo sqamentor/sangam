@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-cheque-return/return",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.bank.cheque-return",
   "title": {
     "en": "Cheque return",

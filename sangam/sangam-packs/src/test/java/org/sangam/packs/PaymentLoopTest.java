@@ -304,4 +304,31 @@ class PaymentLoopTest {
         assertEquals("15000.00", pay.payload().get("amount"));
         assertEquals("PV-7", pay.payload().get("payeeVersionId"));
     }
+
+    /**
+     * Integrator ruling R1 (owner rules E1-E3): the registry changes the payee's account after the PAO pass. Before the
+     * fix the payment went to the new account under the approval of the old one. Now nothing is paid on the stale
+     * approval; the bill goes back through a fresh PAO pass, which binds the new account, and only then is it paid.
+     */
+    @Test
+    void aPayeeAccountChangedAfterThePaoPassIsNotPaidWithoutAFreshApproval() {
+        String bk = "PL/R1";
+        VerifiedPayees.install((t, e, p, d) -> {
+            long paoPasses = engine.getHistoryService().createHistoricTaskInstanceQuery()
+                    .processInstanceBusinessKey(bk).taskDefinitionKey("pc_pao").finished().count();
+            return paoPasses == 0
+                    ? new VerifiedPayeeLookup.Verified("PV-OLD", "A Payee", "111111111111", "SBIN0000001")
+                    : new VerifiedPayeeLookup.Verified("PV-NEW", "A Payee", "222222222222", "SBIN0000002");
+        });
+        bill(bk, null);
+        long paoPasses = engine.getHistoryService().createHistoricTaskInstanceQuery()
+                .processInstanceBusinessKey(bk).taskDefinitionKey("pc_pao").finished().count();
+        assertEquals(2, paoPasses, "a fresh PAO pass after the account changed; open " + open(bk));
+        assertEquals(1, payments(), "paid once, only after the fresh approval");
+        ConnectorRequest pay = gateway.journal().stream().filter(r -> "pfms.payment".equals(r.connector()))
+                .findFirst().orElseThrow();
+        assertEquals("222222222222", pay.payload().get("accountNo"));
+        assertEquals("222222222222@SBIN0000002", driver.var(bk, "payeeAccount"), "the account the fresh pass bound");
+        assertTrue(driver.ended(bk), "paid and closed: " + open(bk));
+    }
 }

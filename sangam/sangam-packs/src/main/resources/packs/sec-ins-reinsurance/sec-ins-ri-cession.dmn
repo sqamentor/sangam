@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ins_ri_cession" name="Retention and cession (SYNTHETIC; obligatory cession % per IRDAI notification - verify)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-ins-ri-cession" name="Retention and cession (SYNTHETIC; obligatory cession % per IRDAI notification - verify)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-ins-ri-cession" name="Retention and cession (SYNTHETIC; obligatory cession % per IRDAI notification - verify)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-ins-ri-cession_t" hitPolicy="FIRST">
       <input id="sec-ins-ri-cession_i0" label="Sum insured"><inputExpression id="sec-ins-ri-cession_ie0" typeRef="number"><text>sumInsured</text></inputExpression></input>
       <input id="sec-ins-ri-cession_i1" label="Line"><inputExpression id="sec-ins-ri-cession_ie1" typeRef="string"><text>lineOfBusiness</text></inputExpression></input>

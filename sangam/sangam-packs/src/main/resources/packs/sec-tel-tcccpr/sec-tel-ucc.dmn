@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_tel_ucc" name="UCC complaint timeline and graded action (TCCCPR 2018 as amended 2025; verify)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-tel-ucc" name="UCC complaint timeline and graded action (TCCCPR 2018 as amended 2025; verify)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-tel-ucc" name="UCC complaint timeline and graded action (TCCCPR 2018 as amended 2025; verify)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-tel-ucc_t" hitPolicy="FIRST">
       <input id="sec-tel-ucc_i0" label="Prior violations"><inputExpression id="sec-tel-ucc_ie0" typeRef="integer"><text>priorViolations</text></inputExpression></input>
       <output id="sec-tel-ucc_o0" label="Act within" name="uccSpec" typeRef="string"/>

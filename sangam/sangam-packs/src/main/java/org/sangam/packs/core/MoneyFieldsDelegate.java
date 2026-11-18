@@ -143,7 +143,7 @@ public class MoneyFieldsDelegate implements JavaDelegate, ExecutionListener {
             }
             switch (r) {
                 case VerifiedPayeeLookup.Verified v -> {
-                    account = v.accountNo() + (blank(v.ifsc()) ? "" : "@" + v.ifsc());
+                    account = accountOf(v.accountNo(), v.ifsc());
                     payeeVersion = v.payeeVersionId();
                 }
                 case VerifiedPayeeLookup.NotVerified n -> throw hold(ex, "payee " + keyUsed + " not verified: "
@@ -231,5 +231,10 @@ public class MoneyFieldsDelegate implements JavaDelegate, ExecutionListener {
 
     private static boolean blank(String s) {
         return s == null || s.isBlank();
+    }
+
+    /** The canonical {@code payeeAccount} of a verified registry payee: account number, then {@code @IFSC} if any. */
+    static String accountOf(String accountNo, String ifsc) {
+        return accountNo + (ifsc == null || ifsc.isBlank() ? "" : "@" + ifsc);
     }
 }

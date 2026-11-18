@@ -1,6 +1,6 @@
 {
   "id": "sec.util.disconnection",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Disconnection for non-payment and reconnection",
     "hi": "भुगतान न होने पर विच्छेदन एवं पुनर्संयोजन"

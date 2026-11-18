@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_bank_cheque_rules" name="Cheque return rules (SYNTHETIC board policy)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-bank-cheque-rules" name="Cheque return rules (SYNTHETIC board policy)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-bank-cheque-rules" name="Cheque return rules (SYNTHETIC board policy)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-bank-cheque-rules_t" hitPolicy="FIRST">
       <input id="sec-bank-cheque-rules_i0" label="Reason"><inputExpression id="sec-bank-cheque-rules_ie0" typeRef="string"><text>returnReason</text></inputExpression></input>
       <input id="sec-bank-cheque-rules_i1" label="Returns this year"><inputExpression id="sec-bank-cheque-rules_ie1" typeRef="integer"><text>returnCount</text></inputExpression></input>

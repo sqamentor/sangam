@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-reinsurance/fac",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ins.reinsurance",
   "title": {
     "en": "Place facultative (Indian reinsurers first)",
