@@ -316,6 +316,17 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
                 d.put("fetched", true);
                 d.put("uri", "in.gov.sim.issuer-" + shortId());
             }
+            case "eproc.emdRegister" -> {
+                // the e-procurement portal's register of the bids received with their EMD captures (item 11): one
+                // record per responsive bidder of eproc.evaluate; each capture reference is unique to this answer
+                String round = shortId();
+                List<Map<String, Object>> reg = new ArrayList<>();
+                for (int i = 1; i <= 3; i++) {
+                    reg.add(Map.of("bidderId", "BIDDER-" + i, "emdAmount", 2_000_000L, // 20,000 rupees, in paise
+                            "emdCaptureRef", "SIM-EMD-" + round + "-" + i));
+                }
+                d.put("register", reg);
+            }
             case "eproc.evaluate" -> {
                 d.put("l1BidderId", "BIDDER-1");
                 d.put("l1Amount", 95_000_000L); // 9.5 lakh, in paise
