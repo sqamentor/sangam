@@ -203,16 +203,82 @@ class MoneyOutApprovalTest {
         assertEquals(1, v.size(), v.toString());
     }
 
+    // ---- approvals bound inside a called process; connector chosen by a rail DMN (IFMS bill -> PAO chain) ----
+
+    private static String chain(String materialFields, boolean deemedBypass) {
+        String start = "<extensionElements><operaton:executionListener event=\"start\" "
+                + "class=\"org.sangam.packs.core.PackStartListener\"><operaton:field name=\"materialFields\">"
+                + "<operaton:string>" + materialFields + "</operaton:string></operaton:field>"
+                + "</operaton:executionListener></extensionElements>";
+        String body = "<startEvent id=\"cs\"/>" + APPROVE + "<exclusiveGateway id=\"cg\"/><endEvent id=\"ce\"/>"
+                + flow("c1", "cs", deemedBypass ? "cg" : "approve") + flow("c2", "approve", "ce");
+        if (deemedBypass) {
+            body += flow("c3", "cg", "approve") + flow("c4", "cg", "ce");
+        }
+        return "<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" "
+                + "xmlns:operaton=\"http://operaton.org/schema/1.0/bpmn\" targetNamespace=\"t\">"
+                + "<process id=\"t-chain\" isExecutable=\"true\">" + start + body + "</process></definitions>";
+    }
+
+    private static MoneyPathGuard.Models models(String chainBpmn) {
+        return new MoneyPathGuard.Models() {
+            @Override
+            public byte[] process(String processId) {
+                return "t-chain".equals(processId) ? chainBpmn.getBytes(StandardCharsets.UTF_8) : null;
+            }
+
+            @Override
+            public List<String> decisionOutputs(String decisionKey, String output) {
+                return "t-rail".equals(decisionKey) && "executionConnector".equals(output)
+                        ? List.of("pfms.payment") : List.of();
+            }
+        };
+    }
+
+    /** The bill: rail DMN chooses the connector, the PAO chain (called process) approves, core execution pays. */
+    private static List<String> bill(String chainBpmn) {
+        String body = "<startEvent id=\"s\"/><businessRuleTask id=\"rail\" "
+                + "operaton:class=\"org.sangam.packs.core.DecisionDelegate\"><extensionElements><operaton:field "
+                + "name=\"decisionKey\"><operaton:string>t-rail</operaton:string></operaton:field></extensionElements>"
+                + "</businessRuleTask><callActivity id=\"chain\" calledElement=\"t-chain\"/>"
+                + "<callActivity id=\"pay\" calledElement=\"sangam-core-execution\"/><endEvent id=\"e\"/>"
+                + flow("f1", "s", "rail") + flow("f2", "rail", "chain") + flow("f3", "chain", "pay")
+                + flow("f4", "pay", "e");
+        return MoneyPathGuard.check("t.bpmn", (HEAD + body + "</process></definitions>")
+                .getBytes(StandardCharsets.UTF_8), ConnectorMoneyMovements::enforced, Map.of(), models(chainBpmn));
+    }
+
+    @Test
+    void anApprovalInACalledProcessThatDoesNotBindTheMoneyFieldsIsRefused() {
+        List<String> v = bill(chain("billType,amount,tokenNo", false));
+        assertEquals(1, v.size(), v.toString());
+        assertTrue(v.get(0).contains("t-chain") && v.get(0).contains("E3") && v.get(0).contains("currency"),
+                v.toString());
+    }
+
+    @Test
+    void aCalledProcessWithAPathAroundItsApprovalIsNoApproval() {
+        List<String> v = bill(chain("amount,payeeAccount,currency,purpose", true));
+        assertEquals(1, v.size(), v.toString());
+        assertTrue(v.get(0).contains("A1") && v.get(0).contains("reaches pay"), v.toString());
+    }
+
+    @Test
+    void aCalledProcessApprovingOnEveryPathWithTheMoneyFieldsPasses() {
+        assertEquals(List.of(), bill(chain("amount,payeeAccount,currency,purpose", false)));
+    }
+
     @Test
     void everyShippedPackPassesTheMoneyPathGuard() {
         List<String> all = new ArrayList<>();
+        MoneyPathGuard.Models models = MoneyPathGuard.Models.of(PackRegistry.discover().all());
         for (SangamPack p : PackRegistry.discover().all()) {
             Map<String, String> topics = new HashMap<>();
             p.descriptor().workers().forEach(w -> topics.put(w.topic(), w.connector()));
             for (PackDescriptor.PackResource r : p.descriptor().resources()) {
                 if (r.kind() == PackDescriptor.PackResource.Kind.BPMN) {
                     all.addAll(MoneyPathGuard.check(r.path(), read(p, r.path()), ConnectorMoneyMovements::enforced,
-                            topics));
+                            topics, models));
                 }
             }
         }
