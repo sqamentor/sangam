@@ -9,7 +9,7 @@
   <process id="sangam-sec-ins-proposal" name="Proposal to policy" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
     <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ins.proposal-underwriting</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.3</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerName,productCode,sumAssured,age,amount,payeeAccount,currency,purpose</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="ip_start" name="Proposal received" operaton:initiator="initiator" operaton:formKey="sangam:sec-ins-proposal-underwriting/proposal"></startEvent>
-    <serviceTask id="ip_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>customerName=@customerId;productCode=TERM;sumAssured=100000000;age=35;smoker=false;medicalDisclosures=NONE;uwSeat=UNDERWRITER;executionConnector=pg.collect;executionStep=premium;verifyApproval=false;reconcileRequired=false;executionPayloadFields=customerName,premiumAmount;premiumAmount=0;applicantRef=@customerId;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ip_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>customerName=@customerId;productCode=TERM;sumAssured=100000000;age=35;smoker=false;medicalDisclosures=NONE;uwSeat=UNDERWRITER;executionConnector=pg.collect;executionStep=premium;verifyApproval=false;reconcileRequired=false;executionPayloadFields=customerName,premiumAmount;applicantRef=@customerId;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
     <serviceTask id="ip_kyc" name="KYC (CKYC)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ckycr.search</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>search</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ckyc</operaton:string></operaton:field></extensionElements></serviceTask>
     <businessRuleTask id="ip_rule" name="Underwriting route (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ins-uw</operaton:string></operaton:field></extensionElements></businessRuleTask>
     <exclusiveGateway id="ip_routeGw" name="Straight-through?" default="sec_ins_proposal_f21"></exclusiveGateway>
@@ -102,8 +102,13 @@
     <sequenceFlow id="sec_ins_proposal_f32" sourceRef="ip_consent" targetRef="ip_consent_done"/>
     <sequenceFlow id="sec_ins_proposal_f33" sourceRef="ip_group" targetRef="ip_consent_slaPlan"/>
     <sequenceFlow id="sec_ins_proposal_f34" sourceRef="ip_consent_done" targetRef="ip_consGw"/>
-    <sequenceFlow id="sec_ins_proposal_f35" name="accept" sourceRef="ip_uwGw" targetRef="ip_premium"><conditionExpression xsi:type="tFormalExpression">${uwDecision == 'accept'}</conditionExpression></sequenceFlow>
-    <sequenceFlow id="sec_ins_proposal_f36" name="accepted" sourceRef="ip_consGw" targetRef="ip_premium"><conditionExpression xsi:type="tFormalExpression">${counterDecision == 'accept'}</conditionExpression></sequenceFlow>
+    <exclusiveGateway id="ip_premiumGw" name="Premium entered?" default="ip_premiumGw_enter"></exclusiveGateway>
+    <sequenceFlow id="ip_premiumGw_yes" name="premium entered" sourceRef="ip_premiumGw" targetRef="ip_premium"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('premiumAmount') != null &amp;&amp; premiumAmount &gt; 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ip_premiumGw_enter" name="no premium: a person enters it" sourceRef="ip_premiumGw" targetRef="ip_premiumEnter"/>
+    <userTask id="ip_premiumEnter" name="Enter the premium (no rating source; DEC-5)" operaton:candidateGroups="${uwSeat}" operaton:formKey="sangam:sec-ins-proposal-underwriting/premium"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"/></extensionElements></userTask>
+    <sequenceFlow id="ip_premiumEnter_f" sourceRef="ip_premiumEnter" targetRef="ip_premiumGw"/>
+    <sequenceFlow id="sec_ins_proposal_f35" name="accept" sourceRef="ip_uwGw" targetRef="ip_premiumGw"><conditionExpression xsi:type="tFormalExpression">${uwDecision == 'accept'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_proposal_f36" name="accepted" sourceRef="ip_consGw" targetRef="ip_premiumGw"><conditionExpression xsi:type="tFormalExpression">${counterDecision == 'accept'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_ins_proposal_f37" name="declined" sourceRef="ip_consGw" targetRef="ip_endDeclined"/>
     <sequenceFlow id="sec_ins_proposal_f38" name="postpone" sourceRef="ip_uwGw" targetRef="ip_endPostponed"><conditionExpression xsi:type="tFormalExpression">${uwDecision == 'postpone'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_ins_proposal_f39" sourceRef="ip_rj_reject" targetRef="ip_rj_endRejected"/>
@@ -258,6 +263,6 @@
       <bpmndi:BPMNEdge id="sec_ins_proposal_f55_di" bpmnElement="sec_ins_proposal_f55"><di:waypoint x="128" y="805"/><di:waypoint x="225" y="805"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ins_proposal_f56_di" bpmnElement="sec_ins_proposal_f56"><di:waypoint x="325" y="805"/><di:waypoint x="390" y="805"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ins_proposal_f57_di" bpmnElement="sec_ins_proposal_f57"><di:waypoint x="490" y="805"/><di:waypoint x="587" y="805"/></bpmndi:BPMNEdge>
-    </bpmndi:BPMNPlane>
+    <bpmndi:BPMNShape id="ip_premiumGw_di" bpmnElement="ip_premiumGw" isMarkerVisible="true"><dc:Bounds x="2300" y="420" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="ip_premiumEnter_di" bpmnElement="ip_premiumEnter"><dc:Bounds x="2275" y="520" width="100" height="80"/></bpmndi:BPMNShape></bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

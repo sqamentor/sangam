@@ -26,7 +26,7 @@ def works():
     p = pk.proc('sangam-works-project', 'Works project', 'Order of sanctions from the pack configuration '
                 'works-config (per tenant by override deployment, per office by rule row): TS_FIRST (default: estimate, '
                 'technical sanction, administrative approval) or AA_FIRST.',
-                start={'materialFields': 'workName,estimateAmount,budgetHead'})
+                start={'materialFields': 'workName,estimateAmount,budgetHead,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = s.start('wk_start', 'Estimate submitted', form='works/estimate')
     p.forms.append(dict(key='works/estimate', name='Estimate | प्राक्कलन', decision=None,
@@ -243,7 +243,7 @@ def gem():
                           ('ifms.release', 'a', 'G-PFMS', 'Release'), PROFILE_CONNECTOR],
               depends=['sangam.core', 'gov.tender', 'gov.p1.bill-payment'])
     p = pk.proc('sangam-gem-purchase', 'Purchase of goods', '',
-                start={'materialFields': 'itemDescription,quantity,unitPrice,budgetHead,amount'})
+                start={'materialFields': 'itemDescription,quantity,unitPrice,budgetHead,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = s.start('gm_start', 'Indent raised', form='gem-purchase/indent')
     p.forms.append(dict(key='gem-purchase/indent', name='Indent | मांग पत्र', decision=None,

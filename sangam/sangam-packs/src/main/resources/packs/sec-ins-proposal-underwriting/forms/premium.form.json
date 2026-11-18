@@ -1,0 +1,38 @@
+{
+  "key": "sec-ins-proposal-underwriting/premium",
+  "version": "1.0.3",
+  "pack": "sec.ins.proposal-underwriting",
+  "title": {
+    "en": "Premium to collect",
+    "hi": "संग्रहीत किया जाने वाला प्रीमियम"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "premiumAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Premium (INR)",
+        "hi": "प्रीमियम (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

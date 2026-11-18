@@ -1067,7 +1067,7 @@ def land():
     cl = core(s, 'la_close', 'Close (core)', 'closure')
     s.seq(pos, cl, end_ok(p, s, 'la_end'))
     c = pk.proc('sangam-land-compensation-payment', 'Compensation to one awardee', '',
-                start={'materialFields': 'key,amount'})
+                start={'materialFields': 'key,amount,payeeAccount,currency,purpose'})
     s = c.root
     a1 = s.start('lp_start', 'Awardee', initiator=None)
     d = s.setv('lp_defaults', 'Configuration', defaults='executionConnector=pfms.payment;executionStep=compensation;'
