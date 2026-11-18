@@ -83,6 +83,14 @@ class HeldContentTest(unittest.TestCase):
         self.assertEqual('2.0.0', releases.version_of(pid, '2.0.0'), 'a pack declaring another version keeps it')
         self.assertEqual('1.0.1', releases.version_of('universal.up04-skills-routing', '1.0.0'), 'not in SHIPS')
 
+    def test_dmn_money_hold_ships_its_packs_above_the_integration_version(self):
+        # Lane dmn-money-hold changed gov.contract-management and gov.pension after ruling R4 put 1.0.3 on the
+        # integration branch (bce8c0ee); a version that may be deployed is immutable (decision 390 (4)).
+        for pid in ('gov.contract-management', 'gov.pension'):
+            self.assertEqual(('1.0.3', '1.0.4'), releases.DMN_MONEY_HOLD[pid])
+            self.assertEqual('1.0.4', releases.version_of(pid, '1.0.0'), pid)
+        self.assertEqual('1.0.3', releases.version_of('gov.p2.file-movement', '1.0.0'), 'untouched by the lane')
+
 
 if __name__ == '__main__':
     unittest.main()

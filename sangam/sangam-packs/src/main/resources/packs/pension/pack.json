@@ -1,6 +1,6 @@
 {
   "id": "gov.pension",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "name": {
     "en": "Pension: sanction, PPO and monthly disbursement",
     "hi": "पेंशन: स्वीकृति, पीपीओ एवं मासिक भुगतान"
@@ -42,6 +42,18 @@
     {
       "kind": "FORM",
       "path": "packs/pension/forms/papers.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/pension/forms/payable-pensionAmount.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/pension/forms/payable-retirementGratuity.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/pension/forms/payable-familyPension.form.json"
     },
     {
       "kind": "FORM",
@@ -162,11 +174,17 @@
     "variables": [
       "amount",
       "averageEmoluments",
+      "computedFamilyPension",
+      "computedGratuity",
+      "computedPension",
       "familyPension",
+      "familyPensionEntered",
       "lastPay",
       "pensionAmount",
+      "pensionAmountEntered",
       "powerLimit",
-      "retirementGratuity"
+      "retirementGratuity",
+      "retirementGratuityEntered"
     ]
   }
 }
