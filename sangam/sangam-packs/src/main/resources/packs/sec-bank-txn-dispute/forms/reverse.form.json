@@ -22,6 +22,17 @@
         "en": "Remarks",
         "hi": "टिप्पणी"
       }
+    },
+    {
+      "id": "compensationAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Compensation amount (INR)",
+        "hi": "क्षतिपूर्ति राशि (रुपये)"
+      }
     }
   ]
 }

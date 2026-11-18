@@ -69,6 +69,15 @@
         "en": "Photographs (geo-tagged)",
         "hi": "फ़ोटो (जियो-टैग)"
       }
+    },
+    {
+      "id": "originalPaymentRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Original payment reference (capture)",
+        "hi": "मूल भुगतान संदर्भ (प्राप्ति)"
+      }
     }
   ]
 }
