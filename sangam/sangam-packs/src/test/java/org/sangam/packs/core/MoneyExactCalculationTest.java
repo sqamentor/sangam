@@ -72,6 +72,8 @@ class MoneyExactCalculationTest {
     @AfterAll
     static void tearDown() {
         engine.close();
+        engine = null;
+        PackRuntime.reset();
     }
 
     private static ProcessInstance start(Object fee, Object pct, Object processingFee) {
