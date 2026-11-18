@@ -86,7 +86,7 @@ jobs:
         # of every module, including the IT profiles' (failsafe, JDBC drivers, Testcontainers modules).
         run: |
           set -euo pipefail
-          bash ./mvnw $MAVEN_ARGS -T 1C -DskipTests -Psangam-db-it,sangam-it-only,oracle-it test-compile dependency:go-offline
+          bash "$GITHUB_WORKSPACE/.github/actions/maven-cache/resolve-once.sh" -DskipTests -Psangam-db-it,sangam-it-only,oracle-it test-compile dependency:go-offline
       - name: Maven fetch count (Maven Central 429 evidence)
         if: always()
         run: bash "$GITHUB_WORKSPACE/.github/actions/maven-cache/fetch-count.sh"

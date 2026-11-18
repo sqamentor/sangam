@@ -122,5 +122,19 @@ class Distribution(unittest.TestCase):
             self.assertRegex(f.read(), r"(?m)^distributionSha256Sum=[0-9a-f]{64}\s*$")
 
 
+class SingleFetch(unittest.TestCase):
+    def test_deps_job_resolves_serially_with_bounded_retries(self):
+        with open(os.path.join(WORKFLOWS, "ci-lanes.yml"), encoding="utf-8") as f:
+            deps = dict(jobs(f.read()))["deps"]
+        self.assertIn("resolve-once.sh", deps)
+        self.assertNotRegex(deps, r"\s-T\s", "parallel resolution makes the one cold fetch bursty")
+        with open(os.path.join(ACTION, "resolve-once.sh"), encoding="utf-8") as f:
+            s = f.read()
+        self.assertIn("for attempt in 1 2 3", s)
+        self.assertIn("retryHandler.serviceUnavailable=429,503", s)
+        self.assertIn("exit 1", s)
+        self.assertNotRegex(s, r"\s-T\s|maven\.test\.failure\.ignore|checksumPolicy|--lax-checksums")
+
+
 if __name__ == "__main__":
     unittest.main()
