@@ -22,6 +22,17 @@
         "en": "Remarks",
         "hi": "टिप्पणी"
       }
+    },
+    {
+      "id": "unpaidAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Unpaid dividend to move (INR)",
+        "hi": "अदत्त लाभांश राशि (रुपये)"
+      }
     }
   ]
 }
