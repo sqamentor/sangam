@@ -2959,13 +2959,6 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/loose-envify@1.4.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
   "pkg:npm/luxon@3.7.2": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -3099,7 +3092,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/react-dom@18.3.1": {
+  "pkg:npm/react-dom@19.3.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -3127,7 +3120,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/react@18.3.1": {
+  "pkg:npm/react@19.3.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -3141,7 +3134,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/scheduler@0.23.2": {
+  "pkg:npm/scheduler@0.28.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
