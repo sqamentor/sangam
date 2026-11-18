@@ -39,6 +39,7 @@
     "dorny/paths-filter": "0e4a8c6effa4802afeda77dc8d303f8176d7dfad v3.0.4",
     "aws-actions/configure-aws-credentials": "e1253824e5c10ff9df46874f81ed3ec929e19cfd v6.3.0",
     "aquasecurity/trivy-action": "ed142fd0673e97e23eac54620cfb913e5ce36c25 v0.36.0",
-    "softprops/action-gh-release": "8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 v3.0.4"
+    "softprops/action-gh-release": "8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 v3.0.4",
+    "google/clusterfuzzlite": "884713a6c30a92e5e8544c39945cd7cb630abcd1 v1"
   }
 }
