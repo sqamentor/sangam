@@ -152,6 +152,69 @@ class MoneyFieldsDelegateTest {
         assertEquals("000123456789@SIMB0000001", v.get("payeeAccount"));
     }
 
+    // ---- owner decision M5: a compensation refund released by its capture record ----
+
+    private static Map<String, Object> captureThenRefund(String captureRef, long captured, long refund,
+                                                         String refundCurrency) {
+        String key = "t-capture-" + (++seq);
+        String bpmn = "<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" "
+                + "xmlns:operaton=\"http://operaton.org/schema/1.0/bpmn\" targetNamespace=\"t\">"
+                + "<process id=\"" + key + "\" isExecutable=\"true\" operaton:historyTimeToLive=\"1\"><startEvent id=\"s\"/>"
+                + "<task id=\"charge\"><extensionElements><operaton:executionListener event=\"end\" "
+                + "class=\"org.sangam.packs.core.CaptureRefunds$Record\"><operaton:field name=\"snapshotVar\">"
+                + "<operaton:string>chargeCaptureRef</operaton:string></operaton:field></operaton:executionListener>"
+                + "</extensionElements></task>"
+                + "<task id=\"later\"><extensionElements><operaton:executionListener event=\"start\" "
+                + "expression=\"${execution.setVariable('amount', " + refund + ")}\"/></extensionElements></task>"
+                + "<userTask id=\"refund\"><extensionElements><operaton:executionListener event=\"start\" "
+                + "class=\"org.sangam.packs.core.CaptureRefunds$Release\"><operaton:field name=\"captureVar\">"
+                + "<operaton:string>chargeCaptureRef</operaton:string></operaton:field><operaton:field name=\"purpose\">"
+                + "<operaton:string>Saga refund</operaton:string></operaton:field></operaton:executionListener>"
+                + "</extensionElements></userTask><endEvent id=\"e\"/>"
+                + "<sequenceFlow id=\"f1\" sourceRef=\"s\" targetRef=\"charge\"/>"
+                + "<sequenceFlow id=\"f2\" sourceRef=\"charge\" targetRef=\"later\"/>"
+                + "<sequenceFlow id=\"f3\" sourceRef=\"later\" targetRef=\"refund\"/>"
+                + "<sequenceFlow id=\"f4\" sourceRef=\"refund\" targetRef=\"e\"/></process></definitions>";
+        engine.getRepositoryService().createDeployment().addString(key + ".bpmn", bpmn)
+                .addString("pack.json", "{\"id\":\"t\",\"money\":{\"currency\":\"INR\"}}")
+                .tenantId(PackTestTenant.ID).deploy();
+        Map<String, Object> v = vars("executionOutcome", "DONE", "opExternalRef", captureRef, "amount", captured);
+        String id = engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(key + "-1")
+                .setVariables(v).processDefinitionTenantId(PackTestTenant.ID).execute().getId();
+        return engine.getRuntimeService().getVariables(id);
+    }
+
+    @Test
+    void aRefundOfAtMostTheCaptureToTheSameSourceOnceIsReleasedByTheCaptureRecord() {
+        Map<String, Object> v = captureThenRefund("PG-CAP-1", 10_000L, 10_000L, null);
+        assertEquals("capture-record", v.get("approvedBy"));
+        assertEquals("capture:PG-CAP-1", v.get("payeeAccount"));
+        assertEquals(null, org.sangam.packs.core.MoneyOutApproval.refusal("payment.refund", v::get),
+                "the refund payment step accepts the release");
+    }
+
+    @Test
+    void aRefundAboveTheCaptureIsHeldForAFreshSanction() {
+        String why = held(() -> captureThenRefund("PG-CAP-2", 10_000L, 10_001L, null));
+        assertTrue(why.contains("fresh sanction"), why);
+    }
+
+    @Test
+    void aSecondDifferentRefundOnTheSameCaptureIsHeld() {
+        captureThenRefund("PG-CAP-3", 10_000L, 4_000L, null);
+        String why = held(() -> captureThenRefund("PG-CAP-3", 10_000L, 3_000L, null));
+        assertTrue(why.contains("fresh sanction"), why);
+    }
+
+    @Test
+    void aRefundInAnotherCurrencyThanTheCaptureIsHeld() {
+        java.util.concurrent.atomic.AtomicInteger calls = new java.util.concurrent.atomic.AtomicInteger();
+        // the capture is recorded in the pack's INR; by the refund the tenant profile names USD
+        TenantCurrencies.install(t -> calls.getAndIncrement() == 0 ? null : "USD");
+        String why = held(() -> captureThenRefund("PG-CAP-4", 10_000L, 10_000L, null));
+        assertTrue(why.contains("fresh sanction"), why);
+    }
+
     @Test
     void aMissingZeroOrFractionalAmountIsHeld() {
         held(() -> run("payeeKeys=customerId;purpose=X", "INR", vars("customerId", "C-1")));
