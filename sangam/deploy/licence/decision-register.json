@@ -2357,13 +2357,6 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/%40bpmn-io/feelin@6.1.1": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
   "pkg:npm/%40bpmn-io/feelin@7.0.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -2371,14 +2364,14 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/%40bpmn-io/form-js-editor@1.26.1": {
+  "pkg:npm/%40bpmn-io/form-js-editor@2.2.0": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
    ],
    "spdx": "LicenseRef-bpmn.io (declared 'SEE LICENSE IN LICENSE')"
   },
-  "pkg:npm/%40bpmn-io/form-js-viewer@1.26.1": {
+  "pkg:npm/%40bpmn-io/form-js-viewer@2.2.0": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
@@ -2407,13 +2400,6 @@
    "spdx": "MIT"
   },
   "pkg:npm/%40bpmn-io/lezer-feel@1.9.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
-  "pkg:npm/%40bpmn-io/lezer-feel@2.5.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -2461,20 +2447,6 @@
     "ui"
    ],
    "spdx": "MIT"
-  },
-  "pkg:npm/%40carbon/grid@11.66.0": {
-   "decision": "ACCEPTED WITH CONDITIONS",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "Apache-2.0"
-  },
-  "pkg:npm/%40carbon/layout@11.63.0": {
-   "decision": "ACCEPTED WITH CONDITIONS",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "Apache-2.0"
   },
   "pkg:npm/%40codemirror/autocomplete@6.20.4": {
    "decision": "ACCEPTED FOR DEFINED USE",
@@ -2545,13 +2517,6 @@
     "ui"
    ],
    "spdx": "OFL-1.1"
-  },
-  "pkg:npm/%40ibm/telemetry-js@1.12.0": {
-   "decision": "ACCEPTED WITH CONDITIONS",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "Apache-2.0"
   },
   "pkg:npm/%40lezer/common@1.5.5": {
    "decision": "ACCEPTED FOR DEFINED USE",
