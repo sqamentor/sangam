@@ -24,6 +24,8 @@ runs:
         path: |
           ~/.m2/repository
           !~/.m2/repository/org/sangam
+          !~/.m2/repository/**/*.lastUpdated
+          !~/.m2/repository/**/resolver-status.properties
           ~/.cache/sangam-maven-dist
         key: sangam-maven-v1-${{ runner.os }}-${{ hashFiles('sangam/**/pom.xml', 'sangam/.mvn/wrapper/maven-wrapper.properties') }}
         restore-keys: sangam-maven-v1-${{ runner.os }}-
@@ -34,6 +36,8 @@ runs:
         path: |
           ~/.m2/repository
           !~/.m2/repository/org/sangam
+          !~/.m2/repository/**/*.lastUpdated
+          !~/.m2/repository/**/resolver-status.properties
           ~/.cache/sangam-maven-dist
         key: sangam-maven-v1-${{ runner.os }}-${{ hashFiles('sangam/**/pom.xml', 'sangam/.mvn/wrapper/maven-wrapper.properties') }}
         restore-keys: sangam-maven-v1-${{ runner.os }}-

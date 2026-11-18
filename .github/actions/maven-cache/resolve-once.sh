@@ -12,10 +12,10 @@ retry=(-Daether.connector.http.retryHandler.count=5
        -Daether.connector.http.retryHandler.interval=10000
        -Daether.connector.http.retryHandler.intervalMax=300000
        -Daether.connector.http.retryHandler.serviceUnavailable=429,503)
-transient='status code: (429|503)|Too Many Requests|\(absent\)|Could not (find|transfer) artifact'
+transient='status code: (429|503)|Too Many Requests|\(absent\)|Could not (find|transfer) artifact|The POM for \S+ is missing'
 for attempt in 1 2 3; do
   log="$RUNNER_TEMP/maven-resolve-$attempt.log"
-  if bash ./mvnw $MAVEN_ARGS "${retry[@]}" "${args[@]}" 2>&1 | tee "$log"; then
+  if bash ./mvnw $MAVEN_ARGS "${retry[@]}" "${args[@]}" 2>&1 | tee "$log" && ! grep -Eq "The POM for \S+ is missing" "$log"; then
     echo "maven resolution: done on attempt $attempt"
     exit 0
   fi

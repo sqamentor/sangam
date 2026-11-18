@@ -117,6 +117,16 @@ class Distribution(unittest.TestCase):
         self.assertNotIn("--insecure", self.script)
         self.assertNotRegex(self.script, r"curl[^\n]*\s-k\b")
 
+    def test_plain_mvn_runs_the_pinned_wrapper(self):
+        # The runner image's Maven binds other default plugin versions than the pinned 3.9.9 (resources-plugin 3.5.0
+        # vs 3.3.1), which the shared cache does not hold: those jobs went back to Maven Central.
+        self.assertIn('exec bash "%s/sangam/mvnw"', self.script)
+        self.assertIn('>> "$GITHUB_PATH"', self.script)
+
+    def test_cache_never_stores_not_found_markers(self):
+        self.assertIn("!~/.m2/repository/**/*.lastUpdated", self.action)
+        self.assertIn("!~/.m2/repository/**/resolver-status.properties", self.action)
+
     def test_wrapper_properties_keep_the_checksum(self):
         with open(os.path.join(REPO, "sangam", ".mvn", "wrapper", "maven-wrapper.properties"), encoding="utf-8") as f:
             self.assertRegex(f.read(), r"(?m)^distributionSha256Sum=[0-9a-f]{64}\s*$")

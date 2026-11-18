@@ -33,6 +33,14 @@ SHIM
 chmod +x "$shim/wget"
 (cd sangam && PATH="$shim:$PATH" MVNW_REPOURL="file://$root" bash ./mvnw -B -ntp -v >/dev/null)
 echo "MVNW_REPOURL=file://$root" >> "$GITHUB_ENV"
+# One Maven everywhere: a plain `mvn` in any later step runs the pinned, SHA-256-verified wrapper distribution, not the
+# runner image's Maven. A different Maven binds different default plugin versions (the runner's binds
+# maven-resources-plugin 3.5.0, 3.9.9 binds 3.3.1), which the shared cache does not hold, so those jobs went back to
+# Maven Central (the resources-plugin 3.5.0 / maven-filtering 3.5.0 failures, run 44332794608 JDK 27 leg).
+bin="$RUNNER_TEMP/sangam-mvn-bin"; mkdir -p "$bin"
+printf '#!/usr/bin/env bash\nexec bash "%s/sangam/mvnw" "$@"\n' "$GITHUB_WORKSPACE" > "$bin/mvn"
+chmod +x "$bin/mvn"
+echo "$bin" >> "$GITHUB_PATH"
 # Marker for the fetch count: Maven sets a fetched file's mtime to the remote Last-Modified, so count by ctime (set when the file is written).
 touch "$RUNNER_TEMP/sangam-m2-restored"
 echo "maven repository: $(find "$HOME/.m2/repository" -type f -name '*.jar' 2>/dev/null | wc -l) jars restored"
