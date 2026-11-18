@@ -1121,9 +1121,11 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.checkerframework/checker-qual@3.41.0": {
+  "pkg:maven/org.checkerframework/checker-qual@3.55.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
+    "control-plane",
+    "rollup",
     "server"
    ],
    "spdx": "MIT"
