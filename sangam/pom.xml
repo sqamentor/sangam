@@ -152,7 +152,7 @@
     <!-- RM-31: the slf4j family ships as one version; Spring Boot 4.1.2 brings jul-to-slf4j 2.0.20, so the API is 2.0.20
          too (test_version_families.py) -->
     <version.slf4j>2.0.20</version.slf4j>
-    <version.h2>2.3.232</version.h2>
+    <!-- UP-L7: 2.5.252 (was 2.3.232); file databases written by 2.3.232 open unchanged (H2FileUpgradeTest) --><version.h2>2.5.252</version.h2>
     <!-- broker clients (R38 inbound, ports channels): one version for every module, also for hosts (M-014); the
          Spring Boot BOM would otherwise resolve a different kafka-clients for a module that gets it transitively -->
     <version.kafka>3.9.2</version.kafka>

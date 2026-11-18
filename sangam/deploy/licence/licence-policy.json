@@ -88,7 +88,7 @@
     { "elected": "Apache-2.0", "decision": "90", "purls": ["pkg:maven/org.cryptacular/cryptacular@1.3.0"] },
     { "elected": "CDDL-1.1", "decision": "117", "purls": ["pkg:maven/javax.xml.bind/jaxb-api@2.3.1"] },
     { "elected": "BSD-2-Clause", "decision": "117", "purls": ["pkg:maven/org.hdrhistogram/HdrHistogram@2.2.2"] },
-    { "elected": "MPL-2.0", "decision": "117 (H2 election MPL-2.0)", "purls": ["pkg:maven/com.h2database/h2@2.3.232"] },
+    { "elected": "MPL-2.0", "decision": "117 (H2 election MPL-2.0)", "purls": ["pkg:maven/com.h2database/h2@2.5.252"] },
     { "elected": "MPL-2.0", "decision": "94 (veraPDF 1.30.4, wcag-algorithms 1.30.3; only in the PDF validator, decisions 114 and 119)",
       "purl_prefix": "pkg:maven/org.verapdf/", "versions": ["1.30.4", "1.30.3"], "allowed_in": ["pdf-validator"] },
     { "elected": "Apache-2.0", "decision": "383 (the Rust crates offered as MIT OR Apache-2.0 elect Apache-2.0, the project licence)",
