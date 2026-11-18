@@ -15,7 +15,7 @@
     <exclusiveGateway id="dp_exGw" name="executionOutcome?" default="dbt_beneficiary_payment_f7"></exclusiveGateway>
     <userTask id="dp_fix" name="Correct failed record" operaton:candidateGroups="${failureDesk}" operaton:formKey="sangam:dbt-batch/fix-record"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>fixDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
     <exclusiveGateway id="dp_fixGw" name="" default="dbt_beneficiary_payment_f12"></exclusiveGateway>
-    <endEvent id="dp_endFailed" name="Failed, corrected for resend"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>FAILED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>opReasonCode</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>correctedAccount,correctedIfsc</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="dp_endFailed" name="Failed, corrected for resend"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>FAILED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>opReasonCode</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>bankAccount,ifsc,correctedAccount,correctedIfsc</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <endEvent id="dp_endDropped" name="Dropped"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>DROPPED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>opReasonCode</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <sequenceFlow id="dbt_beneficiary_payment_f1" sourceRef="dp_start" targetRef="dp_defaults"/>
     <sequenceFlow id="dbt_beneficiary_payment_f2" sourceRef="dp_defaults" targetRef="dp_corrGw"/>
@@ -27,13 +27,17 @@
     <sequenceFlow id="dbt_beneficiary_payment_f8" sourceRef="dp_execute" targetRef="dp_exGw"/>
     <sequenceFlow id="dbt_beneficiary_payment_f9" sourceRef="dp_route" targetRef="dp_fix"/>
     <sequenceFlow id="dbt_beneficiary_payment_f10" sourceRef="dp_fix" targetRef="dp_fixGw"/>
-    <sequenceFlow id="dbt_beneficiary_payment_f11" name="correct" sourceRef="dp_fixGw" targetRef="dp_endFailed"><conditionExpression xsi:type="tFormalExpression">${fixDecision == 'correct'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="dbt_beneficiary_payment_f11" name="correct" sourceRef="dp_fixGw" targetRef="dp_recordFix"><conditionExpression xsi:type="tFormalExpression">${fixDecision == 'correct'}</conditionExpression></sequenceFlow>
+    <serviceTask id="dp_recordFix" name="Record the corrected account for the next round's seal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>bankAccount=@correctedAccount;ifsc=@correctedIfsc</operaton:string></operaton:field></extensionElements></serviceTask>
+    <sequenceFlow id="dbt_beneficiary_payment_f13" sourceRef="dp_recordFix" targetRef="dp_endFailed"/>
     <sequenceFlow id="dbt_beneficiary_payment_f12" name="drop" sourceRef="dp_fixGw" targetRef="dp_endDropped"/>
       <serviceTask id="dp_execute_release" name="Release under the batch sanction (owner decision E1)" operaton:class="org.sangam.packs.core.BatchItemReleaseDelegate"></serviceTask>
     <sequenceFlow id="dp_execute_release_f" sourceRef="dp_execute_release" targetRef="dp_execute"/>
   </process>
   <bpmndi:BPMNDiagram id="dbt_beneficiary_payment_diagram">
     <bpmndi:BPMNPlane id="dbt_beneficiary_payment_plane" bpmnElement="sangam-dbt-beneficiary-payment">
+      <bpmndi:BPMNShape id="dp_recordFix_di" bpmnElement="dp_recordFix"><dc:Bounds x="1500" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="dbt_beneficiary_payment_f13_di" bpmnElement="dbt_beneficiary_payment_f13"><di:waypoint x="1600" y="320"/><di:waypoint x="1650" y="320"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="dp_start_di" bpmnElement="dp_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dp_defaults_di" bpmnElement="dp_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dp_corrGw_di" bpmnElement="dp_corrGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>

@@ -6,6 +6,7 @@ import re
 
 import check_results
 import money
+import money_movement
 import powers
 import prepare
 import reason_codes
@@ -369,7 +370,8 @@ def write_all(root):
                 resources.append({'kind': 'OTHER', 'path': rpath})
         conns = {}
         for c in pk.connectors:
-            conns[c[0]] = {'id': c[0], 'capabilityClass': c[1], 'govTag': c[2], 'purpose': c[3]}
+            conns[c[0]] = {'id': c[0], 'moneyMovement': money_movement.of(c[0]), 'capabilityClass': c[1],
+                           'govTag': c[2], 'purpose': c[3]}
             if c[0] in SIMULATOR_BINDINGS:
                 conn, op = SIMULATOR_BINDINGS[c[0]]
                 conns[c[0]]['simulatorBinding'] = {'connector': conn, 'operation': op}
