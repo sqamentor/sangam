@@ -184,7 +184,7 @@ def pao_chain():
                'IFS-073', 'IFS-ML-003', 'IFS-ML-004', 'IFS-HR-002', 'IFS-OD-003', 'IFS-TG-005', 'IFS-KL-007', 'IFS-UP-003',
                'IFS-AP-004', 'GA-07', 'GA-23', 'GP-02', 'GP-17'],
               connectors=CONFIG_CONNECTORS)
-    p = pk.proc('sangam-ifms-pao-chain', 'PAO / treasury pre-check', '', start={'materialFields': 'billType,amount,tokenNo'})
+    p = pk.proc('sangam-ifms-pao-chain', 'PAO / treasury pre-check', '', start={'materialFields': 'billType,amount,tokenNo,payeeAccount,currency,purpose'})
     s = p.root
     st = s.start('pc_start', 'Bill received', initiator=None)
     d = s.setv('pc_defaults', 'Configuration', defaults='tokenSeries=TOKEN;tokenless=false;billDistributorSeat=BD-1;'
@@ -294,7 +294,7 @@ def bill():
                                                ('rail.fcy', 'c', 'G-BANK', 'Foreign-currency advice')],
               depends=['sangam.core', 'gov.ifms.pao-chain'], main=['sangam-ifms-bill'])
     p = pk.proc('sangam-ifms-bill', 'Bill by catalogue type', '',
-                start={'materialFields': 'billType,headOfAccount,amount,payee,payeeAccount,sanctionRef'})
+                start={'materialFields': 'billType,headOfAccount,amount,payee,payeeAccount,sanctionRef,currency,purpose'})
     s = p.root
     st = s.start('bl_start', 'Bill drafted by the DDO', form='ifms-bill/draft')
     p.forms.append(dict(key='ifms-bill/draft', name='Bill | बिल', decision=None,
@@ -469,7 +469,7 @@ def bill():
               'GOI profile, bill type CONTINGENT', 'lines carry 2054 and 2052', 'BILL_INVALID with RPR SI 2.2(5)(g)',
               {'sim_config_documentType': 'valid=false'})
     for slug, fam, default_type, en, hi, ids in FAMILIES:
-        fp = pk.proc('sangam-ifms-bill-' + slug, en, '', start={'materialFields': 'billType,amount'})
+        fp = pk.proc('sangam-ifms-bill-' + slug, en, '', start={'materialFields': 'billType,headOfAccount,amount,payee,payeeAccount,sanctionRef,currency,purpose'})
         fs = fp.root
         a = fs.start('bf_' + slug.replace('-', '') + '_start', en + ' started', form='ifms-bill/' + slug)
         fp.forms.append(dict(key='ifms-bill/' + slug, name=en + ' | ' + hi, decision=None,
@@ -825,7 +825,7 @@ def gia_uc():
               connectors=CONFIG_CONNECTORS + [ledger_conn('available', 'Unspent balance and funds'),
                                                ('grantee.registry', 'a', 'G-PFMS', 'Implementing-agency register (EAT)')],
               depends=['sangam.core', 'gov.ifms.pao-chain', 'gov.ifms.bill'])
-    p = pk.proc('sangam-ifms-gia-release', 'Grant release', '', start={'materialFields': 'grantee,amount,releasePercent'})
+    p = pk.proc('sangam-ifms-gia-release', 'Grant release', '', start={'materialFields': 'grantee,amount,releasePercent,payeeAccount,currency,purpose'})
     s = p.root
     st = s.start('gr_start', 'Release proposed', form='ifms-gia-uc/release')
     p.forms.append(dict(key='ifms-gia-uc/release', name='Grant release | अनुदान विमुक्ति', decision=None,
@@ -914,7 +914,7 @@ def sna_sparsh():
                                                ('rail.ekuber', 'c', 'G-RBI', 'Batch to RBI'),
                                                ('pfms.childSanction', 'a', 'G-PFMS', 'Child sanction / DN-CN notifications')])
     p = pk.proc('sangam-ifms-sna-sparsh-release', 'SNA-SPARSH daily release', '',
-                start={'materialFields': 'slsCode,amount,centreShare,stateShare'})
+                start={'materialFields': 'slsCode,amount,centreShare,stateShare,payeeAccount,currency,purpose'})
     s = p.root
     st = s.start('ss_start', 'IA payment file from the state treasury', form='ifms-sna-sparsh/claim')
     p.forms.append(dict(key='ifms-sna-sparsh/claim', name='SNA-SPARSH claim | एसएनए-स्पर्श दावा', decision=None,
@@ -1039,7 +1039,7 @@ def gpf_advances():
               'from the profile.',
               ['IFC-171', 'IFC-026', 'IFC-254', 'IFS-NL-002'] + SIDE, connectors=CONFIG_CONNECTORS,
               depends=['sangam.core', 'gov.ifms.pao-chain', 'gov.ifms.bill'])
-    p = pk.proc('sangam-ifms-gpf', 'GPF advance / withdrawal', '', start={'materialFields': 'employeeId,gpfAccount,amount,gpfPurpose'})
+    p = pk.proc('sangam-ifms-gpf', 'GPF advance / withdrawal', '', start={'materialFields': 'employeeId,gpfAccount,amount,gpfPurpose,payeeAccount,currency,purpose'})
     s = p.root
     st = s.start('gp_start', 'Application', form='ifms-gpf/application')
     p.forms.append(dict(key='ifms-gpf/application', name='GPF application | जीपीएफ आवेदन', decision=None,
@@ -1107,7 +1107,7 @@ def gpf_advances():
                ['IFC-180', 'IFC-107', 'IFC-210', 'IFC-025'] + SIDE,
                connectors=CONFIG_CONNECTORS + [ledger_conn('allocate', 'Raise the recovery demand (RECEIVABLE)')],
                depends=['sangam.core', 'gov.ifms.pao-chain', 'gov.ifms.bill'])
-    p = pk2.proc('sangam-ifms-advance', 'Employee advance', '', start={'materialFields': 'employeeId,advanceKind,amount,instalments'})
+    p = pk2.proc('sangam-ifms-advance', 'Employee advance', '', start={'materialFields': 'employeeId,advanceKind,amount,instalments,payeeAccount,currency,purpose'})
     s = p.root
     st = s.start('av_start', 'Application', form='ifms-loans-advances/application')
     p.forms.append(dict(key='ifms-loans-advances/application', name='Advance application | अग्रिम आवेदन', decision=None,

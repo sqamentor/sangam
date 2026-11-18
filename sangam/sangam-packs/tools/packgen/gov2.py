@@ -228,7 +228,7 @@ def pension():
     s.flow(cg, rep, None, 'complete', default=True)
     s.flow(rep, s.end('pm_end', 'Month closed'))
     c = pk.proc('sangam-pension-payment', 'Pension payment for one pensioner', '',
-                start={'materialFields': 'key,amount,bankAccount,ifsc'})
+                start={'materialFields': 'key,amount,bankAccount,ifsc,payeeAccount,currency,purpose'})
     s = c.root
     st = s.start('pp_start', 'Item', initiator=None)
     d = s.setv('pp_defaults', 'Configuration', defaults='lifeCertificateValid=true;executionConnector=pfms.payment;'

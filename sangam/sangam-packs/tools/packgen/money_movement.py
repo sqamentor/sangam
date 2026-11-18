@@ -345,6 +345,16 @@ MOVEMENT = {
 }
 
 
+# Owner decision M3: why a connector that looks like money out is not (written to pack.json as moneyMovementReason).
+REASON = {
+    'card.chargeback': 'owner decision M3: a chargeback is a claim on the card network that brings money in',
+    'depository.credit': 'owner decision M3: credits securities (shares) to demat accounts; no money moves',
+    'lms.book': 'owner decision M3: books the loan account in the LMS (a repayment schedule); no money moves',
+    'logistics.codRemit': 'owner decision M3: cash collected on delivery is remitted TO the platform (money in)',
+    're.cede': 'owner decision M3: records a cession in the reinsurance register; no money moves',
+}
+
+
 def of(connector_id):
     """The declared money movement of a connector; KeyError for a connector nobody classified."""
     if connector_id not in MOVEMENT:

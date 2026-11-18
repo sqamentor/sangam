@@ -45,7 +45,7 @@ def bank_dea():
     p = pk.proc('sangam-sec-bank-dormancy-review', 'Dormancy review', '', start={'materialFields': 'period'})
     s, cg = campaign(pk, p, 'dv', '0 0 5 3 * ?', 'cbs.dormancyDue', 'sangam-sec-bank-dormancy-account')
     s.flow(cg, s.end('dv_end', 'Review closed'), None, 'complete', default=True)
-    c = pk.proc('sangam-sec-bank-dormancy-account', 'Dormancy of one account', '', start={'materialFields': 'key'})
+    c = pk.proc('sangam-sec-bank-dormancy-account', 'Dormancy of one account', '', start={'materialFields': 'key,amount,payeeAccount,currency,purpose'})
     s = c.root
     a = s.start('da_start', 'Account inactive', initiator=None)
     d = s.setv('da_defaults', 'Configuration', defaults='yearsInactive=2;applicantRef=@key;opsSeat=OPS-CHECKER')
@@ -81,7 +81,7 @@ def bank_dea():
     s.flow(ag, tr, "deaDecision == 'approve'", 'approve')
     s.flow(ag, mk, None, 'retain (dispute / legal hold)', default=True)
     s.flow(tr, s.end('da_endTransferred', 'Transferred to DEA Fund', listeners=[c.item_listener('TRANSFERRED')]))
-    cl = pk.proc('sangam-sec-bank-dea-claim', 'Reactivation / claim', '', start={'materialFields': 'customerId,accountNo'})
+    cl = pk.proc('sangam-sec-bank-dea-claim', 'Reactivation / claim', '', start={'materialFields': 'customerId,accountNo,amount,payeeAccount,currency,purpose'})
     s = cl.root
     st = start_form(cl, s, 'dc_start', 'Claim or reactivation request', 'sec-bank-inoperative-deposits/claim',
                     'Reactivation / claim | पुनः सक्रियण / दावा', ['customerId*', 'accountNo*', 'claimantType*', 'documents'])
@@ -240,7 +240,7 @@ def cap_corporate_action():
                [('exchange.intimate', 'b', '', 'Exchange intimation'), ('depository.benpos', 'a', '', 'Beneficiary positions'),
                 ('bank.transfer', 'c', '', 'Dividend payment'), ('bank.unpaidDividend', 'a', '', 'Unpaid dividend account')])
     p = pk.proc('sangam-sec-cap-dividend', 'Dividend corporate action', '',
-                start={'materialFields': 'companyName,dividendPerShare,recordDate'})
+                start={'materialFields': 'companyName,dividendPerShare,recordDate,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'cd_start', 'Board declares dividend', 'sec-cap-corporate-action/declare',
                     'Dividend declaration | लाभांश घोषणा', ['companyName*', 'dividendPerShare*', 'recordDate*', 'documents'])
@@ -263,7 +263,7 @@ def cap_corporate_action():
     un = s.conn('cd_unpaid', 'Move unpaid amounts to the unpaid dividend account (7 days)', 'bank.unpaidDividend', 'transfer',
                 'submit', 'companyName', 'unpaid', step='unpaid-dividend')
     s.seq(rv, un, end_ok(p, s, 'cd_end', 'Dividend closed'))
-    c = pk.proc('sangam-sec-cap-dividend-holder', 'Dividend to one holder', '', start={'materialFields': 'key'})
+    c = pk.proc('sangam-sec-cap-dividend-holder', 'Dividend to one holder', '', start={'materialFields': 'key,amount,payeeAccount,currency,purpose'})
     s = c.root
     a = s.start('ch_start', 'Holder', initiator=None)
     d = s.setv('ch_defaults', 'Configuration', defaults='executionConnector=bank.transfer;executionStep=dividend;'
@@ -334,7 +334,7 @@ def ins_death_claim():
                'legal heir once by operationId, interest for delay, rejection with reasons and the Ombudsman route.',
                ['SEC-INS-011', 'GP-06', 'GP-12', 'GP-22'] + SIDE,
                [('policy.coverCheck', 'a', '', 'Policy status'), ('claims.pay', 'c', '', 'Claim payment')])
-    p = pk.proc('sangam-sec-ins-death-claim', 'Death claim', '', start={'materialFields': 'policyNo,claimantName,sumAssured'})
+    p = pk.proc('sangam-sec-ins-death-claim', 'Death claim', '', start={'materialFields': 'policyNo,claimantName,sumAssured,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'dc_start', 'Death intimated', 'sec-ins-death-claim/intimation', 'Death claim intimation | मृत्यु दावा सूचना',
                     ['policyNo*', 'claimantName*', 'claimantType*', 'sumAssured', 'dateOfDeath', 'documents'])
@@ -637,7 +637,7 @@ def ecom_gst_tcs():
                ['SEC-ECOM-009', 'GP-30', 'GP-12'],
                [('erp.netSupplies', 'a', '', 'Net taxable supplies by seller'), ('gstn.payment', 'c', '', 'Tax deposit'),
                 ('gstn.gstr8', 'b', '', 'GSTR-8 filing')])
-    p = pk.proc('sangam-sec-ecom-gst-tcs', 'Monthly GST TCS', '', start={'materialFields': 'period'})
+    p = pk.proc('sangam-sec-ecom-gst-tcs', 'Monthly GST TCS', '', start={'materialFields': 'period,amount,payeeAccount,currency,purpose'})
     s = p.root
     t = s.start('gt_timer', 'First of the month', timer_cycle='0 0 6 1 * ?', initiator=None)
     d = s.setv('gt_defaults', 'Configuration', defaults='period=CURRENT;taxSeat=TAX-TEAM;executionConnector=gstn.payment;'
@@ -929,7 +929,7 @@ def edu_scholarship():
                'failure re-verified with corrected bank details, renewal next year.',
                ['SEC-EDU-005', 'GP-16', 'GP-12', 'GP-49'] + SIDE,
                [('nsp.application', 'a', '', 'NSP application'), ('pfms.dbt', 'c', '', 'DBT payment')])
-    p = pk.proc('sangam-sec-edu-scholarship', 'Scholarship', '', start={'materialFields': 'applicantName,schemeId,income'})
+    p = pk.proc('sangam-sec-edu-scholarship', 'Scholarship', '', start={'materialFields': 'applicantName,schemeId,income,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'sc_start', 'Application on NSP', 'sec-edu-scholarship/apply', 'Scholarship application | छात्रवृत्ति आवेदन',
                     ['applicantName*', 'schemeId*', 'income*', 'socialCategory*', 'bankAccount', 'documents'])
@@ -1102,7 +1102,7 @@ def hr_payroll():
                [('hris.inputs', 'a', '', 'Attendance and inputs'), ('bank.transfer', 'c', '', 'Salary payment file'),
                 ('epfo.ecr', 'b', '', 'PF ECR'), ('esic.contribution', 'b', '', 'ESI contribution'),
                 ('docs.payslip', 'a', '', 'Payslips')])
-    p = pk.proc('sangam-sec-hr-payroll', 'Monthly payroll', '', start={'materialFields': 'period'})
+    p = pk.proc('sangam-sec-hr-payroll', 'Monthly payroll', '', start={'materialFields': 'period,amount,payeeAccount,currency,purpose'})
     s = p.root
     t = s.start('pr_timer', '25th of the month', timer_cycle='0 0 6 25 * ?', initiator=None)
     d = s.setv('pr_defaults', 'Configuration',

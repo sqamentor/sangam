@@ -36,6 +36,10 @@
       "path": "packs/sec-ins-proposal-underwriting/forms/free-look-refund.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/sec-ins-proposal-underwriting/forms/premium.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/sec-ins-proposal-underwriting/seed.json"
     },
