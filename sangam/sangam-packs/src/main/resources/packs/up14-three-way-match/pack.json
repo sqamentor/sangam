@@ -32,8 +32,8 @@
       "path": "packs/up14-three-way-match/seed.json"
     },
     {
-      "kind": "DMN",
-      "path": "packs/up14-three-way-match/up14-payable-rounding.dmn"
+      "kind": "FORM",
+      "path": "packs/up14-three-way-match/forms/payable-amount.form.json"
     }
   ],
   "seed": "packs/up14-three-way-match/seed.json",
@@ -76,13 +76,6 @@
     {
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
-    }
-  ],
-  "placeholders": [
-    {
-      "decision": "up14-payable-rounding",
-      "rule": "SYNTHETIC payable rounding: nearest paisa",
-      "reason": "the company's payable rounding (line versus invoice total) was not verified; deploy it as a tenant override (decision 139)"
     }
   ]
 }
