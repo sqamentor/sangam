@@ -18,12 +18,6 @@
     <parallelGateway id="ip_fork" name="T+2 in parallel"></parallelGateway>
     <parallelGateway id="ip_join" name=""></parallelGateway>
     <serviceTask id="ip_credit" name="Credit shares to demat accounts" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>depository.credit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>issueName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="step"><operaton:string>credit</operaton:string></operaton:field></extensionElements></serviceTask>
-    <callActivity id="ip_credit_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
-    <exclusiveGateway id="ip_credit_sgw" name="Sanctioned?" default="ip_credit_sgw_no"></exclusiveGateway>
-    <endEvent id="ip_credit_notReleased" name="Not released"></endEvent>
-    <sequenceFlow id="ip_credit_sanction_f" sourceRef="ip_credit_sanction" targetRef="ip_credit_sgw"/>
-    <sequenceFlow id="ip_credit_sgw_yes" name="sanctioned" sourceRef="ip_credit_sgw" targetRef="ip_credit"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
-    <sequenceFlow id="ip_credit_sgw_no" name="not sanctioned" sourceRef="ip_credit_sgw" targetRef="ip_credit_notReleased"/>
 
     <serviceTask id="ip_unblock" name="Unblock funds of non-allottees" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>sponsorbank.unblock</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>unblock</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>issueName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>unblock</operaton:string></operaton:field><operaton:field name="step"><operaton:string>unblock</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="ip_ubGw" name="Unblock failed?" default="sec_cap_ipo_f20"></exclusiveGateway>
@@ -45,7 +39,7 @@
     <sequenceFlow id="sec_cap_ipo_f11" sourceRef="ip_recon" targetRef="ip_basis_slaPlan"/>
     <sequenceFlow id="sec_cap_ipo_f12" sourceRef="ip_basis_done" targetRef="ip_basisSend"/>
     <sequenceFlow id="sec_cap_ipo_f13" sourceRef="ip_basisSend" targetRef="ip_fork"/>
-    <sequenceFlow id="sec_cap_ipo_f14" sourceRef="ip_fork" targetRef="ip_credit_sanction"/>
+    <sequenceFlow id="sec_cap_ipo_f14" sourceRef="ip_fork" targetRef="ip_credit"/>
     <sequenceFlow id="sec_cap_ipo_f15" sourceRef="ip_credit" targetRef="ip_join"/>
     <sequenceFlow id="sec_cap_ipo_f16" sourceRef="ip_fork" targetRef="ip_unblock"/>
     <sequenceFlow id="sec_cap_ipo_f17" sourceRef="ip_unblock" targetRef="ip_join"/>
@@ -70,7 +64,7 @@
       <bpmndi:BPMNShape id="ip_basisSend_di" bpmnElement="ip_basisSend"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ip_fork_di" bpmnElement="ip_fork"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ip_join_di" bpmnElement="ip_join"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="ip_credit_sanction_di" bpmnElement="ip_credit_sanction"><dc:Bounds x="1490" y="25" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="ip_credit_sgw_di" bpmnElement="ip_credit_sgw" isMarkerVisible="true"><dc:Bounds x="1620" y="35" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="ip_credit_notReleased_di" bpmnElement="ip_credit_notReleased"><dc:Bounds x="1627" y="-55" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="ip_credit_sanction_f_di" bpmnElement="ip_credit_sanction_f"><di:waypoint x="1590" y="60"/><di:waypoint x="1620" y="60"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="ip_credit_sgw_yes_di" bpmnElement="ip_credit_sgw_yes"><di:waypoint x="1645" y="85"/><di:waypoint x="1645" y="155"/><di:waypoint x="1670" y="155"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="ip_credit_sgw_no_di" bpmnElement="ip_credit_sgw_no"><di:waypoint x="1645" y="35"/><di:waypoint x="1645" y="-19"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="ip_credit_di" bpmnElement="ip_credit"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_credit_di" bpmnElement="ip_credit"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ip_unblock_di" bpmnElement="ip_unblock"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ip_ubGw_di" bpmnElement="ip_ubGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ip_comp_di" bpmnElement="ip_comp"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>

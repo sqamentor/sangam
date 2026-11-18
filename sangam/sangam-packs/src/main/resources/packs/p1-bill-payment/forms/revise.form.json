@@ -96,6 +96,15 @@
         "en": "Remarks",
         "hi": "टिप्पणी"
       }
+    },
+    {
+      "id": "payeePartyId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payee party ID (verified party registry)",
+        "hi": "प्राप्तकर्ता पक्ष आईडी (सत्यापित पक्ष रजिस्टर)"
+      }
     }
   ],
   "decision": {

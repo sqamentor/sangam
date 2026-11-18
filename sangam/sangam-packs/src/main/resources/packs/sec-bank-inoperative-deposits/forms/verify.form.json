@@ -40,6 +40,17 @@
         "en": "Remarks",
         "hi": "टिप्पणी"
       }
+    },
+    {
+      "id": "payableAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount payable with interest (INR)",
+        "hi": "ब्याज सहित देय राशि (रुपये)"
+      }
     }
   ],
   "decision": {

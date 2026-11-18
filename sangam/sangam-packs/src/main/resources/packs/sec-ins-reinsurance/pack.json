@@ -40,7 +40,8 @@
   "connectors": [
     {
       "id": "re.cede",
-      "moneyMovement": "OUT",
+      "moneyMovement": "NONE",
+      "moneyMovementReason": "owner decision M3: records a cession in the reinsurance register; no money moves",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Cession register"
@@ -78,11 +79,5 @@
     "variables": [
       "sumInsured"
     ]
-  },
-  "documentSlots": [
-    {
-      "documentType": "SANCTION_NOTE",
-      "slot": "sanctionDocumentId"
-    }
-  ]
+  }
 }
