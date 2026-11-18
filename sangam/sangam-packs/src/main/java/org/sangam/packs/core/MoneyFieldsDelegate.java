@@ -53,7 +53,8 @@ import org.sangam.packs.port.VerifiedPayees;
  */
 public class MoneyFieldsDelegate implements JavaDelegate, ExecutionListener {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = com.fasterxml.jackson.databind.json.JsonMapper.builder()
+            .enable(com.fasterxml.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS).build();
     private static final Map<String, String> PACK_CURRENCY = new ConcurrentHashMap<>();
     private static final String NONE = "";
 
