@@ -112,7 +112,7 @@ jobs:
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with: { distribution: temurin, java-version: "25.0.5+8", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with: { node-version: "22.18.0", package-manager-cache: false }
+        with: { node-version: "22.23.5", package-manager-cache: false }
       - name: Set version (versions-maven-plugin 2.25.2, Apache-2.0, decision 185)
         # Full coordinate: the version is fixed here, never chosen by the run (the root pom pin is an integrator REQUEST).
         run: mvn $MAVEN_ARGS -q org.codehaus.mojo:versions-maven-plugin:2.25.2:set -DnewVersion="$V" -DprocessAllModules=true -DgenerateBackupPoms=false

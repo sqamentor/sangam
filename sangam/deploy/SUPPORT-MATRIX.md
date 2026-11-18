@@ -29,7 +29,7 @@ Bytecode level: the parent pom still sets `maven.compiler.release=21`, so JDK 25
 | Spring Boot | 4.1.2 | Fixed by the Operaton starter |
 | Liquibase | 4.33.0 | Below 5.0 (LIC-7) |
 | Jackson (jackson-databind / jackson-bom) | 2.22.x (pinned 2.22.3) | Licence gate floor; 2.22.x only, because the FEEL closure's jackson-module-scala 2.22.3 refuses any other databind minor. `SangamFeel.install` fails fast outside 2.22.x (SG-33): import `io.github.sqamentor:sangam-bom` and set `jackson.version` / import `jackson-bom` 2.22.3 in your own parent pom |
-| Node (UI build only) | 22 | Not a runtime dependency |
+| Node (UI build only) | 22.22.2 or later (owner decision 2026-11-18; CI 22.23.5) | Not a runtime dependency |
 
 ## 3. Databases and drivers (R17, CF-11)
 
