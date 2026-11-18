@@ -72,7 +72,8 @@
     },
     {
       "id": "logistics.codRemit",
-      "moneyMovement": "OUT",
+      "moneyMovement": "IN",
+      "moneyMovementReason": "owner decision M3: cash collected on delivery is remitted TO the platform (money in)",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "COD remittance"

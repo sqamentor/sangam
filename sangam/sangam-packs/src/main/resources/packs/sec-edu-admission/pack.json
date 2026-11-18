@@ -100,5 +100,12 @@
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "currencyReason": "owner decision M1: the pack applies the UGC refund schedule and DigiLocker / APAAR, Indian systems in rupees, so the pack declares INR",
+    "variables": []
+  }
 }

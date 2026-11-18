@@ -49,6 +49,17 @@
         "en": "Remarks",
         "hi": "टिप्पणी"
       }
+    },
+    {
+      "id": "refundAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount to refund (INR)",
+        "hi": "वापसी योग्य राशि (रुपये)"
+      }
     }
   ],
   "decision": {
