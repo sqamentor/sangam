@@ -190,4 +190,43 @@ class CmmnConformanceIT extends EngineScenarioSupport {
             ctx.check("addChild refused at deploy", refused);
         });
     }
+
+    private static final String PLANNING_CASE = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <definitions xmlns="http://www.omg.org/spec/CMMN/20151109/MODEL" targetNamespace="t" id="d">
+              <case id="r10-planning">
+                <casePlanModel id="plan" autoComplete="false">
+                  <planItem id="PI_main" definitionRef="main"/>
+                  <planningTable id="pt">
+                    <discretionaryItem id="DI_high" definitionRef="high" applicabilityRuleRefs="arBig" authorizedRoleRefs="rApprover"/>
+                    <discretionaryItem id="DI_open" definitionRef="open"/>
+                    <applicabilityRule id="arBig"><condition>${amount > 1000}</condition></applicabilityRule>
+                  </planningTable>
+                  <humanTask id="main" name="Main"/>
+                  <humanTask id="high" name="High value review"/>
+                  <humanTask id="open" name="Open item"/>
+                </casePlanModel>
+                <caseRoles id="roles"><role id="rApprover" name="approver"/></caseRoles>
+              </case>
+            </definitions>
+            """;
+
+    /** Owner rulings C2 / C3 = B: applicable discretionary items are listed (rule + role); planning itself is not offered. */
+    @Test
+    void planningTableApplicableItems() {
+        scenario("CMMN-C2-PLANNING-APPLICABLE", ctx -> {
+            deployCmmn("r10-planning", PLANNING_CASE);
+            var svc = new org.sangam.ports.cmmn.PlanningService(engine);
+            var approver = new org.sangam.ports.cmmn.PlanningService.Caller("u1", java.util.Set.of("approver"));
+            String small = adapter.startCase(SCENARIO_TENANT, "r10-planning", key("PLS"), vars("amount", 500));
+            String big = adapter.startCase(SCENARIO_TENANT, "r10-planning", key("PLB"), vars("amount", 5000));
+            List<String> s = svc.applicable(small, approver).stream().map(i -> i.discretionaryItemId()).sorted().toList();
+            List<String> b = svc.applicable(big, approver).stream().map(i -> i.discretionaryItemId()).sorted().toList();
+            List<String> none = svc.applicable(big, new org.sangam.ports.cmmn.PlanningService.Caller("u2", java.util.Set.of()))
+                    .stream().map(i -> i.discretionaryItemId()).toList();
+            ctx.check("rule false: only the open item (" + s + ")", List.of("DI_open").equals(s));
+            ctx.check("rule true and role held (" + b + ")", List.of("DI_high", "DI_open").equals(b));
+            ctx.check("role missing hides the item (" + none + ")", List.of("DI_open").equals(none));
+        });
+    }
 }

@@ -9,6 +9,7 @@ import java.util.Set;
 import org.operaton.bpm.engine.ProcessEngine;
 import org.operaton.bpm.engine.impl.cmmn.entity.runtime.CaseExecutionEntity;
 import org.operaton.bpm.engine.impl.el.Expression;
+import org.operaton.bpm.engine.impl.el.ExpressionManager;
 import org.operaton.bpm.model.cmmn.CmmnModelInstance;
 import org.operaton.bpm.model.cmmn.instance.ApplicabilityRule;
 import org.operaton.bpm.model.cmmn.instance.DiscretionaryItem;
@@ -53,11 +54,30 @@ public class PlanningService {
     }
 
     public List<PlanningItem> applicable(String stageOrCaseExecutionId, Caller caller) {
-        return List.of();
+        if (caller == null || caller.userId() == null || stageOrCaseExecutionId == null) {
+            return List.of();
+        }
+        Set<String> groups = caller.groups() == null ? Set.of() : caller.groups();
+        return EngineTx.execute(engine, ctx -> {
+            CaseExecutionEntity exec = ctx.getCaseExecutionManager().findCaseExecutionById(stageOrCaseExecutionId);
+            if (exec == null || !exec.isActive()) {
+                return List.<PlanningItem>of();
+            }
+            CmmnModelInstance model = engine.getRepositoryService().getCmmnModelInstance(exec.getCaseDefinitionId());
+            ModelElementInstance el = model.getModelElementById(exec.getActivityId());
+            Stage stage = el instanceof Stage s ? s
+                    : el instanceof PlanItem p && p.getDefinition() instanceof Stage s2 ? s2 : null;
+            if (stage == null || stage.getPlanningTable() == null) {
+                return List.<PlanningItem>of();
+            }
+            List<PlanningItem> out = new ArrayList<>();
+            collect(stage.getPlanningTable(), exec, groups, ctx.getProcessEngineConfiguration().getExpressionManager(), out);
+            return out;
+        });
     }
 
     private static void collect(PlanningTable table, CaseExecutionEntity exec, Set<String> groups,
-                                org.operaton.bpm.engine.impl.el.ExpressionManager el, List<PlanningItem> out) {
+                                ExpressionManager el, List<PlanningItem> out) {
         for (TableItem item : table.getTableItems()) {
             if (!applies(item, exec, groups, el)) {
                 continue;
@@ -81,7 +101,7 @@ public class PlanningService {
     }
 
     private static boolean applies(TableItem item, CaseExecutionEntity exec, Set<String> groups,
-                                   org.operaton.bpm.engine.impl.el.ExpressionManager el) {
+                                   ExpressionManager el) {
         Set<String> roles = roles(item);
         if (!roles.isEmpty() && roles.stream().noneMatch(groups::contains)) {
             return false;
