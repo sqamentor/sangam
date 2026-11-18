@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T00:04:26.287Z",
+  "generatedAt": "2026-11-18T01:11:30.167Z",
   "inputs": {
     "bpmnPalette": 9,
     "bpmnReplaceMenu": 34,
@@ -551,9 +551,9 @@
       "construct": "DiscretionaryItem",
       "modeller": "SOURCE_EDITOR",
       "engine": "PARSED",
-      "status": "SUPPORTED",
-      "note": "Planning table with manual start.",
-      "source": "Operaton CmmnTransform",
+      "status": "PARTIAL",
+      "note": "Partial: applicable items listed (applicabilityRule + roles), runtime planning not supported.",
+      "source": "sangam-flowable-ports PlanningService (owner ruling C3 = B)",
       "xml": [
         "discretionaryItem"
       ]
