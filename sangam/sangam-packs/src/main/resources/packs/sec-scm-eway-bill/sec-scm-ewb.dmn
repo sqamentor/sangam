@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_scm_ewb" name="E-way bill threshold and validity (CGST Rules r.138; verify state thresholds)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-scm-ewb" name="E-way bill threshold and validity (CGST Rules r.138; verify state thresholds)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-scm-ewb" name="E-way bill threshold and validity (CGST Rules r.138; verify state thresholds)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-scm-ewb_t" hitPolicy="FIRST">
       <input id="sec-scm-ewb_i0" label="Value"><inputExpression id="sec-scm-ewb_ie0" typeRef="number"><text>consignmentValue</text></inputExpression></input>
       <input id="sec-scm-ewb_i1" label="Distance (km)"><inputExpression id="sec-scm-ewb_ie1" typeRef="integer"><text>distanceKm</text></inputExpression></input>

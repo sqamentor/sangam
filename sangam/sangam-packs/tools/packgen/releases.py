@@ -310,6 +310,26 @@ SHIPS['universal.up14-three-way-match'] = ('1.0.1', '1.0.2')
 SHIPS['universal.up18-capa'] = ('1.0.1', '1.0.2')
 SHIPS['universal.up19-contract-lifecycle'] = ('1.0.1', '1.0.2')
 
+# Lane ARCH-JURIS (owner decisions A1, E1-E3, M1-M3; integrator ruling R3): these packs shipped their held version with
+# changed content, so each ships under the next version (decision 390 (2)); the reason per pack:
+#  - moneyMovement declared on every connector of the pack (owner decision A1: an undeclared connector counts as money
+#    out), pack.json only: sec.bank.aml-str, sec.bank.cheque-return, sec.cap.surveillance-alert, sec.fin.complaint,
+#    sec.fin.cyber-incident, sec.health.abdm-consent, sec.health.blood-bank, sec.health.lab-order, sec.legal.dpdp-rights,
+#    sec.mfg.batch-release, sec.scm.eway-bill, sec.tel.tcccpr, sec.util.disconnection, universal.up06-hitl-ai-review,
+#    universal.up16-provisioning, universal.up20-rpa, universal.up22-external-collaboration, gov.work-order,
+#    gov.ifms.salary-monthly;
+#  - money out now behind a core sanction that binds amount, payee account, currency and purpose (E1-E3, M1-M3), BPMN,
+#    forms and pack.json: gov.ifms.receipts (refund), sec.cap.ipo-allotment (refund), sec.ins.reinsurance (settlement).
+# gov.works pins gov.work-order (calledElementVersionTag), so its pin moves to 1.0.2.
+for _pid in ('sec.bank.aml-str', 'sec.bank.cheque-return', 'sec.cap.surveillance-alert', 'sec.fin.complaint',
+             'sec.fin.cyber-incident', 'sec.health.abdm-consent', 'sec.health.blood-bank', 'sec.health.lab-order',
+             'sec.legal.dpdp-rights', 'sec.mfg.batch-release', 'sec.scm.eway-bill', 'sec.tel.tcccpr',
+             'sec.util.disconnection', 'universal.up06-hitl-ai-review', 'universal.up16-provisioning',
+             'universal.up20-rpa', 'universal.up22-external-collaboration', 'gov.work-order', 'gov.ifms.receipts',
+             'sec.cap.ipo-allotment', 'sec.ins.reinsurance'):
+    SHIPS[_pid] = ('1.0.1', '1.0.2')
+SHIPS['gov.ifms.salary-monthly'] = ('1.0.0', '1.0.1')
+
 
 def version_of(pack_id, declared):
     """The version a pack ships as: NEXT for a BUMPED pack still declaring the RELEASED version, then the SHIPS bump of

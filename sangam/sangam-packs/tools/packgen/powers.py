@@ -14,7 +14,8 @@ broadened:
   * limitTable: the `powersDecisionKey` the calling process sets (at most one per process, else generation stops), or
     the core sanction's own default when it sets none;
   * monetary: the call binds the money fields (a MoneyFieldsDelegate listener on it sets `amount` for this action,
-    owner decision E3), or the pack declares `amount` as a money variable, or the calling process assigns `amount`
+    owner decision E3), or the process seals a batch (integrator ruling R2: the amount is the sealed total), or the
+    pack declares `amount` as a money variable, or the calling process assigns `amount`
     anything but the literal 0 (a reference such as @estimateAmount, or a value); `amount=0` is the existing "no amount" marker. A
     process that assigns no amount while another process of the same pack does is ambiguous and stops generation;
   * currency: the pack currency (money.py), for a monetary action only;
@@ -51,6 +52,15 @@ _MONEY_FIELDS = 'org.sangam.packs.core.MoneyFieldsDelegate'
 def binds_money_fields(xml):
     """Ids of the call activities whose MoneyFieldsDelegate listener copies the paid figure into `amount` (E3)."""
     return {m.group(1) for m in _CALL_BODY.finditer(xml) if _MONEY_FIELDS in (m.group(2) or '')}
+
+
+def seals_a_batch(xml):
+    """True when the process seals a batch (BatchDelegate op SEAL): its sanction sanctions the sealed total, which
+    BatchSeal copies into `amount` (integrator ruling R2), so the sanction is monetary."""
+    for task in re.findall(r'<serviceTask\s[^>]*?BatchDelegate"[^>]*>.*?</serviceTask>', xml, re.S):
+        if re.search(r'<operaton:field name="op">\s*<operaton:string>SEAL</operaton:string>', task):
+            return True
+    return False
 
 
 def sanction_calls(xml):
@@ -236,7 +246,7 @@ def declare(pk, xmls, tables, missing):
             missing.add(f'{pk.id} {pid}: limit table {table} is shipped neither by the pack nor by sangam.core')
             continue
         nonzero, assigned = _assigns_amount(xml)
-        monetary = 'amount' in pk.money_vars or nonzero
+        monetary = 'amount' in pk.money_vars or nonzero or seals_a_batch(xml)
         if not monetary and not assigned and any_amount:
             missing.add(f'{pk.id} {pid}: the sanction process assigns no amount while another process of the pack '
                         f'does; declare whether the sanction is monetary')

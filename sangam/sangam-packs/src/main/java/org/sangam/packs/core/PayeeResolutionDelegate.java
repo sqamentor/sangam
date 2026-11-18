@@ -73,6 +73,7 @@ public class PayeeResolutionDelegate implements JavaDelegate {
                 ex.setVariable("paymentAmount", major(ex.getVariable("amount"),
                         requiredCurrency(ex)).toPlainString());
                 ex.setVariable("executionPayloadFields", PAYLOAD_FIELDS);
+                bindPaidAccount(ex, MoneyFieldsDelegate.accountOf(v.accountNo(), v.ifsc()), v.payeeVersionId());
                 Vars.audit(ex, "PAYEE_VERSION_RECORDED", Vars.map("payeeVersionId", v.payeeVersionId(),
                         "employeeId", employeeId, "payeeId", payeeId, "asOf", asOf.toString()));
             }
@@ -84,6 +85,23 @@ public class PayeeResolutionDelegate implements JavaDelegate {
                         "employeeId", employeeId, "payeeId", payeeId, "asOf", asOf.toString()));
             }
         }
+    }
+
+    /**
+     * Integrator ruling R1 (owner rules E1-E3): the account paid is the one resolved on the payment date, and the
+     * approval bound {@code payeeAccount}. The resolved account is written to {@code payeeAccount}, so when the registry
+     * changed the account after the approval the material hash no longer matches: core execution refuses with
+     * APPROVAL_INVALIDATED (nothing is paid) and the pack routes back for a fresh approval. A refund to source
+     * ({@code capture:<ref>}) is not a registry account and is left as approved.
+     */
+    private static void bindPaidAccount(DelegateExecution ex, String resolved, String version) {
+        String approved = blankToNull(Vars.str(ex, "payeeAccount"));
+        if (approved == null || approved.startsWith("capture:") || approved.equals(resolved)) {
+            return;
+        }
+        ex.setVariable("payeeAccount", resolved);
+        Vars.audit(ex, "PAYEE_ACCOUNT_CHANGED_AFTER_APPROVAL", Vars.map("approvedAccount", approved,
+                "resolvedAccount", resolved, "payeeVersionId", version));
     }
 
     private String requiredCurrency(DelegateExecution ex) {

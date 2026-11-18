@@ -1,6 +1,6 @@
 {
   "key": "sec-cap-ipo-allotment/basis",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.cap.ipo-allotment",
   "title": {
     "en": "Basis of allotment with the designated exchange (T+1)",

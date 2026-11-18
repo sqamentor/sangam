@@ -1,6 +1,6 @@
 {
   "key": "sec-legal-dpdp-rights/reply",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.legal.dpdp-rights",
   "title": {
     "en": "DPO reply (90 days)",

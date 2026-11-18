@@ -1,6 +1,6 @@
 {
   "key": "work-order/agreement",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.work-order",
   "title": {
     "en": "Sign agreement",
