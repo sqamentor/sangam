@@ -71,6 +71,15 @@
         "en": "Invoiced unit price",
         "hi": "बीजक इकाई मूल्य"
       }
+    },
+    {
+      "id": "payeePartyId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Supplier (verified payee registry id)",
+        "hi": "आपूर्तिकर्ता (सत्यापित पंजी आईडी)"
+      }
     }
   ]
 }
