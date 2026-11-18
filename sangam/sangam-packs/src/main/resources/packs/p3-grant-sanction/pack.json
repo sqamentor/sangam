@@ -244,13 +244,13 @@
   ],
   "currency": "INR",
   "powers": {
-    "p3_instSanction": {
+    "p3_sanction": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "sangam-core-powers",
       "ruleCaseType": "GRANT"
     },
-    "p3_sanction": {
+    "p3_instSanction": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "sangam-core-powers",

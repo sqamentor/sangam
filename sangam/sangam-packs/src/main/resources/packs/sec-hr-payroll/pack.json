@@ -158,13 +158,13 @@
       "limitTable": "sec-hr-payroll-powers",
       "ruleCaseType": "PAYROLL"
     },
-    "pr_esi_paySanction": {
+    "pr_pf_paySanction": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "sec-hr-payroll-powers",
       "ruleCaseType": "PAYROLL"
     },
-    "pr_pf_paySanction": {
+    "pr_esi_paySanction": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "sec-hr-payroll-powers",

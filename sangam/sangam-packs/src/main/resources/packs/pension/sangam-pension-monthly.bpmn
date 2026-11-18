@@ -14,6 +14,12 @@
     <exclusiveGateway id="pm_doneGw" name="Round complete?" default="pension_monthly_f10"></exclusiveGateway>
     <serviceTask id="pm_report" name="Disbursement report" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>pension-disbursement-report</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="pm_end" name="Month closed"></endEvent>
+    <serviceTask id="pm_seal" name="Seal the batch items (count, total, fingerprints; owner decision E1)" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>SEAL</operaton:string></operaton:field><operaton:field name="currency"><operaton:string>INR</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Monthly pension</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="payeeField"><operaton:string>bankAccount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="pm_bsanction" name="Sanction the sealed batch (core sanction, owner decision E1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="pm_bsgw" name="Batch sanctioned?" default="pm_bsgw_no"></exclusiveGateway>
+    <endEvent id="pm_bnotReleased" name="Batch not released"></endEvent>
+    <exclusiveGateway id="pm_bsanctionPrepareGw" name="Document to sign?" default="pension_monthly_f13"></exclusiveGateway>
+    <userTask id="pm_bsanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:pension/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.DocumentSlotReadyListener"><operaton:field name="slots"><operaton:string>sanctionDocumentId:SANCTION_NOTE</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <sequenceFlow id="pension_monthly_f1" sourceRef="pm_timer" targetRef="pm_load"/>
     <sequenceFlow id="pension_monthly_f2" sourceRef="pm_open" targetRef="pm_fanOut"/>
     <sequenceFlow id="pension_monthly_f3" sourceRef="pm_fanOut" targetRef="pm_fanGw"/>
@@ -25,38 +31,50 @@
     <sequenceFlow id="pension_monthly_f9" sourceRef="pm_load" targetRef="pm_seal"/>
     <sequenceFlow id="pension_monthly_f10" name="complete" sourceRef="pm_doneGw" targetRef="pm_report"/>
     <sequenceFlow id="pension_monthly_f11" sourceRef="pm_report" targetRef="pm_end"/>
-      <serviceTask id="pm_seal" name="Seal the batch items (count, total, fingerprints; owner decision E1)" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>SEAL</operaton:string></operaton:field><operaton:field name="currency"><operaton:string>INR</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Monthly pension</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="payeeField"><operaton:string>bankAccount</operaton:string></operaton:field></extensionElements></serviceTask>
-    <callActivity id="pm_bsanction" name="Sanction the sealed batch (core sanction, owner decision E1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
-    <exclusiveGateway id="pm_bsgw" name="Batch sanctioned?" default="pm_bsgw_no"></exclusiveGateway>
-    <endEvent id="pm_bnotReleased" name="Batch not released"></endEvent>
-    <sequenceFlow id="pm_seal_f" sourceRef="pm_seal" targetRef="pm_bsanction"/>
+    <sequenceFlow id="pm_seal_f" sourceRef="pm_seal" targetRef="pm_bsanctionPrepareGw"/>
     <sequenceFlow id="pm_bsanction_f" sourceRef="pm_bsanction" targetRef="pm_bsgw"/>
     <sequenceFlow id="pm_bsgw_yes" name="sanctioned" sourceRef="pm_bsgw" targetRef="pm_open"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="pm_bsgw_no" name="not sanctioned" sourceRef="pm_bsgw" targetRef="pm_bnotReleased"/>
+    <sequenceFlow id="pension_monthly_f12" name="DSC signature needed" sourceRef="pm_bsanctionPrepareGw" targetRef="pm_bsanctionPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pension_monthly_f13" name="no DSC signature" sourceRef="pm_bsanctionPrepareGw" targetRef="pm_bsanction"/>
+    <sequenceFlow id="pension_monthly_f14" sourceRef="pm_bsanctionPrepare" targetRef="pm_bsanction"/>
   </process>
   <bpmndi:BPMNDiagram id="pension_monthly_diagram">
     <bpmndi:BPMNPlane id="pension_monthly_plane" bpmnElement="sangam-pension-monthly">
       <bpmndi:BPMNShape id="pm_timer_di" bpmnElement="pm_timer"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="pm_load_di" bpmnElement="pm_load"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pm_open_di" bpmnElement="pm_open"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pm_fanOut_di" bpmnElement="pm_fanOut"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pm_fanGw_di" bpmnElement="pm_fanGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pm_poll_di" bpmnElement="pm_poll"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pm_aggregate_di" bpmnElement="pm_aggregate"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pm_doneGw_di" bpmnElement="pm_doneGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pm_report_di" bpmnElement="pm_report"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pm_end_di" bpmnElement="pm_end"><dc:Bounds x="1537" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_open_di" bpmnElement="pm_open"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_fanOut_di" bpmnElement="pm_fanOut"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_fanGw_di" bpmnElement="pm_fanGw"><dc:Bounds x="1530" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_poll_di" bpmnElement="pm_poll"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_aggregate_di" bpmnElement="pm_aggregate"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_doneGw_di" bpmnElement="pm_doneGw"><dc:Bounds x="2025" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_report_di" bpmnElement="pm_report"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_end_di" bpmnElement="pm_end"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_seal_di" bpmnElement="pm_seal"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_bsanction_di" bpmnElement="pm_bsanction"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_bsgw_di" bpmnElement="pm_bsgw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_bnotReleased_di" bpmnElement="pm_bnotReleased"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_bsanctionPrepareGw_di" bpmnElement="pm_bsanctionPrepareGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_bsanctionPrepare_di" bpmnElement="pm_bsanctionPrepare"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="pension_monthly_f1_di" bpmnElement="pension_monthly_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="pension_monthly_f2_di" bpmnElement="pension_monthly_f2"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="pension_monthly_f3_di" bpmnElement="pension_monthly_f3"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="pension_monthly_f4_di" bpmnElement="pension_monthly_f4"><di:waypoint x="730" y="95"/><di:waypoint x="730" y="149"/><di:waypoint x="565" y="149"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="pension_monthly_f5_di" bpmnElement="pension_monthly_f5"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="pension_monthly_f6_di" bpmnElement="pension_monthly_f6"><di:waypoint x="913" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="pension_monthly_f7_di" bpmnElement="pension_monthly_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="pension_monthly_f8_di" bpmnElement="pension_monthly_f8"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="134"/><di:waypoint x="895" y="134"/><di:waypoint x="895" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f2_di" bpmnElement="pension_monthly_f2"><di:waypoint x="1275" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f3_di" bpmnElement="pension_monthly_f3"><di:waypoint x="1440" y="195"/><di:waypoint x="1530" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f4_di" bpmnElement="pension_monthly_f4"><di:waypoint x="1555" y="220"/><di:waypoint x="1555" y="274"/><di:waypoint x="1390" y="274"/><di:waypoint x="1390" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f5_di" bpmnElement="pension_monthly_f5"><di:waypoint x="1580" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f6_di" bpmnElement="pension_monthly_f6"><di:waypoint x="1738" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f7_di" bpmnElement="pension_monthly_f7"><di:waypoint x="1935" y="195"/><di:waypoint x="2025" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f8_di" bpmnElement="pension_monthly_f8"><di:waypoint x="2050" y="220"/><di:waypoint x="2050" y="259"/><di:waypoint x="1720" y="259"/><di:waypoint x="1720" y="213"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="pension_monthly_f9_di" bpmnElement="pension_monthly_f9"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="pension_monthly_f10_di" bpmnElement="pension_monthly_f10"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="pension_monthly_f11_di" bpmnElement="pension_monthly_f11"><di:waypoint x="1440" y="70"/><di:waypoint x="1537" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f10_di" bpmnElement="pension_monthly_f10"><di:waypoint x="2075" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f11_di" bpmnElement="pension_monthly_f11"><di:waypoint x="2265" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pm_seal_f_di" bpmnElement="pm_seal_f"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pm_bsanction_f_di" bpmnElement="pm_bsanction_f"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pm_bsgw_yes_di" bpmnElement="pm_bsgw_yes"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pm_bsgw_no_di" bpmnElement="pm_bsgw_no"><di:waypoint x="1085" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f12_di" bpmnElement="pension_monthly_f12"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f13_di" bpmnElement="pension_monthly_f13"><di:waypoint x="590" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f14_di" bpmnElement="pension_monthly_f14"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

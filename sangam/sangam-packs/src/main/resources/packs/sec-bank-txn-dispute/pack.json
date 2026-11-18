@@ -108,17 +108,9 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-execution"
+    "sangam-core-execution",
+    "sangam-core-sanction"
   ],
-  "money": {
-    "unit": "MINOR",
-    "currency": "INR",
-    "exponent": 2,
-    "variables": [
-      "amount",
-      "compensationAmount"
-    ]
-  },
   "documentSlots": [
     {
       "documentType": "SANCTION_NOTE",
@@ -127,17 +119,26 @@
   ],
   "currency": "INR",
   "powers": {
-    "dp_compensate_sanction": {
-      "monetary": true,
-      "currency": "INR",
-      "limitTable": "sangam-core-powers",
-      "ruleCaseType": "GENERAL"
-    },
     "dp_reversal_sanction": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "sangam-core-powers",
       "ruleCaseType": "GENERAL"
+    },
+    "dp_compensate_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
     }
+  },
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "compensationAmount"
+    ]
   }
 }

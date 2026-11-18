@@ -28,6 +28,10 @@
       "path": "packs/sec-cap-corporate-action/forms/review.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/sec-cap-corporate-action/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/sec-cap-corporate-action/seed.json"
     },
@@ -80,17 +84,9 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-execution"
+    "sangam-core-execution",
+    "sangam-core-sanction"
   ],
-  "money": {
-    "unit": "MINOR",
-    "currency": "INR",
-    "exponent": 2,
-    "variables": [
-      "dividendPerShare",
-      "unpaidAmount"
-    ]
-  },
   "documentSlots": [
     {
       "documentType": "SANCTION_NOTE",
@@ -99,17 +95,26 @@
   ],
   "currency": "INR",
   "powers": {
-    "cd_bsanction": {
-      "monetary": true,
-      "currency": "INR",
-      "limitTable": "sangam-core-powers",
-      "ruleCaseType": "GENERAL"
-    },
     "cd_unpaid_sanction": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "sangam-core-powers",
       "ruleCaseType": "GENERAL"
+    },
+    "cd_bsanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
     }
+  },
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "dividendPerShare",
+      "unpaidAmount"
+    ]
   }
 }

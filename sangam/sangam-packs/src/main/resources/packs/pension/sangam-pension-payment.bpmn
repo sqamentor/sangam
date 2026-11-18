@@ -14,6 +14,7 @@
     <endEvent id="pp_endPaid" name="Paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <endEvent id="pp_endFailed" name="Failed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>FAILED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>opReasonCode</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <exclusiveGateway id="pp_exGw" name="executionOutcome?" default="pension_payment_f9"></exclusiveGateway>
+    <serviceTask id="pp_pay_release" name="Release under the batch sanction (owner decision E1)" operaton:class="org.sangam.packs.core.BatchItemReleaseDelegate"></serviceTask>
     <sequenceFlow id="pension_payment_f1" sourceRef="pp_start" targetRef="pp_defaults"/>
     <sequenceFlow id="pension_payment_f2" sourceRef="pp_defaults" targetRef="pp_lifeGw"/>
     <sequenceFlow id="pension_payment_f3" name="hold" sourceRef="pp_lifeGw" targetRef="pp_life"><conditionExpression xsi:type="tFormalExpression">${!lifeCertificateValid}</conditionExpression></sequenceFlow>
@@ -24,7 +25,6 @@
     <sequenceFlow id="pension_payment_f8" name="DONE" sourceRef="pp_exGw" targetRef="pp_endPaid"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="pension_payment_f9" name="otherwise" sourceRef="pp_exGw" targetRef="pp_endFailed"/>
     <sequenceFlow id="pension_payment_f10" sourceRef="pp_pay" targetRef="pp_exGw"/>
-      <serviceTask id="pp_pay_release" name="Release under the batch sanction (owner decision E1)" operaton:class="org.sangam.packs.core.BatchItemReleaseDelegate"></serviceTask>
     <sequenceFlow id="pp_pay_release_f" sourceRef="pp_pay_release" targetRef="pp_pay"/>
   </process>
   <bpmndi:BPMNDiagram id="pension_payment_diagram">
@@ -33,12 +33,13 @@
       <bpmndi:BPMNShape id="pp_defaults_di" bpmnElement="pp_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="pp_lifeGw_di" bpmnElement="pp_lifeGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="pp_life_di" bpmnElement="pp_life"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_pay_di" bpmnElement="pp_pay"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_pay_di" bpmnElement="pp_pay"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="pp_holdGw_di" bpmnElement="pp_holdGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="pp_endHeld_di" bpmnElement="pp_endHeld"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_endPaid_di" bpmnElement="pp_endPaid"><dc:Bounds x="1207" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_endFailed_di" bpmnElement="pp_endFailed"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="pp_exGw_di" bpmnElement="pp_exGw"><dc:Bounds x="1035" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_endPaid_di" bpmnElement="pp_endPaid"><dc:Bounds x="1372" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_endFailed_di" bpmnElement="pp_endFailed"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_exGw_di" bpmnElement="pp_exGw"><dc:Bounds x="1200" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_pay_release_di" bpmnElement="pp_pay_release"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="pension_payment_f1_di" bpmnElement="pension_payment_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="pension_payment_f2_di" bpmnElement="pension_payment_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="pension_payment_f3_di" bpmnElement="pension_payment_f3"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
@@ -46,9 +47,10 @@
       <bpmndi:BPMNEdge id="pension_payment_f5_di" bpmnElement="pension_payment_f5"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="pension_payment_f6_di" bpmnElement="pension_payment_f6"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="pension_payment_f7_di" bpmnElement="pension_payment_f7"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="pension_payment_f8_di" bpmnElement="pension_payment_f8"><di:waypoint x="1085" y="195"/><di:waypoint x="1146" y="195"/><di:waypoint x="1146" y="320"/><di:waypoint x="1207" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="pension_payment_f9_di" bpmnElement="pension_payment_f9"><di:waypoint x="1085" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="pension_payment_f10_di" bpmnElement="pension_payment_f10"><di:waypoint x="945" y="195"/><di:waypoint x="1035" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_payment_f8_di" bpmnElement="pension_payment_f8"><di:waypoint x="1250" y="195"/><di:waypoint x="1311" y="195"/><di:waypoint x="1311" y="320"/><di:waypoint x="1372" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_payment_f9_di" bpmnElement="pension_payment_f9"><di:waypoint x="1250" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_payment_f10_di" bpmnElement="pension_payment_f10"><di:waypoint x="1110" y="195"/><di:waypoint x="1200" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pp_pay_release_f_di" bpmnElement="pp_pay_release_f"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

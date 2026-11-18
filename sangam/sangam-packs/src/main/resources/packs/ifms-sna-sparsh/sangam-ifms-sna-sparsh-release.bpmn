@@ -254,7 +254,7 @@
       <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f48_di" bpmnElement="ifms_sna_sparsh_release_f48"><di:waypoint x="4080" y="195"/><di:waypoint x="4170" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f49_di" bpmnElement="ifms_sna_sparsh_release_f49"><di:waypoint x="4410" y="195"/><di:waypoint x="4500" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f50_di" bpmnElement="ifms_sna_sparsh_release_f50"><di:waypoint x="4550" y="195"/><di:waypoint x="4595" y="195"/><di:waypoint x="4595" y="320"/><di:waypoint x="4640" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f51_di" bpmnElement="ifms_sna_sparsh_release_f51"><di:waypoint x="4690" y="360"/><di:waypoint x="4690" y="392"/><di:waypoint x="4030" y="392"/><di:waypoint x="4030" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f51_di" bpmnElement="ifms_sna_sparsh_release_f51"><di:waypoint x="4690" y="360"/><di:waypoint x="4690" y="392"/><di:waypoint x="2875" y="392"/><di:waypoint x="2875" y="110"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f52_di" bpmnElement="ifms_sna_sparsh_release_f52"><di:waypoint x="4740" y="195"/><di:waypoint x="4805" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f53_di" bpmnElement="ifms_sna_sparsh_release_f53"><di:waypoint x="4905" y="195"/><di:waypoint x="5002" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f54_di" bpmnElement="ifms_sna_sparsh_release_f54"><di:waypoint x="4550" y="195"/><di:waypoint x="4640" y="195"/></bpmndi:BPMNEdge>

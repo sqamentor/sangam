@@ -123,16 +123,9 @@
     "sangam.core"
   ],
   "tenantOverrides": [],
-  "calls": [],
-  "money": {
-    "unit": "MINOR",
-    "currency": "INR",
-    "exponent": 2,
-    "variables": [
-      "amount",
-      "refundAmount"
-    ]
-  },
+  "calls": [
+    "sangam-core-sanction"
+  ],
   "documentSlots": [
     {
       "documentType": "SANCTION_NOTE",
@@ -147,5 +140,14 @@
       "limitTable": "sangam-core-powers",
       "ruleCaseType": "GENERAL"
     }
+  },
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "refundAmount"
+    ]
   }
 }

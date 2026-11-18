@@ -53,6 +53,10 @@
     },
     {
       "kind": "FORM",
+      "path": "packs/pension/forms/prepare-sanction-note.form.json"
+    },
+    {
+      "kind": "FORM",
       "path": "packs/pension/forms/life-certificate.form.json"
     },
     {
@@ -138,17 +142,17 @@
   ],
   "currency": "INR",
   "powers": {
-    "pm_bsanction": {
-      "monetary": true,
-      "currency": "INR",
-      "limitTable": "sangam-core-powers",
-      "ruleCaseType": "GENERAL"
-    },
     "ps_sanction": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "pension-powers",
       "ruleCaseType": "PENSION"
+    },
+    "pm_bsanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
     }
   },
   "money": {
