@@ -108,7 +108,23 @@ class MoneyOutApprovalTest {
 
     private static final String HEAD = "<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" "
             + "xmlns:operaton=\"http://operaton.org/schema/1.0/bpmn\" targetNamespace=\"t\">"
-            + "<process id=\"p\" isExecutable=\"true\" operaton:historyTimeToLive=\"P1D\">";
+            + "<process id=\"p\" isExecutable=\"true\" operaton:historyTimeToLive=\"P1D\">" + MoneyOutApprovalTest.MONEY_FIELDS;
+
+    /** E3: a money-out process declares amount, payee account, currency and purpose as material fields. */
+    private static final String MONEY_FIELDS = "<extensionElements><operaton:executionListener event=\"start\" "
+            + "class=\"org.sangam.packs.core.PackStartListener\"><operaton:field name=\"materialFields\">"
+            + "<operaton:string>amount,payeeAccount,currency,purpose</operaton:string></operaton:field>"
+            + "</operaton:executionListener></extensionElements>";
+
+    @Test
+    void aMoneyOutProcessWithoutTheMoneyFieldsIsRefusedAtDeploy() {
+        String body = "<startEvent id=\"s\"/>" + APPROVE + pay("pfms.payment") + "<endEvent id=\"e\"/>" + flow("f1", "s", "approve")
+                + flow("f2", "approve", "pay") + flow("f3", "pay", "e");
+        List<String> v = MoneyPathGuard.check("t.bpmn", (HEAD.replace(MONEY_FIELDS, "") + body + "</process></definitions>")
+                .getBytes(StandardCharsets.UTF_8), ConnectorMoneyMovements::enforced, Map.of());
+        assertEquals(1, v.size(), v.toString());
+        assertTrue(v.get(0).contains("E3") && v.get(0).contains("payeeAccount"), v.toString());
+    }
 
     private static String pay(String connector) {
         return "<serviceTask id=\"pay\" operaton:class=\"org.sangam.packs.core.ConnectorCallDelegate\"><extensionElements>"
