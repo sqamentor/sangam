@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_rtps_timeline" name="Notified services and timelines (synthetic)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="rtps-timeline" name="Notified services and timelines (synthetic)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
+  <decision id="rtps-timeline" name="Notified services and timelines (synthetic)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
     <decisionTable id="rtps-timeline_t" hitPolicy="FIRST">
       <input id="rtps-timeline_i0" label="Service"><inputExpression id="rtps-timeline_ie0" typeRef="string"><text>serviceCode</text></inputExpression></input>
       <output id="rtps-timeline_o0" label="Time limit" name="caseSla" typeRef="string"/>

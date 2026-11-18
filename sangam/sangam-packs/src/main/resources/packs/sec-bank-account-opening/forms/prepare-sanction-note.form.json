@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-account-opening/prepare-sanction-note",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.bank.account-opening",
   "title": {
     "en": "Prepare the document to sign",

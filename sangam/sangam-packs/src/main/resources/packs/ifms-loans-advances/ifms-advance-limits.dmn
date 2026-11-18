@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_advance_limits" name="Advance limits" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="ifms-advance-limits" name="Advance limits" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.4">
+  <decision id="ifms-advance-limits" name="Advance limits" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.5">
     <decisionTable id="ifms-advance-limits_t" hitPolicy="FIRST">
       <input id="ifms-advance-limits_i0" label="Kind"><inputExpression id="ifms-advance-limits_ie0" typeRef="string"><text>advanceKind</text></inputExpression></input>
       <input id="ifms-advance-limits_i1" label="Amount"><inputExpression id="ifms-advance-limits_ie1" typeRef="number"><text>amount</text></inputExpression></input>

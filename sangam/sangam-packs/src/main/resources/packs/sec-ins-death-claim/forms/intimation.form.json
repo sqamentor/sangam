@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-death-claim/intimation",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ins.death-claim",
   "title": {
     "en": "Death claim intimation",

@@ -1,6 +1,6 @@
 {
   "key": "sec-edu-admission/refund-review",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.edu.admission",
   "title": {
     "en": "Withdrawal refund: processing fee",

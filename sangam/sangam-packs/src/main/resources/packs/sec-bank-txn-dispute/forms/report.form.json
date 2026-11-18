@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-txn-dispute/report",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.bank.txn-dispute",
   "title": {
     "en": "Transaction dispute",

@@ -1,6 +1,6 @@
 {
   "key": "sec-nbfc-digital-lending/application",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.nbfc.digital-lending",
   "title": {
     "en": "Digital loan application",

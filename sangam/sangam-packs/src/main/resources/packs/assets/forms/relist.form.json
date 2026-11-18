@@ -1,6 +1,6 @@
 {
   "key": "assets/relist",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.assets",
   "title": {
     "en": "No bid: revise reserve price and relist",

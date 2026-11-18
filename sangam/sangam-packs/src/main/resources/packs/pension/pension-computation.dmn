@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_pension_computation" name="Pension computation (CCS (Pension) Rules 2021)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- Replaces the earlier 50 % placeholder. Values from the CCS (Pension) Rules 2021 as summarised in IFMS-CENTRAL IFC-179; ceilings marked [U] are configuration placeholders. Commutation uses ccs-commutation-factor. -->
-  <decision id="pension-computation" name="Pension computation (CCS (Pension) Rules 2021)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
+  <decision id="pension-computation" name="Pension computation (CCS (Pension) Rules 2021)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
     <decisionTable id="pension-computation_t" hitPolicy="FIRST">
       <input id="pension-computation_i0" label="Qualifying service (years)"><inputExpression id="pension-computation_ie0" typeRef="number"><text>qualifyingService</text></inputExpression></input>
       <input id="pension-computation_i1" label="Last emoluments"><inputExpression id="pension-computation_ie1" typeRef="number"><text>lastPay</text></inputExpression></input>

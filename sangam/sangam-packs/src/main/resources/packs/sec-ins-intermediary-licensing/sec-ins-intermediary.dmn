@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ins_intermediary" name="Intermediary eligibility (SYNTHETIC; verify current IRDAI regulations)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-ins-intermediary" name="Intermediary eligibility (SYNTHETIC; verify current IRDAI regulations)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
+  <decision id="sec-ins-intermediary" name="Intermediary eligibility (SYNTHETIC; verify current IRDAI regulations)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
     <decisionTable id="sec-ins-intermediary_t" hitPolicy="FIRST">
       <input id="sec-ins-intermediary_i0" label="Type"><inputExpression id="sec-ins-intermediary_ie0" typeRef="string"><text>intermediaryType</text></inputExpression></input>
       <input id="sec-ins-intermediary_i1" label="Qualification"><inputExpression id="sec-ins-intermediary_ie1" typeRef="string"><text>qualification</text></inputExpression></input>

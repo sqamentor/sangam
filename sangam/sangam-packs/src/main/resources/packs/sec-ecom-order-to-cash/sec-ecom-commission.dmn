@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ecom_commission" name="Marketplace commission (SYNTHETIC)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-ecom-commission" name="Marketplace commission (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
+  <decision id="sec-ecom-commission" name="Marketplace commission (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
     <decisionTable id="sec-ecom-commission_t" hitPolicy="FIRST">
       <input id="sec-ecom-commission_i0" label="Category"><inputExpression id="sec-ecom-commission_ie0" typeRef="string"><text>category</text></inputExpression></input>
       <output id="sec-ecom-commission_o0" label="Commission %" name="commissionPct" typeRef="integer"/>

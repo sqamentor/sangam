@@ -1,6 +1,6 @@
 {
   "key": "pension/verify-service",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.pension",
   "title": {
     "en": "Verify service record",

@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.discharge",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Discharge planning (CMS Conditions of Participation)",
     "es": "Planificación del alta (Condiciones de Participación de CMS)"

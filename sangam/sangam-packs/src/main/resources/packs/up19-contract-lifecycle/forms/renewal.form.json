@@ -1,6 +1,6 @@
 {
   "key": "up19-contract-lifecycle/renewal",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "universal.up19-contract-lifecycle",
   "title": {
     "en": "Renewal decision",

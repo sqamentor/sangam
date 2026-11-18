@@ -1,6 +1,6 @@
 {
   "key": "sec-tel-mnp-port-in/escalate",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.tel.mnp-port-in",
   "title": {
     "en": "Escalate delayed port to the MNPSP",

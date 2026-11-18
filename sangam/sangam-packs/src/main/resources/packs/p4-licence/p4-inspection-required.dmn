@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_p4_inspection_required" name="P4 inspection required?" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="p4-inspection-required" name="P4 inspection required?" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
+  <decision id="p4-inspection-required" name="P4 inspection required?" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
     <decisionTable id="p4-inspection-required_t" hitPolicy="FIRST">
       <input id="p4-inspection-required_i0" label="Licence type"><inputExpression id="p4-inspection-required_ie0" typeRef="string"><text>licenceType</text></inputExpression></input>
       <input id="p4-inspection-required_i1" label="Area (sq m)"><inputExpression id="p4-inspection-required_ie1" typeRef="number"><text>premisesArea</text></inputExpression></input>

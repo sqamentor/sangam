@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.payer-to-payer",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Payer-to-Payer data exchange (CMS-0057-F)",
     "es": "Intercambio de datos entre pagadores (CMS-0057-F)"

@@ -1,6 +1,6 @@
 {
   "key": "ifms-supplementary/proposal",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.ifms.supplementary",
   "title": {
     "en": "Supplementary proposal",

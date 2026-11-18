@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-baa/dispose",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ushealth.baa",
   "title": {
     "en": "Return or destroy PHI and keep the certificate (6 years)",

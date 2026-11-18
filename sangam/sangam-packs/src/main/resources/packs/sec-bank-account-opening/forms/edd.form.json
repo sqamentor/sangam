@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-account-opening/edd",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.bank.account-opening",
   "title": {
     "en": "Enhanced due diligence",

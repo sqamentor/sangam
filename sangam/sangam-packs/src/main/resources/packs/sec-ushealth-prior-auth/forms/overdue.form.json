@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-prior-auth/overdue",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ushealth.prior-auth",
   "title": {
     "en": "Payer decision overdue: escalate and record for metrics",

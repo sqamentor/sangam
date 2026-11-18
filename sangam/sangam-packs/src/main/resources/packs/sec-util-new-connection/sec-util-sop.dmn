@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_util_sop" name="Connection timeline by area (Electricity (Rights of Consumers) Rules 2020)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-util-sop" name="Connection timeline by area (Electricity (Rights of Consumers) Rules 2020)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
+  <decision id="sec-util-sop" name="Connection timeline by area (Electricity (Rights of Consumers) Rules 2020)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
     <decisionTable id="sec-util-sop_t" hitPolicy="FIRST">
       <input id="sec-util-sop_i0" label="Area"><inputExpression id="sec-util-sop_ie0" typeRef="string"><text>areaType</text></inputExpression></input>
       <output id="sec-util-sop_o0" label="Connect within" name="connSpec" typeRef="string"/>

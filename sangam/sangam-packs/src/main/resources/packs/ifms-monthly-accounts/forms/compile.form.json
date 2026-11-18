@@ -1,6 +1,6 @@
 {
   "key": "ifms-monthly-accounts/compile",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "pack": "gov.ifms.monthly-accounts",
   "title": {
     "en": "Compile and check the monthly account",

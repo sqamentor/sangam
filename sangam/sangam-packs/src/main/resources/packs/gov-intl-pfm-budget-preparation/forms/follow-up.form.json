@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-budget-preparation/follow-up",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.intl.pfm-budget-preparation",
   "title": {
     "en": "Budget not yet enacted: follow up (interim authority per the profile)",

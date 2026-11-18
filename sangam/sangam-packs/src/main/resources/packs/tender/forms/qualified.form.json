@@ -1,6 +1,6 @@
 {
   "key": "tender/qualified",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.tender",
   "title": {
     "en": "Record technically qualified bidders",
