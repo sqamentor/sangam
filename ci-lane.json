@@ -1,0 +1,6 @@
+{
+  "modules": "sangam-feel,sangam-engine,sangam-flowable-ports,sangam-packs",
+  "dbs": "postgres,oracle,sqlserver,mysql",
+  "chunks": "A-contracts,B-engine",
+  "ui": false
+}
