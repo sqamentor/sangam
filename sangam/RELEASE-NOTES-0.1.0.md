@@ -59,6 +59,7 @@ Shas are merge or decision commits on the integration branch `claude/workspace-s
 |---|---|
 | Signed-in and OTP rights intake, erasure, breach notice, consent per purpose, age and guardian consent, grievance period (decisions 335-350, 360-362, 365, 369) | 10a4b474, 44b09423, b2e43f69, 1e742e62 |
 | Compliance pack shipped as `sangam.compliance` 1.1.1 (decision 402 (8), F7-4) | f58fecc9 (merge 95d8956c) |
+| Compliance pack form fields named by `id` (13 DPDP rights, breach and incident forms used `key`, so the UI lost their values); guard `PackFormFieldIdsTest` over every pack form | fix/compliance-form-ids |
 | Opt-in live eSign connector with the decision 140 verifier | fa4b5102 |
 
 ### 1.5 Packs (IFMS, leave, pension and others)
