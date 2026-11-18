@@ -27,7 +27,7 @@ import org.w3c.dom.NodeList;
  *       price, charge, ...). Binary floating point cannot hold decimal money; use {@code long} (minor units) or
  *       {@code number} (exact decimal).</li>
  *   <li><b>SG-33 warning</b>: any other {@code double}/{@code float}: {@code number} is recommended.</li>
- *   <li><b>SG-35 warning</b>: an equality test on a zoned {@code date and time}. DMN 1.3 compares date-times on the
+ *   <li><b>SG-35 error</b> (owner ruling G1, 2026-11-18; a warning before): an equality test on a zoned {@code date and time}. DMN 1.3 compares date-times on the
  *       time line (OMG issue DMN13-35), but the pinned feel-scala engine's {@code =} also compares the zone, so
  *       the same instant in two zones is "not equal". Compare instants with {@code <}, {@code >}, a range, or
  *       subtraction ({@code a - b = duration("PT0S")}).</li>
@@ -103,9 +103,10 @@ public final class DmnModelLint {
                 String t = n.getTextContent();
                 if (t != null && (ZONED_DT_EQ.matcher(t).find() || isBareZonedEntry(n, t))) {
                     String owner = n.getParentNode() instanceof Element p ? p.getAttribute("id") : "";
-                    out.add(new Finding(false, "SANGAM-DMN-DATETIME-EQ", resource, owner, "equality on a zoned date "
-                            + "and time also compares the zone in the pinned FEEL engine; compare instants with < > "
-                            + "or subtraction (ADR-D-26, DMN13-35)"));
+                    out.add(new Finding(true, "SANGAM-DMN-DATETIME-EQ", resource, owner, "date-time = or != against a "
+                            + "zoned literal is refused (owner ruling G1): the FEEL engine's = also compares the zone, so "
+                            + "the same instant in two zones is 'not equal'. Compare instants with < > a range, or "
+                            + "a - b = duration(\"PT0S\"); date-time inputs reach the decision as UTC instants"));
                 }
                 if (t != null && TIME_IANA.matcher(t).find()) {
                     String owner = n.getParentNode() instanceof Element p ? p.getAttribute("id") : "";

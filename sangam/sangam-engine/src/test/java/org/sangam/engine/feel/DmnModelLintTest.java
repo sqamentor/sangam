@@ -53,15 +53,21 @@ class DmnModelLintTest {
         assertTrue(lint(table("long", "amountPaise", "fee", "long", "&lt; 5")).isEmpty());
     }
 
+    /** Owner ruling G1 (DAT-1, 2026-11-18): date-time = and != are refused at deploy, never only warned. */
     @Test
-    void zonedDateTimeEqualityWarns() {
+    void zonedDateTimeEqualityIsRefused() {
         List<DmnModelLint.Finding> f = lint(table("string", "t", "ok", "string",
                 "date and time(\"2026-11-08T10:00:00@Asia/Kolkata\")"));
         assertEquals(1, f.size(), f.toString());
         assertEquals("SANGAM-DMN-DATETIME-EQ", f.get(0).code());
-        assertFalse(f.get(0).error());
-        assertEquals(1, lint("<decision id=\"l\" name=\"l\"><literalExpression><text>a = date and time("
-                + "\"2026-11-08T04:30:00Z\")</text></literalExpression></decision>").size());
+        assertTrue(f.get(0).error(), "G1: a refusal, not a warning");
+        assertTrue(f.get(0).message().contains("refused"), f.get(0).message());
+        List<DmnModelLint.Finding> ne = lint("<decision id=\"n\" name=\"n\"><literalExpression><text>a != @\"2026-11-08T04:30:00Z\""
+                + "</text></literalExpression></decision>");
+        assertTrue(ne.size() == 1 && ne.get(0).error(), ne.toString());
+        List<DmnModelLint.Finding> lit = lint("<decision id=\"l\" name=\"l\"><literalExpression><text>a = date and time("
+                + "\"2026-11-08T04:30:00Z\")</text></literalExpression></decision>");
+        assertTrue(lit.size() == 1 && lit.get(0).error(), lit.toString());
         assertTrue(lint(table("string", "t", "ok", "string", "&lt; date and time(\"2026-11-08T04:30:00Z\")"))
                 .isEmpty(), "ordering compares instants and is fine");
     }

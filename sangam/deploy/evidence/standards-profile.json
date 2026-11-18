@@ -917,7 +917,7 @@
     },
     {
       "topic": "Date-time equality (SG-35)",
-      "rule": "DMN 1.3 compares date-times on the time line (OMG issue DMN13-35, resolved in DMN 1.3: `=` is the same instant). The pinned engine's `=` also compares the zone (feel-scala issue #767), and an operator cannot be overridden without changing the engine, which the SG-27 pin forbids. **Policy: the spec semantics, same instant.** Until the engine is upgraded, the deploy-time lint `SANGAM-DMN-DATETIME-EQ` warns on `=`/`!=`, and on a bare input entry, against a zoned date-time literal. Models compare instants with `<`, `>`, ranges, or `a - b = duration(\"PT0S\")`. This is a documented gap, not a silent rule."
+      "rule": "DMN 1.3 compares date-times on the time line (OMG issue DMN13-35, resolved in DMN 1.3: `=` is the same instant). The pinned engine's `=` also compares the zone (feel-scala issue #767), and an operator cannot be overridden without changing the engine, which the SG-27 pin forbids. **Policy: the spec semantics, same instant** (owner ruling G1, 2026-11-18). Deploy **refuses** `=`/`!=`, and a bare input entry, against a zoned date-time literal (`SANGAM-DMN-DATETIME-EQ`, an error). A `ZonedDateTime`, `OffsetDateTime` or `Instant` input is normalised to its UTC instant at the Sangam boundary (`SangamValueMapper`, no engine change), so equality between date-time variables compares instants. Models compare literals with `<`, `>`, ranges, or `a - b = duration(\"PT0S\")`. Tests: `DateTimeUtcBoundaryTest`, `DmnModelLintTest`."
     },
     {
       "topic": "Built-in conversion of a variable (SG-34)",
