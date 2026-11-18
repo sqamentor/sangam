@@ -216,21 +216,26 @@ jobs:
         run: if [ -f sangam/sdks/typescript-nestjs/package.json ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "::notice::sdks/typescript-nestjs not present"; fi
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         if: steps.d.outputs.present == 'true'
-        with: { node-version: "22.18.0", cache: npm, cache-dependency-path: sangam/sdks/typescript/package-lock.json }
+        with:
+          node-version: "22.18.0"
+          cache: npm
+          cache-dependency-path: |
+            sangam/sdks/typescript/package-lock.json
+            sangam/sdks/typescript-nestjs/package-lock.json
       - if: steps.d.outputs.present == 'true'
         working-directory: sangam/sdks
         run: |
-          # The adapter has no dependencies of its own to install: TypeScript and @types/node come from the SDK's lockfile
-          # (npm ci there) and @sangam/sdk is this tree's SDK build. @nestjs is a peer dependency the adapter never imports.
+          # UP-L6: the adapter builds from its own lockfile (TypeScript and @types/node it declares). --legacy-peer-deps
+          # keeps npm from installing the peers: @sangam/sdk is this tree's SDK build (linked below, it is not on the
+          # registry) and @nestjs is a peer the adapter never imports.
           (cd typescript && npm ci --ignore-scripts --no-audit --no-fund && npm run build)
           cd typescript-nestjs
+          npm ci --legacy-peer-deps --ignore-scripts --no-audit --no-fund
           mkdir -p node_modules/@sangam
           ln -sfn ../../../typescript node_modules/@sangam/sdk
-          TSC=../typescript/node_modules/typescript/bin/tsc
-          TYPES=../typescript/node_modules/@types
-          node "$TSC" -p tsconfig.check.json --noEmit --typeRoots "$TYPES"
-          node "$TSC" -p tsconfig.json --typeRoots "$TYPES"
-          node "$TSC" -p test/tsconfig.json --typeRoots "$TYPES"
+          npm exec --no -- tsc -p tsconfig.check.json --noEmit
+          npm exec --no -- tsc -p tsconfig.json
+          npm exec --no -- tsc -p test/tsconfig.json
           node --test build-test/test/*.test.js
 
   codegen:

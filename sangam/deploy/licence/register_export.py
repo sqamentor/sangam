@@ -63,10 +63,17 @@ def npm_purl(name, version):
     return f"pkg:npm/{name}@{version}"
 
 
+# npm rows the ui distribution answers for: what vite bundles into dist/, and what the ui SBOM lists without being
+# bundled (cyclonedx-npm --omit dev keeps devOptional packages, e.g. an optional peer of a runtime package that is
+# installed as a devDependency; UP-L6: typescript, the optional peer of react-i18next 15.7). The register must cover
+# every component the shipped SBOM names, so the second kind is exported for "ui" too.
+NPM_UI_MARKERS = ("distribution (bundled into the UI dist", "listed in the ui SBOM")
+
+
 def non_maven_rows(path):
     with open(path, encoding="utf-8", newline="") as f:
         for r in csv.DictReader(f):
-            if r["ecosystem"] == "npm" and "distribution (bundled into the UI dist" in r["usage_scope"]:
+            if r["ecosystem"] == "npm" and any(m in r["usage_scope"] for m in NPM_UI_MARKERS):
                 yield npm_purl(r["name"], r["version"]), {"decision": r["decision"], "distributions": ["ui"], "spdx": r["spdx"]}
 
 
