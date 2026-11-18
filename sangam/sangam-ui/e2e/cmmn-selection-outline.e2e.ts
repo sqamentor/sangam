@@ -40,7 +40,8 @@ test('a selected CMMN plan item is outlined on the canvas', async ({ page, api }
 
   await signInAs(page, author.token);
   await page.goto(`/modeller/${encodeURIComponent(id)}`);
-  const pick = page.getByRole('button', { name: 'Examine grievance', exact: true });
+  // The plan outline button is named by its kind and its name ("Human task Examine grievance", CmmnDiagramEditor.tsx).
+  const pick = page.getByRole('button', { name: /^Human task Examine grievance$/ });
   await pick.click();
   await expect(pick).toHaveAttribute('aria-pressed', 'true');
   const shape = page.locator('.cmmn-host [data-element-id="grvc_pi_examine"]');
