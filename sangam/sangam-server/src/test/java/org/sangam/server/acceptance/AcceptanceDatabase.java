@@ -9,9 +9,9 @@ import java.util.Locale;
 import java.util.function.UnaryOperator;
 
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.MSSQLServerContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.mssqlserver.MSSQLServerContainer;
+import org.testcontainers.mysql.MySQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.oracle.OracleContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -100,11 +100,11 @@ public final class AcceptanceDatabase {
      * container ({@code acceptLicense()}). Otherwise the lane refuses before any container exists, with a NOT-RUN
      * reason: the acceptance tests fail loudly and are never counted as a pass.
      */
-    static MSSQLServerContainer<?> sqlServer(DockerImageName image, UnaryOperator<String> env) {
+    static MSSQLServerContainer sqlServer(DockerImageName image, UnaryOperator<String> env) {
         if (!mssqlEulaAccepted(env)) {
             throw mssqlEulaRefusal(env.apply(MSSQL_EULA_VARIABLE));
         }
-        return new MSSQLServerContainer<>(image).acceptLicense();
+        return new MSSQLServerContainer(image).acceptLicense();
     }
 
     static boolean mssqlEulaAccepted(UnaryOperator<String> env) {
@@ -185,7 +185,7 @@ public final class AcceptanceDatabase {
 
     private static JdbcDatabaseContainer<?> create(String db) {
         return switch (db) {
-            case "postgres" -> new PostgreSQLContainer<>(DockerImageName.parse("postgres:17"))
+            case "postgres" -> new PostgreSQLContainer(DockerImageName.parse("postgres:17"))
                     .withDatabaseName("sangam").withUsername("sangam").withPassword("sangam");
             case "oracle" -> new OracleContainer(DockerImageName.parse("gvenzl/oracle-free:23-slim-faststart"))
                     .withUsername("sangam").withPassword("sangam").withStartupTimeout(Duration.ofMinutes(5));
@@ -260,7 +260,7 @@ public final class AcceptanceDatabase {
      * MySQL 8.4 checked through MariaDB Connector/J, the driver the server itself uses on MySQL (D-05, LIC-4), so the
      * readiness check and the server go through the same driver and no second MySQL driver is on the class path.
      */
-    static final class MariaDbDriverMySqlContainer extends MySQLContainer<MariaDbDriverMySqlContainer> {
+    static final class MariaDbDriverMySqlContainer extends MySQLContainer {
         MariaDbDriverMySqlContainer() {
             super(DockerImageName.parse("mysql:8.4"));
         }
