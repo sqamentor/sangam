@@ -90,5 +90,12 @@
   "calls": [
     "sangam-core-committee",
     "sangam-core-execution"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "currencyReason": "owner decision M1: the pack publishes to DigiLocker / NAD with ABC credits, Indian systems in rupees, so the pack declares INR",
+    "variables": []
+  }
 }
