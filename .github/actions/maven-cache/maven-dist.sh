@@ -33,6 +33,6 @@ SHIM
 chmod +x "$shim/wget"
 (cd sangam && PATH="$shim:$PATH" MVNW_REPOURL="file://$root" bash ./mvnw -B -ntp -v >/dev/null)
 echo "MVNW_REPOURL=file://$root" >> "$GITHUB_ENV"
-# Marker for the fetch count: files restored from the cache keep their old mtimes, new downloads are newer.
+# Marker for the fetch count: Maven sets a fetched file's mtime to the remote Last-Modified, so count by ctime (set when the file is written).
 touch "$RUNNER_TEMP/sangam-m2-restored"
 echo "maven repository: $(find "$HOME/.m2/repository" -type f -name '*.jar' 2>/dev/null | wc -l) jars restored"
