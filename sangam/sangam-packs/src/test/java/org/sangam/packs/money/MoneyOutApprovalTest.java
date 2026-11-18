@@ -313,6 +313,38 @@ class MoneyOutApprovalTest {
         assertTrue(incident.getIncidentMessage().contains("MONEY_OUT_HELD"), incident.getIncidentMessage());
     }
 
+    @Test
+    void anE3RefusalInCoreExecutionPrepareIsAnIncidentNotAQuietEnd() {
+        // before the fix ExternalOperationDelegate raised the E2/E3 refusal as a BPMN error; core execution has no
+        // catch for it, so a caller without a boundary (ifms-bill bl_pay) went on without executionOutcome
+        String field = "<extensionElements><operaton:field name=\"op\"><operaton:string>PREPARE</operaton:string>"
+                + "</operaton:field><operaton:field name=\"connector\"><operaton:string>pfms.payment</operaton:string>"
+                + "</operaton:field></extensionElements>";
+        String bpmn = asyncPay("t-e3-prepare", "org.sangam.packs.core.ExternalOperationDelegate", field);
+        engine.getRepositoryService().createDeployment().addString("t-e3-prepare.bpmn", bpmn)
+                .tenantId(org.sangam.packs.PackTestTenant.ID).deploy();
+        Map<String, Object> v = new HashMap<>();
+        v.put("amount", 100);
+        v.put("materialFields", "amount"); // approved, but without payeeAccount, currency, purpose (E3)
+        v.put("approvedPayloadHash", org.sangam.packs.core.Vars.hash(
+                new java.util.LinkedHashMap<>(Map.of("amount", org.sangam.packs.core.Vars.canonical(100)))));
+        v.put("approvedBy", "pao-1");
+        String id = engine.getRuntimeService().createProcessInstanceByKey("t-e3-prepare").businessKey("E3-1")
+                .setVariables(v).processDefinitionTenantId(org.sangam.packs.PackTestTenant.ID).execute().getId();
+        var job = engine.getManagementService().createJobQuery().processInstanceId(id).singleResult();
+        engine.getManagementService().setJobRetries(job.getId(), 1);
+        try {
+            engine.getManagementService().executeJob(job.getId());
+        } catch (RuntimeException expected) {
+            // the held payment fails its job
+        }
+        assertNotNull(engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(id).singleResult(),
+                "the case stays open");
+        var incident = engine.getRuntimeService().createIncidentQuery().processInstanceId(id).singleResult();
+        assertNotNull(incident, "an incident holds the payment");
+        assertTrue(incident.getIncidentMessage().contains("MONEY_OUT_HELD"), incident.getIncidentMessage());
+    }
+
     // ---- E2 / E3 on the shared rule ----
 
     private static Map<String, Object> approvedCase(String approvedBy) {
