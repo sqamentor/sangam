@@ -154,6 +154,7 @@
     "exponent": 2,
     "variables": [
       "amount",
+      "payableAmount",
       "powerLimit",
       "unitPrice"
     ]
