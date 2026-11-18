@@ -6,10 +6,12 @@
  * axe-core is the dev dependency already in node_modules (4.14.0, MPL-2.0), injected from disk, never from a CDN; the
  * page's CSP (script-src 'self') is bypassed for this injection only. Written, not run (test phase).
  */
+import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
-import { expect, test } from './support/fixtures';
-import { UI_ROOT } from './support/env';
+import { expect, signInAs, test } from './support/fixtures';
+import { UI_ROOT, devToken, t } from './support/env';
+import { createIdentity } from './support/identities';
 
 test.use({ bypassCSP: true });
 
@@ -35,16 +37,27 @@ test('sign-in screen', async ({ page }) => {
   expect(await blockingIssues(page)).toEqual([]);
 });
 
-for (const [name, path] of [
-  ['inbox', '/tasks'],
-  ['operations dashboard', '/ops'],
-  ['process definitions', '/ops/processes'],
-  ['modeller packages', '/modeller'],
-  ['audit search', '/audit'],
+// Each screen runs as a user its route guard admits (App.tsx), and the check fails on the "You do not have access to
+// this" page (error.notAvailable): that page has no violations of its own, so before this the modeller entry passed
+// without ever opening the modeller (the development token has no MODELLER role). The development token's groups give
+// TASK_USER and OPERATOR; the modeller screens run as a model author (sangam-model-author -> MODELLER).
+for (const [name, path, scopes] of [
+  ['inbox', '/tasks', null],
+  ['operations dashboard', '/ops', null],
+  ['process definitions', '/ops/processes', null],
+  ['modeller packages', '/modeller', ['sangam-model-author']],
+  ['audit search', '/audit', null],
 ] as const) {
-  test(`${name} (${path})`, async ({ signedIn: page }) => {
+  test(`${name} (${path})`, async ({ page, api }) => {
+    if (scopes) {
+      const user = await createIdentity(api.ctx, `e2e-a11y-${randomUUID().slice(0, 8)}`, scopes);
+      await signInAs(page, user.token);
+    } else {
+      await signInAs(page, devToken());
+    }
     await page.goto(path);
     await page.waitForLoadState('networkidle');
+    await expect(page.getByText(t('error.notAvailable'))).toHaveCount(0);
     expect(await blockingIssues(page)).toEqual([]);
   });
 }
