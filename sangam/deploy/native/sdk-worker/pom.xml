@@ -28,7 +28,7 @@
   <properties>
     <worker.mainClass>org.sangam.sdk.nativeimage.NativeWorkerMain</worker.mainClass>
     <worker.imageName>sangam-sdk-worker</worker.imageName>
-    <version.native-maven-plugin>1.1.18</version.native-maven-plugin>
+    <version.native-maven-plugin>1.1.19</version.native-maven-plugin>
   </properties>
 
   <dependencies>
