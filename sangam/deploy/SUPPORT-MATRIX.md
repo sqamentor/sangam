@@ -135,7 +135,7 @@ product documentation); Microsoft "Release planning" and "Solution concepts" for
 | Safari | 16.4 | Declared |
 | Any older version, any other browser engine | None | **Unsupported** |
 
-Evidence so far: the baseline is the build target only (Vite 8.3.5 in `sangam-ui/package.json`; no `build.target` in `vite.config.ts` or `vite.embed.config.ts`). The UI unit tests run in jsdom, not in a browser, and the browser end-to-end suite (`ui.yml`, Playwright) has not been run on the Vite 8 build, so no browser row is proven yet. This applies to `sangam-ui` and the embeddable components; the server, gateway and SDKs have no browser requirement.
+Evidence so far: the baseline is the build target only (Vite 8.3.8 in `sangam-ui/package.json`; no `build.target` in `vite.config.ts` or `vite.embed.config.ts`). The UI unit tests run in jsdom, not in a browser, and the browser end-to-end suite (`ui.yml`, Playwright) has not been run on the Vite 8 build, so no browser row is proven yet. This applies to `sangam-ui` and the embeddable components; the server, gateway and SDKs have no browser requirement.
 
 ## Local JDK evidence (SG-06, SG-07)
 

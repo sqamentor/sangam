@@ -2280,13 +2280,6 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/%40bpmn-io/cm-theme@0.1.0-alpha.2": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
   "pkg:npm/%40bpmn-io/cm-theme@0.2.2": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -2371,14 +2364,21 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/%40bpmn-io/form-js-editor@1.12.0": {
+  "pkg:npm/%40bpmn-io/feelin@7.0.0": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
+  "pkg:npm/%40bpmn-io/form-js-editor@1.26.1": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
    ],
    "spdx": "LicenseRef-bpmn.io (declared 'SEE LICENSE IN LICENSE')"
   },
-  "pkg:npm/%40bpmn-io/form-js-viewer@1.12.0": {
+  "pkg:npm/%40bpmn-io/form-js-viewer@1.26.1": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
@@ -2637,7 +2637,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/big.js@6.2.2": {
+  "pkg:npm/big.js@7.0.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -2742,6 +2742,13 @@
    ],
    "spdx": "LicenseRef-bpmn.io (declared 'MIT')"
   },
+  "pkg:npm/diagram-js@15.30.0": {
+   "decision": "ACCEPTED WITH CONDITIONS",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "LicenseRef-bpmn.io (declared 'MIT')"
+  },
   "pkg:npm/didi@10.2.2": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -2750,6 +2757,13 @@
    "spdx": "MIT"
   },
   "pkg:npm/didi@11.0.1": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
+  "pkg:npm/didi@12.0.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -2826,7 +2840,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/dompurify@3.4.17": {
+  "pkg:npm/dompurify@3.4.18": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
@@ -2840,14 +2854,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/feelers@1.5.1": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
-  "pkg:npm/feelin@3.2.0": {
+  "pkg:npm/feelers@3.2.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -2896,6 +2903,13 @@
    ],
    "spdx": "MIT"
   },
+  "pkg:npm/ids@3.0.2": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
   "pkg:npm/inferno-shared@5.6.3": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -2938,13 +2952,6 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/lezer-feel@1.9.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
   "pkg:npm/lodash@4.18.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -2966,7 +2973,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/marked@15.0.12": {
+  "pkg:npm/marked@18.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -3057,7 +3064,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/oidc-client-ts@3.1.0": {
+  "pkg:npm/oidc-client-ts@3.5.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -3078,6 +3085,13 @@
    ],
    "spdx": "MIT"
   },
+  "pkg:npm/path-intersection@4.2.1": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
   "pkg:npm/preact@10.29.8": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -3092,7 +3106,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/react-i18next@15.1.4": {
+  "pkg:npm/react-i18next@15.7.4": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -3190,6 +3204,27 @@
    ],
    "spdx": "MIT"
   },
+  "pkg:npm/temporal-polyfill@1.0.8": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
+  "pkg:npm/temporal-spec@1.0.1": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "Apache-2.0"
+  },
+  "pkg:npm/temporal-utils@1.0.4": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
   "pkg:npm/ticky@1.0.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -3198,6 +3233,13 @@
    "spdx": "MIT"
   },
   "pkg:npm/tiny-svg@3.1.3": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
+  "pkg:npm/tiny-svg@4.1.4": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"

@@ -8,7 +8,7 @@ const who: Binding = { tenantId: 't1', deviceId: 'd1', userId: 'u1' };
 const now = new Date(Date.UTC(2026, 10, 12, 10, 0, 0));
 
 /** DER SEQUENCE { INTEGER r, INTEGER s } back to r||s, to verify with WebCrypto. */
-function derToP1363(der: Uint8Array, n = 32): Uint8Array {
+function derToP1363(der: Uint8Array, n = 32): Uint8Array<ArrayBuffer> {
   expect(der[0]).toBe(0x30);
   expect(der[1]).toBe(der.length - 2);
   const out = new Uint8Array(2 * n);
