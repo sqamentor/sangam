@@ -25,7 +25,7 @@ env:
   RL: python3 -I ${{ github.workspace }}/sangam/deploy/licence/results_ledger.py
   RD: python3 -I ${{ github.workspace }}/sangam/deploy/licence/release_dist.py
   CL: python3 -I deploy/licence/check_licences.py --policy deploy/licence/licence-policy.json
-  CYCLONEDX: org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeBom
+  CYCLONEDX: org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeBom
 
 jobs:
   licences:

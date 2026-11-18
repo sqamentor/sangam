@@ -20,7 +20,7 @@
 # Tools are pinned: actions by commit SHA (CR-10), syft and grype by SHA-256 after the vendor cosign signature of
 # their checksum file is verified (fetch_tool.py, CR-11, decision 179), the npm SBOM generator from
 # deploy/licence/tools/package-lock.json (CR-12), npm install scripts off (decision 130), versions-maven-plugin by its
-# full coordinate 2.25.1 (decision 185).
+# full coordinate 2.25.2 (decision 185, UP-L4).
 name: release
 
 on:
@@ -48,7 +48,7 @@ env:
   RD: python3 -I ${{ github.workspace }}/sangam/deploy/licence/release_dist.py
   FETCH: python3 -I ${{ github.workspace }}/sangam/deploy/licence/fetch_tool.py
   CL: python3 -I deploy/licence/check_licences.py --policy deploy/licence/licence-policy.json
-  CYCLONEDX: org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeBom
+  CYCLONEDX: org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeBom
 
 jobs:
   meta:
@@ -113,9 +113,9 @@ jobs:
         with: { distribution: temurin, java-version: "25.0.5+8", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: "22.18.0" }
-      - name: Set version (versions-maven-plugin 2.25.1, Apache-2.0, decision 185)
+      - name: Set version (versions-maven-plugin 2.25.2, Apache-2.0, decision 185)
         # Full coordinate: the version is fixed here, never chosen by the run (the root pom pin is an integrator REQUEST).
-        run: mvn $MAVEN_ARGS -q org.codehaus.mojo:versions-maven-plugin:2.25.1:set -DnewVersion="$V" -DprocessAllModules=true -DgenerateBackupPoms=false
+        run: mvn $MAVEN_ARGS -q org.codehaus.mojo:versions-maven-plugin:2.25.2:set -DnewVersion="$V" -DprocessAllModules=true -DgenerateBackupPoms=false
       - name: Build and unit tests
         # simulators-app builds the simulators fat jar (distributions.json "simulators"); while the profile does not
         # exist Maven only warns, the jar is missing and sbom-match-simulators records BLOCKED.

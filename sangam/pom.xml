@@ -185,7 +185,7 @@
          below and deploy/licence/licence-policy.json (forbidden_components, build_time_tools) keep them out of every
          shipped scope. Every gate they drive is report-only (no build failure) until the test-phase triage. -->
     <version.errorprone>2.52.0</version.errorprone>
-    <version.nullaway>0.14.3</version.nullaway>
+    <version.nullaway>0.14.4</version.nullaway>
     <!-- LGPL build-only tools, allowed by the owner decision of 2026-11-12 (licence-policy.json build_time_tools) -->
     <version.spotbugs-maven-plugin>4.10.5.0</version.spotbugs-maven-plugin>
     <version.spotbugs>4.10.5</version.spotbugs>
@@ -196,17 +196,17 @@
     <version.pitest-junit5>1.2.3</version.pitest-junit5>
     <!-- CR-10/CR-12 (RM-20..RM-22): build tools the workflows call by prefix (dependency:copy, dependency:tree,
          help:evaluate) or by coordinate (makeBom) are pinned here, so no CI run picks a version by itself. All
-         Apache-2.0, build-only, never shipped. maven-dependency-plugin 3.7.0 = what the Maven 3.9.9 wrapper's super POM
-         resolves; maven-help-plugin 3.5.2 = the version in the local repository (unpinned, an offline run cannot
-         resolve one); cyclonedx-maven-plugin 2.9.1 = decision 134, downloaded under decision 178 with its 23-jar
+         Apache-2.0, build-only, never shipped. maven-dependency-plugin 3.11.0 (UP-L4; was 3.7.0, the Maven 3.9.9 super POM
+         version); maven-help-plugin 3.5.2 = the version in the local repository (unpinned, an offline run cannot
+         resolve one); cyclonedx-maven-plugin 2.9.3 (UP-L4; 2.9.1 = decision 134, downloaded under decision 178 with its 23-jar
          build-time closure (DOWNLOADS-WAVE4.md, 2026-11-12T18:42:21Z; the per-POM licence review of that closure is
-         not done); versions-maven-plugin 2.25.1 = decision 185 (latest stable, Apache-2.0, recorded in
-         DOWNLOADS-WAVE4.md); maven-site-plugin 3.12.1 = the version the Maven 3.9.9 super POM binds (RM-45). -->
-    <version.maven-dependency-plugin>3.7.0</version.maven-dependency-plugin>
+         not done); versions-maven-plugin 2.25.2 (UP-L4; 2.25.1 = decision 185 (latest stable, Apache-2.0, recorded in
+         DOWNLOADS-WAVE4.md); maven-site-plugin 3.22.0 (UP-L4; RM-45 pins a literal version, was the super POM 3.12.1). -->
+    <version.maven-dependency-plugin>3.11.0</version.maven-dependency-plugin>
     <version.maven-help-plugin>3.5.2</version.maven-help-plugin>
-    <version.maven-site-plugin>3.12.1</version.maven-site-plugin>
-    <version.cyclonedx-maven-plugin>2.9.1</version.cyclonedx-maven-plugin>
-    <version.versions-maven-plugin>2.25.1</version.versions-maven-plugin>
+    <version.maven-site-plugin>3.22.0</version.maven-site-plugin>
+    <version.cyclonedx-maven-plugin>2.9.3</version.cyclonedx-maven-plugin>
+    <version.versions-maven-plugin>2.25.2</version.versions-maven-plugin>
     <version.jqwik>1.10.2</version.jqwik>
     <version.jazzer>0.30.0</version.jazzer>
     <version.cucumber>8.0.4</version.cucumber>
@@ -530,7 +530,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.14.0</version>
+          <version>3.16.0</version>
           <configuration>
             <parameters>true</parameters>
           </configuration>
@@ -538,7 +538,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.5.3</version>
+          <version>3.6.1</version>
           <configuration>
             <!-- quoted: the project path contains spaces. SL-53: every test JVM runs in UTC, as the engine requires
                  (EngineTimeZone refuses any other default zone); a timer test sets sangam.engine.timer-zone instead -->
@@ -552,7 +552,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-failsafe-plugin</artifactId>
-          <version>3.5.3</version>
+          <version>3.6.1</version>
           <configuration>
             <!-- same as surefire: the JDK's Windows selector pipe (AF_UNIX) fails in some user temp folders; UTC (SL-53);
                  @{argLine} carries the JaCoCo agent of -Psangam-coverage into the integration tests too (X1-10) -->
@@ -562,7 +562,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.4.2</version>
+          <version>3.5.1</version>
         </plugin>
         <!-- M-094 / M-095 build-time tools: pinned here, bound only in the report-only profiles below -->
         <plugin>
@@ -637,6 +637,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
+        <!-- UP-L4: stays 3.6.1. 3.7.0 also checks OPTIONAL dependencies in bannedDependencies, which breaks the
+             decision 217/232 add-on design below (jnats optional in sangam-flowable-ports fails the build); moving
+             needs a reworded rule that keeps the same control, an integrator/owner item. -->
         <version>3.6.1</version>
         <executions>
           <execution>
@@ -911,7 +914,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-source-plugin</artifactId>
-            <version>3.3.1</version>
+            <version>3.4.0</version>
             <executions>
               <execution>
                 <id>sangam-central-sources</id>
@@ -922,7 +925,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
-            <version>3.11.2</version>
+            <version>3.12.0</version>
             <configuration>
               <doclint>none</doclint>
               <quiet>true</quiet>
@@ -950,7 +953,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>3.2.7</version>
+            <version>3.2.8</version>
             <configuration>
               <bestPractices>true</bestPractices>
               <passphraseEnvName>MAVEN_GPG_PASSPHRASE</passphraseEnvName>
