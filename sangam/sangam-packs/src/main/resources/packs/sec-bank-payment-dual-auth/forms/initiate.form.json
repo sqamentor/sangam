@@ -87,6 +87,15 @@
         "en": "Payee party ID (verified party registry)",
         "hi": "प्राप्तकर्ता पक्ष आईडी (सत्यापित पक्ष रजिस्टर)"
       }
+    },
+    {
+      "id": "remitterPartyId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Remitter (verified registry id of the debited customer account)",
+        "hi": "प्रेषक (डेबिट खाते का सत्यापित पंजी आईडी)"
+      }
     }
   ]
 }
