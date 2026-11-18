@@ -12,7 +12,7 @@ env:
     TZ: UTC
     MAVEN_ARGS: -B -ntp
     TESTCONTAINERS_RYUK_DISABLED: "false"
-    JDK_URL: https://api.adoptium.net/v3/binary/version/jdk-25.0.1%2B8/linux/x64/jdk/hotspot/normal/eclipse
+    JDK_URL: https://api.adoptium.net/v3/binary/version/jdk-25.0.5%2B8/linux/x64/jdk/hotspot/normal/eclipse
     CI_MODULES: ""
     CI_DBS: ""
     CI_CHUNKS: ""

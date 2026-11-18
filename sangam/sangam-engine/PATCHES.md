@@ -1,6 +1,9 @@
 # sangam-engine: engine behaviour changes (patch ledger)
 
-Base: `org.operaton.bpm:operaton-engine:2.2.0` from Maven Central, used **unchanged as a dependency** (ADR-D-16).
+Base: `org.operaton.bpm:operaton-engine:2.2.1` from Maven Central, used **unchanged as a dependency** (ADR-D-16).
+Upgrade 2.2.0 -> 2.2.1 (UP-L1L2, 2026-11-17): patch release; consumer poms (operaton-bom, operaton-root, operaton-engine-dmn)
+differ only in version and joda-time 2.15.0 -> 2.15.1, so the FEEL pins (SG-27) are unchanged. The javap evidence below
+was taken on 2.2.0; the pin tests (`EngineInternalsPinTest`, upgrade checklist) were re-run on 2.2.1 (see the UP-L1L2 report).
 This ledger records every place where Sangam changes engine behaviour, so each upgrade can re-check it.
 
 ## Summary
