@@ -3246,6 +3246,13 @@
    ],
    "spdx": "MIT"
   },
+  "pkg:npm/typescript@5.9.3": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "Apache-2.0"
+  },
   "pkg:npm/void-elements@3.1.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [

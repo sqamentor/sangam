@@ -112,8 +112,13 @@ class Export(unittest.TestCase):
                 w.writerow(["ecosystem", "name", "version", "usage_scope", "spdx", "decision"])
                 w.writerow(["npm", "@s/x", "1.0.0", "distribution (bundled into the UI dist)", "MIT", "ACCEPTED FOR DEFINED USE"])
                 w.writerow(["npm", "dev", "1.0.0", "build", "MIT", "ACCEPTED FOR DEFINED USE"])
+                # UP-L6: an optional peer installed as a devDependency is in the ui SBOM although vite never bundles it
+                w.writerow(["npm", "peer", "2.0.0", "devDependency (direct); listed in the ui SBOM (devOptional)",
+                            "Apache-2.0", "ACCEPTED FOR DEFINED USE"])
             out = rx.build(mp, np_)["components"]
-        self.assertEqual(sorted(out), ["pkg:maven/g/a@1.0", "pkg:maven/g/c@1.0", "pkg:maven/g/q@2.0", "pkg:npm/%40s/x@1.0.0"])
+        self.assertEqual(sorted(out), ["pkg:maven/g/a@1.0", "pkg:maven/g/c@1.0", "pkg:maven/g/q@2.0", "pkg:npm/%40s/x@1.0.0",
+                                       "pkg:npm/peer@2.0.0"])
+        self.assertEqual(out["pkg:npm/peer@2.0.0"]["distributions"], ["ui"])
         self.assertEqual(out["pkg:maven/g/a@1.0"]["distributions"], ["gateway", "server"])
         self.assertEqual(out["pkg:npm/%40s/x@1.0.0"]["distributions"], ["ui"])
 

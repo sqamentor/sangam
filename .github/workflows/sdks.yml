@@ -233,9 +233,9 @@ jobs:
           npm ci --legacy-peer-deps --ignore-scripts --no-audit --no-fund
           mkdir -p node_modules/@sangam
           ln -sfn ../../../typescript node_modules/@sangam/sdk
-          npx --no-install tsc -p tsconfig.check.json --noEmit
-          npx --no-install tsc -p tsconfig.json
-          npx --no-install tsc -p test/tsconfig.json
+          npm exec --no -- tsc -p tsconfig.check.json --noEmit
+          npm exec --no -- tsc -p tsconfig.json
+          npm exec --no -- tsc -p test/tsconfig.json
           node --test build-test/test/*.test.js
 
   codegen:
