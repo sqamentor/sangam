@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_advance_powers" name="Delegated powers by role" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- Delegated powers for ADVANCE (SL-31). UNVERIFIED: the Compendium of Rules on Advances is not read (corpus IFC-025 / IFC-180 [U]); confirm the sanctioning authority and its limit and deploy it as a tenant DMN override -->
-  <decision id="ifms-advance-powers" name="Delegated powers by role" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.4">
+  <decision id="ifms-advance-powers" name="Delegated powers by role" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.5">
     <decisionTable id="ifms-advance-powers_t" hitPolicy="FIRST">
       <input id="ifms-advance-powers_i0" label="Seat role"><inputExpression id="ifms-advance-powers_ie0" typeRef="string"><text>seatRole</text></inputExpression></input>
       <input id="ifms-advance-powers_i1" label="Case type"><inputExpression id="ifms-advance-powers_ie1" typeRef="string"><text>caseType</text></inputExpression></input>

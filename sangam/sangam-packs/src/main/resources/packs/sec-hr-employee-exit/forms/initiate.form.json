@@ -1,6 +1,6 @@
 {
   "key": "sec-hr-employee-exit/initiate",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.hr.employee-exit",
   "title": {
     "en": "Exit",

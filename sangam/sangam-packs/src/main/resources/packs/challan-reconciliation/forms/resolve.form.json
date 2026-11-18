@@ -1,6 +1,6 @@
 {
   "key": "challan-reconciliation/resolve",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.ifms.challan-reconciliation",
   "title": {
     "en": "Resolve challan discrepancy",

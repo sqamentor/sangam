@@ -1,6 +1,6 @@
 {
   "key": "sec-nbfc-dlg-arrangement/proposal",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.nbfc.dlg-arrangement",
   "title": {
     "en": "DLG proposal",

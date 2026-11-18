@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.loan-origination",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Loan origination to disbursal",
     "hi": "ऋण आवेदन से संवितरण तक"

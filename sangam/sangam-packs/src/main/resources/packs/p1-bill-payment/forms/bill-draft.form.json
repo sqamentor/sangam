@@ -1,6 +1,6 @@
 {
   "key": "p1-bill-payment/bill-draft",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.p1.bill-payment",
   "title": {
     "en": "Bill for payment",

@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-eligibility/mse",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ushealth.eligibility",
   "title": {
     "en": "Medical screening examination and stabilisation (no payment inquiry first)",

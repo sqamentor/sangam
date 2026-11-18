@@ -1,6 +1,6 @@
 {
   "key": "p2-file-movement/prepare-noting",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.p2.file-movement",
   "title": {
     "en": "Prepare the document to sign",

@@ -1,6 +1,6 @@
 {
   "key": "land-acquisition/award",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.land-acquisition",
   "title": {
     "en": "Make award (s.23)",

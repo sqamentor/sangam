@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-breach/low-probability",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ushealth.breach",
   "title": {
     "en": "Approve the low-probability determination (kept 6 years)",

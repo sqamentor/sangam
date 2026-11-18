@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-eligibility/resolve",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ushealth.eligibility",
   "title": {
     "en": "Resolve coverage: correct data, other coverage, self-pay",

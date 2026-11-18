@@ -1,6 +1,6 @@
 {
   "key": "sec-nbfc-digital-lending/prepare-sanction-note",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.nbfc.digital-lending",
   "title": {
     "en": "Prepare the document to sign",

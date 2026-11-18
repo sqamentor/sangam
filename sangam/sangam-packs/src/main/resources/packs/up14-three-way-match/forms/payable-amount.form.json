@@ -1,6 +1,6 @@
 {
   "key": "up14-three-way-match/payable-amount",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "universal.up14-three-way-match",
   "title": {
     "en": "Payable amount",

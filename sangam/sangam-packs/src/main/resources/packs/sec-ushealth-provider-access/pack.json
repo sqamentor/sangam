@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.provider-access",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Provider Access request (CMS-0057-F)",
     "es": "Solicitud de acceso del proveedor (CMS-0057-F)"

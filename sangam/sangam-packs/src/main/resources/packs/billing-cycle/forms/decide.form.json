@@ -1,6 +1,6 @@
 {
   "key": "billing-cycle/decide",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "universal.billing-cycle",
   "title": {
     "en": "Arrears: waive or recover",

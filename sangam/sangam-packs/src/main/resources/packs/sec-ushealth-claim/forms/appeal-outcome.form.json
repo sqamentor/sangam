@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-claim/appeal-outcome",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ushealth.claim",
   "title": {
     "en": "Record the appeal outcome",

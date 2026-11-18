@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-fiscal-transparency/publishHold",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.intl.pfm-fiscal-transparency",
   "title": {
     "en": "Publication not confirmed by the portal: confirm and resend",

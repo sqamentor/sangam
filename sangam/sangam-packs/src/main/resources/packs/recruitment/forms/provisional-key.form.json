@@ -1,6 +1,6 @@
 {
   "key": "recruitment/provisional-key",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.recruitment",
   "title": {
     "en": "Publish provisional answer key and results",

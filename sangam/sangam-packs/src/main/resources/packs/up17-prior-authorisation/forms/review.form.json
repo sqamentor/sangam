@@ -1,6 +1,6 @@
 {
   "key": "up17-prior-authorisation/review",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "universal.up17-prior-authorisation",
   "title": {
     "en": "Clinical review",

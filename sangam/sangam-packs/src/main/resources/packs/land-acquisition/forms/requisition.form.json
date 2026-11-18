@@ -1,6 +1,6 @@
 {
   "key": "land-acquisition/requisition",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.land-acquisition",
   "title": {
     "en": "Land acquisition requisition",

@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-intermediary-licensing/apply",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ins.intermediary-licensing",
   "title": {
     "en": "Intermediary application",

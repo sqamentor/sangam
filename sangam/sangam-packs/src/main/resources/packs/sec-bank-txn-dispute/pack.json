@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.txn-dispute",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Failed transactions, unauthorised transactions and card chargebacks",
     "hi": "विफल लेनदेन, अनधिकृत लेनदेन एवं कार्ड चार्जबैक"

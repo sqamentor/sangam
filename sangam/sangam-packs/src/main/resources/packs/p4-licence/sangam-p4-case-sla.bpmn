@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- P4 case variant: statutory clock. Generated layout; edit freely in the Sangam modeller. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_p4_case_sla" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.2">
-  <process id="sangam-p4-case-sla" name="P4 case variant: statutory clock" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_p4_case_sla" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.3">
+  <process id="sangam-p4-case-sla" name="P4 case variant: statutory clock" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
     <documentation>Runs as the blocking process task of the CMMN case; exits when the case is approved.</documentation>
     <startEvent id="pcs_start" name="Clock started"></startEvent>
     <serviceTask id="pcs_deadline" name="Deadline" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>case</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>30D</operaton:string></operaton:field></extensionElements></serviceTask>
