@@ -137,7 +137,11 @@ public final class ModelCodeAllowList {
             "org.sangam.packs.core.AssignmentStrategyDelegate",
             "org.sangam.packs.core.BatchDelegate",
             "org.sangam.packs.core.BatchItemOutcomeListener",
+            "org.sangam.packs.core.BatchItemReleaseDelegate", // ARCH-JURIS E1: item released under the batch sanction
+            "org.sangam.packs.core.BatchItemsDelegate", // ARCH-JURIS E1/E3: batch items with a registry payee each
             "org.sangam.packs.core.BatchJoinListener",
+            "org.sangam.packs.core.CaptureRefunds$Record", // ARCH-JURIS M5: a capture recorded for its refunds
+            "org.sangam.packs.core.CaptureRefunds$Release", // ARCH-JURIS M5: a refund released against its capture
             "org.sangam.packs.core.CaseRecordDelegate",
             "org.sangam.packs.core.CommitteeDelegate",
             "org.sangam.packs.core.ConnectorCallDelegate",
@@ -152,6 +156,7 @@ public final class ModelCodeAllowList {
             "org.sangam.packs.core.LifecycleStateDelegate",
             "org.sangam.packs.core.LinkedInstanceDelegate",
             "org.sangam.packs.core.MoneyCalculationDelegate",
+            "org.sangam.packs.core.MoneyFieldsDelegate", // ARCH-JURIS A1/E3: money fields bound to the sanction
             "org.sangam.packs.core.NotifyDelegate",
             "org.sangam.packs.core.PackStartListener",
             "org.sangam.packs.core.PayeeResolutionDelegate",
