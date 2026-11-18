@@ -118,6 +118,39 @@ class TaskFormRequirementsTest {
         assertFalse(p2.detail().isBlank());
     }
 
+    /**
+     * PACKFORM-FIELD-KEY: the shipped compliance forms, deployed as the compliance pack deploys them, name their
+     * required fields by {@code id}, and completing such a task without them is refused. Covers the forms whose fields
+     * were named {@code key} before the fix (grievance, breach, erasure, rectification, restriction, objection,
+     * nomination, automated-decision review, incident).
+     */
+    @Test
+    void shippedComplianceFormsRequireTheirFields() throws Exception {
+        java.nio.file.Path dir = java.nio.file.Path.of("..", "sangam-compliance", "src", "main", "resources", "packs",
+                "compliance", "forms");
+        Map<String, String> res = new LinkedHashMap<>();
+        try (var s = java.nio.file.Files.list(dir)) {
+            for (java.nio.file.Path p : s.filter(x -> x.toString().endsWith(".form.json")).sorted().toList()) {
+                res.put("packs/compliance/forms/" + p.getFileName(), java.nio.file.Files.readString(p));
+            }
+        }
+        assertEquals(21, res.size());
+        for (String form : res.values()) {
+            for (var f : JSON.readTree(form).path("fields")) {
+                assertTrue(f.hasNonNull("id") && !f.has("key"), "field named by id only: " + f);
+            }
+        }
+        TaskFormRequirements r = new TaskFormRequirements(repository(Map.of("dep1", res), new AtomicInteger()));
+        Map<String, List<String>> expected = new LinkedHashMap<>();
+        expected.put("compliance/grievance-examine", List.of("grievanceResponse"));
+        expected.put("compliance/breach-risk-assessment", List.of("riskFactors", "affectedCount"));
+        for (var e : expected.entrySet()) {
+            List<String> required = r.requiredForTask("pd1", null, "sangam:" + e.getKey());
+            assertEquals(e.getValue(), required, e.getKey());
+            assertEquals(e.getValue(), TaskFormRequirements.missing(required, Map.of()), "completion without them");
+        }
+    }
+
     /** A RepositoryService answering resource listings/streams of the given deployments; pd1 belongs to dep1. */
     private static RepositoryService repository(Map<String, Map<String, String>> deployments, AtomicInteger listings) {
         ProcessDefinition pd = (ProcessDefinition) Proxy.newProxyInstance(TaskFormRequirementsTest.class.getClassLoader(),

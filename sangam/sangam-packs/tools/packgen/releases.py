@@ -225,6 +225,9 @@ SHIPS['universal.up21-iot-storm-control'] = ('1.0.1', '1.0.2')
 # R7UI-F7-4: the compliance models changed after HELD_AT (incident report completion guard, isStartableInTasklist).
 # Its pack.json is kept by hand, so this entry is the ledger record of that bump; version_of does not apply to it.
 SHIPS['sangam.compliance'] = ('1.1.0', '1.1.1')
+# PACKFORM-FIELD-KEY (lane compliance-ids, 2026-11-18): 13 compliance forms named their fields 'key' instead of 'id', so the
+# UI rendered them without a name; renamed to 'id' (same names). Held is still 1.1.0, so the change ships within 1.1.1
+# (owner decision 402 (8)); test_the_compliance_pack_ships_no_held_version_with_other_content covers it.
 SHIPS['gov.intl.pfm-breach-case'] = ('1.0.0', '1.0.1')
 SHIPS['gov.intl.pfm-budget-accounting-reconciliation'] = ('1.0.0', '1.0.1')
 SHIPS['gov.intl.pfm-cash-plan'] = ('1.0.0', '1.0.1')
