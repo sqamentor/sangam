@@ -24,6 +24,15 @@
       }
     },
     {
+      "id": "payeePartyId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Awarded supplier (verified payee registry id)",
+        "hi": "चयनित आपूर्तिकर्ता (सत्यापित पंजी आईडी)"
+      }
+    },
+    {
       "id": "unitPrice",
       "type": "money",
       "currency": "INR",
