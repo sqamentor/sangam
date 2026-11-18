@@ -251,6 +251,13 @@ public final class MoneyPathGuard {
         if (cls(e).endsWith(".BatchItemReleaseDelegate")) {
             return true; // E1: the batch parent's sanction, released for this unchanged item
         }
+        NodeList el = e.getElementsByTagNameNS(OPERATON, "executionListener");
+        for (int i = 0; i < el.getLength(); i++) {
+            Element l = (Element) el.item(i);
+            if ("start".equals(l.getAttribute("event")) && l.getAttribute("class").endsWith(".CaptureRefunds$Release")) {
+                return true; // M5: a refund released by its capture record (at most the capture, same source, once)
+            }
+        }
         if (!"userTask".equals(e.getLocalName())) {
             return false;
         }

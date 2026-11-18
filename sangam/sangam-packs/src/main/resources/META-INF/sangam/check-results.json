@@ -86,11 +86,6 @@
       "reason": "configuration / credit-policy DMN output, not a docs.kfs answer"
     },
     {
-      "process": "sangam-sec-bank-txn-dispute",
-      "variable": "txnRef",
-      "reason": "input of switch.status (copied from customerId)"
-    },
-    {
       "process": "sangam-sec-ecom-seller-onboarding",
       "variable": "sellerName",
       "reason": "input of marketplace.createSeller (copied from supplierName)"
