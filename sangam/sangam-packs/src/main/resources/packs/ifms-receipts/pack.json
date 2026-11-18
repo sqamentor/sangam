@@ -125,7 +125,8 @@
     "currency": "INR",
     "exponent": 2,
     "variables": [
-      "amount"
+      "amount",
+      "refundAmount"
     ]
   },
   "documentSlots": [
