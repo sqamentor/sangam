@@ -21,6 +21,17 @@ else
   echo "$sum  $dest.part" | sha256sum -c --status || { rm -f "$dest.part"; echo "::error::SHA-256 mismatch for $url"; exit 1; }
   mv "$dest.part" "$dest"
 fi
+# Install it with mvnw now, from the verified file (mvnw re-checks the SHA-256). mvnw prefers wget, which has no file://
+# support, so for this one call only a shim earlier on PATH copies file:// URLs and hands anything else to real wget.
+shim="$RUNNER_TEMP/mvnw-file-wget"; mkdir -p "$shim"
+cat > "$shim/wget" <<'SHIM'
+#!/usr/bin/env bash
+url=""; out=""; while [ $# -gt 0 ]; do case "$1" in -O) out="$2"; shift ;; file://*) url="$1" ;; esac; shift; done
+[ -n "$url" ] && [ -n "$out" ] && exec cp "${url#file://}" "$out"
+echo "mvnw-file-wget: only file:// URLs are served here" >&2; exit 1
+SHIM
+chmod +x "$shim/wget"
+(cd sangam && PATH="$shim:$PATH" MVNW_REPOURL="file://$root" bash ./mvnw -B -ntp -v >/dev/null)
 echo "MVNW_REPOURL=file://$root" >> "$GITHUB_ENV"
 # Marker for the fetch count: files restored from the cache keep their old mtimes, new downloads are newer.
 touch "$RUNNER_TEMP/sangam-m2-restored"
