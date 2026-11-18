@@ -1,0 +1,29 @@
+{
+  "key": "pension/payable-retirementGratuity",
+  "version": "1.0.2",
+  "pack": "gov.pension",
+  "title": {
+    "en": "Payable retirementGratuity: exact value held, rounding rule not configured",
+    "hi": "देय राशि दर्ज करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "retirementGratuityEntered",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Payable retirement gratuity (INR), one of the two whole amounts next to the exact value",
+        "hi": "देय सेवानिवृत्ति उपदान (रुपये)"
+      }
+    }
+  ]
+}

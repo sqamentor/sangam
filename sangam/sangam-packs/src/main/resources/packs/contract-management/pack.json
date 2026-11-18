@@ -42,6 +42,14 @@
     {
       "kind": "OTHER",
       "path": "packs/contract-management/pack.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/contract-management/forms/payable-ldAmount.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/contract-management/forms/payable-escalationAmount.form.json"
     }
   ],
   "seed": "packs/contract-management/seed.json",
@@ -88,9 +96,13 @@
     "variables": [
       "amendmentAmount",
       "amount",
+      "computedEscalationAmount",
+      "computedLdAmount",
       "contractValue",
       "escalationAmount",
-      "ldAmount"
+      "escalationAmountEntered",
+      "ldAmount",
+      "ldAmountEntered"
     ]
   }
 }

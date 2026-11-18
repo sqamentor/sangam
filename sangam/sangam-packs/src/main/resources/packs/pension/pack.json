@@ -62,6 +62,18 @@
     {
       "kind": "OTHER",
       "path": "packs/pension/pack.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/pension/forms/payable-pensionAmount.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/pension/forms/payable-retirementGratuity.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/pension/forms/payable-familyPension.form.json"
     }
   ],
   "seed": "packs/pension/seed.json",
@@ -152,11 +164,17 @@
     "variables": [
       "amount",
       "averageEmoluments",
+      "computedFamilyPension",
+      "computedGratuity",
+      "computedPension",
       "familyPension",
+      "familyPensionEntered",
       "lastPay",
       "pensionAmount",
+      "pensionAmountEntered",
       "powerLimit",
-      "retirementGratuity"
+      "retirementGratuity",
+      "retirementGratuityEntered"
     ]
   }
 }

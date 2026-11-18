@@ -155,6 +155,24 @@ def salary():
 
 
 # ------------------------------------------------------------------------------------------------ pension
+def exact_money(pk, s, id, target, computed, form):
+    """DEC-5 (integrator ruling 2026-11-18): the DMN gives the exact figure `computed`; op EXACT
+    (MoneyCalculationDelegate, frozen API of ARCH-JURIS) writes `target` when it is a whole number of minor units,
+    otherwise holds it (<target>Held, MONEY_OUT_HELD, reason: rounding rule not configured) and routes to the
+    reviewer, who enters <target>Entered (one of the two whole amounts next to the exact value); the step runs again
+    until the amount is valid, and the case goes on to the same scrutiny and sanction. Returns (first, last)."""
+    pk.money_vars.add(target)  # the payable figure stays a declared money variable (pack.json money.variables)
+    calc = s.svc(id, f'{target}: exact, whole minor units or held (DEC-5)', C['MONEY'],
+                 {'result': target, 'op': 'EXACT', 'formula': computed})
+    gw = s.xgw(id + '_heldGw', 'Whole minor units?')
+    enter = s.user(id + '_enter', f'Payable {target}: exact value held, rounding rule not configured | देय राशि दर्ज करें',
+                   '${scrutinySeat}', form=f'{form}-{target}', fields=[target + 'Entered*'])
+    s.flow(calc, gw)
+    s.flow(gw, enter, '${' + target + 'Held == true}', 'held: reviewer enters the amount')
+    s.flow(enter, calc)
+    return calc, gw
+
+
 def pension():
     pk = Pack('gov.pension', 'pension', 'Pension: sanction, PPO and monthly disbursement', 'पेंशन: स्वीकृति, पीपीओ एवं मासिक भुगतान',
               'IFMS', 'Pension papers: computation by rule, service verification, Head of Office sanction, '
@@ -181,7 +199,14 @@ def pension():
     comp = s.rule('ps_compute', 'Pension computation (DMN)', 'pension-computation')
     amt = s.setv('ps_amount', 'Amount for power check', values='amount=@pensionAmount')
     scr = core(s, 'ps_scrutiny', 'Pension section scrutiny (core)', 'scrutiny')
-    s.seq(st, d, comp, amt, scr)
+    x1, g1 = exact_money(pk, s, 'ps_exPension', 'pensionAmount', 'computedPension', 'pension/payable')
+    x2, g2 = exact_money(pk, s, 'ps_exGratuity', 'retirementGratuity', 'computedGratuity', 'pension/payable')
+    x3, g3 = exact_money(pk, s, 'ps_exFamily', 'familyPension', 'computedFamilyPension', 'pension/payable')
+    s.seq(st, d, comp, x1)
+    s.flow(g1, x2, None, 'whole minor units', default=True)
+    s.flow(g2, x3, None, 'whole minor units', default=True)
+    s.flow(g3, amt, None, 'whole minor units', default=True)
+    s.seq(amt, scr)
     rej = rejection(p, s, 'ps_rj', reopen=scr)
     ve, vd = s.sla_task('ps_verify', 'Verify service record | सेवा अभिलेख का सत्यापन', 'verifySeat',
                         form='pension/verify-service', decision=('serviceVerdict', ['verified', 'failed']),
@@ -251,8 +276,9 @@ def pension():
     pk.dmn('pension-computation', 'Pension computation (CCS (Pension) Rules 2021)', 'FIRST',
            [('Qualifying service (years)', 'qualifyingService', 'number'), ('Last emoluments', 'lastPay', 'money'),
             ('Average emoluments (10 months)', 'averageEmoluments', 'money')],
-           [('pensionAmount', 'Monthly pension', 'money'), ('eligibleForPension', 'Eligible', 'boolean'),
-            ('retirementGratuity', 'Retirement gratuity', 'money'), ('familyPension', 'Family pension (ordinary rate)', 'money'),
+           [('computedPension', 'Monthly pension (exact)', 'money'), ('eligibleForPension', 'Eligible', 'boolean'),
+            ('computedGratuity', 'Retirement gratuity (exact)', 'money'),
+            ('computedFamilyPension', 'Family pension, ordinary rate (exact)', 'money'),
             ('ruleRef', 'Rule', 'string')],
            # money in minor units (SD-398): amounts through M(); outputs are exact (DEC-5: no rounding in DMN, the Java money
            # step holds a figure that is not a whole minor unit until a rounding rule is configured)
@@ -384,7 +410,14 @@ def contract():
     amt = s.expr('ca_amount', 'Amount for sanction',
                  "${execution.setVariable('amount', amendmentAmount + escalationAmount)}")
     scr = core(s, 'ca_scrutiny', 'Scrutiny (core)', 'scrutiny')
-    s.seq(st, d, ld, pe, amt, scr)
+    x1, g1 = exact_money(pk, s, 'ca_exLd', 'ldAmount', 'computedLdAmount', 'contract-management/payable')
+    x2, g2 = exact_money(pk, s, 'ca_exEscalation', 'escalationAmount', 'computedEscalationAmount',
+                         'contract-management/payable')
+    s.seq(st, d, ld, x1)
+    s.flow(g1, pe, None, 'whole minor units', default=True)
+    s.flow(pe, x2)
+    s.flow(g2, amt, None, 'whole minor units', default=True)
+    s.seq(amt, scr)
     rej = rejection(p, s, 'ca_rj')
     san = core(s, 'ca_sanction', 'Sanction by amendment power (core)', 'sanction')
     outcome(s, 'ca_scrGw', 'scrutinyOutcome', {'ACCEPTED': san}, rej)
@@ -399,13 +432,13 @@ def contract():
     s.side_exits('ca')
     pk.dmn('contract-ld', 'Liquidated damages (synthetic GCC clause)', 'FIRST',
            [('Delay (days)', 'delayDays', 'integer'), ('Contract value', 'contractValue', 'money')],
-           [('ldAmount', 'LD amount', 'money')],
+           [('computedLdAmount', 'LD amount (exact)', 'money')],
            [(['<= 0', '-'], ['0'], 'no delay'),
             (['-', '-'], ['min(delayDays * 0.0005, 0.1) * contractValue'],
              '0.05% per day, capped at 10%; exact (DEC-5: no rounding in DMN)')])
     pk.dmn('contract-price-escalation', 'Price escalation (synthetic clause 10CC-style)', 'FIRST',
            [('Index change (%)', 'escalationIndex', 'number'), ('Base amount', 'amendmentAmount', 'money')],
-           [('escalationAmount', 'Escalation', 'money')],
+           [('computedEscalationAmount', 'Escalation (exact)', 'money')],
            [(['<= 5', '-'], ['0'], 'absorbed by the contractor up to 5%'),
             (['-', '-'], ['(escalationIndex - 5) / 100 * contractValue * 0.85'],
              'beyond 5%, on 85% of value; exact (DEC-5: no rounding in DMN)')])

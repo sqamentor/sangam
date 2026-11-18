@@ -5,7 +5,7 @@
     <decisionTable id="contract-price-escalation_t" hitPolicy="FIRST">
       <input id="contract-price-escalation_i0" label="Index change (%)"><inputExpression id="contract-price-escalation_ie0" typeRef="number"><text>escalationIndex</text></inputExpression></input>
       <input id="contract-price-escalation_i1" label="Base amount"><inputExpression id="contract-price-escalation_ie1" typeRef="number"><text>amendmentAmount</text></inputExpression></input>
-      <output id="contract-price-escalation_o0" label="Escalation" name="escalationAmount" typeRef="number"/>
+      <output id="contract-price-escalation_o0" label="Escalation (exact)" name="computedEscalationAmount" typeRef="number"/>
       <rule id="contract-price-escalation_r0"><description>absorbed by the contractor up to 5%</description>
         <inputEntry id="contract-price-escalation_r0_i0"><text>&lt;= 5</text></inputEntry>
         <inputEntry id="contract-price-escalation_r0_i1"><text>-</text></inputEntry>
