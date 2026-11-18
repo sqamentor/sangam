@@ -5,7 +5,9 @@ The one place packgen turns an amount into what a pack ships. Pack definitions a
 the rules and delegations state them: 25 lakh is 2500000); the generator emits integer MINOR units (250000000) for:
 
 - a DMN column typed ``'money'`` (lib.dmn): every literal of its input tests and outputs; an output that is an
-  expression must round once to a whole minor unit (``floor(`` / ``ceiling(`` / ``decimal(`` ..., ``round half``);
+  expression gives the EXACT figure and must not round money (DEC-5: ``floor(`` / ``ceiling(`` / ``decimal(`` /
+  ``round ...(`` around a money figure is refused); the Java money step uses it only when it is a whole minor unit
+  and otherwise holds the case for a reviewer-entered amount (rounding rule not configured);
 - ``setv`` values / defaults, acceptance ``vars`` and start defaults whose variable name is money (``is_money``);
 - an amount inside a FEEL expression or condition: write ``M(9000)`` (returns the minor-unit literal);
 - an amount inside a simulator directive of an acceptance scenario (``sim_ifms_budget = 'available=310000'``) when
@@ -113,11 +115,27 @@ def column_entry(entry, where, output, currency=DEFAULT_CURRENCY):
         return s
     if is_literal(s):
         return convert_literal(s, currency)
-    # an expression: its amounts are written with M(); an output rounds once to a whole minor unit
-    if output and not s.startswith(ROUNDING) and not re.fullmatch(r'[A-Za-z_]\w*', s):
-        raise ValueError(f'{where}: money output expression {s!r} must round once to a whole minor unit '
-                         f'(wrap it in floor( / ceiling( / decimal(x, 0) ...) or be a single money variable')
+    # an expression: its amounts are written with M(); an output is exact and never rounds money (DEC-5)
+    if output:
+        for call in rounding_calls(s):
+            if any(is_money(w) for w in _WORDS.findall(call)):
+                raise ValueError(f'{where}: money output expression {s!r} rounds money ({call!r}); DEC-5: the DMN '
+                                 f'gives the exact figure and the Java money step decides (hold when not a whole '
+                                 f'minor unit)')
     return s
+
+
+def rounding_calls(expr):
+    """The argument text of every rounding call (``ROUNDING``) in `expr`, string literals removed."""
+    t = re.sub(r'"(?:[^"\\]|\\.)*"', '""', str(expr))
+    out = []
+    for m in re.finditer(r'(?<![\w.])(' + '|'.join(re.escape(r[:-1]) for r in ROUNDING) + r')\s*\(', t):
+        depth, i = 1, m.end()
+        while i < len(t) and depth:
+            depth += {'(': 1, ')': -1}.get(t[i], 0)
+            i += 1
+        out.append(t[m.end():i - 1])
+    return out
 
 
 def convert_assignments(spec, where, currency=DEFAULT_CURRENCY):

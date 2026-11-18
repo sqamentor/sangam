@@ -11,10 +11,10 @@
         <inputEntry id="contract-ld_r0_i1"><text>-</text></inputEntry>
         <outputEntry id="contract-ld_r0_o0"><text>0</text></outputEntry>
       </rule>
-      <rule id="contract-ld_r1"><description>0.05% per day, capped at 10%; rounded down once to a whole minor unit</description>
+      <rule id="contract-ld_r1"><description>0.05% per day, capped at 10%; exact (DEC-5: no rounding in DMN)</description>
         <inputEntry id="contract-ld_r1_i0"><text>-</text></inputEntry>
         <inputEntry id="contract-ld_r1_i1"><text>-</text></inputEntry>
-        <outputEntry id="contract-ld_r1_o0"><text>floor(min(delayDays * 0.0005, 0.1) * contractValue)</text></outputEntry>
+        <outputEntry id="contract-ld_r1_o0"><text>min(delayDays * 0.0005, 0.1) * contractValue</text></outputEntry>
       </rule>
     </decisionTable>
   </decision>
