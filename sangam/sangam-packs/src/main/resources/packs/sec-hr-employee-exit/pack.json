@@ -99,17 +99,9 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-cancellation",
-    "sangam-core-execution"
+    "sangam-core-execution",
+    "sangam-core-sanction"
   ],
-  "money": {
-    "unit": "MINOR",
-    "currency": "INR",
-    "exponent": 2,
-    "variables": [
-      "fnfAmount",
-      "gratuityAmount"
-    ]
-  },
   "documentSlots": [
     {
       "documentType": "SANCTION_NOTE",
@@ -118,17 +110,26 @@
   ],
   "currency": "INR",
   "powers": {
-    "hx_gratPay_sanction": {
-      "monetary": true,
-      "currency": "INR",
-      "limitTable": "sangam-core-powers",
-      "ruleCaseType": "GENERAL"
-    },
     "hx_pay_sanction": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "sangam-core-powers",
       "ruleCaseType": "GENERAL"
+    },
+    "hx_gratPay_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
     }
+  },
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "fnfAmount",
+      "gratuityAmount"
+    ]
   }
 }

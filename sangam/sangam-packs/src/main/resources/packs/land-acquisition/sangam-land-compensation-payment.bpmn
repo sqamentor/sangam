@@ -10,27 +10,29 @@
     <endEvent id="lp_endPaid" name="Paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <endEvent id="lp_endFailed" name="Failed (deposit with authority)"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>FAILED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>opReasonCode</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <exclusiveGateway id="lp_gw" name="executionOutcome?" default="land_compensation_paymen_f4"></exclusiveGateway>
+    <serviceTask id="lp_pay_release" name="Release under the batch sanction (owner decision E1)" operaton:class="org.sangam.packs.core.BatchItemReleaseDelegate"></serviceTask>
     <sequenceFlow id="land_compensation_paymen_f1" sourceRef="lp_start" targetRef="lp_defaults"/>
     <sequenceFlow id="land_compensation_paymen_f2" sourceRef="lp_defaults" targetRef="lp_pay_release"/>
     <sequenceFlow id="land_compensation_paymen_f3" name="DONE" sourceRef="lp_gw" targetRef="lp_endPaid"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="land_compensation_paymen_f4" name="otherwise" sourceRef="lp_gw" targetRef="lp_endFailed"/>
     <sequenceFlow id="land_compensation_paymen_f5" sourceRef="lp_pay" targetRef="lp_gw"/>
-      <serviceTask id="lp_pay_release" name="Release under the batch sanction (owner decision E1)" operaton:class="org.sangam.packs.core.BatchItemReleaseDelegate"></serviceTask>
     <sequenceFlow id="lp_pay_release_f" sourceRef="lp_pay_release" targetRef="lp_pay"/>
   </process>
   <bpmndi:BPMNDiagram id="land_compensation_paymen_diagram">
     <bpmndi:BPMNPlane id="land_compensation_paymen_plane" bpmnElement="sangam-land-compensation-payment">
       <bpmndi:BPMNShape id="lp_start_di" bpmnElement="lp_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="lp_defaults_di" bpmnElement="lp_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="lp_pay_di" bpmnElement="lp_pay"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="lp_endPaid_di" bpmnElement="lp_endPaid"><dc:Bounds x="712" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="lp_endFailed_di" bpmnElement="lp_endFailed"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="lp_gw_di" bpmnElement="lp_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lp_pay_di" bpmnElement="lp_pay"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lp_endPaid_di" bpmnElement="lp_endPaid"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lp_endFailed_di" bpmnElement="lp_endFailed"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lp_gw_di" bpmnElement="lp_gw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lp_pay_release_di" bpmnElement="lp_pay_release"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="land_compensation_paymen_f1_di" bpmnElement="land_compensation_paymen_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="land_compensation_paymen_f2_di" bpmnElement="land_compensation_paymen_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="land_compensation_paymen_f3_di" bpmnElement="land_compensation_paymen_f3"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="195"/><di:waypoint x="712" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="land_compensation_paymen_f4_di" bpmnElement="land_compensation_paymen_f4"><di:waypoint x="590" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="land_compensation_paymen_f5_di" bpmnElement="land_compensation_paymen_f5"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_compensation_paymen_f3_di" bpmnElement="land_compensation_paymen_f3"><di:waypoint x="755" y="70"/><di:waypoint x="816" y="70"/><di:waypoint x="816" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_compensation_paymen_f4_di" bpmnElement="land_compensation_paymen_f4"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_compensation_paymen_f5_di" bpmnElement="land_compensation_paymen_f5"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="lp_pay_release_f_di" bpmnElement="lp_pay_release_f"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

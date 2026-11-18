@@ -102,17 +102,9 @@
   "calls": [
     "sangam-core-cancellation",
     "sangam-core-execution",
-    "sangam-core-rejection"
+    "sangam-core-rejection",
+    "sangam-core-sanction"
   ],
-  "money": {
-    "unit": "MINOR",
-    "currency": "INR",
-    "exponent": 2,
-    "variables": [
-      "approvedAmount",
-      "estimatedCost"
-    ]
-  },
   "documentSlots": [
     {
       "documentType": "SANCTION_NOTE",
@@ -127,5 +119,14 @@
       "limitTable": "sangam-core-powers",
       "ruleCaseType": "GENERAL"
     }
+  },
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "approvedAmount",
+      "estimatedCost"
+    ]
   }
 }

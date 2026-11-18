@@ -160,13 +160,13 @@
   ],
   "currency": "INR",
   "powers": {
-    "py_authoriser": {
+    "py_checker": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "sec-bank-pay-powers",
       "ruleCaseType": "PAYMENT"
     },
-    "py_checker": {
+    "py_authoriser": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "sec-bank-pay-powers",

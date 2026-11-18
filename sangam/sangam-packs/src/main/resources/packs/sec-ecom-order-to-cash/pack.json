@@ -36,12 +36,16 @@
       "path": "packs/sec-ecom-order-to-cash/forms/delay.form.json"
     },
     {
-      "kind": "SEED",
-      "path": "packs/sec-ecom-order-to-cash/seed.json"
+      "kind": "FORM",
+      "path": "packs/sec-ecom-order-to-cash/forms/commission-amount.form.json"
     },
     {
       "kind": "FORM",
-      "path": "packs/sec-ecom-order-to-cash/forms/commission-amount.form.json"
+      "path": "packs/sec-ecom-order-to-cash/forms/prepare-sanction-note.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ecom-order-to-cash/seed.json"
     },
     {
       "kind": "OTHER",
@@ -111,18 +115,9 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-execution"
+    "sangam-core-execution",
+    "sangam-core-sanction"
   ],
-  "money": {
-    "unit": "MINOR",
-    "currency": "INR",
-    "exponent": 2,
-    "variables": [
-      "amount",
-      "commissionAmount",
-      "payableAmount"
-    ]
-  },
   "documentSlots": [
     {
       "documentType": "SANCTION_NOTE",
@@ -131,12 +126,6 @@
   ],
   "currency": "INR",
   "powers": {
-    "eo_cxRefund_sanction": {
-      "monetary": true,
-      "currency": "INR",
-      "limitTable": "sangam-core-powers",
-      "ruleCaseType": "GENERAL"
-    },
     "eo_refund_sanction": {
       "monetary": true,
       "currency": "INR",
@@ -148,6 +137,22 @@
       "currency": "INR",
       "limitTable": "sangam-core-powers",
       "ruleCaseType": "GENERAL"
+    },
+    "eo_cxRefund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
     }
+  },
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "commissionAmount",
+      "payableAmount"
+    ]
   }
 }

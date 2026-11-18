@@ -134,7 +134,7 @@ def split_name(n):
     return n.strip(), None
 
 
-def field_json(pack, fid, typ, req, label):
+def field_json(pack, fid, typ, req, label, own=False):
     """A form field. A money field (money.is_money) is type 'money': the value is integer minor units of the pack
     currency; the form shows and takes major units (value / 10^exponent)."""
     if money.is_money(fid):
@@ -143,6 +143,9 @@ def field_json(pack, fid, typ, req, label):
         pack.money_vars.add(fid)
         return {'id': fid, 'type': 'readonly' if typ == 'readonly' else 'money', 'currency': pack.currency,
                 'exponent': money.EXPONENT[pack.currency], 'required': req, 'label': label}
+    if own and typ == 'money':  # an amount entered under a name outside the money convention (e.g. <result>Entered, C4)
+        return {'id': fid, 'type': 'money', 'currency': pack.currency, 'exponent': money.EXPONENT[pack.currency],
+                'required': req, 'label': label}
     return {'id': fid, 'type': typ, 'required': req, 'label': label}
 
 
@@ -188,11 +191,12 @@ def form_json(pack, f):
     for fid in f['fields']:
         req = fid.endswith('*')
         fid = fid.rstrip('*')
-        if fid not in L:
+        own = f.get('labels', {}).get(fid)  # a label of this form only (money_out.form)
+        if fid not in L and own is None:
             MISSING.add('field:' + fid)
             continue
-        le, lh, typ = L[fid]
-        fields.append(field_json(pack, fid, typ, req, {'en': le, 'hi': lh}))
+        le, lh, typ = own or L[fid]
+        fields.append(field_json(pack, fid, typ, req, {'en': le, 'hi': lh}, own=own is not None))
     out = {'key': f['key'], 'version': pack.version, 'pack': pack.id, 'title': {'en': en, 'hi': hi or en},
            'caseSummary': {'source': 'materialFields', 'label': {'en': 'Case details', 'hi': 'प्रकरण का विवरण'}},
            'fields': fields}
@@ -419,9 +423,12 @@ def write_all(root):
             accepted.append(dict(a, startVariables=money.convert_sim_vars(
                 a['startVariables'], prefixes, f'{pk.id} {a["id"]}', pk.currency)))
         manifest['acceptance'] = accepted
-        if pk.money_vars:
-            manifest['money'] = {'unit': 'MINOR', 'currency': pk.currency, 'exponent': money.EXPONENT[pk.currency],
-                                 'variables': sorted(pk.money_vars)}
+        reason = getattr(pk, 'currency_reason', None)  # owner decision M1 (money_out_ports.CURRENCY_REASON)
+        if pk.money_vars or reason:
+            manifest['money'] = {'unit': 'MINOR', 'currency': pk.currency, 'exponent': money.EXPONENT[pk.currency]}
+            if reason:
+                manifest['money']['currencyReason'] = reason
+            manifest['money']['variables'] = sorted(pk.money_vars)
         check_reason_codes(mpath, json.dumps(manifest, ensure_ascii=False))   # acceptance-run answers
         write(os.path.join(root, mpath), json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
         idx.append(mpath)

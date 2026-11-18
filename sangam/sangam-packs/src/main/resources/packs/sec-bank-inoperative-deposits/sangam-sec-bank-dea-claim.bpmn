@@ -13,14 +13,10 @@
     <endEvent id="dc_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <exclusiveGateway id="dc_deaGw" name="Already with DEA Fund?" default="sec_bank_dea_claim_f9"></exclusiveGateway>
     <serviceTask id="dc_claim" name="Claim refund from the DEA Fund" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>rbi.deaClaim</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>claim</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>accountNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>deaClaim</operaton:string></operaton:field><operaton:field name="step"><operaton:string>dea-claim</operaton:string></operaton:field></extensionElements></serviceTask>
-    <serviceTask id="dc_credit" name="Reactivate / pay with interest, no fee" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cbs.credit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>accountNo,customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="step"><operaton:string>credit</operaton:string></operaton:field></extensionElements></serviceTask>
     <callActivity id="dc_credit_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.MoneyFieldsDelegate"><operaton:field name="amount"><operaton:string>payableAmount</operaton:string></operaton:field><operaton:field name="payeeKeys"><operaton:string>payeePartyId</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Repayment of an unclaimed deposit with interest</operaton:string></operaton:field></operaton:executionListener><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
     <exclusiveGateway id="dc_credit_sgw" name="Sanctioned?" default="dc_credit_sgw_no"></exclusiveGateway>
     <endEvent id="dc_credit_notReleased" name="Not released"></endEvent>
-    <sequenceFlow id="dc_credit_sanction_f" sourceRef="dc_credit_sanction" targetRef="dc_credit_sgw"/>
-    <sequenceFlow id="dc_credit_sgw_yes" name="sanctioned" sourceRef="dc_credit_sgw" targetRef="dc_credit"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
-    <sequenceFlow id="dc_credit_sgw_no" name="not sanctioned" sourceRef="dc_credit_sgw" targetRef="dc_credit_notReleased"/>
-
+    <serviceTask id="dc_credit" name="Reactivate / pay with interest, no fee" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cbs.credit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>accountNo,customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="step"><operaton:string>credit</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="dc_end" name="Paid / reactivated"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <sequenceFlow id="sec_bank_dea_claim_f1" sourceRef="dc_start" targetRef="dc_defaults"/>
     <sequenceFlow id="sec_bank_dea_claim_f2" sourceRef="dc_defaults" targetRef="dc_kyc"/>
@@ -33,6 +29,9 @@
     <sequenceFlow id="sec_bank_dea_claim_f9" name="no" sourceRef="dc_deaGw" targetRef="dc_credit_sanction"/>
     <sequenceFlow id="sec_bank_dea_claim_f10" sourceRef="dc_claim" targetRef="dc_credit_sanction"/>
     <sequenceFlow id="sec_bank_dea_claim_f11" sourceRef="dc_credit" targetRef="dc_end"/>
+    <sequenceFlow id="dc_credit_sanction_f" sourceRef="dc_credit_sanction" targetRef="dc_credit_sgw"/>
+    <sequenceFlow id="dc_credit_sgw_yes" name="sanctioned" sourceRef="dc_credit_sgw" targetRef="dc_credit"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="dc_credit_sgw_no" name="not sanctioned" sourceRef="dc_credit_sgw" targetRef="dc_credit_notReleased"/>
   </process>
   <bpmndi:BPMNDiagram id="sec_bank_dea_claim_diagram">
     <bpmndi:BPMNPlane id="sec_bank_dea_claim_plane" bpmnElement="sangam-sec-bank-dea-claim">
@@ -45,8 +44,11 @@
       <bpmndi:BPMNShape id="dc_rj_endRejected_di" bpmnElement="dc_rj_endRejected"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dc_deaGw_di" bpmnElement="dc_deaGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dc_claim_di" bpmnElement="dc_claim"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dc_credit_sanction_di" bpmnElement="dc_credit_sanction"><dc:Bounds x="830" y="-100" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="dc_credit_sgw_di" bpmnElement="dc_credit_sgw" isMarkerVisible="true"><dc:Bounds x="960" y="-90" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="dc_credit_notReleased_di" bpmnElement="dc_credit_notReleased"><dc:Bounds x="967" y="-180" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="dc_credit_sanction_f_di" bpmnElement="dc_credit_sanction_f"><di:waypoint x="930" y="-65"/><di:waypoint x="960" y="-65"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="dc_credit_sgw_yes_di" bpmnElement="dc_credit_sgw_yes"><di:waypoint x="985" y="-40"/><di:waypoint x="985" y="30"/><di:waypoint x="1010" y="30"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="dc_credit_sgw_no_di" bpmnElement="dc_credit_sgw_no"><di:waypoint x="985" y="-90"/><di:waypoint x="985" y="-144"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="dc_credit_di" bpmnElement="dc_credit"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dc_end_di" bpmnElement="dc_end"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_credit_sanction_di" bpmnElement="dc_credit_sanction"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_credit_sgw_di" bpmnElement="dc_credit_sgw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_credit_notReleased_di" bpmnElement="dc_credit_notReleased"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_credit_di" bpmnElement="dc_credit"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_end_di" bpmnElement="dc_end"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="sec_bank_dea_claim_f1_di" bpmnElement="sec_bank_dea_claim_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_dea_claim_f2_di" bpmnElement="sec_bank_dea_claim_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_dea_claim_f3_di" bpmnElement="sec_bank_dea_claim_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
@@ -57,7 +59,10 @@
       <bpmndi:BPMNEdge id="sec_bank_dea_claim_f8_di" bpmnElement="sec_bank_dea_claim_f8"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_dea_claim_f9_di" bpmnElement="sec_bank_dea_claim_f9"><di:waypoint x="755" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_dea_claim_f10_di" bpmnElement="sec_bank_dea_claim_f10"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_dea_claim_f11_di" bpmnElement="sec_bank_dea_claim_f11"><di:waypoint x="1110" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dea_claim_f11_di" bpmnElement="sec_bank_dea_claim_f11"><di:waypoint x="1440" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dc_credit_sanction_f_di" bpmnElement="dc_credit_sanction_f"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dc_credit_sgw_yes_di" bpmnElement="dc_credit_sgw_yes"><di:waypoint x="1250" y="70"/><di:waypoint x="1295" y="70"/><di:waypoint x="1295" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dc_credit_sgw_no_di" bpmnElement="dc_credit_sgw_no"><di:waypoint x="1250" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>
