@@ -21,16 +21,9 @@ const files = Object.keys(docs).sort();
 interface Field { id: string; key?: string; type: string }
 
 /**
- * KNOWN DEFECT (pre-existing, found by this test 2026-11-18, not caused by form-js; handoff 2026-11-18\
- * PACKFORM-FIELD-KEY-DEFECT.md): these compliance pack forms name fields with "key" instead of "id". packForm (UI) and
- * TaskFormRequirements (server) read only "id", so those fields get no key and their required flags are not enforced.
- * Expected to fail until the forms or both readers are fixed; when one is fixed its it.fails turns red: remove it here.
+ * Every shipped form must pass, the 13 compliance forms included: they named fields with "key" instead of "id" until
+ * fix/compliance-form-ids (2026-11-18), which this test found (handoff 2026-11-18\PACKFORM-FIELD-KEY-DEFECT.md).
  */
-const KEY_NOT_ID = new Set([
-  'accounting-review', 'automated-decision-review', 'breach-report', 'breach-risk-assessment', 'breach-subject-notice',
-  'erasure-approve', 'grievance-examine', 'incident-follow-up', 'incident-prepare', 'nomination-verify',
-  'objection-decide', 'rectification-examine', 'restriction-decide',
-].map((n) => `sangam-compliance/src/main/resources/packs/compliance/forms/${n}.form.json`));
 
 const host = document.createElement('div');
 document.body.appendChild(host);
@@ -43,9 +36,6 @@ describe('pack forms load in the form-js viewer', () => {
   });
 
   const names = files.map((f) => f.replace('../../../', ''));
-  it('the known-defect list names only shipped forms', () => {
-    for (const n of KEY_NOT_ID) expect(names).toContain(n);
-  });
 
   const check = async (name: string) => {
     const doc = docs[`../../../${name}`];
@@ -66,6 +56,5 @@ describe('pack forms load in the form-js viewer', () => {
       form.destroy();
     }
   };
-  it.each(names.filter((n) => !KEY_NOT_ID.has(n)).map((n) => [n]))('%s', check);
-  it.fails.each(names.filter((n) => KEY_NOT_ID.has(n)).map((n) => [n]))('KNOWN DEFECT (key, not id): %s', check);
+  it.each(names.map((n) => [n]))('%s', check);
 });
