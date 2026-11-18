@@ -384,8 +384,8 @@ malware:
       registry: docker.io
       repository: clamav/clamav
       # Pinned (approval line in the W3-M report); never empty, never "latest".
-      tag: "1.4.3"
-      digest: ""
+      tag: "1.5.4"
+      digest: "sha256:7054e3f34308c384ea43cd786ea17abf899bd44af40af9f1b099853d7a5c214e"
       pullPolicy: IfNotPresent
     replicaCount: 1
     port: 3310
@@ -840,7 +840,7 @@ backup:
     requests: { cpu: 100m, memory: 256Mi }
     limits: { memory: 1Gi }
   postgres:
-    image: postgres:17@sha256:846a7ddaa67a4b354ae1d21087b683901aa6113a4ed626d3787cfbf6c85e3e07
+    image: postgres:17.12@sha256:0d938e975177bef9f1f61f3f9dbcf2e0aa0a139568f66d3415ed8892eb97f6ac
     fullSchedule: "15 1 * * *"          # daily base backup (pg_basebackup, tar + gzip, WAL streamed)
     logicalSchedule: "45 2 * * 0"       # weekly pg_dump -Fc (portable, for restore tests)
     # Continuous WAL archive with pg_receivewal (a Deployment, not a CronJob): RPO = seconds.

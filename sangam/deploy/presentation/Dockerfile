@@ -17,7 +17,7 @@
 # download: the owner approves it first. At run time nothing is fetched from the internet (all assets are bundled,
 # R56); the only outbound connections are to SANGAM_API_UPSTREAM (and the browser's to the OIDC issuer).
 
-FROM node:26.3.0-alpine3.22@sha256:c7932b9e5e337b0e733d6e16abc1b0e104759e8b05e59ed56586cce967d26dfe AS build
+FROM node:26.13.1-alpine3.24@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS build
 WORKDIR /src
 COPY sangam-ui/package.json sangam-ui/package-lock.json* ./
 ARG NPM_CONFIG_REGISTRY
@@ -30,7 +30,7 @@ ENV SANGAM_UI_BASE=${SANGAM_UI_BASE}
 RUN npm run build && test -f dist/index.html && grep -q "${SANGAM_UI_BASE}assets/" dist/index.html \
  && mkdir -p /out && cp -r dist/. /out/
 
-FROM nginxinc/nginx-unprivileged:1.28.0-alpine3.21@sha256:c97ff0bf7cbae369953c6da1232ec14ad9f971d66360c5698db0856a4cd657a0 AS runtime
+FROM nginxinc/nginx-unprivileged:1.30.6-alpine3.24@sha256:f5116ed4606f3eb015dd4a8e28cb9b351476dc0ad4bc6e9f93b19cec130cdf03 AS runtime
 LABEL org.opencontainers.image.title="sangam-front" \
       org.opencontainers.image.description="Sangam web UI and API proxy under /sangam/" \
       org.opencontainers.image.licenses="Apache-2.0" \

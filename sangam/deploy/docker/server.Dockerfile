@@ -46,7 +46,7 @@
 # Base images are pinned by index digest in the FROM lines (decisions 253, 261; lookup in DOWNLOADS-WAVE4.md).
 # JRE_IMAGE and DISTROLESS_IMAGE stay build args (decision 253) because the JDK 21 variant above overrides them;
 # their defaults are digest-pinned like every FROM (decision 261).
-ARG JRE_IMAGE=eclipse-temurin:25.0.1_8-jre-noble@sha256:ecbdcdbfae44ee61794a8ad36042b6b8e3c3124e5e9c171c3630fcd5ab856e33
+ARG JRE_IMAGE=eclipse-temurin:25.0.5_8-jre-noble@sha256:e3b6f7887a50f20d8f07abf279d8a81a5953fb398a9555bd9edd56b9bd15968c
 ARG DISTROLESS_IMAGE=gcr.io/distroless/java25-debian13:nonroot@sha256:1c4ced761d17961c900cba60c33c8c3c46edbdadaa9d5ef9806eb5a6824fd406
 # build | prebuilt
 ARG JAR_SOURCE=build
@@ -148,7 +148,7 @@ RUN mkdir -p /layout/opt/sangam/config /layout/var/lib/sangam/compliance-logs /l
 FROM ${JRE_IMAGE} AS runtime
 ARG APP_MODULE
 LABEL org.opencontainers.image.title="${APP_MODULE}" \
-      org.opencontainers.image.description="Sangam workflow platform (${APP_MODULE}), based on Operaton 2.2.0" \
+      org.opencontainers.image.description="Sangam workflow platform (${APP_MODULE}), based on Operaton 2.2.1" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.source="https://github.com/sqamentor/sangam"
 RUN groupadd --system --gid 10001 sangam \

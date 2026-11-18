@@ -171,10 +171,6 @@ class Images(unittest.TestCase):
     # RM-33 ratchet: the third-party images still without a digest. Each needs a registry lookup (Phase C, decision
     # 96: no download now); the list may only shrink, and a new unpinned image fails here.
     UNPINNED = {
-        ("sangam/deploy/compose/docker-compose.cells.yml", "curlimages/curl:8.15.0"),
-        ("sangam/deploy/compose/docker-compose.yml", "clamav/clamav:1.4.3"),
-        ("sangam/deploy/compose/docker-compose.yml", "grafana/grafana-oss:12.1.1"),
-        ("sangam/deploy/helm/sangam/values.yaml", "clamav/clamav:1.4.3"),
         (".github/workflows/db-matrix.yml", "mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04"),
         (".github/workflows/db-matrix.yml", "mariadb:11.4"),
         (".github/workflows/db-matrix.yml", "icr.io/db2_community/db2:12.1.2.0"),
