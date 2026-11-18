@@ -44,7 +44,7 @@ x-cell-env: &cell-env
 
 services:
   cells-postgres:
-    image: postgres:17@sha256:846a7ddaa67a4b354ae1d21087b683901aa6113a4ed626d3787cfbf6c85e3e07
+    image: postgres:17.12@sha256:0d938e975177bef9f1f61f3f9dbcf2e0aa0a139568f66d3415ed8892eb97f6ac
     profiles: [two-cells]
     networks: [cells]
     environment:
@@ -158,7 +158,7 @@ services:
     ports: ["127.0.0.1:8097:8095"]
 
   cell-register:
-    image: curlimages/curl:8.15.0
+    image: curlimages/curl:8.23.0@sha256:3fb7e13e5d179a845c97d78204f3f1064d1907037f26a3ebf91710571151fd93
     restart: unless-stopped
     profiles: [two-cells]
     networks: [cells]

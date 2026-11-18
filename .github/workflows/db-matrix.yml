@@ -176,7 +176,7 @@ jobs:
     env:
       # Read by the Sangam integration-test base classes (same images as spike Databases.java).
       SANGAM_IT_DB: ${{ matrix.db }}
-      SANGAM_IT_IMAGE_POSTGRES: postgres:17@sha256:846a7ddaa67a4b354ae1d21087b683901aa6113a4ed626d3787cfbf6c85e3e07
+      SANGAM_IT_IMAGE_POSTGRES: postgres:17@sha256:0d938e975177bef9f1f61f3f9dbcf2e0aa0a139568f66d3415ed8892eb97f6ac
       SANGAM_IT_IMAGE_ORACLE: gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093
       SANGAM_IT_IMAGE_SQLSERVER: mcr.microsoft.com/mssql/server:2022-latest@sha256:4525e3efac9f3e241cb003bb2ff2a82818b502f37e12049d788b1a9fa7e13b7f
       # SG-05: must equal AcceptanceDatabase's sqlserver2025 image
