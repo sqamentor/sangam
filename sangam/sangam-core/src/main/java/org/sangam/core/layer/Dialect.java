@@ -152,11 +152,9 @@ public enum Dialect {
             // So: pick a candidate window in priority order (ROWNUM over an ordered inline view), then lock-and-skip
             // inside that window, still in order. With SKIP LOCKED, Oracle locks rows as they are fetched, and the
             // limit marker makes Jdbc.query stop fetching (and locking) at `limit`; concurrent claimers get the next
-            // rows of the window instead of an empty batch. The window comes from the statement's snapshot, so a row
-            // another claimer changed and committed after it is unlocked again and would be locked and returned; the
-            // locking query repeats the caller's predicate, which Oracle re-checks on the current row when it locks.
+            // rows of the window instead of an empty batch.
             case ORACLE -> "SELECT " + limitMarker(limit) + columns + " FROM " + table + " " + alias
-                    + " WHERE (" + where + ") AND " + alias + ".ROWID IN (SELECT sgm_rid FROM (SELECT " + alias + ".ROWID AS sgm_rid FROM "
+                    + " WHERE " + alias + ".ROWID IN (SELECT sgm_rid FROM (SELECT " + alias + ".ROWID AS sgm_rid FROM "
                     + table + " " + alias + " WHERE (" + where + ") ORDER BY " + orderBy + ") WHERE ROWNUM <= "
                     + Math.multiplyExact(limit, ORACLE_CANDIDATE_WINDOW) + ")"
                     + " ORDER BY " + orderBy + " FOR UPDATE SKIP LOCKED";
