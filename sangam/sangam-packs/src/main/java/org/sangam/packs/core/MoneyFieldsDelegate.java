@@ -82,7 +82,7 @@ public class MoneyFieldsDelegate implements JavaDelegate, ExecutionListener {
                     + "'statutoryParty'");
         }
         BigDecimal paid = paidAmount(ex, amountVar);
-        String ccy = currency(ex);
+        String ccy = currencyOf(ex);
         String account;
         String payeeVersion = null;
         if (!blank(capture)) {
@@ -148,7 +148,7 @@ public class MoneyFieldsDelegate implements JavaDelegate, ExecutionListener {
                 "currency", ccy, "payeeAccount", account, "purpose", purposeText.trim(), "payeeVersionId", payeeVersion));
     }
 
-    private BigDecimal paidAmount(DelegateExecution ex, String var) {
+    private static BigDecimal paidAmount(DelegateExecution ex, String var) {
         Object raw = ex.getVariable(var);
         BigDecimal v;
         try {
@@ -165,7 +165,8 @@ public class MoneyFieldsDelegate implements JavaDelegate, ExecutionListener {
         return v;
     }
 
-    private String currency(DelegateExecution ex) {
+    /** Owner decision M1: the tenant profile's currency, else the pack's {@code money.currency}; neither: held. */
+    static String currencyOf(DelegateExecution ex) {
         String c = TenantCurrencies.of(Vars.tenant(ex));
         if (c == null) {
             c = packCurrency(ex);
@@ -203,7 +204,7 @@ public class MoneyFieldsDelegate implements JavaDelegate, ExecutionListener {
         return NONE.equals(c) ? null : c;
     }
 
-    private static ProcessEngineException hold(DelegateExecution ex, String why) {
+    static ProcessEngineException hold(DelegateExecution ex, String why) {
         Vars.audit(ex, "MONEY_FIELDS_HELD", Vars.map("activity", ex.getCurrentActivityId(), "reason", why));
         return BatchSeal.held(why);
     }
