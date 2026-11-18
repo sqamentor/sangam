@@ -125,7 +125,8 @@
       "ruleCaseType": "GENERAL"
     },
     "dv_bsanction": {
-      "monetary": false,
+      "monetary": true,
+      "currency": "INR",
       "limitTable": "sangam-core-powers",
       "ruleCaseType": "GENERAL"
     }

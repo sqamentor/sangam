@@ -155,5 +155,19 @@ class DeclareTest(unittest.TestCase):
         self.assertFalse(missing)
 
 
+    def test_a_batch_sanction_is_monetary_on_the_sealed_total(self):
+        # integrator ruling R2 (owner rules E1-E3): BatchSeal copies the sealed total into `amount`; the sanction of the
+        # batch is monetary even when the pack marks `amount=0` as "no amount" at the start
+        missing = set()
+        seal = ('<serviceTask id="seal" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements>'
+                '<operaton:field name="op"><operaton:string>SEAL</operaton:string></operaton:field>'
+                '</extensionElements></serviceTask>')
+        body = ('<startEvent id="s"/>' + setv('a', defaults='amount=0') + seal + call('c')
+                + flow('f1', 's', 'a') + flow('f2', 'a', 'seal') + flow('f3', 'seal', 'c'))
+        block = powers.declare(self.Pack, {'p': HEAD + body + TAIL}, {'sangam-core-powers': self.UNKEYED}, missing)
+        self.assertEqual({'c': {'monetary': True, 'currency': 'INR', 'limitTable': 'sangam-core-powers'}}, block)
+        self.assertFalse(missing)
+
+
 if __name__ == '__main__':
     unittest.main()

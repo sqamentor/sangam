@@ -131,6 +131,11 @@ class RuleCaseTypeListenerTest {
     }
 
     static void approve(Task task) {
+        approveOn(engine, task);
+    }
+
+    /** Approves the task as officer-1 on seat BRANCHMGR. */
+    static void approveOn(ProcessEngine engine, Task task) {
         Map<String, Object> v = new HashMap<>();
         v.put("decision", "approve");
         v.put("actingPerson", "officer-1");

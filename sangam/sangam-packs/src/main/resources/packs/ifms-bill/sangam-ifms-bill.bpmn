@@ -5,6 +5,7 @@
   <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
   <message id="msg_sangam_ifms_fundsAllotted" name="sangam.ifms.fundsAllotted"/>
   <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <error id="err_APPROVAL_INVALIDATED" name="APPROVAL_INVALIDATED" errorCode="APPROVAL_INVALIDATED"/>
   <process id="sangam-ifms-bill" name="Bill by catalogue type" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.5">
     <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.bill</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.5</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>billType,headOfAccount,amount,payee,payeeAccount,sanctionRef,currency,purpose</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="bl_start" name="Bill drafted by the DDO" operaton:initiator="initiator" operaton:formKey="sangam:ifms-bill/draft"></startEvent>
@@ -130,6 +131,8 @@
     <sequenceFlow id="ifms_bill_f58" name="DONE" sourceRef="bl_exGw" targetRef="bl_consume"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="ifms_bill_f59" name="otherwise" sourceRef="bl_exGw" targetRef="bl_payFailed"/>
     <sequenceFlow id="ifms_bill_f60" sourceRef="bl_pay" targetRef="bl_exGw"/>
+    <boundaryEvent id="bl_payInvalidated" name="Payee account or payload changed after the PAO pass: fresh approval" attachedToRef="bl_pay" cancelActivity="true"><errorEventDefinition errorRef="err_APPROVAL_INVALIDATED"/></boundaryEvent>
+    <sequenceFlow id="ifms_bill_f76" name="approval invalidated" sourceRef="bl_payInvalidated" targetRef="bl_rail"/>
     <sequenceFlow id="ifms_bill_f61" sourceRef="bl_payFailed" targetRef="bl_payCorrect"/>
     <sequenceFlow id="ifms_bill_f62" sourceRef="bl_payCorrect" targetRef="bl_payCorrectGw"/>
     <sequenceFlow id="ifms_bill_f63" name="reissue after correction" sourceRef="bl_payCorrectGw" targetRef="bl_rail"><conditionExpression xsi:type="tFormalExpression">${payCorrectDecision == 'reissue'}</conditionExpression></sequenceFlow>
@@ -203,6 +206,8 @@
       <bpmndi:BPMNShape id="bl_release_di" bpmnElement="bl_release"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="bl_revise_di" bpmnElement="bl_revise"><dc:Bounds x="3650" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="bl_pay_di" bpmnElement="bl_pay"><dc:Bounds x="3815" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_payInvalidated_di" bpmnElement="bl_payInvalidated"><dc:Bounds x="3847" y="387" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_bill_f76_di" bpmnElement="ifms_bill_f76"><di:waypoint x="3865" y="387"/><di:waypoint x="3865" y="140"/><di:waypoint x="3040" y="140"/><di:waypoint x="3040" y="155"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="bl_chainGw_di" bpmnElement="bl_chainGw"><dc:Bounds x="3345" y="170" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="bl_revGw_di" bpmnElement="bl_revGw"><dc:Bounds x="3840" y="170" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="bl_version_di" bpmnElement="bl_version"><dc:Bounds x="3980" y="280" width="100" height="80"/></bpmndi:BPMNShape>

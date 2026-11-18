@@ -1,6 +1,6 @@
 {
   "key": "sec-fin-cyber-incident/approve",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.fin.cyber-incident",
   "title": {
     "en": "CISO approves RCA",

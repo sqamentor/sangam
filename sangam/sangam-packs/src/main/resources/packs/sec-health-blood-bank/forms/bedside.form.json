@@ -1,6 +1,6 @@
 {
   "key": "sec-health-blood-bank/bedside",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.health.blood-bank",
   "title": {
     "en": "Bedside identity check and transfuse",

@@ -1,6 +1,6 @@
 {
   "key": "work-order/site-handover",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.work-order",
   "title": {
     "en": "Hand over site",

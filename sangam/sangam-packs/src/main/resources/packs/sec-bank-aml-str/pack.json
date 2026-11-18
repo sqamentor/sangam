@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.aml-str",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "AML alert investigation and STR / CTR to FIU-IND",
     "hi": "धन-शोधन चेतावनी जाँच एवं एफआईयू-आईएनडी को एसटीआर / सीटीआर"
