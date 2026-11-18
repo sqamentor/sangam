@@ -80,7 +80,8 @@
     },
     {
       "id": "card.chargeback",
-      "moneyMovement": "OUT",
+      "moneyMovement": "IN",
+      "moneyMovementReason": "owner decision M3: a chargeback is a claim on the card network that brings money in",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Chargeback to the network"

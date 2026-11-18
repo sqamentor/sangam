@@ -60,6 +60,15 @@
         "en": "Description",
         "hi": "विवरण"
       }
+    },
+    {
+      "id": "originalPaymentRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Original payment reference (capture)",
+        "hi": "मूल भुगतान संदर्भ (प्राप्ति)"
+      }
     }
   ]
 }

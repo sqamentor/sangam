@@ -10,12 +10,6 @@
     <serviceTask id="ri_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>sumInsured=@amount;lineOfBusiness=FIRE;riSeat=RI-DESK</operaton:string></operaton:field></extensionElements></serviceTask>
     <businessRuleTask id="ri_rule" name="Retention and cession (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ins-ri-cession</operaton:string></operaton:field></extensionElements></businessRuleTask>
     <serviceTask id="ri_cede" name="Record obligatory and treaty cession" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>re.cede</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>cede</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>policyNo,sumInsured,lineOfBusiness</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>cede</operaton:string></operaton:field><operaton:field name="step"><operaton:string>cede</operaton:string></operaton:field></extensionElements></serviceTask>
-    <callActivity id="ri_cede_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
-    <exclusiveGateway id="ri_cede_sgw" name="Sanctioned?" default="ri_cede_sgw_no"></exclusiveGateway>
-    <endEvent id="ri_cede_notReleased" name="Not released"></endEvent>
-    <sequenceFlow id="ri_cede_sanction_f" sourceRef="ri_cede_sanction" targetRef="ri_cede_sgw"/>
-    <sequenceFlow id="ri_cede_sgw_yes" name="sanctioned" sourceRef="ri_cede_sgw" targetRef="ri_cede"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
-    <sequenceFlow id="ri_cede_sgw_no" name="not sanctioned" sourceRef="ri_cede_sgw" targetRef="ri_cede_notReleased"/>
 
     <exclusiveGateway id="ri_facGw" name="Facultative needed?" default="sec_ins_reinsurance_f7"></exclusiveGateway>
     <userTask id="ri_fac" name="Place facultative (Indian reinsurers first)" operaton:candidateGroups="${riSeat}" operaton:formKey="sangam:sec-ins-reinsurance/fac"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
@@ -32,7 +26,7 @@
     <endEvent id="ri_end" name="Recovered"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <sequenceFlow id="sec_ins_reinsurance_f1" sourceRef="ri_start" targetRef="ri_defaults"/>
     <sequenceFlow id="sec_ins_reinsurance_f2" sourceRef="ri_defaults" targetRef="ri_rule"/>
-    <sequenceFlow id="sec_ins_reinsurance_f3" sourceRef="ri_rule" targetRef="ri_cede_sanction"/>
+    <sequenceFlow id="sec_ins_reinsurance_f3" sourceRef="ri_rule" targetRef="ri_cede"/>
     <sequenceFlow id="sec_ins_reinsurance_f4" sourceRef="ri_cede" targetRef="ri_facGw"/>
     <sequenceFlow id="sec_ins_reinsurance_f5" name="yes" sourceRef="ri_facGw" targetRef="ri_fac"><conditionExpression xsi:type="tFormalExpression">${facultativeRequired}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_ins_reinsurance_f6" sourceRef="ri_fac" targetRef="ri_facSend"/>
@@ -54,7 +48,7 @@
       <bpmndi:BPMNShape id="ri_start_di" bpmnElement="ri_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ri_defaults_di" bpmnElement="ri_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ri_rule_di" bpmnElement="ri_rule"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="ri_cede_sanction_di" bpmnElement="ri_cede_sanction"><dc:Bounds x="335" y="-100" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="ri_cede_sgw_di" bpmnElement="ri_cede_sgw" isMarkerVisible="true"><dc:Bounds x="465" y="-90" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="ri_cede_notReleased_di" bpmnElement="ri_cede_notReleased"><dc:Bounds x="472" y="-180" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="ri_cede_sanction_f_di" bpmnElement="ri_cede_sanction_f"><di:waypoint x="435" y="-65"/><di:waypoint x="465" y="-65"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="ri_cede_sgw_yes_di" bpmnElement="ri_cede_sgw_yes"><di:waypoint x="490" y="-40"/><di:waypoint x="490" y="30"/><di:waypoint x="515" y="30"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="ri_cede_sgw_no_di" bpmnElement="ri_cede_sgw_no"><di:waypoint x="490" y="-90"/><di:waypoint x="490" y="-144"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="ri_cede_di" bpmnElement="ri_cede"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ri_cede_di" bpmnElement="ri_cede"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ri_facGw_di" bpmnElement="ri_facGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ri_fac_di" bpmnElement="ri_fac"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ri_facSend_di" bpmnElement="ri_facSend"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>

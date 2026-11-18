@@ -88,7 +88,8 @@
     },
     {
       "id": "lms.book",
-      "moneyMovement": "OUT",
+      "moneyMovement": "NONE",
+      "moneyMovementReason": "owner decision M3: books the loan account in the LMS (a repayment schedule); no money moves",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Book the loan in the LMS"
