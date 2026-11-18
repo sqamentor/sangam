@@ -128,7 +128,8 @@ public final class PackDeployer {
             contents.add(bytes);
             if (r.kind() == PackResource.Kind.BPMN) {
                 violations.addAll(ModelGuard.check(r.path(), bytes));
-                violations.addAll(MoneyPathGuard.check(r.path(), bytes, ConnectorMoneyMovements::enforced, topics(d)));
+                violations.addAll(MoneyPathGuard.check(r.path(), bytes, ConnectorMoneyMovements::enforced, topics(d),
+                        models()));
             }
         }
         if (!violations.isEmpty()) {
@@ -543,6 +544,18 @@ public final class PackDeployer {
 
     private static boolean notEmpty(List<?> l) {
         return l != null && !l.isEmpty();
+    }
+
+    private volatile MoneyPathGuard.Models models;
+
+    /** Processes and decisions of every registered pack, for the money-path guard (called processes, rail DMNs). */
+    private MoneyPathGuard.Models models() {
+        MoneyPathGuard.Models m = models;
+        if (m == null) {
+            m = MoneyPathGuard.Models.of(registry.all());
+            models = m;
+        }
+        return m;
     }
 
     private static byte[] read(SangamPack pack, String path) {
