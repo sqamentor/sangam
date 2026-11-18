@@ -55,7 +55,12 @@ public final class CaptureRefunds {
                 throw BatchSeal.held("the capture succeeded without a capture reference; a refund could never be "
                         + "matched to it (owner decision M5)");
             }
-            BigDecimal minor = Vars.decimal(ex.getVariable(Vars.field(amount, ex, "amount")));
+            String amountVar = Vars.field(amount, ex, "amount");
+            BigDecimal minor = Vars.decimal(ex.getVariable(amountVar));
+            if (minor == null || minor.signum() <= 0) {
+                throw BatchSeal.held("the capture " + ref + " has no positive amount in '" + amountVar
+                        + "'; a refund could never be capped by it (owner decision M5)");
+            }
             String ccy = MoneyFieldsDelegate.currencyOf(ex);
             ex.setVariable(Vars.field(snapshotVar, ex), ref.toString());
             LedgerStore.Posting p = PackRuntime.ledgers().post(Vars.tenant(ex), LEDGER, ref.toString(), ccy,

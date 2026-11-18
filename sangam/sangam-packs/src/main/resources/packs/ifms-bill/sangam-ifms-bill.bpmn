@@ -112,7 +112,12 @@
     <sequenceFlow id="ifms_bill_f39" sourceRef="bl_hold" targetRef="bl_funds_clear"/>
     <sequenceFlow id="ifms_bill_f40" name="available" sourceRef="bl_fundsGw" targetRef="bl_encumber"/>
     <sequenceFlow id="ifms_bill_f41" sourceRef="bl_encumber" targetRef="bl_rail"/>
-    <sequenceFlow id="ifms_bill_f42" sourceRef="bl_rail" targetRef="bl_chain"/>
+    <sequenceFlow id="ifms_bill_f42" sourceRef="bl_rail" targetRef="bl_payeeVerifyPre"/>
+    <serviceTask id="bl_payeeVerifyPre" name="Verified payee before the PAO pass" operaton:class="org.sangam.packs.core.PayeeResolutionDelegate"><extensionElements><operaton:field name="currency"><operaton:string>INR</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="bl_payeePreGw" name="Payee verified?" default="ifms_bill_f78"></exclusiveGateway>
+    <sequenceFlow id="ifms_bill_f77" sourceRef="bl_payeeVerifyPre" targetRef="bl_payeePreGw"/>
+    <sequenceFlow id="ifms_bill_f79" name="verified" sourceRef="bl_payeePreGw" targetRef="bl_chain"><conditionExpression xsi:type="tFormalExpression">${payeeVerified}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_bill_f78" name="not verified" sourceRef="bl_payeePreGw" targetRef="bl_payeeHold"/>
     <sequenceFlow id="ifms_bill_f43" name="PASSED" sourceRef="bl_chainGw" targetRef="bl_payeeVerify"><conditionExpression xsi:type="tFormalExpression">${paoOutcome == 'PASSED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="ifms_bill_f44" name="otherwise" sourceRef="bl_chainGw" targetRef="bl_release"/>
     <sequenceFlow id="ifms_bill_f45" sourceRef="bl_chain" targetRef="bl_chainGw"/>
@@ -127,7 +132,7 @@
     <sequenceFlow id="ifms_bill_f54" name="verified" sourceRef="bl_payeeVerifiedGw" targetRef="bl_pay"><conditionExpression xsi:type="tFormalExpression">${payeeVerified}</conditionExpression></sequenceFlow>
     <sequenceFlow id="ifms_bill_f55" name="not verified" sourceRef="bl_payeeVerifiedGw" targetRef="bl_payeeHold"/>
     <sequenceFlow id="ifms_bill_f56" sourceRef="bl_payeeHold" targetRef="bl_payeeHoldGw"/>
-    <sequenceFlow id="ifms_bill_f57" name="check again" sourceRef="bl_payeeHoldGw" targetRef="bl_payeeVerify"><conditionExpression xsi:type="tFormalExpression">${payeeHoldDecision == 'checkAgain'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_bill_f57" name="check again" sourceRef="bl_payeeHoldGw" targetRef="bl_payeeVerifyPre"><conditionExpression xsi:type="tFormalExpression">${payeeHoldDecision == 'checkAgain'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="ifms_bill_f58" name="DONE" sourceRef="bl_exGw" targetRef="bl_consume"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="ifms_bill_f59" name="otherwise" sourceRef="bl_exGw" targetRef="bl_payFailed"/>
     <sequenceFlow id="ifms_bill_f60" sourceRef="bl_pay" targetRef="bl_exGw"/>
@@ -216,6 +221,11 @@
       <bpmndi:BPMNShape id="bl_wd_end_di" bpmnElement="bl_wd_end"><dc:Bounds x="4342" y="177" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="bl_consume_di" bpmnElement="bl_consume"><dc:Bounds x="4145" y="655" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="bl_close_di" bpmnElement="bl_close"><dc:Bounds x="4310" y="655" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_payeeVerifyPre_di" bpmnElement="bl_payeeVerifyPre"><dc:Bounds x="3040" y="400" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_payeePreGw_di" bpmnElement="bl_payeePreGw"><dc:Bounds x="3180" y="415" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_bill_f77_di" bpmnElement="ifms_bill_f77"><di:waypoint x="3140" y="440"/><di:waypoint x="3180" y="440"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f79_di" bpmnElement="ifms_bill_f79"><di:waypoint x="3205" y="415"/><di:waypoint x="3205" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f78_di" bpmnElement="ifms_bill_f78"><di:waypoint x="3205" y="465"/><di:waypoint x="3865" y="465"/><di:waypoint x="3865" y="360"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="bl_payeeVerify_di" bpmnElement="bl_payeeVerify"><dc:Bounds x="3485" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="bl_payeeVerifiedGw_di" bpmnElement="bl_payeeVerifiedGw"><dc:Bounds x="3675" y="295" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="bl_payeeHold_di" bpmnElement="bl_payeeHold"><dc:Bounds x="3815" y="280" width="100" height="80"/></bpmndi:BPMNShape>
