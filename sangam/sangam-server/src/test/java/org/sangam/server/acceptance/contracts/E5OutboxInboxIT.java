@@ -297,6 +297,39 @@ class E5OutboxInboxIT extends ContractSupport {
         };
     }
 
+    /**
+     * Deterministic reproduction of run 44233540674 (postgres: expected BUFFERED, was RECEIVED). The server's own inbox
+     * loop claims every due row; while its claim transaction holds the row (skip-locked select, not yet committed), this
+     * test's {@code processOnce} skips the row and returns 0, and the committed state is still RECEIVED. Here a second
+     * connection plays that in-flight claim, so the interleaving happens on every run.
+     */
+    @Test
+    @Order(6)
+    void e5_5r_earlyMessageWhileAnotherInboxHoldsTheClaim() throws Exception {
+        String bk = key("lic-e5-5r");
+        String source = key("applicant-portal");
+        String msgId = key("msg-e5-5r");
+        inboxService.registerSourceHandler(source, clarificationHandler());
+        engine.startProcess(T, licenceKey, bk, Map.of("applicationId", bk));
+        assertEquals(Inbox.ReceiveResult.ACCEPTED, inbox.receive(T, source, msgId, bk, "documents attached", Duration.ofHours(24)));
+        try (Connection competitor = dataSource.getConnection()) {
+            competitor.setAutoCommit(false);
+            try {
+                List<String> held = Jdbc.query(competitor, dialect().skipLockedSelect("i.message_id", "INBOX", "i",
+                                "i.tenant_id = ? AND i.source = ? AND i.message_id = ? AND i.state IN ('RECEIVED','BUFFERED')",
+                                "i.received_at", 1),
+                        rs -> rs.getString(1), T, source, msgId);
+                assertEquals(List.of(msgId), held, "precondition: the competing claim holds the row");
+                int processedEarly = inbox.processOnce(10, clarificationHandler());
+                Inbox.State early = inTx(c -> Inbox.state(c, T, source, msgId));
+                assertEquals(0, processedEarly);
+                assertEquals(Inbox.State.BUFFERED, early);
+            } finally {
+                competitor.rollback();
+            }
+        }
+    }
+
     @Test
     @Order(5)
     void e5_5_earlyMessageBufferedThenCorrelated() throws InterruptedException {
