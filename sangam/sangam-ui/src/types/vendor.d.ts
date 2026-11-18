@@ -3,7 +3,8 @@
 
 declare module 'dmn-js/lib/Modeler' {
   export default class DmnModeler {
-    constructor(options: { container: HTMLElement; keyboard?: { bindTo?: unknown }; common?: Record<string, unknown> });
+    // dmn-js 18 (diagram-js 15) removed keyboard.bindTo: the canvas binds its own keyboard
+    constructor(options: { container: HTMLElement; common?: Record<string, unknown> });
     importXML(xml: string): Promise<{ warnings: unknown[] }>;
     saveXML(options?: { format?: boolean }): Promise<{ xml: string }>;
     getActiveViewer(): { get: <T = unknown>(name: string) => T } | undefined;

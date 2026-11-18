@@ -111,7 +111,7 @@ export function DmnEditor({ xml, onReady, onChange, height = 520 }: { xml: strin
   changeRef.current = onChange;
   useEffect(() => {
     if (!host.current) return;
-    const m = new DmnModeler({ container: host.current, common: { keyboard: { bindTo: host.current } } });
+    const m = new DmnModeler({ container: host.current }); // dmn-js 18: the keyboard binds to the focusable canvas itself
     ref.current = m;
     m.on('views.changed', () => setViews(m.getViews()));
     m.importXML(xml || EMPTY_DMN)
