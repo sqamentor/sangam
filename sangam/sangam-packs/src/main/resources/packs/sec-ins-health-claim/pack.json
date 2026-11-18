@@ -46,6 +46,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-ins-health-claim/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-ins-health-claim/pack.json"
     }
   ],
   "seed": "packs/sec-ins-health-claim/seed.json",
@@ -114,5 +118,14 @@
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "hc_settle_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  }
 }

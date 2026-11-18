@@ -160,13 +160,19 @@
   ],
   "currency": "INR",
   "powers": {
+    "py_authoriser": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-bank-pay-powers",
+      "ruleCaseType": "PAYMENT"
+    },
     "py_checker": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "sec-bank-pay-powers",
       "ruleCaseType": "PAYMENT"
     },
-    "py_authoriser": {
+    "py_retCredit_sanction": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "sec-bank-pay-powers",

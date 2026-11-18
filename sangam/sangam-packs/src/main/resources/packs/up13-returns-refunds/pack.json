@@ -34,6 +34,10 @@
     {
       "kind": "SEED",
       "path": "packs/up13-returns-refunds/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/up13-returns-refunds/pack.json"
     }
   ],
   "seed": "packs/up13-returns-refunds/seed.json",
@@ -91,5 +95,14 @@
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "u13_refund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  }
 }

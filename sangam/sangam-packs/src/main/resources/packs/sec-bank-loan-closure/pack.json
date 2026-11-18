@@ -34,6 +34,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-bank-loan-closure/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-bank-loan-closure/pack.json"
     }
   ],
   "seed": "packs/sec-bank-loan-closure/seed.json",
@@ -94,5 +98,14 @@
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "lc_pay_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  }
 }

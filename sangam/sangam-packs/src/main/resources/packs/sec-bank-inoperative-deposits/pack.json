@@ -42,6 +42,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-bank-inoperative-deposits/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-bank-inoperative-deposits/pack.json"
     }
   ],
   "seed": "packs/sec-bank-inoperative-deposits/seed.json",
@@ -111,5 +115,19 @@
     "variables": [
       "payableAmount"
     ]
+  },
+  "currency": "INR",
+  "powers": {
+    "dc_credit_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    },
+    "dv_bsanction": {
+      "monetary": false,
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
   }
 }

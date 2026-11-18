@@ -34,6 +34,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-ecom-gst-tcs/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-ecom-gst-tcs/pack.json"
     }
   ],
   "seed": "packs/sec-ecom-gst-tcs/seed.json",
@@ -93,5 +97,14 @@
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "gt_deposit_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  }
 }
