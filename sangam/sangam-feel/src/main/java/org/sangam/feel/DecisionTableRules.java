@@ -160,7 +160,7 @@ public final class DecisionTableRules {
 
     // ------------------------------------------------------------------ GAP-2
 
-    /** Transformed output clause -> its constant default value (raw FEEL text until first use). Weak keys, as in FC-54. */
+    /** Transformed output clause -> its constant default value (raw FEEL text until first use). Weak keys, as in FLOWABLE-INTO-OPERATON FC-54. */
     private static final Map<DmnDecisionTableOutputImpl, String> DEFAULTS = Collections.synchronizedMap(new WeakHashMap<>());
 
     static final class DefaultOutputListener implements DmnTransformListener {
