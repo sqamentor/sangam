@@ -31,6 +31,14 @@ import org.sangam.packs.port.VerifiedPayees;
  *   <li>{@code payeeKey}: the record field the verified-payee registry ({@link VerifiedPayees}) resolves;
  *       {@code employeeId} is looked up as an employee, any other field as a party. The item's {@code payeeAccount}
  *       is the registry's verified account, never a typed account (M2); not verified: held.</li>
+ *   <li>{@code captureField} (instead of {@code payeeKey}): refund to source (owner decision M5). The item's
+ *       {@code payeeAccount} is {@code capture:<ref>} of the record's capture reference. With {@code recordCapture=true}
+ *       (at the step where the money was captured, for example bids received with their EMD) each record's capture is
+ *       posted to the capture-record ledger ({@link CaptureRefunds#LEDGER}, idempotent per reference), so a later
+ *       refund ({@link CaptureRefunds.Release}) is released only up to that capture, once, to that source, in that
+ *       currency; a record without a capture reference: held.</li>
+ *   <li>{@code excludeKeyVar} (optional): the variable holding one item key left out (for example the awarded bidder,
+ *       whose EMD is not refunded with the unsuccessful bidders); named but empty: held.</li>
  *   <li>{@code carry} (optional): record fields copied onto the item as they are (for example the period).</li>
  *   <li>{@code itemsVar}: where the items go ({@code key}, {@code amount}, {@code payeeAccount},
  *       {@code payeeVersionId}, the key field and the carried fields).</li>
@@ -46,13 +54,31 @@ public class BatchItemsDelegate implements JavaDelegate {
     private Expression payeeKey;
     private Expression carry;
     private Expression itemsVar;
+    private Expression captureField;
+    private Expression recordCapture;
+    private Expression excludeKeyVar;
 
     @Override
     public void execute(DelegateExecution ex) {
         String src = need(ex, source, "source");
         String keyName = need(ex, keyField, "keyField");
         String out = need(ex, itemsVar, "itemsVar");
-        String payeeName = need(ex, payeeKey, "payeeKey");
+        String payeeName = Vars.field(payeeKey, ex);
+        String captureName = Vars.field(captureField, ex);
+        if ((payeeName == null || payeeName.isBlank()) == (captureName == null || captureName.isBlank())) {
+            throw new IllegalStateException("BatchItemsDelegate needs exactly one of 'payeeKey', 'captureField'");
+        }
+        boolean record = Vars.fieldBool(recordCapture, ex, false);
+        String exclude = null;
+        String excludeVar = Vars.field(excludeKeyVar, ex);
+        if (excludeVar != null && !excludeVar.isBlank()) {
+            exclude = Vars.str(ex, excludeVar.trim());
+            if (exclude == null || exclude.isBlank()) {
+                throw hold(ex, "the key to leave out ('" + excludeVar.trim() + "') is not on the case");
+            }
+            exclude = exclude.trim();
+        }
+        String ccy = captureName != null && !captureName.isBlank() ? MoneyFieldsDelegate.currencyOf(ex) : null;
         DecimalFormula f = DecimalFormula.parse(need(ex, amount, "amount"));
         if (f.roundsComponents()) {
             throw new IllegalStateException("BatchItemsDelegate: the amount formula never rounds (rule C4)");
@@ -97,6 +123,30 @@ public class BatchItemsDelegate implements JavaDelegate {
             if (a.signum() <= 0) {
                 throw hold(ex, "record " + key + ": the amount " + a.toPlainString() + " is not positive");
             }
+            if (key.equals(exclude)) {
+                continue;
+            }
+            Map<String, Object> item = new LinkedHashMap<>();
+            if (captureName != null && !captureName.isBlank()) {
+                Object ref = rec.get(captureName);
+                if (ref == null || ref.toString().isBlank()) {
+                    throw hold(ex, "record " + key + " has no capture reference " + captureName + " (M5)");
+                }
+                item.put("payeeAccount", "capture:" + ref);
+                item.put(captureName, ref.toString());
+                if (record) {
+                    org.sangam.packs.port.LedgerStore.Posting posted = org.sangam.packs.port.PackRuntime.ledgers().post(
+                            tenant, CaptureRefunds.LEDGER, ref.toString(), ccy,
+                            org.sangam.packs.port.LedgerStore.amount(a.setScale(0).longValueExact(), ccy),
+                            CaptureRefunds.CAPTURE_REF, false);
+                    if (!posted.applied() && !"DUPLICATE_REFERENCE".equals(posted.reason())) {
+                        throw hold(ex, "capture record of " + ref + " refused: " + posted.reason());
+                    }
+                }
+                addItem(items, item, key, a, keyName, carried, rec);
+                total = total.add(a);
+                continue;
+            }
             Object pk = rec.get(payeeName);
             if (pk == null || pk.toString().isBlank()) {
                 throw hold(ex, "record " + key + " has no payee key " + payeeName + " (M2)");
@@ -107,7 +157,6 @@ public class BatchItemsDelegate implements JavaDelegate {
             if (r == null) {
                 throw new IllegalStateException("PAYEE_LOOKUP_NO_ANSWER: the verified-payee adapter returned null");
             }
-            Map<String, Object> item = new LinkedHashMap<>();
             switch (r) {
                 case VerifiedPayeeLookup.Verified v -> {
                     item.put("payeeAccount", v.accountNo() + (v.ifsc().isBlank() ? "" : "@" + v.ifsc()));
@@ -116,18 +165,24 @@ public class BatchItemsDelegate implements JavaDelegate {
                 case VerifiedPayeeLookup.NotVerified n -> throw hold(ex, "record " + key + ": payee " + pk
                         + " not verified: " + n.reason() + (n.detail() == null ? "" : " (" + n.detail() + ")"));
             }
-            item.put("key", key);
-            item.put("amount", a.setScale(0).longValueExact());
-            item.put(keyName, key);
-            for (String c : carried) {
-                item.put(c, rec.get(c));
-            }
-            items.add(item);
+            addItem(items, item, key, a, keyName, carried, rec);
             total = total.add(a);
         }
         Vars.setJsonDocument(ex, out, items);
         Vars.audit(ex, "BATCH_ITEMS_BUILT", Vars.map("source", src, "itemsVar", out, "items", items.size(),
-                "total", total.toPlainString(), "amount", f.text(), "payeeKey", payeeName));
+                "total", total.toPlainString(), "amount", f.text(), "payeeKey", payeeName, "captureField", captureName,
+                "capturesRecorded", record, "excluded", exclude));
+    }
+
+    private static void addItem(List<Map<String, Object>> items, Map<String, Object> item, String key, BigDecimal a,
+                                String keyName, List<String> carried, Map<String, Object> rec) {
+        item.put("key", key);
+        item.put("amount", a.setScale(0).longValueExact());
+        item.put(keyName, key);
+        for (String c : carried) {
+            item.put(c, rec.get(c));
+        }
+        items.add(item);
     }
 
     private static String need(DelegateExecution ex, Expression e, String name) {
