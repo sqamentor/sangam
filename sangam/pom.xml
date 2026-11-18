@@ -207,7 +207,6 @@
     <version.maven-site-plugin>3.12.1</version.maven-site-plugin>
     <version.cyclonedx-maven-plugin>2.9.3</version.cyclonedx-maven-plugin>
     <version.versions-maven-plugin>2.25.2</version.versions-maven-plugin>
-    <version.jqwik>1.10.2</version.jqwik>
     <version.jazzer>0.30.0</version.jazzer>
     <version.cucumber>8.0.4</version.cucumber>
     <!-- M-095: empty unless -Psangam-coverage sets it (JaCoCo prepare-agent). Surefire reads it as @{argLine}, so the
@@ -479,14 +478,8 @@
         <artifactId>sangam-programme</artifactId>
         <version>${project.version}</version>
       </dependency>
-      <!-- M-095 test-quality libraries (approved batch 1): versions only, test scope. The harnesses (jqwik model
-           generator, Jazzer BPMN/DMN/JSON targets, Gherkin scenarios) are added by the module owners in Wave 2. -->
-      <dependency>
-        <groupId>net.jqwik</groupId>
-        <artifactId>jqwik</artifactId>
-        <version>${version.jqwik}</version>
-        <scope>test</scope>
-      </dependency>
+      <!-- M-095 test-quality libraries (approved batch 1): versions only, test scope. The harnesses (Jazzer
+           BPMN/DMN/JSON targets, Gherkin scenarios) are added by the module owners in Wave 2. -->
       <dependency>
         <groupId>com.code-intelligence</groupId>
         <artifactId>jazzer-junit</artifactId>

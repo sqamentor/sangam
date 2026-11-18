@@ -50,13 +50,9 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
-    <!-- M-095 / M-116 test harnesses (W2-I): property (jqwik), fuzz (Jazzer) and Gherkin acceptance (Cucumber).
+    <!-- M-095 / M-116 test harnesses (W2-I): fuzz (Jazzer) and Gherkin acceptance (Cucumber);
+         property tests are plain JUnit 5 with seeded generators (jqwik removed, owner decision 2026-11-18).
          Versions and test scope are managed in the root pom (approved batch 1); never shipped. -->
-    <dependency>
-      <groupId>net.jqwik</groupId>
-      <artifactId>jqwik</artifactId>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>com.code-intelligence</groupId>
       <artifactId>jazzer-junit</artifactId>

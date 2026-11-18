@@ -765,7 +765,7 @@ Goal: a system that lives for **10+ years**, stays **compatible** across upgrade
 | P2 | **Test-first for the engine core** | TDD for behaviors and commands; every bug fix starts with a failing test |
 | P3 | **Test pyramid** | Unit → engine integration (H2 + Postgres) → DB matrix (all databases via Testcontainers) → contract tests (SDKs) → end-to-end (UI, Playwright) |
 | P4 | **Mutation testing** | PIT on core modules, so tests are proven to catch faults and not just raise coverage |
-| P5 | **Property-based and model-based tests** | jqwik generates random BPMN/CMMN models and event orders and checks invariants: no lost tokens, no double completion, history matches runtime |
+| P5 | **Property-based and model-based tests** | Seeded JUnit 5 generators (fixed seed; jqwik removed, owner decision 2026-11-18) generate random BPMN/CMMN models and event orders and checks invariants: no lost tokens, no double completion, history matches runtime |
 | P6 | **Fuzz all parsers and inputs** | XML (BPMN/CMMN/DMN), FEEL, JSON variables and API payloads are fuzzed with Jazzer, covering XXE, billion-laughs and deserialization attacks |
 | P7 | **Code review rules** | Two reviewers for core and security-sensitive modules; CODEOWNERS per module |
 | P8 | **Documentation as code** | Docs, C4 diagrams, ADRs and the API reference live in the repo and build in CI; a feature without docs is not done |
@@ -2781,7 +2781,7 @@ Checked and found **consistent**, so not listed above:
 - pp.15–16 18 technical choices: covered by B §6.
 - pp.16–17 C1–C17: covered by B §7.
 - pp.17–18 ATAM: covered by B §8.
-- pp.18–20 FMEA F1–F24: covered by B §9 (it adds tool names jqwik and Jazzer, and R-numbers in the cells, all from B §19 / A §14.3).
+- pp.18–20 FMEA F1–F24: covered by B §9 (it adds tool names jqwik and Jazzer; jqwik was later replaced by seeded JUnit 5 generators, owner decision 2026-11-18; and R-numbers in the cells, all from B §19 / A §14.3).
 - p.20 fault trees T1–T4: covered by B §10.
 - p.20 local code checks: covered by B §12 (X12 is the causal claim).
 - pp.20–21 defaults: covered by B §12 (new column is N7).
@@ -7347,7 +7347,7 @@ JUnit 5 एक्सटेंशन्स,
 @Deployment , मॉक बिहेवियर
 फ़ैक्ट्री।
 दोनों + Mutation (PIT),
-Property (jqwik), Fuzzing
+Property (JUnit 5 seeded), Fuzzing
 (Jazzer), Jepsen व Replay
 टेस्ट।
 22. Legacy
@@ -8967,7 +8967,7 @@ Flowable
 इंटरसेप्टर
 मॉडल-
 आधारित
-(jqwik) टेस्ट
+(JUnit 5 seeded) टेस्ट
 7×2×3 =
 42
 F5
@@ -9616,7 +9616,7 @@ System Design (D1–D12): Hexagonal Architecture (कोर में Spring/MyB
 Migrate → Contract बैकवड कम्पैटिबिलिटी, डिज़ाइन से Observability, कोर में पूण Determinism (कोई
 System.currentTimeMillis , new Date() या ThreadLocal नहीं), और स्टैंडड्स को प्राथमिकता।
 System Development (P1–P10): Trunk-based विकास, कोर के लिए TDD, टेस्ट पिरामिड, कोर पर PIT
-Mutation Testing (≥ 70% स्कोर, ≥ 85% लाइन कवरेज), jqwik प्रॉपर्टी-आधारित टेस्ट, Jazzer पासर फ़ज़िंंग, कोर व
+Mutation Testing (≥ 70% स्कोर, ≥ 85% लाइन कवरेज), JUnit 5 (seeded) प्रॉपर्टी-आधारित टेस्ट, Jazzer पासर फ़ज़िंंग, कोर व
 सुरक्षा मॉड्यूूल्स के लिए 2 रिव्यूअस, Docs-as-Code, सख्त Definition of Done और पिन किए गए डिपेंडेंसीज़ के साथ
 Reproducible Builds।
 10+ वष का लाइफसाइकिल और कानूनी नियम (§12, §14.7): हर 3 महीने में माइनर रिलीज़ और हर 2 साल में 5-वर्षीय सुरक्षा
