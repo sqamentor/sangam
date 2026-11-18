@@ -23,13 +23,13 @@ final class MiwgScenarios {
     static final Map<String, String> NOT_APPLICABLE = new LinkedHashMap<>();
 
     static {
-        RUNS.put("C.1.0", "Invoice: message start, reject, clarify, approve, bank transfer, archive (external) to 'Invoice processed'.");
+        RUNS.put("C.1.0", "Invoice: message start, reject, clarify, approve, bank transfer, archive (external) to 'Invoice processed'. Test copy only: the definitions-level XPath declaration is removed (F3); its expressions are JUEL.");
         RUNS.put("C.9.1", "Document request: external e-mail, document message to 'Document received'; daily non-interrupting timer sends a reminder.");
 
         for (String m : new String[] {"A.1.0", "A.2.0", "A.2.1", "A.3.0", "A.4.0", "A.4.1", "B.1.0", "B.2.0", "C.2.0", "C.8.0", "C.10.0"}) {
             NOT_APPLICABLE.put(m, DESCRIPTIVE);
         }
-        NOT_APPLICABLE.put("C.1.1", "Conditions are XPath (bpmn:getDataObject) over data objects; Sangam evaluates JUEL/FEEL, not XPath (see XPath note).");
+        NOT_APPLICABLE.put("C.1.1", "Conditions are XPath (bpmn:getDataObject) over data objects; Sangam does not evaluate XPath and refuses the model at deploy (XPATH, owner ruling F3).");
         NOT_APPLICABLE.put("C.3.0", "Gateway conditions are free text ('Service Level == 'Premium'') with XPath declared; not an evaluable expression.");
         NOT_APPLICABLE.put("C.4.0", "Process has no isExecutable attribute and only manual/WebService work with XPath conditions; no binding in the model.");
         NOT_APPLICABLE.put("C.5.0", "No isExecutable attribute; called process and data states only, no executable binding.");

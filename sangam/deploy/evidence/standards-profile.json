@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "inputs": {
     "compatibility": "sangam-ui/src/modeller/compatibility.json",
-    "compatibilityGeneratedAt": "2026-11-17T17:53:02.203Z",
+    "compatibilityGeneratedAt": "2026-11-18T00:04:26.287Z",
     "feelPolicy": "SANGAM.md X.0g (ADR-D-26)"
   },
   "notations": [
@@ -15,7 +15,7 @@
         "SUPPORTED_WITH_RULES": 7,
         "PORTED": 2,
         "NOT_EXECUTABLE": 4,
-        "REJECTED": 1,
+        "REJECTED": 2,
         "UNSUPPORTED": 2
       }
     },
@@ -501,6 +501,18 @@
     },
     {
       "notation": "BPMN",
+      "construct": "FormalExpression.XPath",
+      "status": "REJECTED",
+      "modeller": "IMPORT_ONLY",
+      "engineParses": false,
+      "note": "XPath is not evaluated: definitions/@expressionLanguage or a language attribute naming XPath is refused at deploy (XPATH) on H2, the server and the CLI; only JUEL and FEEL (owner ruling F3, R10-bpmn).",
+      "source": "sangam-flowable-ports SangamModelValidator; owner ruling F3",
+      "xml": [
+        "formalExpression"
+      ]
+    },
+    {
+      "notation": "BPMN",
       "construct": "ScriptTask",
       "status": "REJECTED",
       "modeller": "REPLACE_MENU",
@@ -517,8 +529,8 @@
       "status": "UNSUPPORTED",
       "modeller": "REPLACE_MENU",
       "engineParses": false,
-      "note": "Parsed but no runtime join semantics in either engine (D-52).",
-      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "note": "Refused at deploy (D-52): no runtime join semantics; not supported by owner ruling F1 (R10-bpmn).",
+      "source": "FLOWABLE-INTO-OPERATON D-52; owner ruling F1",
       "xml": [
         "complexGateway"
       ]
@@ -529,8 +541,8 @@
       "status": "UNSUPPORTED",
       "modeller": "IMPORT_ONLY",
       "engineParses": false,
-      "note": "Multiple / parallel-multiple events are not executed (D-52).",
-      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "note": "Multiple / parallel-multiple events (more than one event definition) are refused at deploy (D-52); not supported by owner ruling F2 (R10-bpmn).",
+      "source": "FLOWABLE-INTO-OPERATON D-52; owner ruling F2",
       "xml": [
         "multipleEventDefinition"
       ]

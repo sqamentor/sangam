@@ -2,19 +2,19 @@
 # Any difference fails MiwgConformanceH2Test. Change a row only with a reviewed reason (regression gate).
 A.1.0	PASS	PASS	PASS 0 executable	N/A
 A.2.0	PASS	PASS	PASS 0 executable	N/A
-A.2.1	PASS (warnings EXT)	PASS	PASS 0 executable	N/A
+A.2.1	FAIL XPATH#_cVKUwTOCEeSknpIVFCxNIQ,XPATH#_cVKUwzOCEeSknpIVFCxNIQ,XPATH#_cVKUxDOCEeSknpIVFCxNIQ,XPATH#_cVKUxTOCEeSknpIVFCxNIQ,XPATH#_cVKUxjOCEeSknpIVFCxNIQ	PASS	FAIL deployment rejected by the Sangam validator (R44): [XPATH] A.2.1.bpmn#_cVKUwTOCEeSknpIVFCxNIQ: conditionExpression declares language 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL) [XP...	N/A
 A.3.0	PASS	PASS	PASS 0 executable	N/A
 A.4.0	PASS	PASS	PASS 0 executable	N/A
-A.4.1	PASS (warnings EXT)	PASS	PASS 0 executable	N/A
+A.4.1	FAIL XPATH	PASS	FAIL deployment rejected by the Sangam validator (R44): [XPATH] A.4.1.bpmn: definitions declare expressionLanguage 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration an...	N/A
 B.1.0	PASS (warnings DOC-ONLY)	PASS	PASS 0 executable	N/A
 B.2.0	PASS (warnings DOC-ONLY)	PASS	PASS 0 executable	N/A
-C.1.0	PASS (warnings EXT,IMPORT)	PASS	FAIL ENGINE-09005 Could not parse BPMN process. Errors: * One of the attributes 'class', 'delegateExpression', 'type', or 'expression' is mandatory on serviceTask. If you are using a connector, make sure the connect process e...	PASS
-C.1.1	PASS (warnings DOC-ONLY,EXT,IMPORT)	PASS	FAIL ENGINE-09005 Could not parse BPMN process. Errors: * One of the attributes 'class', 'delegateExpression', 'type', or 'expression' is mandatory on serviceTask. If you are using a connector, make sure the connect process e...	N/A
-C.2.0	PASS	PASS	PASS 0 executable	N/A
-C.3.0	FAIL ADR-D-25#_2b6bc88e-d3be-4704-87d1-c264bf704589,ADR-D-25#_604be023-654c-44df-a64c-365254a100cd,ADR-D-25#_936c0bfa-5ebf-4546-8d1a-cce556148788	PASS	FAIL deployment rejected by the Sangam validator (R44): [ADR-D-25] C.3.0.bpmn#_<uuid>: _<uuid>: flow _<uuid> has no condition and is not the default flow (it would always be true) [ADR-D-25] C.3.0.bpmn#_<uuid>: _<uuid>: flow ...	N/A
-C.4.0	PASS (warnings DOC-ONLY,EXT)	PASS	PASS 0 executable	N/A
-C.5.0	PASS (warnings DOC-ONLY,EXT)	PASS	PASS 0 executable	N/A
-C.6.0	PASS (warnings EXT)	PASS	PASS 0 executable	N/A
+C.1.0	FAIL XPATH	PASS	FAIL deployment rejected by the Sangam validator (R44): [XPATH] C.1.0.bpmn: definitions declare expressionLanguage 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration an...	PASS
+C.1.1	FAIL XPATH	PASS	FAIL deployment rejected by the Sangam validator (R44): [XPATH] C.1.1.bpmn: definitions declare expressionLanguage 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration an...	N/A
+C.2.0	FAIL XPATH	PASS	FAIL deployment rejected by the Sangam validator (R44): [XPATH] C.2.0.bpmn: definitions declare expressionLanguage 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration an...	N/A
+C.3.0	FAIL ADR-D-25#_2b6bc88e-d3be-4704-87d1-c264bf704589,ADR-D-25#_604be023-654c-44df-a64c-365254a100cd,ADR-D-25#_936c0bfa-5ebf-4546-8d1a-cce556148788,XPATH,XPATH#Bpmn_FormalExpression_8pPK4BqGEeWDuOtG0oS24A	PASS	FAIL deployment rejected by the Sangam validator (R44): [XPATH] C.3.0.bpmn#Bpmn_FormalExpression_8pPK4BqGEeWDuOtG0oS24A: timeDuration declares language 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL...	N/A
+C.4.0	FAIL XPATH	PASS	FAIL deployment rejected by the Sangam validator (R44): [XPATH] C.4.0.bpmn: definitions declare expressionLanguage 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration an...	N/A
+C.5.0	FAIL XPATH	PASS	FAIL deployment rejected by the Sangam validator (R44): [XPATH] C.5.0.bpmn: definitions declare expressionLanguage 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration an...	N/A
+C.6.0	FAIL XPATH	PASS	FAIL deployment rejected by the Sangam validator (R44): [XPATH] C.6.0.bpmn: definitions declare expressionLanguage 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration an...	N/A
 C.7.0	PASS (warnings EXT)	PASS	PASS 0 executable	N/A
 C.8.0	PASS (warnings DOC-ONLY,EXT)	PASS	PASS 0 executable	N/A
 C.8.1	PASS (warnings DOC-ONLY,EXT)	PASS	FAIL ENGINE-09005 Could not parse BPMN process. Errors: * One of the attributes 'class', 'delegateExpression', 'type', or 'expression' is mandatory on serviceTask. If you are using a connector, make sure the connect process e...	N/A

@@ -10,10 +10,10 @@ Stages: IMPORT = Sangam pre-deploy validator, no error; SCHEMA = Operaton BPMN m
 
 | Stage | Pass | Applicable |
 |---|---|---|
-| IMPORT | 21 | 22 |
+| IMPORT | 13 | 22 |
 | SCHEMA | 22 | 22 |
-| DEPLOY | 16 | 22 |
-| DEPLOY refused as designed | 6 | 22 |
+| DEPLOY | 10 | 22 |
+| DEPLOY refused as designed | 12 | 22 |
 | RUN | 2 | 2 |
 
 ## Per model
@@ -22,19 +22,19 @@ Stages: IMPORT = Sangam pre-deploy validator, no error; SCHEMA = Operaton BPMN m
 |---|---|---|---|---|---|
 | A.1.0 | PASS | PASS | PASS 0 executable | N/A | Descriptive model: every process is isExecutable="false" (interchange only). |
 | A.2.0 | PASS | PASS | PASS 0 executable | N/A | Descriptive model: every process is isExecutable="false" (interchange only). |
-| A.2.1 | PASS (warnings EXT) | PASS | PASS 0 executable | N/A | Descriptive model: every process is isExecutable="false" (interchange only). |
+| A.2.1 | FAIL XPATH#_cVKUwTOCEeSknpIVFCxNIQ,XPATH#_cVKUwzOCEeSknpIVFCxNIQ,XPATH#_cVKUxDOCEeSknpIVFCxNIQ,XPATH#_cVKUxTOCEeSknpIVFCxNIQ,XPATH#_cVKUxjOCEeSknpIVFCxNIQ | PASS | FAIL deployment rejected by the Sangam validator (R44): [XPATH] A.2.1.bpmn#_cVKUwTOCEeSknpIVFCxNIQ: conditionExpression declares language 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL) [XP... | N/A | Descriptive model: every process is isExecutable="false" (interchange only). |
 | A.3.0 | PASS | PASS | PASS 0 executable | N/A | Descriptive model: every process is isExecutable="false" (interchange only). |
 | A.4.0 | PASS | PASS | PASS 0 executable | N/A | Descriptive model: every process is isExecutable="false" (interchange only). |
-| A.4.1 | PASS (warnings EXT) | PASS | PASS 0 executable | N/A | Descriptive model: every process is isExecutable="false" (interchange only). |
+| A.4.1 | FAIL XPATH | PASS | FAIL deployment rejected by the Sangam validator (R44): [XPATH] A.4.1.bpmn: definitions declare expressionLanguage 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration an... | N/A | Descriptive model: every process is isExecutable="false" (interchange only). |
 | B.1.0 | PASS (warnings DOC-ONLY) | PASS | PASS 0 executable | N/A | Descriptive model: every process is isExecutable="false" (interchange only). |
 | B.2.0 | PASS (warnings DOC-ONLY) | PASS | PASS 0 executable | N/A | Descriptive model: every process is isExecutable="false" (interchange only). |
-| C.1.0 | PASS (warnings EXT,IMPORT) | PASS | FAIL ENGINE-09005 Could not parse BPMN process. Errors: * One of the attributes 'class', 'delegateExpression', 'type', or 'expression' is mandatory on serviceTask. If you are using a connector, make sure the connect process e... | PASS | Invoice: message start, reject, clarify, approve, bank transfer, archive (external) to 'Invoice processed'. |
-| C.1.1 | PASS (warnings DOC-ONLY,EXT,IMPORT) | PASS | FAIL ENGINE-09005 Could not parse BPMN process. Errors: * One of the attributes 'class', 'delegateExpression', 'type', or 'expression' is mandatory on serviceTask. If you are using a connector, make sure the connect process e... | N/A | Conditions are XPath (bpmn:getDataObject) over data objects; Sangam evaluates JUEL/FEEL, not XPath (see XPath note). |
-| C.2.0 | PASS | PASS | PASS 0 executable | N/A | Descriptive model: every process is isExecutable="false" (interchange only). |
-| C.3.0 | FAIL ADR-D-25#_2b6bc88e-d3be-4704-87d1-c264bf704589,ADR-D-25#_604be023-654c-44df-a64c-365254a100cd,ADR-D-25#_936c0bfa-5ebf-4546-8d1a-cce556148788 | PASS | FAIL deployment rejected by the Sangam validator (R44): [ADR-D-25] C.3.0.bpmn#_<uuid>: _<uuid>: flow _<uuid> has no condition and is not the default flow (it would always be true) [ADR-D-25] C.3.0.bpmn#_<uuid>: _<uuid>: flow ... | N/A | Gateway conditions are free text ('Service Level == 'Premium'') with XPath declared; not an evaluable expression. |
-| C.4.0 | PASS (warnings DOC-ONLY,EXT) | PASS | PASS 0 executable | N/A | Process has no isExecutable attribute and only manual/WebService work with XPath conditions; no binding in the model. |
-| C.5.0 | PASS (warnings DOC-ONLY,EXT) | PASS | PASS 0 executable | N/A | No isExecutable attribute; called process and data states only, no executable binding. |
-| C.6.0 | PASS (warnings EXT) | PASS | PASS 0 executable | N/A | No isExecutable attribute; WebService tasks without WSDL operations, timeDate without a date. |
+| C.1.0 | FAIL XPATH | PASS | FAIL deployment rejected by the Sangam validator (R44): [XPATH] C.1.0.bpmn: definitions declare expressionLanguage 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration an... | PASS | Invoice: message start, reject, clarify, approve, bank transfer, archive (external) to 'Invoice processed'. Test copy only: the definitions-level XPath declaration is removed (F3); its expressions are JUEL. |
+| C.1.1 | FAIL XPATH | PASS | FAIL deployment rejected by the Sangam validator (R44): [XPATH] C.1.1.bpmn: definitions declare expressionLanguage 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration an... | N/A | Conditions are XPath (bpmn:getDataObject) over data objects; Sangam does not evaluate XPath and refuses the model at deploy (XPATH, owner ruling F3). |
+| C.2.0 | FAIL XPATH | PASS | FAIL deployment rejected by the Sangam validator (R44): [XPATH] C.2.0.bpmn: definitions declare expressionLanguage 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration an... | N/A | Descriptive model: every process is isExecutable="false" (interchange only). |
+| C.3.0 | FAIL ADR-D-25#_2b6bc88e-d3be-4704-87d1-c264bf704589,ADR-D-25#_604be023-654c-44df-a64c-365254a100cd,ADR-D-25#_936c0bfa-5ebf-4546-8d1a-cce556148788,XPATH,XPATH#Bpmn_FormalExpression_8pPK4BqGEeWDuOtG0oS24A | PASS | FAIL deployment rejected by the Sangam validator (R44): [XPATH] C.3.0.bpmn#Bpmn_FormalExpression_8pPK4BqGEeWDuOtG0oS24A: timeDuration declares language 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL... | N/A | Gateway conditions are free text ('Service Level == 'Premium'') with XPath declared; not an evaluable expression. |
+| C.4.0 | FAIL XPATH | PASS | FAIL deployment rejected by the Sangam validator (R44): [XPATH] C.4.0.bpmn: definitions declare expressionLanguage 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration an... | N/A | Process has no isExecutable attribute and only manual/WebService work with XPath conditions; no binding in the model. |
+| C.5.0 | FAIL XPATH | PASS | FAIL deployment rejected by the Sangam validator (R44): [XPATH] C.5.0.bpmn: definitions declare expressionLanguage 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration an... | N/A | No isExecutable attribute; called process and data states only, no executable binding. |
+| C.6.0 | FAIL XPATH | PASS | FAIL deployment rejected by the Sangam validator (R44): [XPATH] C.6.0.bpmn: definitions declare expressionLanguage 'http://www.w3.org/1999/XPath'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration an... | N/A | No isExecutable attribute; WebService tasks without WSDL operations, timeDate without a date. |
 | C.7.0 | PASS (warnings EXT) | PASS | PASS 0 executable | N/A | No isExecutable attribute; FEEL item definitions of the Trisotech type language, WebService work without operations. |
 | C.8.0 | PASS (warnings DOC-ONLY,EXT) | PASS | PASS 0 executable | N/A | Descriptive model: every process is isExecutable="false" (interchange only). |
 | C.8.1 | PASS (warnings DOC-ONLY,EXT) | PASS | FAIL ENGINE-09005 Could not parse BPMN process. Errors: * One of the attributes 'class', 'delegateExpression', 'type', or 'expression' is mandatory on serviceTask. If you are using a connector, make sure the connect process e... | N/A | Bound to KnowProcess implementations (kp:http, kp:mail, kp:dmn) and FEEL conditions over DMN item definitions of the Trisotech type language. |
@@ -43,11 +43,11 @@ Stages: IMPORT = Sangam pre-deploy validator, no error; SCHEMA = Operaton BPMN m
 | C.9.2 | PASS (warnings DOC-ONLY,EXT) | PASS | FAIL ENGINE-09005 Could not parse BPMN process. Errors: * Either loopCardinality or loopDataInputRef/activiti:collection must be set \| resource C.9.2.bpmn \| line 116 \| column 49 * One of the attributes 'class', 'delegateExpre... | N/A | Conditions use Zeebe FEEL syntax ('=fraud'). |
 | C.10.0 | PASS (warnings DOC-ONLY,EXT) | PASS | PASS 0 executable | N/A | Descriptive model: every process is isExecutable="false" (interchange only). |
 
-A refused deployment is the designed outcome when an executable process (isExecutable="true") binds its work to another vendor's engine (activiti:, kp: or zeebe: extensions, `##unspecified` or `webService` implementations without an operation) or breaks a Sangam deploy rule (ADR-D-25 strict exclusive routing): Sangam refuses rather than deploy a process that cannot run. Each refusal is listed with its first error and is part of the regression gate.
+A refused deployment is the designed outcome when an executable process (isExecutable="true") binds its work to another vendor's engine (activiti:, kp: or zeebe: extensions, `##unspecified` or `webService` implementations without an operation) or breaks a Sangam deploy rule (ADR-D-25 strict exclusive routing; XPATH, F3): Sangam refuses rather than deploy a process that cannot run. Each refusal is listed with its first error and is part of the regression gate.
 
 ## Refused by security policy (SL-160)
 
-On the full server the SL-160 deploy allow-list checks every expression and script language in the file, descriptive processes included. Two models that deploy here are refused by security policy (SL-160) on the server, by owner ruling (no scanner exception):
+On the full server the SL-160 deploy allow-list checks every expression and script language in the file, descriptive processes included, and runs before the Sangam validator. Two models are refused by security policy (SL-160) on the server, by owner ruling (no scanner exception); A.2.1 is also refused here (XPATH, F3):
 
 | Model | Server outcome | Code |
 |---|---|---|
@@ -56,6 +56,12 @@ On the full server the SL-160 deploy allow-list checks every expression and scri
 
 MiwgConformanceIT asserts both refusals and their codes on PostgreSQL, Oracle, SQL Server and MySQL.
 
-## XPath note
+## Not supported (owner rulings F1 to F3)
 
-BPMN 2.0.2 section 2.2 makes XPath 1.0 the default expression language and XML Schema / WSDL the default type and service languages for Process Execution Conformance. Sangam evaluates JUEL (`${...}`) and FEEL; it does not evaluate XPath and ignores `definitions/@expressionLanguage`. Models whose conditions are XPath (C.1.1) are not run. This gap is reported to the integrator (R10-bpmn report), not decided here.
+| Construct | Outcome | Code |
+|---|---|---|
+| complexGateway | refused at deploy (F1) | D-52 |
+| multiple and parallel-multiple events (an event with more than one event definition) | refused at deploy (F2) | D-52 |
+| XPath: `definitions/@expressionLanguage` or a `language` attribute naming XPath | refused at deploy on H2, the server and the CLI (which deploys through the server) (F3); never read as JUEL | XPATH |
+
+BPMN 2.0.2 section 2.2 makes XPath 1.0 the default expression language for Process Execution Conformance. Sangam evaluates JUEL (`${...}`) and FEEL only, so a model that declares XPath is refused instead of being run with a meaning its author did not write. On the server SL-160 runs first, so a `language` naming XPath is reported there as SL160-SCRIPT (A.2.1, C.3.0).

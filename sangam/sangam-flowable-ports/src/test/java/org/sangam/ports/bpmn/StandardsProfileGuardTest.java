@@ -87,6 +87,10 @@ class StandardsProfileGuardTest {
                 + "<sequenceFlow id=\"f3\" sourceRef=\"c\" targetRef=\"e\"/>" + E
                 + "<association associationDirection=\"One\" sourceRef=\"b\" targetRef=\"undo\"/>");   // artifacts after flow elements (XSD)
         p.put("MultipleEventDefinition", flow("<intermediateCatchEvent id=\"x\"><signalEventDefinition signalRef=\"sig\"/><messageEventDefinition messageRef=\"msg\"/></intermediateCatchEvent>"));
+        p.put("FormalExpression.XPath", "<startEvent id=\"s\"/><sequenceFlow id=\"f\" sourceRef=\"s\" targetRef=\"g\"/>"
+                + "<exclusiveGateway id=\"g\" default=\"f2\"/><sequenceFlow id=\"f1\" sourceRef=\"g\" targetRef=\"e\">"
+                + "<conditionExpression language=\"http://www.w3.org/1999/XPath\">${true}</conditionExpression></sequenceFlow>"
+                + "<sequenceFlow id=\"f2\" sourceRef=\"g\" targetRef=\"e\"/>" + E);   // F3
         p.put("StandardLoopCharacteristics", flow("<userTask id=\"x\"><standardLoopCharacteristics loopMaximum=\"2\"/></userTask>"));
         p.put("DataObjectReference", flow("<task id=\"x\"/>") + "<dataObject id=\"do\"/><dataObjectReference id=\"dor\" dataObjectRef=\"do\"/>");
         p.put("DataStoreReference", flow("<task id=\"x\"/>") + "<dataStoreReference id=\"dsr\" dataStoreRef=\"store\"/>");

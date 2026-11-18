@@ -47,22 +47,27 @@ final class MiwgReport {
         }
         sb.append("\nA refused deployment is the designed outcome when an executable process (isExecutable=\"true\") binds its ")
                 .append("work to another vendor's engine (activiti:, kp: or zeebe: extensions, `##unspecified` or `webService` ")
-                .append("implementations without an operation) or breaks a Sangam deploy rule (ADR-D-25 strict exclusive routing): ")
+                .append("implementations without an operation) or breaks a Sangam deploy rule (ADR-D-25 strict exclusive routing; XPATH, F3): ")
                 .append("Sangam refuses rather than deploy a process that cannot run. Each refusal is listed with its first error ")
                 .append("and is part of the regression gate.\n")
                 .append("\n## Refused by security policy (SL-160)\n\n")
                 .append("On the full server the SL-160 deploy allow-list checks every expression and script language in the ")
-                .append("file, descriptive processes included. Two models that deploy here are refused by security policy ")
-                .append("(SL-160) on the server, by owner ruling (no scanner exception):\n\n")
+                .append("file, descriptive processes included, and runs before the Sangam validator. Two models are refused by security policy ")
+                .append("(SL-160) on the server, by owner ruling (no scanner exception); A.2.1 is also refused here (XPATH, F3):\n\n")
                 .append("| Model | Server outcome | Code |\n|---|---|---|\n")
                 .append("| A.2.1 | refused by security policy (SL-160) | SL160-SCRIPT (XPath conditions) |\n")
                 .append("| C.8.0 | refused by security policy (SL-160) | SL160-EXPR-BEAN (`SYS.PROCESSINSTANCE_ID`) |\n\n")
                 .append("MiwgConformanceIT asserts both refusals and their codes on PostgreSQL, Oracle, SQL Server and MySQL.\n");
-        sb.append("\n## XPath note\n\n")
-                .append("BPMN 2.0.2 section 2.2 makes XPath 1.0 the default expression language and XML Schema / WSDL the default type ")
-                .append("and service languages for Process Execution Conformance. Sangam evaluates JUEL (`${...}`) and FEEL; it does not ")
-                .append("evaluate XPath and ignores `definitions/@expressionLanguage`. Models whose conditions are XPath (C.1.1) are not ")
-                .append("run. This gap is reported to the integrator (R10-bpmn report), not decided here.\n");
+        sb.append("\n## Not supported (owner rulings F1 to F3)\n\n")
+                .append("| Construct | Outcome | Code |\n|---|---|---|\n")
+                .append("| complexGateway | refused at deploy (F1) | D-52 |\n")
+                .append("| multiple and parallel-multiple events (an event with more than one event definition) | refused at deploy (F2) | D-52 |\n")
+                .append("| XPath: `definitions/@expressionLanguage` or a `language` attribute naming XPath | refused at deploy on H2, ")
+                .append("the server and the CLI (which deploys through the server) (F3); never read as JUEL | XPATH |\n\n")
+                .append("BPMN 2.0.2 section 2.2 makes XPath 1.0 the default expression language for Process Execution Conformance. ")
+                .append("Sangam evaluates JUEL (`${...}`) and FEEL only, so a model that declares XPath is refused instead of being run ")
+                .append("with a meaning its author did not write. On the server SL-160 runs first, so a `language` naming XPath is ")
+                .append("reported there as SL160-SCRIPT (A.2.1, C.3.0).\n");
         return sb.toString();
     }
 

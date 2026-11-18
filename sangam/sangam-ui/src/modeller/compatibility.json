@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T17:53:02.203Z",
+  "generatedAt": "2026-11-18T00:04:26.287Z",
   "inputs": {
     "bpmnPalette": 9,
     "bpmnReplaceMenu": 34,
@@ -86,8 +86,8 @@
       "modeller": "REPLACE_MENU",
       "engine": "NOT_PARSED",
       "status": "UNSUPPORTED",
-      "note": "Parsed but no runtime join semantics in either engine (D-52).",
-      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "note": "Refused at deploy (D-52): no runtime join semantics; not supported by owner ruling F1 (R10-bpmn).",
+      "source": "FLOWABLE-INTO-OPERATON D-52; owner ruling F1",
       "xml": [
         "complexGateway"
       ]
@@ -186,6 +186,18 @@
       "source": "Operaton parser",
       "xml": [
         "exclusiveGateway"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "FormalExpression.XPath",
+      "modeller": "IMPORT_ONLY",
+      "engine": "UNKNOWN",
+      "status": "REJECTED",
+      "note": "XPath is not evaluated: definitions/@expressionLanguage or a language attribute naming XPath is refused at deploy (XPATH) on H2, the server and the CLI; only JUEL and FEEL (owner ruling F3, R10-bpmn).",
+      "source": "sangam-flowable-ports SangamModelValidator; owner ruling F3",
+      "xml": [
+        "formalExpression"
       ]
     },
     {
@@ -290,8 +302,8 @@
       "modeller": "IMPORT_ONLY",
       "engine": "NOT_PARSED",
       "status": "UNSUPPORTED",
-      "note": "Multiple / parallel-multiple events are not executed (D-52).",
-      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "note": "Multiple / parallel-multiple events (more than one event definition) are refused at deploy (D-52); not supported by owner ruling F2 (R10-bpmn).",
+      "source": "FLOWABLE-INTO-OPERATON D-52; owner ruling F2",
       "xml": [
         "multipleEventDefinition"
       ]
