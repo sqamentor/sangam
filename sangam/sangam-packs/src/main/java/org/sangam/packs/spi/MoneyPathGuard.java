@@ -218,7 +218,14 @@ public final class MoneyPathGuard {
                     nodes.put(id, e);
                     succ.computeIfAbsent(e.getAttribute("attachedToRef"), k -> new ArrayList<>()).add(id);
                 }
-                default -> nodes.put(id, e);
+                default -> {
+                    nodes.put(id, e);
+                    // a compensation handler is reached through an association, not a sequence flow; it can run
+                    // whenever its activity is compensated, so it is an entry point of its own
+                    if ("true".equals(e.getAttribute("isForCompensation"))) {
+                        starts.add(id);
+                    }
+                }
             }
         }
     }
