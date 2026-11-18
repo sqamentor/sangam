@@ -32,7 +32,13 @@ updates:
     schedule: { interval: weekly }
     open-pull-requests-limit: 5
   # Product image definitions: the Dockerfiles under deploy/docker and the operator Dockerfile.
+  # Owner Q6 (2026-11-18): presentation Dockerfile and the compose files too; tag@digest pairs move together and every
+  # pull request stays gated by CI (no auto-merge).
   - package-ecosystem: docker
-    directories: [/sangam/deploy/docker, /sangam/deploy/operator]
+    directories: [/sangam/deploy/docker, /sangam/deploy/operator, /sangam/deploy/presentation]
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+  - package-ecosystem: docker-compose
+    directory: /sangam/deploy/compose
     schedule: { interval: weekly }
     open-pull-requests-limit: 5

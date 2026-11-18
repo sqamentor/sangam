@@ -42,7 +42,7 @@ DBS = ["postgres", "oracle", "sqlserver", "sqlserver2025", "mysql"]
 # Images: the names AcceptanceDatabase asks Testcontainers for; digests as in db-matrix.yml (RM-33). The leg pulls
 # the digest and tags it with the name, so the pinned bytes are what runs (sqlserver2025 has no digest pin yet, SG-05).
 IMAGES = {
-    "postgres": "postgres:17@sha256:846a7ddaa67a4b354ae1d21087b683901aa6113a4ed626d3787cfbf6c85e3e07",
+    "postgres": "postgres:17@sha256:0d938e975177bef9f1f61f3f9dbcf2e0aa0a139568f66d3415ed8892eb97f6ac",
     "oracle": "gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093",
     "sqlserver": "mcr.microsoft.com/mssql/server:2022-latest@sha256:4525e3efac9f3e241cb003bb2ff2a82818b502f37e12049d788b1a9fa7e13b7f",
     "sqlserver2025": "mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04",

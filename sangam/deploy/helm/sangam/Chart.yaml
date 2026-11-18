@@ -2,7 +2,7 @@
 apiVersion: v2
 name: sangam
 description: >-
-  Sangam universal workflow platform (based on Operaton 2.2.0): server, UI, Liquibase migration job, autoscaling,
+  Sangam universal workflow platform (based on Operaton 2.2.1): server, UI, Liquibase migration job, autoscaling,
   disruption budgets, network policies and per-database backup CronJob examples (RPO <= 5 min / RTO <= 1 h).
 type: application
 version: 0.1.0

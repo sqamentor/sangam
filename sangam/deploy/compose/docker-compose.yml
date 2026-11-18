@@ -177,7 +177,7 @@ services:
 
   # ------------------------------------------------------------------------------------------------ databases
   postgres:
-    image: postgres:17@sha256:846a7ddaa67a4b354ae1d21087b683901aa6113a4ed626d3787cfbf6c85e3e07
+    image: postgres:17.12@sha256:0d938e975177bef9f1f61f3f9dbcf2e0aa0a139568f66d3415ed8892eb97f6ac
     profiles: [postgres]
     restart: unless-stopped
     environment:
@@ -426,7 +426,7 @@ services:
   # M-082 / owner decision 71: ClamAV (GPL-2.0) as a separate service, never linked; pinned tag; pulled only when the
   # profile is used (test phase). clamd 3310 is not published: only the server reaches it on the sangam network.
   clamav:
-    image: clamav/clamav:1.4.3
+    image: clamav/clamav:1.5.4@sha256:7054e3f34308c384ea43cd786ea17abf899bd44af40af9f1b099853d7a5c214e
     restart: unless-stopped
     profiles: [malware]
     environment:
@@ -589,7 +589,7 @@ services:
   # Always present so the server has a local OTLP endpoint; by default it exports nowhere (R56: no outbound
   # telemetry by default). OTEL_COLLECTOR_CONFIG=collector-observability.yaml forwards to Jaeger/Prometheus.
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.131.1@sha256:c06aa6d7833e9a2b81c6c394d67e40ae9864edec8dca8a8e8552df1316c96d9b
+    image: otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
     restart: unless-stopped
     command: ["--config=/etc/otelcol/${OTEL_COLLECTOR_CONFIG:-collector-base.yaml}"]
     volumes:
@@ -600,14 +600,14 @@ services:
     networks: [sangam]
 
   jaeger:
-    image: jaegertracing/jaeger:2.9.0@sha256:e128b9adbb29c7146ac0b43e26be9dec794fee3478f2f05c4ef7a5b14ddba9a4
+    image: jaegertracing/jaeger:2.23.0@sha256:3823829974ccfc2485d2e48b165579091f32295022ae80ca49704e2f4834116e
     profiles: [observability]
     restart: unless-stopped
     ports: ["127.0.0.1:16686:16686"]
     networks: [sangam]
 
   prometheus:
-    image: prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996
+    image: prom/prometheus:v3.16.0@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06
     profiles: [observability]
     restart: unless-stopped
     command:
@@ -622,7 +622,7 @@ services:
     networks: [sangam]
 
   grafana:
-    image: grafana/grafana-oss:12.1.1
+    image: grafana/grafana:13.3.1@sha256:0615ec4fbd4072004b7d86b46ded63013a74b7d6eb1119273dd89e8fa25c13cf
     profiles: [observability]
     restart: unless-stopped
     environment:
@@ -637,6 +637,12 @@ services:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
+    # Owner Q5: start check; /api/health answers once the database and provisioning are up.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:3000/api/health | grep -q '\"database\": *\"ok\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
     ports: ["127.0.0.1:3001:3000"]
     networks: [sangam]
 

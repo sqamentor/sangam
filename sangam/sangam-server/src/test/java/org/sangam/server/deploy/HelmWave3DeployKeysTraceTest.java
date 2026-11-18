@@ -104,6 +104,9 @@ class HelmWave3DeployKeysTraceTest {
         assertEquals("clamav/clamav", image.get("repository"), "owner decision 71 names clamav/clamav");
         String tag = String.valueOf(image.get("tag"));
         assertTrue(tag.matches("\\d+\\.\\d+\\.\\d+"), "pinned tag, got " + tag);
+        // RM-33 (UP-L3): the tag is pinned by its registry digest too, and compose names the same tag@digest
+        String digest = String.valueOf(image.get("digest"));
+        assertTrue(digest.matches("sha256:[0-9a-f]{64}"), "pinned digest, got " + digest);
 
         String template = read(CHART.resolve("templates/clamav.yaml"));
         assertTrue(template.startsWith("{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}"), "SPDX header");
@@ -114,7 +117,7 @@ class HelmWave3DeployKeysTraceTest {
                 "the server egress reaches clamd only when the service exists");
 
         String compose = read(DEPLOY.resolve("compose/docker-compose.yml"));
-        assertTrue(compose.contains("    image: clamav/clamav:" + tag + "\n"), "compose uses the same pinned image");
+        assertTrue(compose.contains("    image: clamav/clamav:" + tag + "@" + digest + "\n"), "compose uses the same pinned image");
         assertTrue(compose.contains("    profiles: [malware]\n"), "compose ClamAV only with --profile malware");
         assertFalse(Pattern.compile("(?m)^\\s+- \"?[0-9.:]*3310:3310").matcher(compose).find(), "clamd not published");
         assertTrue(compose.contains("SANGAM_MALWARE_SCANNER: ${SANGAM_MALWARE_SCANNER:-none}"), "compose default none");
