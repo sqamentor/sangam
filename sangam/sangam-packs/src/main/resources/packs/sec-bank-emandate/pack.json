@@ -38,6 +38,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-bank-emandate/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-bank-emandate/pack.json"
     }
   ],
   "seed": "packs/sec-bank-emandate/seed.json",
@@ -86,5 +90,14 @@
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "ed_debit_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  }
 }

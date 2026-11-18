@@ -30,6 +30,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-cap-corporate-action/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-cap-corporate-action/pack.json"
     }
   ],
   "seed": "packs/sec-cap-corporate-action/seed.json",
@@ -92,5 +96,19 @@
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "cd_bsanction": {
+      "monetary": false,
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    },
+    "cd_unpaid_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  }
 }

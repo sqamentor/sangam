@@ -146,6 +146,12 @@
       "currency": "INR",
       "limitTable": "sec-scm-powers",
       "ruleCaseType": "PURCHASE"
+    },
+    "pp_paySanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-scm-powers",
+      "ruleCaseType": "PURCHASE"
     }
   },
   "money": {

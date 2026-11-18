@@ -38,6 +38,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-ins-proposal-underwriting/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-ins-proposal-underwriting/pack.json"
     }
   ],
   "seed": "packs/sec-ins-proposal-underwriting/seed.json",
@@ -119,5 +123,14 @@
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "ip_refund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  }
 }

@@ -42,6 +42,10 @@
     {
       "kind": "FORM",
       "path": "packs/sec-edu-admission/forms/refund-amount.form.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-edu-admission/pack.json"
     }
   ],
   "seed": "packs/sec-edu-admission/seed.json",
@@ -119,5 +123,14 @@
       "processingFee",
       "refundAmount"
     ]
+  },
+  "currency": "INR",
+  "powers": {
+    "ed_wdRefund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
   }
 }

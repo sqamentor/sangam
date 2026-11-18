@@ -173,6 +173,11 @@
   ],
   "currency": "INR",
   "powers": {
+    "db_retry_bsanction": {
+      "monetary": false,
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GRANT"
+    },
     "db_sanction": {
       "monetary": false,
       "limitTable": "sangam-core-powers",

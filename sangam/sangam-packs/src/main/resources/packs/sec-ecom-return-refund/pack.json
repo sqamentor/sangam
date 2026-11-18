@@ -34,6 +34,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-ecom-return-refund/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-ecom-return-refund/pack.json"
     }
   ],
   "seed": "packs/sec-ecom-return-refund/seed.json",
@@ -88,5 +92,14 @@
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "er_refund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  }
 }

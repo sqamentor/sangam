@@ -42,6 +42,10 @@
     {
       "kind": "FORM",
       "path": "packs/sec-ecom-order-to-cash/forms/commission-amount.form.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-ecom-order-to-cash/pack.json"
     }
   ],
   "seed": "packs/sec-ecom-order-to-cash/seed.json",
@@ -124,5 +128,26 @@
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "eo_cxRefund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    },
+    "eo_refund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    },
+    "eo_settle_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  }
 }

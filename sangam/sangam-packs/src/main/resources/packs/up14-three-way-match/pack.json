@@ -34,6 +34,10 @@
     {
       "kind": "FORM",
       "path": "packs/up14-three-way-match/forms/payable-amount.form.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/up14-three-way-match/pack.json"
     }
   ],
   "seed": "packs/up14-three-way-match/seed.json",
@@ -77,5 +81,14 @@
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "u14_post_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  }
 }

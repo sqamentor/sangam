@@ -46,6 +46,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-hr-employee-exit/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-hr-employee-exit/pack.json"
     }
   ],
   "seed": "packs/sec-hr-employee-exit/seed.json",
@@ -111,5 +115,20 @@
       "documentType": "SANCTION_NOTE",
       "slot": "sanctionDocumentId"
     }
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "hx_gratPay_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    },
+    "hx_pay_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  }
 }

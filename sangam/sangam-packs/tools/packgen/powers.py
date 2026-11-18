@@ -13,8 +13,9 @@ Derivation from the calling process, the same facts the listener used to read fr
 broadened:
   * limitTable: the `powersDecisionKey` the calling process sets (at most one per process, else generation stops), or
     the core sanction's own default when it sets none;
-  * monetary: the pack declares `amount` as a money variable, or the calling process assigns `amount` anything but the
-    literal 0 (a reference such as @estimateAmount, or a value); `amount=0` is the existing "no amount" marker. A
+  * monetary: the call binds the money fields (a MoneyFieldsDelegate listener on it sets `amount` for this action,
+    owner decision E3), or the pack declares `amount` as a money variable, or the calling process assigns `amount`
+    anything but the literal 0 (a reference such as @estimateAmount, or a value); `amount=0` is the existing "no amount" marker. A
     process that assigns no amount while another process of the same pack does is ambiguous and stops generation;
   * currency: the pack currency (money.py), for a monetary action only;
   * ruleCaseType (owner decision 222): the value of `caseType` in force when the call is entered, declared only when
@@ -43,6 +44,13 @@ _CALL = re.compile(r'<callActivity\b[^>]*>')
 _ATTR = re.compile(r'\b(id|calledElement)="([^"]*)"')
 _TABLE = re.compile(r'powersDecisionKey=([^;<"&]+)')
 _AMOUNT = re.compile(r'(?<![A-Za-z0-9_])amount=([^;<"&]*)')
+_CALL_BODY = re.compile(r'<callActivity\b[^>]*?\bid="([^"]+)"[^>]*?(?:/>|>(.*?)</callActivity>)', re.S)
+_MONEY_FIELDS = 'org.sangam.packs.core.MoneyFieldsDelegate'
+
+
+def binds_money_fields(xml):
+    """Ids of the call activities whose MoneyFieldsDelegate listener copies the paid figure into `amount` (E3)."""
+    return {m.group(1) for m in _CALL_BODY.finditer(xml) if _MONEY_FIELDS in (m.group(2) or '')}
 
 
 def sanction_calls(xml):
@@ -234,12 +242,14 @@ def declare(pk, xmls, tables, missing):
                         f'does; declare whether the sanction is monetary')
             continue
         keyed_by_case_type = has_case_type_input(tables[table])
+        money_bound = binds_money_fields(xml)
         for action in calls:
             if action in block:
                 missing.add(f'{pk.id}: sanction call id {action} is not unique')
                 continue
-            entry = {'monetary': monetary}
-            if monetary:
+            action_monetary = monetary or action in money_bound
+            entry = {'monetary': action_monetary}
+            if action_monetary:
                 entry['currency'] = pk.currency
             entry['limitTable'] = table
             if keyed_by_case_type:
