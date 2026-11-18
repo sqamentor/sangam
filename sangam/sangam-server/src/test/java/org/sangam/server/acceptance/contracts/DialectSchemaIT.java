@@ -194,7 +194,8 @@ class DialectSchemaIT extends ContractSupport {
                 .endsWith("ORDER BY d.id LIMIT 5 FOR UPDATE OF d SKIP LOCKED"));
         // Oracle (deliberate change in Dialect.skipLockedSelect): an ordered ROWID candidate window of 8 x limit, then
         // ORDER BY .. FOR UPDATE SKIP LOCKED inside it; the limit marker makes Jdbc.query stop fetching (= locking) at 5.
-        assertEquals("SELECT /*sangam:limit=5*/ d.id FROM T d WHERE d.ROWID IN (SELECT sgm_rid FROM (SELECT d.ROWID AS"
+        // The locking query repeats the predicate, so a row changed after the window's snapshot is re-checked on lock.
+        assertEquals("SELECT /*sangam:limit=5*/ d.id FROM T d WHERE (d.x=1) AND d.ROWID IN (SELECT sgm_rid FROM (SELECT d.ROWID AS"
                         + " sgm_rid FROM T d WHERE (d.x=1) ORDER BY d.id) WHERE ROWNUM <= 40) ORDER BY d.id FOR UPDATE SKIP LOCKED",
                 Dialect.ORACLE.skipLockedSelect("d.id", "T", "d", "d.x=1", "d.id", 5));
         assertTrue(Dialect.SQLSERVER.skipLockedSelect("d.id", "T", "d", "d.x=1", "d.id", 5)
