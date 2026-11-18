@@ -372,6 +372,10 @@ def write_all(root):
         for c in pk.connectors:
             conns[c[0]] = {'id': c[0], 'moneyMovement': money_movement.of(c[0]), 'capabilityClass': c[1],
                            'govTag': c[2], 'purpose': c[3]}
+            if c[0] in money_movement.REASON:
+                conns[c[0]] = {'id': c[0], 'moneyMovement': conns[c[0]]['moneyMovement'],
+                               'moneyMovementReason': money_movement.REASON[c[0]],
+                               **{k: v for k, v in conns[c[0]].items() if k not in ('id', 'moneyMovement')}}
             if c[0] in SIMULATOR_BINDINGS:
                 conn, op = SIMULATOR_BINDINGS[c[0]]
                 conns[c[0]]['simulatorBinding'] = {'connector': conn, 'operation': op}
