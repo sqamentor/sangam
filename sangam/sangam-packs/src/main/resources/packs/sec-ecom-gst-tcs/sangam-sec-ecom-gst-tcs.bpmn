@@ -49,7 +49,10 @@
     <sequenceFlow id="sec_ecom_gst_tcs_f15" name="confirmed" sourceRef="gt_suppliesGw" targetRef="gt_rate"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f16" sourceRef="gt_rate" targetRef="gt_compute"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f17" sourceRef="gt_compute" targetRef="gt_review_slaPlan"/>
-    <sequenceFlow id="sec_ecom_gst_tcs_f18" sourceRef="gt_review_done" targetRef="gt_deposit_sanction"/>
+    <sequenceFlow id="sec_ecom_gst_tcs_f18" sourceRef="gt_review_done" targetRef="gt_tcsGw"/>
+    <exclusiveGateway id="gt_tcsGw" name="TCS payable?" default="sec_ecom_gst_tcs_f24"></exclusiveGateway>
+    <sequenceFlow id="sec_ecom_gst_tcs_f23" name="TCS payable" sourceRef="gt_tcsGw" targetRef="gt_deposit_sanction"><conditionExpression xsi:type="tFormalExpression">${tcsAmount &gt; 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_gst_tcs_f24" name="nil: nothing to deposit" sourceRef="gt_tcsGw" targetRef="gt_gstr8"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f19" sourceRef="gt_deposit" targetRef="gt_gstr8"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f20" sourceRef="gt_gstr8" targetRef="gt_fileGw"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f21" name="error: correct" sourceRef="gt_fileGw" targetRef="gt_review_slaPlan"><conditionExpression xsi:type="tFormalExpression">${gstr8Status == 'FAILED'}</conditionExpression></sequenceFlow>
@@ -100,6 +103,6 @@
       <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f20_di" bpmnElement="sec_ecom_gst_tcs_f20"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f21_di" bpmnElement="sec_ecom_gst_tcs_f21"><di:waypoint x="2380" y="95"/><di:waypoint x="2380" y="128"/><di:waypoint x="1225" y="128"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f22_di" bpmnElement="sec_ecom_gst_tcs_f22"><di:waypoint x="2405" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
-    </bpmndi:BPMNPlane>
+    <bpmndi:BPMNShape id="gt_tcsGw_di" bpmnElement="gt_tcsGw" isMarkerVisible="true"><dc:Bounds x="1200" y="300" width="50" height="50"/></bpmndi:BPMNShape></bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>
