@@ -24,6 +24,15 @@
       }
     },
     {
+      "id": "payeePartyId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Merchant (verified payee registry id)",
+        "hi": "व्यापारी (सत्यापित पानेवाला पंजी आईडी)"
+      }
+    },
+    {
       "id": "account",
       "type": "masked",
       "required": true,
@@ -50,6 +59,15 @@
       "label": {
         "en": "Amount (INR)",
         "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "amountType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Amount type (FIXED or MAX)",
+        "hi": "राशि का प्रकार (FIXED या MAX)"
       }
     },
     {
