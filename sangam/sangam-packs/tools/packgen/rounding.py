@@ -212,6 +212,13 @@ POLICIES = {
         placeholder=('SYNTHETIC payable rounding: nearest paisa',
                      'the company's payable rounding (line versus invoice total) was not verified; deploy it as a '
                      'tenant override (decision 139)')),
+    'sec-edu-refund-rounding': dict(
+        title='Withdrawal refund rounding (fee x refund %)',
+        rows=demo('withdrawal refund', 'HALF_UP', 1, 'line', 'line value',
+                  why='SEC-SCM-001: value rules are company policy (SYNTHETIC); quantity is a decimal field'),
+        placeholder=('SYNTHETIC refund rounding: nearest paisa',
+                     'the institution's refund rounding was not verified; deploy it as a tenant override '
+                     '(decision 139)')),
     'gem-amount-rounding': dict(
         title='GeM purchase value rounding (quantity x unit price)',
         rows=demo('purchase value', 'HALF_UP', 1, 'line', 'line value'),
