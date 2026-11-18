@@ -254,18 +254,19 @@ def pension():
            [('pensionAmount', 'Monthly pension', 'money'), ('eligibleForPension', 'Eligible', 'boolean'),
             ('retirementGratuity', 'Retirement gratuity', 'money'), ('familyPension', 'Family pension (ordinary rate)', 'money'),
             ('ruleRef', 'Rule', 'string')],
-           # money in minor units (SD-398): amounts through M(), one rounding up to a whole minor unit per figure
-           [(['>= 10', '-', '-'], ['ceiling(min([max([max([lastPay, averageEmoluments]) * 0.5, %s]), %s]))'
+           # money in minor units (SD-398): amounts through M(); outputs are exact (DEC-5: no rounding in DMN, the Java money
+           # step holds a figure that is not a whole minor unit until a rounding rule is configured)
+           [(['>= 10', '-', '-'], ['min([max([max([lastPay, averageEmoluments]) * 0.5, %s]), %s])'
                                   % (M(9000), M(125000)), 'true',
-                                  'ceiling(min([lastPay * 0.25 * min([floor(qualifyingService * 2), 66]), %s]))'
+                                  'min([lastPay * 0.25 * min([floor(qualifyingService * 2), 66]), %s])'
                                   % M(2500000),
-                                  'ceiling(max([lastPay * 0.3, %s]))' % M(9000),
+                                  'max([lastPay * 0.3, %s])' % M(9000),
                                   '"CCS (Pension) Rules 2021: 50% of last emoluments or average emoluments, whichever is more '
                                   'beneficial; minimum 9,000, maximum 50% of the highest pay (1,25,000); gratuity 1/4 per '
                                   'six-monthly period, max 16.5 x emoluments, ceiling 25 lakh [U ceiling date]"'],
              'pension after 10 years of qualifying service'),
-            (['< 10', '-', '-'], ['0', 'false', 'ceiling(lastPay * 0.5 * floor(qualifyingService * 2))',
-                                 'ceiling(max([lastPay * 0.3, %s]))' % M(9000),
+            (['< 10', '-', '-'], ['0', 'false', 'lastPay * 0.5 * floor(qualifyingService * 2)',
+                                 'max([lastPay * 0.3, %s])' % M(9000),
                                  '"CCS (Pension) Rules 2021: service gratuity below 10 years (half a month per six-monthly period) [U]"'],
              'service gratuity only')],
            doc='Replaces the earlier 50 % placeholder. Values from the CCS (Pension) Rules 2021 as summarised in IFMS-CENTRAL '
@@ -400,14 +401,14 @@ def contract():
            [('Delay (days)', 'delayDays', 'integer'), ('Contract value', 'contractValue', 'money')],
            [('ldAmount', 'LD amount', 'money')],
            [(['<= 0', '-'], ['0'], 'no delay'),
-            (['-', '-'], ['floor(min(delayDays * 0.0005, 0.1) * contractValue)'],
-             '0.05% per day, capped at 10%; rounded down once to a whole minor unit')])
+            (['-', '-'], ['min(delayDays * 0.0005, 0.1) * contractValue'],
+             '0.05% per day, capped at 10%; exact (DEC-5: no rounding in DMN)')])
     pk.dmn('contract-price-escalation', 'Price escalation (synthetic clause 10CC-style)', 'FIRST',
            [('Index change (%)', 'escalationIndex', 'number'), ('Base amount', 'amendmentAmount', 'money')],
            [('escalationAmount', 'Escalation', 'money')],
            [(['<= 5', '-'], ['0'], 'absorbed by the contractor up to 5%'),
-            (['-', '-'], ['floor((escalationIndex - 5) / 100 * contractValue * 0.85)'],
-             'beyond 5%, on 85% of value; rounded down once to a whole minor unit')])
+            (['-', '-'], ['(escalationIndex - 5) / 100 * contractValue * 0.85'],
+             'beyond 5%, on 85% of value; exact (DEC-5: no rounding in DMN)')])
     pk.dmn('contract-amendment-authority', 'Amendment authority', 'FIRST',
            [('Type', 'amendmentType', 'string'), ('Amount', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')],
