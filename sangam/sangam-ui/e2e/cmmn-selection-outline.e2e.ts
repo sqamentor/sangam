@@ -6,10 +6,13 @@
  */
 import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { expect, test } from './support/fixtures';
 
-const CASE = readFileSync(resolve(__dirname, '../../sangam-packs/src/main/resources/packs/grievance/sangam-grievance-case.cmmn'), 'utf-8');
+const CASE = readFileSync(
+  fileURLToPath(new URL('../../sangam-packs/src/main/resources/packs/grievance/sangam-grievance-case.cmmn', import.meta.url)),
+  'utf-8',
+);
 
 test('a selected CMMN plan item is outlined on the canvas', async ({ signedIn: page, api }) => {
   const created = await api.ctx.post('packages', { data: { key: `e2e-cmmn-${randomUUID().slice(0, 8)}`, name: 'E2E CMMN outline' } });
