@@ -130,7 +130,9 @@ public class ExternalOperationDelegate implements JavaDelegate {
             String held = MoneyOutApproval.refusal(conn(ex), ex::getVariable);
             if (held != null) {
                 Vars.audit(ex, "APPROVAL_INVALIDATED", Vars.map("reason", held, "step", s));
-                throw new BpmnError(MoneyOutApproval.ERROR, held);
+                // held as an incident with the reason: core execution has no catch for it, and an uncaught BPMN
+                // error would end the call quietly, so the caller would go on without executionOutcome
+                throw new org.operaton.bpm.engine.ProcessEngineException(MoneyOutApproval.HELD + ": " + held);
             }
         }
         int attempt = Vars.intVal(ex, s + "Attempt", 1);
