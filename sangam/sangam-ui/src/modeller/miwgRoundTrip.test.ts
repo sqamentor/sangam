@@ -6,7 +6,7 @@
  * The round trip must keep every element (id and BPMN type), every sequence/message flow end, every diagram shape and
  * edge with its bounds, and add no new import warning. bpmn-js cannot lay out SVG in jsdom, so rendering is not covered.
  */
-import BpmnModdle from 'bpmn-moddle';
+import { BpmnModdle } from 'bpmn-moddle'; // bpmn-moddle 10 (bpmn-js 18): named export
 import { describe, expect, it } from 'vitest';
 
 // Vite reads the files (vite.config.ts allows this folder under Vitest only)

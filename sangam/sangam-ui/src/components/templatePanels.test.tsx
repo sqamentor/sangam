@@ -7,7 +7,6 @@
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import i18n from 'i18next';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
 vi.mock('../api/client', async (orig) => {
@@ -15,12 +14,12 @@ vi.mock('../api/client', async (orig) => {
   return { ...real, http: { ...real.http, get: api.get, post: api.post } };
 });
 
-import { initI18n } from '../i18n';
+import { initI18n, tr } from '../i18n';
 import { TemplatePalette } from './TemplatePalette';
 import { FormComponentPanel, insertTemplate, type FormEditorLike } from './FormComponentPanel';
 import { blockingA11yIssues } from '../test/axe';
 
-const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
+const T = tr;
 
 function fakeModeler() {
   const created: { type: string }[] = [];

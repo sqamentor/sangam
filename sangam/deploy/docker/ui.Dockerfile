@@ -27,8 +27,8 @@ ARG NPM_CONFIG_REGISTRY
 # after npm ci. rolldown and lightningcss load their native binary from a prebuilt optional package
 # (@rolldown/binding-linux-*, lightningcss-linux-*; plain optionalDependencies selected by os and cpu, no
 # hasInstallScript). esbuild, whose postinstall used to be rebuilt here by name, is no longer in package-lock.json.
-# The packages that do have an install script are not run: @carbon/grid and @carbon/layout (ibmtelemetry, install-time
-# telemetry), inferno (opencollective banner) and fsevents (macOS only, optional).
+# The packages that do have an install script are not run: inferno (opencollective banner) and fsevents (macOS only,
+# optional). @carbon/grid and @carbon/layout (ibmtelemetry, install-time telemetry) left the tree with form-js 2.2 (UP-L6b).
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --ignore-scripts --no-audit --no-fund
 COPY sangam-ui/ ./

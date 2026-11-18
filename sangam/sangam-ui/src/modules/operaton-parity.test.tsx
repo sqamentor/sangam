@@ -10,7 +10,6 @@ import type { ReactElement } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import i18n from 'i18next';
 
 const api = vi.hoisted(() => ({
   get: vi.fn(),
@@ -35,7 +34,7 @@ vi.mock('../components/BpmnDiagram', () => ({ BpmnDiagram: (p: { title: string }
 vi.mock('../components/DmnView', () => ({ DmnView: (p: { title: string; xml: string }) => <div data-testid="dmn">{p.title}:{p.xml}</div> }));
 vi.mock('../plugins/host', () => ({ PluginSlot: () => null, usePlugins: () => [] }));
 
-import { initI18n } from '../i18n';
+import { initI18n, tr } from '../i18n';
 import { EngineAdminPage, OperatonOpsPage, TaskDashboard, TaskFiltersPage, Account } from './operaton';
 import { DrdPage } from './operaton2';
 import { AddVariables, TaskDates } from './operaton3';
@@ -46,7 +45,7 @@ import { StartCatalog } from '../areas/tasklist/StartAndCases';
 import { api as contract } from '../api/endpoints';
 import { ApiError } from '../api/client';
 
-const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
+const T = tr;
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** A field label: the translated text, optionally followed by the required marker. */
 const L = (k: string) => new RegExp(`^${esc(T(k))}(\\s*\\*.*)?$`);

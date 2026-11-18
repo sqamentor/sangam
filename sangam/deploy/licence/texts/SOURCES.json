@@ -156,7 +156,7 @@
       "sha256": "3164FADA4B955AE8CD46F7612432A16A46684B54BF924F3F5EB578D04DDD6458"
     },
     "LicenseRef-bpmn.io": {
-      "source": "npm bpmn-js 17.11.1 LICENSE (sangam-ui node_modules, installed from the committed lockfile); the bpmn.io licence (MIT with the watermark clause, LIC-8)",
+      "source": "npm bpmn-js 18.33.0 LICENSE (sangam-ui node_modules, installed from the committed lockfile); the bpmn.io licence (MIT with the watermark clause, LIC-8)",
       "artefact_sha256": "5788CF8BD61481776CEE1C943595525499A1355C045E9244F92E6C8092C06770",
       "entry": "LICENSE",
       "change": "none (verbatim bytes)",

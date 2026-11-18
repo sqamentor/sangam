@@ -18,7 +18,7 @@ import { api } from '../../api/endpoints';
 import { ApiError } from '../../api/client';
 import type { DscEnrolment, DscEnrolmentStatus } from '../../api/types';
 import { config } from '../../config';
-import { fmtDate } from '../../i18n';
+import { fmtDate, type Translate } from '../../i18n';
 import { DscAgentError, dscAgent, type DscCertificate } from '../../lib/dscAgent';
 import { announce, useAction, useAsync } from '../../lib/hooks';
 import { Badge, DataTable, Dialog, Empty, Loading, Notice, PageHeader, ProblemAlert, Section, SelectField, TextArea, type Column } from '../../components/ui';
@@ -29,7 +29,7 @@ export const DSC_REASON_MAX = 512;
 /** DscCertificateEnrolmentRequest: at most 16 KiB decoded. */
 export const DSC_CERTIFICATE_MAX_BYTES = 16 * 1024;
 
-type T = (k: string, o?: Record<string, unknown>) => string;
+type T = Translate;
 
 function toBase64(bytes: Uint8Array): string {
   let s = '';

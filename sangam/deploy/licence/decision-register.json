@@ -2315,21 +2315,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/%40bpmn-io/feel-editor@1.12.1": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
   "pkg:npm/%40bpmn-io/feel-editor@2.8.1": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
-  "pkg:npm/%40bpmn-io/feel-lint@2.1.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -2357,13 +2343,6 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/%40bpmn-io/feelin@6.1.1": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
   "pkg:npm/%40bpmn-io/feelin@7.0.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -2371,26 +2350,19 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/%40bpmn-io/form-js-editor@1.26.1": {
+  "pkg:npm/%40bpmn-io/form-js-editor@2.2.0": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
    ],
    "spdx": "LicenseRef-bpmn.io (declared 'SEE LICENSE IN LICENSE')"
   },
-  "pkg:npm/%40bpmn-io/form-js-viewer@1.26.1": {
+  "pkg:npm/%40bpmn-io/form-js-viewer@2.2.0": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
    ],
    "spdx": "LicenseRef-bpmn.io (declared 'SEE LICENSE IN LICENSE')"
-  },
-  "pkg:npm/%40bpmn-io/lang-feel@2.4.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
   },
   "pkg:npm/%40bpmn-io/lang-feel@4.0.2": {
    "decision": "ACCEPTED FOR DEFINED USE",
@@ -2400,20 +2372,6 @@
    "spdx": "MIT"
   },
   "pkg:npm/%40bpmn-io/lang-feelers@1.0.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
-  "pkg:npm/%40bpmn-io/lezer-feel@1.9.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
-  "pkg:npm/%40bpmn-io/lezer-feel@2.5.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -2448,33 +2406,12 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/%40camunda/feel-builtins@0.2.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
   "pkg:npm/%40camunda/feel-builtins@1.5.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
    ],
    "spdx": "MIT"
-  },
-  "pkg:npm/%40carbon/grid@11.66.0": {
-   "decision": "ACCEPTED WITH CONDITIONS",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "Apache-2.0"
-  },
-  "pkg:npm/%40carbon/layout@11.63.0": {
-   "decision": "ACCEPTED WITH CONDITIONS",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "Apache-2.0"
   },
   "pkg:npm/%40codemirror/autocomplete@6.20.4": {
    "decision": "ACCEPTED FOR DEFINED USE",
@@ -2546,13 +2483,6 @@
    ],
    "spdx": "OFL-1.1"
   },
-  "pkg:npm/%40ibm/telemetry-js@1.12.0": {
-   "decision": "ACCEPTED WITH CONDITIONS",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "Apache-2.0"
-  },
   "pkg:npm/%40lezer/common@1.5.5": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -2609,6 +2539,13 @@
    ],
    "spdx": "MIT"
   },
+  "pkg:npm/%40types/react@19.3.0": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
   "pkg:npm/%40types/trusted-types@2.0.7": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -2644,14 +2581,14 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/bpmn-js@17.11.1": {
+  "pkg:npm/bpmn-js@18.33.0": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
    ],
    "spdx": "LicenseRef-bpmn.io (declared 'SEE LICENSE IN LICENSE')"
   },
-  "pkg:npm/bpmn-moddle@8.1.0": {
+  "pkg:npm/bpmn-moddle@10.3.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -2666,13 +2603,6 @@
    "spdx": "MIT"
   },
   "pkg:npm/clsx@2.1.1": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
-  "pkg:npm/component-event@0.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -2721,6 +2651,13 @@
    ],
    "spdx": "MIT"
   },
+  "pkg:npm/csstype@3.2.3": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
   "pkg:npm/debug@4.4.3": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -2735,26 +2672,12 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/diagram-js@14.11.3": {
-   "decision": "ACCEPTED WITH CONDITIONS",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "LicenseRef-bpmn.io (declared 'MIT')"
-  },
   "pkg:npm/diagram-js@15.30.0": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
    ],
    "spdx": "LicenseRef-bpmn.io (declared 'MIT')"
-  },
-  "pkg:npm/didi@10.2.2": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
   },
   "pkg:npm/didi@11.0.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
@@ -2770,49 +2693,49 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/dmn-js-boxed-expression@16.8.2": {
+  "pkg:npm/dmn-js-boxed-expression@18.0.1": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
    ],
    "spdx": "LicenseRef-bpmn.io (declared 'SEE LICENSE IN LICENSE')"
   },
-  "pkg:npm/dmn-js-decision-table@16.8.2": {
+  "pkg:npm/dmn-js-decision-table@18.0.3": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
    ],
    "spdx": "LicenseRef-bpmn.io (declared 'SEE LICENSE IN LICENSE')"
   },
-  "pkg:npm/dmn-js-drd@16.8.2": {
+  "pkg:npm/dmn-js-drd@18.0.1": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
    ],
    "spdx": "LicenseRef-bpmn.io (declared 'SEE LICENSE IN LICENSE')"
   },
-  "pkg:npm/dmn-js-literal-expression@16.8.2": {
+  "pkg:npm/dmn-js-literal-expression@18.0.1": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
    ],
    "spdx": "LicenseRef-bpmn.io (declared 'SEE LICENSE IN LICENSE')"
   },
-  "pkg:npm/dmn-js-shared@16.8.2": {
+  "pkg:npm/dmn-js-shared@18.0.1": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
    ],
    "spdx": "LicenseRef-bpmn.io (declared 'SEE LICENSE IN LICENSE')"
   },
-  "pkg:npm/dmn-js@16.8.2": {
+  "pkg:npm/dmn-js@18.0.3": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
    ],
    "spdx": "LicenseRef-bpmn.io (declared 'SEE LICENSE IN LICENSE')"
   },
-  "pkg:npm/dmn-moddle@10.0.0": {
+  "pkg:npm/dmn-moddle@12.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -2826,15 +2749,8 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/domify@1.4.2": {
-   "decision": "ACCEPTED WITH CONDITIONS",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
   "pkg:npm/domify@3.0.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
+   "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
    ],
@@ -2882,21 +2798,14 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:npm/html-parse-stringify@3.1.0": {
+  "pkg:npm/html-parse-stringify@4.0.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/i18next@23.16.8": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
-  "pkg:npm/ids@1.0.5": {
+  "pkg:npm/i18next@27.1.5": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -2959,13 +2868,6 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/loose-envify@1.4.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
   "pkg:npm/luxon@3.7.2": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -2980,28 +2882,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/min-dash@3.8.1": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
-  "pkg:npm/min-dash@4.2.3": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
   "pkg:npm/min-dash@5.1.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
-  "pkg:npm/min-dom@4.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -3022,28 +2903,14 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/moddle-xml@10.1.0": {
+  "pkg:npm/moddle-xml@12.3.2": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/moddle-xml@9.0.6": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
-  "pkg:npm/moddle@5.0.4": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
-  "pkg:npm/moddle@6.2.3": {
+  "pkg:npm/moddle@8.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -3078,13 +2945,6 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/path-intersection@3.1.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
   "pkg:npm/path-intersection@4.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -3099,14 +2959,14 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/react-dom@18.3.1": {
+  "pkg:npm/react-dom@19.3.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/react-i18next@15.7.4": {
+  "pkg:npm/react-i18next@18.0.2": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -3127,28 +2987,21 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/react@18.3.1": {
+  "pkg:npm/react@19.3.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/saxen@8.1.2": {
+  "pkg:npm/saxen@11.2.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/scheduler@0.23.2": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
-  "pkg:npm/selection-ranges@3.0.3": {
+  "pkg:npm/scheduler@0.28.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -3162,7 +3015,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/selection-update@0.1.2": {
+  "pkg:npm/selection-update@1.1.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -3232,13 +3085,6 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/tiny-svg@3.1.3": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
-  },
   "pkg:npm/tiny-svg@4.1.4": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -3252,13 +3098,6 @@
     "ui"
    ],
    "spdx": "Apache-2.0"
-  },
-  "pkg:npm/void-elements@3.1.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
   },
   "pkg:npm/w3c-keyname@2.2.8": {
    "decision": "ACCEPTED FOR DEFINED USE",

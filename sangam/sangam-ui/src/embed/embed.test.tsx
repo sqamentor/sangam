@@ -9,7 +9,6 @@
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, waitFor, within } from '@testing-library/react';
-import i18n from 'i18next';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), page: vi.fn(), text: vi.fn() }));
 
@@ -30,8 +29,9 @@ vi.mock('../components/BpmnDiagram', () => ({
 
 import { ApiError, buildUrl, request } from '../api/client';
 import { checkApiBase, configure, PROCESS_DIAGRAM_TAG, TASK_FORM_TAG } from './index';
+import { tr } from '../i18n';
 
-const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
+const T = tr;
 let routes: Record<string, unknown> = {};
 
 const TASK = {

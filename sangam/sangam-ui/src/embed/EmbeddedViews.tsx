@@ -38,12 +38,14 @@ export function EmbeddedTaskForm({ taskId, callbacks }: { taskId: string; callba
   const cb = useRef(callbacks);
   cb.current = callbacks;
 
-  useEffect(() => {
-    if (d) {
-      setValues({ ...d.variables });
-      setErrors({});
-    }
-  }, [d]);
+  // A newly loaded task resets the form during render, not in an effect: React 19 may run a passive effect only after
+  // the next event, so the first render would show (and submit) empty values.
+  const [shown, setShown] = useState(d);
+  if (d && shown !== d) {
+    setShown(d);
+    setValues({ ...d.variables });
+    setErrors({});
+  }
   useEffect(() => {
     if (task.error) cb.current.onError(task.error);
   }, [task.error]);

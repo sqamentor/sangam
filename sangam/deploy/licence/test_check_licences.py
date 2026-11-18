@@ -293,8 +293,8 @@ class ReviewedLicences(unittest.TestCase):
     """ui.yml "Licence policy (strict, distribution ui)", 2026-11-15: nine bpmn.io packages declare the pointer
     "SEE LICENSE IN LICENSE" and component-props declares nothing, so the gate saw no licence it could judge although
     each version is in the decision register with the licence read from its files."""
-    BPMN = "pkg:npm/bpmn-js@17.11.1"
-    FORM = "pkg:npm/%40bpmn-io/form-js-editor@1.26.1"
+    BPMN = "pkg:npm/bpmn-js@18.33.0"
+    FORM = "pkg:npm/%40bpmn-io/form-js-editor@2.2.0"
     PROPS = "pkg:npm/component-props@1.1.1"
 
     def test_a_reviewed_bpmn_io_version_is_judged_by_its_recorded_licence_and_stays_conditional(self):

@@ -11,7 +11,6 @@ import type { ReactElement } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import i18n from 'i18next';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), del: vi.fn(), page: vi.fn(), upload: vi.fn(), request: vi.fn(), download: vi.fn() }));
 
@@ -31,7 +30,7 @@ vi.mock('../components/BpmnDiagram', () => ({ BpmnDiagram: (p: { title: string }
 vi.mock('../plugins/host', () => ({ PluginSlot: () => null, usePlugins: () => [] }));
 
 import { ApiError } from '../api/client';
-import { initI18n } from '../i18n';
+import { initI18n, tr } from '../i18n';
 import type { AuditEvent } from '../api/types';
 import { AuditSearch, Documents, Timeline, verifyLinkage } from './audit/Audit';
 import { Reconciliation, ReconciliationDetail } from './ops/IncidentsRecon';
@@ -40,7 +39,7 @@ import { AnalyticsDashboard } from './analytics/Analytics';
 import { PortalApplication, PortalApply, PortalGrievances, PortalHome } from './portal/Portal';
 import { PortalConsents, PortalNotices } from './portal/PortalPrivacy';
 
-const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
+const T = tr;
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** A field label: the translated text, optionally followed by the required marker (ui.tsx FieldWrap:187-196). */
 const L = (k: string) => new RegExp(`^${esc(T(k))}(\\s*\\*.*)?$`);

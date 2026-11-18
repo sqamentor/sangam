@@ -7,7 +7,6 @@
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import i18n from 'i18next';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), request: vi.fn() }));
 vi.mock('../api/client', async (orig) => {
@@ -16,11 +15,11 @@ vi.mock('../api/client', async (orig) => {
 });
 
 import { ApiError } from '../api/client';
-import { initI18n } from '../i18n';
+import { initI18n, tr } from '../i18n';
 import { ActionDialog, type Act } from './engine';
 import { programmeConfigFields } from './programmeConfig';
 
-const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
+const T = tr;
 const act: Act = { id: 'publish', label: 'act.publish', method: 'PUT', path: '/programme-config', fields: programmeConfigFields(), load: { path: '/programme-config', omit: ['version', 'contentHash'] } };
 
 beforeAll(() => initI18n('en'));

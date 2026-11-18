@@ -14,7 +14,6 @@
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import i18n from 'i18next';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), page: vi.fn(), post: vi.fn(), request: vi.fn() }));
 vi.mock('../api/client', async (orig) => {
@@ -24,7 +23,7 @@ vi.mock('../api/client', async (orig) => {
 
 import { api as endpoints } from '../api/endpoints';
 import { idpTimeoutProblem } from '../areas/admin/Admin';
-import { initI18n } from '../i18n';
+import { initI18n, tr } from '../i18n';
 import { validateForm, type FormValues } from '../components/FormRenderer';
 import { ActionDialog, applyBodyDefaults, buildRequest, f, fieldDefaults, type Act, type Row, type ScreenDef } from './engine';
 import { caseworkScreens as CW } from './casework';
@@ -32,7 +31,7 @@ import { financeScreens as FI } from './finance';
 import { programmeScreens as PG } from './programme';
 import { RosterGrid, resourceScreens as RS } from './resources';
 
-const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
+const T = tr;
 
 beforeAll(() => initI18n('en'));
 beforeEach(() => {

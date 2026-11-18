@@ -9,7 +9,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import i18n from 'i18next';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), del: vi.fn(), page: vi.fn(), request: vi.fn() }));
 
@@ -23,11 +22,11 @@ vi.mock('../auth/AuthProvider', () => ({
 vi.mock('../plugins/host', () => ({ PluginSlot: () => null, usePlugins: () => [] }));
 
 import { ApiError } from '../api/client';
-import { initI18n } from '../i18n';
+import { initI18n, tr } from '../i18n';
 import { TestClockPanel, clockChange } from './testClock';
 import { EngineAdminPage } from './operaton';
 
-const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
+const T = tr;
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** A field label, optionally followed by the required marker. */
 const L = (k: string) => new RegExp(`^${esc(T(k))}(\\s*\\*.*)?$`);

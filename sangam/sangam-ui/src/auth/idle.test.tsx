@@ -8,7 +8,6 @@
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import i18n from 'i18next';
 
 const api = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock('../api/client', async (orig) => {
@@ -16,14 +15,14 @@ vi.mock('../api/client', async (orig) => {
   return { ...real, http: { ...real.http, get: api.get } };
 });
 
-import { initI18n } from '../i18n';
+import { initI18n, tr } from '../i18n';
 import { IDLE_MINUTES, idleMinutes, normalise, setConfig } from '../config';
 import { AuthProvider, useAuth } from './AuthProvider';
 import { IdleSession } from './IdleSession';
 import { idleState, warningMs } from './idle';
 import { SignIn } from '../areas/auth/SignIn';
 
-const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
+const T = tr;
 const ME = { userId: 'u1', displayName: 'User One', tenantId: 't1', roles: ['TASK_USER'], seats: [{ seatId: 's1', seatName: 'SO', designation: 'SO', orgUnitName: 'U', kind: 'SUBSTANTIVE', validFrom: '2026-01-01' }] };
 
 function Shell() {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Owner decision 161 (M-041): Sangam's own CMMN 1.1 modeler, built from diagram-js 14.11.3 feature modules (no cmmn-js).
+ * Owner decision 161 (M-041): Sangam's own CMMN 1.1 modeler, built from diagram-js 15 feature modules (no cmmn-js).
  * Shapes carry the CMMN kind, name and ids; CmmnRules keep the diagram valid CMMN:
  * - plan items live inside the case plan model or a stage;
  * - criteria sit on a host's border (attach support moves them with it): entry criteria on tasks, stages and
@@ -14,6 +14,8 @@ import ModelingModule from 'diagram-js/lib/features/modeling';
 import MoveModule from 'diagram-js/lib/features/move';
 import ResizeModule from 'diagram-js/lib/features/resize';
 import SelectionModule from 'diagram-js/lib/features/selection';
+// diagram-js 15: selection no longer draws the outline; the outline module keeps the selected shape visible
+import OutlineModule from 'diagram-js/lib/features/outline';
 import KeyboardModule from 'diagram-js/lib/features/keyboard';
 import EditorActionsModule from 'diagram-js/lib/features/editor-actions';
 import KeyboardMoveSelectionModule from 'diagram-js/lib/features/keyboard-move-selection';
@@ -181,12 +183,12 @@ const isLink = (e: CmmnShape | CmmnConnection | undefined): e is CmmnConnection 
 export function createCmmnModeler(container: HTMLElement, model: { nodes: CmmnNode[]; links: CmmnLink[] }, opts: CmmnModelerOptions): CmmnModelerApi {
   const diagram = new Diagram({
     canvas: { container },
-    keyboard: { bindTo: container },
     modules: [
       ModelingModule,
       MoveModule,
       ResizeModule,
       SelectionModule,
+      OutlineModule,
       KeyboardModule,
       EditorActionsModule,
       KeyboardMoveSelectionModule,

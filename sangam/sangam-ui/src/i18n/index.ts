@@ -59,6 +59,21 @@ export function initI18n(defaultLang: Lang, opts: { embedded?: boolean } = {}): 
   return i18n;
 }
 
+/**
+ * The translate function a helper takes: a screen's `t` (react-i18next), `i18n.t` or a test stub, with or without
+ * options. Two call signatures, not `options?`: i18next 27 infers the options type from the argument, so neither an
+ * options value that may be undefined nor passing `t` where `(k, o?) => string` is expected type-checks any more.
+ */
+export interface Translate {
+  (key: string): string;
+  (key: string, options: Record<string, unknown>): string;
+}
+
+/** `i18n.t` for code that holds options that may be absent (tests, custom elements). */
+export function tr(key: string, options?: Record<string, unknown>): string {
+  return (options === undefined ? i18n.t(key) : i18n.t(key, options)) as string;
+}
+
 export function setLanguage(lang: Lang): void {
   void i18n.changeLanguage(lang);
   document.documentElement.lang = lang;

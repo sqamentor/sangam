@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiError, http, request, type Query } from '../api/client';
 import type { FormField, FormSchema } from '../api/types';
 import { announce, useAction, useAsync, usePaged } from '../lib/hooks';
-import { fmtDate } from '../i18n';
+import { fmtDate, type Translate } from '../i18n';
 import { truncate } from '../lib/text';
 import { FormRenderer, validateForm, type FormValues } from '../components/FormRenderer';
 import { PurposeCodeField, isPurposeCode } from './purposeField';
@@ -78,7 +78,7 @@ export interface Act {
    * in the user's words, or undefined. E.g. the field template designer's NUMBER scale and bounds (decisions 230, 242).
    * The server stays the authority.
    */
-  check?: (body: Row, t: (k: string, o?: Record<string, unknown>) => string) => string | undefined;
+  check?: (body: Row, t: Translate) => string | undefined;
 }
 
 /**
