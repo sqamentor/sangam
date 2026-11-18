@@ -124,6 +124,16 @@ public class SangamModelValidator {
         }
         walk(doc.getDocumentElement(), resource, bpmn, cmmn, out);
         if (bpmn) {
+            // Owner ruling F3 (R10-bpmn): Sangam evaluates JUEL and FEEL, never XPath. Operaton ignores
+            // definitions/@expressionLanguage and reads every expression as JUEL, so a model that declares XPath (the BPMN
+            // 2.0.2 default) would run with a meaning its author did not write. It is refused; descriptive files too,
+            // because the declaration covers the whole file.
+            String lang = doc.getDocumentElement().getAttribute("expressionLanguage");
+            if (isXPath(lang)) {
+                out.add(new Finding(Severity.ERROR, "XPATH", resource, null, "definitions declare expressionLanguage '" + lang
+                        + "'; Sangam does not evaluate XPath (only JUEL and FEEL); remove the declaration and write the "
+                        + "expressions in JUEL"));
+            }
             // ADR-D-25 / R44: the shared strict-XOR rule (same check as the engine parse listener). Like the engine, it
             // applies to executable processes only: Operaton parses a process only when isExecutable="true" (absent or
             // false = descriptive model, never run), so a descriptive gateway without conditions is not a routing risk.
@@ -171,6 +181,11 @@ public class SangamModelValidator {
             if (DOCUMENTATION_ONLY_BPMN.contains(local)) {
                 out.add(new Finding(Severity.WARNING, "DOC-ONLY", resource, id(el), local + " is documentation only; it has no runtime effect"));
             }
+            if (el != el.getOwnerDocument().getDocumentElement() && isXPath(el.getAttribute("language"))) {
+                // F3: a condition or other formal expression declaring XPath; reported on the nearest element with an id
+                out.add(new Finding(Severity.ERROR, "XPATH", resource, id(el), local + " declares language '"
+                        + el.getAttribute("language") + "'; Sangam does not evaluate XPath (only JUEL and FEEL)"));
+            }
             if (isEventElement(local) && countEventDefinitions(el) > 1) {
                 out.add(new Finding(Severity.ERROR, "D-52", resource, id, "multiple/parallel-multiple events are not executable on Operaton"));
             }
@@ -214,6 +229,11 @@ public class SangamModelValidator {
     private static boolean isExtension(Element el) {
         String ns = el.getNamespaceURI();
         return ns != null && (ns.contains("operaton.org") || ns.contains("camunda.org"));
+    }
+
+    /** XPath as named by BPMN 2.0.2 ({@code http://www.w3.org/1999/XPath}) or any URI or name containing "xpath". */
+    public static boolean isXPath(String language) {
+        return language != null && language.toLowerCase(Locale.ROOT).contains("xpath");
     }
 
     private static boolean isEventElement(String local) {

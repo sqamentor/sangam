@@ -220,10 +220,16 @@ final class MiwgHarness {
 
     /**
      * Binds service, send and business-rule tasks that carry no engine implementation (or a vendor delegate) to the
-     * Sangam external-task topic {@value #TOPIC}. Tasks already bound to an external topic keep their topic.
+     * Sangam external-task topic {@value #TOPIC}. Tasks already bound to an external topic keep their topic. A
+     * definitions-level XPath declaration is removed (owner ruling F3 refuses it at deploy): this is a visible port of the
+     * test copy, done only for run scenarios whose expressions are written in JUEL ({@code ${...}}), as in C.1.0; the
+     * unchanged file is still refused in the DEPLOY stage.
      */
     static byte[] bindVendorImplementations(byte[] bytes) {
         Document doc = SecureXml.parse(bytes);
+        if (org.sangam.ports.bpmn.SangamModelValidator.isXPath(doc.getDocumentElement().getAttribute("expressionLanguage"))) {
+            doc.getDocumentElement().removeAttribute("expressionLanguage");
+        }
         for (String tag : List.of("serviceTask", "sendTask", "businessRuleTask")) {
             NodeList nl = doc.getElementsByTagNameNS(BPMN_NS, tag);
             for (int i = 0; i < nl.getLength(); i++) {

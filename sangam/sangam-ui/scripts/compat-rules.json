@@ -5,7 +5,7 @@
     "BusinessRuleTask": { "status": "SUPPORTED_WITH_RULES", "note": "Needs operaton:decisionRefBinding (deployment); a missing binding is rejected (D-12).", "source": "sangam-engine SangamBpmnParseListener" },
     "CallActivity": { "status": "SUPPORTED_WITH_RULES", "note": "Without calledElementBinding the call binds to the deployment, not latest (D-12).", "source": "sangam-engine SangamBpmnParseListener" },
     "AdHocSubProcess": { "status": "PORTED", "note": "Rejected by Operaton (ENGINE-09005); Sangam port with start/complete API (FC-01).", "source": "spike FLOWABLE-INTO-OPERATON FC-01; contract /process-instances/{id}/ad-hoc" },
-    "ComplexGateway": { "status": "UNSUPPORTED", "note": "Parsed but no runtime join semantics in either engine (D-52).", "source": "FLOWABLE-INTO-OPERATON D-52" },
+    "ComplexGateway": { "status": "UNSUPPORTED", "note": "Refused at deploy (D-52): no runtime join semantics; not supported by owner ruling F1 (R10-bpmn).", "source": "FLOWABLE-INTO-OPERATON D-52; owner ruling F1" },
     "Transaction": { "status": "SUPPORTED", "note": "Cancel end / boundary events with compensation.", "source": "Operaton BpmnParse" },
     "DataStoreReference": { "status": "NOT_EXECUTABLE", "note": "Documentation only; accepted with a DOC-ONLY warning, not executed (D-52; refused before R10-bpmn).", "source": "sangam-flowable-ports SangamModelValidator" },
     "DataObjectReference": { "status": "NOT_EXECUTABLE", "note": "Documentation only; use process variables or R78 data objects.", "source": "SANGAM II §3.2" },
@@ -20,7 +20,8 @@
     "LinkEventDefinition": { "status": "SUPPORTED", "note": "", "source": "Operaton BpmnParse" },
     "TerminateEventDefinition": { "status": "SUPPORTED_WITH_RULES", "note": "Terminates the enclosing scope; terminateAll is a Stage E port (FC-22).", "source": "FLOWABLE-INTO-OPERATON FC-22" },
     "SubProcess.triggeredByEvent": { "status": "SUPPORTED", "note": "Event sub-process (interrupting and non-interrupting).", "source": "Operaton BpmnParse" },
-    "MultipleEventDefinition": { "status": "UNSUPPORTED", "note": "Multiple / parallel-multiple events are not executed (D-52).", "source": "FLOWABLE-INTO-OPERATON D-52" }
+    "MultipleEventDefinition": { "status": "UNSUPPORTED", "note": "Multiple / parallel-multiple events (more than one event definition) are refused at deploy (D-52); not supported by owner ruling F2 (R10-bpmn).", "source": "FLOWABLE-INTO-OPERATON D-52; owner ruling F2" },
+    "FormalExpression.XPath": { "status": "REJECTED", "note": "XPath is not evaluated: definitions/@expressionLanguage or a language attribute naming XPath is refused at deploy (XPATH) on H2, the server and the CLI; only JUEL and FEEL (owner ruling F3, R10-bpmn).", "source": "sangam-flowable-ports SangamModelValidator; owner ruling F3" }
   },
   "dmn": {
     "Decision": { "status": "SUPPORTED", "note": "Decision table and literal expression.", "source": "Operaton engine-dmn" },

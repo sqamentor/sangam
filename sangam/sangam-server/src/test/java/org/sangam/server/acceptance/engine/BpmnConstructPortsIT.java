@@ -42,6 +42,25 @@ class BpmnConstructPortsIT extends EngineScenarioSupport {
             </definitions>
             """;
 
+    /** Owner ruling F3: a model that declares XPath is refused at deploy (code XPATH), never read as JUEL. */
+    @Test
+    void aModelDeclaringXPathIsRefused() {
+        scenario("R10-xpath-refused", ctx -> {
+            String xml = LOOP.replace("targetNamespace=\"t\"", "targetNamespace=\"t\" expressionLanguage=\"http://www.w3.org/1999/XPath\"")
+                    .replace("id=\"r10-loop\"", "id=\"r10-xpath\"");
+            String message;
+            try {
+                adapter.deploy(SCENARIO_TENANT, "r10-xpath-" + RUN, Map.of("r10-xpath.bpmn", xml.getBytes(StandardCharsets.UTF_8)));
+                message = null;
+            } catch (RuntimeException e) {
+                message = String.valueOf(e.getMessage());
+            }
+            ctx.check("refused with XPATH: " + message, message != null && message.contains("XPATH"));
+            ctx.check("no definition deployed", engine.getRepositoryService().createProcessDefinitionQuery()
+                    .processDefinitionKey("r10-xpath").count() == 0);
+        });
+    }
+
     @Test
     void standardLoopRepeatsWhileTheConditionHolds() {
         scenario("R10-standard-loop", ctx -> {
