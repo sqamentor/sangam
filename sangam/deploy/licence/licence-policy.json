@@ -102,7 +102,7 @@
     { "licence": "LicenseRef-bpmn.io", "declared": "SEE LICENSE IN LICENSE",
       "evidence": "LICENSE file of the package: the bpmn.io licence, MIT terms plus the watermark clause; LIC-8",
       "purls": [
-        "pkg:npm/bpmn-js@17.11.1", "pkg:npm/dmn-js@16.8.2", "pkg:npm/dmn-js-shared@16.8.2", "pkg:npm/dmn-js-drd@16.8.2",
+        "pkg:npm/bpmn-js@18.33.0", "pkg:npm/dmn-js@16.8.2", "pkg:npm/dmn-js-shared@16.8.2", "pkg:npm/dmn-js-drd@16.8.2",
         "pkg:npm/dmn-js-decision-table@16.8.2", "pkg:npm/dmn-js-literal-expression@16.8.2",
         "pkg:npm/dmn-js-boxed-expression@16.8.2", "pkg:npm/%40bpmn-io/form-js-editor@2.2.0",
         "pkg:npm/%40bpmn-io/form-js-viewer@2.2.0"

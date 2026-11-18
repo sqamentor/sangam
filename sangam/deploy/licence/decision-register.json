@@ -2609,14 +2609,14 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/bpmn-js@17.11.1": {
+  "pkg:npm/bpmn-js@18.33.0": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "ui"
    ],
    "spdx": "LicenseRef-bpmn.io (declared 'SEE LICENSE IN LICENSE')"
   },
-  "pkg:npm/bpmn-moddle@8.1.0": {
+  "pkg:npm/bpmn-moddle@10.3.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -2980,7 +2980,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/moddle-xml@10.1.0": {
+  "pkg:npm/moddle-xml@12.3.2": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -3001,7 +3001,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/moddle@6.2.3": {
+  "pkg:npm/moddle@8.2.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -3086,6 +3086,13 @@
    "spdx": "MIT"
   },
   "pkg:npm/react@19.3.1": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
+  "pkg:npm/saxen@11.2.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"

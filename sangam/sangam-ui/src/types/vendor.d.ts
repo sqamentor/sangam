@@ -26,7 +26,7 @@ declare module 'dmn-js/lib/Viewer' {
 
 declare module 'bpmn-moddle' {
   // The serialisation layer of bpmn-js (Viewer.importXML / saveXML); used directly by the MIWG round-trip test.
-  export default class BpmnModdle {
+  export class BpmnModdle {
     constructor(packages?: Record<string, unknown>);
     fromXML(xml: string, typeName?: string): Promise<{ rootElement: unknown; warnings: { message: string }[] }>;
     toXML(element: unknown, options?: { format?: boolean }): Promise<{ xml: string }>;

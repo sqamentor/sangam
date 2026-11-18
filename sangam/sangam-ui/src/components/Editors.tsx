@@ -73,7 +73,7 @@ export function BpmnEditor({ xml, onReady, onChange, height = 560, packageId }: 
   const [selected, setSelected] = useState<Selected | null>(null);
   useEffect(() => {
     if (!host.current) return;
-    const m = new BpmnModeler({ container: host.current, keyboard: { bindTo: host.current } });
+    const m = new BpmnModeler({ container: host.current }); // bpmn-js 18: the keyboard binds to the focusable canvas itself
     setModeler(m as unknown as ModelerLike);
     setSelected(null);
     (m.get('eventBus') as { on: (e: string, cb: (ev: { newSelection?: { id: string; businessObject?: { $type?: string } }[] }) => void) => void }).on('selection.changed', (ev) => {
