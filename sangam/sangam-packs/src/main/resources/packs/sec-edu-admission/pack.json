@@ -32,16 +32,16 @@
       "path": "packs/sec-edu-admission/forms/accept.form.json"
     },
     {
-      "kind": "SEED",
-      "path": "packs/sec-edu-admission/seed.json"
-    },
-    {
       "kind": "FORM",
       "path": "packs/sec-edu-admission/forms/refund-review.form.json"
     },
     {
       "kind": "FORM",
       "path": "packs/sec-edu-admission/forms/refund-amount.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-edu-admission/seed.json"
     },
     {
       "kind": "OTHER",
@@ -105,6 +105,7 @@
   "calls": [
     "sangam-core-execution",
     "sangam-core-rejection",
+    "sangam-core-sanction",
     "sangam-core-scrutiny"
   ],
   "documentSlots": [
@@ -113,6 +114,15 @@
       "slot": "sanctionDocumentId"
     }
   ],
+  "currency": "INR",
+  "powers": {
+    "ed_wdRefund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",
@@ -123,14 +133,5 @@
       "processingFee",
       "refundAmount"
     ]
-  },
-  "currency": "INR",
-  "powers": {
-    "ed_wdRefund_sanction": {
-      "monetary": true,
-      "currency": "INR",
-      "limitTable": "sangam-core-powers",
-      "ruleCaseType": "GENERAL"
-    }
   }
 }

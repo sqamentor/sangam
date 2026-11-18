@@ -107,21 +107,9 @@
   "calls": [
     "sangam-core-cancellation",
     "sangam-core-execution",
-    "sangam-core-rejection"
+    "sangam-core-rejection",
+    "sangam-core-sanction"
   ],
-  "money": {
-    "unit": "MINOR",
-    "currency": "INR",
-    "exponent": 2,
-    "variables": [
-      "medicalCostDeduction",
-      "premiumAmount",
-      "refundAmount",
-      "riskPremiumDeduction",
-      "stampDutyDeduction",
-      "sumAssured"
-    ]
-  },
   "documentSlots": [
     {
       "documentType": "SANCTION_NOTE",
@@ -136,5 +124,18 @@
       "limitTable": "sangam-core-powers",
       "ruleCaseType": "GENERAL"
     }
+  },
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "medicalCostDeduction",
+      "premiumAmount",
+      "refundAmount",
+      "riskPremiumDeduction",
+      "stampDutyDeduction",
+      "sumAssured"
+    ]
   }
 }

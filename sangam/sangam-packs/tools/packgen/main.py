@@ -35,6 +35,7 @@ import sector  # noqa: E402
 import readme  # noqa: E402
 import compliance  # noqa: E402
 import releases  # noqa: E402
+import money_out  # noqa: E402
 
 GENERATED_ROOTS = ('packs', os.path.join('META-INF', 'sangam'))
 # packgen owns the BPMN models of the compliance pack (ADR-D-20 single source); the other files of that pack directory
@@ -48,6 +49,7 @@ def generate(resources, readme_path, compliance_dir):
     core.build()
     for mod in (gov1, gov2, gov2_works, gov3, gov_ifms, gov_intl, gov_pfm, gov_pfm_g, universal, billing_pack, sector):
         mod.build()
+    money_out.apply(packs.ALL)  # lane ARCH-JURIS: sanction before money out, pack-specific money flows
     packs.write_all(resources)  # form titles, labels and options are resolved while writing
     if packs.MISSING:
         sys.exit('missing labels / options / titles: ' + ', '.join(sorted(packs.MISSING)))

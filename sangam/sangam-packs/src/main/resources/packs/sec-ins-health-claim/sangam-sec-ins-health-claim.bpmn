@@ -52,14 +52,10 @@
     <serviceTask id="hc_discharge_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_discharge</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>tpaSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="hc_discharge_breachGw" name="Deemed?" default="sec_ins_health_claim_f47"></exclusiveGateway>
     <exclusiveGateway id="hc_discharge_done" name=""></exclusiveGateway>
-    <callActivity id="hc_settle" name="Settle with the hospital (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <callActivity id="hc_settle_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.MoneyFieldsDelegate"><operaton:field name="amount"><operaton:string>approvedAmount</operaton:string></operaton:field><operaton:field name="payeeKeys"><operaton:string>payeePartyId</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Health claim settlement (hospital on cashless, insured on reimbursement)</operaton:string></operaton:field></operaton:executionListener><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
     <exclusiveGateway id="hc_settle_sgw" name="Sanctioned?" default="hc_settle_sgw_no"></exclusiveGateway>
     <endEvent id="hc_settle_notReleased" name="Not released"></endEvent>
-    <sequenceFlow id="hc_settle_sanction_f" sourceRef="hc_settle_sanction" targetRef="hc_settle_sgw"/>
-    <sequenceFlow id="hc_settle_sgw_yes" name="sanctioned" sourceRef="hc_settle_sgw" targetRef="hc_settle"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
-    <sequenceFlow id="hc_settle_sgw_no" name="not sanctioned" sourceRef="hc_settle_sgw" targetRef="hc_settle_notReleased"/>
-
+    <callActivity id="hc_settle" name="Settle with the hospital (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <serviceTask id="hc_insGroup" name="Insured group" operaton:expression="${execution.setVariable('insuredGroup', 'external:'.concat(policyNo))}"></serviceTask>
     <serviceTask id="hc_docs_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_docs</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>30D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
     <userTask id="hc_docs" name="Submit claim documents" operaton:candidateGroups="${insuredGroup}" operaton:formKey="sangam:sec-ins-health-claim/documents" operaton:dueDate="${hc_docsDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
@@ -167,6 +163,9 @@
     <sequenceFlow id="sec_ins_health_claim_f75" name="otherwise" sourceRef="hc_payGw" targetRef="hc_payFailed"/>
     <sequenceFlow id="sec_ins_health_claim_f76" sourceRef="hc_settle" targetRef="hc_payGw"/>
     <sequenceFlow id="sec_ins_health_claim_f77" sourceRef="hc_payFailed" targetRef="hc_endPayFailed"/>
+    <sequenceFlow id="hc_settle_sanction_f" sourceRef="hc_settle_sanction" targetRef="hc_settle_sgw"/>
+    <sequenceFlow id="hc_settle_sgw_yes" name="sanctioned" sourceRef="hc_settle_sgw" targetRef="hc_settle"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="hc_settle_sgw_no" name="not sanctioned" sourceRef="hc_settle_sgw" targetRef="hc_settle_notReleased"/>
     <subProcess id="hc_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
       <startEvent id="hc_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
       <serviceTask id="hc_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -231,7 +230,10 @@
       <bpmndi:BPMNShape id="hc_discharge_breachAct_di" bpmnElement="hc_discharge_breachAct"><dc:Bounds x="2990" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_discharge_breachGw_di" bpmnElement="hc_discharge_breachGw"><dc:Bounds x="3180" y="295" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_discharge_done_di" bpmnElement="hc_discharge_done"><dc:Bounds x="3345" y="295" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hc_settle_sanction_di" bpmnElement="hc_settle_sanction"><dc:Bounds x="3305" y="-100" width="100" height="80"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="hc_settle_sgw_di" bpmnElement="hc_settle_sgw" isMarkerVisible="true"><dc:Bounds x="3435" y="-90" width="50" height="50"/></bpmndi:BPMNShape><bpmndi:BPMNShape id="hc_settle_notReleased_di" bpmnElement="hc_settle_notReleased"><dc:Bounds x="3442" y="-180" width="36" height="36"/></bpmndi:BPMNShape><bpmndi:BPMNEdge id="hc_settle_sanction_f_di" bpmnElement="hc_settle_sanction_f"><di:waypoint x="3405" y="-65"/><di:waypoint x="3435" y="-65"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="hc_settle_sgw_yes_di" bpmnElement="hc_settle_sgw_yes"><di:waypoint x="3460" y="-40"/><di:waypoint x="3460" y="30"/><di:waypoint x="3485" y="30"/></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="hc_settle_sgw_no_di" bpmnElement="hc_settle_sgw_no"><di:waypoint x="3460" y="-90"/><di:waypoint x="3460" y="-144"/></bpmndi:BPMNEdge><bpmndi:BPMNShape id="hc_settle_di" bpmnElement="hc_settle"><dc:Bounds x="3485" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_settle_sanction_di" bpmnElement="hc_settle_sanction"><dc:Bounds x="3485" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_settle_sgw_di" bpmnElement="hc_settle_sgw"><dc:Bounds x="3675" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_settle_notReleased_di" bpmnElement="hc_settle_notReleased"><dc:Bounds x="3847" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_settle_di" bpmnElement="hc_settle"><dc:Bounds x="3815" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_insGroup_di" bpmnElement="hc_insGroup"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_docs_slaPlan_di" bpmnElement="hc_docs_slaPlan"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_docs_di" bpmnElement="hc_docs"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
@@ -248,10 +250,10 @@
       <bpmndi:BPMNShape id="hc_assess_breachGw_di" bpmnElement="hc_assess_breachGw"><dc:Bounds x="2685" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_assess_done_di" bpmnElement="hc_assess_done"><dc:Bounds x="2850" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_reimbGw_di" bpmnElement="hc_reimbGw"><dc:Bounds x="3015" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hc_payFailed_di" bpmnElement="hc_payFailed"><dc:Bounds x="3815" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hc_end_di" bpmnElement="hc_end"><dc:Bounds x="3847" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hc_payGw_di" bpmnElement="hc_payGw"><dc:Bounds x="3675" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hc_endPayFailed_di" bpmnElement="hc_endPayFailed"><dc:Bounds x="4012" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_payFailed_di" bpmnElement="hc_payFailed"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_end_di" bpmnElement="hc_end"><dc:Bounds x="4177" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_payGw_di" bpmnElement="hc_payGw"><dc:Bounds x="4005" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_endPayFailed_di" bpmnElement="hc_endPayFailed"><dc:Bounds x="4342" y="177" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_preauth_warn_di" bpmnElement="hc_preauth_warn"><dc:Bounds x="1348" y="217" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_preauth_breach_di" bpmnElement="hc_preauth_breach"><dc:Bounds x="1378" y="217" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hc_enhance_warn_di" bpmnElement="hc_enhance_warn"><dc:Bounds x="2833" y="467" width="36" height="36"/></bpmndi:BPMNShape>
@@ -345,10 +347,13 @@
       <bpmndi:BPMNEdge id="sec_ins_health_claim_f71_di" bpmnElement="sec_ins_health_claim_f71"><di:waypoint x="2900" y="70"/><di:waypoint x="3015" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ins_health_claim_f72_di" bpmnElement="sec_ins_health_claim_f72"><di:waypoint x="3065" y="70"/><di:waypoint x="3485" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ins_health_claim_f73_di" bpmnElement="sec_ins_health_claim_f73"><di:waypoint x="3065" y="70"/><di:waypoint x="3155" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_ins_health_claim_f74_di" bpmnElement="sec_ins_health_claim_f74"><di:waypoint x="3725" y="70"/><di:waypoint x="3786" y="70"/><di:waypoint x="3786" y="195"/><di:waypoint x="3847" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_ins_health_claim_f75_di" bpmnElement="sec_ins_health_claim_f75"><di:waypoint x="3725" y="70"/><di:waypoint x="3815" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_ins_health_claim_f76_di" bpmnElement="sec_ins_health_claim_f76"><di:waypoint x="3585" y="70"/><di:waypoint x="3675" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_ins_health_claim_f77_di" bpmnElement="sec_ins_health_claim_f77"><di:waypoint x="3915" y="70"/><di:waypoint x="4012" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f74_di" bpmnElement="sec_ins_health_claim_f74"><di:waypoint x="4055" y="195"/><di:waypoint x="4116" y="195"/><di:waypoint x="4116" y="320"/><di:waypoint x="4177" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f75_di" bpmnElement="sec_ins_health_claim_f75"><di:waypoint x="4055" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f76_di" bpmnElement="sec_ins_health_claim_f76"><di:waypoint x="3915" y="195"/><di:waypoint x="4005" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f77_di" bpmnElement="sec_ins_health_claim_f77"><di:waypoint x="4245" y="195"/><di:waypoint x="4342" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="hc_settle_sanction_f_di" bpmnElement="hc_settle_sanction_f"><di:waypoint x="3585" y="70"/><di:waypoint x="3675" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="hc_settle_sgw_yes_di" bpmnElement="hc_settle_sgw_yes"><di:waypoint x="3725" y="70"/><di:waypoint x="3770" y="70"/><di:waypoint x="3770" y="195"/><di:waypoint x="3815" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="hc_settle_sgw_no_di" bpmnElement="hc_settle_sgw_no"><di:waypoint x="3725" y="70"/><di:waypoint x="3847" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ins_health_claim_f78_di" bpmnElement="sec_ins_health_claim_f78"><di:waypoint x="128" y="865"/><di:waypoint x="225" y="865"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ins_health_claim_f79_di" bpmnElement="sec_ins_health_claim_f79"><di:waypoint x="325" y="865"/><di:waypoint x="390" y="865"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ins_health_claim_f80_di" bpmnElement="sec_ins_health_claim_f80"><di:waypoint x="490" y="865"/><di:waypoint x="587" y="865"/></bpmndi:BPMNEdge>

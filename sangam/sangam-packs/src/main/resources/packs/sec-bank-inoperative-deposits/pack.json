@@ -29,6 +29,10 @@
     },
     {
       "kind": "FORM",
+      "path": "packs/sec-bank-inoperative-deposits/forms/prepare-sanction-note.form.json"
+    },
+    {
+      "kind": "FORM",
       "path": "packs/sec-bank-inoperative-deposits/forms/approve.form.json"
     },
     {
@@ -99,7 +103,8 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-rejection"
+    "sangam-core-rejection",
+    "sangam-core-sanction"
   ],
   "documentSlots": [
     {
@@ -107,6 +112,21 @@
       "slot": "sanctionDocumentId"
     }
   ],
+  "currency": "INR",
+  "powers": {
+    "dv_bsanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    },
+    "dc_credit_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",
@@ -115,20 +135,5 @@
     "variables": [
       "payableAmount"
     ]
-  },
-  "currency": "INR",
-  "powers": {
-    "dc_credit_sanction": {
-      "monetary": true,
-      "currency": "INR",
-      "limitTable": "sangam-core-powers",
-      "ruleCaseType": "GENERAL"
-    },
-    "dv_bsanction": {
-      "monetary": true,
-      "currency": "INR",
-      "limitTable": "sangam-core-powers",
-      "ruleCaseType": "GENERAL"
-    }
   }
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- EMD refund to one bidder, released against its EMD capture. Generated layout; edit freely in the Sangam modeller. -->
+<!-- EMD refund to one bidder. Generated layout; edit freely in the Sangam modeller. -->
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_tender_emd_refund" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.3">
   <process id="sangam-tender-emd-refund" name="EMD refund to one bidder" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3" operaton:isStartableInTasklist="false">
     <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.tender</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.3</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key,tenderId,bidderId,emdCaptureRef,amount,payeeAccount,currency,purpose</operaton:string></operaton:field></operaton:executionListener></extensionElements>
@@ -12,9 +12,11 @@
   </process>
   <bpmndi:BPMNDiagram id="tender_emd_refund_diagram">
     <bpmndi:BPMNPlane id="tender_emd_refund_plane" bpmnElement="sangam-tender-emd-refund">
-      <bpmndi:BPMNShape id="te_start_di" bpmnElement="te_start"><dc:Bounds x="100" y="122" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="te_refund_di" bpmnElement="te_refund"><dc:Bounds x="190" y="100" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="te_end_di" bpmnElement="te_end"><dc:Bounds x="340" y="122" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="te_start_di" bpmnElement="te_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="te_refund_di" bpmnElement="te_refund"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="te_end_di" bpmnElement="te_end"><dc:Bounds x="382" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="te_f1_di" bpmnElement="te_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="te_f2_di" bpmnElement="te_f2"><di:waypoint x="285" y="70"/><di:waypoint x="382" y="70"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

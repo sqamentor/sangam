@@ -28,12 +28,16 @@
       "path": "packs/up14-three-way-match/forms/exception.form.json"
     },
     {
-      "kind": "SEED",
-      "path": "packs/up14-three-way-match/seed.json"
+      "kind": "FORM",
+      "path": "packs/up14-three-way-match/forms/payable-amount.form.json"
     },
     {
       "kind": "FORM",
-      "path": "packs/up14-three-way-match/forms/payable-amount.form.json"
+      "path": "packs/up14-three-way-match/forms/prepare-sanction-note.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up14-three-way-match/seed.json"
     },
     {
       "kind": "OTHER",
@@ -64,18 +68,9 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-execution"
+    "sangam-core-execution",
+    "sangam-core-sanction"
   ],
-  "money": {
-    "unit": "MINOR",
-    "currency": "INR",
-    "exponent": 2,
-    "variables": [
-      "invoicePrice",
-      "payableAmount",
-      "poPrice"
-    ]
-  },
   "documentSlots": [
     {
       "documentType": "SANCTION_NOTE",
@@ -90,5 +85,15 @@
       "limitTable": "sangam-core-powers",
       "ruleCaseType": "GENERAL"
     }
+  },
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "invoicePrice",
+      "payableAmount",
+      "poPrice"
+    ]
   }
 }

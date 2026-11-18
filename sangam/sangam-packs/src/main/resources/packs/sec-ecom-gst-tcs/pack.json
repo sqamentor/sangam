@@ -75,27 +75,20 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-execution"
+    "sangam-core-execution",
+    "sangam-core-sanction"
+  ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
   ],
   "placeholders": [
     {
       "decision": "sec-ecom-tcs-rounding",
       "rule": "SYNTHETIC TCS rounding: nearest rupee on one total per seller",
       "reason": "CGST Act s.170 (nearest rupee) is known, but its stage for TCS (per seller, per CGST / SGST / IGST head) was not verified and the pack has no tax-head split; deploy the confirmed policy as a tenant override (decision 139)"
-    }
-  ],
-  "money": {
-    "unit": "MINOR",
-    "currency": "INR",
-    "exponent": 2,
-    "variables": [
-      "netSupplies"
-    ]
-  },
-  "documentSlots": [
-    {
-      "documentType": "SANCTION_NOTE",
-      "slot": "sanctionDocumentId"
     }
   ],
   "currency": "INR",
@@ -106,5 +99,13 @@
       "limitTable": "sangam-core-powers",
       "ruleCaseType": "GENERAL"
     }
+  },
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "netSupplies"
+    ]
   }
 }
