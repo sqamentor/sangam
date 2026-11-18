@@ -53,6 +53,15 @@
       }
     },
     {
+      "id": "payeePartyId",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Supplier (verified payee registry id; required for a direct purchase)",
+        "hi": "आपूर्तिकर्ता (सत्यापित पंजी आईडी)"
+      }
+    },
+    {
       "id": "msmeSupplier",
       "type": "boolean",
       "required": false,

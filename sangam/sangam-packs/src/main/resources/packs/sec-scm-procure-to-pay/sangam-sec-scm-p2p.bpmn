@@ -7,7 +7,7 @@
   <message id="msg_sangam_invoice_received" name="sangam.invoice.received"/>
   <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
   <process id="sangam-sec-scm-p2p" name="Procure to pay" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
-    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.scm.procure-to-pay</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.2</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>itemDescription,quantity,unitPrice,supplierName</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.scm.procure-to-pay</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.2</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>itemDescription,quantity,unitPrice,supplierName,amount,payeeAccount,currency,purpose</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="pp_start" name="Requisition raised" operaton:initiator="initiator" operaton:formKey="sangam:sec-scm-procure-to-pay/requisition"></startEvent>
     <serviceTask id="pp_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>supplierName=SUPPLIER-1;msmeSupplier=false;caseType=PURCHASE;routingDecisionKey=sec-scm-pr-authority;powersDecisionKey=sec-scm-powers;appealAllowed=false;buyerSeat=BUYER;poQty=@quantity;poPrice=@unitPrice</operaton:string></operaton:field></extensionElements></serviceTask>
     <serviceTask id="pp_amount" name="Value (decision 139 policy)" operaton:class="org.sangam.packs.core.MoneyCalculationDelegate"><extensionElements><operaton:field name="result"><operaton:string>amount</operaton:string></operaton:field><operaton:field name="formula"><operaton:string>quantity * unitPrice</operaton:string></operaton:field><operaton:field name="policy"><operaton:string>sec-scm-p2p-amount-rounding</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -46,13 +46,21 @@
     <serviceTask id="pp_release_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pp_release</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>treasurySeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="pp_release_breachGw" name="Deemed?" default="sec_scm_p2p_f39"></exclusiveGateway>
     <exclusiveGateway id="pp_release_done" name=""></exclusiveGateway>
+    <serviceTask id="pp_payable" name="Payable: accepted quantity at the awarded price (decision 139 policy)" operaton:class="org.sangam.packs.core.MoneyCalculationDelegate"><extensionElements><operaton:field name="result"><operaton:string>payableAmount</operaton:string></operaton:field><operaton:field name="formula"><operaton:string>grnQty * unitPrice</operaton:string></operaton:field><operaton:field name="policy"><operaton:string>sec-scm-p2p-amount-rounding</operaton:string></operaton:field></extensionElements></serviceTask>
     <serviceTask id="pp_payCfg" name="Payment settings" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>treasurySeat=AP-TREASURY;executionConnector=bank.transfer;executionStep=supplier-payment;verifyApproval=false;reconcileRequired=true;executionPayloadFields=supplierName,amount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="pp_paySanction" name="Approve release of this payment (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.MoneyFieldsDelegate"><operaton:field name="amount"><operaton:string>payableAmount</operaton:string></operaton:field><operaton:field name="payeeKeys"><operaton:string>payeePartyId</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Payment to the supplier for the accepted goods</operaton:string></operaton:field></operaton:executionListener><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="pp_paySgw" name="Sanctioned?" default="pp_f9002"></exclusiveGateway>
+    <endEvent id="pp_payNotReleased" name="Not released"></endEvent>
     <callActivity id="pp_pay" name="Pay supplier (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <endEvent id="pp_end" name="Paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <exclusiveGateway id="pp_approvePrepareGw" name="Document to sign?" default="sec_scm_p2p_f53"></exclusiveGateway>
     <userTask id="pp_approvePrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:sec-scm-procure-to-pay/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.DocumentSlotReadyListener"><operaton:field name="slots"><operaton:string>sanctionDocumentId:SANCTION_NOTE</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <boundaryEvent id="pp_release_warn" name="SLA warning (75%)" attachedToRef="pp_release" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pp_releaseWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
     <boundaryEvent id="pp_release_breach" name="SLA breached" attachedToRef="pp_release" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pp_releaseDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="pp_f9002" name="not sanctioned" sourceRef="pp_paySgw" targetRef="pp_payNotReleased"/>
+    <sequenceFlow id="pp_f9001" name="sanctioned" sourceRef="pp_paySgw" targetRef="pp_pay"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pp_f9000" sourceRef="pp_paySanction" targetRef="pp_paySgw"/>
+    <sequenceFlow id="pp_f9003" sourceRef="pp_payable" targetRef="pp_release_slaPlan"/>
     <sequenceFlow id="sec_scm_p2p_f1" sourceRef="pp_budget_clear" targetRef="pp_budget"/>
     <sequenceFlow id="sec_scm_p2p_f2" sourceRef="pp_start" targetRef="pp_defaults"/>
     <sequenceFlow id="sec_scm_p2p_f3" sourceRef="pp_defaults" targetRef="pp_amount"/>
@@ -95,8 +103,8 @@
     <sequenceFlow id="sec_scm_p2p_f40" sourceRef="pp_release_slaPlan" targetRef="pp_release"/>
     <sequenceFlow id="sec_scm_p2p_f41" sourceRef="pp_release" targetRef="pp_release_done"/>
     <sequenceFlow id="sec_scm_p2p_f42" sourceRef="pp_terms" targetRef="pp_payCfg"/>
-    <sequenceFlow id="sec_scm_p2p_f43" sourceRef="pp_payCfg" targetRef="pp_release_slaPlan"/>
-    <sequenceFlow id="sec_scm_p2p_f44" sourceRef="pp_release_done" targetRef="pp_pay"/>
+    <sequenceFlow id="sec_scm_p2p_f43" sourceRef="pp_payCfg" targetRef="pp_payable"/>
+    <sequenceFlow id="sec_scm_p2p_f44" sourceRef="pp_release_done" targetRef="pp_paySanction"/>
     <sequenceFlow id="sec_scm_p2p_f45" sourceRef="pp_pay" targetRef="pp_end"/>
     <sequenceFlow id="sec_scm_p2p_f52" name="DSC signature needed" sourceRef="pp_approvePrepareGw" targetRef="pp_approvePrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_scm_p2p_f53" name="no DSC signature" sourceRef="pp_approvePrepareGw" targetRef="pp_approve"/>
@@ -122,6 +130,10 @@
   </process>
   <bpmndi:BPMNDiagram id="sec_scm_p2p_diagram">
     <bpmndi:BPMNPlane id="sec_scm_p2p_plane" bpmnElement="sangam-sec-scm-p2p">
+      <bpmndi:BPMNShape id="pp_payNotReleased_di" bpmnElement="pp_payNotReleased"><dc:Bounds x="5180" y="-23" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_paySgw_di" bpmnElement="pp_paySgw" isMarkerVisible="true"><dc:Bounds x="5100" y="-30" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_paySanction_di" bpmnElement="pp_paySanction"><dc:Bounds x="4970" y="-45" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_payable_di" bpmnElement="pp_payable"><dc:Bounds x="3980" y="305" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="pp_start_di" bpmnElement="pp_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="pp_defaults_di" bpmnElement="pp_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="pp_amount_di" bpmnElement="pp_amount"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
