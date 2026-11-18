@@ -15,7 +15,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, download, http, request } from '../api/client';
 import { announce, useAction, useAsync } from '../lib/hooks';
-import { fmtDate, todayIso } from '../i18n';
+import { fmtDate, todayIso, type Translate } from '../i18n';
 import { FormRenderer, type FormValues } from '../components/FormRenderer';
 import { Badge, DataTable, Empty, JsonView, KeyValues, Loading, Notice, PageHeader, ProblemAlert, ReasonDialog, Section, TextArea, TextField } from '../components/ui';
 import { ModulePage, ModuleScreen, c, cell, f, type Row, type ScreenDef } from './engine';
@@ -382,7 +382,7 @@ type PromotionPlan = { sourceTenant?: string; sourceEnvironment?: string; target
 type Bundle = { format?: number; body?: Row; signature?: { keyId?: string; algorithm?: string; value?: string } };
 
 /** The problem codes of the promotion service, explained (PromotionService.java:68-120, BundleService.java:89-107). */
-export function promotionProblem(e: unknown, t: (k: string, o?: Record<string, unknown>) => string): string | null {
+export function promotionProblem(e: unknown, t: Translate): string | null {
   if (!(e instanceof ApiError) || !e.problem.code) return null;
   const known = ['PROMOTION_ENVIRONMENT_NOT_SET', 'PROMOTION_ENVIRONMENT_MISSING', 'PROMOTION_SAME_ENVIRONMENT', 'PROMOTION_TARGET_MISMATCH', 'PROMOTION_PLAN_CHANGED', 'PROMOTION_DRY_RUN_FAILED', 'PROMOTION_NO_CHANGE', 'BUNDLE_INVALID', 'BUNDLE_SIGNATURE_INVALID', 'BUNDLE_UNSIGNED', 'BUNDLE_SIGNER_MISSING'];
   return known.includes(e.problem.code) ? t(`promo.err.${e.problem.code}`) : null;
@@ -522,7 +522,7 @@ export const PACK_CODES = ['PACK_NOT_INSTALLED', 'PACK_HAS_DEPENDANTS', 'PACK_HA
  * A pack lifecycle refusal, explained (PackLifecycleController.java:82-97; PackDeployer.java:369-515,
  * PackOperationTxLock.java:65): the reason in words plus the server's `blockers` (409) or `violations` (422).
  */
-export function packProblem(e: unknown, t: (k: string, o?: Record<string, unknown>) => string): { message: string; items: string[] } | null {
+export function packProblem(e: unknown, t: Translate): { message: string; items: string[] } | null {
   if (!(e instanceof ApiError)) return null;
   const code = e.problem.code ?? '';
   if (!(PACK_CODES as readonly string[]).includes(code)) return null;

@@ -2539,6 +2539,13 @@
    ],
    "spdx": "MIT"
   },
+  "pkg:npm/%40types/react@19.3.0": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
   "pkg:npm/%40types/trusted-types@2.0.7": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -2638,6 +2645,13 @@
    "spdx": "MIT"
   },
   "pkg:npm/css.escape@1.5.1": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
+  "pkg:npm/csstype@3.2.3": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -2784,14 +2798,14 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:npm/html-parse-stringify@3.1.0": {
+  "pkg:npm/html-parse-stringify@4.0.1": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/i18next@23.16.8": {
+  "pkg:npm/i18next@27.1.5": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -2952,7 +2966,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:npm/react-i18next@15.7.4": {
+  "pkg:npm/react-i18next@18.0.2": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -3084,13 +3098,6 @@
     "ui"
    ],
    "spdx": "Apache-2.0"
-  },
-  "pkg:npm/void-elements@3.1.0": {
-   "decision": "ACCEPTED FOR DEFINED USE",
-   "distributions": [
-    "ui"
-   ],
-   "spdx": "MIT"
   },
   "pkg:npm/w3c-keyname@2.2.8": {
    "decision": "ACCEPTED FOR DEFINED USE",

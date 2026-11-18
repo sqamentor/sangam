@@ -17,7 +17,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, http, request } from '../api/client';
 import { announce, useAction, useAsync, useInterval, usePaged } from '../lib/hooks';
-import { fmtDate, fmtNumber } from '../i18n';
+import { fmtDate, fmtNumber, type Translate } from '../i18n';
 import { DEFAULT_MAX_BYTES, DEFAULT_MAX_ROWS, chunkRows, duplicateIds, parseRows, type BulkFormat, type BulkRow } from '../lib/bulkRows';
 import { Badge, DataTable, Dialog, Empty, KeyValues, Loading, Notice, PageHeader, Pagination, ProblemAlert, Section, SelectField, TabPanel, Tabs, TextField } from '../components/ui';
 
@@ -62,7 +62,7 @@ interface RowStatus {
 const enc = encodeURIComponent;
 
 /** A 413 from a chunk upload, explained (BULK_LIMIT or the tenant quota); null for any other error. */
-export function explain413(e: unknown, t: (k: string, o?: Record<string, unknown>) => string): string | null {
+export function explain413(e: unknown, t: Translate): string | null {
   if (!(e instanceof ApiError) || e.status !== 413) return null;
   const p = e.problem;
   if (p.code === 'TENANT_QUOTA_EXCEEDED') return t('bulk.quotaExceeded', { allowed: fmtNumber(Number(p.allowed)), requested: fmtNumber(Number(p.requested)) });

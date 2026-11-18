@@ -65,7 +65,7 @@ def npm_purl(name, version):
 
 # npm rows the ui distribution answers for: what vite bundles into dist/, and what the ui SBOM lists without being
 # bundled (cyclonedx-npm --omit dev keeps devOptional packages, e.g. an optional peer of a runtime package that is
-# installed as a devDependency; UP-L6: typescript, the optional peer of react-i18next 15.7). The register must cover
+# installed as a devDependency; UP-L6: typescript, the optional peer of react-i18next 15.7 and 18). The register must cover
 # every component the shipped SBOM names, so the second kind is exported for "ui" too.
 NPM_UI_MARKERS = ("distribution (bundled into the UI dist", "listed in the ui SBOM")
 

@@ -10,7 +10,6 @@ import type { ReactElement } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import i18n from 'i18next';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), page: vi.fn(), request: vi.fn(), download: vi.fn() }));
 
@@ -19,12 +18,12 @@ vi.mock('../api/client', async (orig) => {
   return { ...real, http: { ...real.http, get: api.get, post: api.post, page: api.page }, request: api.request, download: api.download };
 });
 
-import { initI18n, setTenantLocale } from '../i18n';
+import { initI18n, setTenantLocale, tr } from '../i18n';
 import { EvidenceReport, checkPurpose, consents, purposes, rightsScreen } from './compliance';
 import { ActionDialog } from './engine';
 import { PrincipalSearchScreen } from './complianceSearch';
 
-const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
+const T = tr;
 const show = (el: ReactElement) => render(<MemoryRouter>{el}</MemoryRouter>);
 const REF = 'citizen-1@example.org';
 

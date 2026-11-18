@@ -14,7 +14,7 @@ import { javaInstant, type GpsFix } from '../../lib/offline/canonical';
 import { defaultBackend } from '../../lib/offline/storage';
 import { canonicalDecimalOrUndefined, compareDecimal, withinScale } from '../../lib/decimal';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
-import { fmtDate } from '../../i18n';
+import { fmtDate, type Translate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { Badge, Checkbox, DataTable, Empty, Loading, Notice, PageHeader, Pagination, ProblemAlert, Section, SelectField, TextArea, TextField } from '../../components/ui';
 
@@ -187,7 +187,7 @@ export function numberProblem(item: Pick<TemplateItem, 'min' | 'max' | 'scale'>,
 }
 
 /** The user's words for a NUMBER problem (form.* messages). */
-export function numberProblemText(p: NumberProblem, t: (k: string, o?: Record<string, unknown>) => string): string {
+export function numberProblemText(p: NumberProblem, t: Translate): string {
   switch (p.code) {
     case 'notANumber':
       return t('form.notANumber');

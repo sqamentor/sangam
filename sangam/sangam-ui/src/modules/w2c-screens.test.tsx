@@ -9,7 +9,6 @@ import type { ReactElement } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import i18n from 'i18next';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), page: vi.fn(), request: vi.fn(), download: vi.fn() }));
 
@@ -19,7 +18,7 @@ vi.mock('../api/client', async (orig) => {
 });
 
 import { ApiError } from '../api/client';
-import { initI18n } from '../i18n';
+import { initI18n, tr } from '../i18n';
 import { BulkIngestPage, explain413 } from './bulk';
 import { PackLifecycle, Promotions, GuidedRun, groupPacks, packProblem, promotionProblem } from './config';
 import { ModuleSecurityDefaults } from '../areas/admin/Admin';
@@ -28,7 +27,7 @@ import { BulkTestReport, reportRows, runRows } from './platform';
 import { ActionMenu } from '../components/ActionMenu';
 import { ActionDialog } from './engine';
 
-const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
+const T = tr;
 const show = (el: ReactElement) => render(<MemoryRouter>{el}</MemoryRouter>);
 const problem = (status: number, code: string, extra: Record<string, unknown> = {}) => new ApiError({ status, title: 't', code, ...extra });
 const dialog = () => screen.getByRole('dialog');

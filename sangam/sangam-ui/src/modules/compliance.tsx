@@ -10,7 +10,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { download, http } from '../api/client';
 import type { FormField } from '../api/types';
-import { tenantLocale } from '../i18n';
+import { tenantLocale, type Translate } from '../i18n';
 import { useAction, useAsync } from '../lib/hooks';
 import { Checkbox, JsonView, KeyValues, Loading, Notice, ProblemAlert, Section, SelectField, TextField } from '../components/ui';
 import { ActionDialog, ModulePage, ModuleScreen, c, f, type Act, type ScreenDef } from './engine';
@@ -26,7 +26,7 @@ export function yesNo(key: string, label = `fld.${key}`): FormField {
  * Owner decision 362: a form whose attestations are explicit Yes / No choices sends each as a JSON boolean; one left
  * unanswered is refused here, as the server refuses it by name (never read as false).
  */
-export function checkChoices(keys: (string | [key: string, label: string])[]): (body: Record<string, unknown>, t: (k: string, o?: Record<string, unknown>) => string) => string | undefined {
+export function checkChoices(keys: (string | [key: string, label: string])[]): (body: Record<string, unknown>, t: Translate) => string | undefined {
   return (body, t) => {
     for (const e of keys) {
       const [k, label] = typeof e === 'string' ? [e, `fld.${e}`] : e;
@@ -48,7 +48,7 @@ export const purposeFields: FormField[] = [
 ];
 
 /** Every data item names its code and says, true or false, whether it is sensitive; nothing is assumed. */
-export function checkPurpose(body: Record<string, unknown>, t: (k: string, o?: Record<string, unknown>) => string): string | undefined {
+export function checkPurpose(body: Record<string, unknown>, t: Translate): string | undefined {
   for (const k of ['standardsAttested', 'active']) if (typeof body[k] !== 'boolean') return t('mod.compliance.choiceRequired', { field: t(`fld.${k}`) });
   const items = body.dataItems;
   if (items === undefined) return undefined;

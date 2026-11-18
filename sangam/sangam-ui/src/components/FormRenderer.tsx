@@ -16,6 +16,7 @@ import { useAsync } from '../lib/hooks';
 import { codePointLength } from '../lib/text';
 import type { FieldChange, FormField, FormSchema } from '../api/types';
 import { DecimalValue, compareDecimal, fromNumberInput } from '../lib/decimal';
+import { type Translate } from '../i18n';
 
 export type FormValues = Record<string, unknown>;
 
@@ -62,7 +63,7 @@ export function submitValues(schema: FormSchema, values: FormValues): FormValues
   return out;
 }
 
-export function validateForm(schema: FormSchema, values: FormValues, t: (k: string, o?: Record<string, unknown>) => string): Record<string, string> {
+export function validateForm(schema: FormSchema, values: FormValues, t: Translate): Record<string, string> {
   const errs: Record<string, string> = {};
   for (const f of flatten(schema.components)) {
     if (!f.key || f.readonly || f.disabled) continue;

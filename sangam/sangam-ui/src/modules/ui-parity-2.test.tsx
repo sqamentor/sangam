@@ -46,7 +46,7 @@ vi.mock('../plugins/host', () => ({
 }));
 const NONE: unknown[] = [];
 
-import { initI18n } from '../i18n';
+import { initI18n, tr } from '../i18n';
 import { EngineAdminPage, OperatonOpsPage, Welcome, ENGINE_PERMISSIONS } from './operaton';
 import { InstanceDetail } from '../areas/ops/InstanceDetail';
 import { DefinitionDetail, ProcessDefinitions } from '../areas/ops/Processes';
@@ -54,7 +54,7 @@ import { TaskInbox, parseCardVariables } from '../areas/tasklist/TaskInbox';
 import { savedFiltersKey } from '../areas/tasklist/savedFilters';
 import { api as contract, historyActivityFilter } from '../api/endpoints';
 
-const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
+const T = tr;
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const L = (k: string) => new RegExp(`^${esc(T(k))}(\\s*\\*.*)?$`);
 const EMPTY = { items: [], page: 0, size: 25, total: 0, capped: false };
