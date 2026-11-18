@@ -16,6 +16,10 @@
       "path": "packs/sec-hr-payroll/sangam-sec-hr-payroll.bpmn"
     },
     {
+      "kind": "BPMN",
+      "path": "packs/sec-hr-payroll/sangam-sec-hr-salary-payment.bpmn"
+    },
+    {
       "kind": "DMN",
       "path": "packs/sec-hr-payroll/sec-hr-wage-rules.dmn"
     },
