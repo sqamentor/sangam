@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 // SPDX-License-Identifier: Apache-2.0
+import type { ReactElement } from 'react';
 /**
  * M-047 (component tests, first part, W2-C screens): each screen sends exactly the contract body the server reads and
  * shows the server's refusals in words. The API client is mocked; nothing is rendered by a server. Written, not run in
@@ -28,7 +29,7 @@ import { ActionMenu } from '../components/ActionMenu';
 import { ActionDialog } from './engine';
 
 const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
-const show = (el: JSX.Element) => render(<MemoryRouter>{el}</MemoryRouter>);
+const show = (el: ReactElement) => render(<MemoryRouter>{el}</MemoryRouter>);
 const problem = (status: number, code: string, extra: Record<string, unknown> = {}) => new ApiError({ status, title: 't', code, ...extra });
 const dialog = () => screen.getByRole('dialog');
 

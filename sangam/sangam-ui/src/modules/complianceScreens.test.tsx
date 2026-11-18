@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 // SPDX-License-Identifier: Apache-2.0
+import type { ReactElement } from 'react';
 /**
  * Owner decisions 338 and 342 on the officer compliance screens, with the API client mocked:
  * - 338: the consent and rights registers send the principal reference in a POST body to .../search; no request
@@ -24,7 +25,7 @@ import { ActionDialog } from './engine';
 import { PrincipalSearchScreen } from './complianceSearch';
 
 const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
-const show = (el: JSX.Element) => render(<MemoryRouter>{el}</MemoryRouter>);
+const show = (el: ReactElement) => render(<MemoryRouter>{el}</MemoryRouter>);
 const REF = 'citizen-1@example.org';
 
 beforeAll(() => initI18n('en'));
