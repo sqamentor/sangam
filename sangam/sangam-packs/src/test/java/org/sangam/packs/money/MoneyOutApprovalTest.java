@@ -178,6 +178,24 @@ class MoneyOutApprovalTest {
     }
 
     @Test
+    void aSecondPaymentOnOneSanctionIsRefused() {
+        // instalment loop / reissue: approve once, pay, loop back to the same payment
+        List<String> v = guard("<startEvent id=\"s\"/>" + APPROVE + pay("pfms.dbt") + "<exclusiveGateway id=\"g\"/>"
+                + "<endEvent id=\"e\"/>" + flow("f1", "s", "approve") + flow("f2", "approve", "pay")
+                + flow("f3", "pay", "g") + flow("f4", "g", "pay") + flow("f5", "g", "e"));
+        assertEquals(1, v.size(), v.toString());
+        assertTrue(v.get(0).contains("reaches pay"), v.toString());
+    }
+
+    @Test
+    void aFreshSanctionBeforeEveryPaymentInALoopPasses() {
+        assertEquals(List.of(), guard("<startEvent id=\"s\"/>" + APPROVE + pay("pfms.dbt")
+                + "<exclusiveGateway id=\"g\"/><endEvent id=\"e\"/>" + flow("f1", "s", "approve")
+                + flow("f2", "approve", "pay") + flow("f3", "pay", "g") + flow("f4", "g", "approve")
+                + flow("f5", "g", "e")));
+    }
+
+    @Test
     void aPaymentInsideASubProcessIsSeen() {
         List<String> v = guard("<startEvent id=\"s\"/><subProcess id=\"sp\"><startEvent id=\"ss\"/>" + pay("bank.transfer")
                 + "<endEvent id=\"se\"/>" + flow("g1", "ss", "pay") + flow("g2", "pay", "se") + "</subProcess>"
