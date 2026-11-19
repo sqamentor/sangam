@@ -1,5 +1,12 @@
 {
  "_comment": "SPDX-License-Identifier: Apache-2.0. Required results-ledger lines per gate (CR-01, CR-22; results_ledger.py gate --set NAME). release: every line must be PASS. pr-*: PASS or NOT-RUN (report-only); FAIL, SKIPPED, BLOCKED or a missing line fails. The release set is derived from distributions.json (test_results_ledger.py checks that every distribution has its licence, register, SBOM-match and notices lines).",
+ "_waivers": [
+  {"_note": "Decision 417 (owner 2026-11-19): OWASP Dependency-Check waived for the v0.1.0 release only, while the NVD API key is not in SSM. The line stays BLOCKED and the gate shows WAIVED, never PASS. It holds only while the Grype image scan (image-vuln-scan) and CodeQL (codeql: 0 open high/critical alerts) are PASS. It expires at any other tag, and as soon as the key exists (the line is then PASS or FAIL, never this BLOCKED reason).",
+   "check": "dependency-check", "tag": "v0.1.0", "decision": 417, "status": "BLOCKED",
+   "reasons": ["SSM parameter /shared/security/nvd-api-key not readable"],
+   "requires_pass": ["image-vuln-scan", "codeql"],
+   "job": "security", "job_name": "OWASP Dependency-Check"}
+ ],
  "release": [
   "build-unit-tests",
   "forbidden-coordinates",
@@ -27,6 +34,7 @@
   "db-mysql",
   "dependency-check",
   "image-vuln-scan",
+  "codeql",
   "secret-scan",
   "semgrep",
   "licence-server",

@@ -599,6 +599,14 @@ jobs:
     if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read           # the run's jobs (which job inside security failed)
+      security-events: read   # CodeQL analyses and open alerts for the codeql line
+    env:
+      # decision 417: waivers apply to exactly this tag; a dry run (workflow_dispatch) gates with no tag, so strictly
+      GATE_TAG: ${{ github.event_name == 'push' && github.ref_name || '' }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -607,17 +615,33 @@ jobs:
         with:
           pattern: ledger-*
           path: results
-      - name: Every upstream job succeeded
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: exit-cause-*
+          path: exit-causes
+      - name: CodeQL line (PASS = both languages analysed for this ref and 0 open high or critical alerts)
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p codeql
+          gh api --paginate "repos/$GITHUB_REPOSITORY/code-scanning/analyses?ref=$GITHUB_REF&per_page=100" > codeql/analyses.json
+          gh api --paginate "repos/$GITHUB_REPOSITORY/code-scanning/alerts?ref=$GITHUB_REF&state=open&per_page=100" > codeql/open-alerts.json
+          $RL run --check codeql --ledger-dir results/codeql --expect codeql/analyses.json --expect codeql/open-alerts.json -- \
+            python3 -I -c 'import json,sys
+          an = {a.get("category") for a in json.load(open("codeql/analyses.json")) if a.get("tool", {}).get("name") == "CodeQL"}
+          need = {"/language:java-kotlin", "/language:javascript-typescript"}
+          if not need <= an: print("::error::CodeQL analyses missing for this ref:", sorted(need - an)); sys.exit(2)
+          bad = [a["number"] for a in json.load(open("codeql/open-alerts.json"))
+                 if (a.get("rule") or {}).get("security_severity_level") in ("high", "critical")]
+          print("open high/critical CodeQL alerts:", bad); sys.exit(1 if bad else 0)'
+      - name: Every upstream job succeeded (a failure only through a waived check, decision 417)
         env:
           NEEDS: ${{ toJSON(needs) }}
         run: |
-          python3 -I -c 'import json,os,sys
-          bad = {k: v["result"] for k, v in json.loads(os.environ["NEEDS"]).items() if v["result"] != "success"}
-          [print(f"::error::job {k}: {r}") for k, r in sorted(bad.items())]
-          sys.exit(1 if bad else 0)'
-      - name: Results-ledger gate (release mode, every line PASS)
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs?per_page=100" --jq '.jobs[]' | python3 -I -c 'import json,sys; json.dump({"jobs": [json.loads(l) for l in sys.stdin if l.strip()]}, open("run-jobs.json", "w"))'
+          $RL jobs --required sangam/deploy/licence/release-checks.json --needs-json "$NEEDS" --run-jobs run-jobs.json --exit-cause-dir exit-causes --ledger-dir results --tag "$GATE_TAG"
+      - name: Results-ledger gate (release mode, every line PASS; WAIVED only per release-checks.json _waivers)
         if: ${{ !cancelled() }}
-        run: $RL gate --required sangam/deploy/licence/release-checks.json --mode release --set release --ledger-dir results --out results/release-gate.json
+        run: $RL gate --required sangam/deploy/licence/release-checks.json --mode release --set release --ledger-dir results --out results/release-gate.json --tag "$GATE_TAG"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
