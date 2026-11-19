@@ -21,7 +21,7 @@ import org.sangam.channels.messenger.WebhookVerifiers;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.integration.connector.SecretResolver;
 import org.sangam.rest.port.ApiProblem;
-import org.sangam.rest.support.TenantConfig;
+import org.sangam.rest.config.TenantConfig;
 import org.sangam.rest.support.TxSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

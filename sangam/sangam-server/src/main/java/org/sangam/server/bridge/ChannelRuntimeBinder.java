@@ -31,7 +31,7 @@ import org.sangam.rest.modules.channels.ChannelStatusSource;
 import org.sangam.rest.port.Page;
 import org.sangam.rest.port.RegistryPort;
 import org.sangam.rest.port.RequestContext;
-import org.sangam.rest.support.TenantConfig;
+import org.sangam.rest.config.TenantConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ResolvableType;

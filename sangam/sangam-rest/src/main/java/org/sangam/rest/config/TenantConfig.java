@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-package org.sangam.rest.support;
+package org.sangam.rest.config;
 
 import java.util.Map;
 import java.util.Optional;
