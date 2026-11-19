@@ -323,6 +323,46 @@
         "payeeAccount": "00004207100104",
         "ifsc": "ZXRJ9JPR002"
       }
+    },
+    {
+      "id": "GIA-0001",
+      "flow": "gia",
+      "process": "sangam-ifms-gia-release",
+      "businessKey": "JPR-DDO-0420/GIA/2026-27/0001",
+      "startedBy": "kavita.sharma",
+      "target": "WAITING",
+      "expectState": "APPROVED",
+      "variables": {
+        "granteeType": "INSTITUTION",
+        "headOfAccount": "2210-00-101-01-00-31",
+        "ifsc": "ZXRJ9JPR001",
+        "grantee": "Zila Swasthya Samiti, Jaipur",
+        "payee": "Zila Swasthya Samiti, Jaipur",
+        "partyId": "PTY-GRT-0001",
+        "payeeAccount": "00004207200001",
+        "amount": 250000000,
+        "sanctionRef": "DTA/JPR/GIA/2026-27/017 dated 18-06-2026"
+      }
+    },
+    {
+      "id": "GIA-0002",
+      "flow": "gia",
+      "process": "sangam-ifms-gia-release",
+      "businessKey": "JPR-DDO-0420/GIA/2026-27/0002",
+      "startedBy": "kavita.sharma",
+      "target": "RUNNING",
+      "stopAt": "sn_sanction",
+      "variables": {
+        "granteeType": "INSTITUTION",
+        "headOfAccount": "2210-00-101-01-00-31",
+        "ifsc": "ZXRJ9JPR001",
+        "grantee": "Rajkiya Balika Chhatrawas Samiti, Sanganer",
+        "payee": "Rajkiya Balika Chhatrawas Samiti, Sanganer",
+        "partyId": "PTY-GRT-0002",
+        "payeeAccount": "00004207200002",
+        "amount": 48000000,
+        "sanctionRef": "DTA/JPR/GIA/2026-27/041 dated 09-10-2026"
+      }
     }
   ]
 }
