@@ -265,7 +265,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:maven/com.microsoft.sqlserver/mssql-jdbc@12.10.2.jre11": {
+  "pkg:maven/com.microsoft.sqlserver/mssql-jdbc@13.6.2.jre11": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
