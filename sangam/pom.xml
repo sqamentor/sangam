@@ -184,7 +184,7 @@
     <!-- M-094 / M-095 build-time tools (owner download approval batch 1, 2026-11-12). Never shipped: the enforcer rule
          below and deploy/licence/licence-policy.json (forbidden_components, build_time_tools) keep them out of every
          shipped scope. Every gate they drive is report-only (no build failure) until the test-phase triage. -->
-    <version.errorprone>2.52.0</version.errorprone>
+    <version.errorprone>2.53.0</version.errorprone>
     <version.nullaway>0.14.4</version.nullaway>
     <!-- LGPL build-only tools, allowed by the owner decision of 2026-11-12 (licence-policy.json build_time_tools) -->
     <version.spotbugs-maven-plugin>4.10.5.0</version.spotbugs-maven-plugin>
