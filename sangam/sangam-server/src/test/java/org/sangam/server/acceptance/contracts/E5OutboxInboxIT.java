@@ -391,6 +391,51 @@ class E5OutboxInboxIT extends ContractSupport {
         assertEquals(before, correlated.size(), "no subscription yet: nothing correlated");
     }
 
+    /** The skip-locked claim e5_5r's competing inbox takes on one message (the same predicate as core Inbox.claim). */
+    private List<String> claimInboxRow(Connection c, String source, String msgId) {
+        return Jdbc.query(c, dialect().skipLockedSelect("i.message_id", "INBOX", "i",
+                        "i.tenant_id = ? AND i.source = ? AND i.message_id = ? AND i.state IN ('RECEIVED','BUFFERED')",
+                        "i.received_at", 1),
+                rs -> rs.getString(1), T, source, msgId);
+    }
+
+    /**
+     * Run 44498412338 (oracle, e5_5r): the precondition "the competing claim holds the row" failed. The server's own
+     * inbox loop claims every due row, whatever its source, so its claim on the new message could be in flight when
+     * e5_5r's competitor asked for the row; SKIP LOCKED then skipped it and the competitor held nothing. Here a third
+     * connection plays the server's in-flight claim and releases it a second later, so the interleaving happens on every
+     * run.
+     */
+    @Test
+    @Order(6)
+    void e5_5rs_competingClaimSetupWhileTheServerInboxHoldsTheRow() throws Exception {
+        String source = key("applicant-portal");
+        String msgId = key("msg-e5-5rs");
+        assertEquals(Inbox.ReceiveResult.ACCEPTED, inbox.receive(T, source, msgId, key("lic-e5-5rs"), "documents attached",
+                Duration.ofHours(24)));
+        Connection server = dataSource.getConnection();
+        server.setAutoCommit(false);
+        assertEquals(List.of(msgId), claimInboxRow(server, source, msgId), "precondition: the server-side claim holds the row");
+        ExecutorService ex = Executors.newSingleThreadExecutor();
+        Future<?> release = ex.submit(() -> {
+            Thread.sleep(1000);
+            server.rollback();
+            server.close();
+            return null;
+        });
+        try (Connection competitor = dataSource.getConnection()) {
+            competitor.setAutoCommit(false);
+            try {
+                assertEquals(List.of(msgId), claimInboxRow(competitor, source, msgId), "precondition: the competing claim holds the row");
+            } finally {
+                competitor.rollback();
+            }
+        } finally {
+            release.get(30, TimeUnit.SECONDS);
+            ex.shutdown();
+        }
+    }
+
     /**
      * Before the instance waits at the message catch, the only settled state is BUFFERED, whichever inbox (this test's
      * or the server's own loop) claims the row. RECEIVED and CLAIMED are in-flight states of a competing claim; the row
