@@ -8,6 +8,7 @@ and does not deploy anything itself.
 | `sangam-compose-fragment.yml` | The services `sangam-postgres`, `sangam-server` and `sangam-front`, merged with the IFMS compose stack. `sangam-front` serves the UI at `/sangam/` and the API at `/sangam/api/v1`. |
 | `trusted-proxies.env` | B9: the `sangam-internal` subnet plus the Cloudflare ranges, and `CF-Connecting-IP` as the client address header |
 | `keycloak-clients-sangam.json` | The `sangam-ui` client (public, PKCE) and the `sangam-server` client (bearer-only) for the existing realm `oneifms`. It contains no secrets. |
+| `generate-demo-keys.sh` | Host-side key generation (openssl only, idempotent, prints no key material) into `SANGAM_SECRETS_DIR` |
 | `DB-REQUIREMENT.md` | The database engine, version, size and backup |
 | `../../../sangam-handoff/2026-11-19/DEMO-GO-LIVE-RUNBOOK.md` (outside the repo) | The steps, the owner's yes for each one, and the rollback |
 

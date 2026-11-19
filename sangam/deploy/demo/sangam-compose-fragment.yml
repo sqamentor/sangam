@@ -3,7 +3,9 @@
 # Cloudflare Tunnel (cloudflared) in front, Keycloak realm `oneifms` in the same stack). The IFMS go-live lane is the
 # only deployer; this file is merged with the IFMS stack:
 #
-#   docker compose -f <ifms compose file> -f sangam-compose-fragment.yml --env-file sangam-demo.env up -d \
+#   SANGAM_SECRETS_DIR=<dir> sh generate-demo-keys.sh     # once; idempotent, prints no key material
+#   docker compose -f <ifms compose file> -f sangam-compose-fragment.yml --env-file sangam-demo.env \
+#     --env-file <dir>/sangam-keys.env up -d \
 #     sangam-postgres sangam-server sangam-front
 #
 # Path layout (B10): https://demo.ifms.dev/sangam/ is the UI, https://demo.ifms.dev/sangam/api/v1 the API. The
@@ -72,8 +74,13 @@ services:
     networks:
       sangam-internal: { aliases: [sangam-server-internal] }
       ifms-edge: {}
+    # Key material: generated on the host by generate-demo-keys.sh into SANGAM_SECRETS_DIR (never committed, never
+    # printed). sangam-keys.env carries the env-only keys (pass it as a second --env-file); files/ is the file secret
+    # provider's root, mounted read-only.
     volumes:
       - sangam-server-state:/var/lib/sangam
+      - ${SANGAM_SECRETS_DIR:?host directory written by generate-demo-keys.sh}/files:/run/sangam-secrets:ro
+    # The full production start set (ProductionStartupFailFastTest.baseline(); bound by DemoComposeFragmentStartupTest).
     environment:
       TZ: UTC
       SPRING_PROFILES_ACTIVE: postgres,oidc
@@ -81,16 +88,37 @@ services:
       SANGAM_DB_URL: jdbc:postgresql://sangam-postgres:5432/sangam
       SANGAM_DB_USER: sangam
       SANGAM_DB_PASSWORD: ${SANGAM_PG_PASSWORD:?}
-      # first start creates the schema; the runbook switches it to validate afterwards (decision 334)
-      SANGAM_LIQUIBASE_MODE: ${SANGAM_LIQUIBASE_MODE:-startup}
+      # runbook step 4: migrate-only once (one-shot), then serve (EV-M-0890 answer 3)
+      SANGAM_LIQUIBASE_MODE: ${SANGAM_LIQUIBASE_MODE:?migrate-only for the one-shot, then the serve mode of runbook step 4}
       SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE: system:platform
       SANGAM_TENANT_DEFAULT: GOI.FIN
       SANGAM_COMPLIANCE_JURISDICTIONS: IN
       SANGAM_COMPLIANCE_LOG_ARCHIVE_COUNTRY: IN
       SANGAM_COMPLIANCE_ORGANISATION: ${SANGAM_COMPLIANCE_ORGANISATION:-OneIFMS demo}
       SANGAM_COMPLIANCE_TENANTS: GOI.FIN
+      # key encryption key (sangam.security.kek.*), registry signer (Ed25519) and vault pepper: env-only keys
+      SANGAM_SECURITY_KEK_KEYS_K1: ${SANGAM_SECURITY_KEK_KEYS_K1:?from sangam-keys.env}
+      SANGAM_SECURITY_KEK_CURRENTID: k1
+      SANGAM_REGISTRY_SIGNER_PRIVATEKEY: ${SANGAM_REGISTRY_SIGNER_PRIVATEKEY:?from sangam-keys.env}
+      SANGAM_REGISTRY_SIGNER_PUBLICKEY: ${SANGAM_REGISTRY_SIGNER_PUBLICKEY:?from sangam-keys.env}
+      SANGAM_REGISTRY_VAULT_HMACPEPPER: ${SANGAM_REGISTRY_VAULT_HMACPEPPER:?from sangam-keys.env}
+      # file secret provider: <root>/compliance/principal-key, <root>/audit/checkpoint-private, checkpoint-public
+      SANGAM_SECRETS_PROVIDERS: file
+      SANGAM_SECRETS_FILE_ROOT: /run/sangam-secrets
       SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF: secret://compliance/principal-key
-      SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY: ${SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY:?base64 key, at least 32 bytes (secret, no default)}
+      SANGAM_AUDIT_CHECKPOINT_PRIVATEKEYREF: secret://audit/checkpoint-private
+      SANGAM_AUDIT_CHECKPOINT_PUBLICKEYREF: secret://audit/checkpoint-public
+      # decision 385/387/390: this environment's name, and EITHER the other environments' fingerprint list (a file under
+      # the secrets root) OR the one-time first-environment bootstrap. OPEN (b), owner: which one. Neither set = the
+      # server refuses to start (fail closed).
+      SANGAM_KEYS_ENVIRONMENT: demo-ifms
+      SANGAM_KEYS_FOREIGN_FINGERPRINTS: ${SANGAM_KEYS_FOREIGN_FINGERPRINTS:-}
+      SANGAM_KEYS_BOOTSTRAP: ${SANGAM_KEYS_BOOTSTRAP:-false}
+      # OPEN (c), owner: the ledger module's GL export connector id. Empty = the server refuses to start.
+      SANGAM_LEDGER_GLCONNECTOR: ${SANGAM_LEDGER_GLCONNECTOR:-}
+      # Owner decision 2026-11-19 (EV-M-0890 (a)): written demo waiver, no scanner.
+      SANGAM_MALWARE_SCANNER: none
+      SANGAM_MALWARE_PRODUCTIONWAIVER: "demo.ifms.dev, synthetic data only, behind Cloudflare Access"
       # Keycloak in the IFMS stack, realm oneifms (HOSTING-KEYCLOAK). Public issuer = the iss in the browser's tokens;
       # keys fetched over the IFMS network name given by the deployer.
       SANGAM_OIDC_ISSUER: ${SANGAM_OIDC_ISSUER:?public issuer, e.g. https://<auth host>/realms/oneifms}
@@ -103,22 +131,15 @@ services:
       # SL-70: a platform realm separate from oneifms; empty = no platform administrator in the demo
       SANGAM_SECURITY_PLATFORM_ISSUER: ${SANGAM_SECURITY_PLATFORM_ISSUER:-}
       SANGAM_CORS_ORIGINS: ""
-      # B9 (trusted-proxies.md): the front container's subnet (the only peer that reaches the server) plus the
-      # Cloudflare published ranges; the client address is CF-Connecting-IP, set by Cloudflare and passed by
-      # cloudflared and the front.
+      # B9 (trusted-proxies.env): the front's subnet plus the Cloudflare ranges; client address = CF-Connecting-IP.
       SANGAM_TRUSTED_PROXIES: ${SANGAM_TRUSTED_PROXIES:?the list in trusted-proxies.env}
       SANGAM_CLIENT_IP_HEADERS: CF-Connecting-IP,X-Forwarded-For
-      # Decision 385/387/390: one key per environment. The first start is the one-time bootstrap of environment
-      # "demo-ifms"; the runbook turns it off afterwards.
-      SANGAM_KEYS_ENVIRONMENT: demo-ifms
-      SANGAM_KEYS_BOOTSTRAP: ${SANGAM_KEYS_BOOTSTRAP:-false}
       # Money held / sandbox: no simulator (refused in production mode anyway) and no payment rail.
       SANGAM_INTEGRATION_SIMULATORS_ENABLED: "false"
       SANGAM_CONNECTORS_PAYGOV_BASE_URL: ""
       SANGAM_CONNECTORS_IFMS_BASE_URL: ""
       SANGAM_CONNECTORS_PFMS_DIRECTORY: ""
       SANGAM_OTLP_ENABLED: "false"
-      SANGAM_MALWARE_SCANNER: none
       JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=70
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8081 && printf \"GET /actuator/health/readiness HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q UP <&3'"]
