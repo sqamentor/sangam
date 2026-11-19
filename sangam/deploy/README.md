@@ -237,7 +237,8 @@ Chart behaviour worth knowing:
   `staging`, `[a-z0-9][a-z0-9._-]{0,47}`), and reads the fingerprints of the other environments' keys from a list file,
   `sangam.keys.foreign-fingerprints` (env `SANGAM_KEYS_FOREIGN_FINGERPRINTS`; the chart mounts
   `server.keyEnvironment.foreignFingerprints` at `/opt/sangam/config/key-fingerprints.txt`). A line is
-  `<environment> <sha256 hex> [<setting>]`; `#` starts a comment; lines of the server's own environment are skipped. A
+  `<environment> <sha256 hex> [<setting> [<purpose>]]` (the export writes all four; the purpose is the rest of the
+  line); `#` starts a comment; lines of the server's own environment are skipped. A
   fingerprint is SHA-256 of a public key, or HMAC-SHA256 under the fixed label `sangam:key-fingerprint:v1` of a secret
   (the keys of the key purpose table: KEK, registry signer and peppers, compliance principal key, audit checkpoint,
   package and bundle signing); it is never the key, and no message prints one. With a name set, the server writes its
@@ -263,7 +264,8 @@ Chart behaviour worth knowing:
   does not verify, another environment, another format, or no custodian key refuses the start with
   `KEY_ATTESTATION_INVALID`, naming the setting, never a key or a fingerprint. The first environment of an
   installation has neither a list nor an attestation: `sangam.keys.bootstrap=true` (env `SANGAM_KEYS_BOOTSTRAP`, chart
-  `server.keyEnvironment.bootstrap`) lets it start once. That start is recorded, once the database is ready, as the
+  `server.keyEnvironment.bootstrap`) lets it start once (runbook: section 5.1, with the custodian tool
+  `sangam/tools/keys/sangam-key-attestation.sh`). That start is recorded, before the web server opens a port, as the
   audit event `KEY_ENVIRONMENT_BOOTSTRAPPED` (no tenant, chain `keys:bootstrap`); any later start of that environment
   with the setting still on is refused with `KEY_ENVIRONMENT_LIST_REQUIRED`, and so is the setting together with a list
   or an attestation. Remove it once the next environment's list or the attestation exists.

@@ -31,8 +31,9 @@ import org.springframework.core.env.Environment;
  *       environment are skipped, so one merged list serves every environment). Required in production, where it must
  *       name at least one fingerprint of another environment; a configured list that cannot be read or has a line of
  *       another form refuses the start in every environment (fail closed);</li>
- *   <li>{@value #EXPORT}: optional path where the start writes this environment's own list in the same form, for the
- *       other environments;</li>
+ *   <li>{@value #EXPORT}: optional path where the start writes this environment's own list in the same form, each line
+ *       followed by the setting's purpose, for the other environments and for the custodian's attestation; it is
+ *       written before the list and attestation checks, so a refused start still leaves it;</li>
  *   <li>{@value #ATTESTATION} and {@value #CUSTODIAN} (owner decisions 387 (4) and 390 (4), option c): the path of the
  *       key custodian's Ed25519-signed attestation ({@link KeyAttestation}) and the custodian's public key. In
  *       production it stands in for {@value #FOREIGN}; wherever it is set, every key of this environment must be attested
@@ -105,6 +106,11 @@ public final class KeyEnvironmentSeparation {
             throw refusal(LIST_REQUIRED, ENVIRONMENT + " must match " + NAME.pattern());
         }
         Map<String, Set<String>> own = own(entries);
+        if (export != null) {
+            // before the list and attestation checks: a start refused for a new, not yet attested key still leaves
+            // the custodian the fingerprints to sign (decision 390 (4), key rotation); the export holds no key
+            write(Path.of(export), name, entries);
+        }
         int foreign = 0;
         if (list != null) {
             Map<String, String> theirs = read(Path.of(list), name);
@@ -123,9 +129,6 @@ public final class KeyEnvironmentSeparation {
             }
         }
         int attested = attestation == null ? 0 : attest(env, entries, name, Path.of(attestation));
-        if (export != null) {
-            write(Path.of(export), name, own);
-        }
         return new Result(name, own.values().stream().mapToInt(Set::size).sum(), foreign, attested, bootstrap);
     }
 
@@ -197,9 +200,9 @@ public final class KeyEnvironmentSeparation {
                 continue;
             }
             String[] t = line.split("\\s+");
-            if (t.length < 2 || t.length > 3 || !NAME.matcher(t[0]).matches() || !FINGERPRINT.matcher(t[1]).matches()) {
+            if (t.length < 2 || !NAME.matcher(t[0]).matches() || !FINGERPRINT.matcher(t[1]).matches()) {
                 throw refusal(LIST_REQUIRED, FOREIGN + " line " + (i + 1)
-                        + " is not '<environment> <fingerprint> [<setting>]' (64 lower-case hex digits)");
+                        + " is not '<environment> <fingerprint> [<setting> [<purpose>]]' (64 lower-case hex digits)");
             }
             if (!t[0].equals(self)) {
                 out.putIfAbsent(t[1], t[0]);
@@ -208,12 +211,22 @@ public final class KeyEnvironmentSeparation {
         return out;
     }
 
-    /** Writes this environment's list (via a temporary file and a move, so a reader never sees half of it). */
-    static void write(Path export, String name, Map<String, Set<String>> own) {
+    /**
+     * Writes this environment's list (via a temporary file and a move, so a reader never sees half of it): one line
+     * {@code <environment> <fingerprint> <setting> <purpose>} per fingerprint and setting; the purpose (the rest of the
+     * line, {@link KeyPurposeSeparation#SETTINGS}) is what the custodian attests with the fingerprint.
+     */
+    static void write(Path export, String name, List<KeyPurposeSeparation.Entry> entries) {
+        Set<String> rows = new TreeSet<>();
+        for (KeyPurposeSeparation.Entry e : entries) {
+            for (String f : e.fingerprints()) {
+                rows.add(name + " " + f + " " + e.setting() + " " + e.purpose());
+            }
+        }
         List<String> lines = new ArrayList<>();
         lines.add("# Sangam key fingerprints of environment " + name + " (owner decisions 37 and 385 (3)); one-way, no"
-                + " key values");
-        own.forEach((f, settings) -> settings.forEach(s -> lines.add(name + " " + f + " " + s)));
+                + " key values; <environment> <fingerprint> <setting> <purpose>");
+        lines.addAll(rows);
         try {
             Path dir = export.toAbsolutePath().getParent();
             Path tmp = Files.createTempFile(dir, ".key-fingerprints", ".tmp");

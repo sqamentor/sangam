@@ -9,7 +9,7 @@ import org.sangam.rest.support.TxSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -56,8 +56,46 @@ public class KeyPurposeSeparationWiring {
      * closed: it could not be recorded).
      */
     @Bean
-    public ApplicationRunner sangamKeyEnvironmentBootstrap(Checked checked, ObjectProvider<TxSupport> txs) {
-        return args -> record(checked, txs.getIfAvailable());
+    public SmartLifecycle sangamKeyEnvironmentBootstrap(Checked checked, ObjectProvider<TxSupport> txs) {
+        return new BootstrapRecorder(checked, txs);
+    }
+
+    /**
+     * Runs in the first lifecycle phase, before the web server starts (its lifecycle has a later phase) and before
+     * any scheduler: a refused second bootstrap fails the refresh with no port open and nothing served. An
+     * ApplicationRunner would run only after the server already serves.
+     */
+    static final class BootstrapRecorder implements SmartLifecycle {
+
+        private final Checked checked;
+        private final ObjectProvider<TxSupport> txs;
+        private volatile boolean running;
+
+        BootstrapRecorder(Checked checked, ObjectProvider<TxSupport> txs) {
+            this.checked = checked;
+            this.txs = txs;
+        }
+
+        @Override
+        public void start() {
+            record(checked, txs.getIfAvailable());
+            running = true;
+        }
+
+        @Override
+        public void stop() {
+            running = false;
+        }
+
+        @Override
+        public boolean isRunning() {
+            return running;
+        }
+
+        @Override
+        public int getPhase() {
+            return Integer.MIN_VALUE;
+        }
     }
 
     static void record(Checked checked, TxSupport tx) {
