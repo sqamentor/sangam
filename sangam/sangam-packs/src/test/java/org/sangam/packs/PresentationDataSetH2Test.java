@@ -128,6 +128,31 @@ class PresentationDataSetH2Test {
         return f;
     }
 
+    /** Where each instance of the case waits: active activities, jobs (type, activity, due date) and awaited messages. */
+    static List<String> waits(String bk) {
+        List<String> out = new ArrayList<>();
+        for (var p : engine.getRuntimeService().createProcessInstanceQuery().processInstanceBusinessKeyLike(bk + "%").list()) {
+            String def = p.getProcessDefinitionId().split(":")[0];
+            out.add(def + " active=" + engine.getRuntimeService().getActiveActivityIds(p.getId()));
+            for (var j : engine.getManagementService().createJobQuery().processInstanceId(p.getId()).list()) {
+                var jd = engine.getManagementService().createJobDefinitionQuery().jobDefinitionId(j.getJobDefinitionId())
+                        .singleResult();
+                out.add("  job " + (jd == null ? "?" : jd.getJobType() + "@" + jd.getActivityId()) + " due "
+                        + j.getDuedate() + " retries " + j.getRetries());
+            }
+            engine.getRuntimeService().createEventSubscriptionQuery().processInstanceId(p.getId()).list()
+                    .forEach(s -> out.add("  awaits " + s.getEventType() + ":" + s.getEventName() + "@" + s.getActivityId()));
+        }
+        return out;
+    }
+
+    /** A WAITING case must show what it waits for: a timer job or an awaited message/signal. */
+    static boolean waitsOnTimerOrMessage(String bk) {
+        // cancellation and withdrawal subscriptions exist on every case and are never what it waits for
+        return waits(bk).stream().anyMatch(w -> w.contains("job timer") || (w.contains("awaits message")
+                || w.contains("awaits signal")) && !w.contains("sangam.cancelCase") && !w.contains("sangam.withdrawCase"));
+    }
+
     static List<String> payments(String bk) {
         return ((SimulatorConnectorGateway) PackRuntime.gateway()).journal().stream()
                 .filter(r -> bk.equals(r.businessKey()) && r.connector().contains("payment"))
@@ -146,10 +171,23 @@ class PresentationDataSetH2Test {
             FormAnswers answers = new FormAnswers(engine);
             List<String> done = driver.run(bk, (Task t) -> t.getTaskDefinitionKey().equals(stopAt) ? null
                     : answers.answer(t), 150);
+            // an outside answer the data set declares (for example the citizen's rating), delivered as its source would:
+            // a message correlated by business key once the case waits at the declared activity
+            for (JsonNode ev : c.path("events")) {
+                if (waits(bk).stream().anyMatch(w -> w.contains(ev.path("when").asText()))) {
+                    Map<String, Object> ev_vars = new HashMap<>();
+                    ev.path("variables").fields().forEachRemaining(e -> ev_vars.put(e.getKey(), e.getValue().asText()));
+                    engine.getRuntimeService().createMessageCorrelation(ev.path("message").asText())
+                            .processInstanceBusinessKey(bk).setVariables(ev_vars).correlate();
+                    done = new ArrayList<>(done);
+                    done.addAll(driver.run(bk, (Task t) -> t.getTaskDefinitionKey().equals(stopAt) ? null
+                            : answers.answer(t), 150));
+                }
+            }
             Object state = driver.var(bk, "caseState");
             String r = c.path("id").asText() + " " + bk + ": target " + target + ", done " + done + ", open " + open(bk)
                     + ", state " + state + ", payments " + payments(bk) + ", incidents " + incidents(bk)
-                    + ", facts " + facts(bk);
+                    + ", facts " + facts(bk) + ", waits " + waits(bk);
             System.out.println("[presentation-data] " + r);
             boolean ok = incidents(bk).isEmpty() && switch (target) {
                 case "COMPLETED" -> driver.ended(bk) && "CLOSED".equals(String.valueOf(state));
@@ -157,7 +195,8 @@ class PresentationDataSetH2Test {
                         && !"CLOSED".equals(String.valueOf(state));
                 case "RUNNING" -> !driver.ended(bk) && open(bk).contains(stopAt);
                 // the case waits for time or an outside answer (UC due date, SLA, statutory time limit), no task open
-                case "WAITING" -> !driver.ended(bk) && c.path("expectState").asText().equals(String.valueOf(state));
+                case "WAITING" -> !driver.ended(bk) && c.path("expectState").asText().equals(String.valueOf(state))
+                        && waitsOnTimerOrMessage(bk);
                 default -> false;
             };
             if (!ok) {

@@ -20,7 +20,7 @@
   },
   "h2Simulator": {
     "comment": "Directives for the H2 load test only (simulator connectors). On a hosted server the tenant's sandbox connectors answer instead; nothing pays anywhere real.",
-    "fundsAvailable": "available=100000000",
+    "fundsAvailable": "available=1000000000",
     "registryParty": "multiple=false;verified=true",
     "systems": {
       "sim_config_documentType": "valid=true;signatures=1",
@@ -330,8 +330,7 @@
       "process": "sangam-ifms-gia-release",
       "businessKey": "JPR-DDO-0420/GIA/2026-27/0001",
       "startedBy": "kavita.sharma",
-      "target": "WAITING",
-      "expectState": "APPROVED",
+      "target": "COMPLETED",
       "variables": {
         "granteeType": "INSTITUTION",
         "headOfAccount": "2210-00-101-01-00-31",
@@ -342,7 +341,8 @@
         "payeeAccount": "00004207200001",
         "amount": 250000000,
         "sanctionRef": "DTA/JPR/GIA/2026-27/017 dated 18-06-2026"
-      }
+      },
+      "payment": "SANDBOX"
     },
     {
       "id": "GIA-0002",
@@ -403,15 +403,23 @@
       "process": "sangam-grievance",
       "businessKey": "JPR-DDO-0420/GRV/2026-27/0001",
       "startedBy": "anil.choudhary",
-      "target": "WAITING",
-      "expectState": "SUBMITTED",
+      "target": "COMPLETED",
       "variables": {
         "applicantName": "Lalita Verma",
         "applicantRef": "email:lalita.verma@ifms-jaipur.invalid",
         "category": "SERVICE",
         "district": "Jaipur",
         "grievanceText": "My GPF advance sanctioned in June 2026 has not reached my bank account."
-      }
+      },
+      "events": [
+        {
+          "when": "gv_feedbackWait",
+          "message": "sangam.grievanceFeedback",
+          "variables": {
+            "rating": "good"
+          }
+        }
+      ]
     },
     {
       "id": "RTI-0001",

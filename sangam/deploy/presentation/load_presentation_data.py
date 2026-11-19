@@ -110,7 +110,12 @@ def run_case(base, case, people, dry):
                 return
             http("POST", f"{base}/tasks/{t['id']}/complete", ttok, answer(t))
             print(f"    {t.get('taskDefinitionKey')} done by {who}")
-    print("    no open task: closed, or waiting for the payment status (HELD)")
+    for ev in case.get("events", []):
+        # an outside answer the data set declares (the citizen's rating): POST /messages by business key
+        http("POST", f"{base}/messages", tok, {"messageName": ev["message"], "businessKey": bk,
+                                                "variables": ev.get("variables", {}), "all": False})
+        print(f"    message {ev['message']} delivered")
+    print("    no open task: closed, waiting on a timer, or waiting for the payment status (HELD)")
 
 
 def main():
