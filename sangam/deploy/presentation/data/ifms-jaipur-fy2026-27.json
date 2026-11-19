@@ -363,6 +363,39 @@
         "amount": 48000000,
         "sanctionRef": "DTA/JPR/GIA/2026-27/041 dated 09-10-2026"
       }
+    },
+    {
+      "id": "BA-0001",
+      "flow": "ba",
+      "process": "sangam-ifms-budget-allocation",
+      "businessKey": "JPR-DDO-0420/BA/2026-27/0001",
+      "startedBy": "harish.mathur",
+      "target": "COMPLETED",
+      "variables": {
+        "fiscalYear": "2026-27",
+        "stage": "AUTHORISATION",
+        "headOfAccount": "2054-00-097-01-00-01",
+        "holder": "DDO-1",
+        "amount": 250000000,
+        "remarks": "First quarterly allocation to JPR-DDO-0420, 2026-27"
+      }
+    },
+    {
+      "id": "BA-0002",
+      "flow": "ba",
+      "process": "sangam-ifms-budget-allocation",
+      "businessKey": "JPR-DDO-0420/BA/2026-27/0002",
+      "startedBy": "harish.mathur",
+      "target": "RUNNING",
+      "stopAt": "sn_sanction",
+      "variables": {
+        "fiscalYear": "2026-27",
+        "stage": "AUTHORISATION",
+        "headOfAccount": "2054-00-097-01-00-01",
+        "holder": "DDO-1",
+        "amount": 180000000,
+        "remarks": "Third quarterly allocation to JPR-DDO-0420, 2026-27"
+      }
     }
   ]
 }
