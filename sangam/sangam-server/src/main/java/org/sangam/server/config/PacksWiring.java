@@ -209,6 +209,8 @@ public class PacksWiring {
             org.sangam.assembly.packs.PackDocumentSlotNames.install(registry);
             // decision 292: in production every pack rule row not permitted for PRODUCTION refuses
             ports = withProductionMode(ports, env);
+            // owner option (b) 2026-11-19: demo sandbox tenants (payee + payment simulators for them only)
+            installDemoSandbox(env);
             PackRuntime.install(ports);
             LOG.info("PackRuntime DSC signature check: {}", dsc != null ? "server DSC flow" : "refuse all (DSC off)");
             LOG.info("PackRuntime DSC slot binding: {}", ports.slotBindings() != org.sangam.packs.port.DocumentSlotBindings.NONE
@@ -228,6 +230,47 @@ public class PacksWiring {
      * permittedUse is not PRODUCTION ({@code <PREFIX>_NOT_PERMITTED_IN_PRODUCTION}); outside it, demonstration rows stay
      * usable.
      */
+    /**
+     * Owner option (b) 2026-11-19: {@code GET /me} says {@code sandbox=true} for a demo sandbox tenant (the UI's
+     * "Sandbox" badge), read from the same {@link org.sangam.packs.port.DemoSandbox} set the packs use.
+     */
+    @Bean
+    public InitializingBean sangamDemoSandboxMe(
+            ObjectProvider<org.sangam.rest.port.WorkspacePort> workspace) {
+        return () -> {
+            if (workspace.getIfAvailable() instanceof org.sangam.rest.adapter.operaton.OperatonWorkspaceAdapter w) {
+                w.setSandboxTenants(org.sangam.packs.port.DemoSandbox::isSandbox);
+            }
+        };
+    }
+
+    /** {@value #SANDBOX_TENANTS_PROPERTY}: tenant ids, comma-separated; empty (the default) switches it off. */
+    public static final String SANDBOX_TENANTS_PROPERTY = "sangam.demo.sandbox-tenants";
+
+    /**
+     * Owner option (b) 2026-11-19: installs {@code sangam.demo.sandbox-tenants} into the packs
+     * ({@link org.sangam.packs.port.DemoSandbox}). Allowed in production; it relaxes no production guard. A non-empty
+     * list logs a WARN naming every sandbox tenant at each start.
+     */
+    static java.util.Set<String> installDemoSandbox(Environment env) {
+        String[] raw = env.getProperty(SANDBOX_TENANTS_PROPERTY, String[].class, new String[0]);
+        java.util.List<String> ids = new java.util.ArrayList<>();
+        for (String r : raw) {
+            if (r != null && !r.isBlank()) {
+                ids.add(r.trim());
+            }
+        }
+        org.sangam.packs.port.DemoSandbox.install(ids);
+        java.util.Set<String> t = org.sangam.packs.port.DemoSandbox.tenants();
+        if (!t.isEmpty()) {
+            LOG.warn("DEMO SANDBOX tenants {} ({}): their verified payees and payments ({}) are SIMULATED and audited "
+                    + "sandbox=true; production mode {}; every other tenant is unchanged", t, SANDBOX_TENANTS_PROPERTY,
+                    org.sangam.packs.port.DemoSandbox.PAYMENT_CONNECTORS.stream().sorted().toList(),
+                    ProductionEnvironment.isProduction(env) ? "stays on" : "is off");
+        }
+        return t;
+    }
+
     static PackRuntime.Ports withProductionMode(PackRuntime.Ports ports, Environment env) {
         return ports.withProduction(ProductionEnvironment.isProduction(env));
     }

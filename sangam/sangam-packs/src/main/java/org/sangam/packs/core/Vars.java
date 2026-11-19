@@ -384,17 +384,32 @@ public final class Vars {
     // ---- audit ---------------------------------------------------------------------------------------------------
 
     public static void audit(DelegateExecution ex, String type, Map<String, Object> details) {
-        PackRuntime.audit().record(new PackAuditEvent(type, tenant(ex), ex.getProcessBusinessKey(),
+        String tenant = tenant(ex);
+        PackRuntime.audit().record(new PackAuditEvent(type, tenant, ex.getProcessBusinessKey(),
                 ex.getProcessInstanceId(), str(ex, "lastActorPerson", "system"), str(ex, "lastActorSeat"),
                 str(ex, "lastActedForSeat"), str(ex, "lastAuthorityBasis"), str(ex, PACK_VERSION),
-                str(ex, APPROVED_HASH), str(ex, OPERATION_ID), details, now()));
+                str(ex, APPROVED_HASH), str(ex, OPERATION_ID), sandboxMarked(tenant, details), now()));
     }
 
     public static void auditTask(DelegateTask t, String type, String person, String seat, String actedFor,
                                  String basis, Map<String, Object> details) {
-        PackRuntime.audit().record(new PackAuditEvent(type, tenant(t), t.getExecution().getProcessBusinessKey(),
+        String tenant = tenant(t);
+        PackRuntime.audit().record(new PackAuditEvent(type, tenant, t.getExecution().getProcessBusinessKey(),
                 t.getProcessInstanceId(), person, seat, actedFor, basis, str(t, PACK_VERSION), str(t, APPROVED_HASH),
-                str(t, OPERATION_ID), details, now()));
+                str(t, OPERATION_ID), sandboxMarked(tenant, details), now()));
+    }
+
+    /** Owner option (b): every pack audit event of a demo sandbox tenant carries {@code sandbox=true}. */
+    static Map<String, Object> sandboxMarked(String tenant, Map<String, Object> details) {
+        if (!org.sangam.packs.port.DemoSandbox.isSandbox(tenant)) {
+            return details;
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        if (details != null) {
+            m.putAll(details);
+        }
+        m.put(org.sangam.packs.port.DemoSandbox.AUDIT_KEY, true);
+        return m;
     }
 
     /** Map literal helper that tolerates null values. */

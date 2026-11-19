@@ -38,8 +38,22 @@ public final class VerifiedPayees {
         installed = lookup;
     }
 
-    /** The installed adapter, else the simulator outside production and {@link #NONE} in production. */
+    /**
+     * The installed adapter, else the simulator outside production and {@link #NONE} in production. When demo sandbox
+     * tenants are set ({@link DemoSandbox}), a sandbox tenant is answered by {@link DemoSandbox#PAYEES} instead; every
+     * other tenant gets this base lookup unchanged.
+     */
     public static VerifiedPayeeLookup lookup() {
+        VerifiedPayeeLookup base = base();
+        if (!DemoSandbox.active()) {
+            return base;
+        }
+        return (tenant, employeeId, payeeId, asOf) -> DemoSandbox.isSandbox(tenant)
+                ? DemoSandbox.PAYEES.resolve(tenant, employeeId, payeeId, asOf)
+                : base.resolve(tenant, employeeId, payeeId, asOf);
+    }
+
+    private static VerifiedPayeeLookup base() {
         VerifiedPayeeLookup l = installed;
         if (l != null) {
             return l;

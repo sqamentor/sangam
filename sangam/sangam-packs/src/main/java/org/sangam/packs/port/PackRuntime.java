@@ -133,8 +133,9 @@ public final class PackRuntime {
         return ports;
     }
 
+    /** The installed gateway; with demo sandbox tenants set, their payment rails go to the sandbox simulator. */
     public static ConnectorGateway gateway() {
-        return ports.gateway();
+        return DemoSandbox.routing(ports.gateway());
     }
 
     public static SeatDirectory seats() {

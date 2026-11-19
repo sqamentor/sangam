@@ -224,10 +224,12 @@ schema("TeamTaskFilterCreateRequest", "Owner decisions 404 and 406: a new shared
               "properties": "Optional JSON object, at most 16384 characters as JSON"})
 schema("Me", "The authenticated caller: identity, tenant, personas (roles), seats held, current seat context and permissions (K1, S02).",
        "tenantId tenantName principalId userId displayName groups:list:s roles:list:s seats:list:SeatHolding seatId actingForSeatId "
-       "authMethod permissions:list:s preferredLanguage locale:MeLocale",
+       "authMethod permissions:list:s preferredLanguage locale:MeLocale sandbox:bool",
        descs={"roles": "UI personas: TASK_USER, OPERATOR, PLATFORM_OPERATOR, ADMIN, PLATFORM_ADMIN, MODELLER, REVIEWER, ANALYST, AUDITOR, INTEGRATION, CITIZEN",
               "locale": "M-045: money and number formatting of the tenant's resolved profile (locale section); absent when "
-                        "the tenant has no resolved locale"})
+                        "the tenant has no resolved locale",
+              "sandbox": "Owner option (b) 2026-11-19: true only for a tenant listed in sangam.demo.sandbox-tenants (its "
+                         "verified payees and payments are simulated, audited sandbox=true); absent otherwise"})
 schema("NumberGrouping", "Digit grouping of the integer part: the first group (from the right) and every further group, "
                          "e.g. {first: 3, rest: 2} gives 12,34,567.", "first:int rest:int", ["first", "rest"])
 schema("MeLocale", "The tenant's resolved profile locale (sangam-config LocaleSettings): currency, zone and digit grouping.",

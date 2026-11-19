@@ -132,10 +132,16 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
         return new Me(ctx.tenantId(), tenantName, ctx.principalId(), ctx.principalId(), ctx.principalId(),
                 new ArrayList<>(new TreeSet<>(ctx.groups())), roles(ctx, perms), seats(ctx), ctx.seatId(),
                 ctx.actingForSeatId(), ctx.authMethod(), new ArrayList<>(new TreeSet<>(perms)), null,
-                l == null ? null : l.of(ctx.tenantId()));
+                l == null ? null : l.of(ctx.tenantId()), sandboxTenants.test(ctx.tenantId()) ? Boolean.TRUE : null);
     }
 
     private volatile TenantLocales locales;
+    private volatile java.util.function.Predicate<String> sandboxTenants = t -> false;
+
+    /** Owner option (b) 2026-11-19: which tenants are demo sandbox tenants ({@code /me} sandbox=true); null: none. */
+    public void setSandboxTenants(java.util.function.Predicate<String> sandbox) {
+        this.sandboxTenants = sandbox == null ? t -> false : sandbox;
+    }
 
     /** M-045: binds the profile resolver; {@code /me} then carries the tenant's locale (absent without one). */
     public void setProfiles(org.sangam.config.profile.ProfileResolver profiles) {

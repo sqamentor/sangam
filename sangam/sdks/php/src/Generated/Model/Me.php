@@ -26,6 +26,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read list<string>|null $permissions
  * @property-read string|null $preferredLanguage
  * @property-read MeLocale|null $locale M-045: money and number formatting of the tenant's resolved profile (locale section); absent when the tenant has no resolved locale
+ * @property-read bool|null $sandbox Owner option (b) 2026-11-19: true only for a tenant listed in sangam.demo.sandbox-tenants (its verified payees and payments are simulated, audited sandbox=true); absent otherwise
  */
 final class Me implements \JsonSerializable
 {
@@ -44,6 +45,7 @@ final class Me implements \JsonSerializable
      * @param list<string>|null $permissions
      * @param string|null $preferredLanguage
      * @param MeLocale|null $locale
+     * @param bool|null $sandbox
      */
     public function __construct(
         public readonly ?string $tenantId = null,
@@ -60,6 +62,7 @@ final class Me implements \JsonSerializable
         public readonly ?array $permissions = null,
         public readonly ?string $preferredLanguage = null,
         public readonly ?MeLocale $locale = null,
+        public readonly ?bool $sandbox = null,
     ) {
     }
 
@@ -81,6 +84,7 @@ final class Me implements \JsonSerializable
             Support::arr($data['permissions'] ?? null),
             Support::str($data['preferredLanguage'] ?? null),
             Support::model($data['locale'] ?? null, MeLocale::class),
+            Support::bool($data['sandbox'] ?? null),
         );
     }
 
@@ -128,6 +132,9 @@ final class Me implements \JsonSerializable
         }
         if ($this->locale !== null) {
             $out['locale'] = $this->locale;
+        }
+        if ($this->sandbox !== null) {
+            $out['sandbox'] = $this->sandbox;
         }
         return $out === [] ? new \stdClass() : $out;
     }

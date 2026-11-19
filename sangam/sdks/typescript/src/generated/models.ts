@@ -7023,6 +7023,8 @@ export interface Me {
   preferredLanguage?: string;
   /** M-045: money and number formatting of the tenant's resolved profile (locale section); absent when the tenant has no resolved locale */
   locale?: MeLocale;
+  /** Owner option (b) 2026-11-19: true only for a tenant listed in sangam.demo.sandbox-tenants (its verified payees and payments are simulated, audited sandbox=true); absent otherwise */
+  sandbox?: boolean;
 }
 
 /**
