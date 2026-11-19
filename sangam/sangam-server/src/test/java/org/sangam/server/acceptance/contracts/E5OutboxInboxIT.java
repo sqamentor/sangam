@@ -265,6 +265,33 @@ class E5OutboxInboxIT extends ContractSupport {
         assertTrue(consumer.applied(HISTORY, a.eventId()));
     }
 
+    /**
+     * Run 44462054979 (sqlserver2025, e5_4): right after A committed, the server's background relay held the claim on
+     * A's delivery while this test drained. The test relay skipped the locked row (SKIP LOCKED / READPAST), claimed
+     * nothing, so drain stopped at once, and the committed state was still PENDING. Here a second connection plays that
+     * in-flight claim, so the interleaving happens on every run.
+     */
+    @Test
+    @Order(4)
+    void e5_4r_committedEventWhileAnotherRelayHoldsTheClaim() throws Exception {
+        String pid = startChecker(key("e5-4r"));
+        Outbox.Appended a = completeAndAppend(pid, singleTask(pid, "checkerReview").id(),
+                Map.of("checkerDecision", "forward"), null, false);
+        try (Connection competitor = dataSource.getConnection()) {
+            competitor.setAutoCommit(false);
+            try {
+                List<Long> held = Jdbc.query(competitor, dialect().skipLockedSelect("d.outbox_id", "OUTBOX_DELIVERY", "d",
+                                "d.outbox_id = ? AND d.destination = ? AND d.state = 'PENDING'", "d.outbox_id", 1),
+                        rs -> rs.getLong(1), a.outboxId(), HISTORY);
+                assertEquals(List.of(a.outboxId()), held, "precondition: the competing claim holds A's delivery");
+                relay.drain(5);
+                assertEquals("DONE", state(a.outboxId(), HISTORY));
+            } finally {
+                competitor.rollback();   // the competing relay crashed mid-claim; its claim never committed
+            }
+        }
+    }
+
     private static void await(CountDownLatch l) {
         try {
             if (!l.await(30, TimeUnit.SECONDS)) {
