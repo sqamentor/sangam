@@ -401,14 +401,14 @@ public final class Vars {
 
     /** Owner option (b): every pack audit event of a demo sandbox tenant carries {@code sandbox=true}. */
     static Map<String, Object> sandboxMarked(String tenant, Map<String, Object> details) {
-        if (!org.sangam.packs.port.DemoSandbox.isSandbox(tenant)) {
+        if (!org.sangam.packs.sim.DemoSandbox.isSandbox(tenant)) {
             return details;
         }
         Map<String, Object> m = new LinkedHashMap<>();
         if (details != null) {
             m.putAll(details);
         }
-        m.put(org.sangam.packs.port.DemoSandbox.AUDIT_KEY, true);
+        m.put(org.sangam.packs.sim.DemoSandbox.AUDIT_KEY, true);
         return m;
     }
 

@@ -232,14 +232,14 @@ public class PacksWiring {
      */
     /**
      * Owner option (b) 2026-11-19: {@code GET /me} says {@code sandbox=true} for a demo sandbox tenant (the UI's
-     * "Sandbox" badge), read from the same {@link org.sangam.packs.port.DemoSandbox} set the packs use.
+     * "Sandbox" badge), read from the same {@link org.sangam.packs.sim.DemoSandbox} set the packs use.
      */
     @Bean
     public InitializingBean sangamDemoSandboxMe(
             ObjectProvider<org.sangam.rest.port.WorkspacePort> workspace) {
         return () -> {
             if (workspace.getIfAvailable() instanceof org.sangam.rest.adapter.operaton.OperatonWorkspaceAdapter w) {
-                w.setSandboxTenants(org.sangam.packs.port.DemoSandbox::isSandbox);
+                w.setSandboxTenants(org.sangam.packs.sim.DemoSandbox::isSandbox);
             }
         };
     }
@@ -249,7 +249,7 @@ public class PacksWiring {
 
     /**
      * Owner option (b) 2026-11-19: installs {@code sangam.demo.sandbox-tenants} into the packs
-     * ({@link org.sangam.packs.port.DemoSandbox}). Allowed in production; it relaxes no production guard. A non-empty
+     * ({@link org.sangam.packs.sim.DemoSandbox}). Allowed in production; it relaxes no production guard. A non-empty
      * list logs a WARN naming every sandbox tenant at each start.
      */
     static java.util.Set<String> installDemoSandbox(Environment env) {
@@ -260,12 +260,12 @@ public class PacksWiring {
                 ids.add(r.trim());
             }
         }
-        org.sangam.packs.port.DemoSandbox.install(ids);
-        java.util.Set<String> t = org.sangam.packs.port.DemoSandbox.tenants();
+        org.sangam.packs.sim.DemoSandbox.install(ids);
+        java.util.Set<String> t = org.sangam.packs.sim.DemoSandbox.tenants();
         if (!t.isEmpty()) {
             LOG.warn("DEMO SANDBOX tenants {} ({}): their verified payees and payments ({}) are SIMULATED and audited "
                     + "sandbox=true; production mode {}; every other tenant is unchanged", t, SANDBOX_TENANTS_PROPERTY,
-                    org.sangam.packs.port.DemoSandbox.PAYMENT_CONNECTORS.stream().sorted().toList(),
+                    org.sangam.packs.sim.DemoSandbox.PAYMENT_CONNECTORS.stream().sorted().toList(),
                     ProductionEnvironment.isProduction(env) ? "stays on" : "is off");
         }
         return t;

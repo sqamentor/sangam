@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
-package org.sangam.packs.port;
+package org.sangam.packs.sim;
 
 import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
 
 import org.sangam.core.layer.CapabilityClass;
-import org.sangam.packs.sim.SimulatorConnectorGateway;
+import org.sangam.packs.port.ConnectorGateway;
+import org.sangam.packs.port.ConnectorRequest;
+import org.sangam.packs.port.ConnectorResult;
+import org.sangam.packs.port.ReconciliationRequest;
+import org.sangam.packs.port.VerifiedPayeeLookup;
+import org.sangam.packs.port.VerifiedPayees;
 
 /**
  * Demo sandbox tenants ({@code sangam.demo.sandbox-tenants}, owner option (b) 2026-11-19). A narrow, per-tenant
