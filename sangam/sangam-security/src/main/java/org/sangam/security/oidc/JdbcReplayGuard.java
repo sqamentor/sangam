@@ -77,7 +77,7 @@ public final class JdbcReplayGuard implements JtiReplayGuard {
         }
         // taken: still valid means a replay; an expired row is released and the insert tried once more (two nodes
         // reusing one expired id race on that insert, and only one wins)
-        int released = tx.read(c -> Jdbc.update(c,
+        int released = tx.inTransaction(c -> Jdbc.update(c,
                 "DELETE FROM SEC_CLIENT_JTI WHERE replay_key=? AND expires_at <= ?", key, now));
         return released == 1 && claim(key, storedIssuer, expiresAt, now);
     }
