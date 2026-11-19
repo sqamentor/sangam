@@ -46,10 +46,13 @@ class KeyAttestationEndToEndTest {
     @TempDir
     Path dir;
 
+    private final String dbPassword = java.util.UUID.randomUUID().toString();
+
     /** The baseline production settings on a file database in {@link #dir}, without a foreign list. */
     private Map<String, String> settings() {
         Map<String, String> m = ProductionStartupFailFastTest.baseline("unused");
         m.put("spring.datasource.url", "jdbc:h2:file:" + slash(dir.resolve("db")) + ";LOCK_TIMEOUT=10000;MODE=PostgreSQL");
+        m.put("SANGAM_DB_PASSWORD", dbPassword); // the file database keeps the password of its first start
         m.remove("sangam.keys.foreign-fingerprints");
         m.put("sangam.keys.environment", ENV);
         m.put("sangam.keys.fingerprint-export", dir.resolve("key-fingerprints.txt").toString());
