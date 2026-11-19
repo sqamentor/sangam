@@ -149,6 +149,16 @@ class LedgerWiringGlGuardTest {
         assertEquals(java.util.Set.of("gl-sap"), LedgerWiring.declaredEnterpriseConnectors(env));
     }
 
+    /** IFMS tenant GOI.FIN: its GL connector, declared in bracket notation, is known to the production guard. */
+    @Test
+    void aGlConnectorOfATenantIdWithADotIsDeclared() {
+        MockEnvironment env = development().withProperty("sangam.channels.enterprise[GOI.FIN].gl-ifms.type", "sap-odata")
+                .withProperty("sangam.channels.enterprise[GOI.FIN].gl-ifms.service-root", "https://sap.example/odata");
+        java.util.Set<String> declared = LedgerWiring.declaredEnterpriseConnectors(env);
+        assertEquals(java.util.Set.of("gl-ifms"), declared);
+        assertTrue(LedgerWiring.requireKnownGlConnector("gl-ifms", true, id -> false, declared));
+    }
+
     @Test
     void theGlExportWaiverAllowsProductionWithoutAConnector() {
         assertNull(LedgerWiring.requireGlExport(null, "GL go-live pending", true, true, true, true));

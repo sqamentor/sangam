@@ -627,6 +627,17 @@ Accepted limits:
 
 All of these are off by default; the chart's `values.schema.json` checks each value.
 
+- **Per-tenant settings for a tenant id with a dot or upper case (`GOI.FIN`).** Settings keyed by tenant
+  (`sangam.channels.egress`, `sangam.channels.enterprise`, `sangam.channels.webhooks`,
+  `sangam.compliance.tenant-jurisdictions`) take the tenant id as a map key in bracket notation:
+  `sangam.channels.egress[GOI.FIN][0]=https://ifms.example.gov.in`,
+  `sangam.channels.enterprise[GOI.FIN].gl-ifms.type=sap-odata`,
+  `sangam.channels.webhooks[GOI.FIN].slack.signing-secret-ref=secret://ifms/slack`. In YAML quote it:
+  `"[GOI.FIN]":`. The plain form `sangam.channels.egress.GOI.FIN` is not a valid property name: the server logs
+  "Configuration property name ... is not valid" and that tenant gets no channel connector, no enterprise connector and
+  no webhook (deny all). Environment variable names cannot express the dot; use a mounted properties/YAML file or
+  `SPRING_APPLICATION_JSON`. Simple ids (`acme`) work with or without brackets. See IFMS-INTEGRATION-GUIDE section 6.
+
 - **Upload malware scanning (M-082).** `malware.scanner` is `none` (default), `clamd` or `icap`, rendered as
   `SANGAM_MALWARE_SCANNER`, with `malware.failClosed` (default true: a scanner error refuses the upload),
   `malware.timeout` (30s), `malware.maxBytes` (25 MiB), `malware.clamd.host`/`port` and `malware.icap.uri`.

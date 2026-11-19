@@ -79,4 +79,38 @@ class ChannelRuntimeBinderTest {
         assertTrue(assertInstanceOf(ConnectorResult.TransientFailure.class, r).noEffect(), "nothing was sent");
         assertSame(binder.tokens(), binder.tokens(), "one token cache per server");
     }
+
+    /**
+     * Tenant ids with a dot and upper case (IFMS uses GOI.FIN): the egress list and the enterprise connectors are map keys
+     * written in bracket notation. Before the fix {@code egress} built the property name 'sangam.channels.egress.GOI.FIN'
+     * and threw InvalidConfigurationPropertyNameException, so refresh registered nothing for the tenant, and the enterprise
+     * lookup refused the id silently.
+     */
+    @Test
+    void aTenantIdWithADotGetsItsEgressChannelsAndEnterpriseConnectors() {
+        ConnectorRegistry connectors = new ConnectorRegistry();
+        MockEnvironment env = new MockEnvironment()
+                .withProperty("sangam.channels.egress[GOI.FIN][0]", "https://sap.example.org")
+                .withProperty("sangam.channels.enterprise[GOI.FIN].orders.type", "sap-odata")
+                .withProperty("sangam.channels.enterprise[GOI.FIN].orders.service-root", "https://sap.example.org/sap/opu/odata/sap/Z_SRV")
+                .withProperty("sangam.channels.enterprise[GOI.FIN].orders.auth-ref", "sap-basic")
+                .withProperty("sangam.channels.egress.acme[0]", "https://acme.example.org")
+                .withProperty("sangam.channels.egress.ACME2[0]", "https://acme2.example.org");
+        ChannelRuntimeBinder binder = new ChannelRuntimeBinder(registry(List.of(
+                Map.of("key", "room", "channel", "MATRIX", "apiBase", "https://matrix.example.org", "tokenRef", "mx"))),
+                connectors, null, SecretResolver.of(Map.of()), env);
+
+        long denyAll = org.sangam.integration.connector.EgressPolicy.denyAll().maxResponseBytes();
+        assertTrue(binder.egress("GOI.FIN").maxResponseBytes() != denyAll, "GOI.FIN has its egress rules");
+        assertTrue(binder.egress("acme").maxResponseBytes() != denyAll, "a simple id without brackets still works");
+        assertTrue(binder.egress("ACME2").maxResponseBytes() != denyAll, "an upper-case simple id without brackets works");
+        assertEquals(denyAll, binder.egress("GOI").maxResponseBytes(), "GOI is another tenant: deny all");
+        assertEquals(denyAll, binder.egress("GOI.FIN]x").maxResponseBytes(), "an id that cannot be a map key gets nothing");
+
+        binder.refresh("GOI.FIN");
+
+        assertEquals("ACTIVE", binder.status("GOI.FIN").get(0).state());
+        assertTrue(connectors.find("GOI.FIN", "room").isPresent());
+        assertEquals("sap-odata", connectors.require("GOI.FIN", "orders").descriptor().type());
+    }
 }
