@@ -136,7 +136,7 @@ class SingleFetch(unittest.TestCase):
     def test_deps_job_resolves_serially_with_bounded_retries(self):
         with open(os.path.join(WORKFLOWS, "ci-lanes.yml"), encoding="utf-8") as f:
             deps = dict(jobs(f.read()))["deps"]
-        self.assertIn("resolve-once.sh", deps)
+        self.assertIn("prefetch.sh", deps)  # which runs every resolution through resolve-once.sh
         self.assertNotRegex(deps, r"\s-T\s", "parallel resolution makes the one cold fetch bursty")
         with open(os.path.join(ACTION, "resolve-once.sh"), encoding="utf-8") as f:
             s = f.read()
@@ -144,6 +144,68 @@ class SingleFetch(unittest.TestCase):
         self.assertIn("retryHandler.serviceUnavailable=429,503", s)
         self.assertIn("exit 1", s)
         self.assertNotRegex(s, r"\s-T\s|maven\.test\.failure\.ignore|checksumPolicy|--lax-checksums")
+
+
+class WriterCoversLaterFetches(unittest.TestCase):
+    """Gap found on bce8c0ee (run 44437469840 IT mysql: surefire-junit-platform 3.6.1 'absent'; sdks run 44440781547:
+    maven-dependency-plugin 3.8.1 not found): the writer resolved only the reactor, not what later steps fetch."""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("maven_inventory", os.path.join(ACTION, "maven_inventory.py"))
+        cls.mi = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.mi)
+        cls.inv = cls.mi.inventory(REPO)
+        cls.cmds = "\n".join(cls.mi.commands(cls.inv))
+
+    def test_every_maven_fetch_in_the_workflows_is_resolved_by_the_inventory(self):
+        self.assertEqual(self.inv["unresolved"], [])
+
+    def test_known_gaps_are_in_the_prefetch(self):
+        for gav in ["org.apache.maven.surefire:surefire-junit-platform:3.6.1",
+                    "org.apache.maven.plugins:maven-dependency-plugin:3.8.1",
+                    "org.openapitools:openapi-generator-cli:7.10.0"]:
+            self.assertIn(gav, self.cmds)
+        self.assertIn("-f sdks/kotlin/pom.xml", self.cmds)
+
+    def test_every_extra_pom_resolves_its_own_test_provider(self):
+        for pom in self.inv["profiles"]:
+            if pom != "pom.xml":
+                self.assertRegex(self.cmds, rf"(?m)^@provider -f {re.escape(pom)}\b")
+
+    def test_every_explicit_coordinate_in_a_workflow_is_prefetched(self):
+        rx = re.compile(r"(?<![\w.-])([a-z][\w.-]*\.[\w.-]+):([\w.-]+):(\d[\w.-]*)(?::[\w-]+)?")
+        missing = []
+        for wf, job, body, _ in maven_jobs():
+            for line in body.splitlines():
+                if not MVN.search(line):
+                    continue
+                for m in rx.finditer(line):
+                    gav = ":".join(m.groups())
+                    if gav not in self.cmds:
+                        missing.append(f"{wf}:{job}: {gav}")
+        self.assertEqual(missing, [], "a Maven step fetches something the cache writer does not resolve")
+
+    def test_every_writer_runs_the_prefetch(self):
+        bad = []
+        for name in sorted(os.listdir(WORKFLOWS)):
+            with open(os.path.join(WORKFLOWS, name), encoding="utf-8") as f:
+                for job, body in jobs(f.read()):
+                    if re.search(r"maven-cache\s*\n\s*with:\s*\n\s*save:", body) and "prefetch.sh" not in body:
+                        bad.append(f"{name}:{job}")
+        self.assertEqual(bad, [], "cache writer jobs that do not run .github/actions/maven-cache/prefetch.sh")
+
+    def test_prefetch_runs_the_inventory_through_the_bounded_retry(self):
+        with open(os.path.join(ACTION, "prefetch.sh"), encoding="utf-8") as f:
+            s = f.read()
+        self.assertIn("maven_inventory.py", s)
+        self.assertIn("resolve-once.sh", s)
+        self.assertNotIn("|| true", s)
+
+    def test_cache_excludes_this_projects_own_artifacts(self):
+        with open(os.path.join(ACTION, "action.yml"), encoding="utf-8") as f:
+            self.assertTrue("!~/.m2/repository/io/github/sqamentor" in f.read(), "own SNAPSHOT artifacts must not be cached")
 
 
 if __name__ == "__main__":

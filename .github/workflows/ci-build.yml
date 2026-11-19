@@ -109,6 +109,9 @@ jobs:
         with:
           # one writer: main only (every ci/* branch and PR restores main's cache), one matrix leg
           save: ${{ github.ref == 'refs/heads/main' && strategy.job-index == 0 && 'true' || 'false' }}
+      - name: Resolve once everything the workflows fetch later (cache writer leg only)
+        if: github.ref == 'refs/heads/main' && strategy.job-index == 0
+        run: bash "$GITHUB_WORKSPACE/.github/actions/maven-cache/prefetch.sh"
       - name: Provenance (start, SG-16)
         run: python3 -I tools/provenance/run_provenance.py start --db h2 --out target/run-provenance
       - name: Build and unit tests

@@ -81,12 +81,13 @@ jobs:
       - uses: ./.github/actions/maven-cache
         with:
           save: "true"
-      - name: Resolve dependencies and plugins once (all IT profiles)
-        # test-compile lets the reactor resolve sibling modules; go-offline then resolves every dependency and plugin
-        # of every module, including the IT profiles' (failsafe, JDBC drivers, Testcontainers modules).
+      - name: Resolve once everything the workflows fetch later (maven_inventory.py)
+        # The reactor (test-compile + go-offline with every profile the workflows use), the -f POMs, the explicit
+        # plugin goals and -Dartifact coordinates, and the surefire/failsafe junit-platform providers, which go-offline
+        # never resolves (run 44437469840 IT mysql; sdks run 44440781547).
         run: |
           set -euo pipefail
-          bash "$GITHUB_WORKSPACE/.github/actions/maven-cache/resolve-once.sh" -DskipTests -Psangam-db-it,sangam-it-only,oracle-it test-compile dependency:go-offline
+          bash "$GITHUB_WORKSPACE/.github/actions/maven-cache/prefetch.sh"
       - name: Maven fetch count (Maven Central 429 evidence)
         if: always()
         run: bash "$GITHUB_WORKSPACE/.github/actions/maven-cache/fetch-count.sh"
