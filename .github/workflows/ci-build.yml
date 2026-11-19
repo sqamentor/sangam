@@ -187,6 +187,36 @@ jobs:
               --load -t "sangam-server:ci-$target" .
           done
           docker image ls sangam-server
+      # Demo hand-over (owner yes 2026-11-19, "all 4 steps"): on a ci/demo-* branch only, also build the UI under
+      # /sangam/ (deploy/presentation/Dockerfile, the sangam-front image) and hand both images over as a workflow
+      # artifact (docker save tarballs + SHA256SUMS + image ids). Nothing is pushed to any registry: GHCR publishing
+      # stays with the signed v-tag release (release.yml).
+      - name: Build sangam-front (UI under /sangam/) for the demo hand-over
+        if: startsWith(github.ref_name, 'ci/demo-')
+        run: |
+          set -euo pipefail
+          docker buildx build -f deploy/presentation/Dockerfile --load -t "sangam-front:demo-${GITHUB_SHA::12}" .
+          docker tag sangam-server:ci-runtime "sangam-server:demo-${GITHUB_SHA::12}"
+      - name: Export the demo images (docker save, SHA256SUMS, image ids)
+        if: startsWith(github.ref_name, 'ci/demo-')
+        run: |
+          set -euo pipefail
+          out=../demo-images; mkdir -p "$out"; tag="demo-${GITHUB_SHA::12}"
+          : > "$out/IMAGES.txt"
+          for name in sangam-server sangam-front; do
+            docker save "$name:$tag" | gzip -n > "$out/$name-$tag.tar.gz"
+            id=$(docker image inspect -f '{{.Id}}' "$name:$tag")
+            echo "$name:$tag image-id $id commit $GITHUB_SHA" >> "$out/IMAGES.txt"
+          done
+          (cd "$out" && sha256sum *.tar.gz > SHA256SUMS && sha256sum -c SHA256SUMS)
+          cat "$out/IMAGES.txt" "$out/SHA256SUMS" | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: startsWith(github.ref_name, 'ci/demo-')
+        with:
+          name: sangam-demo-images
+          path: demo-images/
+          if-no-files-found: error
+          retention-days: 7
       # M-094 image scans. Report-only on pull requests (decision 133): the ledger line is NOT-RUN, never PASS. The
       # release gate (release.yml, image-vuln-scan) fails on a critical vulnerability with a fix.
       - name: Trivy image scan (report-only)
