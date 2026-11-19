@@ -95,6 +95,7 @@ class PresentationDataSetH2Test {
         }
         v.put("sim_ledger_available", set.path("h2Simulator").path("fundsAvailable").asText());
         v.put("sim_registry_party", set.path("h2Simulator").path("registryParty").asText());
+        set.path("h2Simulator").path("systems").fields().forEachRemaining(e -> v.put(e.getKey(), e.getValue().asText()));
         c.path("h2Directives").fields().forEachRemaining(e -> v.put(e.getKey(), e.getValue().asText()));
         return v;
     }
@@ -154,6 +155,8 @@ class PresentationDataSetH2Test {
                 case "PAYMENT_HELD" -> !driver.ended(bk) && done.contains("pc_pao") && !payments(bk).isEmpty()
                         && !"CLOSED".equals(String.valueOf(state));
                 case "RUNNING" -> !driver.ended(bk) && open(bk).contains(stopAt);
+                // the case waits for time or an outside answer (UC due date, SLA, statutory time limit), no task open
+                case "WAITING" -> !driver.ended(bk) && c.path("expectState").asText().equals(String.valueOf(state));
                 default -> false;
             };
             if (!ok) {

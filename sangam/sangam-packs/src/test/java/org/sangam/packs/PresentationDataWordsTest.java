@@ -95,6 +95,27 @@ class PresentationDataWordsTest {
         assertEquals(List.of(), hits);
     }
 
+    /**
+     * Every IFSC in a data set is structurally invalid by the RBI format (the fifth character of a real IFSC is 0), so
+     * no data-set account can ever route to a real branch.
+     */
+    @Test
+    void everyIfscIsStructurallyInvalid() throws IOException {
+        List<String> bad = new ArrayList<>();
+        for (Path p : files(DATA, ".json")) {
+            JSON.readTree(p.toFile()).findValues("ifsc").forEach(n -> {
+                String v = n.asText();
+                if (v.contains(" ")) {
+                    return; // the nonReal block's description of the rule
+                }
+                if (v.length() != 11 || v.charAt(4) == '0') {
+                    bad.add(p.getFileName() + ": " + v);
+                }
+            });
+        }
+        assertEquals(List.of(), bad);
+    }
+
     /** The presentation users' e-mail addresses are shown in the UI (JIT person, Keycloak profile). */
     @Test
     void presentationEmailDomainSaysNoBarredWord() throws IOException {
