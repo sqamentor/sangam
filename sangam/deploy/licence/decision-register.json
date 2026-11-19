@@ -319,7 +319,7 @@
    ],
    "spdx": "BSD-3-Clause"
   },
-  "pkg:maven/com.zaxxer/HikariCP@6.3.0": {
+  "pkg:maven/com.zaxxer/HikariCP@7.0.2": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
