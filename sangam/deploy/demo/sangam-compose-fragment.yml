@@ -80,6 +80,8 @@ services:
     volumes:
       - sangam-server-state:/var/lib/sangam
       - ${SANGAM_SECRETS_DIR:?host directory written by generate-demo-keys.sh}/files:/run/sangam-secrets:ro
+      # the custodian's signed attestation (step 2 of section 5.1); empty until the first start has been attested
+      - ${SANGAM_SECRETS_DIR:?}/attestation:/opt/sangam/attestation:ro
     # The full production start set (ProductionStartupFailFastTest.baseline(); bound by DemoComposeFragmentStartupTest).
     environment:
       TZ: UTC
@@ -108,14 +110,20 @@ services:
       SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF: secret://compliance/principal-key
       SANGAM_AUDIT_CHECKPOINT_PRIVATEKEYREF: secret://audit/checkpoint-private
       SANGAM_AUDIT_CHECKPOINT_PUBLICKEYREF: secret://audit/checkpoint-public
-      # decision 385/387/390: this environment's name, and EITHER the other environments' fingerprint list (a file under
-      # the secrets root) OR the one-time first-environment bootstrap. OPEN (b), owner: which one. Neither set = the
-      # server refuses to start (fail closed).
+      # Decision 387(4) / 390(4), deploy/README.md section 5.1 (tool: sangam-key-attestation.sh, shipped in the handover):
+      #   first start  SANGAM_KEYS_BOOTSTRAP=true, no attestation: audited one-time start, writes the fingerprint export;
+      #   custodian    signs the export on the host (sangam-key-attestation.sh sign) into the attestation directory;
+      #   later starts SANGAM_KEYS_BOOTSTRAP=false, SANGAM_KEYS_ATTESTATION and SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY set.
+      # A second bootstrap, or a later start without the attestation, is refused before any port opens.
       SANGAM_KEYS_ENVIRONMENT: demo-ifms
-      SANGAM_KEYS_FOREIGN_FINGERPRINTS: ${SANGAM_KEYS_FOREIGN_FINGERPRINTS:-}
       SANGAM_KEYS_BOOTSTRAP: ${SANGAM_KEYS_BOOTSTRAP:-false}
-      # OPEN (c), owner: the ledger module's GL export connector id. Empty = the server refuses to start.
-      SANGAM_LEDGER_GLCONNECTOR: ${SANGAM_LEDGER_GLCONNECTOR:-}
+      SANGAM_KEYS_FINGERPRINT_EXPORT: /var/lib/sangam/key-fingerprints.txt
+      SANGAM_KEYS_ATTESTATION: ${SANGAM_KEYS_ATTESTATION:-}
+      SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY: ${SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY:-}
+      # GL export (decision 126): no IFMS GL connector yet, so sangam.ledger.gl-connector stays unset and the start runs
+      # under the audited waiver (LEDGER_GL_EXPORT_WAIVED); entries are kept in LDG_ACCOUNTING, exported once a
+      # connector is set. PENDING MERGE of gl-export (6024c281): until then the server does not know this setting.
+      SANGAM_LEDGER_GLEXPORTWAIVER: "demo.ifms.dev, IFMS GL connector not built yet; entries kept in LDG_ACCOUNTING unexported"
       # Owner decision 2026-11-19 (EV-M-0890 (a)): written demo waiver, no scanner.
       SANGAM_MALWARE_SCANNER: none
       SANGAM_MALWARE_PRODUCTIONWAIVER: "demo.ifms.dev, synthetic data only, behind Cloudflare Access"
