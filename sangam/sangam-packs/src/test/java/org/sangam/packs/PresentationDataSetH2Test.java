@@ -70,6 +70,7 @@ class PresentationDataSetH2Test {
         engine.close();
         engine = null;
         driver = null;
+        set = null;
         PackRuntime.reset();
     }
 
