@@ -216,14 +216,18 @@ public class DeadlineService {
             String pending = "d.next_check_at IS NOT NULL AND d.next_check_at <= ? AND d.state IN ('RUNNING','WARNED','BREACHED')";
             String sql = dialect.skipLockedSelect("d.*", "CF_DEADLINE", "d", pending, "d.next_check_at", Math.max(1, batch));
             List<Deadline> due = Jdbc.query(c, sql, DeadlineService::row, now);
+            int processed = 0;
             for (Deadline d : due) {
                 // On Oracle the skip-locked select can return a deadline a peer processed after the select's snapshot.
                 // The row is locked now, so this read sees the committed row: work it only while it is still due.
                 Optional<Deadline> current = Jdbc.one(c, "SELECT d.* FROM CF_DEADLINE d WHERE d.tenant_id = ? AND d.deadline_id = ? AND "
                         + pending, DeadlineService::row, d.tenantId(), d.id(), now);
-                current.ifPresent(cur -> process(c, cur, now));
+                if (current.isPresent()) {
+                    process(c, current.get(), now);
+                    processed++;
+                }
             }
-            return due.size();
+            return processed;
         });
     }
 
