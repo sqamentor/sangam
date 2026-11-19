@@ -172,7 +172,7 @@ class WriterCoversLaterFetches(unittest.TestCase):
     def test_every_extra_pom_resolves_its_own_test_provider(self):
         for pom in self.inv["profiles"]:
             if pom != "pom.xml":
-                self.assertRegex(self.cmds, rf"-f {re.escape(pom)}[^\n]* test -Dtest=\S+ -Dsurefire.failIfNoSpecifiedTests=false")
+                self.assertRegex(self.cmds, rf"(?m)^@provider -f {re.escape(pom)}\b")
 
     def test_every_explicit_coordinate_in_a_workflow_is_prefetched(self):
         rx = re.compile(r"(?<![\w.-])([a-z][\w.-]*\.[\w.-]+):([\w.-]+):(\d[\w.-]*)(?::[\w-]+)?")

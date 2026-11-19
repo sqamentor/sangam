@@ -187,9 +187,9 @@ def commands(inv):
             p = f" -P{','.join(ids)}" if ids else ""
             out.append(f"-f {pom}{p} dependency:go-offline -DexcludeGroupIds={SANGAM_GROUP}")
             # Its test provider: a POM outside the reactor may run another surefire than the root pins (sdks/kotlin
-            # gets Maven's default 3.2.5, run 44454304569). Running surefire with a filter that matches nothing makes
-            # Maven resolve exactly the provider that POM uses, without hand-keeping its version.
-            out.append(f"-f {pom}{p} test -Dtest=SangamCachePrefetchNoSuchTest -Dsurefire.failIfNoSpecifiedTests=false")
+            # gets Maven's default 3.2.5, run 44454304569). prefetch.sh reads that POM's effective surefire version
+            # (help:effective-pom, no compilation, so the writer's JDK does not matter) and resolves its provider.
+            out.append(f"@provider -f {pom}{p}")
     for gav in inv["plugins"]:
         out.append(f"dependency:get -Dartifact={gav}:maven-plugin")
     for gav in inv["artifacts"] + inv["providers"]:
