@@ -109,7 +109,7 @@ def user_rep(entry, tenant, office):
     attrs = {"tenant": [tenant], "seat": list(seats)}
     if seats:
         attrs["office"] = [office]
-    return {"username": uname, "enabled": True, "emailVerified": True, "email": f"{uname}@sangam.test",
+    return {"username": uname, "enabled": True, "emailVerified": True, "email": f"{uname}@ifms-jaipur.invalid",
             "firstName": first, "lastName": last, "attributes": attrs}
 
 
