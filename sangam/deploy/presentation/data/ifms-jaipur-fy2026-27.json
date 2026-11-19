@@ -396,6 +396,38 @@
         "amount": 180000000,
         "remarks": "Third quarterly allocation to JPR-DDO-0420, 2026-27"
       }
+    },
+    {
+      "id": "GRV-0001",
+      "flow": "grv",
+      "process": "sangam-grievance",
+      "businessKey": "JPR-DDO-0420/GRV/2026-27/0001",
+      "startedBy": "anil.choudhary",
+      "target": "WAITING",
+      "expectState": "SUBMITTED",
+      "variables": {
+        "applicantName": "Lalita Verma",
+        "applicantRef": "email:lalita.verma@ifms-jaipur.invalid",
+        "category": "SERVICE",
+        "district": "Jaipur",
+        "grievanceText": "My GPF advance sanctioned in June 2026 has not reached my bank account."
+      }
+    },
+    {
+      "id": "RTI-0001",
+      "flow": "rti",
+      "process": "sangam-rti-request",
+      "businessKey": "JPR-DDO-0420/RTI/2026-27/0001",
+      "startedBy": "anil.choudhary",
+      "target": "WAITING",
+      "expectState": "ACKNOWLEDGED",
+      "variables": {
+        "applicantName": "Gopal Krishna Sharma",
+        "applicantRef": "email:gopal.sharma@ifms-jaipur.invalid",
+        "information": "Number of contingent bills passed by Treasury Jaipur City in October 2026.",
+        "lifeLiberty": false,
+        "bplApplicant": false
+      }
     }
   ]
 }
