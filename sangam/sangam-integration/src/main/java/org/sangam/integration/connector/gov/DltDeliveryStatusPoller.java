@@ -133,12 +133,19 @@ public final class DltDeliveryStatusPoller {
             List<Due> due = Jdbc.query(c, dialect.skipLockedSelect("d.tenant_id, d.operation_id, d.connector_id",
                     "NOTIFICATION_DELIVERY", "d", where, "d.next_lookup_at", settings.batchSize()),
                     rs -> new Due(rs.getString(1), UUID.fromString(rs.getString(2)), rs.getString(3)));
+            List<Due> claimed = new java.util.ArrayList<>(due.size());
             for (Due d : due) {
-                Jdbc.update(c, "UPDATE NOTIFICATION_DELIVERY SET lookups=lookups+1, next_lookup_at=" + dialect.nowPlusMillisParam()
-                        + ", updated_at=" + dialect.now() + " WHERE tenant_id=? AND operation_id=?",
-                        settings.lookupEvery().toMillis(), d.tenantId(), d.operationId());
+                // fenced on the select's predicate: on Oracle the skip-locked select can return a delivery a peer looked
+                // up (next lookup moved) or settled after the select's snapshot; it is not looked up again now
+                if (Jdbc.update(c, "UPDATE NOTIFICATION_DELIVERY SET lookups=lookups+1, next_lookup_at=" + dialect.nowPlusMillisParam()
+                        + ", updated_at=" + dialect.now() + " WHERE tenant_id=? AND operation_id=? AND state_rank < "
+                        + DltDeliveryReports.FINAL_RANK + " AND lookups < " + settings.maxLookups()
+                        + " AND next_lookup_at IS NOT NULL AND next_lookup_at <= " + dialect.now(),
+                        settings.lookupEvery().toMillis(), d.tenantId(), d.operationId()) == 1) {
+                    claimed.add(d);
+                }
             }
-            return due;
+            return claimed;
         });
     }
 

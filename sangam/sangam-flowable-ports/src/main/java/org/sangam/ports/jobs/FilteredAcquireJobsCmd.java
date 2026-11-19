@@ -9,6 +9,7 @@ import org.operaton.bpm.engine.impl.persistence.entity.AcquirableJobEntity;
 import org.sangam.core.engine.SangamClockHolder;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
+import org.sangam.core.layer.SkipLockedRecheck;
 
 import java.sql.Connection;
 import java.sql.Timestamp;
@@ -77,6 +78,11 @@ public class FilteredAcquireJobsCmd extends AcquireJobsCmd {
         List<String> ids = Jdbc.query(c, sql, rs -> rs.getString(1), now, now, now);
         Map<String, List<String>> exclusive = new LinkedHashMap<>();
         for (String id : ids) {
+            // On Oracle the skip-locked select can return a job another node locked after the select's snapshot; its
+            // fresh revision would let lockJob overwrite that live lock and both nodes would run the job
+            if (globalLockName == null && !SkipLockedRecheck.stillMatches(c, "ACT_RU_JOB", "j", "ID_", id, where, now, now, now)) {
+                continue;
+            }
             // Operaton maps no "selectAcquirableJob" statement; JobEntity ("selectJob") is an AcquirableJobEntity
             AcquirableJobEntity job = cc.getDbEntityManager().selectById(org.operaton.bpm.engine.impl.persistence.entity.JobEntity.class, id);
             if (job == null) {

@@ -127,8 +127,16 @@ public final class Tombstones {
                         "TOMBSTONE", "t", "t.state='CANCEL_REQUESTED' AND t.lease_expires_at < " + dialect.now(), "t.lease_expires_at", 500),
                 rs -> new Tombstone(rs.getString(1), rs.getString(2), rs.getString(3) == null ? null : UUID.fromString(rs.getString(3)),
                         rs.getString(4), rs.getLong(5), State.valueOf(rs.getString(6))));
+        int swept = 0;
         for (Tombstone t : due) {
-            Jdbc.update(c, "UPDATE TOMBSTONE SET state='UNKNOWN_OUTCOME' WHERE tenant_id=? AND task_id=?", t.tenantId(), t.taskId());
+            // fenced: a tombstone a peer swept or a worker acknowledged after the skip-locked snapshot (Oracle) is left
+            // alone, so no second reconciliation item is opened and a CANCELLED tombstone stays CANCELLED
+            if (Jdbc.update(c, "UPDATE TOMBSTONE SET state='UNKNOWN_OUTCOME' WHERE tenant_id=? AND task_id=?"
+                            + " AND state='CANCEL_REQUESTED' AND lease_expires_at < " + dialect.now(),
+                    t.tenantId(), t.taskId()) != 1) {
+                continue;
+            }
+            swept++;
             if (t.operationId() != null) {
                 Jdbc.update(c, "UPDATE OPERATION_LEDGER SET state='UNKNOWN_OUTCOME', updated_at=" + dialect.now()
                         + " WHERE operation_id=? AND state='INTENT'", t.operationId());
@@ -136,7 +144,7 @@ public final class Tombstones {
             reconciliation.open(c, t.tenantId(), ReconciliationQueue.Kind.UNKNOWN_OUTCOME, t.operationId(), t.rootId(), t.taskId(),
                     CanonicalJson.write(Map.of("reason", "lease expired on a deleted instance without cancel acknowledgement")));
         }
-        return due.size();
+        return swept;
     }
 
     /** Removes tombstones past {@code expires_at} that have no open reconciliation item (VI.5.1: never delete open items). */

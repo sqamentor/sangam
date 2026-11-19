@@ -9,6 +9,7 @@ import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.core.layer.OperationLedger;
 import org.sangam.core.layer.ReconciliationQueue;
+import org.sangam.core.layer.SkipLockedRecheck;
 import org.sangam.core.layer.Transactions;
 import org.sangam.integration.connector.ConnectorCallJournal;
 import org.sangam.integration.connector.ConnectorInvoker;
@@ -229,7 +230,14 @@ public final class ReconciliationEngine implements AutoCloseable, org.sangam.cor
                     + " AND (a.escalated_task_id IS NOT NULL OR a.next_attempt_at > " + dialect.now() + "))";
             List<Long> ids = Jdbc.query(c, dialect.skipLockedSelect("r.id", "RECONCILIATION_ITEM", "r", where, "r.id", settings.batchSize()),
                     rs -> rs.getLong(1));
+            List<Long> claimed = new java.util.ArrayList<>(ids.size());
             for (Long id : ids) {
+                // On Oracle the skip-locked select can return an item a peer claimed (attempt leased) or resolved after
+                // the select's snapshot; it is not this node's to work, or it would be looked up and escalated twice
+                if (!SkipLockedRecheck.stillMatches(c, "RECONCILIATION_ITEM", "r", "id", id, where)) {
+                    continue;
+                }
+                claimed.add(id);
                 boolean inserted = Jdbc.insertIfAbsent(c, dialect,
                         "INSERT INTO RECONCILIATION_ATTEMPT(item_id, attempts, not_found_streak, next_attempt_at, last_result,"
                                 + " escalated_task_id, created_at, updated_at) VALUES (?,0,0," + dialect.nowPlusMillisParam()
@@ -240,7 +248,7 @@ public final class ReconciliationEngine implements AutoCloseable, org.sangam.cor
                             + ", updated_at=" + dialect.now() + " WHERE item_id=?", settings.claimTtl().toMillis(), id);
                 }
             }
-            return ids.stream().map(id -> queue.get(c, id).orElseThrow()).toList();
+            return claimed.stream().map(id -> queue.get(c, id).orElseThrow()).toList();
         });
     }
 

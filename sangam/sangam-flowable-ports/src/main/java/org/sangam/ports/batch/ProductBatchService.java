@@ -212,11 +212,16 @@ public class ProductBatchService {
             List<Object[]> rows = Jdbc.query(c, dialect.skipLockedSelect("i.batch_id, i.item_seq, i.item_ref", "PORT_BATCH_ITEM", "i",
                     "i.state = 'PENDING' AND i.batch_id IN (SELECT b.id FROM PORT_BATCH b WHERE b.state = 'RUNNING')",
                     "i.batch_id, i.item_seq", chunk), rs -> new Object[]{rs.getString(1), rs.getInt(2), rs.getString(3)});
+            List<Object[]> mine = new ArrayList<>(rows.size());
             for (Object[] r : rows) {
-                Jdbc.update(c, "UPDATE PORT_BATCH_ITEM SET state = 'RUNNING', attempts = attempts + 1, updated_at = " + dialect.now()
-                        + " WHERE batch_id = ? AND item_seq = ?", r[0], r[1]);
+                // fenced on state = 'PENDING': on Oracle the skip-locked select can return an item a peer claimed or
+                // finished after the select's snapshot; running it again would execute the item twice
+                if (Jdbc.update(c, "UPDATE PORT_BATCH_ITEM SET state = 'RUNNING', attempts = attempts + 1, updated_at = " + dialect.now()
+                        + " WHERE batch_id = ? AND item_seq = ? AND state = 'PENDING'", r[0], r[1]) == 1) {
+                    mine.add(r);
+                }
             }
-            return rows;
+            return mine;
         });
         int n = 0;
         for (Object[] r : claimed) {
