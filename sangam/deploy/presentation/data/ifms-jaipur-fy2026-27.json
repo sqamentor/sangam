@@ -12,7 +12,7 @@
   },
   "nonReal": {
     "accountNumber": "14 digits, always beginning 00004207. Assigned by this data set only; paired with an IFSC whose bank code is not an RBI-allotted code, so no transfer can route.",
-    "ifsc": "ZXRJ0 followed by six characters (ZXRJ0JPR001, ZXRJ0JPR002). ZXRJ is outside the RBI bank-code list; the fifth character is 0 as the IFSC shape requires.",
+    "ifsc": "ZXRJ9 followed by six characters (ZXRJ9JPR001, ZXRJ9JPR002). Structurally invalid: in every real IFSC the fifth character is 0 (RBI format); here it is 9, so it can never match a real branch. PresentationDataWordsTest enforces it.",
     "employeeId": "RJE-26 followed by four digits: an id of this data set, not an IFMS employee code.",
     "gpfAccount": "RJ/GPF/JPR/9 followed by four digits: the 9xxxx series is not issued by AG Rajasthan GPF numbering in this data set.",
     "money": "Integer paise (SD-398); every amount is whole rupees, so GF&AR r.82 rounding leaves it unchanged. No DMN rounds money (DEC-5).",
@@ -23,25 +23,91 @@
     "fundsAvailable": "available=100000000",
     "registryParty": "multiple=false;verified=true"
   },
-  "types": {"qualifyingService": "decimal", "claimPeriod": "date"},
+  "types": {
+    "qualifyingService": "decimal",
+    "claimPeriod": "date"
+  },
   "people": {
-    "kavita.sharma": {"seat": "DDO-1", "name": "Kavita Sharma"},
-    "ramesh.meena": {"seat": "HOO-1", "name": "Ramesh Meena"},
-    "deepak.saini": {"seat": "DH-1", "name": "Deepak Saini"},
-    "sunita.rathore": {"seat": "PAO-1", "name": "Sunita Rathore"},
-    "harish.mathur": {"seat": "FA-1", "name": "Harish Mathur"},
-    "govind.khandelwal": {"seat": "BD-1", "name": "Govind Khandelwal"},
-    "mukesh.swami": {"seat": "AAO-1", "name": "Mukesh Swami"},
-    "sarita.champawat": {"seat": "SS-1", "name": "Sarita Champawat"},
-    "anil.choudhary": {"seat": null, "name": "Anil Choudhary"}
+    "kavita.sharma": {
+      "seat": "DDO-1",
+      "name": "Kavita Sharma"
+    },
+    "ramesh.meena": {
+      "seat": "HOO-1",
+      "name": "Ramesh Meena"
+    },
+    "deepak.saini": {
+      "seat": "DH-1",
+      "name": "Deepak Saini"
+    },
+    "sunita.rathore": {
+      "seat": "PAO-1",
+      "name": "Sunita Rathore"
+    },
+    "harish.mathur": {
+      "seat": "FA-1",
+      "name": "Harish Mathur"
+    },
+    "govind.khandelwal": {
+      "seat": "BD-1",
+      "name": "Govind Khandelwal"
+    },
+    "mukesh.swami": {
+      "seat": "AAO-1",
+      "name": "Mukesh Swami"
+    },
+    "sarita.champawat": {
+      "seat": "SS-1",
+      "name": "Sarita Champawat"
+    },
+    "anil.choudhary": {
+      "seat": null,
+      "name": "Anil Choudhary"
+    }
   },
   "payees": [
-    {"employeeId": "RJE-260101", "payee": "Mahesh Kumar Yadav", "payeeAccount": "00004207100101", "ifsc": "ZXRJ0JPR001", "designation": "Junior Accountant"},
-    {"employeeId": "RJE-260102", "payee": "Pooja Gurjar", "payeeAccount": "00004207100102", "ifsc": "ZXRJ0JPR001", "designation": "Senior Assistant"},
-    {"employeeId": "RJE-260103", "payee": "Suresh Chand Bairwa", "payeeAccount": "00004207100103", "ifsc": "ZXRJ0JPR002", "designation": "Accounts Assistant"},
-    {"employeeId": "RJE-260104", "payee": "Rekha Kumawat", "payeeAccount": "00004207100104", "ifsc": "ZXRJ0JPR002", "designation": "Stenographer"},
-    {"employeeId": "RJE-260105", "payee": "Anil Choudhary", "payeeAccount": "00004207100105", "ifsc": "ZXRJ0JPR001", "designation": "Assistant Administrative Officer"},
-    {"employeeId": "RJE-260106", "payee": "Lalit Prajapat", "payeeAccount": "00004207100106", "ifsc": "ZXRJ0JPR002", "designation": "Lower Division Clerk"}
+    {
+      "employeeId": "RJE-260101",
+      "payee": "Mahesh Kumar Yadav",
+      "payeeAccount": "00004207100101",
+      "ifsc": "ZXRJ9JPR001",
+      "designation": "Junior Accountant"
+    },
+    {
+      "employeeId": "RJE-260102",
+      "payee": "Pooja Gurjar",
+      "payeeAccount": "00004207100102",
+      "ifsc": "ZXRJ9JPR001",
+      "designation": "Senior Assistant"
+    },
+    {
+      "employeeId": "RJE-260103",
+      "payee": "Suresh Chand Bairwa",
+      "payeeAccount": "00004207100103",
+      "ifsc": "ZXRJ9JPR002",
+      "designation": "Accounts Assistant"
+    },
+    {
+      "employeeId": "RJE-260104",
+      "payee": "Rekha Kumawat",
+      "payeeAccount": "00004207100104",
+      "ifsc": "ZXRJ9JPR002",
+      "designation": "Stenographer"
+    },
+    {
+      "employeeId": "RJE-260105",
+      "payee": "Anil Choudhary",
+      "payeeAccount": "00004207100105",
+      "ifsc": "ZXRJ9JPR001",
+      "designation": "Assistant Administrative Officer"
+    },
+    {
+      "employeeId": "RJE-260106",
+      "payee": "Lalit Prajapat",
+      "payeeAccount": "00004207100106",
+      "ifsc": "ZXRJ9JPR002",
+      "designation": "Lower Division Clerk"
+    }
   ],
   "cases": [
     {
@@ -53,11 +119,19 @@
       "target": "COMPLETED",
       "payment": "SANDBOX",
       "variables": {
-        "billType": "CONTINGENT", "headOfAccount": "2054-00-001-01-00-13", "chargedVoted": "VOTED",
-        "amount": 4235000, "payee": "Mahesh Kumar Yadav", "employeeId": "RJE-260101", "partyId": "PTY-RJE-260101",
-        "payeeAccount": "00004207100101", "ifsc": "ZXRJ0JPR001",
-        "sanctionRef": "DTA/JPR/Contg/2026-27/114 dated 08-07-2026", "ddoCode": "JPR-DDO-0420",
-        "claimPeriod": "2026-07-01", "subject": "Purchase of office stationery for July 2026"
+        "billType": "CONTINGENT",
+        "headOfAccount": "2054-00-001-01-00-13",
+        "chargedVoted": "VOTED",
+        "amount": 4235000,
+        "payee": "Mahesh Kumar Yadav",
+        "employeeId": "RJE-260101",
+        "partyId": "PTY-RJE-260101",
+        "payeeAccount": "00004207100101",
+        "ifsc": "ZXRJ9JPR001",
+        "sanctionRef": "DTA/JPR/Contg/2026-27/114 dated 08-07-2026",
+        "ddoCode": "JPR-DDO-0420",
+        "claimPeriod": "2026-07-01",
+        "subject": "Purchase of office stationery for July 2026"
       }
     },
     {
@@ -69,11 +143,19 @@
       "target": "COMPLETED",
       "payment": "SANDBOX",
       "variables": {
-        "billType": "CONTINGENT", "headOfAccount": "2054-00-001-01-00-13", "chargedVoted": "VOTED",
-        "amount": 1868000, "payee": "Pooja Gurjar", "employeeId": "RJE-260102", "partyId": "PTY-RJE-260102",
-        "payeeAccount": "00004207100102", "ifsc": "ZXRJ0JPR001",
-        "sanctionRef": "DTA/JPR/TA/2026-27/062 dated 21-08-2026", "ddoCode": "JPR-DDO-0420",
-        "claimPeriod": "2026-08-01", "subject": "Travelling allowance, tour to Ajmer treasury, August 2026"
+        "billType": "CONTINGENT",
+        "headOfAccount": "2054-00-001-01-00-13",
+        "chargedVoted": "VOTED",
+        "amount": 1868000,
+        "payee": "Pooja Gurjar",
+        "employeeId": "RJE-260102",
+        "partyId": "PTY-RJE-260102",
+        "payeeAccount": "00004207100102",
+        "ifsc": "ZXRJ9JPR001",
+        "sanctionRef": "DTA/JPR/TA/2026-27/062 dated 21-08-2026",
+        "ddoCode": "JPR-DDO-0420",
+        "claimPeriod": "2026-08-01",
+        "subject": "Travelling allowance, tour to Ajmer treasury, August 2026"
       }
     },
     {
@@ -84,13 +166,23 @@
       "startedBy": "kavita.sharma",
       "target": "PAYMENT_HELD",
       "payment": "HELD",
-      "h2Directives": {"sim_pfms_payment": "PENDING"},
+      "h2Directives": {
+        "sim_pfms_payment": "PENDING"
+      },
       "variables": {
-        "billType": "CONTINGENT", "headOfAccount": "2054-00-001-01-00-13", "chargedVoted": "VOTED",
-        "amount": 9750000, "payee": "Suresh Chand Bairwa", "employeeId": "RJE-260103", "partyId": "PTY-RJE-260103",
-        "payeeAccount": "00004207100103", "ifsc": "ZXRJ0JPR002",
-        "sanctionRef": "DTA/JPR/Contg/2026-27/188 dated 14-10-2026", "ddoCode": "JPR-DDO-0420",
-        "claimPeriod": "2026-10-01", "subject": "Annual maintenance of record room compactors, 2026-27"
+        "billType": "CONTINGENT",
+        "headOfAccount": "2054-00-001-01-00-13",
+        "chargedVoted": "VOTED",
+        "amount": 9750000,
+        "payee": "Suresh Chand Bairwa",
+        "employeeId": "RJE-260103",
+        "partyId": "PTY-RJE-260103",
+        "payeeAccount": "00004207100103",
+        "ifsc": "ZXRJ9JPR002",
+        "sanctionRef": "DTA/JPR/Contg/2026-27/188 dated 14-10-2026",
+        "ddoCode": "JPR-DDO-0420",
+        "claimPeriod": "2026-10-01",
+        "subject": "Annual maintenance of record room compactors, 2026-27"
       }
     },
     {
@@ -102,11 +194,19 @@
       "target": "RUNNING",
       "stopAt": "pc_pao",
       "variables": {
-        "billType": "CONTINGENT", "headOfAccount": "2054-00-001-01-00-13", "chargedVoted": "VOTED",
-        "amount": 2512000, "payee": "Rekha Kumawat", "employeeId": "RJE-260104", "partyId": "PTY-RJE-260104",
-        "payeeAccount": "00004207100104", "ifsc": "ZXRJ0JPR002",
-        "sanctionRef": "DTA/JPR/Contg/2026-27/203 dated 03-11-2026", "ddoCode": "JPR-DDO-0420",
-        "claimPeriod": "2026-11-01", "subject": "Telephone and internet charges, October 2026"
+        "billType": "CONTINGENT",
+        "headOfAccount": "2054-00-001-01-00-13",
+        "chargedVoted": "VOTED",
+        "amount": 2512000,
+        "payee": "Rekha Kumawat",
+        "employeeId": "RJE-260104",
+        "partyId": "PTY-RJE-260104",
+        "payeeAccount": "00004207100104",
+        "ifsc": "ZXRJ9JPR002",
+        "sanctionRef": "DTA/JPR/Contg/2026-27/203 dated 03-11-2026",
+        "ddoCode": "JPR-DDO-0420",
+        "claimPeriod": "2026-11-01",
+        "subject": "Telephone and internet charges, October 2026"
       }
     },
     {
@@ -118,11 +218,19 @@
       "target": "RUNNING",
       "stopAt": "pc_dealing",
       "variables": {
-        "billType": "CONTINGENT", "headOfAccount": "2054-00-001-01-00-13", "chargedVoted": "VOTED",
-        "amount": 1340000, "payee": "Lalit Prajapat", "employeeId": "RJE-260106", "partyId": "PTY-RJE-260106",
-        "payeeAccount": "00004207100106", "ifsc": "ZXRJ0JPR002",
-        "sanctionRef": "DTA/JPR/Contg/2026-27/211 dated 12-11-2026", "ddoCode": "JPR-DDO-0420",
-        "claimPeriod": "2026-11-01", "subject": "Electricity charges of the office building, October 2026"
+        "billType": "CONTINGENT",
+        "headOfAccount": "2054-00-001-01-00-13",
+        "chargedVoted": "VOTED",
+        "amount": 1340000,
+        "payee": "Lalit Prajapat",
+        "employeeId": "RJE-260106",
+        "partyId": "PTY-RJE-260106",
+        "payeeAccount": "00004207100106",
+        "ifsc": "ZXRJ9JPR002",
+        "sanctionRef": "DTA/JPR/Contg/2026-27/211 dated 12-11-2026",
+        "ddoCode": "JPR-DDO-0420",
+        "claimPeriod": "2026-11-01",
+        "subject": "Electricity charges of the office building, October 2026"
       }
     },
     {
@@ -134,9 +242,16 @@
       "target": "COMPLETED",
       "payment": "SANDBOX",
       "variables": {
-        "employeeId": "RJE-260105", "partyId": "PTY-RJE-260105", "gpfAccount": "RJ/GPF/JPR/90417", "gpfPurpose": "ADVANCE",
-        "amount": 15000000, "gpfBalance": 61245000, "qualifyingService": "14.5",
-        "payee": "Anil Choudhary", "payeeAccount": "00004207100105", "ifsc": "ZXRJ0JPR001"
+        "employeeId": "RJE-260105",
+        "partyId": "PTY-RJE-260105",
+        "gpfAccount": "RJ/GPF/JPR/90417",
+        "gpfPurpose": "ADVANCE",
+        "amount": 15000000,
+        "gpfBalance": 61245000,
+        "qualifyingService": "14.5",
+        "payee": "Anil Choudhary",
+        "payeeAccount": "00004207100105",
+        "ifsc": "ZXRJ9JPR001"
       }
     },
     {
@@ -148,9 +263,16 @@
       "target": "RUNNING",
       "stopAt": "sn_sanction",
       "variables": {
-        "employeeId": "RJE-260102", "partyId": "PTY-RJE-260102", "gpfAccount": "RJ/GPF/JPR/90533", "gpfPurpose": "ADVANCE",
-        "amount": 8000000, "gpfBalance": 38410000, "qualifyingService": "9.0",
-        "payee": "Pooja Gurjar", "payeeAccount": "00004207100102", "ifsc": "ZXRJ0JPR001"
+        "employeeId": "RJE-260102",
+        "partyId": "PTY-RJE-260102",
+        "gpfAccount": "RJ/GPF/JPR/90533",
+        "gpfPurpose": "ADVANCE",
+        "amount": 8000000,
+        "gpfBalance": 38410000,
+        "qualifyingService": "9.0",
+        "payee": "Pooja Gurjar",
+        "payeeAccount": "00004207100102",
+        "ifsc": "ZXRJ9JPR001"
       }
     }
   ]
