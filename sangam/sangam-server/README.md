@@ -334,7 +334,7 @@ Flowable worker compatibility is served at `/api/v1/compat/flowable/external-job
 | H2 2.3.232 (runtime, development) | MPL-2.0 / EPL-1.0 |
 | PostgreSQL JDBC 42.7.12 | BSD-2-Clause |
 | Microsoft mssql-jdbc 13.6.2 | MIT |
-| MariaDB Connector/J 3.5.11 | LGPL-2.1 (runtime class path only, **not** in the fat jar; LIC-4/LIC-5) |
+| MariaDB Connector/J 4.0.0 | LGPL-2.1 (runtime class path only, **not** in the fat jar; LIC-4/LIC-5) |
 
 ## Generic modules (final integration wave)
 

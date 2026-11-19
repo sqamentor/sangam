@@ -1378,7 +1378,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.mariadb.jdbc/mariadb-java-client@3.5.11": {
+  "pkg:maven/org.mariadb.jdbc/mariadb-java-client@4.0.0": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "lib-ext"
