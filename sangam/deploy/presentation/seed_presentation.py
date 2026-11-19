@@ -7,7 +7,8 @@ realm files and a hosted Keycloak get the same people. Two parts, each skipped w
   1. Keycloak (admin REST API): the realm roles exist; each user exists with name, e-mail, attributes tenant, seat,
      office; its password is (re)set from SANGAM_PRESENTATION_PASSWORD_<USERNAME>; its realm roles are added.
      A user whose password variable is empty is created without a password and reported.
-  2. Sangam (REST API, a tenant administrator's bearer token): the org unit, roles and seats of the IFMS pack seed
+  2. Sangam (REST API, a tenant administrator's bearer token): the tenant's org level types (PUT /admin/org-levels),
+     then the org unit, roles and seats of the IFMS pack seed
      (the server does not install pack seeds), then every seat-holding user who has signed in once (JIT person)
      gets a SUBSTANTIVE assignment to its seat from today, unless it holds it already.
 
@@ -45,7 +46,9 @@ def load_lists():
     return mod
 
 
-def http(method, url, token=None, body=None, form=None, headers=None):
+def http(method, url, token=None, body=None, form=None, headers=None, replayed=None):
+    """(status, JSON body). When `replayed` is a list, appends whether the server replayed a stored answer to the same
+    Idempotency-Key (response header Idempotent-Replayed: true), i.e. this call changed nothing."""
     h = dict(headers or {})
     data = None
     if token:
@@ -60,6 +63,8 @@ def http(method, url, token=None, body=None, form=None, headers=None):
     try:
         with urllib.request.urlopen(req, timeout=30) as res:
             raw = res.read()
+            if replayed is not None:
+                replayed.append((res.headers.get("Idempotent-Replayed") or "").lower() == "true")
             return res.status, (json.loads(raw) if raw and raw[:1] in (b"{", b"[") else None)
     except urllib.error.HTTPError as e:
         raw = e.read()
@@ -125,13 +130,16 @@ def idem(*parts):
 # (UNKNOWN_LEVEL, UNKNOWN_UNIT, UNKNOWN_SEAT, ...) is a real refusal and stops the seed (EV-M-0923: a blanket 409
 # reported "exists" for an org unit that was never created).
 EXISTS_CODES = ("UNIT_EXISTS", "SEAT_EXISTS")
+# The org level types this seed uses, top first: PAO-OFFICE is created at level OFFICE (no parent).
+ORG_LEVELS = ("OFFICE",)
 
 
 def create_if_absent(what, method, url, tok, body, headers):
     """POST/PUT; a 409 with an "already there" code counts as present. Other errors stop the seed."""
     try:
-        http(method, url, tok, body, headers=headers)
-        print(f"  {what}: created")
+        again = []
+        http(method, url, tok, body, headers=headers, replayed=again)
+        print(f"  {what}: {'exists (replayed)' if again and again[0] else 'created'}")
     except SystemExit as e:
         if "-> 409" not in str(e) or not any(f'"code":"{c}"' in str(e) for c in EXISTS_CODES):
             raise
@@ -163,6 +171,12 @@ def seed_sangam(base, tok, g, tenant, office, today):
     with open(SEED, encoding="utf-8") as f:
         seed = json.load(f)
     unit = next(o for o in seed["offices"] if o["id"] == office)
+    # The tenant's org level types come first: an org unit's level must be one of them (409 UNKNOWN_LEVEL otherwise,
+    # EV-M-0923). PUT /admin/org-levels is idempotent: the same list again changes nothing; a different list once
+    # units exist is refused (409 LEVELS_IN_USE) and stops the seed.
+    _, levels = http("PUT", f"{base}/admin/org-levels", tok, {"tenantId": tenant, "levels": list(ORG_LEVELS)},
+                     headers=idem(tenant, "org-levels", *ORG_LEVELS))
+    print(f"  org levels: {', '.join(levels['levels'])}")
     create_if_absent(f"org unit {office}", "POST", f"{base}/admin/org-units", tok,
                      {"id": office, "code": office, "name": "Jaipur", "level": "OFFICE",
                       "parentId": unit.get("parent") or None}, idem(tenant, "unit", office))

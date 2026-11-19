@@ -50,6 +50,8 @@ class PresentationSeedAgainstServerTest {
     private static final String TENANT = "GOI.FIN";
     private static final String OFFICE = "PAO-OFFICE";
     private static final Path SEED = Path.of("..", "deploy", "presentation", "seed_presentation.py").toAbsolutePath().normalize();
+    private static final Path PACK_SEED = Path.of("..", "sangam-packs", "src", "main", "resources", "packs", "ifms-gpf", "seed.json")
+            .toAbsolutePath().normalize();
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final HttpClient HTTP = HttpClient.newHttpClient();
 
@@ -102,6 +104,21 @@ class PresentationSeedAgainstServerTest {
             assertEquals(0, first.exit, "the seed stopped:\n" + first.out);
             assertFalse(first.out.contains("not yet signed in"), first.out);
             String afterFirst = state(api, admin, postings);
+            // every pack role is defined (no role listing endpoint exists: read-only check of SEC_ROLE)
+            TreeSet<String> roles = new TreeSet<>();
+            JSON.readTree(PACK_SEED.toFile()).path("roles").forEach(r -> roles.add(r.path("code").asText()));
+            assertFalse(roles.isEmpty());
+            try (var c = ctx.getBean(javax.sql.DataSource.class).getConnection();
+                 var ps = c.prepareStatement("SELECT role_id FROM SEC_ROLE WHERE tenant_id=?")) {
+                ps.setString(1, TENANT);
+                TreeSet<String> stored = new TreeSet<>();
+                try (var rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        stored.add(rs.getString(1));
+                    }
+                }
+                assertTrue(stored.containsAll(roles), "pack roles " + roles + " defined: " + stored);
+            }
 
             Seed second = seed(List.of(), env);
             assertEquals(0, second.exit, "the rerun stopped:\n" + second.out);
@@ -115,14 +132,22 @@ class PresentationSeedAgainstServerTest {
      * holders with assignment ids, read through the API; asserts the 10 seats and the 8 postings.
      */
     private static String state(String api, String admin, Map<String, String> postings) throws Exception {
+        // a seat's pack role is its designation (as onboarding's installPackSeeds creates pack seats)
+        Map<String, String> packRole = new TreeMap<>();
+        for (JsonNode s : JSON.readTree(PACK_SEED.toFile()).path("seats")) {
+            packRole.put(s.path("id").asText(), s.path("role").asText());
+        }
         JsonNode seats = get(api + "/admin/seats?orgUnitId=" + OFFICE + "&size=100", admin);
         List<String> rows = new ArrayList<>();
+        Map<String, String> found = new TreeMap<>();
         for (JsonNode s : items(seats)) {
-            rows.add("seat " + s.path("id").asText() + " roles=" + texts(s.path("roles")) + " reportsTo="
+            found.put(s.path("id").asText(), s.path("designation").asText());
+            rows.add("seat " + s.path("id").asText() + " designation=" + s.path("designation").asText() + " reportsTo="
                     + s.path("reportsToSeatId").asText(null) + " active=" + s.path("active").asText());
-            assertFalse(texts(s.path("roles")).isEmpty(), "seat " + s.path("id").asText() + " carries its pack role");
+            assertTrue(s.path("active").asBoolean(), "seat " + s.path("id").asText() + " is active");
         }
         assertEquals(10, rows.size(), "the 10 seats of the IFMS pack seed: " + rows);
+        assertEquals(packRole, found, "every seat of the pack seed, each with its pack role as designation");
         String today = LocalDate.now(ZoneOffset.UTC).toString();
         int held = 0;
         for (Map.Entry<String, String> p : postings.entrySet()) {
