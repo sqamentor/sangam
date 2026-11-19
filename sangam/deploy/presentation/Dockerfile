@@ -25,6 +25,9 @@ RUN --mount=type=cache,target=/root/.npm \
     npm ci --ignore-scripts --no-audit --no-fund
 COPY sangam-ui/ ./
 COPY deploy/fonts/*.ttf deploy/fonts/OFL-*.txt deploy/fonts/README.md /deploy/fonts/
+# compliancePackCodes.test.ts (type-checked by npm run build) reads the India compliance pack at ../../../sangam-compliance
+# relative to src/modules, i.e. /sangam-compliance here; without it tsc fails (TS2307, ci-build run 44458833009).
+COPY sangam-compliance/src/main/resources/compliance/jurisdictions/IN/pack.json /sangam-compliance/src/main/resources/compliance/jurisdictions/IN/pack.json
 ARG SANGAM_UI_BASE=/sangam/
 ENV SANGAM_UI_BASE=${SANGAM_UI_BASE}
 RUN npm run build && test -f dist/index.html && grep -q "${SANGAM_UI_BASE}assets/" dist/index.html \

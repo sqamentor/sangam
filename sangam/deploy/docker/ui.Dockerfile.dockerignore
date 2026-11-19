@@ -6,3 +6,5 @@ sangam-ui/coverage/**
 !deploy/docker/ui/**
 # Decision 120: the approved UI fonts (hash-checked by sangam-ui/scripts/deploy-fonts.mjs at build time).
 !deploy/fonts/**
+# The India compliance pack read by src/modules/compliancePackCodes.test.ts (type-checked in the build stage).
+!sangam-compliance/src/main/resources/compliance/jurisdictions/IN/pack.json

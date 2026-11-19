@@ -35,6 +35,9 @@ COPY sangam-ui/ ./
 # Decision 120 (RM-24): scripts/deploy-fonts.mjs reads the approved Noto TTFs, their OFL texts and the SHA-256 table
 # from ../deploy/fonts relative to the UI root (/src), so they go to /deploy/fonts; a missing or changed file fails the build.
 COPY deploy/fonts/*.ttf deploy/fonts/OFL-*.txt deploy/fonts/README.md /deploy/fonts/
+# compliancePackCodes.test.ts (type-checked by npm run build) reads the India compliance pack at ../../../sangam-compliance
+# relative to src/modules, i.e. /sangam-compliance here; without it tsc fails (TS2307, ci-build run 44458833009).
+COPY sangam-compliance/src/main/resources/compliance/jurisdictions/IN/pack.json /sangam-compliance/src/main/resources/compliance/jurisdictions/IN/pack.json
 RUN npm run build && test -f dist/index.html && mkdir -p /out && cp -r dist/. /out/
 
 FROM node:26.13.1-alpine3.24@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS prebuilt
