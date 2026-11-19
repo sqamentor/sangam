@@ -122,8 +122,13 @@ services:
       SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY: ${SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY:-}
       # GL export (decision 126): no IFMS GL connector yet, so sangam.ledger.gl-connector stays unset and the start runs
       # under the audited waiver (LEDGER_GL_EXPORT_WAIVED); entries are kept in LDG_ACCOUNTING, exported once a
-      # connector is set. PENDING MERGE of gl-export (6024c281): until then the server does not know this setting.
+      # connector is set: stored with exported_at NULL and exported later. Schema changeset 0049-01 (gl-export) is applied
+      # by the migrate-only one-shot before the serving start.
       SANGAM_LEDGER_GLEXPORTWAIVER: "demo.ifms.dev, IFMS GL connector not built yet; entries kept in LDG_ACCOUNTING unexported"
+      # Owner decision 2026-11-19 (option (b), "enable for GOI.FIN"): demo sandbox tenant (sangam.demo.sandbox-tenants).
+      # GOI.FIN only: verified payee, payment and bank statement answered by the in-process simulator, audit marked
+      # sandbox=true, UI shows "Sandbox"; no real money. No production guard is relaxed.
+      SANGAM_DEMO_SANDBOXTENANTS: GOI.FIN
       # Owner decision 2026-11-19 (EV-M-0890 (a)): written demo waiver, no scanner.
       SANGAM_MALWARE_SCANNER: none
       SANGAM_MALWARE_PRODUCTIONWAIVER: "demo.ifms.dev, synthetic data only, behind Cloudflare Access"

@@ -61,7 +61,7 @@ class DemoComposeFragmentStartupTest {
             "SANGAM_AUDIT_CHECKPOINT_PRIVATEKEYREF", "SANGAM_AUDIT_CHECKPOINT_PUBLICKEYREF",
             "SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF", "SANGAM_KEYS_ENVIRONMENT", "SANGAM_KEYS_BOOTSTRAP",
             "SANGAM_KEYS_FINGERPRINT_EXPORT", "SANGAM_KEYS_ATTESTATION", "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY",
-            "SANGAM_LEDGER_GLEXPORTWAIVER", "SANGAM_TRUSTED_PROXIES");
+            "SANGAM_LEDGER_GLEXPORTWAIVER", "SANGAM_TRUSTED_PROXIES", "SANGAM_DEMO_SANDBOXTENANTS");
 
     @TempDir
     Path dir;
@@ -95,6 +95,8 @@ class DemoComposeFragmentStartupTest {
             assertTrue(ctx.isActive());
             assertEquals("true", ctx.getEnvironment().getProperty("sangam.security.production"));
             assertEquals("k1", ctx.getEnvironment().getProperty("sangam.security.kek.current-id"));
+            // SANGAM_DEMO_SANDBOXTENANTS binds to sangam.demo.sandbox-tenants and is installed into the packs
+            assertEquals(Set.of("GOI.FIN"), org.sangam.packs.sim.DemoSandbox.tenants());
         }
 
         // the custodian, on the host: signs this environment's export (the shell tool is KeyAttestationEndToEndTest's)
@@ -115,6 +117,9 @@ class DemoComposeFragmentStartupTest {
         try (ConfigurableApplicationContext ctx = start(keys, later)) {
             assertTrue(ctx.isActive());
             assertEquals(attestation.toString(), ctx.getEnvironment().getProperty("sangam.keys.attestation"));
+            assertEquals(Set.of("GOI.FIN"), org.sangam.packs.sim.DemoSandbox.tenants());
+        } finally {
+            org.sangam.packs.sim.DemoSandbox.install(Set.of());
         }
     }
 
@@ -174,6 +179,7 @@ class DemoComposeFragmentStartupTest {
                 case "SANGAM_AUDIT_CHECKPOINT_PUBLICKEYREF" -> "secret://audit/checkpoint-public";
                 case "SANGAM_KEYS_ENVIRONMENT" -> ENV;
                 case "SANGAM_LEDGER_GLEXPORTWAIVER" -> "demo-fragment start-up test: no GL connector";
+                case "SANGAM_DEMO_SANDBOXTENANTS" -> "GOI.FIN";
                 case "SANGAM_MALWARE_SCANNER" -> "none";
                 case "SANGAM_MALWARE_PRODUCTIONWAIVER" -> "demo-fragment start-up test: no scanner";
                 case "SANGAM_OIDC_ISSUER" -> "https://idp.example/realms/oneifms";
