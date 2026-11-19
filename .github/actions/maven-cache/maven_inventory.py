@@ -148,7 +148,30 @@ def inventory(repo):
             pom_profiles(os.path.join(sangam, pom)) if os.path.exists(os.path.join(sangam, pom)) else set())
         for p in sorted(ids - known):
             unresolved.append(f"{pom}: profile {p} is not defined")
+    # -f POMs outside the reactor that depend on this project's own modules (sdks/kotlin -> sangam-sdk-java): those
+    # modules must be installed locally first, exactly as the workflow does, or go-offline cannot read the POM's
+    # dependency tree. The installed io.github.sqamentor artifacts are excluded from the cache.
+    modules = {}
+    for d, subdirs, files in os.walk(sangam):
+        subdirs[:] = [s for s in subdirs if s not in ("target", "node_modules", ".git") and not s.startswith(".")]
+        if "pom.xml" in files and d != sangam:
+            a = ET.parse(os.path.join(d, "pom.xml")).getroot().find("m:artifactId", POM_NS)
+            if a is not None:
+                modules[a.text.strip()] = os.path.relpath(d, sangam).replace(os.sep, "/")
+    installs = set()
+    for pom in profiles:
+        path = os.path.join(sangam, pom)
+        if pom == "pom.xml" or not os.path.exists(path):
+            continue
+        for dep in ET.parse(path).getroot().findall("m:dependencies/m:dependency", POM_NS):
+            g, a = dep.find("m:groupId", POM_NS), dep.find("m:artifactId", POM_NS)
+            if g is not None and a is not None and g.text.strip() in (SANGAM_GROUP, "${project.groupId}"):
+                if a.text.strip() in modules:
+                    installs.add(modules[a.text.strip()])
+                else:
+                    unresolved.append(f"{pom}: depends on {a.text.strip()}, which is no reactor module")
     return {"plugins": sorted(plugins), "artifacts": sorted(artifacts), "providers": sorted(providers),
+            "installs": sorted(installs),
             "profiles": {k: sorted(v) for k, v in sorted(profiles.items())}, "unresolved": unresolved}
 
 
@@ -157,6 +180,8 @@ def commands(inv):
     out = []
     root_profiles = ",".join(inv["profiles"].get("pom.xml", []))
     out.append(f"-DskipTests -P{root_profiles} test-compile dependency:go-offline")
+    if inv.get("installs"):
+        out.append(f"-DskipTests -pl {','.join(inv['installs'])} -am install")
     for pom, ids in inv["profiles"].items():
         if pom != "pom.xml":
             p = f" -P{','.join(ids)}" if ids else ""

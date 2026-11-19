@@ -19,7 +19,8 @@ for attempt in 1 2 3; do
     echo "maven resolution: done on attempt $attempt"
     exit 0
   fi
-  if [ "$attempt" -lt 3 ] && grep -Eq "$transient" "$log"; then
+  # a missing artifact of this project itself is a build-order error, never a Central answer: fail at once
+  if [ "$attempt" -lt 3 ] && grep -Eq "$transient" "$log" && ! grep -Eq "(find|resolve)[^\n]*io\.github\.sqamentor:" "$log"; then
     n=$(find "$HOME/.m2/repository" -name '*.lastUpdated' 2>/dev/null | wc -l)
     find "$HOME/.m2/repository" -name '*.lastUpdated' -delete 2>/dev/null || true
     s=$(( attempt * 60 ))
