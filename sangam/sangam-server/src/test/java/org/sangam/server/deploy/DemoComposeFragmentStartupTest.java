@@ -68,6 +68,11 @@ class DemoComposeFragmentStartupTest {
             "SANGAM_LEDGER_GLEXPORTWAIVER", "SANGAM_TRUSTED_PROXIES", "SANGAM_DEMO_SANDBOXTENANTS",
             "SANGAM_SECURITY_FIRSTADMINS_TENANT", "SANGAM_SECURITY_FIRSTADMINS_SUBJECTS");
 
+    @org.junit.jupiter.api.AfterAll
+    static void releaseRealm() {
+        RealmIdp.release();
+    }
+
     @TempDir
     Path dir;
 
@@ -356,6 +361,7 @@ class DemoComposeFragmentStartupTest {
         private static RealmIdp instance;
         private final com.nimbusds.jose.jwk.RSAKey key;
         private final String jwks;
+        private final com.sun.net.httpserver.HttpServer server;
 
         private RealmIdp() throws Exception {
             key = new com.nimbusds.jose.jwk.gen.RSAKeyGenerator(2048).keyID(java.util.UUID.randomUUID().toString())
@@ -366,7 +372,7 @@ class DemoComposeFragmentStartupTest {
                     .filter(a -> a instanceof java.net.Inet4Address && !a.isLoopbackAddress() && !a.isLinkLocalAddress())
                     .map(java.net.InetAddress::getHostAddress).findFirst()
                     .orElseThrow(() -> new IllegalStateException("no non-loopback IPv4 address for the test JWKS"));
-            com.sun.net.httpserver.HttpServer server = com.sun.net.httpserver.HttpServer.create(
+            server = com.sun.net.httpserver.HttpServer.create(
                     new java.net.InetSocketAddress(java.net.InetAddress.getByName(host), 0), 0);
             byte[] body = new com.nimbusds.jose.jwk.JWKSet(key.toPublicJWK()).toString().getBytes(StandardCharsets.UTF_8);
             server.createContext("/realms/oneifms/protocol/openid-connect/certs", ex -> {
@@ -378,6 +384,14 @@ class DemoComposeFragmentStartupTest {
             });
             server.start();
             jwks = "http://" + host + ":" + server.getAddress().getPort() + "/realms/oneifms/protocol/openid-connect/certs";
+        }
+
+        /** Stops the JWKS server and releases the instance (TestClassStaticsReleasedTest). */
+        static synchronized void release() {
+            if (instance != null) {
+                instance.server.stop(0);
+                instance = null;
+            }
         }
 
         static synchronized RealmIdp get() {
