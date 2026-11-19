@@ -147,6 +147,21 @@ class ChannelHooksWebhooksH2Test {
         assertEquals(404, assertThrows(ApiProblem.class, () -> controller(true).slack("other", body, ts, "v0=00")).status(), "not configured");
     }
 
+    /** IFMS tenant GOI.FIN: webhook keys under sangam.channels.webhooks[GOI.FIN] (before the fix: 404 for every hook). */
+    @Test
+    void aTenantIdWithADotVerifiesItsWebhook() throws Exception {
+        env.withProperty("sangam.channels.webhooks[GOI.FIN].slack.signing-secret-ref", "secret://channels/slack-secret")
+                .withProperty("sangam.channels.webhooks.ACME2.slack.signing-secret-ref", "secret://channels/slack-secret");
+        byte[] body = "{\"type\":\"url_verification\",\"challenge\":\"goi\"}".getBytes(StandardCharsets.UTF_8);
+        String ts = String.valueOf(Instant.now().getEpochSecond());
+        assertEquals("goi", controller(true).slack("GOI.FIN", body, ts, slackSignature("s3cret", ts, body)).getBody().challenge());
+        assertEquals("goi", controller(true).slack("ACME2", body, ts, slackSignature("s3cret", ts, body)).getBody().challenge());
+        assertEquals(401, assertThrows(ApiProblem.class,
+                () -> controller(true).slack("GOI.FIN", body, ts, slackSignature("wrong", ts, body))).status());
+        assertEquals(404, assertThrows(ApiProblem.class, () -> controller(true).slack("GOI", body, ts, "v0=00")).status(),
+                "GOI is another tenant");
+    }
+
     @Test
     void slackMessageWithAFileGivesTheTextNowAndTheMediaAfterCommitOnce() throws Exception {
         byte[] body = ("{\"type\":\"event_callback\",\"event_id\":\"Ev1\",\"event\":{\"type\":\"message\",\"subtype\":\"file_share\",\"user\":\"U1\","
