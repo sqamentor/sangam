@@ -256,13 +256,70 @@ class E5OutboxInboxIT extends ContractSupport {
         Outbox.Appended a = slow.get(30, TimeUnit.SECONDS);
         ex.shutdown();
         boolean aOnFirstPass = consumer.applied(HISTORY, a.eventId()) || consumer.applied(WEBHOOK, a.eventId());
-        relay.drain(5);
         assertTrue(a.outboxId() < b.outboxId(), "A got the lower id but committed later");
         assertTrue(bOnFirstPass, "B's two deliveries were published on the first pass");
         assertFalse(aOnFirstPass, "A was not visible on the first pass");
+        // Run 44462054979: the server's relay held the claim on A's delivery while this test drained, so drain skipped
+        // it and the committed state was still PENDING (in flight). Reproduced by e5_4r. The contract is the settled
+        // state, whichever relay delivers A: both deliveries DONE.
+        awaitDelivered(a);
         assertEquals("DONE", state(a.outboxId(), HISTORY));
         assertEquals("DONE", state(a.outboxId(), WEBHOOK));
         assertTrue(consumer.applied(HISTORY, a.eventId()));
+    }
+
+    /**
+     * Run 44462054979 (sqlserver2025, e5_4): right after A committed, the server's background relay held the claim on
+     * A's delivery while this test drained. The test relay skipped the locked row (SKIP LOCKED / READPAST), claimed
+     * nothing, so drain stopped at once, and the committed state was still PENDING. Here a second connection plays that
+     * in-flight claim, so the interleaving happens on every run.
+     */
+    @Test
+    @Order(4)
+    void e5_4r_committedEventWhileAnotherRelayHoldsTheClaim() throws Exception {
+        String pid = startChecker(key("e5-4r"));
+        Outbox.Appended a = completeAndAppend(pid, singleTask(pid, "checkerReview").id(),
+                Map.of("checkerDecision", "forward"), null, false);
+        try (Connection competitor = dataSource.getConnection()) {
+            competitor.setAutoCommit(false);
+            try {
+                List<Long> held = Jdbc.query(competitor, dialect().skipLockedSelect("d.outbox_id", "OUTBOX_DELIVERY", "d",
+                                "d.outbox_id = ? AND d.destination = ? AND d.state = 'PENDING'", "d.outbox_id", 1),
+                        rs -> rs.getLong(1), a.outboxId(), HISTORY);
+                assertEquals(List.of(a.outboxId()), held, "precondition: the competing claim holds A's delivery");
+                relay.drain(5);
+                assertEquals("PENDING", state(a.outboxId(), HISTORY),
+                        "the competing claim is not committed: the delivery is in flight, skipped, not published twice");
+                assertFalse(consumer.applied(HISTORY, a.eventId()), "a claimed delivery is not published by this relay");
+            } finally {
+                competitor.rollback();   // the competing relay crashed mid-claim; its claim never committed
+            }
+        }
+        awaitDelivered(a);
+        assertEquals("DONE", state(a.outboxId(), HISTORY));
+        assertEquals("DONE", state(a.outboxId(), WEBHOOK));
+        assertTrue(consumer.applied(HISTORY, a.eventId()));
+    }
+
+    /**
+     * The settled state of a committed event is DONE on each destination, whichever relay (this test's or the server's
+     * background relay) delivers it; PENDING and CLAIMED are in-flight states of a competing claim and the delivery must
+     * never be PARKED or SKIPPED here. Drives this test's relay until both deliveries settle (at most 30 s).
+     */
+    private void awaitDelivered(Outbox.Appended a) throws InterruptedException {
+        long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
+        while (System.nanoTime() < deadline) {
+            String h = state(a.outboxId(), HISTORY);
+            String w = state(a.outboxId(), WEBHOOK);
+            if ("DONE".equals(h) && "DONE".equals(w)) {
+                return;
+            }
+            for (String s : List.of(h, w)) {
+                assertTrue("DONE".equals(s) || "PENDING".equals(s) || "CLAIMED".equals(s), "delivery of A reached " + s);
+            }
+            relay.drain(5);
+            Thread.sleep(200);
+        }
     }
 
     private static void await(CountDownLatch l) {
