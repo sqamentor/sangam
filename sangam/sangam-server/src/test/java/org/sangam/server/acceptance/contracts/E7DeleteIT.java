@@ -204,6 +204,32 @@ class E7DeleteIT extends ContractSupport {
         assertTrue(deleted(pid));
     }
 
+    /**
+     * Run 44515408887 (oracle, e7_2:196 "expected 1 but was 0"): the server's leader-elected lifecycle maintenance
+     * ({@code InstanceLifecycleService.maintain}, which calls {@code Tombstones.sweepExpiredLeases}) swept the expired
+     * tombstone first and opened the UNKNOWN_OUTCOME item (reconciliation item 3 in the log, escalated 30 ms before the
+     * test's sweep). The test's own sweep then correctly found nothing: the fence from 1a0d5ec3 keeps a second sweep from
+     * opening a second item. Here a peer sweep plays the server's maintenance, so the interleaving happens every run.
+     */
+    @Test
+    @Order(2)
+    void e7_2r_tombstonedLeaseSweptByTheServerFirst() throws Exception {
+        String topic = key("pay-e7-2r");
+        String pid = toPayment("2r", topic);
+        PaymentWorker w = worker("worker-1", topic);
+        LeasedWork lw = w.fetch();
+        OperationLedger.Intent intent = w.intent(lw);
+        w.dispatch(lw, intent);
+        clock = clock.plus(LEASE.minusMillis(400));
+        engine.setClock(clock);
+        Rest del = restDelete(pid, "technical delete");
+        assertEquals(200, del.status(), del.body());
+        Thread.sleep(800);
+        inEngineTx(tombstones::sweepExpiredLeases);          // the server's lifecycle maintenance sweeps first
+        int swept = inEngineTx(tombstones::sweepExpiredLeases);
+        assertEquals(1, swept);
+    }
+
     @Test
     @Order(3)
     void e7_3_lateFailAndUnknownAfterDelete() {
