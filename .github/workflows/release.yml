@@ -378,7 +378,7 @@ jobs:
       - uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
         with:
           cosign-release: v2.5.2
-      - name: syft 1.29.0 and grype 0.121.3 (vendor cosign signature, then SHA-256 pin; CR-11, decision 179)
+      - name: syft 1.29.0 and grype 0.122.1 (vendor cosign signature, then SHA-256 pin; CR-11, decision 179)
         run: |
           $FETCH syft --bin "$BIN"
           $FETCH grype --bin "$BIN"
@@ -499,7 +499,7 @@ jobs:
       - name: Image vulnerability gate (grype, critical with a fix fails, decision 133)
         if: ${{ !cancelled() }}
         run: |
-          $RL run --check image-vuln-scan --ledger-dir "$LEDGER" --tool-version grype-0.121.3 --expect-glob "$ISBOM/*.cdx.json=12" -- \
+          $RL run --check image-vuln-scan --ledger-dir "$LEDGER" --tool-version grype-0.122.1 --expect-glob "$ISBOM/*.cdx.json=12" -- \
             bash -c 'rc=0; for s in "$1"/*.cdx.json; do "$2" "sbom:$s" --fail-on critical --only-fixed -o table --file "$3/$(basename "$s" .cdx.json).grype.txt" || rc=1; done; exit $rc' \
             _ "$ISBOM" "$BIN/grype" "$IVULN"
       - name: Image SBOMs hold no build-time tool (CR-16)
