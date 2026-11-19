@@ -10,6 +10,7 @@
  * The OIDC code path needs a live identity provider and is covered by the E2E suite, not here. Written, not run.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useLayoutEffect } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const api = vi.hoisted(() => ({ get: vi.fn() }));
@@ -108,6 +109,33 @@ describe('M-047 AuthProvider (dev-token mode)', () => {
     h = await headersOfNextCall();
     expect(h.get('X-Sangam-Seat')).toBe('s1');
     expect(h.get('X-Sangam-Acting-For-Seat')).toBe('s2');
+  });
+
+  it('a call fired in the commit that shows the seat already carries that seat (no passive-effect race)', async () => {
+    // The commit that shows the seat is observed in a layout effect, i.e. before React runs that commit's passive
+    // effects (scheduled as a later task outside act). That is the window run 44489607242 hit at random: its waitFor saw
+    // seat s1 in the DOM and fired the call before the seat headers were registered. Here the window is hit every time.
+    const sent: Array<[string, string | null, string | null]> = [];
+    function LoadOnSeat() {
+      const { seat } = useAuth();
+      useLayoutEffect(() => {
+        if (!seat) return;
+        void raw('GET', '/probe');
+      }, [seat]);
+      return null;
+    }
+    fetchMock.mockImplementation(async (_url: string, init: RequestInit) => {
+      const h = init.headers as Headers;
+      sent.push([h.get('Authorization') ?? '', h.get('X-Sangam-Seat'), h.get('X-Sangam-Acting-For-Seat')]);
+      return { ok: true, status: 200, headers: new Headers(), json: async () => ({}) };
+    });
+    window.sessionStorage.setItem('sangam.devToken', 'tok-1');
+    render(<AuthProvider><Probe /><LoadOnSeat /></AuthProvider>);
+    await waitFor(() => expect(sent.length).toBe(1));
+    expect(sent[0]).toEqual(['Bearer tok-1', 's1', null]);
+    fireEvent.click(screen.getByRole('button', { name: 'seat2' }));
+    await waitFor(() => expect(sent.length).toBe(2));
+    expect(sent[1]).toEqual(['Bearer tok-1', 's1', 's2']);
   });
 
   it('roles come from the token claims when /me has none', async () => {
