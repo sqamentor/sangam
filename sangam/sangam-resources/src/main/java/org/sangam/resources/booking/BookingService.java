@@ -631,8 +631,8 @@ public final class BookingService {
                 Math.max(1, limit)), rs -> rs.getString(1), t, now);
         int n = 0;
         for (String id : ids) {
-            Booking b = get(c, t, id);
-            if (b.state() == State.HELD || b.state() == State.PENDING_APPROVAL) {
+            Booking b = get(c, t, id); // locked: the committed row (Oracle skip-locked can return one a peer changed)
+            if ((b.state() == State.HELD || b.state() == State.PENDING_APPROVAL) && b.holdExpiresAt() != null && !b.holdExpiresAt().isAfter(now)) {
                 expire(c, system, b, now, true);
                 n++;
             }
@@ -649,9 +649,9 @@ public final class BookingService {
                 rs -> rs.getString(1), t, now);
         int n = 0;
         for (String id : ids) {
-            Booking b = get(c, t, id);
+            Booking b = get(c, t, id); // locked: the committed row (Oracle skip-locked can return one already NO_SHOW)
             ResourceType type = catalogue.type(c, t, b.typeId());
-            if (type.noShowGraceMinutes() <= 0 || now.isBefore(b.startsAt().plus(Duration.ofMinutes(type.noShowGraceMinutes())))) {
+            if (b.state() != State.CONFIRMED || type.noShowGraceMinutes() <= 0 || now.isBefore(b.startsAt().plus(Duration.ofMinutes(type.noShowGraceMinutes())))) {
                 continue;
             }
             BigDecimal refund = refund(c, system, b, now, "SYSTEM", true, "no-show");
