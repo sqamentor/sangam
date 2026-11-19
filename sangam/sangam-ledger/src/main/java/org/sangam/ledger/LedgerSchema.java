@@ -21,7 +21,9 @@ import java.util.List;
  *       (operation, audit reference, actor, time, legs as JSON);</li>
  *   <li>{@code LDG_HOLD}: requests held for funds / stock (pending queue), released on allocation;</li>
  *   <li>{@code LDG_FREEZE}: freeze orders (mass freeze by account predicate) with their release;</li>
- *   <li>{@code LDG_ACCOUNTING}: accounting entries produced by the event mapping, for export to the GL connector;</li>
+ *   <li>{@code LDG_ACCOUNTING}: every accounting entry produced by the event mapping, with its exact GL payload
+ *       ({@code payload_json}); {@code exported_at} is set when the entry is handed to the GL export outbox, NULL while no
+ *       GL connector is set (audited waiver), exported later by {@link LedgerJournal#exportPending};</li>
  *   <li>{@code BILL_UNVERIFIED_PAYMENT} (sangam-billing, RM-03, owner decision 141): payments accepted without their
  *       channel's confirmation. One row per (tenant, channel, payment reference), the unique index refusing a second
  *       acceptance; the accepted columns are never updated, a resolution fills its own columns; {@code version} guards
@@ -108,7 +110,8 @@ public final class LedgerSchema {
               currency     {str64},
               functional_amount {money},
               created_at   {ts} NOT NULL,
-              exported_at  {ts}
+              exported_at  {ts},
+              payload_json {text}
             )""",
             "CREATE INDEX LDG_ACCOUNTING_EXPORT ON LDG_ACCOUNTING (tenant_id, exported_at)",
             """

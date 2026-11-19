@@ -46,6 +46,15 @@ public final class ConnectorRegistry {
                 .orElseThrow(() -> new IllegalArgumentException("no connector '" + connectorId + "' for tenant " + tenantId));
     }
 
+    /** Whether a connector of this id is registered, platform-wide or for any tenant ({@code tenantId:connectorId}). */
+    public boolean knows(String connectorId) {
+        if (connectorId == null || connectorId.isBlank()) {
+            return false;
+        }
+        String suffix = ":" + connectorId;
+        return connectors.keySet().stream().anyMatch(k -> k.equals(connectorId) || k.endsWith(suffix));
+    }
+
     public List<ConnectorDescriptor> descriptors() {
         return connectors.values().stream().map(SangamConnector::descriptor).distinct().toList();
     }

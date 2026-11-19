@@ -57,7 +57,7 @@ test case in that class that removes it and expects the refusal.
 | 8 | Audit checkpoint keys `sangam.audit.checkpoint.private-key-ref` / `public-key-ref` (`secret://`) | "(decision 126)" | decision 126 |
 | 9 | Compliance principal key `sangam.compliance.principal-key-ref` (base64, >= 32 bytes) | "(owner decision 371)" | decisions 371 (5), 372 |
 | 10 | Key environment `sangam.keys.environment` **and** `sangam.keys.foreign-fingerprints`, **or** the custodian attestation `sangam.keys.attestation` + `sangam.keys.custodian-public-key`; first environment only: `sangam.keys.bootstrap=true` once | `KEY_ENVIRONMENT_LIST_REQUIRED`, `KEY_ATTESTATION_INVALID` | decisions 385 (3), 387 (4), 390 (2); `deploy/README.md:236-269` |
-| 11 | GL export connector `sangam.ledger.gl-connector` (the ledger module is on by default), naming a connector the integration module has | "sangam.ledger.gl-connector must be set in production" | decision 126 part 2; `LedgerWiring.java:88-96` |
+| 11 | GL export connector `sangam.ledger.gl-connector` (the ledger module is on by default), naming a connector the integration module has, **or** `sangam.ledger.gl-export-waiver` (env `SANGAM_LEDGER_GLEXPORTWAIVER`) with a non-blank reason: audited (`LEDGER_GL_EXPORT_WAIVED`), entries kept in `LDG_ACCOUNTING` with `exported_at` NULL and exported once a connector is set; both set, or a blank reason, is refused | "sangam.ledger.gl-connector must be set in production"; an id naming no connector: "LEDGER_GL_CONNECTOR_UNKNOWN"; waiver: "ambiguous" / "needs a written reason" | decision 126 part 2; `LedgerWiring.requireGlExport`, `LedgerWiring.requireKnownGlConnector` |
 | 12 | Trusted proxies `sangam.http.trusted-proxies` listing the UI and the ingress | `TRUSTED_PROXIES_REQUIRED` | decision 371 (1), register DEC-371-1 |
 | 13 | Development conveniences off: `sangam.security.bootstrap.enabled=false`, `sangam.security.dev-token.enabled=false`, `sangam.debug.enabled=false`, no development platform issuer | "...is not allowed with sangam.security.production=true" | decisions 143, 152 |
 | 14 | OIDC complete: issuer together with any JWK set URI | "OIDC token validation is incomplete in production (RM-09)" | RM-09 |
@@ -148,7 +148,7 @@ cloud brokers and the Quarkus host (MASTER-PENDING section C, C1-C14). **There i
 
 1. **By design**, Sangam is plug and play: domain behaviour is packs and profiles, never Java, and a scenario that needs Java fails acceptance.
 2. **Embedding on Spring Boot 4.1** and **the standalone server** work by dependency or image plus configuration. No product code is needed.
-3. **Production is configuration-heavy on purpose.** The fifteen fail-closed settings of section 2 must be supplied, and the GL connector and the malware scanner (or a waiver) are among them.
+3. **Production is configuration-heavy on purpose.** The fifteen fail-closed settings of section 2 must be supplied, and the GL connector (or its audited waiver) and the malware scanner (or a waiver) are among them.
 4. **New external systems need code:** a connector plugin. **New domains need data:** packs through packgen.
 5. **Quarkus is not usable:** every start is refused with `CAPABILITY_MISSING`.
 6. **The evidence is not there yet.** Oracle and SQL Server acceptance is FAIL or NOT_RUN, the plug-and-play suite has not run on the current tree, and AC-08 is not green.

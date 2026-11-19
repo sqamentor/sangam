@@ -93,6 +93,42 @@ public final class JdbcLedgerStore implements LedgerStore {
         return journal != null;
     }
 
+    /**
+     * Hands every accounting entry kept while no GL export was configured ({@code exported_at} NULL) to the GL export,
+     * one transaction per entry, oldest first (owner decision 126, RM-05). Safe on several nodes at once.
+     *
+     * @return the number of entries this call exported
+     */
+    public int exportPendingAccounting() {
+        if (!(journal instanceof LedgerJournal j) || !j.exports()) {
+            throw new IllegalStateException("this ledger store has no GL export: accounting entries stay in LDG_ACCOUNTING");
+        }
+        List<Long> ids = inTx(LedgerJournal::pendingExport);
+        int n = 0;
+        for (long id : ids) {
+            if (inTx(c -> j.exportPending(c, id))) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    private <T> T inTx(java.util.function.Function<Connection, T> work) {
+        try (Connection c = ds.getConnection()) {
+            c.setAutoCommit(false);
+            try {
+                T r = work.apply(c);
+                c.commit();
+                return r;
+            } catch (RuntimeException ex) {
+                c.rollback();
+                throw ex;
+            }
+        } catch (SQLException ex) {
+            throw new Jdbc.LayerSqlException("ledger accounting export", ex);
+        }
+    }
+
     @Override
     public PostResult post(Entry e) {
         return post(e, List.of());

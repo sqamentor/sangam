@@ -209,6 +209,7 @@ class CallerVariableWritePathsTest {
                     reason(1, "registry facts converted for a decision evaluation, never written to an instance")),
             Map.entry("src/main/java/org/sangam/server/bridge/Remittance835Router.java", guarded(5)),
             Map.entry("src/main/java/org/sangam/server/config/ChannelsWiring.java", guarded(4)),
+            Map.entry("src/main/java/org/sangam/server/config/LedgerWiring.java", reason(1, "PendingAuditDrainer.signal(scope, chain): wakes the audit drain of the GL waiver event; no engine call")),
             Map.entry("src/main/java/org/sangam/server/config/ModellerWiring.java", guarded(3)),
             Map.entry("src/main/java/org/sangam/server/config/ProductionEnvironment.java", reason(1, "EnvironmentPolicy.signal(profile): no engine call")),
             Map.entry("src/main/java/org/sangam/server/web/DscSigningController.java", reason(1, "not an engine write: the DSC signing flow completes a signature, no engine variable")),
