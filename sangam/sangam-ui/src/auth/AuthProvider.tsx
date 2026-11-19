@@ -7,7 +7,7 @@
  * Role-aware menus are a convenience only; the server is the security boundary (X.4.7).
  */
 import { appPath } from '../basePath';
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { UserManager, WebStorageStateStore, type User as OidcUser } from 'oidc-client-ts';
 import { addHeaderProvider, setTokenProvider, setUnauthenticatedHandler, ApiError } from '../api/client';
 import { api } from '../api/endpoints';
@@ -129,7 +129,10 @@ export function AuthProvider({ children, providerSignOut = true }: { children: R
 
   // Contract headers: X-Sangam-Seat = own substantive seat; X-Sangam-Acting-For-Seat = the seat held on additional
   // charge or as leave substitute, so the audit records "acted for" (IX.5 rule 4).
-  useEffect(() => {
+  // Layout effect, not a passive one: it runs in the commit that shows the seat, before any passive effect (a child's
+  // data load included) and before the next event handler. React 19 may run a passive effect only after the next
+  // discrete event, so a call fired in between went out under the previous seat, or with no seat header at all.
+  useLayoutEffect(() => {
     const held = me?.seats.find((s) => s.seatId === seatId);
     const own = me?.seats.find((s) => s.kind === 'SUBSTANTIVE');
     return addHeaderProvider((): Record<string, string> => {
@@ -272,7 +275,8 @@ export function AuthProvider({ children, providerSignOut = true }: { children: R
 
   // Seat no longer held today (charge ended): drop it with notice handled by SeatSwitcher.
   const seat = useMemo(() => me?.seats.find((s) => s.seatId === seatId) ?? null, [me, seatId]);
-  useEffect(() => {
+  // Layout effect for the same reason as the seat headers: the default seat is in place before any call can go out.
+  useLayoutEffect(() => {
     if (me && !seatId) {
       const first = me.seats.find((s) => s.kind === 'SUBSTANTIVE' && !s.pendingApproval) ?? me.seats[0];
       if (first) setSeat(first.seatId);
