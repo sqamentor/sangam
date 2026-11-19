@@ -148,7 +148,7 @@ def load_ledger(ledger_dir):
     return lines
 
 
-WAIVER_KEYS = {"check", "tag", "decision", "status", "reasons", "requires_pass", "job", "job_name", "_note"}
+WAIVER_KEYS = {"check", "tag", "decision", "status", "reasons", "requires_pass", "job", "job_name", "_note", "report_only_jobs"}
 
 
 def load_waivers(spec):
@@ -241,7 +241,9 @@ def job_failures_waived(needs, run_jobs, causes, lines, waivers, tag):
             problems.append(f"job {job}: {result}")
             continue
         failed = sorted(j.get("name", "") for j in run_jobs
-                        if j.get("name", "").startswith(job + " / ") and j.get("conclusion") not in ("success", "skipped"))
+                        if j.get("name", "").startswith(job + " / ") and j.get("conclusion") not in ("success", "skipped")
+                        # continue-on-error jobs never fail the workflow (test_results_ledger checks the list)
+                        and j.get("name", "")[len(job) + 3:] not in set().union(*(w.get("report_only_jobs", []) for w in ws)))
         ok_w = [w for w in ws if waiver_for(w["check"], lines, waivers, tag) is w
                 and failed == [f"{job} / {w['job_name']}"]
                 and causes.get(job) == [w["check"]]]

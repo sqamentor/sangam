@@ -5,6 +5,7 @@ Run: python -I -m unittest discover -s sangam/deploy/licence -p "test_*.py" (gov
 run in the test phase."""
 import json
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -219,7 +220,8 @@ class DependencyCheckWaiver(unittest.TestCase):
         needs = {k: {"result": "success"} for k in ("meta", "build", "images", "chart", "db-matrix", "governance")}
         needs["security"] = {"result": security}
         needs.update(others or {})
-        names = ["CodeQL java-kotlin", "CodeQL javascript-typescript", "OWASP Dependency-Check", "Semgrep", "Gitleaks"]
+        names = ["CodeQL java-kotlin", "CodeQL javascript-typescript", "OWASP Dependency-Check", "Semgrep", "Gitleaks",
+                 "OpenSSF Scorecard (report-only, not a required check)"]
         run = {"jobs": [{"name": f"security / {n}", "conclusion": "failure" if n in failed else "success"}
                         for n in names] + [{"name": "build", "conclusion": "success"}]}
         rj = os.path.join(self.tmp.name, "jobs.json")
@@ -249,6 +251,21 @@ class DependencyCheckWaiver(unittest.TestCase):
         self.assertEqual(self.jobs("v0.1.0", causes=("dependency-check", "semgrep")), 1)
         self.assertEqual(self.jobs("v0.1.0", security="cancelled"), 1)
         self.assertEqual(self.jobs("v0.1.0", others={"build": {"result": "failure"}}), 1)
+
+    def test_jobs_ignores_only_the_continue_on_error_jobs_of_security_yml(self):
+        self.ledger()
+        scorecard = "OpenSSF Scorecard (report-only, not a required check)"
+        self.assertEqual(self.jobs("v0.1.0", failed=("OWASP Dependency-Check", scorecard)), 0)
+        with open(os.path.join(HERE, "..", "..", "..", ".github", "workflows", "security.yml"), encoding="utf-8") as f:
+            wf = f.read()
+        coe = set()
+        for block in re.split(r"\n  (?=[a-z][a-z0-9_-]*:\n)", wf.split("\njobs:\n", 1)[1]):
+            name = re.search(r"\n    name: (.+)", block)
+            if name and re.search(r"\n    continue-on-error: true", block):
+                coe.add(name.group(1).strip())
+        with open(self.spec, encoding="utf-8") as f:
+            [w] = rl.load_waivers(json.load(f))
+        self.assertEqual(set(w["report_only_jobs"]), coe)
 
     def test_jobs_refuses_when_the_ledger_waiver_does_not_hold(self):
         self.ledger(dc=("FAIL", NVD))

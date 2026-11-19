@@ -5,7 +5,8 @@
    "check": "dependency-check", "tag": "v0.1.0", "decision": 417, "status": "BLOCKED",
    "reasons": ["SSM parameter /shared/security/nvd-api-key not readable"],
    "requires_pass": ["image-vuln-scan", "codeql"],
-   "job": "security", "job_name": "OWASP Dependency-Check"}
+   "job": "security", "job_name": "OWASP Dependency-Check",
+   "report_only_jobs": ["OpenSSF Scorecard (report-only, not a required check)", "Sonar (report-only, runs only when SANGAM_SONAR_HOST_URL is set)"]}
  ],
  "release": [
   "build-unit-tests",
