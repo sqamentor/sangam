@@ -28,7 +28,7 @@ class GetHandlerSideEffectsReportTest {
         new java.util.TreeMap<>(result.entrySet().stream().collect(java.util.stream.Collectors.toMap(
                 e -> e.getKey().toString(), Map.Entry::getValue, (a, b) -> a))).forEach((h, hits) ->
                 byHandler.add(h + "	" + String.join(" | ", new java.util.TreeSet<>(
-                        hits.stream().map(x -> x.sink() + " @ " + x.site()).toList()))));
+                        hits.stream().map(x -> x.sink() + " @ " + x.site() + (x.path().size() > 1 ? " <- " + x.path().get(x.path().size() - 2) : "")).toList()))));
         GetHandlerSideEffects.writeReport(Path.of("target/get-handler-side-effects-by-handler.tsv"), byHandler);
         GetHandlerSideEffects.writeReport(Path.of("target/get-handler-unbound-wiring-lambdas.txt"),
                 new java.util.ArrayList<>(new java.util.TreeSet<>(g.unboundArguments)));
