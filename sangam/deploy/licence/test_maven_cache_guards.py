@@ -208,5 +208,119 @@ class WriterCoversLaterFetches(unittest.TestCase):
             self.assertTrue("!~/.m2/repository/io/github/sqamentor" in f.read(), "own SNAPSHOT artifacts must not be cached")
 
 
+
+class DistributionFetch(unittest.TestCase):
+    """Runs 44489607242 / 44473072992: the one fetch of the pinned apache-maven-3.9.9-bin.zip got HTTP 404 (and 429 x5),
+    failed at once on the 404 and deleted the response headers, blocking whole lane runs before any test ran."""
+
+    def setUp(self):
+        with open(os.path.join(ACTION, "action.yml"), encoding="utf-8") as f:
+            self.action = f.read()
+
+    def test_distribution_has_its_own_cache_keyed_on_url_and_checksum(self):
+        steps = self.action.split("    - name: ")
+        dist = [s for s in steps if "uses: actions/cache@" in s and "steps.dist.outputs.key" in s]
+        self.assertEqual(len(dist), 1, "no separate Maven distribution cache step")
+        self.assertRegex(dist[0], r"path: ~/\.cache/sangam-maven-dist\s*\n", "only the distribution in that cache")
+        self.assertNotIn("hashFiles", dist[0], "the key must not change with the poms")
+        with open(os.path.join(ACTION, "maven-dist-key.sh"), encoding="utf-8") as f:
+            key = f.read()
+        self.assertIn("distributionUrl", key)
+        self.assertIn("distributionSha256Sum", key)
+        order = [i for i, s in enumerate(steps) if "steps.dist.outputs.key" in s or "maven-dist.sh" in s]
+        self.assertEqual(order, sorted(order))
+        self.assertIn("maven-dist.sh", steps[order[-1]], "the distribution cache restores before maven-dist.sh")
+
+    def run_fetch(self, codes):
+        """Run maven-dist.sh with a fake curl answering `codes` in turn and a no-op sleep; return (exit, log, calls)."""
+        import shutil
+        import subprocess
+        import tempfile
+        bash = shutil.which("bash")
+        if not bash:
+            self.skipTest("bash not available")
+        tmp = tempfile.mkdtemp(prefix=".maven-dist-test-", dir=REPO)
+        self.addCleanup(shutil.rmtree, tmp, True)
+        fake = os.path.join(tmp, "bin")
+        os.makedirs(fake)
+        with open(os.path.join(tmp, "codes"), "w", newline="\n") as f:
+            f.write("\n".join(codes) + "\n")
+        curl = r"""#!/usr/bin/env bash
+hdr=""; part=""; url=""; while [ $# -gt 0 ]; do case "$1" in -D) hdr="$2"; shift ;; -o) part="$2"; shift ;; https://*) url="$1" ;; esac; shift; done
+n=$(( $(cat "$T/calls" 2>/dev/null || echo 0) + 1 )); echo "$n" > "$T/calls"; echo "$url" >> "$T/urls"
+entry=$(sed -n "${n}p" "$T/codes"); [ -n "$entry" ] || entry=$(tail -1 "$T/codes")
+code=${entry%%:*}; ra=""; case "$entry" in *:*) ra="Retry-After: ${entry#*:}\r\n" ;; esac
+printf "HTTP/1.1 %s X\r\nServer: Fake-Edge\r\nX-Cache: MISS, MISS\r\nX-Served-By: cache-fake-1\r\nCF-RAY: 0123abcd-IAD\r\n${ra}Set-Cookie: secret=s3cr3t\r\nAuthorization: Bearer s3cr3t\r\n\r\n" "$code" > "$hdr"
+printf 'not the zip' > "$part"; printf '%s' "$code"
+"""
+        for name, body in (("curl", curl), ("sleep", "#!/usr/bin/env bash\nexit 0\n")):
+            with open(os.path.join(fake, name), "w", newline="\n") as f:
+                f.write(body)
+            os.chmod(os.path.join(fake, name), 0o755)
+        # Every path is built inside bash from $PWD (the repository) and the scratch directory's name, so the same
+        # test runs under Linux bash, Git for Windows bash and WSL bash (whose drive mounts differ).
+        rel = os.path.basename(tmp)
+        with open(os.path.join(tmp, "run.sh"), "w", newline="\n") as f:
+            f.write(f'T="$PWD/{rel}"; export T HOME="$T" RUNNER_TEMP="$T" GITHUB_ENV="$T/env" GITHUB_PATH="$T/path" '
+                    'GITHUB_WORKSPACE="$PWD" PATH="$T/bin:$PATH"\nexec bash .github/actions/maven-cache/maven-dist.sh\n')
+        p = subprocess.run([bash, f"{rel}/run.sh"], cwd=REPO, capture_output=True, text=True, timeout=120)
+        log = p.stdout + p.stderr
+        calls_file = os.path.join(tmp, "calls")
+        self.assertTrue(os.path.exists(calls_file), f"maven-dist.sh never called curl (exit {p.returncode}):\n{log}")
+        with open(calls_file) as f:
+            calls = int(f.read().strip())
+        with open(os.path.join(tmp, "urls")) as f:
+            self.urls = f.read().split()
+        self.cached = os.path.exists(os.path.join(tmp, ".cache", "sangam-maven-dist", "org", "apache", "maven",
+                                                  "apache-maven", "3.9.9", "apache-maven-3.9.9-bin.zip"))
+        return p.returncode, log, calls
+
+    def test_404_on_the_pinned_file_is_retried_and_headers_are_logged(self):
+        rc, log, calls = self.run_fetch(["404"])
+        self.assertNotEqual(rc, 0)
+        self.assertEqual(calls, 5, "a 404 on the pinned, checksum-verified file is transient: bounded retries")
+        for h in ("Server: Fake-Edge", "X-Cache: MISS", "X-Served-By: cache-fake-1", "CF-RAY: 0123abcd-IAD"):
+            self.assertIn(h, log, "which server answered must reach the job log")
+        self.assertNotIn("s3cr3t", log, "only allow-listed headers are printed")
+
+    def test_other_errors_still_fail_at_once_and_checksum_still_applies(self):
+        rc, log, calls = self.run_fetch(["403"])
+        self.assertNotEqual(rc, 0)
+        self.assertEqual(calls, 1)
+        rc, log, calls = self.run_fetch(["429", "200"])
+        self.assertNotEqual(rc, 0)
+        self.assertEqual(calls, 2)
+        self.assertIn("SHA-256 mismatch", log, "wrong bytes are refused after a retried fetch")
+
+    FALLBACK = "https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.zip"
+
+    def test_long_retry_after_takes_the_apache_archive_fallback(self):
+        # Run 44493122674: 'HTTP/2 404, server: cloudflare, retry-after: 28304', a ~7.9 h edge block, not a transient.
+        for first in ("404:28304", "429:28304"):
+            rc, log, calls = self.run_fetch([first, "200"])
+            self.assertEqual(calls, 2, f"{first}: one Central attempt, then the fallback, no 300 s waits")
+            self.assertTrue(self.urls[0].startswith("https://repo.maven.apache.org/maven2/"), self.urls)
+            self.assertEqual(self.urls[1], self.FALLBACK, "fallback derived from distributionUrl's version")
+            self.assertIn(f"from {self.FALLBACK}", log, "the job log names the source")
+
+    def test_short_retry_after_keeps_waiting_on_central(self):
+        rc, log, calls = self.run_fetch(["429:30", "404:300", "404"])
+        self.assertEqual(calls, 5)
+        self.assertNotIn(self.FALLBACK, self.urls)
+
+    def test_fallback_bytes_with_a_wrong_checksum_are_refused(self):
+        rc, log, calls = self.run_fetch(["404:28304", "200"])
+        self.assertNotEqual(rc, 0)
+        self.assertIn(f"SHA-256 mismatch for {self.FALLBACK}", log)
+        self.assertFalse(self.cached, "refused bytes must never land in the distribution cache")
+        self.assertNotIn("MVNW_REPOURL", log)
+
+    def test_fallback_error_fails_with_its_headers(self):
+        rc, log, calls = self.run_fetch(["404:28304", "503"])
+        self.assertNotEqual(rc, 0)
+        self.assertEqual(calls, 2)
+        self.assertIn(f"::error::{self.FALLBACK} answered HTTP 503", log)
+
+
 if __name__ == "__main__":
     unittest.main()

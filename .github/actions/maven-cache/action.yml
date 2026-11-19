@@ -43,6 +43,21 @@ runs:
           ~/.cache/sangam-maven-dist
         key: sangam-maven-v2-${{ runner.os }}-${{ hashFiles('sangam/**/pom.xml', 'sangam/.mvn/wrapper/maven-wrapper.properties') }}
         restore-keys: sangam-maven-v2-${{ runner.os }}-
+    # The pinned Maven distribution also has its own small cache, separate from the ~590 MiB dependency entries (which
+    # stay as they are, so their cache version and restore keys do not change). Its key is derived only from
+    # distributionUrl and distributionSha256Sum, so it survives pom changes and dependency-cache eviction, and the zip
+    # is fetched from repo.maven.apache.org at most once per pinned version (runs 44489607242, 44473072992: HTTP 404 and
+    # 429 on that one fetch blocked whole lane runs). Any job may save it (first one wins); actions/cache saves only on
+    # job success, after maven-dist.sh verified the SHA-256, and mvnw verifies it again.
+    - name: Maven distribution cache key (distributionUrl + distributionSha256Sum)
+      id: dist
+      shell: bash
+      run: bash "$GITHUB_ACTION_PATH/maven-dist-key.sh" >> "$GITHUB_OUTPUT"
+    - name: Maven distribution cache (keyed on the pinned version)
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/sangam-maven-dist
+        key: ${{ steps.dist.outputs.key }}
     - name: Verified Maven distribution (from the cache)
       shell: bash
       run: bash "$GITHUB_ACTION_PATH/maven-dist.sh"
