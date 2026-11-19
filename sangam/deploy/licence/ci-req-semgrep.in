@@ -1,3 +1,3 @@
 # SPDX-License-Identifier: Apache-2.0
 # Input of ci-req-semgrep.txt (security.yml, Semgrep CLI in its own venv; LGPL-2.1 build-time tool).
-semgrep==1.185.0
+semgrep==1.186.0
