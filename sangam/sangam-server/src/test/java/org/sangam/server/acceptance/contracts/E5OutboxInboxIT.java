@@ -256,10 +256,13 @@ class E5OutboxInboxIT extends ContractSupport {
         Outbox.Appended a = slow.get(30, TimeUnit.SECONDS);
         ex.shutdown();
         boolean aOnFirstPass = consumer.applied(HISTORY, a.eventId()) || consumer.applied(WEBHOOK, a.eventId());
-        relay.drain(5);
         assertTrue(a.outboxId() < b.outboxId(), "A got the lower id but committed later");
         assertTrue(bOnFirstPass, "B's two deliveries were published on the first pass");
         assertFalse(aOnFirstPass, "A was not visible on the first pass");
+        // Run 44462054979: the server's relay held the claim on A's delivery while this test drained, so drain skipped
+        // it and the committed state was still PENDING (in flight). Reproduced by e5_4r. The contract is the settled
+        // state, whichever relay delivers A: both deliveries DONE.
+        awaitDelivered(a);
         assertEquals("DONE", state(a.outboxId(), HISTORY));
         assertEquals("DONE", state(a.outboxId(), WEBHOOK));
         assertTrue(consumer.applied(HISTORY, a.eventId()));
@@ -285,10 +288,37 @@ class E5OutboxInboxIT extends ContractSupport {
                         rs -> rs.getLong(1), a.outboxId(), HISTORY);
                 assertEquals(List.of(a.outboxId()), held, "precondition: the competing claim holds A's delivery");
                 relay.drain(5);
-                assertEquals("DONE", state(a.outboxId(), HISTORY));
+                assertEquals("PENDING", state(a.outboxId(), HISTORY),
+                        "the competing claim is not committed: the delivery is in flight, skipped, not published twice");
+                assertFalse(consumer.applied(HISTORY, a.eventId()), "a claimed delivery is not published by this relay");
             } finally {
                 competitor.rollback();   // the competing relay crashed mid-claim; its claim never committed
             }
+        }
+        awaitDelivered(a);
+        assertEquals("DONE", state(a.outboxId(), HISTORY));
+        assertEquals("DONE", state(a.outboxId(), WEBHOOK));
+        assertTrue(consumer.applied(HISTORY, a.eventId()));
+    }
+
+    /**
+     * The settled state of a committed event is DONE on each destination, whichever relay (this test's or the server's
+     * background relay) delivers it; PENDING and CLAIMED are in-flight states of a competing claim and the delivery must
+     * never be PARKED or SKIPPED here. Drives this test's relay until both deliveries settle (at most 30 s).
+     */
+    private void awaitDelivered(Outbox.Appended a) throws InterruptedException {
+        long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
+        while (System.nanoTime() < deadline) {
+            String h = state(a.outboxId(), HISTORY);
+            String w = state(a.outboxId(), WEBHOOK);
+            if ("DONE".equals(h) && "DONE".equals(w)) {
+                return;
+            }
+            for (String s : List.of(h, w)) {
+                assertTrue("DONE".equals(s) || "PENDING".equals(s) || "CLAIMED".equals(s), "delivery of A reached " + s);
+            }
+            relay.drain(5);
+            Thread.sleep(200);
         }
     }
 
