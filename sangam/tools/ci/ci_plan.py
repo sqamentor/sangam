@@ -28,7 +28,8 @@ CHUNKS = {
     "A-contracts": "AuditChainIT,AuthorizationPolicyIT,DialectSchemaIT,E4IdempotencyIT,E5OutboxInboxIT,E7DeleteIT,"
                    "IdempotencyStoreIT,InboxIT,OperationLedgerIT,OutboxRelayIT,TenantQuotaIT,TombstonesIT,"
                    "UtcConversionVendorIT,WebhookRelayIT,WorkApiLedgerIT,UnverifiedPaymentVendorIT,NullBindDialectIT,"
-                   "ExplicitOnlyPermissionDialectIT,MysqlUtf8mb4PatchIT,ServerStartsIT,NowPlusMillisDialectIT",
+                   "ExplicitOnlyPermissionDialectIT,MysqlUtf8mb4PatchIT,ServerStartsIT,NowPlusMillisDialectIT,"
+                   "ValidateAfterMigrateIT",
     "B-engine": "E1CorpusCoverageIT,E10PlatformFitIT,E11GapSetIT,E8DstTimerIT,DecimalVariableIT,FetchLockVerificationIT,"
                 "FlowableMigrationStoreIT,FwtWorkerCompatIT,MultiInstanceCompensationIT,E46ConformanceIT,IfmsPacksIT,"
                 "E3LeaseIT,MiwgConformanceIT,BpmnConstructPortsIT",
