@@ -12,17 +12,17 @@ Model files scanned: 501 (BPMN 226, DMN 271, CMMN 4). Files with an Operaton ext
 
 | Extension | Kind | Model | Used on | Uses | Files |
 |---|---|---|---|---|---|
-| `operaton:field` | element | bpmn | executionListener, extensionElements, taskListener | 7263 | 220 |
-| `operaton:string` | element | bpmn | field | 7093 | 219 |
-| `operaton:class` | attribute | bpmn | businessRuleTask, serviceTask | 1986 | 221 |
+| `operaton:field` | element | bpmn | executionListener, extensionElements, taskListener | 7278 | 220 |
+| `operaton:string` | element | bpmn | field | 7108 | 219 |
+| `operaton:class` | attribute | bpmn | businessRuleTask, serviceTask | 1991 | 221 |
 | `operaton:in` | element | bpmn | extensionElements | 1149 | 137 |
 | `operaton:executionListener` | element | bpmn | extensionElements | 744 | 193 |
-| `operaton:formKey` | attribute | bpmn | startEvent, userTask | 648 | 196 |
-| `operaton:taskListener` | element | bpmn | extensionElements | 611 | 165 |
+| `operaton:formKey` | attribute | bpmn | startEvent, userTask | 653 | 196 |
+| `operaton:taskListener` | element | bpmn | extensionElements | 616 | 165 |
 | `operaton:out` | element | bpmn | extensionElements | 530 | 137 |
 | `operaton:calledElementBinding` | attribute | bpmn | callActivity | 512 | 123 |
 | `operaton:calledElementVersionTag` | attribute | bpmn | callActivity | 512 | 123 |
-| `operaton:candidateGroups` | attribute | bpmn | userTask | 503 | 177 |
+| `operaton:candidateGroups` | attribute | bpmn | userTask | 508 | 177 |
 | `operaton:asyncBefore` | attribute | bpmn | serviceTask | 471 | 168 |
 | `operaton:historyTimeToLive` | attribute | dmn | decision | 271 | 271 |
 | `operaton:versionTag` | attribute | dmn | decision | 271 | 271 |
@@ -57,7 +57,7 @@ Model files scanned: 501 (BPMN 226, DMN 271, CMMN 4). Files with an Operaton ext
 | sangam-compliance | 12 | 249 |
 | sangam-control-plane | 1 | 27 |
 | sangam-onboarding | 1 | 33 |
-| sangam-packs | 482 | 23292 |
+| sangam-packs | 482 | 23342 |
 | sangam-resources | 2 | 35 |
 
 ## Other engine namespaces

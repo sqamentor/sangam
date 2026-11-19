@@ -49,11 +49,16 @@
     "energyRate",
     "entitlementOverride",
     "eraPatientResponsibility",
+    "escalationAmountEntered",
     "estimatedPatientShare",
+    "familyPensionEntered",
     "fundsAvailable",
     "jointApprovalThreshold",
+    "ldAmountEntered",
     "ldRecoverable",
+    "pensionAmountEntered",
     "ppdrThreshold",
+    "retirementGratuityEntered",
     "stateShare"
   ],
   "notMoney": {

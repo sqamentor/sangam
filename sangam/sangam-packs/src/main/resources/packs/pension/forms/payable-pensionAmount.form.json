@@ -1,0 +1,29 @@
+{
+  "key": "pension/payable-pensionAmount",
+  "version": "1.0.4",
+  "pack": "gov.pension",
+  "title": {
+    "en": "Payable pensionAmount: exact value held, rounding rule not configured",
+    "hi": "देय राशि दर्ज करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "pensionAmountEntered",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Payable monthly pension (INR), one of the two whole amounts next to the exact value",
+        "hi": "देय मासिक पेंशन (रुपये)"
+      }
+    }
+  ]
+}

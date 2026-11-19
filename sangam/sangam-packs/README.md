@@ -3,7 +3,7 @@
 
 Owner: WS-PACKS. Base package `org.sangam.packs`. Binding rules: `../ARCHITECTURE.md`. Requirements: `../../SANGAM.md` IX.3-IX.5, IX.8, X.4, GOV-1..12; patterns: `../../spike/GOV-PATTERNS.md` (GP-01..GP-55) and `../../spike/results/PREMIUM-AND-UNIVERSAL-SCOPE.md` (UP-01..UP-22); sector packs: `../../spike/results/SECTOR-WORKFLOWS.md` (SEC-<SECTOR>-nnn).
 
-**Contents:** 148 packs, 207 BPMN processes, 193 DMN decisions, 4 CMMN cases, 620 bilingual (English / Hindi) forms, seed seats and roles per pack, 65 Java source files (SPI, ports, simulator, delegates, workers). All models deploy on Operaton 2.2.0 with XSD validation and history-TTL enforcement on, every call activity resolves, every startable process reaches its first wait state, and the four pilot packs run end to end on the simulator (see "Tests").
+**Contents:** 148 packs, 207 BPMN processes, 193 DMN decisions, 4 CMMN cases, 625 bilingual (English / Hindi) forms, seed seats and roles per pack, 65 Java source files (SPI, ports, simulator, delegates, workers). All models deploy on Operaton 2.2.0 with XSD validation and history-TTL enforcement on, every call activity resolves, every startable process reaches its first wait state, and the four pilot packs run end to end on the simulator (see "Tests").
 
 ## 1. Layout
 

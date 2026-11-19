@@ -61,30 +61,30 @@ class DmnExactMoneyOutputTest {
     void liquidatedDamagesAreExact() {
         // 3 days x 0.05 % of 1,000,000.01 rupees = 150000.0015 paise: not rounded down in DMN
         exact("150000.0015", eval("contract-ld", Map.of("delayDays", 3, "contractValue", 100000001L))
-                .getEntry("ldAmount"), "ldAmount");
+                .getEntry("computedLdAmount"), "computedLdAmount");
     }
 
     @Test
     void priceEscalationIsExact() {
         // (6 - 5) % on 85 % of 1,000,000.01 rupees = 850000.0085 paise
         exact("850000.0085", eval("contract-price-escalation", Map.of("escalationIndex", 6, "amendmentAmount",
-                100000001L, "contractValue", 100000001L)).getEntry("escalationAmount"), "escalationAmount");
+                100000001L, "contractValue", 100000001L)).getEntry("computedEscalationAmount"), "computedEscalationAmount");
     }
 
     @Test
     void pensionFiguresAreExact() {
         DmnDecisionRuleResult r = eval("pension-computation", Map.of("qualifyingService", 20, "lastPay", 5000001L,
                 "averageEmoluments", 4000000L));
-        exact("2500000.5", r.getEntry("pensionAmount"), "pensionAmount (50 % of 50,000.01)");
-        exact("50000010", r.getEntry("retirementGratuity"), "retirementGratuity (1/4 x 40 half-years)");
-        exact("1500000.3", r.getEntry("familyPension"), "familyPension (30 %)");
+        exact("2500000.5", r.getEntry("computedPension"), "pensionAmount (50 % of 50,000.01)");
+        exact("50000010", r.getEntry("computedGratuity"), "retirementGratuity (1/4 x 40 half-years)");
+        exact("1500000.3", r.getEntry("computedFamilyPension"), "familyPension (30 %)");
         DmnDecisionRuleResult g = eval("pension-computation", Map.of("qualifyingService", 9, "lastPay", 3,
                 "averageEmoluments", 3L));
-        exact("27", g.getEntry("retirementGratuity"), "service gratuity: 3 x 0.5 x 18 half-years");
-        exact("900000", g.getEntry("familyPension"), "family pension minimum 9,000 rupees");
+        exact("27", g.getEntry("computedGratuity"), "service gratuity: 3 x 0.5 x 18 half-years");
+        exact("900000", g.getEntry("computedFamilyPension"), "family pension minimum 9,000 rupees");
         DmnDecisionRuleResult h = eval("pension-computation", Map.of("qualifyingService", new BigDecimal("9.75"),
                 "lastPay", 5L, "averageEmoluments", 5L));
-        exact("47.5", h.getEntry("retirementGratuity"), "5 x 0.5 x floor(19.5) = 19 half-years: the count is floored, "
+        exact("47.5", h.getEntry("computedGratuity"), "5 x 0.5 x floor(19.5) = 19 half-years: the count is floored, "
                 + "the money is exact");
     }
 }

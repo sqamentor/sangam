@@ -33,7 +33,10 @@ MONEY_SUFFIXES = ('Amount', 'Amt', 'Fee', 'Fees', 'Price', 'Cost', 'Value', 'Bal
 # money names the suffix rule does not catch
 MONEY_EXTRA = {'energyRate', 'entitlementOverride', 'dividendPerShare', 'estimatedPatientShare', 'centreShare',
                'stateShare', 'fundsAvailable', 'budgetAvailable', 'ldRecoverable', 'eraPatientResponsibility',
-               'jointApprovalThreshold', 'committeeThreshold', 'crilcThreshold', 'ppdrThreshold'}
+               'jointApprovalThreshold', 'committeeThreshold', 'crilcThreshold', 'ppdrThreshold',
+               # reviewer-entered payable amounts of op EXACT (DEC-5)
+               'ldAmountEntered', 'escalationAmountEntered', 'pensionAmountEntered',
+               'retirementGratuityEntered', 'familyPensionEntered'}
 # names the suffix rule catches that are not money (with the unit they are in)
 NOT_MONEY = {
     'leaveBalance': 'days of leave',

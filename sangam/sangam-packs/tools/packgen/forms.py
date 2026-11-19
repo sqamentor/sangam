@@ -197,6 +197,12 @@ L = {
     'qualifyingService': ('Qualifying service (years)', 'अर्हक सेवा (वर्ष)', 'decimal'),
     'lastPay': ('Last pay drawn (INR)', 'अंतिम आहरित वेतन (रुपये)', 'decimal'),
     'pensionAmount': ('Monthly pension (INR)', 'मासिक पेंशन (रुपये)', 'readonly'),
+    # DEC-5: the reviewer's payable amount when the exact figure is not whole minor units (op EXACT)
+    'pensionAmountEntered': ('Payable monthly pension (INR), one of the two whole amounts next to the exact value', 'देय मासिक पेंशन (रुपये)', 'decimal'),
+    'retirementGratuityEntered': ('Payable retirement gratuity (INR), one of the two whole amounts next to the exact value', 'देय सेवानिवृत्ति उपदान (रुपये)', 'decimal'),
+    'familyPensionEntered': ('Payable family pension (INR), one of the two whole amounts next to the exact value', 'देय पारिवारिक पेंशन (रुपये)', 'decimal'),
+    'ldAmountEntered': ('Payable liquidated damages (INR), one of the two whole amounts next to the exact value', 'देय परिनिर्धारित नुकसानी (रुपये)', 'decimal'),
+    'escalationAmountEntered': ('Payable price escalation (INR), one of the two whole amounts next to the exact value', 'देय मूल्य वृद्धि (रुपये)', 'decimal'),
     'ppoNo': ('PPO number', 'पीपीओ संख्या', 'readonly'),
     'objection': ('Objection raised', 'उठाई गई आपत्ति', 'text'),
     'lifeCertificate': ('Life certificate received', 'जीवन प्रमाण पत्र प्राप्त', 'boolean'),

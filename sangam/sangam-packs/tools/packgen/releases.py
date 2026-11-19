@@ -460,6 +460,15 @@ R4_ARCH_JURIS = {
     'universal.up19-contract-lifecycle': ('1.0.2', '1.0.3'),
 }
 
+# Lane dmn-money-hold (DEC-5, M1-M5, C4: DMN never rounds money; op EXACT holds a fractional amount for a person to enter
+# one of the two adjacent whole amounts under the same sanction): contract-amendment (LD, price escalation) and pension
+# sanction (pension, retirement gratuity, family pension) gain the hold and its payable-* forms after ruling R4 put 1.0.3
+# on the integration branch (bce8c0ee). A version that may be deployed is immutable (decision 390 (4)): 1.0.4.
+DMN_MONEY_HOLD = {
+    'gov.contract-management': ('1.0.3', '1.0.4'),
+    'gov.pension': ('1.0.3', '1.0.4'),
+}
+
 def version_of(pack_id, declared):
     """The version a pack ships as: NEXT for a BUMPED pack still declaring the RELEASED version, then the SHIPS bump of
     a pack still at its HELD_AT version; else as declared."""
@@ -470,6 +479,9 @@ def version_of(pack_id, declared):
     if v == held:
         v = ships
     frm, to = R4_ARCH_JURIS.get(pack_id, (None, None))
+    if v == frm:
+        v = to
+    frm, to = DMN_MONEY_HOLD.get(pack_id, (None, None))
     return to if v == frm else v
 
 
