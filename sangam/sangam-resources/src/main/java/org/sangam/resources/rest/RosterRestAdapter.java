@@ -204,7 +204,7 @@ public final class RosterRestAdapter implements RosterRestPort {
 
     @Override
     public VisibleQuery.CappedCount countAssignments(SecurityIdentity actor, String periodId, int cap) {
-        return tx.inTransaction(c -> roster.countAssignments(c, actor, periodId, cap));
+        return tx.read(c -> roster.countAssignments(c, actor, periodId, cap));
     }
 
     @Override

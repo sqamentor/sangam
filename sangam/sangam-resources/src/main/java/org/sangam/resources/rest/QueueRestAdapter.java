@@ -90,7 +90,7 @@ public final class QueueRestAdapter implements QueueRestPort {
         QueueModel.TokenState st = tokenState(state);
         int sz = size <= 0 ? 50 : Math.min(size, 1000);
         int offset = Math.max(page, 0) * sz;
-        return tx.inTransaction(c -> queue.tokens(c, actor, servicePointId, st, offset, sz));
+        return tx.read(c -> queue.tokens(c, actor, servicePointId, st, offset, sz));
     }
 
     @Override

@@ -255,7 +255,7 @@ public final class GeoService {
 
     /** All active features of the layer that contain the point, deepest level first. */
     public List<GeoFeature> containing(String tenantId, String layer, GeoPoint p) {
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             JurisdictionLayer l = requireLayer(c, tenantId, layer);
             List<GeoFeature> cands = load(c, tenantId, index.containingCandidates(c, tenantId, layer, p));
             List<GeoFeature> hits = new ArrayList<>();
@@ -293,7 +293,7 @@ public final class GeoService {
     public List<NearestFeature> nearestFeatures(String tenantId, String layer, GeoPoint p, int n, double maxMeters) {
         int want = Math.max(1, n);
         double cap = maxMeters > 0 ? maxMeters : DEFAULT_MAX_SEARCH_M;
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             requireLayer(c, tenantId, layer);
             List<String> ids = index.nearestCandidates(c, tenantId, layer, p, want);
             List<NearestFeature> ranked;

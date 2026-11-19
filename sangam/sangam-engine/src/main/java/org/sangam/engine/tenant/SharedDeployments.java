@@ -170,7 +170,7 @@ public final class SharedDeployments {
 
     /** The platform-wide registry, ordered by registration time then id; revoked rows only when asked. */
     public List<Registration> list(boolean includeRevoked) {
-        return adapter.inEngineTransaction(c -> Jdbc.query(c, "SELECT " + COLUMNS + " FROM SHARED_DEPLOYMENT"
+        return adapter.inEngineReadTransaction(c -> Jdbc.query(c, "SELECT " + COLUMNS + " FROM SHARED_DEPLOYMENT"
                 + (includeRevoked ? "" : " WHERE revoked_at IS NULL") + " ORDER BY registered_at, deployment_id",
                 SharedDeployments::row));
     }

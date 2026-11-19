@@ -86,7 +86,7 @@ public class EventRegistry {
 
     /** Latest version of every channel in every tenant (adapter start-up). */
     public List<DeployedChannel> allChannels() {
-        return tx.inTransaction(c -> Jdbc.query(c,
+        return tx.read(c -> Jdbc.query(c,
                 "SELECT d.tenant_id, d.version, d.definition FROM EVT_CHANNEL_DEF d WHERE d.state = 'ACTIVE' AND d.version = "
                         + "(SELECT MAX(x.version) FROM EVT_CHANNEL_DEF x WHERE x.tenant_id = d.tenant_id AND x.channel_key = d.channel_key"
                         + " AND x.state = 'ACTIVE')",
@@ -95,7 +95,7 @@ public class EventRegistry {
 
     public List<DeployedEvent> events(String tenantId) {
         String tenant = org.sangam.core.layer.TenantKey.of(tenantId);
-        return tx.inTransaction(c -> Jdbc.query(c,
+        return tx.read(c -> Jdbc.query(c,
                 "SELECT d.version, d.definition FROM EVT_EVENT_DEF d WHERE d.tenant_id = ? AND d.state = 'ACTIVE' AND d.version = "
                         + "(SELECT MAX(x.version) FROM EVT_EVENT_DEF x WHERE x.tenant_id = d.tenant_id AND x.event_key = d.event_key"
                         + " AND x.state = 'ACTIVE')",

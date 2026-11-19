@@ -199,7 +199,7 @@ public final class ConversationService {
      * newest {@code limit} messages, oldest first.
      */
     public List<Message> since(String tenantId, String conversationId, String actor, String afterMessageId, int limit) {
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             requireParticipant(c, tenantId, conversationId, actor);
             Optional<Instant> at = afterMessageId == null ? Optional.empty()
                     : Jdbc.one(c, "SELECT created_at FROM CH_MESSAGE WHERE id=? AND conversation_id=?", rs -> Jdbc.instant(rs, "created_at"), afterMessageId, conversationId);

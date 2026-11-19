@@ -95,7 +95,7 @@ public final class ActionModels {
 
     /** The active actions for an object type that this user may invoke on the object. */
     public List<Action> available(String tenantId, String user, Scope scope, String scopeType, String targetRef, Predicate<Action> extraFilter) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT document FROM MOD_ACTION WHERE tenant_id=? AND active=1 ORDER BY action_key", rs -> Json.MAPPER.convertValue(Json.readMap(rs.getString(1)), Action.class), tenantId))
+        return tx.read(c -> Jdbc.query(c, "SELECT document FROM MOD_ACTION WHERE tenant_id=? AND active=1 ORDER BY action_key", rs -> Json.MAPPER.convertValue(Json.readMap(rs.getString(1)), Action.class), tenantId))
                 .stream().filter(a -> a.scope() == scope && (a.scopeType() == null || a.scopeType().equalsIgnoreCase(scopeType)))
                 .filter(a -> permissions.allowed(tenantId, user, a.permission(), a.scope(), targetRef)).filter(extraFilter).toList();
     }
