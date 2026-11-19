@@ -36,6 +36,7 @@ Bytecode level: the parent pom still sets `maven.compiler.release=21`, so JDK 25
 | Database | Tier | Driver | Shipped? | CI cadence |
 |---|---|---|---|---|
 | PostgreSQL 17 | 1 | pgJDBC 42.7.12 | In fat jar | Every PR, nightly, release |
+| PostgreSQL 18 (new installs only) | 1 candidate | pgJDBC 42.7.12 | In fat jar | **Decision 416**: compose and Helm stay on 17.12 (a major version changes the on-disk format; an existing volume needs `pg_upgrade` or dump and restore). CI lane `postgres18` (image `postgres:18.7`, digest pinned in `tools/ci/ci_plan.py`) runs the acceptance ITs on request through route_build/ci-lanes |
 | Oracle Free 23 | 1 | `ojdbc11` / `ojdbc17` | **No**, customer-supplied (LIC-2) | Affected PRs, nightly, release |
 | SQL Server 2022 (RCSI ON) | 1 | mssql-jdbc 13.6.2 | In fat jar | Affected PRs, nightly, release |
 | SQL Server 2025 (RCSI ON) | 1 candidate | mssql-jdbc 13.6.2 | In fat jar | **Being validated (SG-05)**: its own `db-matrix.yml` lane `sqlserver2025` (image `2025-CU10-ubuntu-24.04`, the same as `AcceptanceDatabase`), nightly and on request, reporting but not gating. It becomes tier 1 once its acceptance run is green |

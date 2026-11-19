@@ -17,7 +17,7 @@ import org.testcontainers.utility.DockerImageName;
 
 /**
  * The one database of an acceptance run, chosen by {@code -Dsangam.db=<postgres|oracle|sqlserver|mysql>} (plus the
- * lanes {@code sqlserver2025}, {@code mariadb} and {@code db2}, see {@link #lane()})
+ * lanes {@code sqlserver2025}, {@code postgres18}, {@code mariadb} and {@code db2}, see {@link #lane()})
  * (or {@code SANGAM_IT_DB}). One container per JVM, started on first use and stopped by Ryuk. The images are the
  * Stage B ones (SANGAM.md XI): PostgreSQL 17, Oracle Database Free 23, SQL Server 2022 (RCSI on), MySQL 8.4 (READ
  * COMMITTED per session, set by the server's mysql profile).
@@ -47,6 +47,7 @@ public final class AcceptanceDatabase {
     static String nameOf(String lane) {
         return switch (lane) {
             case "sqlserver2025" -> "sqlserver";
+            case "postgres18" -> "postgres";
             case "mariadb" -> "mysql";
             default -> lane;
         };
@@ -60,7 +61,7 @@ public final class AcceptanceDatabase {
         }
         if (v == null || v.isBlank()) {
             throw new IllegalStateException(
-                    "acceptance tests need -Dsangam.db=<postgres|oracle|sqlserver|sqlserver2025|mysql|mariadb|db2>");
+                    "acceptance tests need -Dsangam.db=<postgres|postgres18|oracle|sqlserver|sqlserver2025|mysql|mariadb|db2>");
         }
         return v.trim().toLowerCase(Locale.ROOT);
     }
@@ -186,6 +187,10 @@ public final class AcceptanceDatabase {
     private static JdbcDatabaseContainer<?> create(String db) {
         return switch (db) {
             case "postgres" -> new PostgreSQLContainer(DockerImageName.parse("postgres:17"))
+                    .withDatabaseName("sangam").withUsername("sangam").withPassword("sangam");
+            // Decision 416: deployments stay on postgres 17.12; the postgres18 lane tests 18 for new installs (the CI leg
+            // pulls the digest pinned in tools/ci/ci_plan.py and tags it with this name)
+            case "postgres18" -> new PostgreSQLContainer(DockerImageName.parse("postgres:18.7"))
                     .withDatabaseName("sangam").withUsername("sangam").withPassword("sangam");
             case "oracle" -> new OracleContainer(DockerImageName.parse("gvenzl/oracle-free:23-slim-faststart"))
                     .withUsername("sangam").withPassword("sangam").withStartupTimeout(Duration.ofMinutes(5));
