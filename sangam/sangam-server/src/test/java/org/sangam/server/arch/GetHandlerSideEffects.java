@@ -101,6 +101,8 @@ final class GetHandlerSideEffects {
     final Map<M, Set<String>> fieldReads = new HashMap<>();
     /** Raw wiring bindings before resolution: {key, lambda, target "F:owner.name" | "C:class" | "U"}. */
     final List<Object[]> rawBindings = new ArrayList<>();
+    /** Wiring lambdas passed to a call whose class has no field of their type (reviewed by hand). */
+    final List<String> unboundArguments = new ArrayList<>();
     final Set<M> beanMethods = new HashSet<>();
     final Set<M> sources = new LinkedHashSet<>();
     private final Map<Call, Set<M>> classTargets = new HashMap<>();
@@ -136,8 +138,10 @@ final class GetHandlerSideEffects {
     record Hit(String sink, M site, List<M> path) {
     }
 
-    /** How deep below its creator a lambda's interface call is looked for (tx helpers sit 1-4 frames down). */
-    static final int LAMBDA_DEPTH = 8;
+    /** How deep below its creator a lambda's interface call is looked for (tx helpers sit 1-3 frames down). */
+    static final int LAMBDA_DEPTH = 4;
+    /** Calls with more targets than this are not followed when looking for a lambda call (megamorphic). */
+    static final int LAMBDA_FANOUT = 16;
 
     private Map<M, Set<M>> lambdaEdges;
     private final Map<M, Set<String>> invokedBelow = new HashMap<>();
@@ -158,7 +162,11 @@ final class GetHandlerSideEffects {
                     for (String sub : allSubtypes(c.owner())) {
                         keys.add(sub + "." + c.name());
                     }
-                    for (M t : classTargets.computeIfAbsent(c, this::classDispatch)) {
+                    Set<M> ts = classTargets.computeIfAbsent(c, this::classDispatch);
+                    if (ts.size() > LAMBDA_FANOUT) {
+                        continue;
+                    }
+                    for (M t : ts) {
                         if (seen.add(t)) {
                             next.add(t);
                         }
@@ -367,8 +375,11 @@ final class GetHandlerSideEffects {
                     });
                 }
             }
-            if (fields.isEmpty()) {
+            if (fields.isEmpty() && "U".equals(target)) {
                 wiringLambdas.computeIfAbsent(key, x -> new HashSet<>()).add(lam);
+            } else if (fields.isEmpty()) {
+                // passed to a call with no field of its type: run while wiring; listed for review
+                unboundArguments.add(lam + " passed to " + target.substring(2));
             }
             for (String f : fields) {
                 fieldLambdas.computeIfAbsent(f, x -> new HashMap<>()).computeIfAbsent(key, x -> new HashSet<>()).add(lam);
@@ -451,7 +462,7 @@ final class GetHandlerSideEffects {
                               String[] interfaces) {
                 owner = name;
                 String simple = name.substring(name.lastIndexOf('/') + 1).split("\\$")[0];
-                if (simple.endsWith("Wiring") || simple.contains("Config") || simple.endsWith("Configuration")) {
+                if (simple.endsWith("Wiring")) { // @Configuration classes are added from the annotation
                     configClasses.add(name);
                 }
                 if (superName != null) {

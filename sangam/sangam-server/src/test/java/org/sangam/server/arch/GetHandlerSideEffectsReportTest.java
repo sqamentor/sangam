@@ -30,5 +30,7 @@ class GetHandlerSideEffectsReportTest {
                 byHandler.add(h + "	" + String.join(" | ", new java.util.TreeSet<>(
                         hits.stream().map(x -> x.sink() + " @ " + x.site()).toList()))));
         GetHandlerSideEffects.writeReport(Path.of("target/get-handler-side-effects-by-handler.tsv"), byHandler);
+        GetHandlerSideEffects.writeReport(Path.of("target/get-handler-unbound-wiring-lambdas.txt"),
+                new java.util.ArrayList<>(new java.util.TreeSet<>(g.unboundArguments)));
     }
 }

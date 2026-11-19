@@ -578,7 +578,7 @@ public final class BulkIngest {
 
     public Job job(String tenant, String jobId) {
         requireTenant(tenant);
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             Job j = Jdbc.one(c, "SELECT id, tenant_id, object_type, state, expected_chunks, chunk_count, total_rows, created_by, created_at,"
                             + " closed_at, completed_at FROM OPS_BULK_JOB WHERE id = ? AND tenant_id = ?",
                     rs -> new Job(rs.getString(1), rs.getString(2), rs.getString(3), JobState.valueOf(rs.getString(4)),
@@ -613,7 +613,7 @@ public final class BulkIngest {
         }
         Object[] params = p.toArray();
         List<String> ids = new ArrayList<>();
-        long total = tx.inTransaction(c -> {
+        long total = tx.read(c -> {
             ids.addAll(Jdbc.query(c, "SELECT id FROM OPS_BULK_JOB WHERE " + where + " ORDER BY created_at DESC, id" + window(offset, limit),
                     rs -> rs.getString(1), params));
             return Jdbc.one(c, "SELECT COUNT(*) FROM OPS_BULK_JOB WHERE " + where, rs -> rs.getLong(1), params).orElse(0L);
@@ -624,7 +624,7 @@ public final class BulkIngest {
     /** Per-row status of a job of the tenant, in upload order, optionally by state. */
     public Slice<RowStatus> rows(String tenant, String jobId, RowState stateOrNull, int offset, int limit) {
         requireTenant(tenant);
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             jobRow(c, tenant, jobId);
             String where = "job_id = ?" + (stateOrNull == null ? "" : " AND state = ?");
             Object[] params = stateOrNull == null ? new Object[]{jobId} : new Object[]{jobId, stateOrNull.name()};

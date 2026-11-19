@@ -71,7 +71,7 @@ public final class JdbcDscCertificateEnrolments implements DscCertificateEnrolme
         if (tenantId == null || enrolmentId == null) {
             return Optional.empty();
         }
-        return tx.inTransaction(c -> Jdbc.one(c, "SELECT " + COLUMNS + " FROM " + TABLE
+        return tx.read(c -> Jdbc.one(c, "SELECT " + COLUMNS + " FROM " + TABLE
                 + " WHERE tenant_id = ? AND enrolment_id = ?", JdbcDscCertificateEnrolments::row, tenantId, enrolmentId));
     }
 

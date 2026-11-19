@@ -82,7 +82,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public List<Resource> search(SecurityIdentity actor, Resource.Query query) {
-        return tx.inTransaction(c -> catalogue.search(c, actor, query));
+        return tx.read(c -> catalogue.search(c, actor, query));
     }
 
     @Override
@@ -194,7 +194,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
     @Override
     public List<BookingModel.Booking> bookings(SecurityIdentity actor, String resourceId, String requesterId, String state,
                                                Instant from, Instant to, boolean mine, int page, int size) {
-        return tx.inTransaction(c -> bookings.list(c, actor, resourceId, requesterId,
+        return tx.read(c -> bookings.list(c, actor, resourceId, requesterId,
                 state == null ? null : BookingModel.State.valueOf(state), from, to, mine, offset(page, size), size(size)));
     }
 
@@ -257,7 +257,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
 
     @Override
     public List<BookingModel.WaitlistEntry> waitlist(SecurityIdentity actor, String scopeKey, String state, int page, int size) {
-        return tx.inTransaction(c -> waitlist.list(c, actor, scopeKey,
+        return tx.read(c -> waitlist.list(c, actor, scopeKey,
                 state == null ? null : BookingModel.WaitState.valueOf(state), offset(page, size), size(size)));
     }
 
@@ -314,7 +314,7 @@ public final class ResourcesRestAdapter implements ResourcesRestPort {
     @Override
     public List<BookingModel.Allotment> allotments(SecurityIdentity actor, String resourceId, String holderId, String state,
                                                    int page, int size) {
-        return tx.inTransaction(c -> allotments.list(c, actor, resourceId, holderId,
+        return tx.read(c -> allotments.list(c, actor, resourceId, holderId,
                 state == null ? null : BookingModel.AllotState.valueOf(state), offset(page, size), size(size)));
     }
 
