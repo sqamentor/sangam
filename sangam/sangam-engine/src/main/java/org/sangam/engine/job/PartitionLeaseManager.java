@@ -469,14 +469,22 @@ public final class PartitionLeaseManager {
         int total = 0;
         while (true) {
             List<String[]> loops = new ArrayList<>();
+            int[] recoveredNow = {0};
             int n = tx(conn -> {
                 List<String[]> jobs = Jdbc.query(conn, d.skipLockedSelect("j.ID_, j.EXECUTION_ID_", "ACT_RU_JOB", "j",
                                 "j.LOCK_OWNER_ IS NOT NULL AND EXISTS (SELECT 1 FROM EXEC_JOB_SLOT s WHERE s.job_id = j.ID_"
                                         + " AND s.owner_partition = ? AND s.owner_epoch < ?)", "j.ID_", c.recoveryBatch()),
                         rs -> new String[]{rs.getString(1), rs.getString(2)}, p, newEpoch);
+                int recovered = 0;
                 for (String[] job : jobs) {
-                    Jdbc.update(conn, "UPDATE EXEC_JOB_SLOT SET owner_partition = NULL, owner_epoch = NULL,"
-                            + " recoveries = recoveries + 1 WHERE job_id = ?", job[0]);
+                    // fenced on the select's ownership predicate: on Oracle the skip-locked select can return a job that
+                    // was recovered and acquired again (new owner epoch) after its snapshot; that live lock is not cleared
+                    if (Jdbc.update(conn, "UPDATE EXEC_JOB_SLOT SET owner_partition = NULL, owner_epoch = NULL,"
+                            + " recoveries = recoveries + 1 WHERE job_id = ? AND owner_partition = ? AND owner_epoch < ?",
+                            job[0], p, newEpoch) != 1) {
+                        continue;
+                    }
+                    recovered++;
                     int recoveries = Jdbc.one(conn, "SELECT recoveries FROM EXEC_JOB_SLOT WHERE job_id = ?",
                             rs -> rs.getInt(1), job[0]).orElse(0);
                     boolean loop = recoveries > c.maxRecoveries();
@@ -487,9 +495,10 @@ public final class PartitionLeaseManager {
                         loops.add(new String[]{job[0], job[1], Integer.toString(recoveries)});
                     }
                 }
+                recoveredNow[0] = recovered;
                 return jobs.size();
             });
-            total += n;
+            total += recoveredNow[0];
             for (String[] l : loops) {
                 LOG.warn("M-056: job {} recovered {} times (> {}): parked, incident {}", l[0], l[2], c.maxRecoveries(),
                         RECOVERY_LOOP);

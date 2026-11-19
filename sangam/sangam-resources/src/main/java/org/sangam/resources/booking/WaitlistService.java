@@ -210,7 +210,11 @@ public final class WaitlistService implements BookingService.WaitlistSink {
                     "w.tenant_id=? AND w.scope_key=? AND w.state='WAITING' AND w.wanted_from IS NOT NULL AND w.wanted_to IS NOT NULL"
                             + " AND w.wanted_from >= ? AND w.wanted_to <= ?",
                     "w.priority_level, w.priority_score, w.created_at", batch);
-            for (WaitlistEntry e : Jdbc.query(c, sql, WaitlistService::map, t, scope, from, to)) {
+            for (WaitlistEntry candidate : Jdbc.query(c, sql, WaitlistService::map, t, scope, from, to)) {
+                WaitlistEntry e = stillWaiting(c, candidate);
+                if (e == null) {
+                    continue;
+                }
                 BookingModel.HoldRequest req = new BookingModel.HoldRequest(resourceId, e.wantedFrom(), e.wantedTo(),
                         e.quantity(), e.requesterId(), e.beneficiaryId(), null, "waitlist offer", e.category(),
                         e.priorityLevel(), e.attributes(), null, false, null, null, false, offerMinutes);
@@ -264,7 +268,11 @@ public final class WaitlistService implements BookingService.WaitlistSink {
         String sql = ctx.dialect().skipLockedSelect(qualified("w"), "RES_WAITLIST", "w",
                 "w.tenant_id=? AND w.scope_key=? AND w.state='WAITING'", "w.priority_level, w.priority_score, w.created_at",
                 ctx.setting("waitlistPromotionBatch", 10));
-        for (WaitlistEntry e : Jdbc.query(c, sql, WaitlistService::map, t, scopeKey)) {
+        for (WaitlistEntry candidate : Jdbc.query(c, sql, WaitlistService::map, t, scopeKey)) {
+            WaitlistEntry e = stillWaiting(c, candidate);
+            if (e == null) {
+                continue;
+            }
             Instant validFrom = e.wantedFrom() != null && e.wantedFrom().isAfter(from) ? e.wantedFrom() : from;
             Instant validTo = e.wantedTo() != null ? e.wantedTo() : to;
             String target = resourceId;
@@ -370,6 +378,16 @@ public final class WaitlistService implements BookingService.WaitlistSink {
     private WaitlistEntry lock(Connection c, String t, String id) {
         return Jdbc.one(c, ctx.dialect().lockingSelect(COLS, "RES_WAITLIST", "tenant_id=? AND entry_id=?"),
                 WaitlistService::map, t, id).orElseThrow(() -> ResourcesException.notFound("waitlist entry", id));
+    }
+
+    /**
+     * The committed entry while it is still WAITING, else null. The skip-locked select locked the row, but on Oracle it
+     * can return an entry another node offered or allotted after the select's snapshot; that entrant is not offered or
+     * allotted a second time.
+     */
+    private WaitlistEntry stillWaiting(Connection c, WaitlistEntry candidate) {
+        WaitlistEntry e = find(c, candidate.tenantId(), candidate.entryId()).orElse(null);
+        return e != null && e.state() == WaitState.WAITING ? e : null;
     }
 
     private void setState(Connection c, WaitlistEntry e, WaitState s, String bookingId, String allotmentId, Instant offerExpires) {
