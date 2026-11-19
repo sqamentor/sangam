@@ -170,11 +170,9 @@ class Images(unittest.TestCase):
 
     # RM-33 ratchet: the third-party images still without a digest. Each needs a registry lookup (Phase C, decision
     # 96: no download now); the list may only shrink, and a new unpinned image fails here.
-    UNPINNED = {
-        (".github/workflows/db-matrix.yml", "mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04"),
-        (".github/workflows/db-matrix.yml", "mariadb:11.4"),
-        (".github/workflows/db-matrix.yml", "icr.io/db2_community/db2:12.1.2.0"),
-    }
+    # 2026-11-19 (fix/release-gates): the last three (db-matrix sqlserver2025, mariadb, db2) are pinned from the
+    # registry v2 manifest API; the set is empty and must stay empty.
+    UNPINNED = set()
 
     def test_rm33_the_repository_has_only_the_listed_unpinned_images(self):
         paths = [os.path.join(REPO, p) for p in ("sangam/deploy/airgap/images.txt", "sangam/deploy/docker",
@@ -198,6 +196,10 @@ class Images(unittest.TestCase):
         pins = re.findall(r"SANGAM_IT_IMAGE_(\w+): (\S+)@sha256:[0-9a-f]{64}", wf)
         self.assertGreaterEqual(len(pins), 4)
         for db, name in pins:
+            if db == "DB2":
+                # SL-112: AcceptanceDatabase refuses the db2 lane before it asks Testcontainers for any image
+                self.assertIn('case "db2" -> throw db2Refusal(', java)
+                continue
             self.assertIn(f'"{name}"', java, f"{db}: {name} is not an image AcceptanceDatabase uses")
         self.assertIn('docker tag "$ref" "${ref%@sha256:*}"', wf)
 

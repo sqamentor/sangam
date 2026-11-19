@@ -131,5 +131,133 @@ class RequiredChecks(unittest.TestCase):
                 self.assertIn(f"sbom-match-{d['id']}", release, d["id"])
 
 
+NVD = "SSM parameter /shared/security/nvd-api-key not readable"
+
+
+class DependencyCheckWaiver(unittest.TestCase):
+    """Decision 417: dependency-check may be WAIVED (never PASS) for tag v0.1.0 only, only when it is BLOCKED because
+    the NVD key is missing, and only while image-vuln-scan (Grype) and codeql are PASS."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = os.path.join(self.tmp.name, "results")
+        os.makedirs(self.dir)
+        os.environ.pop("GITHUB_STEP_SUMMARY", None)
+        self.spec = os.path.join(HERE, "release-checks.json")
+        self.out = os.path.join(self.tmp.name, "gate.json")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def put(self, check, status, reason=None):
+        with open(os.path.join(self.dir, check + ".json"), "w", encoding="utf-8") as f:
+            json.dump({"check": check, "status": status, "reason": reason}, f)
+
+    def ledger(self, dc=("BLOCKED", NVD), grype="PASS", codeql="PASS", other=None):
+        with open(self.spec, encoding="utf-8") as f:
+            release = json.load(f)["release"]
+        for c in release:
+            self.put(c, "PASS")
+        self.put("dependency-check", *dc)
+        self.put("image-vuln-scan", grype)
+        self.put("codeql", codeql)
+        if other:
+            self.put(*other)
+
+    def gate(self, tag):
+        return rl.main(["gate", "--required", self.spec, "--mode", "release", "--set", "release",
+                        "--ledger-dir", self.dir, "--out", self.out, "--tag", tag])
+
+    def test_spec_names_the_waiver_and_codeql(self):
+        with open(self.spec, encoding="utf-8") as f:
+            spec = json.load(f)
+        self.assertIn("codeql", spec["release"])
+        self.assertIn("image-vuln-scan", spec["release"])
+        [w] = rl.load_waivers(spec)
+        self.assertEqual((w["check"], w["tag"], w["decision"], w["status"]), ("dependency-check", "v0.1.0", 417, "BLOCKED"))
+        self.assertEqual(w["reasons"], [NVD])
+        self.assertEqual(sorted(w["requires_pass"]), ["codeql", "image-vuln-scan"])
+
+    def test_v010_blocked_by_missing_key_is_waived_never_pass(self):
+        self.ledger()
+        self.assertEqual(self.gate("v0.1.0"), 0)
+        with open(self.out, encoding="utf-8") as f:
+            row = [c for c in json.load(f)["checks"] if c["check"] == "dependency-check"][0]
+        self.assertEqual((row["status"], row["verdict"]), ("BLOCKED", "WAIVED"))
+
+    def test_no_waiver_for_another_tag(self):
+        self.ledger()
+        for tag in ("v0.1.1", "v0.2.0", "v0.1.0-rc1", "0.1.0", ""):
+            self.assertEqual(self.gate(tag), 1, tag)
+
+    def test_no_waiver_for_another_check(self):
+        self.ledger(dc=("PASS", None), other=("semgrep", "BLOCKED", NVD))
+        self.assertEqual(self.gate("v0.1.0"), 1)
+        self.ledger(other=("secret-scan", "BLOCKED", NVD))
+        self.assertEqual(self.gate("v0.1.0"), 1)
+
+    def test_a_real_fail_is_never_waived(self):
+        self.ledger(dc=("FAIL", NVD))
+        self.assertEqual(self.gate("v0.1.0"), 1)
+
+    def test_other_blocked_reasons_are_not_waived(self):
+        for reason in ("SSM parameter /shared/security/nvd-api-key empty", "no GitHub OIDC token for this run", None):
+            self.ledger(dc=("BLOCKED", reason))
+            self.assertEqual(self.gate("v0.1.0"), 1, reason)
+
+    def test_no_waiver_unless_grype_and_codeql_pass(self):
+        for grype, codeql in (("FAIL", "PASS"), ("BLOCKED", "PASS"), ("PASS", "FAIL"), ("PASS", "NOT-RUN")):
+            self.ledger(grype=grype, codeql=codeql)
+            self.assertEqual(self.gate("v0.1.0"), 1, (grype, codeql))
+        self.ledger()
+        os.remove(os.path.join(self.dir, "codeql.json"))
+        self.assertEqual(self.gate("v0.1.0"), 1, "codeql line missing")
+
+    # the release gate's "every upstream job succeeded" step
+    def jobs(self, tag, security="failure", failed=("OWASP Dependency-Check",), causes=("dependency-check",),
+             others=None):
+        needs = {k: {"result": "success"} for k in ("meta", "build", "images", "chart", "db-matrix", "governance")}
+        needs["security"] = {"result": security}
+        needs.update(others or {})
+        names = ["CodeQL java-kotlin", "CodeQL javascript-typescript", "OWASP Dependency-Check", "Semgrep", "Gitleaks"]
+        run = {"jobs": [{"name": f"security / {n}", "conclusion": "failure" if n in failed else "success"}
+                        for n in names] + [{"name": "build", "conclusion": "success"}]}
+        rj = os.path.join(self.tmp.name, "jobs.json")
+        with open(rj, "w", encoding="utf-8") as f:
+            json.dump(run, f)
+        cd = os.path.join(self.tmp.name, "causes")
+        os.makedirs(cd, exist_ok=True)
+        for n in os.listdir(cd):
+            os.remove(os.path.join(cd, n))
+        for i, c in enumerate(causes):
+            with open(os.path.join(cd, f"c{i}.json"), "w", encoding="utf-8") as f:
+                json.dump({"workflow": "security", "check": c}, f)
+        return rl.main(["jobs", "--required", self.spec, "--needs-json", json.dumps(needs), "--run-jobs", rj,
+                        "--exit-cause-dir", cd, "--ledger-dir", self.dir, "--tag", tag])
+
+    def test_jobs_accepts_security_failed_only_by_the_waived_check(self):
+        self.ledger()
+        self.assertEqual(self.jobs("v0.1.0"), 0)
+        self.assertEqual(self.jobs("v0.1.0", security="success", failed=(), causes=()), 0)
+
+    def test_jobs_refuses_another_tag_or_another_failure(self):
+        self.ledger()
+        self.assertEqual(self.jobs("v0.1.1"), 1)
+        self.assertEqual(self.jobs("v0.1.0", failed=("OWASP Dependency-Check", "Semgrep")), 1)
+        self.assertEqual(self.jobs("v0.1.0", failed=("Semgrep",)), 1)
+        self.assertEqual(self.jobs("v0.1.0", causes=()), 1, "no recorded exit cause")
+        self.assertEqual(self.jobs("v0.1.0", causes=("dependency-check", "semgrep")), 1)
+        self.assertEqual(self.jobs("v0.1.0", security="cancelled"), 1)
+        self.assertEqual(self.jobs("v0.1.0", others={"build": {"result": "failure"}}), 1)
+
+    def test_jobs_refuses_when_the_ledger_waiver_does_not_hold(self):
+        self.ledger(dc=("FAIL", NVD))
+        self.assertEqual(self.jobs("v0.1.0"), 1)
+        self.ledger(codeql="FAIL")
+        self.assertEqual(self.jobs("v0.1.0"), 1)
+        self.ledger(grype="BLOCKED")
+        self.assertEqual(self.jobs("v0.1.0"), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
