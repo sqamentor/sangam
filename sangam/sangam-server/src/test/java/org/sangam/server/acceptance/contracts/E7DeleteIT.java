@@ -192,8 +192,7 @@ class E7DeleteIT extends ContractSupport {
         Rest del = restDelete(pid, "technical delete");
         assertEquals(200, del.status(), del.body());
         Thread.sleep(800);                                    // the tombstone lease end is on the DB clock
-        int swept = inEngineTx(tombstones::sweepExpiredLeases);
-        assertEquals(1, swept);
+        awaitSweptToUnknownOutcome(lw.work().id());           // by this sweep or the server's lifecycle maintenance
         Tombstones.Tombstone ts = inEngineTx(c -> tombstones.find(c, T, lw.work().id()).orElseThrow());
         assertEquals(Tombstones.State.UNKNOWN_OUTCOME, ts.state());
         List<ReconciliationQueue.Item> open = inEngineTx(c -> reconciliation.listOpen(c, T)).stream()
@@ -225,9 +224,30 @@ class E7DeleteIT extends ContractSupport {
         Rest del = restDelete(pid, "technical delete");
         assertEquals(200, del.status(), del.body());
         Thread.sleep(800);
-        inEngineTx(tombstones::sweepExpiredLeases);          // the server's lifecycle maintenance sweeps first
-        int swept = inEngineTx(tombstones::sweepExpiredLeases);
-        assertEquals(1, swept);
+        awaitSweptToUnknownOutcome(lw.work().id());           // the server's lifecycle maintenance sweeps first
+        assertEquals(0, (int) inEngineTx(tombstones::sweepExpiredLeases), "a swept tombstone is never swept twice");
+        long items = inEngineTx(c -> reconciliation.listOpen(c, T)).stream()
+                .filter(i -> intent.operationId().equals(i.operationId())).count();
+        assertEquals(1, items, "exactly one UNKNOWN_OUTCOME item, whoever swept");
+        assertTrue(deleted(pid));
+    }
+
+    /**
+     * The settled state of an expired tombstoned lease is UNKNOWN_OUTCOME, whichever sweep (this test's or the server's
+     * lifecycle maintenance) gets it; CANCEL_REQUESTED is the only state before. Sweeps until settled (at most 30 s).
+     */
+    private void awaitSweptToUnknownOutcome(String taskId) throws InterruptedException {
+        long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
+        while (true) {
+            Tombstones.State s = inEngineTx(c -> tombstones.find(c, T, taskId).orElseThrow()).state();
+            if (s == Tombstones.State.UNKNOWN_OUTCOME) {
+                return;
+            }
+            assertEquals(Tombstones.State.CANCEL_REQUESTED, s, "tombstone reached " + s);
+            assertTrue(System.nanoTime() < deadline, "tombstone never swept to UNKNOWN_OUTCOME");
+            inEngineTx(tombstones::sweepExpiredLeases);
+            Thread.sleep(200);
+        }
     }
 
     @Test
