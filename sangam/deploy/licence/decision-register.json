@@ -1352,7 +1352,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.json/json@20251224": {
+  "pkg:maven/org.json/json@20260719": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "server"
@@ -2246,7 +2246,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:maven/redis.clients/jedis@7.5.3": {
+  "pkg:maven/redis.clients/jedis@8.0.2": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "server"
