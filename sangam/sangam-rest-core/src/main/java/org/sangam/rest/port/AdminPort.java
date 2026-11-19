@@ -196,6 +196,28 @@ public interface AdminPort {
 
     void deleteOrgUnit(RequestContext ctx, String id, String reason);
 
+    /**
+     * The org level types of a tenant, top first (AJ-02, {@code SEC_ORG_LEVEL}); an org unit's {@code level} must be one of
+     * them. {@code tenantId} is optional on a request and, when given, must be the caller's own tenant.
+     */
+    record OrgLevels(String tenantId, List<String> levels) {
+    }
+
+    /** {@code GET /api/v1/admin/org-levels}: the caller's tenant's level types (empty when none are defined). */
+    default OrgLevels orgLevels(RequestContext ctx) {
+        throw ApiProblem.notInstalled("org levels", "sangam-security");
+    }
+
+    /**
+     * {@code PUT /api/v1/admin/org-levels} (EV-M-0923): a tenant administrator defines its own tenant's level types,
+     * top first (TENANT_CONFIGURED). Idempotent: the same list again changes nothing and records nothing; a different
+     * list is refused with {@code 409 LEVELS_IN_USE} once an org unit exists (the levels are then fixed). Another
+     * tenant's levels are never written ({@code 403 TENANT_MISMATCH}).
+     */
+    default OrgLevels defineOrgLevels(RequestContext ctx, OrgLevels levels) {
+        throw ApiProblem.notInstalled("org levels", "sangam-security");
+    }
+
     Page<Seat> seats(RequestContext ctx, AdminFilter filter, Page.PageRequest page);
 
     Seat seat(RequestContext ctx, String id);

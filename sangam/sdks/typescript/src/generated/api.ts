@@ -564,7 +564,7 @@ export class AIApi {
   }
 }
 
-/** Typed operations of `Admin` (32 operations). */
+/** Typed operations of `Admin` (34 operations). */
 export class AdminApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -891,6 +891,31 @@ export class AdminApi {
     const req: ApiRequest = { method: 'PUT', path: `/admin/roles/by-role-id`, query: { roleId: params?.roleId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.RoleDefinition>(req, options);
+  }
+
+  /**
+   * Org level types
+   *
+   * The caller's tenant's org level types, top first (AJ-02); empty when none are defined.
+   *
+   * `GET /admin/org-levels` (operationId `getOrgLevels`); permission `admin.read`.
+   */
+  async getOrgLevels(options?: RequestOptions): Promise<M.OrgLevels> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/org-levels` };
+    return this.calls.json<M.OrgLevels>(req, options);
+  }
+
+  /**
+   * Define org level types
+   *
+   * A tenant administrator defines its own tenant's org level types, top first (EV-M-0923; ADMIN on ORG_UNIT; TENANT_CONFIGURED). Idempotent: the same list again changes nothing and records nothing. A different list is refused with 409 LEVELS_IN_USE once an org unit exists; another tenant's levels with 403 TENANT_MISMATCH.
+   *
+   * `PUT /admin/org-levels` (operationId `defineOrgLevels`); permission `admin.write`; result stored atomically with the state change.
+   */
+  async defineOrgLevels(body: M.OrgLevels, options?: RequestOptions): Promise<M.OrgLevels> {
+    const req: ApiRequest = { method: 'PUT', path: `/admin/org-levels` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.OrgLevels>(req, options);
   }
 
   /**
@@ -15257,7 +15282,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1180 operations on 992 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1182 operations on 993 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;

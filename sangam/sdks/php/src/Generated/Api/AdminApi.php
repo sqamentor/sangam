@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Admin (32 operations). */
+/** Typed operations of Admin (34 operations). */
 final class AdminApi
 {
     public function __construct(private readonly Calls $calls)
@@ -518,6 +518,38 @@ final class AdminApi
             $req->body($body);
         }
         return $this->calls->model($req, $options, Model\RoleDefinition::class);
+    }
+
+    /**
+     * Org level types
+     *
+     * The caller's tenant's org level types, top first (AJ-02); empty when none are defined.
+     *
+     * GET /admin/org-levels (operationId getOrgLevels); permission admin.read.
+     * @return Model\OrgLevels|null
+     */
+    public function getOrgLevels(?RequestOptions $options = null): ?Model\OrgLevels
+    {
+        $req = ApiRequest::get('/admin/org-levels');
+        return $this->calls->model($req, $options, Model\OrgLevels::class);
+    }
+
+    /**
+     * Define org level types
+     *
+     * A tenant administrator defines its own tenant's org level types, top first (EV-M-0923; ADMIN on ORG_UNIT; TENANT_CONFIGURED). Idempotent: the same list again changes nothing and records nothing. A different list is refused with 409 LEVELS_IN_USE once an org unit exists; another tenant's levels with 403 TENANT_MISMATCH.
+     *
+     * PUT /admin/org-levels (operationId defineOrgLevels); permission admin.write; result stored atomically with the state change.
+     * @param Model\OrgLevels|array $body request body
+     * @return Model\OrgLevels|null
+     */
+    public function defineOrgLevels(Model\OrgLevels|array $body, ?RequestOptions $options = null): ?Model\OrgLevels
+    {
+        $req = ApiRequest::put('/admin/org-levels');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\OrgLevels::class);
     }
 
     /**

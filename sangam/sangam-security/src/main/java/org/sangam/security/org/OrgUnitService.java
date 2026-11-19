@@ -40,10 +40,16 @@ public final class OrgUnitService {
         this.audit = audit;
     }
 
-    /** Defines the tenant's level types in order (1 = top). Replaces an earlier definition only while no unit uses it. */
+    /**
+     * Defines the tenant's level types in order (1 = top). Replaces an earlier definition only while no unit uses it.
+     * The same list again is a no-op (no write, no event), so a repeated definition is safe once units exist.
+     */
     public void defineLevels(Connection c, SecurityIdentity actor, List<String> levelTypes) {
         authz.require(c, actor, ResourceRegistry.ORG_UNIT, Permission.ADMIN, ResourceRegistry.ANY_ID);
         String t = actor.tenantId();
+        if (levels(c, t).equals(levelTypes)) {
+            return;
+        }
         long used = Jdbc.one(c, "SELECT COUNT(*) FROM SEC_ORG_UNIT WHERE tenant_id=?", rs -> rs.getLong(1), t).orElse(0L);
         if (used > 0) {
             throw new SangamSecurityException.AdminConflict("LEVELS_IN_USE", "level types are fixed once units exist");

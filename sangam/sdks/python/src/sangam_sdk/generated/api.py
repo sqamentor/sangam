@@ -541,7 +541,7 @@ class AIApi:
         return cast("dict[str, Any]", self._c.json(req, options))
 
 class AdminApi:
-    """``Admin`` (32 operations)."""
+    """``Admin`` (34 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -818,6 +818,27 @@ class AdminApi:
         req = ApiRequest("PUT", f"/admin/roles/by-role-id", query={"roleId": role_id})
         req.body = body
         return cast("M.RoleDefinition", self._c.json(req, options))
+
+    def get_org_levels(self, *, options: Optional[RequestOptions] = None) -> M.OrgLevels:
+        """Org level types
+
+        The caller's tenant's org level types, top first (AJ-02); empty when none are defined.
+
+        ``GET /admin/org-levels`` (operationId ``getOrgLevels``); permission ``admin.read``.
+        """
+        req = ApiRequest("GET", f"/admin/org-levels")
+        return cast("M.OrgLevels", self._c.json(req, options))
+
+    def define_org_levels(self, body: M.OrgLevels, *, options: Optional[RequestOptions] = None) -> M.OrgLevels:
+        """Define org level types
+
+        A tenant administrator defines its own tenant's org level types, top first (EV-M-0923; ADMIN on ORG_UNIT; TENANT_CONFIGURED). Idempotent: the same list again changes nothing and records nothing. A different list is refused with 409 LEVELS_IN_USE once an org unit exists; another tenant's levels with 403 TENANT_MISMATCH.
+
+        ``PUT /admin/org-levels`` (operationId ``defineOrgLevels``); permission ``admin.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("PUT", f"/admin/org-levels")
+        req.body = body
+        return cast("M.OrgLevels", self._c.json(req, options))
 
     def list_service_principals(self, *, options: Optional[RequestOptions] = None) -> list[M.ServicePrincipal]:
         """Service principals
@@ -13033,7 +13054,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1180 operations on 992 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1182 operations on 993 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)

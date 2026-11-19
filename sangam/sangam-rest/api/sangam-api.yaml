@@ -13516,6 +13516,86 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
+  /admin/org-levels:
+    get:
+      operationId: getOrgLevels
+      tags:
+      - Admin
+      summary: Org level types
+      description: The caller's tenant's org level types, top first (AJ-02); empty when none are defined.
+      x-sangam-permission: admin.read
+      x-sangam-requirements:
+      - IX.5
+      - R19
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgLevels'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+    put:
+      operationId: defineOrgLevels
+      tags:
+      - Admin
+      summary: Define org level types
+      description: 'A tenant administrator defines its own tenant''s org level types, top first (EV-M-0923; ADMIN on ORG_UNIT; TENANT_CONFIGURED).
+        Idempotent: the same list again changes nothing and records nothing. A different list is refused with 409 LEVELS_IN_USE once an org unit
+        exists; another tenant''s levels with 403 TENANT_MISMATCH.'
+      x-sangam-command-type: admin.orglevels.define
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: admin.write
+      x-sangam-requirements:
+      - IX.5
+      - R19
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgLevels'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgLevels'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /admin/service-principals:
     get:
       operationId: listServicePrincipals
@@ -65218,6 +65298,19 @@ components:
             $ref: '#/components/schemas/RoleRule'
       required:
       - name
+    OrgLevels:
+      type: object
+      description: The org level types of a tenant, top first (AJ-02, SEC_ORG_LEVEL); an org unit's level must be one of them. tenantId is optional
+        on a request and, when given, must be the caller's own tenant.
+      properties:
+        tenantId:
+          type: string
+        levels:
+          type: array
+          items:
+            type: string
+      required:
+      - levels
     OrgUnitImportResult:
       type: object
       description: 'Bulk org-unit import result (CSV: id,parentId,code,name,nameHi,level).'

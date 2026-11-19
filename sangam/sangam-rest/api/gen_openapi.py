@@ -706,6 +706,9 @@ schema("RoleRule", "One rule of a role (decision 368): security permissions on a
        " every id, deny omitted = allow.", "resourceType resourceId permissions:list:s deny:bool", ["resourceType", "permissions"])
 schema("RoleDefinition", "A role of the tenant (SEC_ROLE, decision 368); rules omitted = a role that grants nothing itself.",
        "id name rules:list:RoleRule", ["name"])
+schema("OrgLevels", "The org level types of a tenant, top first (AJ-02, SEC_ORG_LEVEL); an org unit's level must be one of them."
+       " tenantId is optional on a request and, when given, must be the caller's own tenant.",
+       "tenantId levels:list:s", ["levels"])
 schema("OrgUnitImportResult", "Bulk org-unit import result (CSV: id,parentId,code,name,nameHi,level).",
        "created:int updated:int errors:list:s")
 # Registries
@@ -1797,6 +1800,14 @@ op("put", "/admin/roles/by-role-id", "defineRole", "Admin", "Define a role",
    " token scope is bound to a service principal only when it is a defined role the caller may grant.",
    ["VI.4", "R41"], params=[q("roleId", desc="Role id (ROLE_ID_PATTERN allows ':', e.g. pack:clerk); may carry ':'", required=True)], body="RoleDefinition", resp=(200, "RoleDefinition"), cmd="admin.role.define",
    perm="policy.admin")
+op("get", "/admin/org-levels", "getOrgLevels", "Admin", "Org level types",
+   "The caller's tenant's org level types, top first (AJ-02); empty when none are defined.",
+   ["IX.5", "R19"], resp=(200, "OrgLevels"), perm="admin.read")
+op("put", "/admin/org-levels", "defineOrgLevels", "Admin", "Define org level types",
+   "A tenant administrator defines its own tenant's org level types, top first (EV-M-0923; ADMIN on ORG_UNIT;"
+   " TENANT_CONFIGURED). Idempotent: the same list again changes nothing and records nothing. A different list is"
+   " refused with 409 LEVELS_IN_USE once an org unit exists; another tenant's levels with 403 TENANT_MISMATCH.",
+   ["IX.5", "R19"], body="OrgLevels", resp=(200, "OrgLevels"), cmd="admin.orglevels.define", perm="admin.write")
 op("get", "/admin/service-principals", "listServicePrincipals", "Admin", "Service principals", "Worker and integration principals (R26).",
    ["R26", "K14"], resp=(200, "array:ServicePrincipal"), perm="admin.read", errors=WS_E)
 op("post", "/admin/service-principals", "createServicePrincipal", "Admin", "Create a service principal",

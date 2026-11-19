@@ -7885,6 +7885,16 @@ export interface OpsValue {
 }
 
 /**
+ * The org level types of a tenant, top first (AJ-02, SEC_ORG_LEVEL); an org unit's level must be one of them. tenantId is optional on a request and, when given, must be the caller's own tenant.
+ *
+ * Schema `OrgLevels`.
+ */
+export interface OrgLevels {
+  tenantId?: string;
+  levels: Array<string>;
+}
+
+/**
  * Organisation unit (IX.5 rule 2).
  *
  * Schema `OrgUnit`.
