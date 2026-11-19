@@ -96,7 +96,7 @@ describe('M-047 AuthProvider (dev-token mode)', () => {
     expect(window.sessionStorage.getItem('sangam.seat')).toBe('s1');
   });
 
-  it('every call carries the bearer token and the seat; an additional charge is sent as the acting-for seat', async () => {
+  it('every call carries the bearer token and the seat; an additional charge is sent as the acting-for seat', { repeats: 29 }, async () => {
     window.sessionStorage.setItem('sangam.devToken', 'tok-1');
     render(<AuthProvider><Probe /></AuthProvider>);
     await waitFor(() => expect(text('seat')).toBe('s1'));
@@ -111,7 +111,7 @@ describe('M-047 AuthProvider (dev-token mode)', () => {
     expect(h.get('X-Sangam-Acting-For-Seat')).toBe('s2');
   });
 
-  it('a call fired in the commit that shows the seat already carries that seat (no passive-effect race)', async () => {
+  it('a call fired in the commit that shows the seat already carries that seat (no passive-effect race)', { repeats: 29 }, async () => {
     // The commit that shows the seat is observed in a layout effect, i.e. before React runs that commit's passive
     // effects (scheduled as a later task outside act). That is the window run 44489607242 hit at random: its waitFor saw
     // seat s1 in the DOM and fired the call before the seat headers were registered. Here the window is hit every time.
