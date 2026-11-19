@@ -103,7 +103,7 @@ class ProductionStartupFailFastTest {
     }
 
     /** Valid production settings; each case changes one of them. */
-    private static Map<String, String> baseline(String db) {
+    static Map<String, String> baseline(String db) {
         Map<String, String> m = new LinkedHashMap<>();
         m.put("sangam.security.production", "true");
         m.put("spring.datasource.url", "jdbc:h2:mem:" + db + ";DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000;MODE=PostgreSQL");
@@ -143,7 +143,7 @@ class ProductionStartupFailFastTest {
         return m;
     }
 
-    private static ConfigurableApplicationContext start(Map<String, String> settings) {
+    static ConfigurableApplicationContext start(Map<String, String> settings) {
         String[] args = settings.entrySet().stream().map(e -> "--" + e.getKey() + "=" + e.getValue()).toArray(String[]::new);
         return new SpringApplicationBuilder(SangamServerApplication.class).profiles("h2").run(args);
     }

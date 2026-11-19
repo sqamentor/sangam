@@ -292,6 +292,28 @@ class KeyEnvironmentSeparationTest {
     }
 
     @Test
+    void decision390AStartRefusedForANewKeyStillWritesTheExportWithPurposesForTheCustodian() throws Exception {
+        Env prod = new Env("production");
+        List<KeyAttestation.Key> keys = new java.util.ArrayList<>(keysOf(prod));
+        keys.removeIf(k -> k.purpose().equals("key-encryption key")); // the rotated key is not attested yet
+        attested(prod, "production", keys, CUSTODIAN.getPrivate());
+        Path export = dir.resolve("rotation-export.txt");
+        prod.env.setProperty(KeyEnvironmentSeparation.EXPORT, export.toString());
+        assertTrue(prod.refused(true).startsWith(KeyAttestation.INVALID));
+        List<String> lines = Files.readAllLines(export).stream().filter(l -> !l.startsWith("#")).toList();
+        assertFalse(lines.isEmpty(), "the refused start left the export");
+        for (KeyPurposeSeparation.Entry e : prod.entries()) {
+            for (String f : e.fingerprints()) {
+                assertTrue(lines.contains("production " + f + " " + e.setting() + " " + e.purpose()),
+                        e.setting() + " with its purpose, in " + lines.size() + " lines");
+            }
+        }
+        // the export is still a valid list for the other environments
+        Env staging = new Env("staging").list(export);
+        assertEquals(lines.stream().map(l -> l.split(" ")[1]).distinct().count(), staging.check(true).foreign());
+    }
+
+    @Test
     void decision390AKeyNotAttestedOrAttestedForAnotherPurposeIsRefusedByName() throws Exception {
         Env prod = new Env("production");
         List<KeyAttestation.Key> keys = new java.util.ArrayList<>(keysOf(prod));

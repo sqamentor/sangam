@@ -237,7 +237,8 @@ Chart behaviour worth knowing:
   `staging`, `[a-z0-9][a-z0-9._-]{0,47}`), and reads the fingerprints of the other environments' keys from a list file,
   `sangam.keys.foreign-fingerprints` (env `SANGAM_KEYS_FOREIGN_FINGERPRINTS`; the chart mounts
   `server.keyEnvironment.foreignFingerprints` at `/opt/sangam/config/key-fingerprints.txt`). A line is
-  `<environment> <sha256 hex> [<setting>]`; `#` starts a comment; lines of the server's own environment are skipped. A
+  `<environment> <sha256 hex> [<setting> [<purpose>]]` (the export writes all four; the purpose is the rest of the
+  line); `#` starts a comment; lines of the server's own environment are skipped. A
   fingerprint is SHA-256 of a public key, or HMAC-SHA256 under the fixed label `sangam:key-fingerprint:v1` of a secret
   (the keys of the key purpose table: KEK, registry signer and peppers, compliance principal key, audit checkpoint,
   package and bundle signing); it is never the key, and no message prints one. With a name set, the server writes its
@@ -263,7 +264,8 @@ Chart behaviour worth knowing:
   does not verify, another environment, another format, or no custodian key refuses the start with
   `KEY_ATTESTATION_INVALID`, naming the setting, never a key or a fingerprint. The first environment of an
   installation has neither a list nor an attestation: `sangam.keys.bootstrap=true` (env `SANGAM_KEYS_BOOTSTRAP`, chart
-  `server.keyEnvironment.bootstrap`) lets it start once. That start is recorded, once the database is ready, as the
+  `server.keyEnvironment.bootstrap`) lets it start once (runbook: section 5.1, with the custodian tool
+  `sangam/tools/keys/sangam-key-attestation.sh`). That start is recorded, before the web server opens a port, as the
   audit event `KEY_ENVIRONMENT_BOOTSTRAPPED` (no tenant, chain `keys:bootstrap`); any later start of that environment
   with the setting still on is refused with `KEY_ENVIRONMENT_LIST_REQUIRED`, and so is the setting together with a list
   or an attestation. Remove it once the next environment's list or the attestation exists.
@@ -1130,6 +1132,91 @@ After any rotation:
 - run `/actuator/health`;
 - complete one smoke task per pack;
 - check the error rate on the dashboard.
+
+### 5.1 Key environment attestation: first hosted environment and rotation (decisions 387 (4) and 390 (4))
+
+Runbook for the operator who is also the key custodian (for example the IFMS operator of `demo.ifms.dev`). The tool is
+`sangam/tools/keys/sangam-key-attestation.sh`: POSIX `sh`, `awk` and OpenSSL 3 only, no JDK and no build. Copy it to
+the host; the custodian's private key is created on the host and never leaves it, and the tool never prints it (it
+prints only the public key). Below, `ENV` is the environment name (`sangam.keys.environment`, for example `demo`) and
+the server reads its settings from the environment variables named (`SANGAM_*`), or the matching chart values.
+
+**Step 0, once per installation: the custodian key.**
+
+```sh
+install -d -m 700 /etc/sangam/custodian
+sh sangam-key-attestation.sh generate-custodian-key /etc/sangam/custodian/custodian-ed25519.pem
+# prints one line: the custodian's PUBLIC key (base64 X.509), the value of SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY
+sh sangam-key-attestation.sh public-key /etc/sangam/custodian/custodian-ed25519.pem   # prints it again later
+```
+
+Keep a backup of `custodian-ed25519.pem` offline (sealed media, as for the other signing keys of section 5). An existing
+key file is never overwritten.
+
+**Step 1, once: the audited bootstrap start.** Start the server with
+
+```sh
+SANGAM_KEYS_ENVIRONMENT=ENV
+SANGAM_KEYS_BOOTSTRAP=true
+SANGAM_KEYS_FINGERPRINT_EXPORT=/var/lib/sangam/key-fingerprints.txt
+# no SANGAM_KEYS_FOREIGN_FINGERPRINTS, no SANGAM_KEYS_ATTESTATION
+```
+
+The start records the audit event `KEY_ENVIRONMENT_BOOTSTRAPPED` (no tenant, chain `keys:bootstrap`) before the web
+server opens its ports, and writes the export: one line per key setting,
+`<environment> <fingerprint> <setting> <purpose>` (the purpose is the rest of the line, for example
+`demo 3f...a1 sangam.security.kek.keys key-encryption key`). Fingerprints are one-way; the file holds no key. The
+server then serves normally. A second start with `SANGAM_KEYS_BOOTSTRAP=true` is refused with
+`KEY_ENVIRONMENT_LIST_REQUIRED` ("already started once") before anything is served, and leaves nothing in the audit
+chain.
+
+**Step 2: the custodian signs the attestation** (on the host, from the export of step 1):
+
+```sh
+sh sangam-key-attestation.sh sign /etc/sangam/custodian/custodian-ed25519.pem ENV \
+    /var/lib/sangam/key-fingerprints.txt /opt/sangam/config/key-attestation.json
+sh sangam-key-attestation.sh verify "$(sh sangam-key-attestation.sh public-key /etc/sangam/custodian/custodian-ed25519.pem)" \
+    /opt/sangam/config/key-attestation.json        # prints: verified: environment ENV, N key(s)
+```
+
+`sign` refuses an export line of another environment, a malformed fingerprint, and a line without a purpose (an export
+from a server before this change: start once more to rewrite it). Check the key count against the export before you go
+on.
+
+**Step 3: every later start.**
+
+```sh
+SANGAM_KEYS_ENVIRONMENT=ENV
+SANGAM_KEYS_BOOTSTRAP=false            # or unset
+SANGAM_KEYS_ATTESTATION=/opt/sangam/config/key-attestation.json
+SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY=<the line printed in step 0>
+# no SANGAM_KEYS_FOREIGN_FINGERPRINTS
+SANGAM_KEYS_FINGERPRINT_EXPORT=/var/lib/sangam/key-fingerprints.txt   # keep it: it is the input of a rotation
+```
+
+The start is refused with `KEY_ATTESTATION_INVALID` when the signature does not verify (an edited file), the
+attestation names another environment, or a key of this environment is not attested with its purpose; the message
+names the setting, never a key or a fingerprint. `SANGAM_KEYS_BOOTSTRAP=true` together with an attestation is refused.
+
+**Rotation of a server key** (KEK, signer, pepper, checkpoint key, ...). The start writes the export before it checks
+the attestation, so a start with a new, not yet attested key still leaves the new fingerprints for the custodian:
+
+1. Put the new key in place as section 5 says and start the server (on Kubernetes, the rolling update's new pod; the
+   old pod keeps serving). The start is refused with `KEY_ATTESTATION_INVALID` ("`<setting>` (`<purpose>`) is not
+   attested") and nothing is served, but `/var/lib/sangam/key-fingerprints.txt` now holds the new fingerprints.
+2. Sign that export (step 2). To keep an old pod and a new pod both able to start during a rolling update, sign the
+   two exports together: `cat old-export.txt /var/lib/sangam/key-fingerprints.txt > both.txt`, then `sign ... ENV
+   both.txt ...` (keep a copy of the export before step 1 as `old-export.txt`).
+3. Start again (step 3). Once no instance runs the old key, sign the current export alone and restart, so the old
+   key is no longer attested.
+
+**Rotation of the custodian key.** Generate a new key into a new file (step 0), sign the current export with it (step
+2), then change `SANGAM_KEYS_ATTESTATION` and `SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY` together and restart (step 3). Destroy
+the old private key file only after the restart succeeded.
+
+A new environment of the installation (for example staging after demo) does not bootstrap: the custodian signs its
+attestation from its export after its first start outside production, or it uses the other environments' list
+(`SANGAM_KEYS_FOREIGN_FINGERPRINTS`, section 1.2).
 
 ---
 
