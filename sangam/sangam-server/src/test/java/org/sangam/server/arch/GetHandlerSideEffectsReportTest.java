@@ -24,5 +24,11 @@ class GetHandlerSideEffectsReportTest {
         lines.add(0, "GET handlers: " + g.sources.size() + ", with a reachable side effect: "
                 + result.values().stream().filter(h -> !h.isEmpty()).count());
         GetHandlerSideEffects.writeReport(Path.of("target/get-handler-side-effects.txt"), lines);
+        List<String> byHandler = new java.util.ArrayList<>();
+        new java.util.TreeMap<>(result.entrySet().stream().collect(java.util.stream.Collectors.toMap(
+                e -> e.getKey().toString(), Map.Entry::getValue, (a, b) -> a))).forEach((h, hits) ->
+                byHandler.add(h + "	" + String.join(" | ", new java.util.TreeSet<>(
+                        hits.stream().map(x -> x.sink() + " @ " + x.site()).toList()))));
+        GetHandlerSideEffects.writeReport(Path.of("target/get-handler-side-effects-by-handler.tsv"), byHandler);
     }
 }
