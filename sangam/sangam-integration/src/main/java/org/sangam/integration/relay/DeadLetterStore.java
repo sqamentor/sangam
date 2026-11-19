@@ -58,7 +58,7 @@ public final class DeadLetterStore {
     }
 
     public List<Entry> listOpen(String tenantId, int limit) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT * FROM INTEGRATION_DEAD_LETTER WHERE tenant_id=? AND state='OPEN' ORDER BY id",
+        return tx.read(c -> Jdbc.query(c, "SELECT * FROM INTEGRATION_DEAD_LETTER WHERE tenant_id=? AND state='OPEN' ORDER BY id",
                 DeadLetterStore::map, tenantId).stream().limit(limit).toList());
     }
 

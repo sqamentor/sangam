@@ -88,7 +88,7 @@ public class ScimController {
                                             @RequestParam(required = false) Integer count,
                                             @RequestParam(required = false) String attributes,
                                             @RequestParam(required = false) String excludedAttributes) {
-        return guarded(ctx, () -> ok(project(tx((s, c) -> s.listUsers(c, id(ctx), filter, startIndex, count)),
+        return guarded(ctx, () -> ok(project(rtx((s, c) -> s.listUsers(c, id(ctx), filter, startIndex, count)),
                 attributes, excludedAttributes)));
     }
 
@@ -104,7 +104,7 @@ public class ScimController {
     public ResponseEntity<String> getUser(RequestContext ctx, @PathVariable String id,
                                           @RequestParam(required = false) String attributes,
                                           @RequestParam(required = false) String excludedAttributes) {
-        return guarded(ctx, () -> resource(ScimResources.project(tx((s, c) -> s.getUser(c, id(ctx), id)), attributes,
+        return guarded(ctx, () -> resource(ScimResources.project(rtx((s, c) -> s.getUser(c, id(ctx), id)), attributes,
                 excludedAttributes)));
     }
 
@@ -148,7 +148,7 @@ public class ScimController {
                                              @RequestParam(required = false) Integer count,
                                              @RequestParam(required = false) String attributes,
                                              @RequestParam(required = false) String excludedAttributes) {
-        return guarded(ctx, () -> ok(project(tx((s, c) -> s.listGroups(c, id(ctx), filter, startIndex, count)),
+        return guarded(ctx, () -> ok(project(rtx((s, c) -> s.listGroups(c, id(ctx), filter, startIndex, count)),
                 attributes, excludedAttributes)));
     }
 
@@ -164,7 +164,7 @@ public class ScimController {
     public ResponseEntity<String> getGroup(RequestContext ctx, @PathVariable String id,
                                            @RequestParam(required = false) String attributes,
                                            @RequestParam(required = false) String excludedAttributes) {
-        return guarded(ctx, () -> resource(ScimResources.project(tx((s, c) -> s.getGroup(c, id(ctx), id)), attributes,
+        return guarded(ctx, () -> resource(ScimResources.project(rtx((s, c) -> s.getGroup(c, id(ctx), id)), attributes,
                 excludedAttributes)));
     }
 
@@ -214,6 +214,20 @@ public class ScimController {
         } catch (ApiProblem e) {
             return error(new ScimException(e.status(), null, e.detail() != null ? e.detail() : e.title()));
         }
+    }
+
+    /** Round 9 CSRF: the read work of the GET handlers, a type of its own (never a write callback). */
+    @FunctionalInterface
+    private interface ScimRead<T> {
+        T read(ScimService service, Connection c);
+    }
+
+    private <T> T rtx(ScimRead<T> work) {
+        ScimService service = scim.getIfAvailable();
+        if (service == null) {
+            throw new ScimException(501, null, "SCIM provisioning is not installed (module sangam-security)");
+        }
+        return Transactions.of(dataSource.getObject()).read(c -> work.read(service, c));
     }
 
     private <T> T tx(BiFunction<ScimService, Connection, T> work) {

@@ -103,7 +103,7 @@ public final class JdbcTenantKeyStore implements TenantKeyStore {
         if (cached != null) {
             return Optional.of(new TenantKey(keyId, cached));
         }
-        return tx.inTransaction(c -> load(c, tenantId, keyId)).map(k -> new TenantKey(keyId, k));
+        return tx.read(c -> load(c, tenantId, keyId)).map(k -> new TenantKey(keyId, k));
     }
 
     @Override
@@ -137,7 +137,7 @@ public final class JdbcTenantKeyStore implements TenantKeyStore {
 
     @Override
     public List<KeyInfo> keys(String tenantId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT key_id, version, status, kek_id FROM SEC_TENANT_KEY WHERE tenant_id=?"
+        return tx.read(c -> Jdbc.query(c, "SELECT key_id, version, status, kek_id FROM SEC_TENANT_KEY WHERE tenant_id=?"
                         + " ORDER BY version",
                 rs -> new KeyInfo(rs.getString(1), tenantId, rs.getInt(2), rs.getString(3), rs.getString(4)), tenantId));
     }

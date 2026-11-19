@@ -57,7 +57,16 @@ class ForgedCrossSiteGetIsRefusedH2Test {
             .followRedirects(HttpClient.Redirect.NEVER).build();
 
     /** GET handlers that answer an anonymous request (pattern -> handler), reviewed one by one in the report. */
-    static final Set<String> PUBLIC = Set.of();
+    static final Set<String> PUBLIC = Set.of(
+            // decision 380: the hosted catalogue is public (SecurityConfig.HOSTED_CATALOGUE_PATHS); reads only
+            "/api/v1/catalogue/hosted/index.json -> org.sangam.rest.modules.modeller.CatalogueHostController.index",
+            "/api/v1/catalogue/hosted/index.json.sig -> org.sangam.rest.modules.modeller.CatalogueHostController.signature",
+            "/api/v1/catalogue/hosted/artifacts/{id}/{version} -> org.sangam.rest.modules.modeller.CatalogueHostController.artifact",
+            // the API description and UI plugin assets are static and permitAll in SecurityConfig
+            "/api/v1/openapi.yaml -> org.sangam.server.web.OpenApiController.openApi",
+            "/api/v1/plugins/ui/{id}/assets/{*path} -> org.sangam.server.web.UiPluginController.asset",
+            // M-006: CDS Hooks discovery; the CDS client JWT is checked by the controller, the fallback answers 501
+            "/cds-services -> org.sangam.rest.modules.connectorshealth.HealthHooksFallbackController.cdsDiscovery");
 
     @DynamicPropertySource
     static void settings(DynamicPropertyRegistry r) {

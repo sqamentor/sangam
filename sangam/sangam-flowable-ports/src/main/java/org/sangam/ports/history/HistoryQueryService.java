@@ -254,7 +254,7 @@ public class HistoryQueryService {
 
     private <T> PageResult<T> page(String from, Where w, String orderBy, String cols, Mapper<T> m, PageRequest p) {
         String fromWhere = from + " WHERE " + w.sql();
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             long total = Jdbc.one(c, Paging.cappedCount(dialect, fromWhere), rs -> rs.getLong(1), w.params()).orElse(0L);
             List<T> items = Jdbc.query(c, "SELECT " + cols + " " + fromWhere + " ORDER BY " + orderBy + Paging.window(dialect, p),
                     m::map, w.params());

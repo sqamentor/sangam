@@ -220,7 +220,7 @@ public class SlaService {
      * the first {@link Paging#MAX_PAGE} closed clocks per group (a sample beyond that).
      */
     public List<SlaStats> stats(String tenant, Instant from, Instant to) {
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             String range = (from == null ? "" : " AND s.started_at >= ?") + (to == null ? "" : " AND s.started_at < ?");
             List<Object> params = new ArrayList<>(List.of(t(tenant)));
             if (from != null) {
