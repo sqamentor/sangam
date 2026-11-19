@@ -16,6 +16,8 @@
 # Images: loaded from the CI hand-over artifact (docker load, see README.md); never pulled from a registry.
 # Money: no payment rail is configured (connector base URLs empty, simulators off), so a bill payment cannot leave
 # Sangam; it stops HELD / as an incident (SD-553: money paths are NOT YET for IFMS).
+# HARD PRECONDITIONS before the demo data load (runbook P1-P3): demo_preflight.py money (pfms.payment binding sandbox or
+# held, no payment connector URL set), persona tokens from a temporary Keycloak client, demo_preflight.py smoke first.
 
 networks:
   sangam-internal:
