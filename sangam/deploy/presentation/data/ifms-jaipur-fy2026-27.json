@@ -21,7 +21,12 @@
   "h2Simulator": {
     "comment": "Directives for the H2 load test only (simulator connectors). On a hosted server the tenant's sandbox connectors answer instead; nothing pays anywhere real.",
     "fundsAvailable": "available=100000000",
-    "registryParty": "multiple=false;verified=true"
+    "registryParty": "multiple=false;verified=true",
+    "systems": {
+      "sim_config_documentType": "valid=true;signatures=1",
+      "sim_config_classification": "valid=true",
+      "sim_ifms_duplicateBill": "duplicate=false"
+    }
   },
   "types": {
     "qualifyingService": "decimal",
@@ -273,6 +278,50 @@
         "payee": "Pooja Gurjar",
         "payeeAccount": "00004207100102",
         "ifsc": "ZXRJ9JPR001"
+      }
+    },
+    {
+      "id": "ADV-0001",
+      "flow": "adv",
+      "process": "sangam-ifms-advance",
+      "businessKey": "JPR-DDO-0420/ADV/2026-27/0001",
+      "startedBy": "anil.choudhary",
+      "target": "COMPLETED",
+      "payment": "SANDBOX",
+      "variables": {
+        "headOfAccount": "7610-00-202-01-00-55",
+        "ddoCode": "JPR-DDO-0420",
+        "employeeId": "RJE-260103",
+        "partyId": "PTY-RJE-260103",
+        "advanceKind": "COMPUTER",
+        "amount": 5000000,
+        "instalments": 10,
+        "basicPay": 5640000,
+        "payee": "Suresh Chand Bairwa",
+        "payeeAccount": "00004207100103",
+        "ifsc": "ZXRJ9JPR002"
+      }
+    },
+    {
+      "id": "ADV-0002",
+      "flow": "adv",
+      "process": "sangam-ifms-advance",
+      "businessKey": "JPR-DDO-0420/ADV/2026-27/0002",
+      "startedBy": "anil.choudhary",
+      "target": "RUNNING",
+      "stopAt": "sn_sanction",
+      "variables": {
+        "headOfAccount": "7610-00-202-01-00-55",
+        "ddoCode": "JPR-DDO-0420",
+        "employeeId": "RJE-260104",
+        "partyId": "PTY-RJE-260104",
+        "advanceKind": "COMPUTER",
+        "amount": 4500000,
+        "instalments": 15,
+        "basicPay": 4210000,
+        "payee": "Rekha Kumawat",
+        "payeeAccount": "00004207100104",
+        "ifsc": "ZXRJ9JPR002"
       }
     }
   ]
