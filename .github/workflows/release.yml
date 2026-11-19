@@ -553,7 +553,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
-        with: { version: v3.18.4 }
+        with: { version: v3.22.1 }
       - name: Chart version and image repository
         run: |
           sed -i "s/^appVersion: .*/appVersion: \"$V\"/" deploy/helm/sangam/Chart.yaml
@@ -813,7 +813,7 @@ jobs:
           python3 -I sangam/deploy/licence/fetch_tool.py syft --bin "$RUNNER_TEMP/bin"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
-        with: { version: v3.18.4 }
+        with: { version: v3.22.1 }
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ghcr.io

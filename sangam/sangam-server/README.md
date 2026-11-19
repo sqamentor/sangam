@@ -329,12 +329,12 @@ Flowable worker compatibility is served at `/api/v1/compat/flowable/external-job
 | Spring Boot 4.1.2 starters (webmvc, actuator, security, security-oauth2-resource-server, jdbc, opentelemetry, validation) | Apache-2.0 |
 | Operaton `operaton-bpm-spring-boot-starter-rest` 2.2.0 | Apache-2.0 |
 | Micrometer Prometheus registry | Apache-2.0 |
-| HikariCP 6.3.0 | Apache-2.0 |
+| HikariCP 7.0.2 | Apache-2.0 |
 | Liquibase core 4.33.0 | Apache-2.0 (FSL applies to 5.x only, LIC-7) |
 | H2 2.3.232 (runtime, development) | MPL-2.0 / EPL-1.0 |
 | PostgreSQL JDBC 42.7.12 | BSD-2-Clause |
-| Microsoft mssql-jdbc 12.10.2 | MIT |
-| MariaDB Connector/J 3.5.11 | LGPL-2.1 (runtime class path only, **not** in the fat jar; LIC-4/LIC-5) |
+| Microsoft mssql-jdbc 13.6.2 | MIT |
+| MariaDB Connector/J 4.0.0 | LGPL-2.1 (runtime class path only, **not** in the fat jar; LIC-4/LIC-5) |
 
 ## Generic modules (final integration wave)
 

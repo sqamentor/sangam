@@ -146,9 +146,9 @@
     <version.junit>6.0.3</version.junit>
     <version.testcontainers>2.0.5</version.testcontainers>
     <version.postgresql>42.7.14</version.postgresql>
-    <version.mariadb>3.5.11</version.mariadb>
-    <version.mssql>12.10.2.jre11</version.mssql>
-    <version.hikari>6.3.0</version.hikari>
+    <version.mariadb>4.0.0</version.mariadb>
+    <version.mssql>13.6.2.jre11</version.mssql>
+    <version.hikari>7.0.2</version.hikari>
     <!-- RM-31: the slf4j family ships as one version; Spring Boot 4.1.2 brings jul-to-slf4j 2.0.20, so the API is 2.0.20
          too (test_version_families.py) -->
     <version.slf4j>2.0.20</version.slf4j>
@@ -252,7 +252,7 @@
       <dependency>
         <groupId>redis.clients</groupId>
         <artifactId>jedis</artifactId>
-        <version>7.5.3</version>
+        <version>8.0.2</version>
       </dependency>
       <dependency>
         <groupId>org.apache.pdfbox</groupId>

@@ -17,7 +17,7 @@ on:
         description: "Comma-separated Maven modules for the build job (-pl ... -am); empty = ci-lane.json or whole reactor"
         default: ""
       dbs:
-        description: "Comma-separated: postgres,oracle,sqlserver,sqlserver2025,mysql (empty = ci-lane.json or postgres)"
+        description: "Comma-separated: postgres,oracle,sqlserver,sqlserver2025,mysql,postgres18 (empty = ci-lane.json or postgres)"
         default: ""
       chunks:
         description: "IT chunks: A-contracts,B-engine,B2-e2,C-e16a,D-e16bc,E-e17,F-platform or all"

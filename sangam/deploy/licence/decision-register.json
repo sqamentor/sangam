@@ -265,7 +265,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:maven/com.microsoft.sqlserver/mssql-jdbc@12.10.2.jre11": {
+  "pkg:maven/com.microsoft.sqlserver/mssql-jdbc@13.6.2.jre11": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -319,7 +319,7 @@
    ],
    "spdx": "BSD-3-Clause"
   },
-  "pkg:maven/com.zaxxer/HikariCP@6.3.0": {
+  "pkg:maven/com.zaxxer/HikariCP@7.0.2": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "control-plane",
@@ -1352,7 +1352,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.json/json@20251224": {
+  "pkg:maven/org.json/json@20260719": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "server"
@@ -1378,7 +1378,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/org.mariadb.jdbc/mariadb-java-client@3.5.11": {
+  "pkg:maven/org.mariadb.jdbc/mariadb-java-client@4.0.0": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "lib-ext"
@@ -2246,7 +2246,7 @@
    ],
    "spdx": "MIT"
   },
-  "pkg:maven/redis.clients/jedis@7.5.3": {
+  "pkg:maven/redis.clients/jedis@8.0.2": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "server"
