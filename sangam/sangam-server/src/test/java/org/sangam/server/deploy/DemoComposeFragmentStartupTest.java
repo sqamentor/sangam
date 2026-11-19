@@ -244,7 +244,7 @@ class DemoComposeFragmentStartupTest {
         }
     }
 
-    private ConfigurableApplicationContext start(Keys keys, Map<String, String> keyFlow) throws IOException {
+    static ConfigurableApplicationContext start(Keys keys, Map<String, String> keyFlow) throws IOException {
         Map<String, Object> env = new LinkedHashMap<>();
         for (String name : serverEnvironment().keySet()) {
             env.put(name, keyFlow.containsKey(name) ? keyFlow.get(name) : keys.value(name));
@@ -261,7 +261,7 @@ class DemoComposeFragmentStartupTest {
     }
 
     /** Test values, fixed for both starts (the same keys and database): one per env name of the fragment. */
-    private static final class Keys {
+    static final class Keys {
         final Path secrets;
         final String db;
         final String dbPassword = random(24);
