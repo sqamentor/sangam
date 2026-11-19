@@ -124,4 +124,99 @@ class LedgerWiringGlGuardTest {
             assertTrue(LedgerWiring.journal(drainer, "gl-1", writer) != null);
         }
     }
+
+    @Test
+    void productionRefusesAGlConnectorIdThatNamesNoConnector() {
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> LedgerWiring.requireKnownGlConnector("no-such-gl", true, id -> false, java.util.Set.of()));
+        assertTrue(e.getMessage().startsWith(LedgerWiring.GL_CONNECTOR_UNKNOWN + ":")
+                && e.getMessage().contains("no-such-gl"), e.getMessage());
+        assertEquals("LEDGER_GL_CONNECTOR_UNKNOWN", LedgerWiring.GL_CONNECTOR_UNKNOWN);
+        assertTrue(!LedgerWiring.requireKnownGlConnector("no-such-gl", false, id -> false, java.util.Set.of()),
+                "development warns and keeps the entries (retried, then dead-lettered)");
+    }
+
+    @Test
+    void guardARegisteredOrDeclaredGlConnectorIsAccepted() {
+        org.sangam.integration.connector.ConnectorRegistry registry = new org.sangam.integration.connector.ConnectorRegistry();
+        assertTrue(!registry.knows("gl-1") && !registry.knows(null) && !registry.knows(" "));
+        assertTrue(LedgerWiring.requireKnownGlConnector("gl-1", true, id -> id.equals("gl-1"), java.util.Set.of()));
+        assertTrue(LedgerWiring.requireKnownGlConnector("gl-1", true, id -> false, java.util.Set.of("gl-1")));
+        assertTrue(LedgerWiring.requireKnownGlConnector(null, true, id -> false, java.util.Set.of()), "unset: requireGlExport");
+        MockEnvironment env = development().withProperty("sangam.channels.enterprise.t1.gl-sap.type", "sap-odata")
+                .withProperty("sangam.channels.enterprise.t1.gl-sap.service-root", "https://sap.example/odata")
+                .withProperty("sangam.channels.enterprise.t2.other.service-root", "https://x");
+        assertEquals(java.util.Set.of("gl-sap"), LedgerWiring.declaredEnterpriseConnectors(env));
+    }
+
+    @Test
+    void theGlExportWaiverAllowsProductionWithoutAConnector() {
+        assertNull(LedgerWiring.requireGlExport(null, "GL go-live pending", true, true, true, true));
+        assertNull(LedgerWiring.requireGlExport(" ", "GL go-live pending", true, false, false, false),
+                "no GL rows are written, so the integration beans are not needed for them");
+        IllegalStateException without = assertThrows(IllegalStateException.class,
+                () -> LedgerWiring.requireGlExport(null, null, true, true, true, true));
+        assertTrue(without.getMessage().contains(LedgerWiring.GL_EXPORT_WAIVER), without.getMessage());
+    }
+
+    @Test
+    void aBlankWaiverOrAWaiverWithAConnectorIsRefused() {
+        for (String blank : new String[] {"", "   ", "\t"}) {
+            for (boolean production : new boolean[] {true, false}) {
+                IllegalStateException e = assertThrows(IllegalStateException.class,
+                        () -> LedgerWiring.requireGlExport(null, blank, production, true, true, true));
+                assertTrue(e.getMessage().contains("needs a written reason"), e.getMessage());
+            }
+        }
+        IllegalStateException both = assertThrows(IllegalStateException.class,
+                () -> LedgerWiring.requireGlExport("gl-1", "reason", true, true, true, true));
+        assertTrue(both.getMessage().contains("ambiguous"), both.getMessage());
+        assertThrows(IllegalStateException.class, () -> LedgerWiring.requireGlExport("gl-1", "reason", false, true, true, true));
+        assertEquals("sangam.ledger.gl-export-waiver", LedgerWiring.GL_EXPORT_WAIVER);
+    }
+
+    @Test
+    void theStoreBeanStartsProductionUnderTheWaiverAndRefusesTheAmbiguousForm() {
+        DefaultListableBeanFactory bf = new DefaultListableBeanFactory();
+        MockEnvironment both = helm().withProperty("sangam.ledger.gl-connector", "gl-1")
+                .withProperty(LedgerWiring.GL_EXPORT_WAIVER, "reason");
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> new LedgerWiring().sangamLedgerStore(
+                null, both, bf.getBeanProvider(PendingAuditDrainer.class), bf.getBeanProvider(OutboxWriter.class),
+                bf.getBeanProvider(PublisherRegistry.class), bf.getBeanProvider(ConnectorInvoker.class)));
+        assertTrue(e.getMessage().contains("ambiguous"), e.getMessage());
+        MockEnvironment waived = helm().withProperty(LedgerWiring.GL_EXPORT_WAIVER, "reason");
+        IllegalStateException next = assertThrows(IllegalStateException.class, () -> new LedgerWiring().sangamLedgerStore(
+                null, waived, bf.getBeanProvider(PendingAuditDrainer.class), bf.getBeanProvider(OutboxWriter.class),
+                bf.getBeanProvider(PublisherRegistry.class), bf.getBeanProvider(ConnectorInvoker.class)));
+        assertTrue(next.getMessage().contains("LEDGER_POSTED"), "past the GL rule, stopped at the audit drainer: "
+                + next.getMessage());
+    }
+
+    @Test
+    void aStartUnderTheWaiverIsASystemAuditEventWithTheReason() throws Exception {
+        org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
+        ds.setURL("jdbc:h2:mem:" + java.util.UUID.randomUUID() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE");
+        try (java.sql.Connection c = ds.getConnection()) {
+            org.sangam.core.layer.Schema.create(c, Dialect.POSTGRESQL);
+            PendingAudit.create(c, Dialect.POSTGRESQL);
+        }
+        Transactions tx = Transactions.of(ds);
+        PendingAudit pending = new PendingAudit(tx, Dialect.POSTGRESQL, new AuditChain(Dialect.POSTGRESQL));
+        try (PendingAuditDrainer drainer = new PendingAuditDrainer(pending,
+                new PendingAuditDrainer.Settings(1, Duration.ZERO, Duration.ZERO, 10))) {
+            LedgerWiring.recordWaiver(tx, drainer, "system:platform", "  GL go-live pending  ", true);
+            String payload = tx.inTransaction(c -> org.sangam.core.layer.Jdbc.one(c, "SELECT payload FROM AUDIT_PENDING"
+                            + " WHERE tenant_id=? AND chain_id=? AND event_type=?", rs -> rs.getString(1), "system:platform",
+                    LedgerWiring.GL_EXPORT_WAIVER_CHAIN, LedgerWiring.GL_EXPORT_WAIVED)).orElse(null);
+            String chained = tx.inTransaction(c -> org.sangam.core.layer.Jdbc.one(c, "SELECT p.payload FROM AUDIT_EVENT e"
+                            + " JOIN AUDIT_PAYLOAD p ON p.event_id = e.event_id"
+                            + " WHERE e.tenant_id=? AND e.chain_id=? AND e.event_type=?", rs -> rs.getString(1), "system:platform",
+                    LedgerWiring.GL_EXPORT_WAIVER_CHAIN, LedgerWiring.GL_EXPORT_WAIVED)).orElse(null);
+            String recorded = payload != null ? payload : chained;
+            assertTrue(recorded != null && recorded.contains("GL go-live pending")
+                    && recorded.contains(LedgerWiring.GL_EXPORT_WAIVER), String.valueOf(recorded));
+            assertThrows(IllegalStateException.class,
+                    () -> LedgerWiring.recordWaiver(tx, drainer, "acme", "reason", true), "never a customer tenant");
+        }
+    }
 }

@@ -446,6 +446,7 @@ Pipeline definitions are read from `classpath:pipelines/<id>.json`. Pipelines st
 | `sangam.ai.worker.tenants`, `.batch`, `.every`, `.lease`, `.external-retry` | unset, 20, 5s, 2m, 5m | Agent worker |
 | `sangam.channels.documents-dir` | `./data/channels` | Channel attachment storage |
 | `sangam.channels.allow-unscanned` | false | Accept attachments with no malware scanner |
+| `sangam.ledger.gl-export-waiver` (env `SANGAM_LEDGER_GLEXPORTWAIVER`) | empty | Production refuses to start without `sangam.ledger.gl-connector` (owner decision 126) unless this names the reason for running without the GL export; the start is a system audit event `LEDGER_GL_EXPORT_WAIVED` with the reason and a WARN line; accounting entries stay in `LDG_ACCOUNTING` (`exported_at` NULL) and are exported once a connector is set. Blank, or set together with a GL connector: refused |
 | `sangam.malware.production-waiver` | empty | Production refuses to start without a malware scanner (owner decision 125) unless this names the reason for running without one; the waiver is logged at every start |
 | `sangam.channels.poll-seconds`, `sangam.channels.poll.<type>.*` | 60 | Polling channel interval and per-type settings |
 | `sangam.channels.bot-process` | unset | Channel type to bot process key |

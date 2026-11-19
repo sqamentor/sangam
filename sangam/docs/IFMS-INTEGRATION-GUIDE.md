@@ -48,7 +48,7 @@ it waits on. "NOT_RUN" means a test is written but has not run on that database.
 | 1.4 | An OIDC identity provider that puts the tenant in a claim (`sangam.security.claims.tenant`) and a separate platform issuer (INTEGRATION-GUIDE sections 6-7) | available now |
 | 1.5 | A secret store reachable through `secret://` references, and the production keys of [PLUG-AND-PLAY.md section 2](PLUG-AND-PLAY.md#2-what-every-production-installation-must-configure) | available now |
 | 1.6 | A malware scanner (ClamAV `clamd` or ICAP), or a recorded waiver (decision 125) | available now |
-| 1.7 | A GL export connector for the ledger (`sangam.ledger.gl-connector`) | available now (the setting); the IFMS GL connector is IFMS's (section 11) |
+| 1.7 | A GL export connector for the ledger (`sangam.ledger.gl-connector`), or the audited waiver `sangam.ledger.gl-export-waiver` with its reason (decision 126) | available now (the setting); the IFMS GL connector is IFMS's (section 11) |
 | 1.8 | Shared build machine: heavy runs take the shared lock and are announced 2 h ahead in the joint ledger (joint ledger rule 7, MACHINE-LOAD) | available now |
 
 ## 2. Architecture
@@ -242,6 +242,7 @@ Take the versions from the green sha's packgen output, never from this table.
 | operationId | UUIDv5 of (tenant, root, activity instance, loop); a worker passes it to PFMS, the bank or GL as their idempotency key | available now |
 | Path parameters | identifiers that can hold `/` or `:` move to query parameters (decisions 393, 400 (1)); in 0.1.0 by decision 406 (4ec73bba) | **merging** (lane R7-ui; listed in the contract-change notice) |
 | Contract deltas since 209d2765 | `RELEASE-NOTES-0.1.0.md` section 3 and the contract-change notice for the joint ledger | notice written; posting pending (E3) |
+| GL export (decision 126) | One GL outbox delivery per accounting entry to `sangam.ledger.gl-connector`, payload `reference`, `event`, `basis`, `debit`, `credit`, `amount`, `currency`, `functionalAmount` (decimals as strings), idempotency key `gl:<eventId>`. A permanent refusal is parked with an OPEN dead letter (operator requeue or skip), never dropped; an unknown outcome is a reconciliation item. Without a GL connector, production starts only under the audited operator waiver `sangam.ledger.gl-export-waiver` (env `SANGAM_LEDGER_GLEXPORTWAIVER`, the written reason, modelled on the malware waiver): the start writes the system audit event `LEDGER_GL_EXPORT_WAIVED` with the reason and logs a WARN naming the waiver. Every accounting entry is kept in `LDG_ACCOUNTING` with its exact GL payload (`payload_json`, changeset 0049-01) and `exported_at` NULL; no outbox GL row is written. Once `sangam.ledger.gl-connector` is set (and the waiver removed) the next start hands those entries to the GL export, oldest first, each once (`JdbcLedgerStore.exportPendingAccounting`). A blank reason, or the waiver together with a GL connector, is refused at start. | available now (this lane; `LedgerGlPublisherTest`, `LedgerGlWaiverH2Test`, `ProductionStartupFailFastTest`) |
 
 ## 12. Workers and connectors
 
@@ -250,7 +251,7 @@ Take the versions from the green sha's packgen output, never from this table.
 | PFMS | `PfmsFileConnector` (`sangam-integration/.../connector/gov/`); simulator `SANGAM_SIM_KIND=pfms` | connector available now; live PFMS NOT_RUN |
 | eSign | `EsignConnector`, opt-in live connector with the decision 140 verifier (merge fa4b5102); `ESIGN_CONFIG_INVALID` on a bad setting | available now (opt-in); live **pending (D11, decision 387 (6))** |
 | DSC (class-2/3 token) | Loopback desktop agent on the signer's computer, server-side verification (register DEC-165) | partial: real token NOT_RUN |
-| GL | `sangam.ledger.gl-connector` names the GL export connector. Production refuses an unset value or an unknown connector (`LedgerWiring.java:88-96`). The IFMS GL connector is an IFMS plugin or configuration of a generic connector | setting available now; IFMS connector owned by IFMS |
+| GL | `sangam.ledger.gl-connector` names the GL export connector. Production refuses an unset value (`LedgerWiring.requireGlExport`) and an id that names no registered connector (platform or tenant, or a declared `sangam.channels.enterprise.<tenant>.<id>.type`) with `LEDGER_GL_CONNECTOR_UNKNOWN` (`LedgerWiring.requireKnownGlConnector`). A permanent refusal by the GL connector is parked and dead-lettered by the outbox relay (operator requeue or skip), never dropped. Under the audited waiver `sangam.ledger.gl-export-waiver` entries are kept for a later export (section 11). The IFMS GL connector is an IFMS plugin or configuration of a generic connector | setting available now; IFMS connector owned by IFMS |
 | IFMS's own workers | service-principal token, `fetch-and-lock`, fencing triple, `outcome-unknown` on doubt (INTEGRATION-GUIDE section 8). Declare each topic's capability class: an undeclared topic is (c), with no automatic repeat | available now |
 
 ## 13. DSC signing gates and document slots
@@ -284,7 +285,7 @@ The order follows IFMS's sponsor gate SD-505 and its scenario catalogue R-114 v0
 - [ ] Every production setting of [PLUG-AND-PLAY.md section 2](PLUG-AND-PLAY.md#2-what-every-production-installation-must-configure) is supplied, and the server starts with `sangam.security.production=true`.
 - [ ] Key environment list, or custodian attestation, is in place, and the bootstrap setting is removed after the first start (decision 390 (2)).
 - [ ] Malware scanner is live, or a recorded waiver with its reason is in place.
-- [ ] GL connector is configured and reachable; PFMS and eSign are live (not simulators).
+- [ ] GL connector is configured and reachable (or the audited GL export waiver is recorded with its reason, and its removal is planned); PFMS and eSign are live (not simulators).
 - [ ] `sangam.rest.government-profile=true`, so idempotency keys are required.
 - [ ] Trusted proxies list the IFMS UI and the ingress.
 - [ ] Packs are deployed at the green sha's versions, and the profiles are loaded per tenant.

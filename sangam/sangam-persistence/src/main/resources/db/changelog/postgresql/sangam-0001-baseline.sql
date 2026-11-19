@@ -6551,6 +6551,11 @@ ALTER TABLE AI_KB_CHUNK ADD COLUMN ocr_transcript_id VARCHAR(64);
 ALTER TABLE SEC_SCIM_RESOURCE ADD COLUMN person_id VARCHAR(64);
 --rollback ALTER TABLE SEC_SCIM_RESOURCE DROP COLUMN person_id;
 
+--changeset sangam:0049-01-ldg_accounting-alter dbms:postgresql,cockroachdb
+--comment: RM-05 / decision 126: the exact GL payload of each accounting entry, for a later export
+ALTER TABLE LDG_ACCOUNTING ADD COLUMN payload_json TEXT;
+--rollback ALTER TABLE LDG_ACCOUNTING DROP COLUMN payload_json;
+
 --changeset sangam:0033-01-cfg_master_code-data dbms:postgresql,cockroachdb
 --comment: SL-84 root master codes: parent_code '' becomes the absent-key value '-'
 UPDATE CFG_MASTER_CODE SET parent_code = '-' WHERE parent_code = '';

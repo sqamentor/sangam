@@ -212,13 +212,14 @@ public final class SangamSchema {
      * changeset that seeds the OPS_UTC_GATE row ENGINE_WORK in state OPEN (0045-14); plus the generator {@code RENAMES}
      * changeset PG_CONFIG to PG_PROGRAMME_CONFIG (0046-01, decision 388: pg_catalog.pg_config shadowed the table on
      * PostgreSQL); plus SEC_SCIM_RESOURCE.person_id (0046-02) and its backfill with the unique index SEC_SCIM_PERSON
-     * (0046-03, decision 393 (a): opaque SCIM ids).
+     * (0046-03, decision 393 (a): opaque SCIM ids); plus LDG_ACCOUNTING.payload_json (0049-01, owner decision 126 and
+     * the audited GL export waiver: the exact GL payload of each kept accounting entry).
      * The PostgreSQL changelog also holds optional extension changesets (generator {@code PG_EXTENSION_OPTIONAL}: the
      * pgvector column AI_KB_CHUNK.embedding_vec, 0044-08, decision 170). They are recorded only where the extension is
      * enabled, so they are not in this count.
      * The changelog holds {@code PRODUCT_TABLES.size() + ADDITIONAL_CHANGESETS} changesets.
      */
-    public static final int ADDITIONAL_CHANGESETS = 96;
+    public static final int ADDITIONAL_CHANGESETS = 97;
 
     /** Liquibase dbms names used in the changelogs. */
     public enum Dbms {
