@@ -266,7 +266,7 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.13.7"
-      - name: Semgrep CLI 1.185.0 in its own venv (LGPL-2.1 build-time tool, licence-policy.json build_time_tools)
+      - name: Semgrep CLI 1.186.0 in its own venv (LGPL-2.1 build-time tool, licence-policy.json build_time_tools)
         run: |
           python -m venv "$RUNNER_TEMP/semgrep-venv"
           "$RUNNER_TEMP/semgrep-venv/bin/python" -m pip install --disable-pip-version-check -q --require-hashes --no-deps -r sangam/deploy/licence/ci-req-semgrep.txt

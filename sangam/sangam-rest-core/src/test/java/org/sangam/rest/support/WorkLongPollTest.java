@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -74,20 +75,45 @@ class WorkLongPollTest {
         }
     }
 
+    /*
+     * Virtual time (UP-L9): the wall-clock version asserted at least 3 polls inside 120 ms and failed 9 times in 16 runs
+     * on a saturated host, where every real timer tick ran 20-120 ms late (L9-evidence/worklongpoll-diag.log). How
+     * promptly the OS runs a timer thread is not a property of WorkLongPoll; the schedule and the deadline are.
+     */
     @Test
     void theDeadlineAnswersAnEmptyListAfterALastAttempt() throws Exception {
-        try (WorkLongPoll poll = new WorkLongPoll(FAST, List.of())) {
-            AtomicInteger calls = new AtomicInteger();
+        VirtualTimer clock = new VirtualTimer(0);
+        try (WorkLongPoll poll = new WorkLongPoll(FAST, List.of(), clock, clock, clock::nanoTime)) {
+            List<Long> calls = new ArrayList<>();
             Sink<String> sink = new Sink<>();
-            long t0 = System.nanoTime();
             poll.await(120, () -> {
-                calls.incrementAndGet();
+                calls.add(clock.nowMillis());
                 return List.of();
             }, sink, null);
-            assertEquals(List.of(), sink.result.get(5, TimeUnit.SECONDS));
-            long took = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t0);
-            assertTrue(took >= 100, "not before the deadline: " + took);
-            assertTrue(calls.get() >= 3, "polled on the schedule up to the deadline: " + calls.get());
+            clock.runUntil(1_000);
+            assertEquals(List.of(), sink.result.getNow(null), "empty list at the deadline");
+            // FAST: first 10 ms, doubling to at most 40 ms, never past the deadline; the last attempt is at the deadline
+            assertEquals(List.of(10L, 30L, 70L, 110L, 120L), calls, "polled on the schedule up to the deadline");
+            assertEquals(0, clock.pending(), "nothing scheduled after the answer");
+            assertEquals(0, poll.waiting());
+        }
+    }
+
+    @Test
+    void aStarvedTimerStillAnswersEmptyAfterOneLastAttemptPastTheDeadline() throws Exception {
+        // every timer task runs 130 ms late, as on a saturated host: the first poll lands after the 120 ms deadline
+        VirtualTimer clock = new VirtualTimer(130);
+        try (WorkLongPoll poll = new WorkLongPoll(FAST, List.of(), clock, clock, clock::nanoTime)) {
+            List<Long> calls = new ArrayList<>();
+            Sink<String> sink = new Sink<>();
+            poll.await(120, () -> {
+                calls.add(clock.nowMillis());
+                return List.of();
+            }, sink, null);
+            clock.runUntil(1_000);
+            assertEquals(List.of(140L), calls, "one attempt, after the deadline, then the answer");
+            assertEquals(List.of(), sink.result.getNow(null));
+            assertEquals(0, clock.pending());
         }
     }
 

@@ -26,7 +26,7 @@ class BuildToolsNotShippedTest(unittest.TestCase):
         self.policy.write_text(json.dumps({"build_time_tools": [
             {"tool": "SpotBugs", "coordinate": "com.github.spotbugs:spotbugs:4.10.5", "never_ship": "pkg:maven/com.github.spotbugs/spotbugs@"},
             {"tool": "FindSecBugs", "coordinate": "com.h3xstream.findsecbugs:findsecbugs-plugin:1.14.0", "never_ship": "pkg:maven/com.h3xstream.findsecbugs/findsecbugs-plugin"},
-            {"tool": "Semgrep CLI", "coordinate": "pypi:semgrep==1.185.0", "never_ship": "pkg:pypi/semgrep@"},
+            {"tool": "Semgrep CLI", "coordinate": "pypi:semgrep==1.186.0", "never_ship": "pkg:pypi/semgrep@"},
             {"tool": "sonar-maven-plugin", "coordinate": "org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211", "never_ship": "pkg:maven/org.sonarsource.scanner.maven/"},
         ]}), encoding="utf-8")
 
@@ -82,7 +82,7 @@ class BuildToolsNotShippedTest(unittest.TestCase):
         code, out = self.run_main("--sbom", str(self.sbom("pkg:maven/com.github.spotbugs/spotbugs@4.10.5")))
         self.assertEqual(1, code)
         self.assertIn("is the build-time tool SpotBugs", out)
-        code, out = self.run_main("--sbom", str(self.sbom("pkg:pypi/semgrep@1.185.0",
+        code, out = self.run_main("--sbom", str(self.sbom("pkg:pypi/semgrep@1.186.0",
                                                           "pkg:maven/org.sonarsource.scanner.maven/sonar-maven-plugin@5.8.0.7211")))
         self.assertEqual(1, code)
         self.assertIn("2 found", out)
@@ -101,7 +101,7 @@ class BuildToolsNotShippedTest(unittest.TestCase):
         self.assertEqual(1, code)
         self.assertIn("app.jar!BOOT-INF/lib/findsecbugs-plugin-1.14.0.jar", out)
         tree = self.dir / "image"
-        (tree / "usr/lib/python3/site-packages/semgrep-1.185.0.dist-info").mkdir(parents=True)
+        (tree / "usr/lib/python3/site-packages/semgrep-1.186.0.dist-info").mkdir(parents=True)
         (tree / "opt/sangam/lib-ext").mkdir(parents=True)
         (tree / "opt/sangam/lib-ext/sonar-maven-plugin-5.8.0.7211.jar").write_bytes(b"x")
         code, out = self.run_main("--tree", str(tree))
