@@ -91,7 +91,16 @@ final class GetHandlerSideEffects {
     final Map<M, Set<Call>> calls = new HashMap<>();
     /** Lambdas created in a method: key {@code iface.sam} -> impl. */
     final Map<M, Map<String, Set<M>>> creates = new HashMap<>();
+    /** Wiring lambdas no field binding was found for (beans that are lambdas): available to every request. */
     final Map<String, Set<M>> wiringLambdas = new HashMap<>();
+    /** Field ({@code owner.name}) -> lambdas stored in it while wiring, by lambda key. */
+    final Map<String, Map<String, Set<M>>> fieldLambdas = new HashMap<>();
+    /** Field declarations: class -> name -> descriptor. */
+    final Map<String, Map<String, String>> fieldsOf = new HashMap<>();
+    /** Fields a method reads, as written ({@code owner.name}). */
+    final Map<M, Set<String>> fieldReads = new HashMap<>();
+    /** Raw wiring bindings before resolution: {key, lambda, target "F:owner.name" | "C:class" | "U"}. */
+    final List<Object[]> rawBindings = new ArrayList<>();
     final Set<M> beanMethods = new HashSet<>();
     final Set<M> sources = new LinkedHashSet<>();
     private final Map<Call, Set<M>> classTargets = new HashMap<>();
@@ -129,81 +138,147 @@ final class GetHandlerSideEffects {
 
     /** Every side effect {@code source} can reach, one shortest path per (site, sink). */
     List<Hit> reach(M source) {
-        Map<M, M> parent = new HashMap<>();
-        Deque<M> work = new ArrayDeque<>();
-        Map<String, Set<M>> available = new HashMap<>();
-        wiringLambdas.forEach((k, v) -> available.computeIfAbsent(k, x -> new HashSet<>()).addAll(v));
-        Map<String, Set<M>> waiting = new HashMap<>(); // lambda key -> callers waiting for lambdas of that key
-        List<Hit> hits = new ArrayList<>();
-        Set<String> seenSites = new HashSet<>();
-        parent.put(source, source);
-        work.add(source);
-        if (!declared.contains(source)) {
-            for (M t : targets(new Call(source.owner(), source.name(), source.desc()), Map.of(), null, null)) {
-                parent.putIfAbsent(t, source);
-                work.add(t);
+        return new Run(source).run();
+    }
+
+    /**
+     * Context-sensitive walk. A lambda created on the path is callable only below the method that created it (the work
+     * it hands down). Lambdas stored in fields while wiring become callable once a method on the path reads that field;
+     * lambdas returned from a method (factories) and wiring lambdas without a field binding are callable anywhere in
+     * this handler's walk.
+     */
+    private final class Run {
+        record State(M m, int ctx) {
+        }
+
+        final M source;
+        final Map<Set<M>, Integer> ctxIds = new HashMap<>();
+        final List<Set<M>> ctxs = new ArrayList<>();
+        final Map<String, Set<M>> global = new HashMap<>();
+        final Map<String, Set<State>> waiting = new HashMap<>();
+        final Map<State, State> parent = new HashMap<>();
+        final Deque<State> work = new ArrayDeque<>();
+        final List<Hit> hits = new ArrayList<>();
+        final Set<String> seenSites = new HashSet<>();
+        final Set<String> seenFields = new HashSet<>();
+
+        Run(M source) {
+            this.source = source;
+            wiringLambdas.forEach((k, v) -> global.computeIfAbsent(k, x -> new HashSet<>()).addAll(v));
+        }
+
+        int ctxOf(Set<M> s) {
+            return ctxIds.computeIfAbsent(s, x -> {
+                ctxs.add(x);
+                return ctxs.size() - 1;
+            });
+        }
+
+        void push(State s, State from) {
+            if (!parent.containsKey(s) && parent.size() < 3_000_000) {
+                parent.put(s, from);
+                work.add(s);
             }
         }
-        while (!work.isEmpty()) {
-            M m = work.pop();
-            for (Map.Entry<String, Set<M>> e : creates.getOrDefault(m, Map.of()).entrySet()) {
-                Set<M> av = available.computeIfAbsent(e.getKey(), x -> new HashSet<>());
-                for (M lam : e.getValue()) {
-                    if (av.add(lam)) {
-                        for (M waiter : waiting.getOrDefault(e.getKey(), Set.of())) {
-                            if (!parent.containsKey(lam)) {
-                                parent.put(lam, waiter);
-                                work.add(lam);
+
+        void addGlobal(String key, M lam) {
+            if (global.computeIfAbsent(key, x -> new HashSet<>()).add(lam)) {
+                for (State w : waiting.getOrDefault(key, Set.of())) {
+                    push(new State(lam, w.ctx()), w);
+                }
+            }
+        }
+
+        List<Hit> run() {
+            State s0 = new State(source, ctxOf(Set.of()));
+            parent.put(s0, s0);
+            work.add(s0);
+            if (!declared.contains(source)) {
+                for (M t : classTargets.computeIfAbsent(new Call(source.owner(), source.name(), source.desc()),
+                        GetHandlerSideEffects.this::classDispatch)) {
+                    push(new State(t, s0.ctx()), s0);
+                }
+            }
+            while (!work.isEmpty()) {
+                State st = work.pop();
+                M m = st.m();
+                for (String f : fieldReads.getOrDefault(m, Set.of())) {
+                    if (seenFields.add(f)) {
+                        fieldLambdas.getOrDefault(resolveField(f), Map.of()).forEach((k, v) -> v.forEach(l -> addGlobal(k, l)));
+                    }
+                }
+                Set<M> here = new HashSet<>(ctxs.get(st.ctx()));
+                Map<String, Set<M>> made = creates.getOrDefault(m, Map.of());
+                String ret = Type.getReturnType(m.desc()).getSort() == Type.OBJECT
+                        ? Type.getReturnType(m.desc()).getInternalName() : "";
+                made.forEach((k, v) -> {
+                    if (k.startsWith(ret + ".")) {
+                        v.forEach(l -> addGlobal(k, l)); // returned to the caller: a factory
+                    } else {
+                        here.addAll(v);
+                    }
+                });
+                int childCtx = here.size() == ctxs.get(st.ctx()).size() ? st.ctx() : ctxOf(Set.copyOf(here));
+                for (Call c : calls.getOrDefault(m, Set.of())) {
+                    String sink = sinkOf(c);
+                    if (sink != null) {
+                        if (seenSites.add(sink + "@" + m)) {
+                            hits.add(new Hit(sink, m, pathTo(st)));
+                        }
+                        continue;
+                    }
+                    for (M t : classTargets.computeIfAbsent(c, GetHandlerSideEffects.this::classDispatch)) {
+                        push(new State(t, childCtx), st);
+                    }
+                    for (String sub : allSubtypes(c.owner())) {
+                        String key = sub + "." + c.name();
+                        Set<M> ofKey = lambdasOf(key);
+                        if (ofKey == null) {
+                            continue;
+                        }
+                        waiting.computeIfAbsent(key, x -> new HashSet<>()).add(st);
+                        for (M lam : global.getOrDefault(key, Set.of())) {
+                            push(new State(lam, childCtx), st);
+                        }
+                        for (M lam : here) {
+                            if (ofKey.contains(lam)) {
+                                push(new State(lam, childCtx), st);
                             }
                         }
                     }
                 }
             }
-            for (Call c : calls.getOrDefault(m, Set.of())) {
-                String sink = sinkOf(c);
-                if (sink != null) {
-                    if (seenSites.add(sink + "@" + m)) {
-                        hits.add(new Hit(sink, m, pathTo(parent, m)));
-                    }
-                    continue;
+            return hits;
+        }
+
+        List<M> pathTo(State s) {
+            List<M> path = new ArrayList<>();
+            for (int i = 0; i < 60; i++) {
+                path.add(0, s.m());
+                State p = parent.get(s);
+                if (p == null || p.equals(s)) {
+                    break;
                 }
-                for (M t : targets(c, available, waiting, m)) {
-                    if (!parent.containsKey(t)) {
-                        parent.put(t, m);
-                        work.add(t);
-                    }
-                }
+                s = p;
             }
+            return path;
         }
-        return hits;
     }
 
-    private static List<M> pathTo(Map<M, M> parent, M m) {
-        List<M> path = new ArrayList<>();
-        for (int i = 0; i < 60; i++) {
-            path.add(0, m);
-            M p = parent.get(m);
-            if (p == null || p.equals(m)) {
-                break;
-            }
-            m = p;
+    private Map<String, Set<M>> lambdasByKey;
+
+    /** Every lambda of a key in the program (main code), or null when there is none. */
+    Set<M> lambdasOf(String key) {
+        if (lambdasByKey == null) {
+            lambdasByKey = new HashMap<>();
+            creates.values().forEach(byKey -> byKey.forEach((k, v) -> lambdasByKey.computeIfAbsent(k, x -> new HashSet<>()).addAll(v)));
+            fieldLambdas.values().forEach(byKey -> byKey.forEach((k, v) -> lambdasByKey.computeIfAbsent(k, x -> new HashSet<>()).addAll(v)));
+            wiringLambdas.forEach((k, v) -> lambdasByKey.computeIfAbsent(k, x -> new HashSet<>()).addAll(v));
         }
-        return path;
+        return lambdasByKey.get(key);
     }
 
-    private Set<M> targets(Call c, Map<String, Set<M>> available, Map<String, Set<M>> waiting, M caller) {
-        Set<M> out = new HashSet<>(classTargets.computeIfAbsent(c, this::classDispatch));
-        for (String sub : allSubtypes(c.owner())) {
-            String key = sub + "." + c.name();
-            out.addAll(available.getOrDefault(key, Set.of()));
-            if (waiting != null) {
-                waiting.computeIfAbsent(key, k -> new HashSet<>()).add(caller);
-            }
-        }
-        return out;
-    }
-
-    private Set<M> classDispatch(Call c) {
+    Set<M> classDispatch(Call c) {
         Set<M> out = new HashSet<>();
         for (String sup : allSupertypes(c.owner())) {
             M m = new M(sup, c.name(), c.desc());
@@ -252,6 +327,47 @@ final class GetHandlerSideEffects {
             }
             return out;
         });
+    }
+
+    /** The declaring class of a field as written ({@code owner.name}), walking supertypes. */
+    String resolveField(String written) {
+        int dot = written.lastIndexOf('.');
+        String owner = written.substring(0, dot);
+        String name = written.substring(dot + 1);
+        for (String c : allSupertypes(owner)) {
+            if (fieldsOf.getOrDefault(c, Map.of()).containsKey(name)) {
+                return c + "." + name;
+            }
+        }
+        return written;
+    }
+
+    private void resolveBindings() {
+        for (Object[] b : rawBindings) {
+            String key = (String) b[0];
+            M lam = (M) b[1];
+            String target = (String) b[2];
+            String iface = key.substring(0, key.lastIndexOf('.'));
+            Set<String> fields = new HashSet<>();
+            if (target.startsWith("F:")) {
+                fields.add(resolveField(target.substring(2)));
+            } else if (target.startsWith("C:")) {
+                Set<String> ifaceSupers = allSupertypes(iface);
+                for (String c : allSupertypes(target.substring(2))) {
+                    fieldsOf.getOrDefault(c, Map.of()).forEach((n, d) -> {
+                        if (d.startsWith("L") && ifaceSupers.contains(d.substring(1, d.length() - 1))) {
+                            fields.add(c + "." + n);
+                        }
+                    });
+                }
+            }
+            if (fields.isEmpty()) {
+                wiringLambdas.computeIfAbsent(key, x -> new HashSet<>()).add(lam);
+            }
+            for (String f : fields) {
+                fieldLambdas.computeIfAbsent(f, x -> new HashMap<>()).computeIfAbsent(key, x -> new HashSet<>()).add(lam);
+            }
+        }
     }
 
     /** handler -> hits, for every GET handler. */
@@ -315,14 +431,8 @@ final class GetHandlerSideEffects {
                 throw new UncheckedIOException(e);
             }
         }
-        // lambdas created while wiring the application are strategies a request can hold
-        g.creates.forEach((m, byKey) -> {
-            boolean wiring = m.name().equals("<init>") || m.name().equals("<clinit>") || g.beanMethods.contains(m)
-                    || g.configClasses.contains(m.owner());
-            if (wiring) {
-                byKey.forEach((k, v) -> g.wiringLambdas.computeIfAbsent(k, x -> new HashSet<>()).addAll(v));
-            }
-        });
+        // lambdas created while wiring are reachable only through the field they are stored in
+        g.resolveBindings();
         return g;
     }
 
@@ -356,8 +466,16 @@ final class GetHandlerSideEffects {
             }
 
             @Override
+            public org.springframework.asm.FieldVisitor visitField(int access, String name, String desc, String sig,
+                                                                   Object value) {
+                fieldsOf.computeIfAbsent(owner, k -> new HashMap<>()).put(name, desc);
+                return null;
+            }
+
+            @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] ex) {
                 M self = new M(owner, name, desc);
+                List<Object[]> pending = new ArrayList<>();
                 declared.add(self);
                 Set<Call> out = calls.computeIfAbsent(self, k -> new LinkedHashSet<>());
                 return new MethodVisitor(Opcodes.ASM9) {
@@ -394,11 +512,40 @@ final class GetHandlerSideEffects {
                         };
                     }
 
+                    private boolean wiring() {
+                        return name.equals("<init>") || name.equals("<clinit>") || beanMethods.contains(self)
+                                || configClasses.contains(owner);
+                    }
+
+                    private void bind(String target) {
+                        for (Object[] p : pending) {
+                            rawBindings.add(new Object[] {p[0], p[1], target});
+                        }
+                        pending.clear();
+                    }
+
+                    @Override
+                    public void visitFieldInsn(int op, String o, String n, String d) {
+                        if (op == Opcodes.GETFIELD || op == Opcodes.GETSTATIC) {
+                            fieldReads.computeIfAbsent(self, k -> new HashSet<>()).add(o + "." + n);
+                        } else if (!pending.isEmpty()) {
+                            bind("F:" + o + "." + n);
+                        }
+                    }
+
                     @Override
                     public void visitMethodInsn(int op, String o, String n, String d, boolean itf) {
                         if (!o.startsWith("[")) {
                             out.add(new Call(o, n, d));
                         }
+                        if (!pending.isEmpty()) {
+                            bind("C:" + o);
+                        }
+                    }
+
+                    @Override
+                    public void visitEnd() {
+                        bind("U"); // a lambda returned as a bean: injectable anywhere of its type
                     }
 
                     @Override
@@ -408,8 +555,13 @@ final class GetHandlerSideEffects {
                             return;
                         }
                         String key = Type.getReturnType(d).getInternalName() + "." + n;
-                        creates.computeIfAbsent(self, k -> new HashMap<>()).computeIfAbsent(key, k -> new HashSet<>())
-                                .add(new M(impl.getOwner(), impl.getName(), impl.getDesc()));
+                        M lam = new M(impl.getOwner(), impl.getName(), impl.getDesc());
+                        if (wiring()) {
+                            pending.add(new Object[] {key, lam});
+                        } else {
+                            creates.computeIfAbsent(self, k -> new HashMap<>()).computeIfAbsent(key, k -> new HashSet<>())
+                                    .add(lam);
+                        }
                     }
                 };
             }
