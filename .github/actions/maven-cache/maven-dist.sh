@@ -23,24 +23,44 @@ else
   # Any other HTTP error fails at once. Run 44448977445: curl gave up after its first 429 (Retry-After beyond its window).
   # On every non-200 answer an allow-list of response headers (which server and edge answered) goes to the job log;
   # never the whole header block, so nothing secret can be printed.
+  # Run 44493122674 showed what the 404 is: 'HTTP/2 404, server: cloudflare, retry-after: 28304' (then 28004, 27704,
+  # 27404): Central's edge blocks the runner egress for ~7.9 h. When a 404/429 asks for more than 300 s, waiting cannot
+  # help, so the same pinned file is taken once from the official Apache distribution archive instead. The fallback URL
+  # is derived from distributionUrl's version, and the SHA-256 check below applies to it unchanged (mvnw re-checks).
+  ver=${url%/*}; ver=${ver##*/}
+  case "$ver" in [0-9]*.*) ;; *) echo "::error::cannot read the Maven version from $url"; exit 1 ;; esac
+  fallback="https://archive.apache.org/dist/maven/maven-${ver%%.*}/$ver/binaries/${url##*/}"
+  hdrs() {
+    echo "maven distribution: HTTP $1 from $2, response headers:"
+    { tr -d '\r' < "$dest.hdr" | grep -iE '^(HTTP/|server:|x-cache|x-served-by|x-timer|cf-ray:|cf-cache-status:|via:|age:|date:|retry-after:|content-length:|content-type:)' | sed 's/^/  /'; } 2>/dev/null || true
+  }
+  src=$url
   for attempt in 1 2 3 4 5; do
     code=$(curl -sSL -D "$dest.hdr" -o "$dest.part" -w '%{http_code}' "$url" || true)
     [ "$code" = 200 ] && break
-    echo "maven distribution: HTTP $code (attempt $attempt), response headers:"
-    { tr -d '\r' < "$dest.hdr" | grep -iE '^(HTTP/|server:|x-cache|x-served-by|x-timer|cf-ray:|cf-cache-status:|via:|age:|date:|retry-after:|content-length:|content-type:)' | sed 's/^/  /'; } 2>/dev/null || true
+    hdrs "$code" "$url (attempt $attempt)"
     case "$code" in
       404|429|503) ;;
       *) rm -f "$dest.part" "$dest.hdr"; echo "::error::$url answered HTTP $code"; exit 1 ;;
     esac
-    [ "$attempt" -lt 5 ] || { rm -f "$dest.part" "$dest.hdr"; echo "::error::$url still HTTP $code after 5 attempts"; exit 1; }
     ra=$(tr -d '\r' < "$dest.hdr" | sed -n 's/^[Rr]etry-[Aa]fter: *\([0-9]\+\).*/\1/p' | tail -1)
+    if [ "$code" != 503 ] && [ -n "$ra" ] && [ "$ra" -gt 300 ]; then
+      echo "::warning::$url answered HTTP $code with Retry-After ${ra}s (> 300 s); fetching the same pinned file from $fallback"
+      src=$fallback
+      code=$(curl -sSL -D "$dest.hdr" -o "$dest.part" -w '%{http_code}' "$fallback" || true)
+      [ "$code" = 200 ] && break
+      hdrs "$code" "$fallback"
+      rm -f "$dest.part" "$dest.hdr"; echo "::error::$fallback answered HTTP $code"; exit 1
+    fi
+    [ "$attempt" -lt 5 ] || { rm -f "$dest.part" "$dest.hdr"; echo "::error::$url still HTTP $code after 5 attempts"; exit 1; }
     s=${ra:-$(( attempt * 60 ))}; [ "$s" -le 300 ] || s=300
     echo "::warning::$url answered HTTP $code (attempt $attempt), Retry-After ${ra:-none}; waiting ${s}s"
     sleep "$s"
   done
   rm -f "$dest.hdr"
-  echo "$sum  $dest.part" | sha256sum -c --status || { rm -f "$dest.part"; echo "::error::SHA-256 mismatch for $url"; exit 1; }
+  echo "$sum  $dest.part" | sha256sum -c --status || { rm -f "$dest.part"; echo "::error::SHA-256 mismatch for $src"; exit 1; }
   mv "$dest.part" "$dest"
+  echo "maven distribution: served by $src (SHA-256 verified), stored for the distribution cache"
 fi
 # Install it with mvnw now, from the verified file (mvnw re-checks the SHA-256). mvnw prefers wget, which has no file://
 # support, so for this one call only a shim earlier on PATH copies file:// URLs and hands anything else to real wget.
