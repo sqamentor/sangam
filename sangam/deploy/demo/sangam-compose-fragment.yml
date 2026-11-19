@@ -129,6 +129,13 @@ services:
       # GOI.FIN only: verified payee, payment and bank statement answered by the in-process simulator, audit marked
       # sandbox=true, UI shows "Sandbox"; no real money. No production guard is relaxed.
       SANGAM_DEMO_SANDBOXTENANTS: GOI.FIN
+      # EV-M-0916: the supported tenant creation (FirstAdminBootstrap). At start-up it creates GOI.FIN if missing and
+      # appoints the two tenant administrators; it changes nothing once GOI.FIN has a tenant-admin role, so the two lines
+      # may stay or be removed after the tenant exists. Entry format person-id:external-subject:Display name, where the
+      # external subject is the token's PRINCIPAL claim (sangam.security.oidc.claims.principal, default
+      # preferred_username), NOT sub: realm oneifms's sangam-ui tokens carry no sub. Do not put ':' or ',' in a name.
+      SANGAM_SECURITY_FIRSTADMINS_TENANT: GOI.FIN
+      SANGAM_SECURITY_FIRSTADMINS_SUBJECTS: ${SANGAM_SECURITY_FIRSTADMINS_SUBJECTS:-rajendra.sharma:rajendra.sharma:Rajendra Prasad Sharma,meenakshi.kanwar:meenakshi.kanwar:Meenakshi Kanwar}
       # Owner decision 2026-11-19 (EV-M-0890 (a)): written demo waiver, no scanner.
       SANGAM_MALWARE_SCANNER: none
       SANGAM_MALWARE_PRODUCTIONWAIVER: "demo.ifms.dev, synthetic data only, behind Cloudflare Access"
@@ -184,7 +191,12 @@ services:
       SANGAM_UI_IDLE_MINUTES: "30"
       SANGAM_CSP_CONNECT_EXTRA: ${SANGAM_CSP_CONNECT_EXTRA:?the auth origin, e.g. https://<auth host>}
     read_only: true
-    tmpfs: [/tmp, /var/cache/nginx, /etc/nginx/conf.d]
+    # EV-M-0916: the image runs as uid 101 (deploy/presentation/Dockerfile USER); a tmpfs without uid/gid is root-owned
+    # and nginx could not write conf.d (it listened on nothing). Checked by DemoComposeFragmentStartupTest.
+    tmpfs:
+      - /tmp:uid=101,gid=101,mode=0700
+      - /var/cache/nginx:uid=101,gid=101,mode=0700
+      - /etc/nginx/conf.d:uid=101,gid=101,mode=0755
     deploy:
       resources:
         limits: { cpus: "0.5", memory: 256m }

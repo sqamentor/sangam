@@ -51,6 +51,10 @@ class DemoComposeFragmentStartupTest {
 
     private static final Path FRAGMENT = Path.of("..", "deploy", "demo", "sangam-compose-fragment.yml");
     private static final String ENV = "demo-ifms";
+    private static final String TENANT = "GOI.FIN";
+    /** The two realm oneifms administrators (EV-M-0916): person id : principal claim (preferred_username) : name. */
+    private static final String FIRST_ADMINS = "rajendra.sharma:rajendra.sharma:Rajendra Prasad Sharma,"
+            + "meenakshi.kanwar:meenakshi.kanwar:Meenakshi Kanwar";
 
     /** The env names the fragment must carry: the production start set and the decision 387(4) key flow. */
     private static final Set<String> REQUIRED = Set.of(
@@ -61,7 +65,8 @@ class DemoComposeFragmentStartupTest {
             "SANGAM_AUDIT_CHECKPOINT_PRIVATEKEYREF", "SANGAM_AUDIT_CHECKPOINT_PUBLICKEYREF",
             "SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF", "SANGAM_KEYS_ENVIRONMENT", "SANGAM_KEYS_BOOTSTRAP",
             "SANGAM_KEYS_FINGERPRINT_EXPORT", "SANGAM_KEYS_ATTESTATION", "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY",
-            "SANGAM_LEDGER_GLEXPORTWAIVER", "SANGAM_TRUSTED_PROXIES", "SANGAM_DEMO_SANDBOXTENANTS");
+            "SANGAM_LEDGER_GLEXPORTWAIVER", "SANGAM_TRUSTED_PROXIES", "SANGAM_DEMO_SANDBOXTENANTS",
+            "SANGAM_SECURITY_FIRSTADMINS_TENANT", "SANGAM_SECURITY_FIRSTADMINS_SUBJECTS");
 
     @TempDir
     Path dir;
@@ -83,6 +88,29 @@ class DemoComposeFragmentStartupTest {
                 "the GL connector stays unset: the demo runs under the audited GL export waiver");
     }
 
+    /**
+     * EV-M-0916 defect 2: the front image runs as a non-root user (deploy/presentation/Dockerfile USER), and a tmpfs
+     * mounted without uid/gid is root-owned, so nginx could not write conf.d and listened on nothing. Every tmpfs of
+     * sangam-front must carry the image's uid and gid.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void everyFrontTmpfsIsOwnedByTheImageUser() throws IOException {
+        String uid = Files.readAllLines(Path.of("..", "deploy", "presentation", "Dockerfile"), StandardCharsets.UTF_8).stream()
+                .map(String::strip).filter(l -> l.startsWith("USER ")).reduce((a, b) -> b).orElseThrow()
+                .substring(5).strip().split(":")[0];
+        assertTrue(uid.matches("[1-9][0-9]*"), "the front image runs as a numeric non-root uid: " + uid);
+        Map<String, Object> doc = new Yaml().load(Files.readString(FRAGMENT, StandardCharsets.UTF_8));
+        Map<String, Object> front = (Map<String, Object>) ((Map<String, Object>) doc.get("services")).get("sangam-front");
+        List<String> tmpfs = (List<String>) front.get("tmpfs");
+        assertFalse(tmpfs == null || tmpfs.isEmpty(), "sangam-front is read_only and needs its tmpfs mounts");
+        for (String m : tmpfs) {
+            List<String> opts = m.contains(":") ? List.of(m.substring(m.indexOf(':') + 1).split(",")) : List.of();
+            assertTrue(opts.contains("uid=" + uid) && opts.contains("gid=" + uid),
+                    "tmpfs " + m + " must be owned by the image user " + uid + " (uid=" + uid + ",gid=" + uid + ")");
+        }
+    }
+
     @Test
     void bootstrapStartThenAttestedRestartFromExactlyTheFragmentsEnvNames() throws Exception {
         Keys keys = new Keys(dir);
@@ -97,7 +125,9 @@ class DemoComposeFragmentStartupTest {
             assertEquals("k1", ctx.getEnvironment().getProperty("sangam.security.kek.current-id"));
             // SANGAM_DEMO_SANDBOXTENANTS binds to sangam.demo.sandbox-tenants and is installed into the packs
             assertEquals(Set.of("GOI.FIN"), org.sangam.packs.sim.DemoSandbox.tenants());
+            assertFirstAdmins(ctx);
         }
+        String afterFirst = tenantState(keys);
 
         // the custodian, on the host: signs this environment's export (the shell tool is KeyAttestationEndToEndTest's)
         List<KeyAttestation.Key> attested = Files.readAllLines(export, StandardCharsets.UTF_8).stream()
@@ -118,8 +148,94 @@ class DemoComposeFragmentStartupTest {
             assertTrue(ctx.isActive());
             assertEquals(attestation.toString(), ctx.getEnvironment().getProperty("sangam.keys.attestation"));
             assertEquals(Set.of("GOI.FIN"), org.sangam.packs.sim.DemoSandbox.tenants());
+            assertFirstAdmins(ctx);
         } finally {
             org.sangam.packs.sim.DemoSandbox.install(Set.of());
+        }
+        assertEquals(afterFirst, tenantState(keys), "a second start with the first-admins settings changes nothing");
+    }
+
+    /**
+     * EV-M-0916: FirstAdminBootstrap under production creates GOI.FIN (a tenant id with a dot) and appoints the two
+     * administrators, and a token shaped like realm oneifms's sangam-ui token (NO sub; preferred_username) signs in
+     * with tenant-admin rights. The seed's external subject is matched against the principal claim
+     * (sangam.security.oidc.claims.principal, default preferred_username), not against sub.
+     */
+    private static void assertFirstAdmins(ConfigurableApplicationContext ctx) throws Exception {
+        assertEquals("CREATED", tenantStatus(ctx.getBean(javax.sql.DataSource.class)),
+                "GOI.FIN exists and serves requests (CREATED; ACTIVE comes from the administrators' activation, AJ-01)");
+        String port = ctx.getEnvironment().getRequiredProperty("local.server.port");
+        for (String[] admin : new String[][] {{"rajendra.sharma", "Rajendra Prasad Sharma"}, {"meenakshi.kanwar", "Meenakshi Kanwar"}}) {
+            String token = RealmIdp.get().tokenWithoutSub(TENANT, admin[0], List.of("sangam-tenant-admin"));
+            java.net.http.HttpResponse<String> me = java.net.http.HttpClient.newHttpClient().send(
+                    java.net.http.HttpRequest.newBuilder(java.net.URI.create("http://localhost:" + port + "/api/v1/me"))
+                            .header("Authorization", "Bearer " + token).GET().build(),
+                    java.net.http.HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, me.statusCode(), admin[0] + ": " + me.body());
+            assertFalse(me.body().contains("TENANT_UNAVAILABLE"), me.body());
+            assertTrue(me.body().contains("\"" + admin[0] + "\""), "the seeded person " + admin[0] + ": " + me.body());
+            assertTrue(me.body().contains("\"admin.write\""), admin[0] + " has administrator permissions: " + me.body());
+            // the sign-in resolved to the SEEDED person (no just-in-time person), which holds the tenant-admin binding
+            assertEquals(List.of(admin[0]), query(ctx, "SELECT person_id FROM SEC_PERSON WHERE tenant_id=? AND external_subject=?",
+                    TENANT, admin[0]), "one person per principal, the seed");
+            assertEquals(List.of(admin[1]), query(ctx, "SELECT display_name FROM SEC_PERSON WHERE tenant_id=? AND person_id=?",
+                    TENANT, admin[0]));
+            assertEquals(List.of(org.sangam.security.admin.TenantAdminService.TENANT_ADMIN_ROLE), query(ctx,
+                    "SELECT role_id FROM SEC_ROLE_BINDING WHERE tenant_id=? AND member_id=?", TENANT,
+                    org.sangam.core.security.SecurityIdentity.USER + admin[0]), admin[0] + " is bound to tenant-admin");
+        }
+        assertEquals(List.of("2"), query(ctx, "SELECT COUNT(*) FROM SEC_PERSON WHERE tenant_id=?", TENANT),
+                "no just-in-time person was provisioned beside the two seeds");
+    }
+
+    private static List<String> query(ConfigurableApplicationContext ctx, String sql, String... args) throws java.sql.SQLException {
+        try (java.sql.Connection c = ctx.getBean(javax.sql.DataSource.class).getConnection();
+             var ps = c.prepareStatement(sql)) {
+            for (int i = 0; i < args.length; i++) {
+                ps.setString(i + 1, args[i]);
+            }
+            List<String> out = new java.util.ArrayList<>();
+            try (var rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(rs.getString(1));
+                }
+            }
+            return out;
+        }
+    }
+
+    private static String tenantStatus(javax.sql.DataSource ds) throws java.sql.SQLException {
+        try (java.sql.Connection c = ds.getConnection();
+             var ps = c.prepareStatement("SELECT status FROM SEC_TENANT WHERE tenant_id=?")) {
+            ps.setString(1, TENANT);
+            try (var rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        }
+    }
+
+    /** The tenant row, its two administrators and its role count, as one comparable string. */
+    private static String tenantState(Keys keys) throws java.sql.SQLException {
+        try (java.sql.Connection c = java.sql.DriverManager.getConnection(keys.db, "sangam_app", keys.dbPassword)) {
+            StringBuilder sb = new StringBuilder();
+            for (String q : List.of(
+                    "SELECT tenant_id, status, created_at FROM SEC_TENANT WHERE tenant_id=?",
+                    "SELECT person_id, external_subject, display_name, status, created_at FROM SEC_PERSON WHERE tenant_id=?"
+                            + " AND person_id IN ('rajendra.sharma','meenakshi.kanwar') ORDER BY person_id",
+                    "SELECT COUNT(*) FROM SEC_ROLE WHERE tenant_id=?")) {
+                try (var ps = c.prepareStatement(q)) {
+                    ps.setString(1, TENANT);
+                    try (var rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+                                sb.append(rs.getString(i)).append('|');
+                            }
+                            sb.append('\n');
+                        }
+                    }
+                }
+            }
+            return sb.toString();
         }
     }
 
@@ -182,9 +298,11 @@ class DemoComposeFragmentStartupTest {
                 case "SANGAM_DEMO_SANDBOXTENANTS" -> "GOI.FIN";
                 case "SANGAM_MALWARE_SCANNER" -> "none";
                 case "SANGAM_MALWARE_PRODUCTIONWAIVER" -> "demo-fragment start-up test: no scanner";
-                case "SANGAM_OIDC_ISSUER" -> "https://idp.example/realms/oneifms";
+                case "SANGAM_SECURITY_FIRSTADMINS_TENANT" -> TENANT;
+                case "SANGAM_SECURITY_FIRSTADMINS_SUBJECTS" -> FIRST_ADMINS;
+                case "SANGAM_OIDC_ISSUER" -> RealmIdp.ISSUER;
                 case "SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI" ->
-                        "https://idp.example/realms/oneifms/protocol/openid-connect/certs";
+                        RealmIdp.get().jwksUri();
                 case "SANGAM_SECURITY_OIDC_AUDIENCE" -> "sangam-server";
                 case "SANGAM_SECURITY_OIDC_TENANT_CLAIM" -> "tenant";
                 case "SANGAM_SECURITY_OIDC_ROLES_CLAIM" -> "roles";
@@ -226,4 +344,69 @@ class DemoComposeFragmentStartupTest {
         Files.writeString(compliance.resolve("principal-key"), random(32), StandardCharsets.UTF_8);
         return root;
     }
-}
+
+    /**
+     * A stand-in for realm oneifms: issuer https://idp.example/realms/oneifms (the token's iss is only compared) and a
+     * JWKS served on a NON-loopback address of this machine, because production refuses loopback URLs
+     * (HostingWiring.sangamProductionUrlGuard). Its tokens are shaped like Keycloak 25+ sangam-ui access tokens without
+     * the basic client scope (EV-M-0916): no sub; preferred_username, tenant, roles, aud, sid.
+     */
+    static final class RealmIdp {
+        static final String ISSUER = "https://idp.example/realms/oneifms";
+        private static RealmIdp instance;
+        private final com.nimbusds.jose.jwk.RSAKey key;
+        private final String jwks;
+
+        private RealmIdp() throws Exception {
+            key = new com.nimbusds.jose.jwk.gen.RSAKeyGenerator(2048).keyID(java.util.UUID.randomUUID().toString())
+                    .keyUse(com.nimbusds.jose.jwk.KeyUse.SIGNATURE).algorithm(com.nimbusds.jose.JWSAlgorithm.RS256).generate();
+            String host = java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces()).stream()
+                    .filter(n -> { try { return n.isUp() && !n.isLoopback(); } catch (java.net.SocketException e) { return false; } })
+                    .flatMap(n -> java.util.Collections.list(n.getInetAddresses()).stream())
+                    .filter(a -> a instanceof java.net.Inet4Address && !a.isLoopbackAddress() && !a.isLinkLocalAddress())
+                    .map(java.net.InetAddress::getHostAddress).findFirst()
+                    .orElseThrow(() -> new IllegalStateException("no non-loopback IPv4 address for the test JWKS"));
+            com.sun.net.httpserver.HttpServer server = com.sun.net.httpserver.HttpServer.create(
+                    new java.net.InetSocketAddress(java.net.InetAddress.getByName(host), 0), 0);
+            byte[] body = new com.nimbusds.jose.jwk.JWKSet(key.toPublicJWK()).toString().getBytes(StandardCharsets.UTF_8);
+            server.createContext("/realms/oneifms/protocol/openid-connect/certs", ex -> {
+                ex.getResponseHeaders().add("Content-Type", "application/json");
+                ex.sendResponseHeaders(200, body.length);
+                try (java.io.OutputStream os = ex.getResponseBody()) {
+                    os.write(body);
+                }
+            });
+            server.start();
+            jwks = "http://" + host + ":" + server.getAddress().getPort() + "/realms/oneifms/protocol/openid-connect/certs";
+        }
+
+        static synchronized RealmIdp get() {
+            if (instance == null) {
+                try {
+                    instance = new RealmIdp();
+                } catch (Exception e) {
+                    throw new IllegalStateException("cannot start the test realm", e);
+                }
+            }
+            return instance;
+        }
+
+        String jwksUri() {
+            return jwks;
+        }
+
+        String tokenWithoutSub(String tenant, String preferredUsername, List<String> roles) throws Exception {
+            java.time.Instant now = java.time.Instant.now();
+            com.nimbusds.jwt.JWTClaimsSet claims = new com.nimbusds.jwt.JWTClaimsSet.Builder()
+                    .issuer(ISSUER).audience("sangam-server")
+                    .issueTime(java.util.Date.from(now)).notBeforeTime(java.util.Date.from(now.minusSeconds(5)))
+                    .expirationTime(java.util.Date.from(now.plusSeconds(600))).jwtID(java.util.UUID.randomUUID().toString())
+                    .claim("tenant", tenant).claim("preferred_username", preferredUsername).claim("roles", roles)
+                    .claim("sid", java.util.UUID.randomUUID().toString()).build();
+            com.nimbusds.jwt.SignedJWT jwt = new com.nimbusds.jwt.SignedJWT(new com.nimbusds.jose.JWSHeader.Builder(
+                    com.nimbusds.jose.JWSAlgorithm.RS256).keyID(key.getKeyID()).build(), claims);
+            jwt.sign(new com.nimbusds.jose.crypto.RSASSASigner(key));
+            assertEquals(null, jwt.getJWTClaimsSet().getSubject(), "shaped like the sangam-ui token: no sub");
+            return jwt.serialize();
+        }
+    }}
