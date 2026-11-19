@@ -1,6 +1,6 @@
 {
   "id": "sec.health.abdm-consent",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "ABDM consent and health information exchange",
     "hi": "एबीडीएम सहमति एवं स्वास्थ्य सूचना आदान-प्रदान"
@@ -40,18 +40,21 @@
   "connectors": [
     {
       "id": "abdm.consentRequest",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Consent request (HIU to CM)"
     },
     {
       "id": "abdm.hiRequest",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Health information request"
     },
     {
       "id": "records.purge",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Purge fetched data"

@@ -1,6 +1,6 @@
 {
   "id": "sec.util.meter-to-cash",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Meter to cash (billing cycle)",
     "hi": "मीटर से नकद (बिलिंग चक्र)"
@@ -44,24 +44,28 @@
   "connectors": [
     {
       "id": "mdm.consumersDue",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Consumers in the cycle: items with key and, for a new connection, connectionCaseKey"
     },
     {
       "id": "mdm.read",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Meter read"
     },
     {
       "id": "billing.generate",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Bill"
     },
     {
       "id": "billing.revise",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Bill revision"

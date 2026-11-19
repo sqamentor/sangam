@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.aml-str",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "AML alert investigation and STR / CTR to FIU-IND",
     "hi": "धन-शोधन चेतावनी जाँच एवं एफआईयू-आईएनडी को एसटीआर / सीटीआर"
@@ -60,24 +60,28 @@
   "connectors": [
     {
       "id": "cbs.txnHistory",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Transaction history"
     },
     {
       "id": "fiu.finnet",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "FINnet 2.0 filing"
     },
     {
       "id": "cbs.riskUpdate",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Customer risk update"
     },
     {
       "id": "cbs.cashTxns",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Cash transactions for CTR"

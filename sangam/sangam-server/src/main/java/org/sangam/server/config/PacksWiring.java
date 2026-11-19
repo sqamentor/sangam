@@ -190,6 +190,12 @@ public class PacksWiring {
             if (pr != null) {
                 // SL-34: pack SLAs count the tenant's own working days (profile calendar: zone, weekend, holidays)
                 ports = ports.withCalendar(packCalendar(pr, businessClocks, calendarName));
+                // owner decision M1: a money-out step takes the tenant / jurisdiction profile's currency first
+                org.sangam.packs.port.TenantCurrencies.install(tenant -> {
+                    java.util.Currency c = pr.resolve(tenant, ConfigWiring.businessClock(businessClocks).today(tenant))
+                            .locale().money().currency();
+                    return c == null ? null : c.getCurrencyCode();
+                });
             } else {
                 LOG.warn("No ProfileResolver bean: pack SLAs use the default working-day calendar (no tenant holidays)");
             }

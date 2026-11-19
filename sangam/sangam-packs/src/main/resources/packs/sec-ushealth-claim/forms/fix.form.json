@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-claim/fix",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ushealth.claim",
   "title": {
     "en": "Fix the front-end rejection (999 / 277CA)",

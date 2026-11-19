@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_records_destruction_check" name="Appraisal before destruction (Public Records Rules r.9)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="records-destruction-check" name="Appraisal before destruction (Public Records Rules r.9)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
+  <decision id="records-destruction-check" name="Appraisal before destruction (Public Records Rules r.9)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
     <decisionTable id="records-destruction-check_t" hitPolicy="FIRST">
       <input id="records-destruction-check_i0" label="Category"><inputExpression id="records-destruction-check_ie0" typeRef="string"><text>retentionCategory</text></inputExpression></input>
       <input id="records-destruction-check_i1" label="Age (years)"><inputExpression id="records-destruction-check_ie1" typeRef="integer"><text>recordAgeYears</text></inputExpression></input>

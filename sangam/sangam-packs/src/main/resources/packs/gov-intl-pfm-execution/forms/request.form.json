@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-execution/request",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.intl.pfm-execution",
   "title": {
     "en": "Commitment request",
@@ -68,6 +68,15 @@
       "label": {
         "en": "Description",
         "hi": "विवरण"
+      }
+    },
+    {
+      "id": "payeePartyId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payee party ID (verified party registry)",
+        "hi": "प्राप्तकर्ता पक्ष आईडी (सत्यापित पक्ष रजिस्टर)"
       }
     }
   ]

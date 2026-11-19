@@ -1,6 +1,6 @@
 {
   "key": "up20-rpa/handle",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "universal.up20-rpa",
   "title": {
     "en": "Bot failed: retry or do manually",

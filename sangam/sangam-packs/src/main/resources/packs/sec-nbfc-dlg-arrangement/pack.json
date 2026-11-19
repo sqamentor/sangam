@@ -1,6 +1,6 @@
 {
   "id": "sec.nbfc.dlg-arrangement",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Default loss guarantee arrangement with the 5% cap",
     "hi": "पाँच प्रतिशत सीमा सहित डिफ़ॉल्ट हानि गारंटी व्यवस्था"
@@ -52,12 +52,14 @@
   "connectors": [
     {
       "id": "dlg.register",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "DLG register"
     },
     {
       "id": "dlg.invoke",
+      "moneyMovement": "NONE",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Invoke guarantee"

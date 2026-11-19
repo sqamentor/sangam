@@ -51,7 +51,7 @@ def up02():
                [('inventory.reserve', 'a', '', 'Reserve'), ('inventory.release', 'a', '', 'Release (compensation)'),
                 ('saga.charge', 'c', '', 'Charge'), ('payment.refund', 'a', '', 'Refund (compensation)'),
                 ('shipping.create', 'a', '', 'Book'), ('shipping.cancel', 'a', '', 'Cancel (compensation)')])
-    p = pk.proc('sangam-up02-saga', 'UP-02 Order saga', '', start={'materialFields': 'orderId,amount'})
+    p = pk.proc('sangam-up02-saga', 'UP-02 Order saga', '', start={'materialFields': 'orderId,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = s.start('u2_start', 'Order', form='up02-saga/order')
     p.forms.append(dict(key='up02-saga/order', name='Order | आदेश', decision=None, fields=['orderId*', 'customerId*', 'amount*'],
@@ -531,7 +531,7 @@ def up13():
                'Return eligibility by policy, pickup, inspection of the returned quantity, partial refund computed on '
                'the accepted quantity and paid once by operationId (R36).', ['R36', 'GP-13', 'GP-12'],
                [('shipping.pickup', 'a', '', 'Pickup'), ('payment.refund', 'a', '', 'Refund')])
-    p = pk.proc('sangam-up13-returns', 'UP-13 Return and refund', '', start={'materialFields': 'orderId,returnQty,refundAmount'})
+    p = pk.proc('sangam-up13-returns', 'UP-13 Return and refund', '', start={'materialFields': 'orderId,returnQty,refundAmount,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = s.start('u13_start', 'Return requested', form='up13-returns-refunds/request')
     p.forms.append(dict(key='up13-returns-refunds/request', name='Return request | वापसी अनुरोध', decision=None,
@@ -571,7 +571,7 @@ def up14():
                'posts automatically, exceptions go to an AP clerk who may seek supplier clarification (R8, R71).',
                ['R8', 'R71', 'GP-29', 'GP-31', 'GP-16'], [('ap.post', 'a', '', 'Post invoice for payment')])
     p = pk.proc('sangam-up14-three-way-match', 'UP-14 Three-way match', '',
-                start={'materialFields': 'poQty,grnQty,invoiceQty,poPrice,invoicePrice'})
+                start={'materialFields': 'poQty,grnQty,invoiceQty,poPrice,invoicePrice,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = s.start('u14_start', 'Invoice received', form='up14-three-way-match/invoice')
     p.forms.append(dict(key='up14-three-way-match/invoice', name='Supplier invoice | आपूर्तिकर्ता बीजक', decision=None,

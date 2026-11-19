@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-patient-access/classifyHold",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ushealth.patient-access",
   "title": {
     "en": "Item category or status not stated: classify before anything is published",

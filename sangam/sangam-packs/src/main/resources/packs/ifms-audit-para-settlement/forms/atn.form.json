@@ -1,6 +1,6 @@
 {
   "key": "ifms-audit-para-settlement/atn",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "pack": "gov.ifms.audit-para-settlement",
   "title": {
     "en": "Prepare action taken note",

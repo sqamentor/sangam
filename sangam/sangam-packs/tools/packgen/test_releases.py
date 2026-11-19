@@ -77,9 +77,11 @@ class HeldContentTest(unittest.TestCase):
     def test_ships_bumps_only_from_the_held_version(self):
         pid = 'gov.p2.file-movement'
         self.assertEqual(('1.0.1', '1.0.2'), releases.SHIPS[pid])
-        self.assertEqual('1.0.2', releases.version_of(pid, '1.0.0'), 'BUMPED to 1.0.1, then SHIPS to 1.0.2')
+        self.assertEqual(('1.0.2', '1.0.3'), releases.R4_ARCH_JURIS[pid])
+        self.assertEqual('1.0.3', releases.version_of(pid, '1.0.0'),
+                         'BUMPED to 1.0.1, then SHIPS to 1.0.2, then ruling R4 (lane ARCH-JURIS) to 1.0.3')
         self.assertEqual('2.0.0', releases.version_of(pid, '2.0.0'), 'a pack declaring another version keeps it')
-        self.assertEqual('1.0.1', releases.version_of('gov.work-order', '1.0.0'), 'not in SHIPS')
+        self.assertEqual('1.0.1', releases.version_of('universal.up04-skills-routing', '1.0.0'), 'not in SHIPS')
 
 
 if __name__ == '__main__':

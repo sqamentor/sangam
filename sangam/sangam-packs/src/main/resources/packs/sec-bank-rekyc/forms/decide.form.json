@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-rekyc/decide",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.bank.rekyc",
   "title": {
     "en": "Decide account action (not automated)",

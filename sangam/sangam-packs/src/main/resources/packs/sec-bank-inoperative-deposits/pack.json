@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.inoperative-deposits",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Inoperative accounts and unclaimed deposits (DEA Fund)",
     "hi": "निष्क्रिय खाते एवं अदावी जमा (डीईए निधि)"
@@ -29,6 +29,10 @@
     },
     {
       "kind": "FORM",
+      "path": "packs/sec-bank-inoperative-deposits/forms/prepare-sanction-note.form.json"
+    },
+    {
+      "kind": "FORM",
       "path": "packs/sec-bank-inoperative-deposits/forms/approve.form.json"
     },
     {
@@ -42,36 +46,45 @@
     {
       "kind": "SEED",
       "path": "packs/sec-bank-inoperative-deposits/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-bank-inoperative-deposits/pack.json"
     }
   ],
   "seed": "packs/sec-bank-inoperative-deposits/seed.json",
   "connectors": [
     {
       "id": "cbs.dormancyDue",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Accounts by inactivity"
     },
     {
       "id": "cbs.markInoperative",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Flag"
     },
     {
       "id": "rbi.deaTransfer",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Transfer to DEA Fund"
     },
     {
       "id": "rbi.deaClaim",
+      "moneyMovement": "IN",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Claim from DEA Fund"
     },
     {
       "id": "cbs.credit",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Credit the claimant"
@@ -90,6 +103,37 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-rejection"
-  ]
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "dv_bsanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    },
+    "dc_credit_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "currencyReason": "owner decision M1: the pack applies RBI's Depositor Education and Awareness (DEA) Fund scheme, which is in rupees, so the pack declares INR",
+    "variables": [
+      "payableAmount"
+    ]
+  }
 }

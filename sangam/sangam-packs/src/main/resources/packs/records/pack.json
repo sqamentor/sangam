@@ -1,6 +1,6 @@
 {
   "id": "gov.records",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Records retention, review and transfer",
     "hi": "अभिलेख प्रतिधारण, समीक्षा एवं अंतरण"
@@ -40,12 +40,14 @@
   "connectors": [
     {
       "id": "archive.nai",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-REC",
       "purpose": "Transfer to the National Archives"
     },
     {
       "id": "archive.destroyCopies",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-REC",
       "purpose": "Destruction of digital copies"

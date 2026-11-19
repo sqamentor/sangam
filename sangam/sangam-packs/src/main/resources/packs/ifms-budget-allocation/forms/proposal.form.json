@@ -1,6 +1,6 @@
 {
   "key": "ifms-budget-allocation/proposal",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.ifms.budget-allocation",
   "title": {
     "en": "Distribution of budget",

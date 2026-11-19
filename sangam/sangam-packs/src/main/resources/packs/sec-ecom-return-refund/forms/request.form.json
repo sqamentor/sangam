@@ -1,6 +1,6 @@
 {
   "key": "sec-ecom-return-refund/request",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ecom.return-refund",
   "title": {
     "en": "Return request",
@@ -68,6 +68,15 @@
       "label": {
         "en": "Photographs (geo-tagged)",
         "hi": "फ़ोटो (जियो-टैग)"
+      }
+    },
+    {
+      "id": "originalPaymentRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Original payment reference (capture)",
+        "hi": "मूल भुगतान संदर्भ (प्राप्ति)"
       }
     }
   ]

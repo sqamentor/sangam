@@ -1,6 +1,6 @@
 {
   "id": "sec.ins.intermediary-licensing",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Agent and broker registration",
     "hi": "अभिकर्ता एवं ब्रोकर पंजीकरण"
@@ -40,18 +40,21 @@
   "connectors": [
     {
       "id": "irdai.agencyPortal",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "IRDAI agency portal"
     },
     {
       "id": "exam.book",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Examination booking"
     },
     {
       "id": "irdai.brokerApply",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Broker application"

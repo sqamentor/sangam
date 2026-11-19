@@ -1,6 +1,6 @@
 {
   "id": "gov.pension",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Pension: sanction, PPO and monthly disbursement",
     "hi": "पेंशन: स्वीकृति, पीपीओ एवं मासिक भुगतान"
@@ -53,6 +53,10 @@
     },
     {
       "kind": "FORM",
+      "path": "packs/pension/forms/prepare-sanction-note.form.json"
+    },
+    {
+      "kind": "FORM",
       "path": "packs/pension/forms/life-certificate.form.json"
     },
     {
@@ -68,24 +72,28 @@
   "connectors": [
     {
       "id": "ag.pensionCase",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-PFMS",
       "purpose": "AG / PAO authorisation (e.g. Bhavishya / COMPACT)"
     },
     {
       "id": "pension.rollAdd",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Enter pensioner in the roll"
     },
     {
       "id": "pension.roll",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Monthly roll"
     },
     {
       "id": "pfms.payment",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
       "purpose": "Monthly pension payment",
@@ -139,6 +147,12 @@
       "currency": "INR",
       "limitTable": "pension-powers",
       "ruleCaseType": "PENSION"
+    },
+    "pm_bsanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
     }
   },
   "money": {

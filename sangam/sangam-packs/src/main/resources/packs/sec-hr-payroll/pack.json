@@ -1,6 +1,6 @@
 {
   "id": "sec.hr.payroll",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Monthly payroll with PF and ESI returns",
     "hi": "पीएफ एवं ईएसआई विवरणी सहित मासिक वेतन"
@@ -14,6 +14,10 @@
     {
       "kind": "BPMN",
       "path": "packs/sec-hr-payroll/sangam-sec-hr-payroll.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-hr-payroll/sangam-sec-hr-salary-payment.bpmn"
     },
     {
       "kind": "DMN",
@@ -68,30 +72,35 @@
   "connectors": [
     {
       "id": "hris.inputs",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Attendance and inputs"
     },
     {
       "id": "bank.transfer",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Salary payment file"
     },
     {
       "id": "epfo.ecr",
+      "moneyMovement": "OUT",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "PF ECR"
     },
     {
       "id": "esic.contribution",
+      "moneyMovement": "OUT",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "ESI contribution"
     },
     {
       "id": "docs.payslip",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Payslips"
@@ -144,6 +153,18 @@
   "currency": "INR",
   "powers": {
     "pr_approve": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-hr-payroll-powers",
+      "ruleCaseType": "PAYROLL"
+    },
+    "pr_pf_paySanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-hr-payroll-powers",
+      "ruleCaseType": "PAYROLL"
+    },
+    "pr_esi_paySanction": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "sec-hr-payroll-powers",

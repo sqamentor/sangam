@@ -1,6 +1,6 @@
 {
   "id": "gov.intl.pfm-procurement-complaint",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Procurement complaint (worldwide PFM)",
     "hi": "प्रापण शिकायत (अंतरराष्ट्रीय सार्वजनिक वित्त)"
@@ -48,6 +48,7 @@
   "connectors": [
     {
       "id": "procurement.suspend",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Suspension of the award (e-procurement)"

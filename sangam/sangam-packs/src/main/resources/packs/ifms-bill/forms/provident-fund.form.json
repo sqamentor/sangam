@@ -1,6 +1,6 @@
 {
   "key": "ifms-bill/provident-fund",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "pack": "gov.ifms.bill",
   "title": {
     "en": "Provident fund bill",

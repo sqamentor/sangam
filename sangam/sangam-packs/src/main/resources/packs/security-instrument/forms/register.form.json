@@ -1,6 +1,6 @@
 {
   "key": "security-instrument/register",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.security-instrument",
   "title": {
     "en": "Register guarantee",

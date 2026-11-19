@@ -1,6 +1,6 @@
 {
   "id": "gov.security-instrument",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Bank guarantee / EMD / performance security",
     "hi": "बैंक गारंटी / बयाना / कार्य निष्पादन प्रतिभूति"
@@ -40,24 +40,28 @@
   "connectors": [
     {
       "id": "bank.bgVerify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "SFMS confirmation from the issuing bank"
     },
     {
       "id": "bank.bgExtend",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Extension request"
     },
     {
       "id": "bank.bgInvoke",
+      "moneyMovement": "IN",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Invocation (encashment)"
     },
     {
       "id": "bank.bgRelease",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Release / return of the original"

@@ -4,11 +4,11 @@
   "name": {"en": "SL-104 pack data test"},
   "domain": "test",
   "connectors": [
-    {"id": "test.sl104.pay", "capabilityClass": "c", "govTag": "", "purpose": "bound by pack data",
+    {"id": "test.sl104.pay", "moneyMovement": "NONE", "capabilityClass": "c", "govTag": "", "purpose": "bound by pack data",
      "simulatorBinding": {"connector": "xa-pay-sim", "operation": "pay"}},
-    {"id": "test.sl104.notify", "capabilityClass": "a", "govTag": "", "purpose": "binding without an operation",
+    {"id": "test.sl104.notify", "moneyMovement": "NONE", "capabilityClass": "a", "govTag": "", "purpose": "binding without an operation",
      "simulatorBinding": {"connector": "xa-notify-sim"}},
-    {"id": "test.sl104.plain", "capabilityClass": "b", "govTag": "", "purpose": "no default binding"}
+    {"id": "test.sl104.plain", "moneyMovement": "NONE", "capabilityClass": "b", "govTag": "", "purpose": "no default binding"}
   ],
   "workers": [
     {"topic": "test.sl104.paymentFile", "connector": "test.sl104.pay", "operation": "submitFile", "capabilityClass": "c"}

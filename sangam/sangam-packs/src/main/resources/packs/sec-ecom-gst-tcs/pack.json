@@ -1,6 +1,6 @@
 {
   "id": "sec.ecom.gst-tcs",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "GST tax collected at source by the marketplace",
     "hi": "मार्केटप्लेस द्वारा स्रोत पर जीएसटी संग्रह"
@@ -34,24 +34,31 @@
     {
       "kind": "SEED",
       "path": "packs/sec-ecom-gst-tcs/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-ecom-gst-tcs/pack.json"
     }
   ],
   "seed": "packs/sec-ecom-gst-tcs/seed.json",
   "connectors": [
     {
       "id": "erp.netSupplies",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Net taxable supplies by seller"
     },
     {
       "id": "gstn.payment",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Tax deposit"
     },
     {
       "id": "gstn.gstr8",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "GSTR-8 filing"
@@ -68,7 +75,14 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-execution"
+    "sangam-core-execution",
+    "sangam-core-sanction"
+  ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
   ],
   "placeholders": [
     {
@@ -77,6 +91,15 @@
       "reason": "CGST Act s.170 (nearest rupee) is known, but its stage for TCS (per seller, per CGST / SGST / IGST head) was not verified and the pack has no tax-head split; deploy the confirmed policy as a tenant override (decision 139)"
     }
   ],
+  "currency": "INR",
+  "powers": {
+    "gt_deposit_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

@@ -1,6 +1,6 @@
 {
   "key": "ifms-loans-advances/prepare-sanction-note",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "pack": "gov.ifms.loans-advances",
   "title": {
     "en": "Prepare the document to sign",

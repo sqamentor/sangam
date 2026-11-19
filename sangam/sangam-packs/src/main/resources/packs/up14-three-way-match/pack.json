@@ -1,6 +1,6 @@
 {
   "id": "universal.up14-three-way-match",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "UP-14 Three-way match with tolerance exceptions",
     "hi": "यूपी-14 सहनशीलता अपवादों सहित त्रि-पक्षीय मिलान"
@@ -28,14 +28,27 @@
       "path": "packs/up14-three-way-match/forms/exception.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/up14-three-way-match/forms/payable-amount.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up14-three-way-match/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/up14-three-way-match/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/up14-three-way-match/pack.json"
     }
   ],
   "seed": "packs/up14-three-way-match/seed.json",
   "connectors": [
     {
       "id": "ap.post",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Post invoice for payment"
@@ -55,14 +68,31 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-execution"
+    "sangam-core-execution",
+    "sangam-core-sanction"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "u14_post_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",
     "exponent": 2,
     "variables": [
       "invoicePrice",
+      "payableAmount",
       "poPrice"
     ]
   }

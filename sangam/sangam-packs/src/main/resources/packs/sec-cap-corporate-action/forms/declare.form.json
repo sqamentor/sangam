@@ -1,6 +1,6 @@
 {
   "key": "sec-cap-corporate-action/declare",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.cap.corporate-action",
   "title": {
     "en": "Dividend declaration",
@@ -50,6 +50,15 @@
       "label": {
         "en": "Documents",
         "hi": "दस्तावेज़"
+      }
+    },
+    {
+      "id": "unpaidDividendPartyId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Unpaid dividend account of the company (verified payee registry id)",
+        "hi": "कंपनी का अदत्त लाभांश खाता (सत्यापित पंजी आईडी)"
       }
     }
   ]

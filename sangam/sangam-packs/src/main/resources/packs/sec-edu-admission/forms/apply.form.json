@@ -1,6 +1,6 @@
 {
   "key": "sec-edu-admission/apply",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.edu.admission",
   "title": {
     "en": "Admission application",

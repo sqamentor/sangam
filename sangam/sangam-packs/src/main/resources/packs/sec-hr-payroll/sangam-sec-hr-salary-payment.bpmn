@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Salary payment for one employee. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_hr_salary_payment" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.3">
+  <process id="sangam-sec-hr-salary-payment" name="Salary payment for one employee" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3" operaton:isStartableInTasklist="false">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.hr.payroll</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.3</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key,employeeId,amount,payeeAccount,currency,purpose</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="sp_start" name="Employee"></startEvent>
+    <serviceTask id="sp_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>executionConnector=bank.transfer;executionStep=salary;verifyApproval=false;reconcileRequired=true;executionPayloadFields=employeeId,amount,payeeAccount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sp_release" name="Release under the batch sanction (owner decision E1)" operaton:class="org.sangam.packs.core.BatchItemReleaseDelegate"></serviceTask>
+    <callActivity id="sp_pay" name="Pay the salary (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="sp_exGw" name="executionOutcome?" default="sp_f5"></exclusiveGateway>
+    <endEvent id="sp_endPaid" name="Paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="sp_endFailed" name="Failed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>FAILED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>opReasonCode</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sp_f1" sourceRef="sp_start" targetRef="sp_defaults"/>
+    <sequenceFlow id="sp_f2" sourceRef="sp_defaults" targetRef="sp_release"/>
+    <sequenceFlow id="sp_f3" sourceRef="sp_release" targetRef="sp_pay"/>
+    <sequenceFlow id="sp_f6" sourceRef="sp_pay" targetRef="sp_exGw"/>
+    <sequenceFlow id="sp_f4" name="DONE" sourceRef="sp_exGw" targetRef="sp_endPaid"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sp_f5" name="otherwise" sourceRef="sp_exGw" targetRef="sp_endFailed"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_hr_salary_payment_diagram">
+    <bpmndi:BPMNPlane id="sec_hr_salary_payment_plane" bpmnElement="sangam-sec-hr-salary-payment">
+      <bpmndi:BPMNShape id="sp_start_di" bpmnElement="sp_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sp_defaults_di" bpmnElement="sp_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sp_release_di" bpmnElement="sp_release"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sp_pay_di" bpmnElement="sp_pay"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sp_exGw_di" bpmnElement="sp_exGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sp_endPaid_di" bpmnElement="sp_endPaid"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sp_endFailed_di" bpmnElement="sp_endFailed"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sp_f1_di" bpmnElement="sp_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sp_f2_di" bpmnElement="sp_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sp_f3_di" bpmnElement="sp_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sp_f6_di" bpmnElement="sp_f6"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sp_f4_di" bpmnElement="sp_f4"><di:waypoint x="755" y="70"/><di:waypoint x="816" y="70"/><di:waypoint x="816" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sp_f5_di" bpmnElement="sp_f5"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

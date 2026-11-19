@@ -1,6 +1,6 @@
 {
   "key": "sec-health-lab-order/run",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.health.lab-order",
   "title": {
     "en": "Run test and technical validation",

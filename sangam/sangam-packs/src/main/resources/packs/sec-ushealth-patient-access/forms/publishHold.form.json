@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-patient-access/publishHold",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ushealth.patient-access",
   "title": {
     "en": "Publication not confirmed: check the Patient Access API",

@@ -1,6 +1,6 @@
 {
   "id": "sec.ins.proposal-underwriting",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Proposal, underwriting and policy issuance",
     "hi": "प्रस्ताव, हामीदारी एवं पॉलिसी जारी करना"
@@ -32,38 +32,55 @@
       "path": "packs/sec-ins-proposal-underwriting/forms/consent.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/sec-ins-proposal-underwriting/forms/free-look-refund.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-proposal-underwriting/forms/premium.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/sec-ins-proposal-underwriting/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-ins-proposal-underwriting/pack.json"
     }
   ],
   "seed": "packs/sec-ins-proposal-underwriting/seed.json",
   "connectors": [
     {
       "id": "ckycr.search",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "CKYC"
     },
     {
       "id": "tpa.medicals",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Medical examination schedule"
     },
     {
       "id": "pg.collect",
+      "moneyMovement": "IN",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Premium collection"
     },
     {
       "id": "policy.issue",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Policy and e-IA"
     },
     {
       "id": "pg.refund",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Free-look refund"
@@ -90,14 +107,34 @@
   "calls": [
     "sangam-core-cancellation",
     "sangam-core-execution",
-    "sangam-core-rejection"
+    "sangam-core-rejection",
+    "sangam-core-sanction"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "ip_refund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",
     "exponent": 2,
     "variables": [
+      "medicalCostDeduction",
       "premiumAmount",
+      "refundAmount",
+      "riskPremiumDeduction",
+      "stampDutyDeduction",
       "sumAssured"
     ]
   }

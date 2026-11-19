@@ -1,6 +1,6 @@
 {
   "id": "sec.eu.gdpr-dsr",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "GDPR data subject rights request (Art. 12, 15-22)",
     "hi": "जीडीपीआर डेटा विषय अधिकार अनुरोध (अनु. 12, 15-22)"
@@ -56,36 +56,42 @@
   "connectors": [
     {
       "id": "records.summary",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Copy of the personal data (Art. 15(3))"
     },
     {
       "id": "records.rectify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Rectification"
     },
     {
       "id": "records.erase",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Erasure"
     },
     {
       "id": "records.restrict",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Restriction of processing"
     },
     {
       "id": "records.export",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Portable export (Art. 20)"
     },
     {
       "id": "recipients.notify",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Notice to recipients (Art. 19)"

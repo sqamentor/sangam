@@ -1,6 +1,6 @@
 {
   "id": "sec.ins.death-claim",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Life insurance death claim",
     "hi": "जीवन बीमा मृत्यु दावा"
@@ -52,12 +52,14 @@
   "connectors": [
     {
       "id": "policy.coverCheck",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Policy status"
     },
     {
       "id": "claims.pay",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Claim payment"

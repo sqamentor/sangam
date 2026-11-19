@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.collections",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Collections, SMA / NPA, restructuring, OTS and SARFAESI",
     "hi": "वसूली, एसएमए / एनपीए, पुनर्संरचना, एकमुश्त निपटान एवं सरफेसी"
@@ -52,24 +52,28 @@
   "connectors": [
     {
       "id": "crilc.report",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "CRILC / CIC reporting"
     },
     {
       "id": "lms.status",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Loan status"
     },
     {
       "id": "lms.settle",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Post settlement / restructuring"
     },
     {
       "id": "docs.notice",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Demand / possession notice"

@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.loan-origination",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Loan origination to disbursal",
     "hi": "ऋण आवेदन से संवितरण तक"
@@ -60,30 +60,36 @@
   "connectors": [
     {
       "id": "cbs.kycStatus",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "KYC status of the customer"
     },
     {
       "id": "bureau.pull",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Credit bureau (CIC)"
     },
     {
       "id": "docs.kfs",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Key Facts Statement with APR"
     },
     {
       "id": "bank.transfer",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Disbursal"
     },
     {
       "id": "lms.book",
+      "moneyMovement": "NONE",
+      "moneyMovementReason": "owner decision M3: books the loan account in the LMS (a repayment schedule); no money moves",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Book the loan in the LMS"

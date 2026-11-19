@@ -61,7 +61,12 @@ class AllPacksSmokeTest {
                 "qualification", "socialCategory", "district", "schemeId", "serviceCode", "licenceType", "leaveType",
                 "category", "subjectHead", "amendmentType", "deviceId", "entityId",
                 // required start-form fields a decision reads (strict FEEL refuses an undefined variable, ADR-D-26)
-                "planPeriod", "projectId", "phiScope")) {
+                "planPeriod", "projectId", "phiScope",
+                // registry party keys a money approval binds its payee by (owner decision E3, MoneyFieldsDelegate
+                // payeeKeys); the test registry (VerifiedPayees.SIMULATOR) holds a verified record for each
+                "payeePartyId", "slsCode", "remitterPartyId", "unpaidDividendPartyId", "sellerId",
+                // the capture a refund to source returns to (owner decision M5, CaptureRefunds)
+                "emdCaptureRef")) {
             v.put(s, "X-" + s);
         }
         v.put("schemeId", "HOUSING-GRANT");
@@ -87,6 +92,7 @@ class AllPacksSmokeTest {
                 "assetValue", "refundAmount", "poPrice", "invoicePrice", "amendmentAmount", "emdAmount", "debtAmount")) {
             v.put(n, 100_000L);
         }
+        v.put("debitAmount", 100_000L); // a variable mandate's actual debit (owner item 3)
         for (String n : List.of("age", "durationYears", "leaveDays", "extensionDays", "delayDays", "retentionYears",
                 "riskScore")) {
             v.put(n, 3);
@@ -134,6 +140,7 @@ class AllPacksSmokeTest {
         List<String> failures = new ArrayList<>();
         PackDriver driver = new PackDriver(engine);
         int started = 0;
+        seedEmdCapture(PackTestTenant.ID);
         for (ProcessDefinition pd : engine.getRepositoryService().createProcessDefinitionQuery().latestVersion().list()) {
             var model = engine.getRepositoryService().getBpmnModelInstance(pd.getId());
             boolean noneStart = model.getModelElementsByType(StartEvent.class).stream()
@@ -143,6 +150,30 @@ class AllPacksSmokeTest {
                 continue; // core blocks are call activities with inputs from the calling pack
             }
             String bk = "SMOKE/" + pd.getKey();
+            boolean batchItem = model.getModelElementsByType(org.operaton.bpm.model.bpmn.instance.ServiceTask.class)
+                    .stream().anyMatch(t -> org.sangam.packs.core.BatchItemReleaseDelegate.class.getName()
+                            .equals(t.getOperatonClass()));
+            if (batchItem) {
+                // owner decision E1: a batch item payment is started only by its parent's FAN_OUT under the batch
+                // sanction (driven by the parent's own tests); started on its own it must be held, never paid
+                try {
+                    String piId = engine.getRuntimeService().startProcessInstanceByKey(pd.getKey(), bk, bag())
+                            .getId();
+                    driver.runJobs();
+                    // no exception: the item waits before its release (e.g. a review); it must not have been released
+                    long released = engine.getHistoryService().createHistoricActivityInstanceQuery()
+                            .processInstanceId(piId).activityType("serviceTask").finished().list().stream()
+                            .filter(a -> releaseTasks(model).contains(a.getActivityId())).count();
+                    if (released > 0) {
+                        failures.add(pd.getKey() + ": a batch item started without a batch sanction was released");
+                    }
+                } catch (RuntimeException e) {
+                    if (!rootMessage(e).contains("carries no batch sanction")) {
+                        failures.add(pd.getKey() + ": " + rootMessage(e));
+                    }
+                }
+                continue;
+            }
             try {
                 Map<String, Object> vars = bag();
                 vars.put("campaignId", "SMOKE/sangam-recruitment-campaign");
@@ -158,6 +189,23 @@ class AllPacksSmokeTest {
                 .forEach(i -> failures.add("incident " + i.getActivityId() + ": " + i.getIncidentMessage()));
         assertTrue(failures.isEmpty(), started + " started; failures:\n" + String.join("\n", failures));
         assertTrue(incidents == 0);
+    }
+
+    private static java.util.Set<String> releaseTasks(org.operaton.bpm.model.bpmn.BpmnModelInstance model) {
+        return model.getModelElementsByType(org.operaton.bpm.model.bpmn.instance.ServiceTask.class).stream()
+                .filter(t -> org.sangam.packs.core.BatchItemReleaseDelegate.class.getName().equals(t.getOperatonClass()))
+                .map(org.operaton.bpm.model.bpmn.instance.ServiceTask::getId)
+                .collect(java.util.stream.Collectors.toSet());
+    }
+
+    /**
+     * Owner decision M5: a refund to source needs the capture it returns to, recorded when the money came in. The EMD
+     * of the bag (emdCaptureRef) was collected by e-procurement, outside these packs, so its capture record is the
+     * test data a tender refund needs (amount: the bag's emdAmount, many times over for every tender run).
+     */
+    static void seedEmdCapture(String tenant) {
+        PackRuntime.ledgers().post(tenant, org.sangam.packs.core.CaptureRefunds.LEDGER, "X-emdCaptureRef", "INR",
+                org.sangam.packs.port.LedgerStore.amount(100_000L * 1000, "INR"), "capture", false);
     }
 
     static String rootMessage(Throwable e) {

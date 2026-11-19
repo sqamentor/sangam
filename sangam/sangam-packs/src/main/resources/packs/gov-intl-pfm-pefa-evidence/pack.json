@@ -1,6 +1,6 @@
 {
   "id": "gov.intl.pfm-pefa-evidence",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "PEFA evidence pack (worldwide PFM)",
     "hi": "पीईएफए साक्ष्य संग्रह (अंतरराष्ट्रीय सार्वजनिक वित्त)"
@@ -40,6 +40,7 @@
   "connectors": [
     {
       "id": "ledger.report",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Ledger report set for the indicators"

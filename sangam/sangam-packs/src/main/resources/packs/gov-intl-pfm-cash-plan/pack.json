@@ -1,6 +1,6 @@
 {
   "id": "gov.intl.pfm-cash-plan",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Cash plan (worldwide PFM)",
     "hi": "नकद योजना (अंतरराष्ट्रीय सार्वजनिक वित्त)"
@@ -44,6 +44,7 @@
   "connectors": [
     {
       "id": "ledger.cashForecast",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Cash forecast from releases and commitments"

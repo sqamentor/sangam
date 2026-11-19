@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-do-not-pay/screenHold",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.intl.pfm-do-not-pay",
   "title": {
     "en": "Screening not confirmed: payment held, confirm the lists",

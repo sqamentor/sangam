@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.gfe-ppdr",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Good-faith estimate and patient-provider dispute resolution (No Surprises Act)",
     "es": "Presupuesto de buena fe y resolución de disputas entre paciente y proveedor (Ley No Surprises)"
@@ -44,12 +44,14 @@
   "connectors": [
     {
       "id": "ppdr.sdr",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Selected dispute-resolution entity (via HHS portal)"
     },
     {
       "id": "notify.mail",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Patient notice"

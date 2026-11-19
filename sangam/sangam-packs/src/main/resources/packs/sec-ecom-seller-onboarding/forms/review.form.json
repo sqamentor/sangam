@@ -1,6 +1,6 @@
 {
   "key": "sec-ecom-seller-onboarding/review",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ecom.seller-onboarding",
   "title": {
     "en": "Review licences and agreement",

@@ -1,6 +1,6 @@
 {
   "id": "gov.p1.bill-payment",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "P1 Bill / payment approval",
     "hi": "पी1 बिल / भुगतान अनुमोदन"
@@ -60,30 +60,35 @@
   "connectors": [
     {
       "id": "ifms.duplicateBill",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Duplicate-bill check (read-only)"
     },
     {
       "id": "ifms.budget",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Budget-head availability (read-only)"
     },
     {
       "id": "ifms.encumber",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Commitment control: encumbrance (GP-11)"
     },
     {
       "id": "ifms.release",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Release of the encumbrance on cancel"
     },
     {
       "id": "pfms.payment",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
       "purpose": "Signed payment file with SSID (SFTP / API)",
@@ -94,12 +99,14 @@
     },
     {
       "id": "bank.statement",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-PFMS",
       "purpose": "Bank debit confirmation by operationId"
     },
     {
       "id": "esign.sign",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-SIGN",
       "purpose": "Approver signature",
@@ -110,6 +117,7 @@
     },
     {
       "id": "notify.sms",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-DLT",
       "purpose": "Payee SMS on a -G header",

@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-access-request/deny",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ushealth.access-request",
   "title": {
     "en": "Written denial with basis, review rights and complaint route",

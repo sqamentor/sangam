@@ -1,6 +1,6 @@
 {
   "id": "sec.nbfc.digital-lending",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Digital lending through an app or LSP",
     "hi": "ऐप या ऋण सेवा प्रदाता द्वारा डिजिटल ऋण"
@@ -52,42 +52,50 @@
   "connectors": [
     {
       "id": "aa.fetch",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Account Aggregator data (consent artefact)"
     },
     {
       "id": "bureau.pull",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "CIC"
     },
     {
       "id": "docs.kfs",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "KFS"
     },
     {
       "id": "bank.transfer",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Disbursal to the borrower account"
     },
     {
       "id": "lms.book",
+      "moneyMovement": "NONE",
+      "moneyMovementReason": "owner decision M3: books the loan account in the LMS (a repayment schedule); no money moves",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Book loan"
     },
     {
       "id": "lms.foreclose",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Cooling-off exit"
     },
     {
       "id": "cic.report",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Credit information reporting"

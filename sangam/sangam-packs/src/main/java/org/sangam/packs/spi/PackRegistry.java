@@ -73,6 +73,8 @@ public final class PackRegistry {
         if (old == null) {
             // the external-task topics the pack declares (manifest workers, SL-104)
             org.sangam.packs.worker.PackWorkers.registerDeclared(p.descriptor());
+            // owner decision A1: the money direction of each connector, conflicts refused
+            ConnectorMoneyMovements.registerDeclared(p.descriptor());
         }
     }
 

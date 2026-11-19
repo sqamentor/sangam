@@ -1,6 +1,6 @@
 {
   "id": "sec.legal.dpdp-rights",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Data principal rights request (DPDP Act 2023)",
     "hi": "डेटा प्रधान अधिकार अनुरोध (डीपीडीपी अधिनियम 2023)"
@@ -44,30 +44,35 @@
   "connectors": [
     {
       "id": "idv.verify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Identity verification"
     },
     {
       "id": "records.summary",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Personal data summary"
     },
     {
       "id": "records.erase",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Erasure"
     },
     {
       "id": "processors.erase",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Erasure at processors"
     },
     {
       "id": "consent.withdraw",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Consent manager"

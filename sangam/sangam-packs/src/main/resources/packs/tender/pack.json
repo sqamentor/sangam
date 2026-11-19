@@ -1,6 +1,6 @@
 {
   "id": "gov.tender",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Tender / e-procurement",
     "hi": "निविदा / ई-प्रापण"
@@ -14,6 +14,10 @@
     {
       "kind": "BPMN",
       "path": "packs/tender/sangam-tender.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/tender/sangam-tender-emd-refund.bpmn"
     },
     {
       "kind": "DMN",
@@ -64,30 +68,42 @@
   "connectors": [
     {
       "id": "cppp.publish",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "NIT / corrigendum on CPPP / GePNIC"
     },
     {
       "id": "eproc.bidsReceived",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Bids received at closing"
     },
     {
       "id": "eproc.evaluate",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Financial comparison, L1"
     },
     {
+      "id": "eproc.emdRegister",
+      "moneyMovement": "NONE",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Bidders and their EMD captures"
+    },
+    {
       "id": "emd.refund",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "G-PG",
       "purpose": "EMD refund to bidders"
     },
     {
       "id": "config.profile",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Profile values of the tenant (sangam-config)"

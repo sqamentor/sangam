@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.budget-allocation",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Budget allocation, release, authorisation, sub-allotment",
     "hi": "बजट आवंटन, विमुक्ति, प्राधिकार, उप-आवंटन"
@@ -44,36 +44,42 @@
   "connectors": [
     {
       "id": "config.profile",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Profile values of the tenant (sangam-config)"
     },
     {
       "id": "config.documentType",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
     },
     {
       "id": "config.classification",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Classification validation (head of account)"
     },
     {
       "id": "config.series",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Number series (token, voucher)"
     },
     {
       "id": "ledger.distribute",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-LEDGER",
       "purpose": "Pass the limit to the next stage (sangam-ledger, idempotent by operationId)"
     },
     {
       "id": "ledger.releaseHolds",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-LEDGER",
       "purpose": "Release bills held for budget (sangam-ledger, idempotent by operationId)"

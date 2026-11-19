@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_gia_release" name="Grant release rules" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- Thresholds from the GOI profile grants.seventyFivePercentRule; States override by tenant DMN. -->
-  <decision id="ifms-gia-release" name="Grant release rules" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.4">
+  <decision id="ifms-gia-release" name="Grant release rules" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.5">
     <decisionTable id="ifms-gia-release_t" hitPolicy="FIRST">
       <input id="ifms-gia-release_i0" label="Recurring"><inputExpression id="ifms-gia-release_ie0" typeRef="boolean"><text>recurringGrant</text></inputExpression></input>
       <input id="ifms-gia-release_i1" label="Release % of sanction"><inputExpression id="ifms-gia-release_ie1" typeRef="number"><text>releasePercent</text></inputExpression></input>

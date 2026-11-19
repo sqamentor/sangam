@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.payment-dual-auth",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Payment initiation with maker, checker and authoriser",
     "hi": "निर्माता, जाँचकर्ता एवं प्राधिकारी सहित भुगतान प्रारंभ"
@@ -60,24 +60,28 @@
   "connectors": [
     {
       "id": "bene.validate",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Beneficiary name lookup"
     },
     {
       "id": "sanctions.screen",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Screening"
     },
     {
       "id": "bank.transfer",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Payment rail"
     },
     {
       "id": "cbs.credit",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Credit back a returned payment"
@@ -163,6 +167,12 @@
       "ruleCaseType": "PAYMENT"
     },
     "py_authoriser": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-bank-pay-powers",
+      "ruleCaseType": "PAYMENT"
+    },
+    "py_retCredit_sanction": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "sec-bank-pay-powers",

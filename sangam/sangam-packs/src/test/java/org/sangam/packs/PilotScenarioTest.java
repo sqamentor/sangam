@@ -87,6 +87,7 @@ class PilotScenarioTest {
         v.put("payee", "M/s Shree Constructions");
         v.put("account", "50100012345678");
         v.put("ifsc", "SBIN0001234");
+        v.put("payeePartyId", "PARTY-SHREE-CONSTRUCTIONS"); // the payee's verified registry party (owner decision M2)
         v.put("amount", 47_500_000L); // 4,75,000 rupees in paise (SD-398)
         v.put("invoiceNo", "INV-2026-0412");
         v.put("budgetHead", "4059-01-051");
@@ -149,10 +150,17 @@ class PilotScenarioTest {
             case "sn_sanction" -> asSeat(t, "sanctionDecision", "approve");
             default -> null;
         }, 80);
-        assertEquals(List.of("sc_scrutiny", "p3_recommend", "sn_sanction"), done);
+        // C4/E1: the grant sanction approves the total; each of the 3 instalments is paid on its own sanction
+        assertEquals(List.of("sc_scrutiny", "p3_recommend", "sn_sanction", "sn_sanction", "sn_sanction",
+                "sn_sanction"), done);
         assertTrue(driver.ended(bk), "still running");
         assertEquals("CLOSED", driver.var(bk, "caseState"));
         assertEquals(3L, ((Number) driver.var(bk, "instalmentNo")).longValue());
+        // the last money-out approval bound the instalment actually paid, not the grant total
+        assertEquals(((Number) driver.var(bk, "instalmentAmount")).longValue(),
+                ((Number) driver.var(bk, "amount")).longValue());
+        assertTrue(((Number) driver.var(bk, "grantTotal")).longValue()
+                > ((Number) driver.var(bk, "instalmentAmount")).longValue());
     }
 
     @Test
@@ -294,7 +302,8 @@ class PilotScenarioTest {
     void compensationCreditWaitsForTheFirstBill() {
         String bk = "CONN/1";
         start("sangam-sec-util-connection", bk, vars("applicantName", "A", "applicantRef", "CONS-77", "premisesAddress", "X",
-                "areaType", "METRO", "loadKw", 5, "compensationDue", true, "initiator", "citizen.a", "meterNo", "M1"));
+                "areaType", "METRO", "loadKw", 5, "compensationDue", true, "initiator", "citizen.a", "meterNo", "M1",
+                "payeePartyId", "PARTY-CONS-77", "compensationAmount", 50_000L)); // the consumer's verified registry party (owner decision M2)
         driver.run(bk, t -> switch (t.getTaskDefinitionKey()) {
             case "sc_scrutiny" -> asSeat(t, "scrutinyDecision", "accept");
             case "uc_inspect" -> asSeat(t, "feasibility", "feasible", "findings", "ok");
@@ -311,7 +320,9 @@ class PilotScenarioTest {
         start("sangam-sec-util-bill", bill, vars("key", "CONS-77", "batchId", "CYCLE-1", "units", 100, "connectionCaseKey", bk,
                 "sim_mdm_read", "readStatus=NORMAL"));
         driver.run(bill, t -> null, 10);
-        driver.run(bk, t -> null, 10);
+        // owner decision A1: the credit is money out, so it waits for the competent authority's sanction
+        driver.run(bk, t -> "sn_sanction".equals(t.getTaskDefinitionKey())
+                ? asSeat(t, "sanctionDecision", "approve") : null, 10);
         assertTrue(driver.ended(bk), "credit done");
         var in = sim().journal().stream().filter(r -> "billing.credit".equals(r.connector()) && bk.equals(r.businessKey()))
                 .findFirst().orElseThrow().payload();

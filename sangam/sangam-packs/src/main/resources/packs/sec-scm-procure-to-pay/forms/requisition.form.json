@@ -1,6 +1,6 @@
 {
   "key": "sec-scm-procure-to-pay/requisition",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.scm.procure-to-pay",
   "title": {
     "en": "Purchase requisition",
@@ -50,6 +50,15 @@
       "label": {
         "en": "Supplier",
         "hi": "आपूर्तिकर्ता"
+      }
+    },
+    {
+      "id": "payeePartyId",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Supplier (verified payee registry id; required for a direct purchase)",
+        "hi": "आपूर्तिकर्ता (सत्यापित पंजी आईडी)"
       }
     },
     {

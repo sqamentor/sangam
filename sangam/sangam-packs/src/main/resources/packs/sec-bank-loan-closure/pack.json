@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.loan-closure",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Loan closure and release of property documents",
     "hi": "ऋण समापन एवं संपत्ति दस्तावेज़ों की वापसी"
@@ -34,30 +34,38 @@
     {
       "kind": "SEED",
       "path": "packs/sec-bank-loan-closure/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-bank-loan-closure/pack.json"
     }
   ],
   "seed": "packs/sec-bank-loan-closure/seed.json",
   "connectors": [
     {
       "id": "lms.closureCheck",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Dues outstanding"
     },
     {
       "id": "cersai.satisfy",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Satisfaction of charge"
     },
     {
       "id": "docs.noc",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "No-dues certificate"
     },
     {
       "id": "bank.credit",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Compensation credit"
@@ -75,8 +83,24 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-execution"
+    "sangam-core-execution",
+    "sangam-core-sanction"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "lc_pay_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

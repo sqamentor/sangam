@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.salary-monthly",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Monthly salary bills",
     "hi": "मासिक वेतन बिल"
@@ -20,6 +20,7 @@
   "connectors": [
     {
       "id": "hrms.salaryBills",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Salary bill per DDO for the period"

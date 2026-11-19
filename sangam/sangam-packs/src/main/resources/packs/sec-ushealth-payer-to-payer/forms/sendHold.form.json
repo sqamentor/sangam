@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-payer-to-payer/sendHold",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ushealth.payer-to-payer",
   "title": {
     "en": "Sending not confirmed: check with the new payer",

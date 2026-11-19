@@ -1,6 +1,6 @@
 {
   "id": "gov.works",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Works / WAMS project lifecycle",
     "hi": "निर्माण कार्य / डब्ल्यूएएमएस परियोजना जीवनचक्र"
@@ -80,12 +80,14 @@
   "connectors": [
     {
       "id": "ifms.encumber",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Encumbrance against the AA"
     },
     {
       "id": "ifms.release",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Release on cancel"

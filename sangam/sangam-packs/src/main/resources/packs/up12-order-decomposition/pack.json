@@ -1,6 +1,6 @@
 {
   "id": "universal.up12-order-decomposition",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "UP-12 Order decomposition and amendment in flight",
     "hi": "यूपी-12 आदेश विभाजन एवं प्रगति में संशोधन"
@@ -28,18 +28,21 @@
   "connectors": [
     {
       "id": "order.lines",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Lines of the order"
     },
     {
       "id": "telecom.activate",
+      "moneyMovement": "NONE",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Activation"
     },
     {
       "id": "telecom.modify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Modification"

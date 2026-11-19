@@ -1,6 +1,6 @@
 {
   "id": "sec.hr.appraisal",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Annual performance appraisal",
     "hi": "वार्षिक कार्य-निष्पादन मूल्यांकन"
@@ -44,12 +44,14 @@
   "connectors": [
     {
       "id": "hris.employees",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Employees in scope"
     },
     {
       "id": "hris.rating",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Record rating"

@@ -75,6 +75,10 @@ class UnknownOutcomeLookupTest {
                 "verifyApproval", false, "reconcileRequired", false, "ackWindow", "PT30M",
                 "executionPayloadFields", "fee,applicantRef", "fee", 1000L));
         v.put(org.sangam.packs.core.Vars.simVar(connector), directive);
+        if (org.sangam.packs.spi.ConnectorMoneyMovements.enforced(connector)
+                == org.sangam.packs.spi.MoneyMovement.OUT) {
+            PackTestApprovals.bindHumanApproval(v); // A1 / E3: money out pays only under a bound approval
+        }
         engine.getRuntimeService().createProcessInstanceByKey("sangam-core-execution").businessKey(bk).setVariables(v)
                 .processDefinitionTenantId(PackTestTenant.ID).execute();
         driver.run(bk, t -> null, 20);

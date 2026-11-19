@@ -1,6 +1,6 @@
 {
   "key": "contract-management/proposal",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.contract-management",
   "title": {
     "en": "Contract amendment",

@@ -1,6 +1,6 @@
 {
   "key": "sec-edu-examination/re-evaluate",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "pack": "sec.edu.examination",
   "title": {
     "en": "Re-evaluate by a different evaluator",

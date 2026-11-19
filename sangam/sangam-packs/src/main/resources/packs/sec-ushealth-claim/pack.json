@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.claim",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Claim submission, status, remittance posting, denial and appeal",
     "es": "Envío de reclamaciones, estado, contabilización de remesas, denegación y apelación"
@@ -84,30 +84,35 @@
   "connectors": [
     {
       "id": "x12.claim",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "837 submission"
     },
     {
       "id": "x12.claimStatus",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "276/277 status"
     },
     {
       "id": "x12.remit",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "835 decode"
     },
     {
       "id": "payer.appeal",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Appeal / redetermination"
     },
     {
       "id": "ledger.post",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Payment posting"

@@ -1,6 +1,6 @@
 {
   "id": "universal.up15-recertification",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "UP-15 Periodic recertification at scale",
     "hi": "यूपी-15 बड़े पैमाने पर आवधिक पुनः प्रमाणन"
@@ -32,12 +32,14 @@
   "connectors": [
     {
       "id": "iam.entitiesDue",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Entities due"
     },
     {
       "id": "iam.revoke",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Revocation"

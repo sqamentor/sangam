@@ -1,6 +1,6 @@
 {
   "id": "gov.stores",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Stores: physical verification and discrepancies",
     "hi": "भंडार: भौतिक सत्यापन एवं विसंगतियाँ"
@@ -44,18 +44,21 @@
   "connectors": [
     {
       "id": "stores.ledger",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Book balances"
     },
     {
       "id": "stores.adjust",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Stock adjustment"
     },
     {
       "id": "hr.recovery",
+      "moneyMovement": "IN",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Recovery from the responsible person"

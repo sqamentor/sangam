@@ -1,6 +1,6 @@
 {
   "id": "sec.cap.corporate-action",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Corporate action: dividend to unpaid dividend account",
     "hi": "कॉर्पोरेट कार्रवाई: लाभांश से अदत्त लाभांश खाते तक"
@@ -28,32 +28,44 @@
       "path": "packs/sec-cap-corporate-action/forms/review.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/sec-cap-corporate-action/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/sec-cap-corporate-action/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-cap-corporate-action/pack.json"
     }
   ],
   "seed": "packs/sec-cap-corporate-action/seed.json",
   "connectors": [
     {
       "id": "exchange.intimate",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Exchange intimation"
     },
     {
       "id": "depository.benpos",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Beneficiary positions"
     },
     {
       "id": "bank.transfer",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Dividend payment"
     },
     {
       "id": "bank.unpaidDividend",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Unpaid dividend account"
@@ -72,14 +84,37 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-execution"
+    "sangam-core-execution",
+    "sangam-core-sanction"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "cd_unpaid_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    },
+    "cd_bsanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",
     "exponent": 2,
     "variables": [
-      "dividendPerShare"
+      "dividendPerShare",
+      "unpaidAmount"
     ]
   }
 }

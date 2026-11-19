@@ -233,7 +233,7 @@ def bank_loan_origination():
                 ('docs.kfs', 'a', '', 'Key Facts Statement with APR'), ('bank.transfer', 'c', '', 'Disbursal'),
                 ('lms.book', 'a', '', 'Book the loan in the LMS')])
     p = pk.proc('sangam-sec-bank-loan-origination', 'Loan origination', '',
-                start={'materialFields': 'customerId,loanProduct,amount,tenureMonths,roiPct'})
+                start={'materialFields': 'customerId,loanProduct,amount,tenureMonths,roiPct,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'lo_start', 'Loan application', 'sec-bank-loan-origination/application',
                     'Loan application | ऋण आवेदन',
@@ -486,7 +486,7 @@ def bank_loan_closure():
                ['SEC-BANK-019', 'GP-06', 'GP-12', 'GP-53'],
                [('lms.closureCheck', 'a', '', 'Dues outstanding'), ('cersai.satisfy', 'a', '', 'Satisfaction of charge'),
                 ('docs.noc', 'a', '', 'No-dues certificate'), ('bank.credit', 'c', '', 'Compensation credit')])
-    p = pk.proc('sangam-sec-bank-loan-closure', 'Loan closure', '', start={'materialFields': 'loanAccountNo,customerId'})
+    p = pk.proc('sangam-sec-bank-loan-closure', 'Loan closure', '', start={'materialFields': 'loanAccountNo,customerId,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'lc_start', 'Loan repaid / settled', 'sec-bank-loan-closure/request',
                     'Loan closure | ऋण समापन', ['loanAccountNo*', 'customerId*', 'applicantRef'])
@@ -555,7 +555,7 @@ def bank_payment():
                [('bene.validate', 'a', '', 'Beneficiary name lookup'), ('sanctions.screen', 'a', '', 'Screening'),
                 ('bank.transfer', 'c', '', 'Payment rail'), ('cbs.credit', 'a', '', 'Credit back a returned payment')])
     p = pk.proc('sangam-sec-bank-payment', 'Payment with dual authorisation', '',
-                start={'materialFields': 'payee,account,ifsc,amount,paymentRail'})
+                start={'materialFields': 'payee,account,ifsc,amount,paymentRail,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'py_start', 'Payment initiated (maker)', 'sec-bank-payment-dual-auth/initiate',
                     'Payment initiation | भुगतान प्रारंभ',
@@ -938,12 +938,12 @@ def bank_dispute():
                 ('cbs.compensation', 'c', '', 'Compensation credit'), ('cards.block', 'a', '', 'Block the instrument'),
                 ('card.chargeback', 'b', '', 'Chargeback to the network')])
     p = pk.proc('sangam-sec-bank-txn-dispute', 'Transaction dispute', '',
-                start={'materialFields': 'customerId,disputeType,txnRef,amount,channel'})
+                start={'materialFields': 'customerId,disputeType,txnRef,amount,channel,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'dp_start', 'Dispute reported', 'sec-bank-txn-dispute/report', 'Transaction dispute | लेनदेन विवाद',
                     ['customerId*', 'disputeType*', 'txnRef*', 'amount*', 'channel*', 'reportedWithinDays', 'description'])
     d = s.setv('dp_defaults', 'Configuration',
-               defaults='disputeType=FAILED_TXN;channel=UPI;txnRef=@customerId;reportedWithinDays=1;'
+               defaults='disputeType=FAILED_TXN;channel=UPI;reportedWithinDays=1;'
                         'tatBreached=false;opsSeat=DISPUTE-DESK;executionConnector=cbs.reversal;executionStep=reversal;'
                         'verifyApproval=false;reconcileRequired=false;executionPayloadFields=customerId,txnRef,amount;'
                         'applicantRef=@customerId')
@@ -1204,7 +1204,7 @@ def nbfc_digital_lending():
                 ('lms.book', 'a', '', 'Book loan'), ('lms.foreclose', 'a', '', 'Cooling-off exit'),
                 ('cic.report', 'a', '', 'Credit information reporting')])
     p = pk.proc('sangam-sec-nbfc-digital-loan', 'Digital loan', '',
-                start={'materialFields': 'customerId,amount,tenureDays,aprPct'})
+                start={'materialFields': 'customerId,amount,tenureDays,aprPct,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'dl_start', 'Application in the app', 'sec-nbfc-digital-lending/application',
                     'Digital loan application | डिजिटल ऋण आवेदन',
@@ -1376,7 +1376,7 @@ def ins_proposal():
                 ('pg.collect', 'b', '', 'Premium collection'), ('policy.issue', 'a', '', 'Policy and e-IA'),
                 ('pg.refund', 'a', '', 'Free-look refund')])
     p = pk.proc('sangam-sec-ins-proposal', 'Proposal to policy', '',
-                start={'materialFields': 'customerName,productCode,sumAssured,age'})
+                start={'materialFields': 'customerName,productCode,sumAssured,age,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'ip_start', 'Proposal received', 'sec-ins-proposal-underwriting/proposal',
                     'Insurance proposal | बीमा प्रस्ताव',
@@ -1475,7 +1475,7 @@ def ins_motor_claim():
                [('policy.coverCheck', 'a', '', 'Policy in force'), ('fraud.score', 'a', '', 'Fraud analytics'),
                 ('claims.pay', 'c', '', 'Claim payment'), ('salvage.auction', 'a', '', 'Salvage disposal')])
     p = pk.proc('sangam-sec-ins-motor-claim', 'Motor claim', '',
-                start={'materialFields': 'policyNo,vehicleRegNo,lossType,claimAmount'})
+                start={'materialFields': 'policyNo,vehicleRegNo,lossType,claimAmount,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'mc_start', 'Claim intimated (FNOL)', 'sec-ins-motor-claim/fnol', 'Motor claim intimation | मोटर दावा सूचना',
                     ['policyNo*', 'vehicleRegNo*', 'lossType*', 'claimAmount*', 'lossDate', 'garageId', 'firNo', 'photos'])
@@ -1604,7 +1604,7 @@ def ins_health_cashless():
                 ('hcx.preauthReply', 'b', '', 'Pre-authorisation reply to the hospital'),
                 ('hcx.settle', 'c', '', 'Claim settlement')])
     p = pk.proc('sangam-sec-ins-health-claim', 'Health claim', '',
-                start={'materialFields': 'policyNo,patientName,hospitalId,estimatedCost'})
+                start={'materialFields': 'policyNo,patientName,hospitalId,estimatedCost,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'hc_start', 'Pre-authorisation / claim request', 'sec-ins-health-claim/request',
                     'Health claim request | स्वास्थ्य दावा अनुरोध',

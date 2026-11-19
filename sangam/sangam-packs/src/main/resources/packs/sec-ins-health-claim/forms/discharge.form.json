@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-health-claim/discharge",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ins.health-claim",
   "title": {
     "en": "Final discharge authorisation (3 hours)",

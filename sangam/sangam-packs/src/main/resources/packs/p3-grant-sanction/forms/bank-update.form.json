@@ -1,6 +1,6 @@
 {
   "key": "p3-grant-sanction/bank-update",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.p3.grant-sanction",
   "title": {
     "en": "Payment returned: update bank details",

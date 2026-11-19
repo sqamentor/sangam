@@ -1,6 +1,6 @@
 {
   "id": "sec.cap.ipo-allotment",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "IPO from bid close to listing (T+3)",
     "hi": "आईपीओ: बोली समापन से सूचीबद्धता (टी+3)"
@@ -36,30 +36,36 @@
   "connectors": [
     {
       "id": "rta.reconcile",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Bid reconciliation"
     },
     {
       "id": "exchange.basis",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Basis of allotment"
     },
     {
       "id": "depository.credit",
+      "moneyMovement": "NONE",
+      "moneyMovementReason": "owner decision M3: credits securities (shares) to demat accounts; no money moves",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Credit of shares"
     },
     {
       "id": "sponsorbank.unblock",
+      "moneyMovement": "NONE",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Unblock ASBA / UPI"
     },
     {
       "id": "exchange.listing",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Listing application"

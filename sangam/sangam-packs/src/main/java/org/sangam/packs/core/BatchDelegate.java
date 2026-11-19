@@ -60,6 +60,9 @@ public class BatchDelegate implements JavaDelegate {
     private Expression itemsAreBusinessKeys;
     private Expression round;
     private Expression roundToOpen;
+    private Expression payeeField;
+    private Expression currency;
+    private Expression purpose;
 
     @Override
     public void execute(DelegateExecution ex) {
@@ -90,6 +93,20 @@ public class BatchDelegate implements JavaDelegate {
                 Vars.audit(ex, "BATCH_OPENED", Vars.map("batchId", batchId, "round", round, "items", keys.size()));
             }
             case "LOAD" -> load(ex, iv);
+            case "SEAL" -> {
+                String pf = Vars.field(payeeField, ex);
+                if (pf != null && !pf.isBlank()) {
+                    ex.setVariable(BatchSeal.PAYEE_FIELD, pf);
+                }
+                // the pack's declared currency and purpose of the batch, unless the case already names them
+                for (Object[] d : new Object[][]{{"currency", currency}, {"purpose", purpose}}) {
+                    String v = Vars.field((Expression) d[1], ex);
+                    if (v != null && !v.isBlank() && ex.getVariable((String) d[0]) == null) {
+                        ex.setVariable((String) d[0], v);
+                    }
+                }
+                BatchSeal.seal(ex, iv);
+            }
             case "FAN_OUT" -> fanOut(ex, tenant, batchId, round, iv);
             case "AGGREGATE" -> {
                 int r = Vars.fieldInt(this.round, ex, round);
@@ -125,7 +142,9 @@ public class BatchDelegate implements JavaDelegate {
         int n = Vars.fieldInt(sampleSize, ex, 3);
         List<Map<String, Object>> synth = new ArrayList<>();
         for (int i = 1; i <= n; i++) {
-            synth.add(Vars.map("key", String.format("ITEM-%05d", i), "amount", 100_000L * i)); // i thousand rupees, in paise
+            // i thousand rupees, in paise; a synthetic payee account so a sealed batch binds one (E3)
+            synth.add(Vars.map("key", String.format("ITEM-%05d", i), "amount", 100_000L * i,
+                    "payeeAccount", String.format("SIM-ACC-%05d", i), "bankAccount", String.format("SIM-ACC-%05d", i)));
         }
         Vars.setJsonDocument(ex, iv, synth);
     }
@@ -146,6 +165,8 @@ public class BatchDelegate implements JavaDelegate {
                 directives.put(n, v);
             }
         });
+        // owner decision E1: a sealed batch fans out only under its intact human sanction
+        Map<String, String> approvedItems = BatchSeal.approvedItems(ex, items);
         for (int i = cursor; i < end; i++) {
             Map<String, Object> it = items.get(i);
             Map<String, Object> vars = new HashMap<>(directives);
@@ -159,6 +180,9 @@ public class BatchDelegate implements JavaDelegate {
             vars.put("itemKey", it.get("key").toString());
             vars.put("parentBusinessKey", ex.getProcessBusinessKey());
             vars.put("tenantId", tenant);
+            if (approvedItems != null) {
+                BatchSeal.passApproval(ex, it, approvedItems, vars);
+            }
             String bk = batchId + ":" + round + ":" + it.get("key");
             ProcessInstantiationBuilder b = rs.createProcessInstanceByKey(key).businessKey(bk).setVariables(vars);
             if (tenant != null && ex.getTenantId() != null) {

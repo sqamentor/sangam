@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- Transaction dispute. Generated layout; edit freely in the Sangam modeller. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_txn_dispute" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.2">
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_txn_dispute" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.3">
   <message id="msg_sangam_chargeback_representment" name="sangam.chargeback.representment"/>
   <message id="msg_sangam_chargeback_ruling" name="sangam.chargeback.ruling"/>
-  <process id="sangam-sec-bank-txn-dispute" name="Transaction dispute" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
-    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.txn-dispute</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.2</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerId,disputeType,txnRef,amount,channel</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+  <process id="sangam-sec-bank-txn-dispute" name="Transaction dispute" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.txn-dispute</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.3</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerId,disputeType,txnRef,amount,channel,payeeAccount,currency,purpose</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="dp_start" name="Dispute reported" operaton:initiator="initiator" operaton:formKey="sangam:sec-bank-txn-dispute/report"></startEvent>
-    <serviceTask id="dp_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>disputeType=FAILED_TXN;channel=UPI;txnRef=@customerId;reportedWithinDays=1;tatBreached=false;opsSeat=DISPUTE-DESK;executionConnector=cbs.reversal;executionStep=reversal;verifyApproval=false;reconcileRequired=false;executionPayloadFields=customerId,txnRef,amount;applicantRef=@customerId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dp_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>disputeType=FAILED_TXN;channel=UPI;reportedWithinDays=1;tatBreached=false;opsSeat=DISPUTE-DESK;executionConnector=cbs.reversal;executionStep=reversal;verifyApproval=false;reconcileRequired=false;executionPayloadFields=customerId,txnRef,amount;applicantRef=@customerId</operaton:string></operaton:field></extensionElements></serviceTask>
     <businessRuleTask id="dp_tat" name="TAT, compensation and liability (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-bank-dispute-tat</operaton:string></operaton:field></extensionElements></businessRuleTask>
     <exclusiveGateway id="dp_typeGw" name="Dispute type?" default="sec_bank_txn_dispute_f42"></exclusiveGateway>
     <serviceTask id="dp_tatClock" name="Regulatory clock: tat" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>tat</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${tatSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
@@ -19,8 +19,14 @@
     <userTask id="dp_reverse" name="Reverse the failed debit" operaton:candidateGroups="${opsSeat}" operaton:formKey="sangam:sec-bank-txn-dispute/reverse" operaton:dueDate="${tatDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <serviceTask id="dp_lateFlag" name="Compensation due" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>tatBreached=true</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="dp_lateEnd" name="Recorded"></endEvent>
-    <callActivity id="dp_reversal" name="Reversal (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="dp_reversal_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.MoneyFieldsDelegate"><operaton:field name="captureVar"><operaton:string>txnRef</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Reversal of a failed debit to its source</operaton:string></operaton:field></operaton:executionListener><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="dp_reversal_sgw" name="Sanctioned?" default="dp_reversal_sgw_no"></exclusiveGateway>
+    <endEvent id="dp_reversal_notReleased" name="Not released"></endEvent>
+    <callActivity id="dp_reversal" name="Reversal (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <exclusiveGateway id="dp_compGw" name="Beyond TAT?" default="sec_bank_txn_dispute_f17"></exclusiveGateway>
+    <callActivity id="dp_compensate_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.MoneyFieldsDelegate"><operaton:field name="amount"><operaton:string>compensationAmount</operaton:string></operaton:field><operaton:field name="payeeKeys"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Compensation for a turnaround-time breach</operaton:string></operaton:field></operaton:executionListener><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="dp_compensate_sgw" name="Sanctioned?" default="dp_compensate_sgw_no"></exclusiveGateway>
+    <endEvent id="dp_compensate_notReleased" name="Not released"></endEvent>
     <serviceTask id="dp_compensate" name="Suo moto compensation credit" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cbs.compensation</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,txnRef,compensationPerDay</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>comp</operaton:string></operaton:field><operaton:field name="step"><operaton:string>compensation</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="dp_endReversed" name="Reversed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <serviceTask id="dp_block" name="Block the instrument" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cards.block</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>block</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,txnRef</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>block</operaton:string></operaton:field><operaton:field name="step"><operaton:string>block</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -71,9 +77,9 @@
     <sequenceFlow id="sec_bank_txn_dispute_f11" name="yes" sourceRef="dp_failGw" targetRef="dp_reverse"/>
     <sequenceFlow id="sec_bank_txn_dispute_f12" sourceRef="dp_tatLate" targetRef="dp_lateFlag"/>
     <sequenceFlow id="sec_bank_txn_dispute_f13" sourceRef="dp_lateFlag" targetRef="dp_lateEnd"/>
-    <sequenceFlow id="sec_bank_txn_dispute_f14" sourceRef="dp_reverse" targetRef="dp_reversal"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f14" sourceRef="dp_reverse" targetRef="dp_reversal_sanction"/>
     <sequenceFlow id="sec_bank_txn_dispute_f15" sourceRef="dp_reversal" targetRef="dp_compGw"/>
-    <sequenceFlow id="sec_bank_txn_dispute_f16" name="yes" sourceRef="dp_compGw" targetRef="dp_compensate"><conditionExpression xsi:type="tFormalExpression">${tatBreached}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_txn_dispute_f16" name="yes" sourceRef="dp_compGw" targetRef="dp_compensate_sanction"><conditionExpression xsi:type="tFormalExpression">${tatBreached}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_bank_txn_dispute_f17" name="within TAT" sourceRef="dp_compGw" targetRef="dp_endReversed"/>
     <sequenceFlow id="sec_bank_txn_dispute_f18" sourceRef="dp_compensate" targetRef="dp_endReversed"/>
     <sequenceFlow id="sec_bank_txn_dispute_f19" name="unauthorised" sourceRef="dp_typeGw" targetRef="dp_block"><conditionExpression xsi:type="tFormalExpression">${disputeType == 'UNAUTHORISED'}</conditionExpression></sequenceFlow>
@@ -110,6 +116,12 @@
     <sequenceFlow id="sec_bank_txn_dispute_f50" name="pre-arbitration" sourceRef="dp_reprGw" targetRef="dp_preArb"/>
     <sequenceFlow id="sec_bank_txn_dispute_f51" sourceRef="dp_preArb" targetRef="dp_ruling"/>
     <sequenceFlow id="sec_bank_txn_dispute_f52" sourceRef="dp_ruling" targetRef="dp_endRuling"/>
+    <sequenceFlow id="dp_compensate_sanction_f" sourceRef="dp_compensate_sanction" targetRef="dp_compensate_sgw"/>
+    <sequenceFlow id="dp_compensate_sgw_yes" name="sanctioned" sourceRef="dp_compensate_sgw" targetRef="dp_compensate"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="dp_compensate_sgw_no" name="not sanctioned" sourceRef="dp_compensate_sgw" targetRef="dp_compensate_notReleased"/>
+    <sequenceFlow id="dp_reversal_sanction_f" sourceRef="dp_reversal_sanction" targetRef="dp_reversal_sgw"/>
+    <sequenceFlow id="dp_reversal_sgw_yes" name="sanctioned" sourceRef="dp_reversal_sgw" targetRef="dp_reversal"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="dp_reversal_sgw_no" name="not sanctioned" sourceRef="dp_reversal_sgw" targetRef="dp_reversal_notReleased"/>
     <subProcess id="dp_ombudsman" name="Unresolved after 30 days" triggeredByEvent="true">
       <startEvent id="dp_omStart" name="30 days" isInterrupting="false"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P30D</timeDuration></timerEventDefinition></startEvent>
       <serviceTask id="dp_omNotify" name="Tell the customer about the RB-IOS route" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>rbios-route</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -133,10 +145,16 @@
       <bpmndi:BPMNShape id="dp_reverse_di" bpmnElement="dp_reverse"><dc:Bounds x="1340" y="530" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dp_lateFlag_di" bpmnElement="dp_lateFlag"><dc:Bounds x="1505" y="655" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dp_lateEnd_di" bpmnElement="dp_lateEnd"><dc:Bounds x="1702" y="677" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dp_reversal_di" bpmnElement="dp_reversal"><dc:Bounds x="1505" y="530" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dp_compGw_di" bpmnElement="dp_compGw"><dc:Bounds x="1695" y="545" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dp_compensate_di" bpmnElement="dp_compensate"><dc:Bounds x="1835" y="530" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dp_endReversed_di" bpmnElement="dp_endReversed"><dc:Bounds x="2032" y="677" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_reversal_sanction_di" bpmnElement="dp_reversal_sanction"><dc:Bounds x="1505" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_reversal_sgw_di" bpmnElement="dp_reversal_sgw"><dc:Bounds x="1695" y="545" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_reversal_notReleased_di" bpmnElement="dp_reversal_notReleased"><dc:Bounds x="1867" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_reversal_di" bpmnElement="dp_reversal"><dc:Bounds x="1835" y="655" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_compGw_di" bpmnElement="dp_compGw"><dc:Bounds x="2025" y="670" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_compensate_sanction_di" bpmnElement="dp_compensate_sanction"><dc:Bounds x="2165" y="655" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_compensate_sgw_di" bpmnElement="dp_compensate_sgw"><dc:Bounds x="2355" y="670" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_compensate_notReleased_di" bpmnElement="dp_compensate_notReleased"><dc:Bounds x="2527" y="677" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_compensate_di" bpmnElement="dp_compensate"><dc:Bounds x="2495" y="780" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_endReversed_di" bpmnElement="dp_endReversed"><dc:Bounds x="2692" y="677" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dp_block_di" bpmnElement="dp_block"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dp_shadow_slaPlan_di" bpmnElement="dp_shadow_slaPlan"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dp_shadow_di" bpmnElement="dp_shadow"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
@@ -172,10 +190,10 @@
       <bpmndi:BPMNShape id="dp_shadow_breach_di" bpmnElement="dp_shadow_breach"><dc:Bounds x="1048" y="342" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dp_investigate_warn_di" bpmnElement="dp_investigate_warn"><dc:Bounds x="1843" y="467" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="dp_investigate_breach_di" bpmnElement="dp_investigate_breach"><dc:Bounds x="1873" y="467" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dp_ombudsman_di" bpmnElement="dp_ombudsman" isExpanded="true"><dc:Bounds x="30" y="888" width="458" height="150"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dp_omStart_di" bpmnElement="dp_omStart"><dc:Bounds x="92" y="950" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dp_omNotify_di" bpmnElement="dp_omNotify"><dc:Bounds x="225" y="928" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="dp_omEnd_di" bpmnElement="dp_omEnd"><dc:Bounds x="422" y="950" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_ombudsman_di" bpmnElement="dp_ombudsman" isExpanded="true"><dc:Bounds x="30" y="910" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_omStart_di" bpmnElement="dp_omStart"><dc:Bounds x="92" y="972" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_omNotify_di" bpmnElement="dp_omNotify"><dc:Bounds x="225" y="950" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_omEnd_di" bpmnElement="dp_omEnd"><dc:Bounds x="422" y="972" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f1_di" bpmnElement="sec_bank_txn_dispute_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f2_di" bpmnElement="sec_bank_txn_dispute_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f3_di" bpmnElement="sec_bank_txn_dispute_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
@@ -190,10 +208,10 @@
       <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f12_di" bpmnElement="sec_bank_txn_dispute_f12"><di:waypoint x="1366" y="628"/><di:waypoint x="1366" y="695"/><di:waypoint x="1505" y="695"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f13_di" bpmnElement="sec_bank_txn_dispute_f13"><di:waypoint x="1605" y="695"/><di:waypoint x="1702" y="695"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f14_di" bpmnElement="sec_bank_txn_dispute_f14"><di:waypoint x="1440" y="570"/><di:waypoint x="1505" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f15_di" bpmnElement="sec_bank_txn_dispute_f15"><di:waypoint x="1605" y="570"/><di:waypoint x="1695" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f16_di" bpmnElement="sec_bank_txn_dispute_f16"><di:waypoint x="1745" y="570"/><di:waypoint x="1835" y="570"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f17_di" bpmnElement="sec_bank_txn_dispute_f17"><di:waypoint x="1745" y="570"/><di:waypoint x="1888" y="570"/><di:waypoint x="1888" y="695"/><di:waypoint x="2032" y="695"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f18_di" bpmnElement="sec_bank_txn_dispute_f18"><di:waypoint x="1935" y="570"/><di:waypoint x="1983" y="570"/><di:waypoint x="1983" y="695"/><di:waypoint x="2032" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f15_di" bpmnElement="sec_bank_txn_dispute_f15"><di:waypoint x="1935" y="695"/><di:waypoint x="2025" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f16_di" bpmnElement="sec_bank_txn_dispute_f16"><di:waypoint x="2075" y="695"/><di:waypoint x="2165" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f17_di" bpmnElement="sec_bank_txn_dispute_f17"><di:waypoint x="2075" y="695"/><di:waypoint x="2692" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f18_di" bpmnElement="sec_bank_txn_dispute_f18"><di:waypoint x="2595" y="820"/><di:waypoint x="2643" y="820"/><di:waypoint x="2643" y="695"/><di:waypoint x="2692" y="695"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f19_di" bpmnElement="sec_bank_txn_dispute_f19"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f20_di" bpmnElement="sec_bank_txn_dispute_f20"><di:waypoint x="1036" y="378"/><di:waypoint x="1036" y="445"/><di:waypoint x="1175" y="445"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f21_di" bpmnElement="sec_bank_txn_dispute_f21"><di:waypoint x="1275" y="445"/><di:waypoint x="1372" y="445"/></bpmndi:BPMNEdge>
@@ -228,8 +246,14 @@
       <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f50_di" bpmnElement="sec_bank_txn_dispute_f50"><di:waypoint x="1415" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f51_di" bpmnElement="sec_bank_txn_dispute_f51"><di:waypoint x="1605" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f52_di" bpmnElement="sec_bank_txn_dispute_f52"><di:waypoint x="1738" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f53_di" bpmnElement="sec_bank_txn_dispute_f53"><di:waypoint x="128" y="968"/><di:waypoint x="225" y="968"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f54_di" bpmnElement="sec_bank_txn_dispute_f54"><di:waypoint x="325" y="968"/><di:waypoint x="422" y="968"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dp_compensate_sanction_f_di" bpmnElement="dp_compensate_sanction_f"><di:waypoint x="2265" y="695"/><di:waypoint x="2355" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dp_compensate_sgw_yes_di" bpmnElement="dp_compensate_sgw_yes"><di:waypoint x="2405" y="695"/><di:waypoint x="2450" y="695"/><di:waypoint x="2450" y="820"/><di:waypoint x="2495" y="820"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dp_compensate_sgw_no_di" bpmnElement="dp_compensate_sgw_no"><di:waypoint x="2405" y="695"/><di:waypoint x="2527" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dp_reversal_sanction_f_di" bpmnElement="dp_reversal_sanction_f"><di:waypoint x="1605" y="570"/><di:waypoint x="1695" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dp_reversal_sgw_yes_di" bpmnElement="dp_reversal_sgw_yes"><di:waypoint x="1745" y="570"/><di:waypoint x="1790" y="570"/><di:waypoint x="1790" y="695"/><di:waypoint x="1835" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dp_reversal_sgw_no_di" bpmnElement="dp_reversal_sgw_no"><di:waypoint x="1745" y="570"/><di:waypoint x="1867" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f53_di" bpmnElement="sec_bank_txn_dispute_f53"><di:waypoint x="128" y="990"/><di:waypoint x="225" y="990"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f54_di" bpmnElement="sec_bank_txn_dispute_f54"><di:waypoint x="325" y="990"/><di:waypoint x="422" y="990"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

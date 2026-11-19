@@ -1,6 +1,6 @@
 {
   "id": "gov.intl.pfm-transfer-deadline",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Collection transfer-deadline monitor (worldwide PFM)",
     "hi": "संग्रह अंतरण समय-सीमा निगरानी (अंतरराष्ट्रीय सार्वजनिक वित्त)"
@@ -44,6 +44,7 @@
   "connectors": [
     {
       "id": "tsa.credit",
+      "moneyMovement": "IN",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Credit in the treasury single account"
