@@ -5,6 +5,7 @@ import java.time.Clock;
 import java.util.Objects;
 
 import org.sangam.packs.calendar.WorkingDayCalendar;
+import org.sangam.packs.sim.DemoSandbox;
 import org.sangam.packs.sim.InMemoryBatchLedger;
 import org.sangam.packs.sim.InMemoryLedgerStore;
 import org.sangam.packs.sim.InMemorySeatDirectory;
@@ -133,8 +134,9 @@ public final class PackRuntime {
         return ports;
     }
 
+    /** The installed gateway; with demo sandbox tenants set, their payment rails go to the sandbox simulator. */
     public static ConnectorGateway gateway() {
-        return ports.gateway();
+        return DemoSandbox.routing(ports.gateway());
     }
 
     public static SeatDirectory seats() {

@@ -6089,6 +6089,7 @@ Schema ``Me``."""
     permissions: list[str]
     preferredLanguage: str
     locale: MeLocale
+    sandbox: bool
 
 
 class MeCapabilities(TypedDict):

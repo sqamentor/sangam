@@ -23,14 +23,27 @@ public interface WorkspacePort {
               List<String> groups, List<String> roles, List<SeatHolding> seats, String seatId, String actingForSeatId,
               String authMethod, List<String> permissions, String preferredLanguage,
               @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
-              MeLocale locale) {
+              MeLocale locale,
+              @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+              Boolean sandbox) {
+
+        /**
+         * Not a demo sandbox tenant: {@code sandbox} absent. Owner option (b) 2026-11-19: {@code sandbox} is true only
+         * for a tenant listed in {@code sangam.demo.sandbox-tenants}; the UI shows a "Sandbox" badge then.
+         */
+        public Me(String tenantId, String tenantName, String principalId, String userId, String displayName,
+                  List<String> groups, List<String> roles, List<SeatHolding> seats, String seatId, String actingForSeatId,
+                  String authMethod, List<String> permissions, String preferredLanguage, MeLocale locale) {
+            this(tenantId, tenantName, principalId, userId, displayName, groups, roles, seats, seatId, actingForSeatId,
+                    authMethod, permissions, preferredLanguage, locale, null);
+        }
 
         /** Without a locale (M-045: the field is then absent from the response). */
         public Me(String tenantId, String tenantName, String principalId, String userId, String displayName,
                   List<String> groups, List<String> roles, List<SeatHolding> seats, String seatId, String actingForSeatId,
                   String authMethod, List<String> permissions, String preferredLanguage) {
             this(tenantId, tenantName, principalId, userId, displayName, groups, roles, seats, seatId, actingForSeatId,
-                    authMethod, permissions, preferredLanguage, null);
+                    authMethod, permissions, preferredLanguage, null, null);
         }
     }
 

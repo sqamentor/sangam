@@ -60743,6 +60743,10 @@ components:
           - $ref: '#/components/schemas/MeLocale'
           description: 'M-045: money and number formatting of the tenant''s resolved profile (locale section); absent when the tenant has no resolved
             locale'
+        sandbox:
+          type: boolean
+          description: 'Owner option (b) 2026-11-19: true only for a tenant listed in sangam.demo.sandbox-tenants (its verified payees and payments
+            are simulated, audited sandbox=true); absent otherwise'
     NumberGrouping:
       type: object
       description: 'Digit grouping of the integer part: the first group (from the right) and every further group, e.g. {first: 3, rest: 2} gives

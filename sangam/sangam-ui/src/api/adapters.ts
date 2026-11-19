@@ -91,6 +91,7 @@ export function normMe(m: Any): T.Me {
     permissions: m.permissions,
     preferredLanguage: m.preferredLanguage,
     locale: m.locale && typeof m.locale === 'object' ? m.locale : undefined,
+    sandbox: m.sandbox === true,
   };
 }
 

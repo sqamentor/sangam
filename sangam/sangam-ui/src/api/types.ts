@@ -52,6 +52,8 @@ export interface Me {
    * field (WorkspacePort.Me has none yet); while absent, money shows the record's own currency or a plain number.
    */
   locale?: TenantLocale;
+  /** Owner option (b) 2026-11-19: true only for a tenant in sangam.demo.sandbox-tenants (payees and payments simulated). */
+  sandbox?: boolean;
 }
 
 // ---------------------------------------------------------------- tasks (S03, S08, S09, R47, VI.4 rule 5)

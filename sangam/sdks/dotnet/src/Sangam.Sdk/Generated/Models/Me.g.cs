@@ -56,4 +56,10 @@ public sealed record Me
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("locale")]
     public MeLocale? Locale { get; init; }
+
+    /// <summary>
+    /// Owner option (b) 2026-11-19: true only for a tenant listed in sangam.demo.sandbox-tenants (its verified payees and payments are simulated, audited sandbox=true); absent otherwise
+    /// </summary>
+    [global::System.Text.Json.Serialization.JsonPropertyName("sandbox")]
+    public bool? Sandbox { get; init; }
 }
