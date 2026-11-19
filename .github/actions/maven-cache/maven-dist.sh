@@ -18,12 +18,18 @@ else
   rm -f "$dest"; mkdir -p "${dest%/*}"
   echo "maven distribution: cache miss, fetching ${url##*/} once"
   # Bounded: at most 5 attempts. On 429/503 wait what Retry-After asks (capped at 300 s; 60 s x attempt when absent).
+  # A 404 on this exact pinned, checksum-verified file is retried the same way: the file exists (200, 9202456 bytes),
+  # so a 404 is a transient answer of the CDN edge, not a missing artifact (runs 44489607242, 44473072992).
   # Any other HTTP error fails at once. Run 44448977445: curl gave up after its first 429 (Retry-After beyond its window).
+  # On every non-200 answer an allow-list of response headers (which server and edge answered) goes to the job log;
+  # never the whole header block, so nothing secret can be printed.
   for attempt in 1 2 3 4 5; do
     code=$(curl -sSL -D "$dest.hdr" -o "$dest.part" -w '%{http_code}' "$url" || true)
     [ "$code" = 200 ] && break
+    echo "maven distribution: HTTP $code (attempt $attempt), response headers:"
+    { tr -d '\r' < "$dest.hdr" | grep -iE '^(HTTP/|server:|x-cache|x-served-by|x-timer|cf-ray:|cf-cache-status:|via:|age:|date:|retry-after:|content-length:|content-type:)' | sed 's/^/  /'; } 2>/dev/null || true
     case "$code" in
-      429|503) ;;
+      404|429|503) ;;
       *) rm -f "$dest.part" "$dest.hdr"; echo "::error::$url answered HTTP $code"; exit 1 ;;
     esac
     [ "$attempt" -lt 5 ] || { rm -f "$dest.part" "$dest.hdr"; echo "::error::$url still HTTP $code after 5 attempts"; exit 1; }
