@@ -17,7 +17,22 @@ if [ -f "$dest" ] && echo "$sum  $dest" | sha256sum -c --status; then
 else
   rm -f "$dest"; mkdir -p "${dest%/*}"
   echo "maven distribution: cache miss, fetching ${url##*/} once"
-  curl -fsSL --retry 6 --retry-max-time 600 --retry-connrefused -o "$dest.part" "$url"
+  # Bounded: at most 5 attempts. On 429/503 wait what Retry-After asks (capped at 300 s; 60 s x attempt when absent).
+  # Any other HTTP error fails at once. Run 44448977445: curl gave up after its first 429 (Retry-After beyond its window).
+  for attempt in 1 2 3 4 5; do
+    code=$(curl -sSL -D "$dest.hdr" -o "$dest.part" -w '%{http_code}' "$url" || true)
+    [ "$code" = 200 ] && break
+    case "$code" in
+      429|503) ;;
+      *) rm -f "$dest.part" "$dest.hdr"; echo "::error::$url answered HTTP $code"; exit 1 ;;
+    esac
+    [ "$attempt" -lt 5 ] || { rm -f "$dest.part" "$dest.hdr"; echo "::error::$url still HTTP $code after 5 attempts"; exit 1; }
+    ra=$(tr -d '\r' < "$dest.hdr" | sed -n 's/^[Rr]etry-[Aa]fter: *\([0-9]\+\).*/\1/p' | tail -1)
+    s=${ra:-$(( attempt * 60 ))}; [ "$s" -le 300 ] || s=300
+    echo "::warning::$url answered HTTP $code (attempt $attempt), Retry-After ${ra:-none}; waiting ${s}s"
+    sleep "$s"
+  done
+  rm -f "$dest.hdr"
   echo "$sum  $dest.part" | sha256sum -c --status || { rm -f "$dest.part"; echo "::error::SHA-256 mismatch for $url"; exit 1; }
   mv "$dest.part" "$dest"
 fi
