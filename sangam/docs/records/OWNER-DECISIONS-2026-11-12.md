@@ -686,3 +686,5 @@ Decision 397 was taken on 2026-11-17 by the owner in chat ("Accept all, build it
   - CI: every setup-node pin that builds or tests the UI moves from 22.18.0 to 22.23.5, the newest 22.x (2026-11-11, security release): ui.yml (UI build and e2e), ci-lanes.yml (UI job), licence-check.yml (UI SBOM install), release.yml (UI build). The pins file (deploy/licence/ci-tool-pins.json) pins the setup-node action, not a Node version, so it records no Node checksum to change. The UI image already builds on node:26.13.1 (digest-pinned), above the floor.
   - Unchanged: the SDKs keep engines >=20.3 and their CI pins (sdks.yml, publish-packages.yml stay on 22.18.0); @types/node stays 22.20.5 (UI) and 20.19.43 (SDKs).
   - Upgraded under it (lane UP-L6b): jsdom 31.0.1, vitest 5.1.1 (both dev only, never shipped).
+
+- **416 (owner chat 2026-11-18), "Postgres image stays 17.12; postgres 18 tested in CI"**: Owner words: "Keep 17.12, test 18 (Recommended)". The shipped default postgres image stays 17.12 for 0.1.0, so existing data volumes need no migration. CI adds a postgres-18 IT leg so 18 is proven for new installs. Done in UP-L8.
