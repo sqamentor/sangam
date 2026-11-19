@@ -182,6 +182,7 @@ The guard scans the main Java sources of every reactor module and fails on a fil
 | File | `impl` types used |
 |---|---|
 | `sangam-engine/src/main/java/org/sangam/engine/OperatonEngineAdapter.java` | `cfg.ProcessEngineConfigurationImpl`, `context.Context`, `db.DbEntity`, `db.entitymanager.OptimisticLockingListener`, `db.entitymanager.OptimisticLockingResult`, `db.entitymanager.operation.DbOperation`, `interceptor.Command`, `interceptor.CommandContext`, `persistence.entity.ExecutionEntity`, `persistence.entity.ExternalTaskEntity` |
+| `sangam-engine/src/main/java/org/sangam/engine/EngineCommands.java` | `cfg.ProcessEngineConfigurationImpl`, `context.Context`, `interceptor.Command`, `interceptor.CommandContext` (round 9 CSRF: the adapter's `once` and `inEngineReadTransaction` command bodies, moved out of `OperatonEngineAdapter` unchanged; the read twin joins an active command context or runs one `Command` through `getCommandExecutorTxRequired`) |
 | `sangam-engine/src/main/java/org/sangam/engine/SangamEngineConfigurer.java` | `cfg.ProcessEngineConfigurationImpl`, `cfg.ProcessEnginePlugin` |
 | `sangam-engine/src/main/java/org/sangam/engine/SangamEngineFactory.java` | `cfg.ProcessEnginePlugin`, `cfg.StandaloneProcessEngineConfiguration` |
 | `sangam-engine/src/main/java/org/sangam/engine/SangamEnginePlugin.java` | `cfg.ProcessEngineConfigurationImpl`, `cfg.ProcessEnginePlugin`, `util.ReflectUtil` |
