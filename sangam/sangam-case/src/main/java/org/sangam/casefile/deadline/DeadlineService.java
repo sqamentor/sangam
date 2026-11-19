@@ -213,12 +213,15 @@ public class DeadlineService {
     public int sweep(int batch) {
         return tx.inTransaction(c -> {
             Instant now = Db.now(c, dialect);
-            String sql = dialect.skipLockedSelect("d.*", "CF_DEADLINE", "d",
-                    "d.next_check_at IS NOT NULL AND d.next_check_at <= ? AND d.state IN ('RUNNING','WARNED','BREACHED')",
-                    "d.next_check_at", Math.max(1, batch));
+            String pending = "d.next_check_at IS NOT NULL AND d.next_check_at <= ? AND d.state IN ('RUNNING','WARNED','BREACHED')";
+            String sql = dialect.skipLockedSelect("d.*", "CF_DEADLINE", "d", pending, "d.next_check_at", Math.max(1, batch));
             List<Deadline> due = Jdbc.query(c, sql, DeadlineService::row, now);
             for (Deadline d : due) {
-                process(c, d, now);
+                // On Oracle the skip-locked select can return a deadline a peer processed after the select's snapshot.
+                // The row is locked now, so this read sees the committed row: work it only while it is still due.
+                Optional<Deadline> current = Jdbc.one(c, "SELECT d.* FROM CF_DEADLINE d WHERE d.tenant_id = ? AND d.deadline_id = ? AND "
+                        + pending, DeadlineService::row, d.tenantId(), d.id(), now);
+                current.ifPresent(cur -> process(c, cur, now));
             }
             return due.size();
         });

@@ -85,8 +85,14 @@ public final class Inbox {
                     rs -> new Object[]{rs.getString(1), rs.getString(2), rs.getString(3)});
             List<Message> out = new ArrayList<>();
             for (Object[] k : keys) {
-                Jdbc.update(c, "UPDATE INBOX SET state='CLAIMED', claim_owner=?, claim_epoch=claim_epoch+1, claim_expires_at="
-                        + dialect.nowPlusMillisParam() + " WHERE tenant_id=? AND source=? AND message_id=?", node, claimTtl.toMillis(), k[0], k[1], k[2]);
+                // fenced on the claim predicate: on Oracle the skip-locked select can return a row a peer claimed or
+                // processed after the select's snapshot; a row this UPDATE does not move is not this node's claim
+                if (Jdbc.update(c, "UPDATE INBOX SET state='CLAIMED', claim_owner=?, claim_epoch=claim_epoch+1, claim_expires_at="
+                        + dialect.nowPlusMillisParam() + " WHERE tenant_id=? AND source=? AND message_id=?"
+                        + " AND state IN ('RECEIVED','BUFFERED') AND next_attempt_at <= " + dialect.now()
+                        + " AND expires_at > " + dialect.now(), node, claimTtl.toMillis(), k[0], k[1], k[2]) != 1) {
+                    continue;
+                }
                 out.add(Jdbc.one(c, "SELECT tenant_id, source, message_id, correlation_key, payload, claim_epoch FROM INBOX"
                                 + " WHERE tenant_id=? AND source=? AND message_id=?",
                         rs -> new Message(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getLong(6)),
@@ -155,9 +161,15 @@ public final class Inbox {
                             "i.tenant_id, i.source, i.message_id, i.correlation_key, i.claim_epoch", "INBOX", "i",
                             "i.tenant_id = ? AND i.state IN ('RECEIVED','BUFFERED') AND i.expires_at <= " + dialect.now(), "i.received_at", 1000),
                     rs -> new Message(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), null, rs.getLong(5)), tenant);
+            int expired = 0;
             for (Message m : due) {
-                Jdbc.update(c, "UPDATE INBOX SET state='EXPIRED' WHERE tenant_id=? AND source=? AND message_id=?",
-                        m.tenantId(), m.source(), m.messageId());
+                // fenced: a row a peer claimed or processed after the skip-locked snapshot (Oracle) is not expired
+                if (Jdbc.update(c, "UPDATE INBOX SET state='EXPIRED' WHERE tenant_id=? AND source=? AND message_id=?"
+                                + " AND state IN ('RECEIVED','BUFFERED') AND expires_at <= " + dialect.now(),
+                        m.tenantId(), m.source(), m.messageId()) != 1) {
+                    continue;
+                }
+                expired++;
                 if (audit != null) {
                     Map<String, Object> p = new LinkedHashMap<>();
                     p.put("source", m.source());
@@ -166,7 +178,7 @@ public final class Inbox {
                     audit.append(c, m.tenantId(), "sec:" + m.tenantId(), "INBOX_MESSAGE_EXPIRED", p);
                 }
             }
-            return due.size();
+            return expired;
         });
     }
 
