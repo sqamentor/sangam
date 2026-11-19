@@ -246,10 +246,11 @@ class DistributionFetch(unittest.TestCase):
         with open(os.path.join(tmp, "codes"), "w", newline="\n") as f:
             f.write("\n".join(codes) + "\n")
         curl = r"""#!/usr/bin/env bash
-hdr=""; part=""; while [ $# -gt 0 ]; do case "$1" in -D) hdr="$2"; shift ;; -o) part="$2"; shift ;; esac; shift; done
-n=$(( $(cat "$T/calls" 2>/dev/null || echo 0) + 1 )); echo "$n" > "$T/calls"
-code=$(sed -n "${n}p" "$T/codes"); [ -n "$code" ] || code=$(tail -1 "$T/codes")
-printf 'HTTP/1.1 %s X\r\nServer: Fake-Edge\r\nX-Cache: MISS, MISS\r\nX-Served-By: cache-fake-1\r\nCF-RAY: 0123abcd-IAD\r\nSet-Cookie: secret=s3cr3t\r\nAuthorization: Bearer s3cr3t\r\n\r\n' "$code" > "$hdr"
+hdr=""; part=""; url=""; while [ $# -gt 0 ]; do case "$1" in -D) hdr="$2"; shift ;; -o) part="$2"; shift ;; https://*) url="$1" ;; esac; shift; done
+n=$(( $(cat "$T/calls" 2>/dev/null || echo 0) + 1 )); echo "$n" > "$T/calls"; echo "$url" >> "$T/urls"
+entry=$(sed -n "${n}p" "$T/codes"); [ -n "$entry" ] || entry=$(tail -1 "$T/codes")
+code=${entry%%:*}; ra=""; case "$entry" in *:*) ra="Retry-After: ${entry#*:}\r\n" ;; esac
+printf "HTTP/1.1 %s X\r\nServer: Fake-Edge\r\nX-Cache: MISS, MISS\r\nX-Served-By: cache-fake-1\r\nCF-RAY: 0123abcd-IAD\r\n${ra}Set-Cookie: secret=s3cr3t\r\nAuthorization: Bearer s3cr3t\r\n\r\n" "$code" > "$hdr"
 printf 'not the zip' > "$part"; printf '%s' "$code"
 """
         for name, body in (("curl", curl), ("sleep", "#!/usr/bin/env bash\nexit 0\n")):
@@ -268,6 +269,10 @@ printf 'not the zip' > "$part"; printf '%s' "$code"
         self.assertTrue(os.path.exists(calls_file), f"maven-dist.sh never called curl (exit {p.returncode}):\n{log}")
         with open(calls_file) as f:
             calls = int(f.read().strip())
+        with open(os.path.join(tmp, "urls")) as f:
+            self.urls = f.read().split()
+        self.cached = os.path.exists(os.path.join(tmp, ".cache", "sangam-maven-dist", "org", "apache", "maven",
+                                                  "apache-maven", "3.9.9", "apache-maven-3.9.9-bin.zip"))
         return p.returncode, log, calls
 
     def test_404_on_the_pinned_file_is_retried_and_headers_are_logged(self):
@@ -286,6 +291,35 @@ printf 'not the zip' > "$part"; printf '%s' "$code"
         self.assertNotEqual(rc, 0)
         self.assertEqual(calls, 2)
         self.assertIn("SHA-256 mismatch", log, "wrong bytes are refused after a retried fetch")
+
+    FALLBACK = "https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.zip"
+
+    def test_long_retry_after_takes_the_apache_archive_fallback(self):
+        # Run 44493122674: 'HTTP/2 404, server: cloudflare, retry-after: 28304', a ~7.9 h edge block, not a transient.
+        for first in ("404:28304", "429:28304"):
+            rc, log, calls = self.run_fetch([first, "200"])
+            self.assertEqual(calls, 2, f"{first}: one Central attempt, then the fallback, no 300 s waits")
+            self.assertTrue(self.urls[0].startswith("https://repo.maven.apache.org/maven2/"), self.urls)
+            self.assertEqual(self.urls[1], self.FALLBACK, "fallback derived from distributionUrl's version")
+            self.assertIn(f"from {self.FALLBACK}", log, "the job log names the source")
+
+    def test_short_retry_after_keeps_waiting_on_central(self):
+        rc, log, calls = self.run_fetch(["429:30", "404:300", "404"])
+        self.assertEqual(calls, 5)
+        self.assertNotIn(self.FALLBACK, self.urls)
+
+    def test_fallback_bytes_with_a_wrong_checksum_are_refused(self):
+        rc, log, calls = self.run_fetch(["404:28304", "200"])
+        self.assertNotEqual(rc, 0)
+        self.assertIn(f"SHA-256 mismatch for {self.FALLBACK}", log)
+        self.assertFalse(self.cached, "refused bytes must never land in the distribution cache")
+        self.assertNotIn("MVNW_REPOURL", log)
+
+    def test_fallback_error_fails_with_its_headers(self):
+        rc, log, calls = self.run_fetch(["404:28304", "503"])
+        self.assertNotEqual(rc, 0)
+        self.assertEqual(calls, 2)
+        self.assertIn(f"::error::{self.FALLBACK} answered HTTP 503", log)
 
 
 if __name__ == "__main__":
