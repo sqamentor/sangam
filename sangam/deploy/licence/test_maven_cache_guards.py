@@ -136,7 +136,7 @@ class SingleFetch(unittest.TestCase):
     def test_deps_job_resolves_serially_with_bounded_retries(self):
         with open(os.path.join(WORKFLOWS, "ci-lanes.yml"), encoding="utf-8") as f:
             deps = dict(jobs(f.read()))["deps"]
-        self.assertIn("resolve-once.sh", deps)
+        self.assertIn("prefetch.sh", deps)  # which runs every resolution through resolve-once.sh
         self.assertNotRegex(deps, r"\s-T\s", "parallel resolution makes the one cold fetch bursty")
         with open(os.path.join(ACTION, "resolve-once.sh"), encoding="utf-8") as f:
             s = f.read()
