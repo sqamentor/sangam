@@ -232,7 +232,7 @@
    ],
    "spdx": "Apache-2.0"
   },
-  "pkg:maven/com.h2database/h2@2.3.232": {
+  "pkg:maven/com.h2database/h2@2.5.252": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
     "control-plane",

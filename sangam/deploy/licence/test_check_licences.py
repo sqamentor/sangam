@@ -154,7 +154,7 @@ class Elections(unittest.TestCase):
         self.assertTrue(ch.errors, "a new version has no election, so the AND reading fails")
 
     def test_an_elected_licence_that_is_not_offered_fails(self):
-        ch = check([comp("pkg:maven/com.h2database/h2@2.3.232", "EPL-1.0")])
+        ch = check([comp("pkg:maven/com.h2database/h2@2.5.252", "EPL-1.0")])
         self.assertTrue(any("ELECTION MISMATCH" in e for e in ch.errors), ch.errors)
 
     def test_verapdf_election_is_live_only_in_the_pdf_validator(self):
@@ -512,7 +512,7 @@ class Cli(unittest.TestCase):
         self.assertEqual(2, cl.main(["--policy", self.policy, "--jar", os.path.join(self.tmp.name, "sangam-server-0.1.0.jar")]))
 
     def test_annotate_records_elections_in_the_sbom(self):
-        p = self.write_bom([comp("pkg:maven/com.h2database/h2@2.3.232", expr="MPL-2.0 OR EPL-1.0")])
+        p = self.write_bom([comp("pkg:maven/com.h2database/h2@2.5.252", expr="MPL-2.0 OR EPL-1.0")])
         self.assertEqual(0, cl.main(["--policy", self.policy, "--sbom", p, "--annotate"]))
         with open(p, encoding="utf-8") as f:
             bom = json.load(f)

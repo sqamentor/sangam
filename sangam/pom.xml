@@ -144,7 +144,7 @@
     <version.geny>1.1.0</version.geny>
     <!-- must match Spring Boot 4.1.2's managed junit-jupiter.version (Spring Framework 7 needs JUnit 6) -->
     <version.junit>6.0.3</version.junit>
-    <version.testcontainers>1.21.4</version.testcontainers>
+    <version.testcontainers>2.0.5</version.testcontainers>
     <version.postgresql>42.7.14</version.postgresql>
     <version.mariadb>3.5.11</version.mariadb>
     <version.mssql>12.10.2.jre11</version.mssql>
@@ -152,7 +152,7 @@
     <!-- RM-31: the slf4j family ships as one version; Spring Boot 4.1.2 brings jul-to-slf4j 2.0.20, so the API is 2.0.20
          too (test_version_families.py) -->
     <version.slf4j>2.0.20</version.slf4j>
-    <version.h2>2.3.232</version.h2>
+    <!-- UP-L7: 2.5.252 (was 2.3.232); file databases written by 2.3.232 open unchanged (H2FileUpgradeTest) --><version.h2>2.5.252</version.h2>
     <!-- broker clients (R38 inbound, ports channels): one version for every module, also for hosts (M-014); the
          Spring Boot BOM would otherwise resolve a different kafka-clients for a module that gets it transitively -->
     <version.kafka>3.9.2</version.kafka>
@@ -208,7 +208,7 @@
     <version.cyclonedx-maven-plugin>2.9.3</version.cyclonedx-maven-plugin>
     <version.versions-maven-plugin>2.25.2</version.versions-maven-plugin>
     <version.jazzer>0.30.0</version.jazzer>
-    <version.cucumber>8.0.4</version.cucumber>
+    <version.cucumber>8.1.0</version.cucumber>
     <!-- M-095: empty unless -Psangam-coverage sets it (JaCoCo prepare-agent). Surefire reads it as @{argLine}, so the
          agent and the UTC/tmpdir flags below are both kept. -->
     <argLine></argLine>
@@ -498,19 +498,19 @@
         <version>${version.cucumber}</version>
         <scope>test</scope>
       </dependency>
-      <!-- Cucumber 8.0.4 asks for these two as version ranges (messages [32.0.0,35.0.0), query [15.0.0,17.0.0)). A range
+      <!-- Cucumber 8.0.4 asked for these two as version ranges (messages [32.0.0,35.0.0), query [15.0.0,17.0.0)). A range
            is resolved from repository metadata, so the result depends on the day of the build and an offline build
-           fails. Pinned to the versions of the approved batch-1 download, inside both ranges. -->
+           fails. Pinned to the versions cucumber-jvm 8.1.0 itself pins (messages 35.0.0, query 16.4.0, UP-L7). -->
       <dependency>
         <groupId>io.cucumber</groupId>
         <artifactId>messages</artifactId>
-        <version>34.2.1</version>
+        <version>35.0.0</version>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>io.cucumber</groupId>
         <artifactId>query</artifactId>
-        <version>16.1.1</version>
+        <version>16.4.0</version>
         <scope>test</scope>
       </dependency>
     </dependencies>
@@ -630,10 +630,12 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <!-- UP-L4: stays 3.6.1. 3.7.0 also checks OPTIONAL dependencies in bannedDependencies, which breaks the
-             decision 217/232 add-on design below (jnats optional in sangam-flowable-ports fails the build); moving
-             needs a reworded rule that keeps the same control, an integrator/owner item. -->
-        <version>3.6.1</version>
+        <!-- UP-L7: 3.6.3 (the 3.6 line's latest; Spring Boot 4.1.2 manages 3.6.3), same rule result as 3.6.1.
+             3.7.0 stays held: it also checks OPTIONAL dependencies in bannedDependencies, which breaks the
+             decision 217/232 add-on design below (re-run 2026-11-18: jnats and bcprov-lts8on, optional in
+             sangam-flowable-ports, fail the build); moving needs a reworded rule that keeps the same control, an
+             integrator/owner item. -->
+        <version>3.6.3</version>
         <executions>
           <execution>
             <id>sangam-banned-dependencies</id>

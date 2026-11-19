@@ -2,7 +2,7 @@
 package org.sangam.server.acceptance;
 
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.MSSQLServerContainer;
+import org.testcontainers.mssqlserver.MSSQLServerContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.util.Map;
@@ -49,7 +49,7 @@ class AcceptanceDatabaseVendorTermsTest {
 
     @Test
     void theOperatorsAcceptanceIsPassedToTheContainer() {
-        MSSQLServerContainer<?> c = AcceptanceDatabase.sqlServer(IMAGE, env(Map.of("SANGAM_ACCEPT_MSSQL_EULA", "Y")));
+        MSSQLServerContainer c = AcceptanceDatabase.sqlServer(IMAGE, env(Map.of("SANGAM_ACCEPT_MSSQL_EULA", "Y")));
         assertEquals("Y", c.getEnvMap().get("ACCEPT_EULA"), "acceptLicense() only after the operator's Y");
     }
 

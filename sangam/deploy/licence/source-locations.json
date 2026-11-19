@@ -11,7 +11,7 @@
  "components": {
   "pkg:maven/ch.qos.logback/logback-classic@1.5.38": "https://repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.5.38/logback-classic-1.5.38-sources.jar",
   "pkg:maven/ch.qos.logback/logback-core@1.5.38": "https://repo1.maven.org/maven2/ch/qos/logback/logback-core/1.5.38/logback-core-1.5.38-sources.jar",
-  "pkg:maven/com.h2database/h2@2.3.232": "https://repo1.maven.org/maven2/com/h2database/h2/2.3.232/h2-2.3.232-sources.jar",
+  "pkg:maven/com.h2database/h2@2.5.252": "https://repo1.maven.org/maven2/com/h2database/h2/2.5.252/h2-2.5.252-sources.jar",
   "pkg:maven/jakarta.annotation/jakarta.annotation-api@3.0.0": "https://repo1.maven.org/maven2/jakarta/annotation/jakarta.annotation-api/3.0.0/jakarta.annotation-api-3.0.0-sources.jar",
   "pkg:maven/jakarta.el/jakarta.el-api@6.0.1": "https://repo1.maven.org/maven2/jakarta/el/jakarta.el-api/6.0.1/jakarta.el-api-6.0.1-sources.jar",
   "pkg:maven/jakarta.jms/jakarta.jms-api@3.1.0": "https://repo1.maven.org/maven2/jakarta/jms/jakarta.jms-api/3.1.0/jakarta.jms-api-3.1.0-sources.jar",
