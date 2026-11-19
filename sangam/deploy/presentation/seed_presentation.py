@@ -121,13 +121,19 @@ def idem(*parts):
     return {"Idempotency-Key": str(uuid.uuid5(uuid.NAMESPACE_URL, "sangam-presentation/" + "/".join(parts)))}
 
 
+# The 409 codes that mean "already there" (OrgUnitService UNIT_EXISTS, SeatService SEAT_EXISTS). Every other 409
+# (UNKNOWN_LEVEL, UNKNOWN_UNIT, UNKNOWN_SEAT, ...) is a real refusal and stops the seed (EV-M-0923: a blanket 409
+# reported "exists" for an org unit that was never created).
+EXISTS_CODES = ("UNIT_EXISTS", "SEAT_EXISTS")
+
+
 def create_if_absent(what, method, url, tok, body, headers):
-    """POST/PUT; a 409 (already there) counts as present. Other errors stop the seed."""
+    """POST/PUT; a 409 with an "already there" code counts as present. Other errors stop the seed."""
     try:
         http(method, url, tok, body, headers=headers)
         print(f"  {what}: created")
     except SystemExit as e:
-        if "-> 409" not in str(e):
+        if "-> 409" not in str(e) or not any(f'"code":"{c}"' in str(e) for c in EXISTS_CODES):
             raise
         print(f"  {what}: exists")
 
@@ -160,9 +166,11 @@ def seed_sangam(base, tok, g, tenant, office, today):
     create_if_absent(f"org unit {office}", "POST", f"{base}/admin/org-units", tok,
                      {"id": office, "code": office, "name": "Jaipur", "level": "OFFICE",
                       "parentId": unit.get("parent") or None}, idem(tenant, "unit", office))
+    # PUT /admin/roles/by-role-id?roleId= (IdentityAdminController.defineRole, decision 393: a role id may carry ':',
+    # so it is a query parameter, never a path segment). Defining a role again replaces it with the same content.
     for r in seed["roles"]:
-        http("PUT", f"{base}/admin/roles/{urllib.parse.quote(r['code'])}", tok, {"id": r["code"], "name": r["name"]["en"]},
-             headers=idem(tenant, "role", r["code"]))
+        http("PUT", f"{base}/admin/roles/by-role-id?" + urllib.parse.urlencode({"roleId": r["code"]}), tok,
+             {"id": r["code"], "name": r["name"]["en"]}, headers=idem(tenant, "role", r["code"]))
     print(f"  roles: {len(seed['roles'])} defined")
     for s in seats_in_order(seed):
         reports = s.get("reportsTo") if s.get("reportsTo") in {x["id"] for x in seed["seats"]} else None
