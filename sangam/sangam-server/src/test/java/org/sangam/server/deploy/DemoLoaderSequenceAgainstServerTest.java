@@ -144,8 +144,9 @@ class DemoLoaderSequenceAgainstServerTest {
             }
         }
         status.add("DEMO-SEQUENCE | connectors | INFO | " + connectors(ctx));
-        if (steps.contains("4a cases")) {
-            status.add("DEMO-SEQUENCE | seat header | INFO | " + seatHeaderProbe(api));
+        if (steps.contains("4a cases") && !step(status, "seat header", () -> seatHeaderCheck(api))) {
+            // register E-24: never an open gap
+            wrong.add("seat header failed");
         }
         String report = "DEMO-SEQUENCE [" + label + "] open gaps " + new java.util.TreeSet<>(OPEN_GAPS) + "\n" + String.join("\n", status);
         System.out.println(report);
@@ -191,51 +192,61 @@ class DemoLoaderSequenceAgainstServerTest {
     }
 
     /**
-     * A fact for the report, not an assertion (the ruling is not this lane's): realm oneifms's tokens carry no seats
-     * claim, and PrincipalAttributeFilter checks {@code X-Sangam-Seat} only against that claim. This reads the open
-     * tasks of BA-0002 (it waits at sn_sanction, seat PAO-1) as the PAO-1 holder and as Kavita Sharma (DDO-1), each
-     * naming seat PAO-1 in the header, and says what each was shown, and what the server answered when Kavita Sharma
-     * then sent the sanction of that task. It runs last, after every step was judged.
+     * Register E-24 (IX.5 rule 1, K7): realm oneifms's tokens carry no seats claim, so the seat a caller names in
+     * {@code X-Sangam-Seat} is checked against who holds it on the action date. BA-0002 waits at sn_sanction, seat
+     * PAO-1 (when the packs are deployed; as deployed no case exists and the PAO-1 holder's list is empty). The PAO-1
+     * holder, Sunita Rathore, naming PAO-1 is shown the seat's tasks. Kavita Sharma holds DDO-1 only: naming PAO-1
+     * she is refused the list (403 SEAT_NOT_HELD), and the sanction of the seat's task, sent by her under that header,
+     * is refused the same way and the task stays open. It runs last, after every step was judged.
      */
-    private static String seatHeaderProbe(String api) {
-        try {
-            String bk = URLEncoder.encode("JPR-DDO-0420/BA/2026-27/0002", StandardCharsets.UTF_8);
-            List<String> seen = new ArrayList<>();
-            for (String[] who : new String[][]{{"sunita.rathore", "PAO"}, {"kavita.sharma", "DDO"}}) {
-                HttpResponse<String> r = HTTP.send(HttpRequest.newBuilder(URI.create(api + "/tasks?businessKey=" + bk))
-                        .header("Authorization", "Bearer " + PresentationSeedAgainstServerTest.token(who[0], List.of(who[1], "sangam-user")))
-                        .header("X-Sangam-Seat", "PAO-1").GET().build(), HttpResponse.BodyHandlers.ofString());
-                JsonNode body = r.statusCode() == 200 ? JSON.readTree(r.body()) : null;
-                JsonNode list = body == null ? null : body.isArray() ? body : body.path("items");
-                List<String> keys = new ArrayList<>();
-                if (list != null) {
-                    list.forEach(t -> keys.add(t.path("taskDefinitionKey").asText()));
-                }
-                seen.add(who[0] + " with X-Sangam-Seat PAO-1: " + r.statusCode() + " " + keys);
-                if (who[0].equals("kavita.sharma") && list != null && list.size() == 1) {
-                    // the same person, the same header: is the sanction of seat PAO-1 accepted from her?
-                    JsonNode form = JSON.readTree(Path.of("..", "sangam-packs", "src", "main", "resources", "packs", "core",
-                            "forms", "sanction.form.json").toAbsolutePath().normalize().toFile());
-                    Map<String, Object> variables = new LinkedHashMap<>();
-                    variables.put(form.path("decision").path("variable").asText(),
-                            form.path("decision").path("options").get(0).path("value").asText());
-                    Map<String, Object> answer = new LinkedHashMap<>();
-                    answer.put("remarks", "Seat header check of the test.");
-                    answer.put("variables", variables);
-                    HttpResponse<String> done = HTTP.send(HttpRequest.newBuilder(
-                                    URI.create(api + "/tasks/" + list.get(0).path("id").asText() + "/complete"))
-                            .header("Authorization", "Bearer " + PresentationSeedAgainstServerTest.token(who[0], List.of(who[1], "sangam-user")))
-                            .header("X-Sangam-Seat", "PAO-1").header("Content-Type", "application/json")
-                            .POST(HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(answer))).build(),
-                            HttpResponse.BodyHandlers.ofString());
-                    String code = done.statusCode() >= 400 ? " " + JSON.readTree(done.body()).path("code").asText() : "";
-                    seen.add("her completion of that task with " + variables + ": " + done.statusCode() + code);
-                }
-            }
-            return String.join("; ", seen);
-        } catch (Exception e) {
-            return "not read: " + e;
+    private static String seatHeaderCheck(String api) throws Exception {
+        String bk = URLEncoder.encode("JPR-DDO-0420/BA/2026-27/0002", StandardCharsets.UTF_8);
+        List<String> seen = new ArrayList<>();
+        HttpResponse<String> holder = seatHeaderGet(api + "/tasks?businessKey=" + bk, "sunita.rathore", "PAO");
+        assertEquals(200, holder.statusCode(), "the PAO-1 holder naming PAO-1: " + holder.body());
+        JsonNode body = JSON.readTree(holder.body());
+        JsonNode list = body.isArray() ? body : body.path("items");
+        List<String> keys = new ArrayList<>();
+        list.forEach(t -> keys.add(t.path("taskDefinitionKey").asText()));
+        seen.add("sunita.rathore (holds PAO-1) with X-Sangam-Seat PAO-1: 200 " + keys);
+
+        HttpResponse<String> other = seatHeaderGet(api + "/tasks?businessKey=" + bk, "kavita.sharma", "DDO");
+        String otherCode = other.statusCode() >= 400 ? JSON.readTree(other.body()).path("code").asText() : other.body();
+        seen.add("kavita.sharma (holds DDO-1 only) with X-Sangam-Seat PAO-1: " + other.statusCode() + " " + otherCode);
+        assertEquals(403, other.statusCode(), String.join("; ", seen));
+        assertEquals("SEAT_NOT_HELD", otherCode, String.join("; ", seen));
+        if (list.size() == 1) {
+            // the same person, the same header: the sanction of seat PAO-1 is not accepted from her
+            JsonNode form = JSON.readTree(Path.of("..", "sangam-packs", "src", "main", "resources", "packs", "core",
+                    "forms", "sanction.form.json").toAbsolutePath().normalize().toFile());
+            Map<String, Object> variables = new LinkedHashMap<>();
+            variables.put(form.path("decision").path("variable").asText(),
+                    form.path("decision").path("options").get(0).path("value").asText());
+            Map<String, Object> answer = new LinkedHashMap<>();
+            answer.put("remarks", "Seat header check of the test.");
+            answer.put("variables", variables);
+            HttpResponse<String> done = HTTP.send(HttpRequest.newBuilder(
+                            URI.create(api + "/tasks/" + list.get(0).path("id").asText() + "/complete"))
+                    .header("Authorization", "Bearer " + PresentationSeedAgainstServerTest.token("kavita.sharma", List.of("DDO", "sangam-user")))
+                    .header("X-Sangam-Seat", "PAO-1").header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(answer))).build(),
+                    HttpResponse.BodyHandlers.ofString());
+            String code = done.statusCode() >= 400 ? JSON.readTree(done.body()).path("code").asText() : "";
+            seen.add("her completion of that task with " + variables + ": " + done.statusCode() + " " + code);
+            assertEquals(403, done.statusCode(), String.join("; ", seen));
+            assertEquals("SEAT_NOT_HELD", code, String.join("; ", seen));
+            HttpResponse<String> still = seatHeaderGet(api + "/tasks?businessKey=" + bk, "sunita.rathore", "PAO");
+            JsonNode after = JSON.readTree(still.body());
+            assertEquals(1, (after.isArray() ? after : after.path("items")).size(), "the task is still open for the PAO-1 holder: " + still.body());
+            seen.add("the task is still open for the holder");
         }
+        return String.join("; ", seen);
+    }
+
+    private static HttpResponse<String> seatHeaderGet(String url, String user, String packRole) throws Exception {
+        return HTTP.send(HttpRequest.newBuilder(URI.create(url))
+                .header("Authorization", "Bearer " + PresentationSeedAgainstServerTest.token(user, List.of(packRole, "sangam-user")))
+                .header("X-Sangam-Seat", "PAO-1").GET().build(), HttpResponse.BodyHandlers.ofString());
     }
 
     /** Whether the loader printed {@code waits at <task>} under the case's own heading. */

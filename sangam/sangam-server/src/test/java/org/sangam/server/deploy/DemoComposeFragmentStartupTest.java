@@ -458,13 +458,21 @@ class DemoComposeFragmentStartupTest {
         }
 
         String tokenWithoutSub(String tenant, String preferredUsername, List<String> roles) throws Exception {
+            return tokenWithoutSub(tenant, preferredUsername, roles, Map.of());
+        }
+
+        /** As above, with further claims (a realm that does issue one the oneifms realm does not, such as seats). */
+        String tokenWithoutSub(String tenant, String preferredUsername, List<String> roles, Map<String, Object> more)
+                throws Exception {
             java.time.Instant now = java.time.Instant.now();
-            com.nimbusds.jwt.JWTClaimsSet claims = new com.nimbusds.jwt.JWTClaimsSet.Builder()
+            com.nimbusds.jwt.JWTClaimsSet.Builder builder = new com.nimbusds.jwt.JWTClaimsSet.Builder()
                     .issuer(ISSUER).audience("sangam-server")
                     .issueTime(java.util.Date.from(now)).notBeforeTime(java.util.Date.from(now.minusSeconds(5)))
                     .expirationTime(java.util.Date.from(now.plusSeconds(600))).jwtID(java.util.UUID.randomUUID().toString())
                     .claim("tenant", tenant).claim("preferred_username", preferredUsername).claim("roles", roles)
-                    .claim("sid", java.util.UUID.randomUUID().toString()).build();
+                    .claim("sid", java.util.UUID.randomUUID().toString());
+            more.forEach(builder::claim);
+            com.nimbusds.jwt.JWTClaimsSet claims = builder.build();
             com.nimbusds.jwt.SignedJWT jwt = new com.nimbusds.jwt.SignedJWT(new com.nimbusds.jose.JWSHeader.Builder(
                     com.nimbusds.jose.JWSAlgorithm.RS256).keyID(key.getKeyID()).build(), claims);
             jwt.sign(new com.nimbusds.jose.crypto.RSASSASigner(key));
