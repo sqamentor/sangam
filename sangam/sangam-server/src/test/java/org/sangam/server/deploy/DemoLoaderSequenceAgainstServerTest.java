@@ -194,7 +194,8 @@ class DemoLoaderSequenceAgainstServerTest {
      * A fact for the report, not an assertion (the ruling is not this lane's): realm oneifms's tokens carry no seats
      * claim, and PrincipalAttributeFilter checks {@code X-Sangam-Seat} only against that claim. This reads the open
      * tasks of BA-0002 (it waits at sn_sanction, seat PAO-1) as the PAO-1 holder and as Kavita Sharma (DDO-1), each
-     * naming seat PAO-1 in the header, and says what each was shown.
+     * naming seat PAO-1 in the header, and says what each was shown, and what the server answered when Kavita Sharma
+     * then sent the sanction of that task. It runs last, after every step was judged.
      */
     private static String seatHeaderProbe(String api) {
         try {
@@ -211,6 +212,25 @@ class DemoLoaderSequenceAgainstServerTest {
                     list.forEach(t -> keys.add(t.path("taskDefinitionKey").asText()));
                 }
                 seen.add(who[0] + " with X-Sangam-Seat PAO-1: " + r.statusCode() + " " + keys);
+                if (who[0].equals("kavita.sharma") && list != null && list.size() == 1) {
+                    // the same person, the same header: is the sanction of seat PAO-1 accepted from her?
+                    JsonNode form = JSON.readTree(Path.of("..", "sangam-packs", "src", "main", "resources", "packs", "core",
+                            "forms", "sanction.form.json").toAbsolutePath().normalize().toFile());
+                    Map<String, Object> variables = new LinkedHashMap<>();
+                    variables.put(form.path("decision").path("variable").asText(),
+                            form.path("decision").path("options").get(0).path("value").asText());
+                    Map<String, Object> answer = new LinkedHashMap<>();
+                    answer.put("remarks", "Seat header check of the test.");
+                    answer.put("variables", variables);
+                    HttpResponse<String> done = HTTP.send(HttpRequest.newBuilder(
+                                    URI.create(api + "/tasks/" + list.get(0).path("id").asText() + "/complete"))
+                            .header("Authorization", "Bearer " + PresentationSeedAgainstServerTest.token(who[0], List.of(who[1], "sangam-user")))
+                            .header("X-Sangam-Seat", "PAO-1").header("Content-Type", "application/json")
+                            .POST(HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(answer))).build(),
+                            HttpResponse.BodyHandlers.ofString());
+                    String code = done.statusCode() >= 400 ? " " + JSON.readTree(done.body()).path("code").asText() : "";
+                    seen.add("her completion of that task with " + variables + ": " + done.statusCode() + code);
+                }
             }
             return String.join("; ", seen);
         } catch (Exception e) {
