@@ -269,6 +269,16 @@ class DemoComposeFragmentStartupTest {
                 "--server.port=0", "--management.server.port=0", "--sangam.engine.allow-multiple-engines-per-jvm=true"};
         List<String> args = new java.util.ArrayList<>(List.of(harness));
         args.addAll(settings);
+        // One JVM runs many test contexts. The meter registry of a context that is gone (closed, or a start that was
+        // refused) stays in Micrometer's global composite, and a counter of the product incremented through it
+        // (Metrics.counter in IdempotencyFilter.replay) then fails on that dead context: the replay answered 500 in
+        // CI run 44801905653. A server process has one context, so only the test JVM needs this.
+        for (io.micrometer.core.instrument.MeterRegistry r
+                : List.copyOf(io.micrometer.core.instrument.Metrics.globalRegistry.getRegistries())) {
+            if (r.isClosed()) {
+                io.micrometer.core.instrument.Metrics.removeRegistry(r);
+            }
+        }
         return new SpringApplicationBuilder(SangamServerApplication.class).environment(environment)
                 .profiles(profiles).run(args.toArray(String[]::new));
     }
