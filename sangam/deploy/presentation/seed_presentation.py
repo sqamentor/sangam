@@ -46,9 +46,9 @@ def load_lists():
     return mod
 
 
-def http(method, url, token=None, body=None, form=None, headers=None, replayed=None):
-    """(status, JSON body). When `replayed` is a list, appends whether the server replayed a stored answer to the same
-    Idempotency-Key (response header Idempotent-Replayed: true), i.e. this call changed nothing."""
+def http(method, url, token=None, body=None, form=None, headers=None):
+    """(status, JSON body). An error stops the seed; it says so when the server did not execute the request but
+    replayed the answer stored for its Idempotency-Key (response header Idempotent-Replayed)."""
     h = dict(headers or {})
     data = None
     if token:
@@ -63,13 +63,12 @@ def http(method, url, token=None, body=None, form=None, headers=None, replayed=N
     try:
         with urllib.request.urlopen(req, timeout=30) as res:
             raw = res.read()
-            if replayed is not None:
-                replayed.append((res.headers.get("Idempotent-Replayed") or "").lower() == "true")
             return res.status, (json.loads(raw) if raw and raw[:1] in (b"{", b"[") else None)
     except urllib.error.HTTPError as e:
         raw = e.read()
         detail = raw.decode("utf-8", "replace")[:300]
-        raise SystemExit(f"{method} {url.split('?')[0]} -> {e.code}: {detail}") from None
+        stored = " (stored answer replayed for this Idempotency-Key, not executed)" if e.headers.get("Idempotent-Replayed") else ""
+        raise SystemExit(f"{method} {url.split('?')[0]} -> {e.code}{stored}: {detail}") from None
 
 
 class Keycloak:
@@ -122,8 +121,17 @@ def items_of(body):
     return body if isinstance(body, list) else (body or {}).get("items", [])
 
 
+# One Idempotency-Key per command of THIS run. The server stores the answer to a key, a refusal included (409 other
+# than a retry conflict, 400, 404, 422: FAILED_FINAL), and replays it to every later request with the same key and
+# body for 30 days without executing it. A key built from tenant and object only made every later run the same
+# command: the org unit refused once with 409 UNKNOWN_LEVEL (no level types yet) stayed refused after the level
+# types were defined (EV-M-0932). What makes a second run change nothing is the state of the tenant, checked by
+# each step below (same level list, UNIT_EXISTS, SEAT_EXISTS, same role content, an active assignment), not the key.
+RUN = uuid.uuid4().hex
+
+
 def idem(*parts):
-    return {"Idempotency-Key": str(uuid.uuid5(uuid.NAMESPACE_URL, "sangam-presentation/" + "/".join(parts)))}
+    return {"Idempotency-Key": str(uuid.uuid5(uuid.NAMESPACE_URL, f"sangam-presentation/{RUN}/" + "/".join(parts)))}
 
 
 # The 409 codes that mean "already there" (OrgUnitService UNIT_EXISTS, SeatService SEAT_EXISTS). Every other 409
@@ -137,9 +145,8 @@ ORG_LEVELS = ("OFFICE",)
 def create_if_absent(what, method, url, tok, body, headers):
     """POST/PUT; a 409 with an "already there" code counts as present. Other errors stop the seed."""
     try:
-        again = []
-        http(method, url, tok, body, headers=headers, replayed=again)
-        print(f"  {what}: {'exists (replayed)' if again and again[0] else 'created'}")
+        http(method, url, tok, body, headers=headers)
+        print(f"  {what}: created")
     except SystemExit as e:
         if "-> 409" not in str(e) or not any(f'"code":"{c}"' in str(e) for c in EXISTS_CODES):
             raise
