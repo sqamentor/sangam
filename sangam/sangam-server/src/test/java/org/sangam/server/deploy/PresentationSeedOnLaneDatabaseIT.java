@@ -75,11 +75,15 @@ class PresentationSeedOnLaneDatabaseIT {
         List<String> packsAtStart = new java.util.ArrayList<>(logs);
         packsAtStart.addAll(DemoLoaderSequenceAgainstServerTest.PACKS_AT_START);
 
-        // start 1: the schema (as the migrate-only one-shot applies it) and the one-time key bootstrap
+        // start 1: the schema as the migrate-only one-shot applies it, and the one-time key bootstrap. The one-shot
+        // itself ends with System.exit, so this start does what it does (LiquibaseMode.applySystemProperties): the
+        // product changelog is applied and Operaton creates its schema in this run only (schema-update=true)
+        List<String> migrate = new java.util.ArrayList<>(logs);
+        migrate.add("--operaton.bpm.database.schema-update=true");
         try (ConfigurableApplicationContext first = DemoComposeFragmentStartupTest.start(keys, Map.of(
                 "SANGAM_LIQUIBASE_MODE", "startup", "SANGAM_KEYS_BOOTSTRAP", "true",
                 "SANGAM_KEYS_FINGERPRINT_EXPORT", export.toString(), "SANGAM_KEYS_ATTESTATION", "",
-                "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", ""), logs, "postgres", "oidc")) {
+                "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", ""), migrate, "postgres", "oidc")) {
             assertEquals(Boolean.TRUE, first.isActive());
         }
 
