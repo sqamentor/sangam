@@ -4,15 +4,35 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth/AuthProvider';
+import { failureText } from '../../auth/failure';
+import { SignedOutNotice } from '../../auth/SignedOutNotice';
 import { config } from '../../config';
 import { LanguageSwitch } from '../../app/Layout';
-import { ProblemAlert, TextField } from '../../components/ui';
+import { Notice, ProblemAlert, TextField } from '../../components/ui';
 
 export function SignIn() {
   const { t } = useTranslation();
-  const { login, mode, status, error, reload, signedOutReason } = useAuth();
+  const { login, mode, status, error, reload } = useAuth();
   const [token, setToken] = useState(config().devToken);
   const [busy, setBusy] = useState(false);
+  const [startFailed, setStartFailed] = useState(false);
+  /**
+   * Register E-23: starting the sign-in can fail before the browser leaves the page (the identity provider's discovery
+   * document cannot be fetched, times out, or is not what it should be; UserManager.signinRedirect rejects). The
+   * rejection used to go nowhere and the button did nothing visible. It is said here in the catalogue's words, with a
+   * retry; the cause goes to the console as text (auth/failure.ts). The library's own message is not shown: it is
+   * English only and names the address it asked.
+   */
+  const start = (devToken?: string) => {
+    setBusy(true);
+    setStartFailed(false);
+    void login(devToken)
+      .catch((e: unknown) => {
+        console.error(`Sign-in could not be started. ${failureText(e)}`);
+        setStartFailed(true);
+      })
+      .finally(() => setBusy(false));
+  };
   return (
     <main id="main" className="signin" tabIndex={-1}>
       <div className="signin-card">
@@ -21,30 +41,26 @@ export function SignIn() {
           {t('auth.title')}
         </h1>
         <p>{t('auth.intro')}</p>
-        {signedOutReason === 'idle' && (
-          <p className="alert alert-info" role="status">
-            {t('auth.idleSignedOut', { minutes: config().session.idleMinutes })}
-          </p>
-        )}
+        <SignedOutNotice />
         {status === 'error' && <ProblemAlert error={error} onRetry={reload} />}
+        {startFailed && (
+          <Notice tone="bad">
+            <strong>{t('auth.startFailed')}</strong>
+            <p className="problem-next">{t('auth.startFailedNext')}</p>
+            <button type="button" onClick={() => start(mode === 'dev' ? token : undefined)}>
+              {t('common.retry')}
+            </button>
+          </Notice>
+        )}
         {mode === 'oidc' ? (
-          <button
-            type="button"
-            className="primary"
-            disabled={busy}
-            onClick={() => {
-              setBusy(true);
-              void login().finally(() => setBusy(false));
-            }}
-          >
+          <button type="button" className="primary" disabled={busy} onClick={() => start()}>
             {busy ? t('auth.redirecting') : t('auth.signInSso')}
           </button>
         ) : (
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              setBusy(true);
-              void login(token).finally(() => setBusy(false));
+              start(token);
             }}
           >
             <p className="alert alert-warn">{t('auth.devNotice')}</p>

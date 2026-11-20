@@ -14,6 +14,7 @@ import { api } from '../api/endpoints';
 import type { Me, Role, SeatHolding } from '../api/types';
 import { config } from '../config';
 import { setTenantLocale } from '../i18n';
+import { failureText } from './failure';
 
 type Status = 'loading' | 'anonymous' | 'authenticated' | 'error';
 
@@ -42,7 +43,15 @@ const SEAT_KEY = 'sangam.seat';
 /** sessionStorage: why the UI ended the last session (survives the OIDC end-session redirect back to the app). */
 const SIGNED_OUT_KEY = 'sangam.signedOut';
 
-export type SignedOutReason = 'idle';
+/**
+ * - idle: decision 349, the UI ended the session after the idle period.
+ * - expired (register E-23): the access token ended because it was not renewed in time (the silent renew failed or
+ *   could not run); the UI holds no valid token any more.
+ * - refused (register E-23): the identity provider completed a sign-in, but GET /me answered 401 to the new token.
+ * Only idle is kept in sessionStorage (it has to survive the provider's sign-out redirect); the other two are shown in
+ * the page that saw them.
+ */
+export type SignedOutReason = 'idle' | 'expired' | 'refused';
 
 function safeSession(): Storage | null {
   try {
@@ -142,13 +151,14 @@ export function AuthProvider({ children, providerSignOut = true }: { children: R
     });
   }, [seatId, me]);
 
-  const loadMe = useCallback(async (token: string | null) => {
+  /** Loads GET /me for the token and sets the state; answers the status it set, for a caller that has to act on it. */
+  const loadMe = useCallback(async (token: string | null): Promise<Status> => {
     tokenRef.current = token;
     if (!token) {
       setStatus('anonymous');
       setMe(null);
       setTenantLocale(null);
-      return;
+      return 'anonymous';
     }
     try {
       const m = await api.me.get();
@@ -161,13 +171,15 @@ export function AuthProvider({ children, providerSignOut = true }: { children: R
       setSignedOutReason(null);
       setError(null);
       setStatus('authenticated');
+      return 'authenticated';
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
         setStatus('anonymous');
-        return;
+        return 'anonymous';
       }
       setError(e as Error);
       setStatus('error');
+      return 'error';
     }
   }, []);
 
@@ -194,12 +206,22 @@ export function AuthProvider({ children, providerSignOut = true }: { children: R
     const onLoaded = (u: OidcUser) => {
       tokenRef.current = u.access_token;
     };
-    const onExpired = () => setStatus('anonymous');
+    // E-23: the token ends only when it was not renewed in time, and the user then lands on the sign-in screen; that
+    // screen says why (SignedOutNotice). A reason already there (idle) stays.
+    const onExpired = () => {
+      setSignedOutReason((r) => r ?? 'expired');
+      setStatus('anonymous');
+    };
+    // E-23: a failed silent renew is raised by the library as an event only (its own log is off); nothing listened, so
+    // it left no trace. The session goes on until the token ends (onExpired); the cause is recorded here, as text.
+    const onRenewError = (e: Error) => console.warn(`Session renewal failed. ${failureText(e)}`);
     m.events.addUserLoaded(onLoaded);
     m.events.addAccessTokenExpired(onExpired);
+    m.events.addSilentRenewError(onRenewError);
     return () => {
       m.events.removeUserLoaded(onLoaded);
       m.events.removeAccessTokenExpired(onExpired);
+      m.events.removeSilentRenewError(onRenewError);
     };
   }, [mode]);
 
@@ -261,7 +283,10 @@ export function AuthProvider({ children, providerSignOut = true }: { children: R
 
   const completeCallback = useCallback(async () => {
     const u = await manager().signinRedirectCallback();
-    await loadMe(u.access_token);
+    // E-23: the identity provider signed the user in, but GET /me answered 401 to the new token (the server does not
+    // accept it). The user is back on the sign-in screen; without a reason that looked like a sign-in that did nothing,
+    // and pressing "Sign in" again came back the same way.
+    if ((await loadMe(u.access_token)) === 'anonymous') setSignedOutReason('refused');
     const target = typeof u.state === 'string' && u.state.startsWith('/') ? u.state : '/';
     return target;
   }, [loadMe]);

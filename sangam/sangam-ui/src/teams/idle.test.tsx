@@ -26,7 +26,7 @@ const oidc = vi.hoisted(() => ({
 vi.mock('oidc-client-ts', async (orig) => {
   const real = await orig<typeof import('oidc-client-ts')>();
   class FakeUserManager {
-    events = { addUserLoaded: vi.fn(), removeUserLoaded: vi.fn(), addAccessTokenExpired: vi.fn(), removeAccessTokenExpired: vi.fn() };
+    events = { addUserLoaded: vi.fn(), removeUserLoaded: vi.fn(), addAccessTokenExpired: vi.fn(), removeAccessTokenExpired: vi.fn(), addSilentRenewError: vi.fn(), removeSilentRenewError: vi.fn() };
     getUser = oidc.getUser;
     removeUser = oidc.removeUser;
     signoutRedirect = oidc.signoutRedirect;

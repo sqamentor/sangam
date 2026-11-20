@@ -11,7 +11,7 @@ import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import { IdleSession } from '../auth/IdleSession';
-import { config } from '../config';
+import { SignedOutNotice } from '../auth/SignedOutNotice';
 import { Loading, Notice, PageHeader, ProblemAlert } from '../components/ui';
 import { signInFromTab, TeamsSignInError } from './teamsAuth';
 import type { UserManager } from 'oidc-client-ts';
@@ -53,11 +53,7 @@ export function TeamsSignIn({ authenticate, userManager, origin, base }: TeamsTa
   return (
     <main className="teams-signin">
       <PageHeader title={t('teams.title')} description={t('teams.signInDesc')} />
-      {auth.signedOutReason === 'idle' && (
-        <p className="alert alert-info" role="status">
-          {t('auth.idleSignedOut', { minutes: config().session.idleMinutes })}
-        </p>
-      )}
+      <SignedOutNotice />
       {failure && <Notice tone={failure.reason === 'cancelled' ? 'info' : 'bad'}>{t(failure.reason === 'cancelled' ? 'teams.cancelled' : failure.reason === 'invalid' ? 'teams.invalid' : 'teams.failed')}</Notice>}
       <button type="button" className="primary" disabled={busy} onClick={() => void signIn()}>
         {t('teams.signIn')}
