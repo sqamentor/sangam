@@ -74,6 +74,8 @@ function Probe() {
 const text = (id: string) => screen.getByTestId(id).textContent;
 const app = () => render(<AuthProvider><SeatContextGuard><Probe /></SeatContextGuard></AuthProvider>);
 const meCalls = () => sent.filter(([p]) => p === '/me');
+/** The text of the message about a seat that is no longer held; empty when none is shown. */
+const notice = () => screen.queryByText(/no longer hold/)?.textContent ?? '';
 
 beforeAll(() => initI18n('en'));
 beforeEach(() => {
@@ -99,8 +101,7 @@ describe('E-24: a seat the server no longer accepts (403 SEAT_NOT_HELD)', () => 
     await waitFor(() => expect(text('offered')).toBe('s3'));
     expect(text('status')).toBe('authenticated');
     expect(window.sessionStorage.getItem('sangam.devToken')).toBe('tok-1');
-    expect(screen.getByRole('status').textContent).toContain('Section officer');
-    expect(screen.getByRole('status').textContent).toContain('no longer hold');
+    expect(notice()).toContain('Section officer');
     // /me was read once more, without the refused seat
     expect(meCalls().slice(before)).toEqual([['/me', null, null]]);
     // the seat /me offers now is the one in use; the refused one is gone from the session
@@ -120,20 +121,25 @@ describe('E-24: a seat the server no longer accepts (403 SEAT_NOT_HELD)', () => 
     await expect(raw('GET', '/probe')).rejects.toMatchObject({ status: 403 });
     await waitFor(() => expect(text('seat')).toBe('s1'));
     expect(text('offered')).toBe('s1');
-    expect(screen.getByRole('status').textContent).toContain('Under secretary');
+    expect(notice()).toContain('Under secretary');
     sent = [];
     await raw('GET', '/probe');
     expect(sent).toEqual([['/probe', 's1', null]]);
   });
 
-  it('a seat kept in the session from before: the page loads, no error screen, the offered seat is used', async () => {
+  it('a seat kept in the session from before: the page loads (GET /me names no seat), the first refusal drops it', async () => {
     window.sessionStorage.setItem('sangam.seat', 's9');
     app();
     await waitFor(() => expect(text('status')).toBe('authenticated'));
+    // GET /me asks which seats are held and never names one, so the seat kept from before cannot fail the page load
+    expect(meCalls()).toEqual([['/me', null, null]]);
+    expect(text('offered')).toBe('s1,s2');
+    await expect(raw('GET', '/probe')).rejects.toMatchObject({ status: 403 });
     await waitFor(() => expect(text('seat')).toBe('s1'));
-    expect(meCalls()).toEqual([['/me', 's9', null], ['/me', null, null]]);
+    expect(text('status')).toBe('authenticated');
+    expect(meCalls()).toEqual([['/me', null, null], ['/me', null, null]]);
     expect(window.sessionStorage.getItem('sangam.seat')).toBe('s1');
-    expect(screen.getByRole('status').textContent).toContain('s9');
+    expect(notice()).toContain('s9');
   });
 
   it('several calls refused at the same moment read /me again once', async () => {
@@ -151,9 +157,9 @@ describe('E-24: a seat the server no longer accepts (403 SEAT_NOT_HELD)', () => 
     await waitFor(() => expect(text('seat')).toBe('s1'));
     held = ['s3'];
     await expect(raw('GET', '/probe')).rejects.toBeInstanceOf(ApiError);
-    await waitFor(() => expect(screen.queryByRole('status')).not.toBeNull());
+    await waitFor(() => expect(notice()).toContain('Section officer'));
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(notice()).toBe('');
   });
 
   it('any other refusal changes nothing: the seat stays and no message is shown', async () => {
@@ -165,6 +171,6 @@ describe('E-24: a seat the server no longer accepts (403 SEAT_NOT_HELD)', () => 
     expect(text('seat')).toBe('s1');
     expect(window.sessionStorage.getItem('sangam.seat')).toBe('s1');
     expect(meCalls().length).toBe(before);
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(notice()).toBe('');
   });
 });

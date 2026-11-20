@@ -106,6 +106,38 @@ public final class SecurityIdentityFilter extends OncePerRequestFilter {
                 || (raw.attributes() != null && PlatformIssuers.DEV_TOKEN_ISSUER.equals(raw.attributes().get("iss")));
     }
 
+    static final String SEAT_HEADER = "X-Sangam-Seat";
+    static final String ACTING_FOR_HEADER = "X-Sangam-Acting-For-Seat";
+
+    private static String named(String header) {
+        return header == null || header.isBlank() ? null : header.trim();
+    }
+
+    /**
+     * {@code AUTH_DENIED} for a seat context the person does not hold now: action (method and path), the named seat and
+     * acted-for seat, reason {@code SEAT_NOT_HELD}; the policy version is added by the audit service. It goes to the
+     * denial chain of {@code sec:<tenant>} and commits on its own. Deny-only: when the record cannot be written the
+     * refusal stands and the failure is logged.
+     */
+    private void seatDenied(SecurityIdentity who, HttpServletRequest req, String seat, String actingFor) {
+        Map<String, Object> p = new LinkedHashMap<>();
+        p.put("action", req.getMethod() + " " + req.getRequestURI());
+        p.put("seat_id", seat);
+        p.put("acted_for_seat_id", actingFor);
+        p.put("person_id", who.personId());
+        p.put("outcome", "DENIED");
+        p.put("reason", SeatHoldings.NOT_HELD);
+        try {
+            tx.inTransaction(c -> {
+                security.audit().denial(c, who, org.sangam.security.audit.SecurityEventType.AUTH_DENIED, null, p);
+                return null;
+            });
+        } catch (RuntimeException e) {
+            org.slf4j.LoggerFactory.getLogger(SecurityIdentityFilter.class).warn(
+                    "the AUTH_DENIED record of a refused seat context could not be written: {}", e.toString());
+        }
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
@@ -188,7 +220,21 @@ public final class SecurityIdentityFilter extends OncePerRequestFilter {
         // IX.5 rules 1 and 4, K7: the seats this person can act in now, from the postings, additional charge and leave
         // in force at the database time (PostingService.seatsOf, re-read whenever one of them changed or reached an
         // effective date). The request context accepts X-Sangam-Seat / X-Sangam-Acting-For-Seat only from here.
-        req.setAttribute(SeatHoldings.ATTRIBUTE, new SeatHoldings(resolved.seats(), resolved.actingForSeats()));
+        SeatHoldings held = new SeatHoldings(resolved.seats(), resolved.actingForSeats());
+        req.setAttribute(SeatHoldings.ATTRIBUTE, held);
+        String seat = named(req.getHeader(SEAT_HEADER));
+        String actingFor = named(req.getHeader(ACTING_FOR_HEADER));
+        if (seat != null || actingFor != null) {
+            try {
+                SeatHoldings.require(held, seat, actingFor);
+            } catch (org.sangam.rest.port.ApiProblem refused) {
+                // K7 refusal: recorded (X.2.3 identity events, CX-1, J-P1-E05 "AUTH_DENIED (if old holder tries)") and
+                // answered here, on every route of the chain, with the one rule (SeatHoldings.require)
+                seatDenied(resolved, req, seat, actingFor);
+                ProblemResponses.write(req, res, refused.status(), refused.code(), "Seat not held", refused.detail());
+                return;
+            }
+        }
         TenantContext.set(resolved);
         try {
             chain.doFilter(req, res);

@@ -91,6 +91,24 @@ export function setUnauthenticatedHandler(h: () => void): void {
   onUnauthenticated = h;
 }
 
+/** The seat context a refused call had named: X-Sangam-Seat and X-Sangam-Acting-For-Seat as sent. */
+export interface NamedSeats {
+  seat: string | null;
+  actingFor: string | null;
+}
+type SeatNotHeldHandler = (named: NamedSeats) => void;
+let onSeatNotHeld: SeatNotHeldHandler = () => undefined;
+/**
+ * A 403 SEAT_NOT_HELD answer (the person does not hold the named seat now, K7) is reported to this handler before the
+ * call fails with its ApiError as any other. Returns the function that takes the handler out again.
+ */
+export function setSeatNotHeldHandler(h: SeatNotHeldHandler): () => void {
+  onSeatNotHeld = h;
+  return () => {
+    if (onSeatNotHeld === h) onSeatNotHeld = () => undefined;
+  };
+}
+
 export function newIdempotencyKey(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
   return `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`;
@@ -157,6 +175,12 @@ async function toProblem(res: Response): Promise<Problem> {
 
 export async function raw(method: string, path: string, opts: RequestOptions = {}): Promise<Response> {
   const headers = await headersFor(method, opts);
+  if (method === 'GET' && path === '/me') {
+    // GET /me asks which seats the person holds now (S02). It names none: a seat kept from before that is no longer
+    // held (403 SEAT_NOT_HELD on every call that names it) must not fail the one call that says what to choose.
+    headers.delete('X-Sangam-Seat');
+    headers.delete('X-Sangam-Acting-For-Seat');
+  }
   let res: Response;
   try {
     res = await fetch(buildUrl(path, opts.query, opts.base), {
@@ -173,7 +197,13 @@ export async function raw(method: string, path: string, opts: RequestOptions = {
   if (res.status === 401) {
     onUnauthenticated();
   }
-  if (!res.ok) throw new ApiError(await toProblem(res));
+  if (!res.ok) {
+    const problem = await toProblem(res);
+    if (problem.status === 403 && problem.code === 'SEAT_NOT_HELD') {
+      onSeatNotHeld({ seat: headers.get('X-Sangam-Seat'), actingFor: headers.get('X-Sangam-Acting-For-Seat') });
+    }
+    throw new ApiError(problem);
+  }
   return res;
 }
 

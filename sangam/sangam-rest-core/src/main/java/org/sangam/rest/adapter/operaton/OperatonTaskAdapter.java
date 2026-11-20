@@ -108,8 +108,8 @@ public class OperatonTaskAdapter implements TaskPort {
         if (!seesAll(ctx)) {
             // Seats are modelled as candidate groups; Operaton forbids candidateGroup + candidateGroupIn together.
             List<String> candidateGroups = new ArrayList<>(ctx.groups());
-            if (ctx.seatId() != null && !candidateGroups.contains(ctx.seatId())) {
-                candidateGroups.add(ctx.seatId());
+            if (ctx.effectiveSeatId() != null && !candidateGroups.contains(ctx.effectiveSeatId())) {
+                candidateGroups.add(ctx.effectiveSeatId());   // the seat acted in: the acted-for seat when one is named
             }
             // Operaton's or() returns the OR branch: every criterion of the branch and endOr() go on that object (on
             // q, the engine refuses "cannot set endOr() before or()" and every non-supervisor list failed).
@@ -512,7 +512,7 @@ public class OperatonTaskAdapter implements TaskPort {
                                  Map<String, Object> submittedLocals) {
         Map<String, Object> locals = new HashMap<>(submittedLocals);
         locals.put("actingPerson", ctx.principalId());
-        String seat = ctx.actingForSeatId() != null ? ctx.actingForSeatId() : ctx.seatId();
+        String seat = ctx.effectiveSeatId();
         if (seat != null) {
             locals.put("actingSeat", seat);
         }
@@ -794,8 +794,8 @@ public class OperatonTaskAdapter implements TaskPort {
 
     private boolean isCandidate(RequestContext ctx, String taskId) {
         Set<String> ids = new LinkedHashSet<>(ctx.groups());
-        if (ctx.seatId() != null) {
-            ids.add(ctx.seatId());
+        if (ctx.effectiveSeatId() != null) {
+            ids.add(ctx.effectiveSeatId());   // the seat the caller acts in (the acted-for seat when one is named)
         }
         for (IdentityLink l : OperatonSupport.call(() -> tasks.getIdentityLinksForTask(taskId))) {
             if (!IdentityLinkType.CANDIDATE.equals(l.getType())) {

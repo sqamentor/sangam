@@ -127,6 +127,7 @@
   "seat": {
     "actingAs": "Acting as",
     "actingFor": "acting for {{name}}",
+    "notHeld": "You no longer hold the seat {{seat}}, so the server did not accept the last request. Your seats were read again. Check the seat shown at the top and repeat what you were doing.",
     "pending": "pending approval",
     "until": "until {{date}}",
     "kind": {

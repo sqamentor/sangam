@@ -370,7 +370,10 @@ class SeatHeaderAuthorizationAgainstServerTest {
         assertEquals(before.size() + 1, authDenied().size());
     }
 
-    /** The AUTH_DENIED events of the tenant, each as its envelope and payload text (read-only). */
+    /**
+     * The AUTH_DENIED events of the tenant that name the reason SEAT_NOT_HELD, each as its envelope and payload text
+     * (read-only). Other denials (a permission the caller lacks) are AUTH_DENIED events too and are not counted.
+     */
     private List<String> authDenied() throws Exception {
         List<String> out = new ArrayList<>();
         try (var c = ctx.getBean(javax.sql.DataSource.class).getConnection();
@@ -379,7 +382,10 @@ class SeatHeaderAuthorizationAgainstServerTest {
             ps.setString(1, TENANT);
             try (var rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    out.add(rs.getString(1) + " " + rs.getString(2) + " " + rs.getString(3) + " " + rs.getString(4));
+                    String event = rs.getString(1) + " " + rs.getString(2) + " " + rs.getString(3) + " " + rs.getString(4);
+                    if (event.contains("SEAT_NOT_HELD")) {
+                        out.add(event);
+                    }
                 }
             }
         }

@@ -191,14 +191,29 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
             } catch (ApiProblem ignored) {
                 // seat not in the admin store: show the id only
             }
-            String actingFor = a.actedForSeatId() == null ? null : holderOf(ctx, a.actedForSeatId());
+            String actingFor = a.actedForSeatId() == null || ownHoldings != null ? null : holderOf(ctx, a.actedForSeatId());
             out.add(new SeatHolding(a.seatId(), seatName, designation, orgUnitName, a.kind(), actingFor, a.validFrom(),
                     a.validTo(), false));
         }
         return out;
     }
 
+    private volatile java.util.function.Function<RequestContext, List<AdminPort.Assignment>> ownHoldings;
+
+    /**
+     * Binds the host's seat directory for the caller's own seats (K7: what the person can act in now), the source of
+     * {@code GET /me} seats, the ACTING_FOR count, {@code /me/delegations} and the leave request's check. It needs no
+     * admin permission; the acted-for holder's name (admin posting list) is then not asked. Unbound: the admin port.
+     */
+    public void setOwnHoldings(java.util.function.Function<RequestContext, List<AdminPort.Assignment>> ownHoldings) {
+        this.ownHoldings = ownHoldings;
+    }
+
     private List<AdminPort.Assignment> myAssignments(RequestContext ctx) {
+        java.util.function.Function<RequestContext, List<AdminPort.Assignment>> own = ownHoldings;
+        if (own != null) {
+            return own.apply(ctx);
+        }
         try {
             return admin.assignments(ctx, new AdminPort.AdminFilter(null, null, null, null, ctx.principalId(), null,
                     dates.today(ctx.tenantId()), false), new Page.PageRequest(0, Page.PageRequest.MAX_SIZE)).items();
@@ -228,8 +243,8 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
     public Map<String, Object> taskCounts(RequestContext ctx) {
         Map<String, Object> out = new LinkedHashMap<>();
         TaskQuery mySeat = tenant(ctx, tasks.createTaskQuery());
-        if (ctx.seatId() != null) {
-            mySeat.or().taskAssignee(ctx.principalId()).taskCandidateGroup(ctx.seatId()).endOr();
+        if (ctx.effectiveSeatId() != null) {
+            mySeat.or().taskAssignee(ctx.principalId()).taskCandidateGroup(ctx.effectiveSeatId()).endOr();
         } else {
             mySeat.taskAssignee(ctx.principalId());
         }
@@ -266,8 +281,8 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
             return q;
         }
         List<String> groups = new ArrayList<>(ctx.groups());
-        if (ctx.seatId() != null && !groups.contains(ctx.seatId())) {
-            groups.add(ctx.seatId());
+        if (ctx.effectiveSeatId() != null && !groups.contains(ctx.effectiveSeatId())) {
+            groups.add(ctx.effectiveSeatId());   // as OperatonTaskAdapter: the acted-for seat when one is named
         }
         // Operaton's or() returns the OR branch: every criterion of the branch and endOr() go on that object, as in
         // OperatonTaskAdapter. On q the engine refused "cannot set endOr() before or()", so every task count and the
