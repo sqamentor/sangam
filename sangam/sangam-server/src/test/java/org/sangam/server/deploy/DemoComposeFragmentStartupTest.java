@@ -250,6 +250,12 @@ class DemoComposeFragmentStartupTest {
 
     /** The fragment's env names under the given profiles (an IT lane's database: the fragment's own postgres,oidc). */
     static ConfigurableApplicationContext start(Keys keys, Map<String, String> keyFlow, String... profiles) throws IOException {
+        return start(keys, keyFlow, List.of(), profiles);
+    }
+
+    /** As above, with further command-line settings of a test (each named and explained where it is passed). */
+    static ConfigurableApplicationContext start(Keys keys, Map<String, String> keyFlow, List<String> settings,
+                                                String... profiles) throws IOException {
         Map<String, Object> env = new LinkedHashMap<>();
         for (String name : serverEnvironment().keySet()) {
             env.put(name, keyFlow.containsKey(name) ? keyFlow.get(name) : keys.value(name));
@@ -261,8 +267,10 @@ class DemoComposeFragmentStartupTest {
                 "--sangam.security.bootstrap.enabled=false", "--sangam.security.dev-token.enabled=false",
                 "--sangam.security.platform-issuer=", "--sangam.debug.enabled=false",
                 "--server.port=0", "--management.server.port=0", "--sangam.engine.allow-multiple-engines-per-jvm=true"};
+        List<String> args = new java.util.ArrayList<>(List.of(harness));
+        args.addAll(settings);
         return new SpringApplicationBuilder(SangamServerApplication.class).environment(environment)
-                .profiles(profiles).run(harness);
+                .profiles(profiles).run(args.toArray(String[]::new));
     }
 
     /** Test values, fixed for both starts (the same keys and database): one per env name of the fragment. */
@@ -303,7 +311,7 @@ class DemoComposeFragmentStartupTest {
                 case "SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE" -> "system:platform";
                 case "SANGAM_TENANT_DEFAULT", "SANGAM_COMPLIANCE_TENANTS", "SANGAM_SECURITY_JITPROVISIONINGTENANTS" -> "GOI.FIN";
                 case "SANGAM_COMPLIANCE_JURISDICTIONS", "SANGAM_COMPLIANCE_LOG_ARCHIVE_COUNTRY" -> "IN";
-                case "SANGAM_COMPLIANCE_ORGANISATION" -> "OneIFMS demo";
+                case "SANGAM_COMPLIANCE_ORGANISATION" -> "OneIFMS";
                 case "SANGAM_SECURITY_KEK_KEYS_K1" -> kek;
                 case "SANGAM_REGISTRY_VAULT_HMACPEPPER" -> pepper;
                 case "SANGAM_SECURITY_KEK_CURRENTID" -> "k1";

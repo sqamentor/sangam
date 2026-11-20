@@ -70,7 +70,7 @@ class PresentationSeedAgainstServerTest {
                 "SANGAM_KEYS_FINGERPRINT_EXPORT", dir.resolve("key-fingerprints.txt").toString(),
                 "SANGAM_KEYS_ATTESTATION", "", "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", "");
         try (ConfigurableApplicationContext ctx = DemoComposeFragmentStartupTest.start(keys, bootstrap)) {
-            seedAndVerify(ctx, false);
+            seedAndVerify(ctx, Earlier.NOTHING);
         }
     }
 
@@ -89,18 +89,118 @@ class PresentationSeedAgainstServerTest {
                 "SANGAM_KEYS_FINGERPRINT_EXPORT", dir.resolve("key-fingerprints.txt").toString(),
                 "SANGAM_KEYS_ATTESTATION", "", "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", "");
         try (ConfigurableApplicationContext ctx = DemoComposeFragmentStartupTest.start(keys, bootstrap)) {
-            seedAndVerify(ctx, true);
+            seedAndVerify(ctx, Earlier.ORG_UNIT_REFUSED);
         }
+    }
+
+    /**
+     * EV-M-0932, demo.ifms.dev exactly as IFMS read it on 2026-11-20T18:30Z: level OFFICE defined (the bac3d46b
+     * loader's own row, COMPLETED 200), no org unit, and the org unit refusal of 2026-11-19 past its response
+     * retention (COMPACTED, 409: the old key now gets a bare 409 without body). The seed must load this tenant.
+     */
+    @Test
+    void theSeedLoadsTheTenantAsItIsOnDemoIfmsDev() throws Exception {
+        DemoComposeFragmentStartupTest.Keys keys = new DemoComposeFragmentStartupTest.Keys(dir);
+        Map<String, String> bootstrap = Map.of("SANGAM_KEYS_BOOTSTRAP", "true",
+                "SANGAM_KEYS_FINGERPRINT_EXPORT", dir.resolve("key-fingerprints.txt").toString(),
+                "SANGAM_KEYS_ATTESTATION", "", "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", "");
+        try (ConfigurableApplicationContext ctx = DemoComposeFragmentStartupTest.start(keys, bootstrap)) {
+            seedAndVerify(ctx, Earlier.AS_ON_LIVE);
+        }
+    }
+
+    /**
+     * EV-M-0932 (c): a run that stops half way (here the connection answers 503 from the fourth seat on) leaves the
+     * level types, the org unit, the roles and three seats. The next run is a new command with new keys: it finds
+     * what is there (UNIT_EXISTS, SEAT_EXISTS), creates the rest, and a third run changes nothing.
+     */
+    @Test
+    void aHalfFinishedRunIsResumedByTheNextRun() throws Exception {
+        DemoComposeFragmentStartupTest.Keys keys = new DemoComposeFragmentStartupTest.Keys(dir);
+        Map<String, String> bootstrap = Map.of("SANGAM_KEYS_BOOTSTRAP", "true",
+                "SANGAM_KEYS_FINGERPRINT_EXPORT", dir.resolve("key-fingerprints.txt").toString(),
+                "SANGAM_KEYS_ATTESTATION", "", "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", "");
+        try (ConfigurableApplicationContext ctx = DemoComposeFragmentStartupTest.start(keys, bootstrap)) {
+            String port = ctx.getEnvironment().getRequiredProperty("local.server.port");
+            String api = "http://localhost:" + port + "/api/v1";
+            String admin = token("rajendra.sharma", List.of("sangam-tenant-admin", "sangam-user"));
+            Seed plan = seed(List.of("--dry-run"), Map.of());
+            Matcher m = Pattern.compile("sangam: assignment (\\S+) -> (\\S+) SUBSTANTIVE").matcher(plan.out);
+            while (m.find()) {
+                get(api + "/me", token(m.group(1), List.of("sangam-user")));
+            }
+            com.sun.net.httpserver.HttpServer cut = cutAfterThreeSeats("http://localhost:" + port);
+            try {
+                Seed broken = seed(List.of(), Map.of("SANGAM_API_BASE",
+                        "http://localhost:" + cut.getAddress().getPort() + "/api/v1", "SANGAM_ADMIN_TOKEN", admin));
+                assertTrue(broken.exit != 0, "the cut run stops:\n" + broken.out);
+                assertTrue(broken.out.contains("/admin/seats -> 503"), broken.out);
+            } finally {
+                cut.stop(0);
+            }
+            assertEquals(3, items(get(api + "/admin/seats?orgUnitId=" + OFFICE + "&size=100", admin)).size(),
+                    "the half-finished run left three seats");
+            seedAndVerify(ctx, Earlier.NOTHING);
+            long existing = seedRuns.get(0).out.lines().filter(l -> l.matches("  (org unit|seat) \\S+: exists")).count();
+            long created = seedRuns.get(0).out.lines().filter(l -> l.matches("  seat \\S+: created")).count();
+            assertEquals(4, existing, "the org unit and three seats were found:\n" + seedRuns.get(0).out);
+            assertEquals(7, created, "the other seven seats were created:\n" + seedRuns.get(0).out);
+        }
+    }
+
+    /** The two runs of the last {@link #seedAndVerify} (first, rerun), for a test that looks at what they printed. */
+    private static final List<Seed> seedRuns = new ArrayList<>();
+
+    /**
+     * A plain forwarder to the server that answers 503 to the fourth and every later {@code POST /admin/seats}
+     * without forwarding it: a connection that drops in the middle of a seed run.
+     */
+    private static com.sun.net.httpserver.HttpServer cutAfterThreeSeats(String server) throws IOException {
+        java.util.concurrent.atomic.AtomicInteger seats = new java.util.concurrent.atomic.AtomicInteger();
+        com.sun.net.httpserver.HttpServer proxy = com.sun.net.httpserver.HttpServer.create(
+                new java.net.InetSocketAddress(java.net.InetAddress.getLoopbackAddress(), 0), 0);
+        proxy.createContext("/", x -> {
+            try {
+                byte[] in = x.getRequestBody().readAllBytes();
+                if (x.getRequestMethod().equals("POST") && x.getRequestURI().getPath().endsWith("/admin/seats")
+                        && seats.incrementAndGet() > 3) {
+                    x.sendResponseHeaders(503, -1);
+                    return;
+                }
+                HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(server + x.getRequestURI()))
+                        .method(x.getRequestMethod(), in.length == 0 ? HttpRequest.BodyPublishers.noBody()
+                                : HttpRequest.BodyPublishers.ofByteArray(in));
+                for (String h : List.of("Authorization", "Content-Type", "Idempotency-Key")) {
+                    if (x.getRequestHeaders().getFirst(h) != null) {
+                        b.header(h, x.getRequestHeaders().getFirst(h));
+                    }
+                }
+                HttpResponse<byte[]> r = HTTP.send(b.build(), HttpResponse.BodyHandlers.ofByteArray());
+                for (String h : List.of("Content-Type", "Idempotent-Replayed")) {
+                    r.headers().firstValue(h).ifPresent(v -> x.getResponseHeaders().set(h, v));
+                }
+                x.sendResponseHeaders(r.statusCode(), r.body().length == 0 ? -1 : r.body().length);
+                if (r.body().length > 0) {
+                    x.getResponseBody().write(r.body());
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                x.sendResponseHeaders(502, -1);
+            } finally {
+                x.close();
+            }
+        });
+        proxy.start();
+        return proxy;
     }
 
     /**
      * The whole check against a started server (this class: H2 file database; {@code PresentationSeedOnLaneDatabaseIT}:
      * the IT lane's PostgreSQL, migrated and then started in validate mode, as on demo.ifms.dev).
      *
-     * @param earlierRunRefused the live history of EV-M-0932: before the seed runs, the org unit request of the
-     *                          earlier loader is sent while the tenant has no level types (409 UNKNOWN_LEVEL, stored)
+     * @param earlier what an earlier loader run left before the seed runs (EV-M-0932)
      */
-    static void seedAndVerify(ConfigurableApplicationContext ctx, boolean earlierRunRefused) throws Exception {
+    static void seedAndVerify(ConfigurableApplicationContext ctx, Earlier earlier) throws Exception {
         {
             String api = "http://localhost:" + ctx.getEnvironment().getRequiredProperty("local.server.port") + "/api/v1";
             String admin = token("rajendra.sharma", List.of("sangam-tenant-admin", "sangam-user"));
@@ -133,12 +233,14 @@ class PresentationSeedAgainstServerTest {
                 get(api + "/me", token(p.getKey(), List.of("sangam-user")));
             }
 
-            if (earlierRunRefused) {
-                earlierLoaderIsRefusedTheOrgUnit(api, admin);
+            if (earlier != Earlier.NOTHING) {
+                earlierLoader(ctx, api, admin, earlier);
             }
 
             Map<String, String> env = Map.of("SANGAM_API_BASE", api, "SANGAM_ADMIN_TOKEN", admin);
             Seed first = seed(List.of(), env);
+            seedRuns.clear();
+            seedRuns.add(first);
             assertEquals(0, first.exit, "the seed stopped:\n" + first.out);
             assertFalse(first.out.contains("not yet signed in"), first.out);
             String afterFirst = state(api, admin, postings);
@@ -159,6 +261,7 @@ class PresentationSeedAgainstServerTest {
             }
 
             Seed second = seed(List.of(), env);
+            seedRuns.add(second);
             assertEquals(0, second.exit, "the rerun stopped:\n" + second.out);
             assertFalse(second.out.contains(": created"), "a rerun creates nothing:\n" + second.out);
             assertEquals(afterFirst, state(api, admin, postings), "a rerun changes nothing");
@@ -204,37 +307,104 @@ class PresentationSeedAgainstServerTest {
         return String.join("\n", rows);
     }
 
+    /** What an earlier loader run left on the tenant before the seed under test runs. */
+    enum Earlier {
+        /** A tenant no loader has touched. */
+        NOTHING,
+        /** The org unit request of the loader up to bac3d46b was refused (409 UNKNOWN_LEVEL) and is stored with its body. */
+        ORG_UNIT_REFUSED,
+        /**
+         * demo.ifms.dev as read on 2026-11-20 (IFMS check 3): the refusal stored, level OFFICE defined by the bac3d46b
+         * loader under its fixed key (COMPLETED 200), and the refusal past its response retention: COMPACTED, 409.
+         */
+        AS_ON_LIVE
+    }
+
     /**
-     * The org unit request exactly as the loader sent it up to bac3d46b (seed_presentation.py: body of
-     * {@code create_if_absent("org unit ...")}, key {@code idem(tenant, "unit", office)} = UUIDv5(NAMESPACE_URL,
-     * "sangam-presentation/GOI.FIN/unit/PAO-OFFICE")), on a tenant with no level types: 409 UNKNOWN_LEVEL, twice
-     * (the second answer is the stored one).
+     * The requests exactly as the loader sent them up to bac3d46b (seed_presentation.py: fixed keys
+     * {@code idem(tenant, "unit", office)} = UUIDv5(NAMESPACE_URL, "sangam-presentation/GOI.FIN/unit/PAO-OFFICE") and
+     * {@code idem(tenant, "org-levels", "OFFICE")}), in the order demo.ifms.dev saw them: the org unit on a tenant with
+     * no level types (409 UNKNOWN_LEVEL, stored); for {@link Earlier#AS_ON_LIVE} then the level types (200), the org
+     * unit again (the stored 409, with its body: EV-M-0932) and the end of the response retention.
+     * <p>
+     * The retention is fixed (IdempotencyStore: 24 h) and the product has no clock to set, so the test moves this one
+     * row's {@code response_expires_at} into the past and then calls the product's own maintenance step
+     * ({@code JdbcIdempotencyAdapter.cleanup()}, the call the scheduler makes), which compacts it.
      */
-    private static void earlierLoaderIsRefusedTheOrgUnit(String api, String admin) throws Exception {
+    private static void earlierLoader(ConfigurableApplicationContext ctx, String api, String admin, Earlier earlier)
+            throws Exception {
         String parent = null;
         for (JsonNode o : JSON.readTree(PACK_SEED.toFile()).path("offices")) {
             if (OFFICE.equals(o.path("id").asText())) {
                 parent = o.path("parent").asText("").isEmpty() ? null : o.path("parent").asText();
             }
         }
-        Map<String, Object> body = new java.util.LinkedHashMap<>();
-        body.put("id", OFFICE);
-        body.put("code", OFFICE);
-        body.put("name", "Jaipur");
-        body.put("level", "OFFICE");
-        body.put("parentId", parent);
-        String key = uuid5Url("sangam-presentation/" + TENANT + "/unit/" + OFFICE);
+        Map<String, Object> unit = new java.util.LinkedHashMap<>();
+        unit.put("id", OFFICE);
+        unit.put("code", OFFICE);
+        unit.put("name", "Jaipur");
+        unit.put("level", "OFFICE");
+        unit.put("parentId", parent);
+        String unitKey = uuid5Url("sangam-presentation/" + TENANT + "/unit/" + OFFICE);
+        assertEquals("04851e5a-405b-536e-8b22-3bcb1f941f3d", unitKey, "the key of the stored row on demo.ifms.dev");
         for (boolean replay : new boolean[]{false, true}) {
-            HttpResponse<String> r = HTTP.send(HttpRequest.newBuilder(URI.create(api + "/admin/org-units"))
-                    .header("Authorization", "Bearer " + admin).header("Content-Type", "application/json")
-                    .header("Idempotency-Key", key)
-                    .POST(HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(body))).build(),
-                    HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> r = send("POST", api + "/admin/org-units", admin, unitKey, unit);
             assertEquals(409, r.statusCode(), r.body());
             assertEquals("UNKNOWN_LEVEL", JSON.readTree(r.body()).path("code").asText(), r.body());
             assertEquals(replay, r.headers().firstValue("Idempotent-Replayed").isPresent(),
                     "the second answer is the stored one: " + r.headers().map());
         }
+        if (earlier != Earlier.AS_ON_LIVE) {
+            return;
+        }
+        HttpResponse<String> levels = send("PUT", api + "/admin/org-levels", admin,
+                uuid5Url("sangam-presentation/" + TENANT + "/org-levels/OFFICE"), Map.of("tenantId", TENANT, "levels", List.of("OFFICE")));
+        assertEquals(200, levels.statusCode(), levels.body());
+        // EV-M-0932 as IFMS saw it: the level is there and the org unit request still gets the stored refusal
+        HttpResponse<String> stored = send("POST", api + "/admin/org-units", admin, unitKey, unit);
+        assertEquals(409, stored.statusCode(), stored.body());
+        assertEquals("UNKNOWN_LEVEL", JSON.readTree(stored.body()).path("code").asText(), stored.body());
+        assertEquals("true", stored.headers().firstValue("Idempotent-Replayed").orElse(null));
+
+        try (var c = ctx.getBean(javax.sql.DataSource.class).getConnection()) {
+            c.setAutoCommit(true);
+            try (var ps = c.prepareStatement("UPDATE IDEMPOTENCY_RECORD SET response_expires_at=? WHERE tenant_id=?"
+                    + " AND command_type='admin.orgunit.create' AND idem_key=?")) {
+                ps.setObject(1, java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(1));
+                ps.setString(2, TENANT);
+                ps.setString(3, unitKey);
+                assertEquals(1, ps.executeUpdate(), "the stored refusal");
+            }
+        }
+        assertTrue(ctx.getBean(org.sangam.rest.port.IdempotencyPort.class)
+                instanceof org.sangam.rest.adapter.jdbc.JdbcIdempotencyAdapter, "the product's idempotency store");
+        ((org.sangam.rest.adapter.jdbc.JdbcIdempotencyAdapter) ctx.getBean(org.sangam.rest.port.IdempotencyPort.class)).cleanup();
+        List<String> rows = new ArrayList<>();
+        try (var c = ctx.getBean(javax.sql.DataSource.class).getConnection();
+             var ps = c.prepareStatement("SELECT command_type, state, http_status FROM IDEMPOTENCY_RECORD WHERE tenant_id=?"
+                     + " AND command_type LIKE 'admin.org%' ORDER BY command_type")) {
+            ps.setString(1, TENANT);
+            try (var rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    rows.add(rs.getString(1) + " " + rs.getString(2) + " " + rs.getInt(3));
+                }
+            }
+        }
+        assertEquals(List.of("admin.orglevels.define COMPLETED 200", "admin.orgunit.create COMPACTED 409"), rows,
+                "the idempotency rows of GOI.FIN as on demo.ifms.dev (IFMS check 3, Q4)");
+        // a compacted row answers with its status only: no body, no code (IdempotencyStore COMPACTED, IdempotencyFilter.replay)
+        HttpResponse<String> compacted = send("POST", api + "/admin/org-units", admin, unitKey, unit);
+        assertEquals(409, compacted.statusCode(), compacted.body());
+        assertEquals("", compacted.body(), "a compacted answer has no body");
+        assertEquals("compacted", compacted.headers().firstValue("Idempotent-Replayed").orElse(null));
+        assertEquals(0, items(get(api + "/admin/org-units", admin)).size(), "no org unit yet, as on demo.ifms.dev");
+    }
+
+    private static HttpResponse<String> send(String method, String url, String token, String key, Object body) throws Exception {
+        return HTTP.send(HttpRequest.newBuilder(URI.create(url)).header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json").header("Idempotency-Key", key)
+                .method(method, HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(body))).build(),
+                HttpResponse.BodyHandlers.ofString());
     }
 
     /** Python's {@code uuid.uuid5(uuid.NAMESPACE_URL, name)} (RFC 4122 version 5: SHA-1 of namespace and name). */
@@ -250,11 +420,11 @@ class PresentationSeedAgainstServerTest {
         return new java.util.UUID(b.getLong(), b.getLong()).toString();
     }
 
-    private static String token(String user, List<String> roles) throws Exception {
+    static String token(String user, List<String> roles) throws Exception {
         return DemoComposeFragmentStartupTest.RealmIdp.get().tokenWithoutSub(TENANT, user, roles);
     }
 
-    private static JsonNode get(String url, String token) throws Exception {
+    static JsonNode get(String url, String token) throws Exception {
         HttpResponse<String> r = HTTP.send(HttpRequest.newBuilder(URI.create(url)).header("Authorization", "Bearer " + token)
                 .GET().build(), HttpResponse.BodyHandlers.ofString());
         assertEquals(200, r.statusCode(), "GET " + url + ": " + r.body());
@@ -278,12 +448,17 @@ class PresentationSeedAgainstServerTest {
         return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 
-    private record Seed(int exit, String out) {
+    record Seed(int exit, String out) {
     }
 
     /** Runs the seed as IFMS does ({@code python -I}); no Keycloak settings, so only the Sangam part runs. */
     private static Seed seed(List<String> args, Map<String, String> env) throws IOException, InterruptedException {
-        List<String> cmd = new ArrayList<>(List.of(python(), "-I", SEED.toString()));
+        return script(SEED, args, env);
+    }
+
+    /** Runs a script of deploy/presentation as IFMS does ({@code python -I}), with only the given settings. */
+    static Seed script(Path script, List<String> args, Map<String, String> env) throws IOException, InterruptedException {
+        List<String> cmd = new ArrayList<>(List.of(python(), "-I", script.toString()));
         cmd.addAll(args);
         ProcessBuilder pb = new ProcessBuilder(cmd).redirectErrorStream(true);
         pb.environment().keySet().removeIf(k -> k.startsWith("KEYCLOAK_") || k.startsWith("SANGAM_"));
@@ -291,7 +466,7 @@ class PresentationSeedAgainstServerTest {
         pb.environment().putAll(env);
         Process p = pb.start();
         String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        assertTrue(p.waitFor(5, TimeUnit.MINUTES), "the seed finished");
+        assertTrue(p.waitFor(15, TimeUnit.MINUTES), script.getFileName() + " finished");
         return new Seed(p.exitValue(), out);
     }
 

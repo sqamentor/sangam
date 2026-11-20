@@ -230,13 +230,16 @@ def main():
     g = load_lists()
     tenant, office = g.PRESENTATION_TENANT, g.PRESENTATION_OFFICE
     env = os.environ.get
-    today = datetime.date.today().isoformat()
+    # The UTC date: the admin API reads validFrom and activeOn as UTC days (a posting starts at 00:00 UTC of its
+    # validFrom). The host's local date can be a day ahead of UTC (India: 00:00 to 05:30), and a posting from that
+    # date would start only at the next UTC midnight: the holder would not hold the seat until then.
+    today = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
     plan = [(env("KEYCLOAK_REALM", "sangam"), g.PRESENTATION_USERS),
             (env("KEYCLOAK_PLATFORM_REALM", "sangam-platform"), g.PRESENTATION_PLATFORM_USERS)]
     kc_ready = all(env(k) for k in ("KEYCLOAK_URL", "KEYCLOAK_ADMIN_USER", "KEYCLOAK_ADMIN_PASSWORD"))
     api_ready = all(env(k) for k in ("SANGAM_API_BASE", "SANGAM_ADMIN_TOKEN"))
 
-    print(f"tenant {tenant}, office {office}, today {today}" + (" (dry run: no network)" if dry else ""))
+    print(f"tenant {tenant}, office {office}, today {today} (UTC)" + (" (dry run: no network)" if dry else ""))
     for realm, users in plan:
         for e in users:
             pw = "set" if env(g.presentation_env_name(e[0])) else "MISSING"
