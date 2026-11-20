@@ -272,10 +272,19 @@ class DemoComposeFragmentStartupTest {
         // One JVM runs many test contexts. The meter registry of a context that is gone (closed, or a start that was
         // refused) stays in Micrometer's global composite, and a counter of the product incremented through it
         // (Metrics.counter in IdempotencyFilter.replay) then fails on that dead context: the replay answered 500 in
-        // CI run 44801905653. A server process has one context, so only the test JVM needs this.
+        // CI run 44801905653. A server process has one context, so only the test JVM needs this. A registry is
+        // taken out when it is closed or when a counter on it cannot be incremented (the failure itself).
         for (io.micrometer.core.instrument.MeterRegistry r
                 : List.copyOf(io.micrometer.core.instrument.Metrics.globalRegistry.getRegistries())) {
-            if (r.isClosed()) {
+            boolean dead = r.isClosed();
+            if (!dead) {
+                try {
+                    r.counter("sangam.test.harness.registry.probe").increment();
+                } catch (RuntimeException e) {
+                    dead = true;
+                }
+            }
+            if (dead) {
                 io.micrometer.core.instrument.Metrics.removeRegistry(r);
             }
         }
