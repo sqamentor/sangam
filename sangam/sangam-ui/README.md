@@ -152,7 +152,7 @@ its Chromium and Firefox browsers are installed by the local binary (`node_modul
 
 | Concern | Implementation | Files |
 |---|---|---|
-| OIDC login (R50, R67) | oidc-client-ts, authorization code + PKCE, silent renew, tokens kept in sessionStorage only | `src/auth/AuthProvider.tsx`, `src/areas/auth/SignIn.tsx` |
+| OIDC login (R50, R67) | oidc-client-ts, authorization code + PKCE, silent renew, tokens kept in sessionStorage only. A sign-in step that fails is said on the sign-in screen (register E-23): a start that cannot reach the identity provider (alert with a retry), a completed sign-in the server answers with 401, and a session that ended because it could not be renewed. The cause of a failed start or renewal goes to the browser console as text, without tokens | `src/auth/AuthProvider.tsx`, `src/auth/SignedOutNotice.tsx`, `src/auth/failure.ts`, `src/areas/auth/SignIn.tsx` |
 | Dev token mode | A static token for the server's dev profile, with a warning banner | same |
 | Seat context and "acted for" (S02, IX.5 rule 4) | Seat switcher in the header. The contract headers are `X-Sangam-Seat` for the substantive seat and `X-Sangam-Acting-For-Seat` for an additional charge or leave substitute | `AuthProvider.tsx`, `app/Layout.tsx` |
 | Typed API client (ARCHITECTURE §4) | Covers: Bearer auth; `Idempotency-Key` on every mutation, reused on a safe retry (R41, CX-4); problem+json; `X-Total-Count` / `X-Total-Count-Capped` ("more than N", A-16); ETag / If-Match; `/engine-rest` base | `src/api/client.ts` |

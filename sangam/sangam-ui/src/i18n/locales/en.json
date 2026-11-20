@@ -119,9 +119,13 @@
     "idleWarningTitle": "Are you still there?",
     "intro": "Sign in to continue.",
     "redirecting": "Redirecting to sign-in…",
+    "sessionExpired": "Your session ended because it could not be renewed. Sign in again to continue.",
     "signIn": "Sign in",
+    "signInRefused": "You signed in, but the server did not accept the sign-in. Try again. If it keeps happening, tell your administrator.",
     "signInSso": "Sign in with single sign-on",
     "signOut": "Sign out",
+    "startFailed": "Sign-in could not be started",
+    "startFailedNext": "Try again. If it keeps happening, tell your administrator that the sign-in service could not be reached or did not answer as expected.",
     "title": "Sign in to Sangam"
   },
   "seat": {
