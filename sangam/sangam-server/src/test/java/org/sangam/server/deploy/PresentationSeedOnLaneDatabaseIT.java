@@ -47,10 +47,30 @@ class PresentationSeedOnLaneDatabaseIT {
         DemoComposeFragmentStartupTest.RealmIdp.release();
     }
 
+    /**
+     * The servers of this test run in the JVM of the lane's shared acceptance server. A server start takes over
+     * process-wide installations (the tenant quotas, the pack runtime's ports, the sandbox tenants) and its close
+     * does not hand them back to an earlier server (QuotaWiring resets the quotas to none). So they are noted before
+     * and put back after: in CI run 44809374237 this class ran before TenantQuotaIT, whose two engine-entry checks
+     * then found no quota installed (expected 413, was 201).
+     */
     @Test
     void theSeedLoadsOnPostgresAsDeployed() throws Exception {
         String lane = AcceptanceDatabase.name();
         Assumptions.assumeTrue(lane.startsWith("postgres"), "the demo fragment is PostgreSQL only; lane " + lane);
+        org.sangam.core.quota.TenantQuotas quotas = org.sangam.core.quota.TenantQuotas.current();
+        var ports = org.sangam.packs.port.PackRuntime.ports();
+        java.util.Set<String> sandbox = org.sangam.packs.sim.DemoSandbox.tenants();
+        try {
+            theLiveStepsOnTheLaneDatabase();
+        } finally {
+            org.sangam.packs.sim.DemoSandbox.install(sandbox);
+            org.sangam.packs.port.PackRuntime.install(ports);
+            org.sangam.core.quota.TenantQuotas.install(quotas);
+        }
+    }
+
+    private void theLiveStepsOnTheLaneDatabase() throws Exception {
         var c = AcceptanceDatabase.container();
         String database = "demo_seed_" + Long.toHexString(System.nanoTime());
         // production refuses the database password shipped in the profile (SL-103), which is the lane's own: this
