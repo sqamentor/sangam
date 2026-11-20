@@ -53,15 +53,22 @@ class PresentationSeedOnLaneDatabaseIT {
         Assumptions.assumeTrue(lane.startsWith("postgres"), "the demo fragment is PostgreSQL only; lane " + lane);
         var c = AcceptanceDatabase.container();
         String database = "demo_seed_" + Long.toHexString(System.nanoTime());
+        // production refuses the database password shipped in the profile (SL-103), which is the lane's own: this
+        // database gets its own owner with a password made here, as the deployer injects one on demo.ifms.dev
+        String owner = database + "_app";
+        byte[] secret = new byte[24];
+        new java.security.SecureRandom().nextBytes(secret);
+        String password = java.util.HexFormat.of().formatHex(secret);
         try (Connection admin = DriverManager.getConnection(AcceptanceDatabase.jdbcUrl(), AcceptanceDatabase.adminUsername(),
                 AcceptanceDatabase.adminPassword()); Statement s = admin.createStatement()) {
-            s.execute("CREATE DATABASE " + database);
+            s.execute("CREATE ROLE " + owner + " LOGIN PASSWORD '" + password + "'");
+            s.execute("CREATE DATABASE " + database + " OWNER " + owner);
         }
         // production refuses a loopback database URL: the container's port on this machine's own address
         String url = "jdbc:postgresql://" + DemoComposeFragmentStartupTest.nonLoopbackIPv4() + ":" + c.getMappedPort(5432)
                 + "/" + database;
-        DemoComposeFragmentStartupTest.Keys keys = new DemoComposeFragmentStartupTest.Keys(dir, url,
-                AcceptanceDatabase.username(), AcceptanceDatabase.password(), "postgres,oidc");
+        DemoComposeFragmentStartupTest.Keys keys = new DemoComposeFragmentStartupTest.Keys(dir, url, owner, password,
+                "postgres,oidc");
         Path export = dir.resolve("key-fingerprints.txt");
         // the fragment does not set the log archive; keep this test's segments out of the module directory
         List<String> logs = List.of("--sangam.compliance.log-archive.root=" + dir.resolve("compliance-logs"));
