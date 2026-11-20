@@ -27,7 +27,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 /**
  * EV-M-0932: the presentation seed passed on H2 ({@link PresentationSeedAgainstServerTest}) while on demo.ifms.dev
  * (PostgreSQL, demo-0c3ef79140fa) {@code PUT /admin/org-levels} answered 200 with levels OFFICE and the next
- * {@code POST /admin/org-units} answered 409 UNKNOWN_LEVEL, on every rerun. This runs the same seed against the server
+ * {@code POST /admin/org-units} answered 409 UNKNOWN_LEVEL, on every rerun: the stored answer to the loader's fixed
+ * Idempotency-Key, first given on demo-021498ea60d1 before any level type existed. This runs the live steps (2c seed,
+ * 3a funds, 3b smoke, 4a cases: {@link DemoLoaderSequenceAgainstServerTest}) against the server
  * exactly as deployed there: the IT lane's PostgreSQL (a fresh database), the demo fragment's env names and profiles
  * ({@code postgres,oidc}, production on), GOI.FIN created only by FirstAdminBootstrap (profile null), the schema applied
  * by a first start and the serving start in {@code SANGAM_LIQUIBASE_MODE=validate} over the custodian's attestation.
@@ -61,12 +63,16 @@ class PresentationSeedOnLaneDatabaseIT {
         DemoComposeFragmentStartupTest.Keys keys = new DemoComposeFragmentStartupTest.Keys(dir, url,
                 AcceptanceDatabase.username(), AcceptanceDatabase.password(), "postgres,oidc");
         Path export = dir.resolve("key-fingerprints.txt");
+        // the fragment does not set the log archive; keep this test's segments out of the module directory
+        List<String> logs = List.of("--sangam.compliance.log-archive.root=" + dir.resolve("compliance-logs"));
+        List<String> packsAtStart = new java.util.ArrayList<>(logs);
+        packsAtStart.addAll(DemoLoaderSequenceAgainstServerTest.PACKS_AT_START);
 
         // start 1: the schema (as the migrate-only one-shot applies it) and the one-time key bootstrap
         try (ConfigurableApplicationContext first = DemoComposeFragmentStartupTest.start(keys, Map.of(
                 "SANGAM_LIQUIBASE_MODE", "startup", "SANGAM_KEYS_BOOTSTRAP", "true",
                 "SANGAM_KEYS_FINGERPRINT_EXPORT", export.toString(), "SANGAM_KEYS_ATTESTATION", "",
-                "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", ""), "postgres", "oidc")) {
+                "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", ""), logs, "postgres", "oidc")) {
             assertEquals(Boolean.TRUE, first.isActive());
         }
 
@@ -85,9 +91,22 @@ class PresentationSeedOnLaneDatabaseIT {
                 "SANGAM_LIQUIBASE_MODE", "validate", "SANGAM_KEYS_BOOTSTRAP", "false",
                 "SANGAM_KEYS_FINGERPRINT_EXPORT", export.toString(), "SANGAM_KEYS_ATTESTATION", attestation.toString(),
                 "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", Base64.getEncoder().encodeToString(custodian.getPublic().getEncoded())),
-                "postgres", "oidc")) {
-            // with the live history: the earlier loader's org unit request was refused before any level type existed
-            PresentationSeedAgainstServerTest.seedAndVerify(ctx, true);
+                logs, "postgres", "oidc")) {
+            // the tenant as on demo.ifms.dev (the stored, compacted org unit refusal), then the live steps in order
+            DemoLoaderSequenceAgainstServerTest.sequence(ctx, "PostgreSQL lane, validate start, as deployed",
+                    List.of("2c seed", "3a funds", "3b smoke"));
+        } finally {
+            org.sangam.packs.sim.DemoSandbox.install(java.util.Set.of());
+        }
+
+        // start 3: the same database and keys, with the packs deployed for GOI.FIN at start (configuration only)
+        try (ConfigurableApplicationContext ctx = DemoComposeFragmentStartupTest.start(keys, Map.of(
+                "SANGAM_LIQUIBASE_MODE", "validate", "SANGAM_KEYS_BOOTSTRAP", "false",
+                "SANGAM_KEYS_FINGERPRINT_EXPORT", export.toString(), "SANGAM_KEYS_ATTESTATION", attestation.toString(),
+                "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", Base64.getEncoder().encodeToString(custodian.getPublic().getEncoded())),
+                packsAtStart, "postgres", "oidc")) {
+            DemoLoaderSequenceAgainstServerTest.sequence(ctx, "PostgreSQL lane, validate start, packs deployed at start",
+                    List.of("3b smoke", "4a cases"));
         } finally {
             org.sangam.packs.sim.DemoSandbox.install(java.util.Set.of());
         }
