@@ -221,7 +221,7 @@ class DemoComposeFragmentStartupTest {
 
     /** The tenant row, its two administrators and its role count, as one comparable string. */
     private static String tenantState(Keys keys) throws java.sql.SQLException {
-        try (java.sql.Connection c = java.sql.DriverManager.getConnection(keys.db, "sangam_app", keys.dbPassword)) {
+        try (java.sql.Connection c = java.sql.DriverManager.getConnection(keys.db, keys.dbUser, keys.dbPassword)) {
             StringBuilder sb = new StringBuilder();
             for (String q : List.of(
                     "SELECT tenant_id, status, created_at FROM SEC_TENANT WHERE tenant_id=?",
@@ -245,6 +245,11 @@ class DemoComposeFragmentStartupTest {
     }
 
     static ConfigurableApplicationContext start(Keys keys, Map<String, String> keyFlow) throws IOException {
+        return start(keys, keyFlow, "h2", "oidc");
+    }
+
+    /** The fragment's env names under the given profiles (an IT lane's database: the fragment's own postgres,oidc). */
+    static ConfigurableApplicationContext start(Keys keys, Map<String, String> keyFlow, String... profiles) throws IOException {
         Map<String, Object> env = new LinkedHashMap<>();
         for (String name : serverEnvironment().keySet()) {
             env.put(name, keyFlow.containsKey(name) ? keyFlow.get(name) : keys.value(name));
@@ -257,31 +262,42 @@ class DemoComposeFragmentStartupTest {
                 "--sangam.security.platform-issuer=", "--sangam.debug.enabled=false",
                 "--server.port=0", "--management.server.port=0", "--sangam.engine.allow-multiple-engines-per-jvm=true"};
         return new SpringApplicationBuilder(SangamServerApplication.class).environment(environment)
-                .profiles("h2", "oidc").run(harness);
+                .profiles(profiles).run(harness);
     }
 
     /** Test values, fixed for both starts (the same keys and database): one per env name of the fragment. */
     static final class Keys {
         final Path secrets;
         final String db;
-        final String dbPassword = random(24);
+        final String dbUser;
+        final String dbPassword;
+        final String profiles;
         final String kek = random(32);
         final String pepper = random(32);
         final String[] signer = ed25519();
 
         Keys(Path dir) throws IOException {
+            this(dir, "jdbc:h2:file:" + dir.resolve("db").toString().replace('\\', '/') + ";LOCK_TIMEOUT=10000;MODE=PostgreSQL",
+                    "sangam_app", random(24), "h2,oidc");
+        }
+
+        /** A real database (an IT lane's), with its own credentials, under the fragment's profiles. */
+        Keys(Path dir, String db, String dbUser, String dbPassword, String profiles) throws IOException {
             secrets = secretsRoot(dir.resolve("secrets"));
-            db = "jdbc:h2:file:" + dir.resolve("db").toString().replace('\\', '/') + ";LOCK_TIMEOUT=10000;MODE=PostgreSQL";
+            this.db = db;
+            this.dbUser = dbUser;
+            this.dbPassword = dbPassword;
+            this.profiles = profiles;
         }
 
         /** An unknown name fails, so every new name of the fragment is looked at. */
         String value(String name) {
             return switch (name) {
                 case "TZ" -> "UTC";
-                case "SPRING_PROFILES_ACTIVE" -> "h2,oidc";
+                case "SPRING_PROFILES_ACTIVE" -> profiles;
                 case "SANGAM_SECURITY_PRODUCTION" -> "true";
                 case "SANGAM_DB_URL" -> db;
-                case "SANGAM_DB_USER" -> "sangam_app";
+                case "SANGAM_DB_USER" -> dbUser;
                 case "SANGAM_DB_PASSWORD" -> dbPassword;
                 case "SANGAM_LIQUIBASE_MODE" -> "startup";
                 case "SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE" -> "system:platform";
@@ -321,6 +337,16 @@ class DemoComposeFragmentStartupTest {
                         + ": add one here (and a binding check if it is a production setting)");
             };
         }
+    }
+
+    /** A non-loopback IPv4 address of this machine: production refuses loopback URLs (HostingWiring, SG-38). */
+    static String nonLoopbackIPv4() throws java.net.SocketException {
+        return java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces()).stream()
+                .filter(n -> { try { return n.isUp() && !n.isLoopback(); } catch (java.net.SocketException e) { return false; } })
+                .flatMap(n -> java.util.Collections.list(n.getInetAddresses()).stream())
+                .filter(a -> a instanceof java.net.Inet4Address && !a.isLoopbackAddress() && !a.isLinkLocalAddress())
+                .map(java.net.InetAddress::getHostAddress).findFirst()
+                .orElseThrow(() -> new IllegalStateException("no non-loopback IPv4 address on this machine"));
     }
 
     private static String random(int bytes) {
@@ -366,12 +392,7 @@ class DemoComposeFragmentStartupTest {
         private RealmIdp() throws Exception {
             key = new com.nimbusds.jose.jwk.gen.RSAKeyGenerator(2048).keyID(java.util.UUID.randomUUID().toString())
                     .keyUse(com.nimbusds.jose.jwk.KeyUse.SIGNATURE).algorithm(com.nimbusds.jose.JWSAlgorithm.RS256).generate();
-            String host = java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces()).stream()
-                    .filter(n -> { try { return n.isUp() && !n.isLoopback(); } catch (java.net.SocketException e) { return false; } })
-                    .flatMap(n -> java.util.Collections.list(n.getInetAddresses()).stream())
-                    .filter(a -> a instanceof java.net.Inet4Address && !a.isLoopbackAddress() && !a.isLinkLocalAddress())
-                    .map(java.net.InetAddress::getHostAddress).findFirst()
-                    .orElseThrow(() -> new IllegalStateException("no non-loopback IPv4 address for the test JWKS"));
+            String host = nonLoopbackIPv4();
             server = com.sun.net.httpserver.HttpServer.create(
                     new java.net.InetSocketAddress(java.net.InetAddress.getByName(host), 0), 0);
             byte[] body = new com.nimbusds.jose.jwk.JWKSet(key.toPublicJWK()).toString().getBytes(StandardCharsets.UTF_8);

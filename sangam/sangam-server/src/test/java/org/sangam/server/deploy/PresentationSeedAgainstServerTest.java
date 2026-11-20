@@ -70,6 +70,38 @@ class PresentationSeedAgainstServerTest {
                 "SANGAM_KEYS_FINGERPRINT_EXPORT", dir.resolve("key-fingerprints.txt").toString(),
                 "SANGAM_KEYS_ATTESTATION", "", "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", "");
         try (ConfigurableApplicationContext ctx = DemoComposeFragmentStartupTest.start(keys, bootstrap)) {
+            seedAndVerify(ctx, false);
+        }
+    }
+
+    /**
+     * EV-M-0932, the state of demo.ifms.dev: an earlier loader run (demo-021498ea60d1, EV-M-0923) sent
+     * {@code POST /admin/org-units} for PAO-OFFICE while GOI.FIN had no level types and got 409 UNKNOWN_LEVEL. That
+     * answer is stored as FAILED_FINAL under the request's Idempotency-Key (X.2.2.4 step 3) and replayed to every
+     * later request with the same key and body. The loader derived the key from tenant and object only, so after
+     * {@code PUT /admin/org-levels} succeeded on demo-0c3ef79140fa its org unit request still got the stored 409.
+     * A new run of the seed is a new command: it must load the tenant whatever an earlier run was answered.
+     */
+    @Test
+    void theSeedLoadsAfterAnEarlierLoaderRunWasRefusedTheOrgUnit() throws Exception {
+        DemoComposeFragmentStartupTest.Keys keys = new DemoComposeFragmentStartupTest.Keys(dir);
+        Map<String, String> bootstrap = Map.of("SANGAM_KEYS_BOOTSTRAP", "true",
+                "SANGAM_KEYS_FINGERPRINT_EXPORT", dir.resolve("key-fingerprints.txt").toString(),
+                "SANGAM_KEYS_ATTESTATION", "", "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", "");
+        try (ConfigurableApplicationContext ctx = DemoComposeFragmentStartupTest.start(keys, bootstrap)) {
+            seedAndVerify(ctx, true);
+        }
+    }
+
+    /**
+     * The whole check against a started server (this class: H2 file database; {@code PresentationSeedOnLaneDatabaseIT}:
+     * the IT lane's PostgreSQL, migrated and then started in validate mode, as on demo.ifms.dev).
+     *
+     * @param earlierRunRefused the live history of EV-M-0932: before the seed runs, the org unit request of the
+     *                          earlier loader is sent while the tenant has no level types (409 UNKNOWN_LEVEL, stored)
+     */
+    static void seedAndVerify(ConfigurableApplicationContext ctx, boolean earlierRunRefused) throws Exception {
+        {
             String api = "http://localhost:" + ctx.getEnvironment().getRequiredProperty("local.server.port") + "/api/v1";
             String admin = token("rajendra.sharma", List.of("sangam-tenant-admin", "sangam-user"));
 
@@ -91,12 +123,18 @@ class PresentationSeedAgainstServerTest {
             assertFalse(texts(me.path("roles")).contains("PLATFORM_ADMIN"), me.toString());
             assertTrue(texts(me.path("permissions")).containsAll(List.of("admin.write", "policy.admin", "tenant.admin")),
                     me.toString());
+            // SANGAM_DEMO_SANDBOXTENANTS=GOI.FIN (the fragment): /me says sandbox=true for this tenant
+            assertTrue(me.path("sandbox").asBoolean(false), "sandbox=true for GOI.FIN: " + me);
             JsonNode tenant = get(api + "/admin/tenants/" + TENANT, admin);
             assertEquals("CREATED", tenant.path("status").asText(), tenant.toString());
 
             // every seat holder signs in once (realm oneifms token: pack role + sangam-user); JIT creates the person
             for (Map.Entry<String, String> p : postings.entrySet()) {
                 get(api + "/me", token(p.getKey(), List.of("sangam-user")));
+            }
+
+            if (earlierRunRefused) {
+                earlierLoaderIsRefusedTheOrgUnit(api, admin);
             }
 
             Map<String, String> env = Map.of("SANGAM_API_BASE", api, "SANGAM_ADMIN_TOKEN", admin);
@@ -164,6 +202,52 @@ class PresentationSeedAgainstServerTest {
         assertEquals(8, held);
         rows.sort(null);
         return String.join("\n", rows);
+    }
+
+    /**
+     * The org unit request exactly as the loader sent it up to bac3d46b (seed_presentation.py: body of
+     * {@code create_if_absent("org unit ...")}, key {@code idem(tenant, "unit", office)} = UUIDv5(NAMESPACE_URL,
+     * "sangam-presentation/GOI.FIN/unit/PAO-OFFICE")), on a tenant with no level types: 409 UNKNOWN_LEVEL, twice
+     * (the second answer is the stored one).
+     */
+    private static void earlierLoaderIsRefusedTheOrgUnit(String api, String admin) throws Exception {
+        String parent = null;
+        for (JsonNode o : JSON.readTree(PACK_SEED.toFile()).path("offices")) {
+            if (OFFICE.equals(o.path("id").asText())) {
+                parent = o.path("parent").asText("").isEmpty() ? null : o.path("parent").asText();
+            }
+        }
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("id", OFFICE);
+        body.put("code", OFFICE);
+        body.put("name", "Jaipur");
+        body.put("level", "OFFICE");
+        body.put("parentId", parent);
+        String key = uuid5Url("sangam-presentation/" + TENANT + "/unit/" + OFFICE);
+        for (boolean replay : new boolean[]{false, true}) {
+            HttpResponse<String> r = HTTP.send(HttpRequest.newBuilder(URI.create(api + "/admin/org-units"))
+                    .header("Authorization", "Bearer " + admin).header("Content-Type", "application/json")
+                    .header("Idempotency-Key", key)
+                    .POST(HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(body))).build(),
+                    HttpResponse.BodyHandlers.ofString());
+            assertEquals(409, r.statusCode(), r.body());
+            assertEquals("UNKNOWN_LEVEL", JSON.readTree(r.body()).path("code").asText(), r.body());
+            assertEquals(replay, r.headers().firstValue("Idempotent-Replayed").isPresent(),
+                    "the second answer is the stored one: " + r.headers().map());
+        }
+    }
+
+    /** Python's {@code uuid.uuid5(uuid.NAMESPACE_URL, name)} (RFC 4122 version 5: SHA-1 of namespace and name). */
+    static String uuid5Url(String name) throws java.security.NoSuchAlgorithmException {
+        java.util.UUID ns = java.util.UUID.fromString("6ba7b811-9dad-11d1-80b4-00c04fd430c8");
+        java.security.MessageDigest sha1 = java.security.MessageDigest.getInstance("SHA-1");
+        sha1.update(java.nio.ByteBuffer.allocate(16).putLong(ns.getMostSignificantBits())
+                .putLong(ns.getLeastSignificantBits()).array());
+        byte[] h = sha1.digest(name.getBytes(StandardCharsets.UTF_8));
+        h[6] = (byte) ((h[6] & 0x0f) | 0x50);
+        h[8] = (byte) ((h[8] & 0x3f) | 0x80);
+        java.nio.ByteBuffer b = java.nio.ByteBuffer.wrap(h, 0, 16);
+        return new java.util.UUID(b.getLong(), b.getLong()).toString();
     }
 
     private static String token(String user, List<String> roles) throws Exception {
