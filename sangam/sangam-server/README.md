@@ -81,7 +81,11 @@ All database profiles read `SANGAM_DB_URL`, `SANGAM_DB_USER` and `SANGAM_DB_PASS
 
 Both modes put an `org.sangam.rest.port.SangamPrincipal` on the request as the attribute `SangamPrincipal.ATTRIBUTE`.
 
-**Seat context:** if the token carries a seats list and the header `X-Sangam-Seat` names a seat that is not in it, the request is rejected with 403 problem `SEAT_NOT_HELD`. Whether the seat is held on the action date (effective dating, additional charge) is checked server-side by sangam-security (IX.5, K7). The token's `additional_charge` claim is informational only.
+**Seat context:** the caller names it in `X-Sangam-Seat` (a seat held on any basis) and `X-Sangam-Acting-For-Seat` (a seat held by additional charge or as leave substitute). A seat is never taken from the caller's word (IX.5 rules 1 and 4, K7):
+- For every request, `SecurityIdentityFilter` resolves the seats the person can act in now from sangam-security's postings, additional charge and approved leave at the database time (`PostingService.seatsOf`; an ended or future posting and an officer on leave hold nothing) and puts them on the request as `SeatHoldings`.
+- `RequestContexts.from`, the one place a request context is built, accepts a named seat only when it is in those holdings. Otherwise the request is rejected with 403 problem `SEAT_NOT_HELD`, on every route, before any port or adapter runs. A request without holdings (no seat directory in the chain) names no seat.
+- If the token carries a seats list, `X-Sangam-Seat` must also be in it (`PrincipalAttributeFilter`). The list only limits; it never gives a seat. The token's `additional_charge` claim is informational only. An API token (`sgm_...`) holds no seat.
+- With the security module off (development only), the admin store's assignments in force today are the seat directory (`AdminStoreSeatHoldings`).
 
 Coarse rules:
 - open: `/actuator/health/**`, `/actuator/info`, `/livez`, `/readyz` and `/api/v1/openapi.yaml`;

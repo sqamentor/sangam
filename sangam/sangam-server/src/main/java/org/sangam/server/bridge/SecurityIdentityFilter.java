@@ -16,6 +16,7 @@ import org.sangam.core.layer.Transactions;
 import org.sangam.core.security.SangamSecurityException;
 import org.sangam.core.security.SecurityIdentity;
 import org.sangam.rest.port.SangamPrincipal;
+import org.sangam.rest.port.SeatHoldings;
 import org.sangam.security.SangamSecurity;
 import org.sangam.security.audit.LoginEventBatcher;
 import org.sangam.security.spring.SangamAuthenticationToken;
@@ -37,7 +38,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *       acting-for seats, roles, memberships; JIT provisioning for the tenants in
  *       {@code sangam.security.jit-provisioning-tenants}); MFA is required where configured;</li>
  *   <li>the resolved identity is bound with {@link TenantContext} for the request and also put on the request as
- *       {@link SecurityIdentities#ATTRIBUTE}; first sight of a session writes a batched {@code LOGIN} event.</li>
+ *       {@link SecurityIdentities#ATTRIBUTE}; first sight of a session writes a batched {@code LOGIN} event;</li>
+ *   <li>the seats of the resolved identity are put on the request as {@link SeatHoldings#ATTRIBUTE}: the only source
+ *       of the seat context sangam-rest accepts ({@code X-Sangam-Seat}, {@code X-Sangam-Acting-For-Seat}; a seat the
+ *       person does not hold now is 403 {@code SEAT_NOT_HELD}; IX.5 rules 1 and 4, K7). An API token holds no
+ *       seat.</li>
  * </ul>
  * A {@link SangamSecurityException} (unknown person, MFA missing, tenant suspended) is answered with problem+json.
  * SL-70: an API token is always a tenant identity, and a tenant identity keeps no platform-only group or role, also
@@ -180,6 +185,10 @@ public final class SecurityIdentityFilter extends OncePerRequestFilter {
             }
         }
         req.setAttribute(SecurityIdentities.ATTRIBUTE, resolved);
+        // IX.5 rules 1 and 4, K7: the seats this person can act in now, from the postings, additional charge and leave
+        // in force at the database time (PostingService.seatsOf, re-read whenever one of them changed or reached an
+        // effective date). The request context accepts X-Sangam-Seat / X-Sangam-Acting-For-Seat only from here.
+        req.setAttribute(SeatHoldings.ATTRIBUTE, new SeatHoldings(resolved.seats(), resolved.actingForSeats()));
         TenantContext.set(resolved);
         try {
             chain.doFilter(req, res);

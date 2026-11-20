@@ -71,7 +71,7 @@ class SeatHeaderAuthorizationAgainstServerTest {
     private static final String LEAVE = "SA-LV";
     /** sa.former held it until the posting was ended a moment ago. */
     private static final String ENDED = "SA-END";
-    /** sa.future is posted to it from tomorrow. */
+    /** sa.future is posted to it from tomorrow (posting dates are UTC days, SecurityAdminBridge.start). */
     private static final String FUTURE = "SA-FUT";
 
     @TempDir
@@ -245,6 +245,12 @@ class SeatHeaderAuthorizationAgainstServerTest {
 
     @Test
     void theSubstantiveHolderSeesAndCompletesTheSeatsTask() throws Exception {
+        // a fact for the report, not asserted (not this lane's ruling): the seats GET /me offers the holder to choose from
+        List<String> offered = new ArrayList<>();
+        JSON.readTree(send("GET", "/me", token("sa.holder", USER), Map.of(), null).body()).path("seats")
+                .forEach(s -> offered.add(s.path("seatId").asText()));
+        System.out.println("SEAT-AUTHZ | /me seats | INFO | sa.holder (substantive holder of " + SUB + ", role sangam-user) is offered "
+                + offered + " by GET /me");
         holderActs("sa.holder", SUB, SUB + "/holder");
     }
 
@@ -254,6 +260,12 @@ class SeatHeaderAuthorizationAgainstServerTest {
         HttpResponse<String> me = send("GET", "/me", token("sa.charge", USER), Map.of(SEAT, CHARGE_OWN, ACTING, CHARGE), null);
         assertEquals(200, me.statusCode(), "own seat + acted-for seat (the headers sangam-ui sends): " + me.body());
         assertEquals(CHARGE, JSON.readTree(me.body()).path("actingForSeatId").asText(), me.body());
+        // a fact for the report, not asserted (not this lane's ruling): which tasks that header pair lists. The task
+        // adapters add the seat of X-Sangam-Seat to the candidate groups, not the acted-for seat.
+        System.out.println("SEAT-AUTHZ | acting-for list | INFO | sa.charge with X-Sangam-Seat " + CHARGE_OWN
+                + " and X-Sangam-Acting-For-Seat " + CHARGE + " is shown " + tasks(send("GET", "/tasks?businessKey="
+                + enc(CHARGE + "/holder"), token("sa.charge", USER), Map.of(SEAT, CHARGE_OWN, ACTING, CHARGE), null))
+                + " of the acted-for seat's 1 open task");
         holderActs("sa.charge", CHARGE, CHARGE + "/holder");
     }
 
@@ -291,6 +303,23 @@ class SeatHeaderAuthorizationAgainstServerTest {
                 Map.of("remarks", "Seat header check.")), "sa.future completes a day early");
     }
 
+    /**
+     * The same session, the same token: the seat is accepted while the posting is in force and refused from the
+     * request after it ended (the resolved identity is re-read when a posting changes; no stale seat is served).
+     */
+    @Test
+    void aPostingEndedDuringASessionIsRefusedOnTheNextRequest() throws Exception {
+        ok(send("POST", "/admin/seats", admin, Map.of(), map("id", "SA-LIVE", "code", "SA-LIVE", "designation", "Officer",
+                "name", "SA-LIVE", "orgUnitId", OFFICE, "reportsToSeatId", null, "roles", List.of())));
+        String session = token("sa.delegate", USER);
+        assertSeatNotHeld(send("GET", "/me", session, Map.of(SEAT, "SA-LIVE"), null), "before the posting");
+        String posting = post("SA-LIVE", "sa.delegate", "SUBSTANTIVE", LocalDate.now(ZoneOffset.UTC).toString(), null);
+        HttpResponse<String> held = send("GET", "/me", session, Map.of(SEAT, "SA-LIVE"), null);
+        assertEquals(200, held.statusCode(), "posted: the next request of the same session is accepted: " + held.body());
+        ok(send("POST", "/admin/assignments/" + posting + "/end", admin, Map.of(), map("reason", "Relieved")));
+        assertSeatNotHeld(send("GET", "/me", session, Map.of(SEAT, "SA-LIVE"), null), "relieved: the next request of the same session");
+    }
+
     // ------------------------------------------------------------------ a token that carries a seats claim
 
     /** The claim still limits the header, and it never gives a seat the person does not hold. */
@@ -319,6 +348,14 @@ class SeatHeaderAuthorizationAgainstServerTest {
                 Map.of("remarks", "Done by the seat holder."));
         assertEquals(200, done.statusCode(), person + " completes the task of " + seat + ": " + done.body());
         assertEquals(0, engine.getTaskService().createTaskQuery().taskId(task).count(), "the task is completed");
+        // the audit trail an administrator reads: who completed the task, and in which seat
+        HttpResponse<String> audit = send("GET", "/audit/events?type=TASK_COMPLETED&actor=" + enc(person) + "&size=100", admin, Map.of(), null);
+        assertEquals(200, audit.statusCode(), audit.body());
+        JsonNode events = JSON.readTree(audit.body());
+        List<String> seen = new ArrayList<>();
+        (events.isArray() ? events : events.path("items")).forEach(e -> seen.add(e.path("actor").asText() + " in "
+                + e.path("seatId").asText() + " task " + e.path("payload").path("task_id").asText()));
+        assertTrue(seen.contains(person + " in " + seat + " task " + task), "TASK_COMPLETED of " + person + " in " + seat + ": " + seen);
     }
 
     private static void assertSeatNotHeld(HttpResponse<String> r, String what) throws Exception {
