@@ -144,6 +144,10 @@ class DemoLoaderSequenceAgainstServerTest {
             }
         }
         status.add("DEMO-SEQUENCE | connectors | INFO | " + connectors(ctx));
+        if (steps.contains("4a cases") && !step(status, "ui seats", () -> uiSeats(ctx, api))) {
+            // register E-24 follow-up 1: never an open gap
+            wrong.add("ui seats failed");
+        }
         if (steps.contains("4a cases") && !step(status, "seat header", () -> seatHeaderCheck(api))) {
             // register E-24: never an open gap
             wrong.add("seat header failed");
@@ -241,6 +245,76 @@ class DemoLoaderSequenceAgainstServerTest {
             seen.add("the task is still open for the holder");
         }
         return String.join("; ", seen);
+    }
+
+    /**
+     * Register E-24 follow-up 1, what an officer gets in sangam-ui, through the calls the UI makes: {@code GET /me}
+     * without a seat (AuthProvider.loadMe) offers each persona of the presentation exactly its posted seat, as
+     * SUBSTANTIVE; then, with that seat in {@code X-Sangam-Seat} (the header AuthProvider sends for a substantive
+     * seat), {@code GET /tasks/counts} answers and {@code GET /tasks?section=MY_SEAT} (TaskInbox) lists every open
+     * task that waits for that seat. Which tasks wait for which seat is read from the engine (candidate groups).
+     */
+    private static String uiSeats(ConfigurableApplicationContext ctx, String api) throws Exception {
+        PresentationSeedAgainstServerTest.Seed plan = PresentationSeedAgainstServerTest.script(
+                PRESENTATION.resolve("seed_presentation.py"), List.of("--dry-run"), Map.of());
+        assertEquals(0, plan.exit(), plan.out());
+        Map<String, List<String>> roles = new LinkedHashMap<>();
+        Matcher r = Pattern.compile("keycloak \\S+: user (\\S+) roles (\\S+) seats").matcher(plan.out());
+        while (r.find()) {
+            roles.put(r.group(1), List.of(r.group(2).split(",")));
+        }
+        Map<String, String> postings = new java.util.TreeMap<>();
+        Matcher m = Pattern.compile("sangam: assignment (\\S+) -> (\\S+) SUBSTANTIVE").matcher(plan.out());
+        while (m.find()) {
+            postings.put(m.group(1), m.group(2));
+        }
+        assertEquals(8, postings.size(), "the presentation's seat holders: " + plan.out());
+        // the open tasks per seat, from the engine
+        org.operaton.bpm.engine.TaskService engine = ctx.getBean(org.operaton.bpm.engine.ProcessEngine.class).getTaskService();
+        Map<String, java.util.Set<String>> waiting = new java.util.TreeMap<>();
+        for (org.operaton.bpm.engine.task.Task t : engine.createTaskQuery().tenantIdIn(TENANT).taskUnassigned().list()) {
+            for (org.operaton.bpm.engine.task.IdentityLink l : engine.getIdentityLinksForTask(t.getId())) {
+                if (org.operaton.bpm.engine.task.IdentityLinkType.CANDIDATE.equals(l.getType()) && l.getGroupId() != null) {
+                    waiting.computeIfAbsent(l.getGroupId(), k -> new java.util.TreeSet<>()).add(t.getId());
+                }
+            }
+        }
+        int shown = 0;
+        List<String> wrong = new ArrayList<>();
+        for (Map.Entry<String, String> p : postings.entrySet()) {
+            String token = PresentationSeedAgainstServerTest.token(p.getKey(), roles.getOrDefault(p.getKey(), List.of("sangam-user")));
+            List<String> offered = new ArrayList<>();
+            PresentationSeedAgainstServerTest.get(api + "/me", token).path("seats")
+                    .forEach(s -> offered.add(s.path("seatId").asText() + " " + s.path("kind").asText()));
+            if (!offered.equals(List.of(p.getValue() + " SUBSTANTIVE"))) {
+                wrong.add(p.getKey() + " (posted to " + p.getValue() + ") is offered " + offered + " by /me");
+                continue;
+            }
+            HttpResponse<String> counts = uiGet(api + "/tasks/counts", token, p.getValue());
+            HttpResponse<String> list = uiGet(api + "/tasks?section=MY_SEAT&page=0&size=500", token, p.getValue());
+            if (counts.statusCode() != 200 || list.statusCode() != 200) {
+                wrong.add(p.getKey() + " with X-Sangam-Seat " + p.getValue() + ": counts " + counts.statusCode() + ", list "
+                        + list.statusCode() + " " + list.body());
+                continue;
+            }
+            JsonNode body = JSON.readTree(list.body());
+            java.util.Set<String> listed = new java.util.TreeSet<>();
+            (body.isArray() ? body : body.path("items")).forEach(t -> listed.add(t.path("id").asText()));
+            java.util.Set<String> expected = waiting.getOrDefault(p.getValue(), java.util.Set.of());
+            if (!listed.containsAll(expected)) {
+                wrong.add(p.getKey() + " with X-Sangam-Seat " + p.getValue() + " is shown " + listed.size() + " tasks, not all of the "
+                        + expected.size() + " that wait for the seat");
+            }
+            shown += expected.size();
+        }
+        assertTrue(wrong.isEmpty(), String.join("; ", wrong));
+        return postings.size() + " of " + postings.size() + " personas are offered their seat by GET /me; " + shown
+                + " open tasks wait for their seats and each is listed for the seat's holder";
+    }
+
+    private static HttpResponse<String> uiGet(String url, String token, String seat) throws Exception {
+        return HTTP.send(HttpRequest.newBuilder(URI.create(url)).header("Authorization", "Bearer " + token)
+                .header("X-Sangam-Seat", seat).GET().build(), HttpResponse.BodyHandlers.ofString());
     }
 
     private static HttpResponse<String> seatHeaderGet(String url, String user, String packRole) throws Exception {

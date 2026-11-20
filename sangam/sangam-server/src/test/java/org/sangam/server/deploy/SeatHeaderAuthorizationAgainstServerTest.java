@@ -125,8 +125,8 @@ class SeatHeaderAuthorizationAgainstServerTest {
                         .startEvent().userTask("act").name("Act for the seat").operatonCandidateGroups("${seat}")
                         .endEvent().done()).deploy();
         for (String key : List.of(SUB + "/list", SUB + "/claim", SUB + "/complete", SUB + "/delegate", SUB + "/acting",
-                SUB + "/claimed-token", SUB + "/holder", CHARGE + "/holder", LEAVE + "/substitute", LEAVE + "/onleave",
-                ENDED + "/former", FUTURE + "/future")) {
+                SUB + "/claimed-token", SUB + "/holder", CHARGE + "/holder", CHARGE + "/pair", CHARGE_OWN + "/own",
+                LEAVE + "/substitute", LEAVE + "/onleave", ENDED + "/former", ENDED + "/denied", FUTURE + "/future")) {
             String seat = key.substring(0, key.indexOf('/'));
             String pi = engine.getRuntimeService().createProcessInstanceByKey("seatcheck").processDefinitionTenantId(TENANT)
                     .businessKey(key).setVariable("seat", seat).execute().getId();
@@ -245,12 +245,6 @@ class SeatHeaderAuthorizationAgainstServerTest {
 
     @Test
     void theSubstantiveHolderSeesAndCompletesTheSeatsTask() throws Exception {
-        // a fact for the report, not asserted (not this lane's ruling): the seats GET /me offers the holder to choose from
-        List<String> offered = new ArrayList<>();
-        JSON.readTree(send("GET", "/me", token("sa.holder", USER), Map.of(), null).body()).path("seats")
-                .forEach(s -> offered.add(s.path("seatId").asText()));
-        System.out.println("SEAT-AUTHZ | /me seats | INFO | sa.holder (substantive holder of " + SUB + ", role sangam-user) is offered "
-                + offered + " by GET /me");
         holderActs("sa.holder", SUB, SUB + "/holder");
     }
 
@@ -260,13 +254,146 @@ class SeatHeaderAuthorizationAgainstServerTest {
         HttpResponse<String> me = send("GET", "/me", token("sa.charge", USER), Map.of(SEAT, CHARGE_OWN, ACTING, CHARGE), null);
         assertEquals(200, me.statusCode(), "own seat + acted-for seat (the headers sangam-ui sends): " + me.body());
         assertEquals(CHARGE, JSON.readTree(me.body()).path("actingForSeatId").asText(), me.body());
-        // a fact for the report, not asserted (not this lane's ruling): which tasks that header pair lists. The task
-        // adapters add the seat of X-Sangam-Seat to the candidate groups, not the acted-for seat.
-        System.out.println("SEAT-AUTHZ | acting-for list | INFO | sa.charge with X-Sangam-Seat " + CHARGE_OWN
-                + " and X-Sangam-Acting-For-Seat " + CHARGE + " is shown " + tasks(send("GET", "/tasks?businessKey="
-                + enc(CHARGE + "/holder"), token("sa.charge", USER), Map.of(SEAT, CHARGE_OWN, ACTING, CHARGE), null))
-                + " of the acted-for seat's 1 open task");
         holderActs("sa.charge", CHARGE, CHARGE + "/holder");
+    }
+
+    // ------------------------------------------------------------------ what the UI is offered and shown (follow-up 1)
+
+    /**
+     * {@code GET /me} is where sangam-ui takes the seats to choose from (AuthProvider: the seat it then sends). It
+     * offers exactly the seats the person can act in now, by the rule of the header check (K7): the regular posting,
+     * the additional charge, the leave substitution; not the seat of an officer on leave, not an ended or a future
+     * posting. Every caller here has role sangam-user only and no seats claim.
+     */
+    @Test
+    void meOffersExactlyTheSeatsThePersonCanActInNow() throws Exception {
+        assertEquals(List.of(SUB + " SUBSTANTIVE"), offered("sa.holder"));
+        assertEquals(List.of(OTHER + " SUBSTANTIVE"), offered("sa.outsider"));
+        assertEquals(List.of(CHARGE + " ADDITIONAL_CHARGE", CHARGE_OWN + " SUBSTANTIVE"), offered("sa.charge"));
+        assertEquals(List.of(LEAVE + " LEAVE_SUBSTITUTE"), offered("sa.substitute"));
+        assertEquals(List.of(), offered("sa.onleave"), "an officer on approved leave is offered no seat");
+        assertEquals(List.of(), offered("sa.former"), "an ended posting is not offered");
+        assertEquals(List.of(), offered("sa.future"), "a posting that starts tomorrow is not offered");
+        // each seat with what the seat switcher prints: its designation as name, and until when an acting seat is held
+        JsonNode seats = JSON.readTree(send("GET", "/me", token("sa.charge", USER), Map.of(), null).body()).path("seats");
+        for (JsonNode s : seats) {
+            assertEquals("Officer", s.path("designation").asText(), s.toString());
+            assertTrue(!s.path("seatName").asText().isBlank(), s.toString());
+            assertEquals(CHARGE.equals(s.path("seatId").asText()), s.hasNonNull("validTo"), "only the charge has an end: " + s);
+        }
+        // every offered seat is accepted when it is sent back as the UI sends it
+        assertEquals(200, send("GET", "/me", token("sa.charge", USER), Map.of(SEAT, CHARGE_OWN, ACTING, CHARGE), null).statusCode());
+        assertEquals(200, send("GET", "/me", token("sa.substitute", USER), Map.of(ACTING, LEAVE), null).statusCode());
+    }
+
+    /**
+     * Why {@code /me} offered no seat: the list came from the administrators' posting directory, which an officer may
+     * not read (READ on POSTING), and the refusal was turned into an empty list. The directory stays closed to
+     * officers; a person's own seats are read from the seat directory itself ({@code PostingService.seatsOf}), which
+     * needs no permission.
+     */
+    @Test
+    void thePostingDirectoryOfTheAdministratorsIsClosedToAnOfficerAndTheOwnSeatsAreNot() {
+        SangamSecurity security = ctx.getBean(SangamSecurity.class);
+        Transactions tx = ctx.getBean("sangamProductTransactions", Transactions.class);
+        SecurityIdentity officer = tx.inTransaction(c -> security.principals().resolve(c,
+                org.sangam.server.bridge.SecurityIdentities.fromPrincipal(new org.sangam.rest.port.SangamPrincipal(TENANT,
+                        "sa.holder", java.util.Set.of("sangam-user"), "OIDC", Map.of("preferred_username", "sa.holder")),
+                        "127.0.0.1"), true, "sa.holder", null));
+        assertEquals(java.util.Set.of(SUB), officer.seats(), "the resolved identity holds the seat");
+        org.junit.jupiter.api.Assertions.assertThrows(org.sangam.core.security.SangamSecurityException.AccessDenied.class,
+                () -> tx.inTransaction(c -> security.directory().postings(c, officer,
+                        new org.sangam.security.admin.SecurityDirectoryService.PostingFilter(null, "sa.holder", null, false,
+                                Sql.dbNow(c, security.dialect()), false), 0, 10, 100)),
+                "the administrators' posting list, asked for the officer's own postings");
+        List<String> own = tx.inTransaction(c -> security.postings().seatsOf(c, TENANT, "sa.holder", Sql.dbNow(c, security.dialect()))
+                .stream().map(h -> h.seatId() + " " + h.kind()).toList());
+        assertEquals(List.of(SUB + " REGULAR"), own);
+    }
+
+    /**
+     * The header pair sangam-ui sends for a seat held on additional charge (own seat in X-Sangam-Seat, the charge in
+     * X-Sangam-Acting-For-Seat, AuthProvider): the acted-for seat's tasks are listed and can be completed, and the
+     * audit names the person, the own seat and the acted-for seat (IX.5 rule 4, AJ-04 step 3). While acting, the own
+     * seat's queue is not mixed in; with the own seat alone the acted-for seat's tasks are not listed.
+     */
+    @Test
+    void theUisHeaderPairListsAndCompletesTheActedForSeatsTask() throws Exception {
+        String charge = token("sa.charge", USER);
+        Map<String, String> pair = Map.of(SEAT, CHARGE_OWN, ACTING, CHARGE);
+        Map<String, String> ownOnly = Map.of(SEAT, CHARGE_OWN);
+        assertEquals(List.of("act"), tasks(send("GET", "/tasks?businessKey=" + enc(CHARGE + "/pair"), charge, pair, null)),
+                "own seat + acted-for seat: the acted-for seat's task");
+        assertEquals(List.of(), tasks(send("GET", "/tasks?businessKey=" + enc(CHARGE + "/pair"), charge, ownOnly, null)),
+                "own seat only: not the acted-for seat's task");
+        assertEquals(List.of("act"), tasks(send("GET", "/tasks?businessKey=" + enc(CHARGE_OWN + "/own"), charge, ownOnly, null)),
+                "own seat only: the own seat's task");
+        assertEquals(List.of(), tasks(send("GET", "/tasks?businessKey=" + enc(CHARGE_OWN + "/own"), charge, pair, null)),
+                "acting for the other seat: the own seat's queue is not mixed in");
+        String task = taskOf.get(CHARGE + "/pair");
+        assertEquals(404, send("POST", "/tasks/" + task + "/complete", charge, ownOnly, Map.of("remarks", "Own seat only.")).statusCode(),
+                "own seat only: the acted-for seat's task cannot be completed");
+        HttpResponse<String> done = send("POST", "/tasks/" + task + "/complete", charge, pair, Map.of("remarks", "Acted for the seat."));
+        assertEquals(200, done.statusCode(), done.body());
+        assertEquals(0, engine.getTaskService().createTaskQuery().taskId(task).count(), "the task is completed");
+        for (String type : List.of("TASK_COMPLETED", "ACTED_FOR")) {
+            HttpResponse<String> audit = send("GET", "/audit/events?type=" + type + "&actor=sa.charge&size=100", admin, Map.of(), null);
+            assertEquals(200, audit.statusCode(), audit.body());
+            JsonNode events = JSON.readTree(audit.body());
+            List<String> seen = new ArrayList<>();
+            (events.isArray() ? events : events.path("items")).forEach(e -> seen.add(e.path("actor").asText() + " in "
+                    + e.path("seatId").asText() + " for " + e.path("actedForSeatId").asText() + " task " + e.path("payload").path("task_id").asText()));
+            assertTrue(seen.contains("sa.charge in " + CHARGE_OWN + " for " + CHARGE + " task " + task), type + ": " + seen);
+        }
+    }
+
+    /**
+     * SANGAM.md X.2.3 (identity events: AUTH_DENIED with action, reason, policy_version), CX-1 and J-P1-E05 ("AUTH_DENIED
+     * (if old holder tries)"): a refused seat leaves one AUTH_DENIED on the tenant's denial chain, naming the person,
+     * the seat, what was tried and why.
+     */
+    @Test
+    void aRefusedSeatIsWrittenToTheAuditTrailAsAuthDenied() throws Exception {
+        String task = taskOf.get(ENDED + "/denied");
+        List<String> before = authDenied();
+        assertSeatNotHeld(send("POST", "/tasks/" + task + "/complete", token("sa.former", USER), Map.of(SEAT, ENDED),
+                Map.of("remarks", "Seat header check.")), "sa.former completes after being relieved");
+        List<String> written = new ArrayList<>(authDenied());
+        written.removeAll(before);
+        assertEquals(1, written.size(), "one AUTH_DENIED for the refused request: " + written);
+        String event = written.get(0);
+        for (String part : List.of("SEAT_NOT_HELD", ENDED, "sa.former", "/tasks/" + task + "/complete", "policy_version")) {
+            assertTrue(event.contains(part), "AUTH_DENIED names " + part + ": " + event);
+        }
+        // a request that names a seat the person holds writes none
+        assertEquals(200, send("GET", "/me", token("sa.holder", USER), Map.of(SEAT, SUB), null).statusCode());
+        assertEquals(before.size() + 1, authDenied().size());
+    }
+
+    /** The AUTH_DENIED events of the tenant, each as its envelope and payload text (read-only). */
+    private List<String> authDenied() throws Exception {
+        List<String> out = new ArrayList<>();
+        try (var c = ctx.getBean(javax.sql.DataSource.class).getConnection();
+             var ps = c.prepareStatement("SELECT e.event_id, e.chain_id, e.envelope, p.payload FROM AUDIT_EVENT e"
+                     + " LEFT JOIN AUDIT_PAYLOAD p ON p.event_id = e.event_id WHERE e.tenant_id=? AND e.event_type='AUTH_DENIED'")) {
+            ps.setString(1, TENANT);
+            try (var rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(rs.getString(1) + " " + rs.getString(2) + " " + rs.getString(3) + " " + rs.getString(4));
+                }
+            }
+        }
+        return out;
+    }
+
+    /** The seats {@code GET /me} offers a person who names no seat, each as "seat kind", sorted. */
+    private List<String> offered(String person) throws Exception {
+        HttpResponse<String> me = send("GET", "/me", token(person, USER), Map.of(), null);
+        assertEquals(200, me.statusCode(), me.body());
+        List<String> out = new ArrayList<>();
+        JSON.readTree(me.body()).path("seats").forEach(s -> out.add(s.path("seatId").asText() + " " + s.path("kind").asText()));
+        out.sort(null);
+        return out;
     }
 
     /** Leave with a substitute (AJ-04 step 5): the substitute acts in the seat, the officer on leave does not (K7). */
