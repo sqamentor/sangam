@@ -5,7 +5,7 @@
  * UI shows a demo-sandbox answer today, and that the two checks the sandbox now answers (ifms.duplicateBill, docs.issue)
  * show the same way as a W-5 simulated payment (pfms.payment):
  * - every page of a sandbox tenant carries the badge "Sandbox" with its tooltip (Layout.tsx SandboxBadge, en.json
- *   auth.sandbox / auth.sandboxNotice; the wording is an open owner question and is pinned here, not changed);
+ *   auth.sandbox / auth.sandboxNotice; the tooltip wording is the one the owner approved in Follow-up 3);
  * - the case and task views link to the Case timeline (Audit.tsx Timeline), whose "Details" of an event show what the
  *   server recorded: simulated=true and sandbox=true for each of the three connectors.
  * The server side of the same marks is DemoLoaderSequenceAgainstServerTest step "sandbox marks".
@@ -63,13 +63,18 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('E-26 Follow-up 1: a simulated check shows as simulated, as a W-5 payment does', () => {
-  it('the badge and its tooltip read exactly as shipped (wording unchanged, an open owner question)', () => {
+  /** Follow-up 3 (owner approval, 2026-11-21): the tooltip names everything the sandbox simulates and never says "demo". */
+  const NOTICE = 'Sandbox tenant: payees, payments, the duplicate-bill check and issued document numbers are simulated. No real money moves.';
+
+  it('the badge says Sandbox and its tooltip reads exactly as the owner approved, with no "demo" in any case', () => {
     render(<SandboxBadge sandbox />);
     const badge = screen.getByTestId('sandbox-badge');
     expect(badge.textContent).toBe('Sandbox');
-    expect(badge.getAttribute('title')).toBe('Demo sandbox tenant: verified payees and payments are simulated, no real money moves');
+    expect(badge.getAttribute('title')).toBe(NOTICE);
     expect(tr('auth.sandbox')).toBe('Sandbox');
-    expect(tr('auth.sandboxNotice')).toBe('Demo sandbox tenant: verified payees and payments are simulated, no real money moves');
+    expect(tr('auth.sandboxNotice')).toBe(NOTICE);
+    expect(badge.getAttribute('title') ?? '').not.toMatch(/demo/i);
+    expect(tr('auth.sandboxNotice')).not.toMatch(/demo/i);
   });
 
   it('the Case timeline shows simulated=true and sandbox=true in the Details of the duplicate check, the document and the W-5 payment alike', async () => {
