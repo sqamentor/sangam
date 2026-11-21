@@ -237,6 +237,12 @@ public final class IntegrationConnectorGateway implements ConnectorGateway, ApiR
 
     // ------------------------------------------------------------------ lookup
 
+    /** {@link ApiReadGateway}: contract only in this commit (register P-3, step 1); it still answers as lookup. */
+    @Override
+    public ConnectorResult lookupReadOnly(String tenantId, String connector, String operationId) {
+        return lookup(tenantId, connector, operationId);
+    }
+
     @Override
     public ConnectorResult lookup(String tenantId, String connector, String operationId) {
         String tenant = tenantOf(tenantId);

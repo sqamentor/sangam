@@ -34,6 +34,8 @@ class RestBackedRecordsGatewayTest {
     final List<ConnectorRequest> queries = new ArrayList<>();
     final List<ConnectorRequest> submits = new ArrayList<>();
     final List<String> lookups = new ArrayList<>();
+    /** Outcome lookups made through the API-read entry (register P-3). */
+    final List<String> readLookups = new java.util.ArrayList<>();
     ConnectorResult answer;
 
     final ConnectorGateway gateway = new ConnectorGateway() {
@@ -81,6 +83,12 @@ class RestBackedRecordsGatewayTest {
         @Override
         public java.util.Optional<String> readOnlyRefusal(ConnectorRequest request) {
             throw new AssertionError("not used");
+        }
+
+        @Override
+        public ConnectorResult lookupReadOnly(String tenantId, String connector, String operationId) {
+            readLookups.add(tenantId + " " + connector + " " + operationId);
+            return answer;
         }
     };
 
@@ -161,7 +169,9 @@ class RestBackedRecordsGatewayTest {
         answer = new ConnectorResult(OperationStatus.FAILED, "DUPLICATE_VENDOR", "exists", "ERP-1",
                 Map.of("record", Map.of("id", "v-1")));
         RestBackedRecords.Outcome o = seam.lookup("t1", "erp.vendors", "op-1");
-        assertEquals(List.of("t1 erp.vendors op-1"), lookups);
+        // register P-3: the outcome GET is an API read; ConnectorGateway.lookup may settle RETRY_REQUESTED and is not used
+        assertEquals(List.of("t1 erp.vendors op-1"), readLookups);
+        assertEquals(List.of(), lookups, "the outcome of a data-object create is never read through ConnectorGateway.lookup");
         assertEquals("FAILED", o.status());
         assertEquals("DUPLICATE_VENDOR", o.reasonCode());
         assertEquals("exists", o.message());
