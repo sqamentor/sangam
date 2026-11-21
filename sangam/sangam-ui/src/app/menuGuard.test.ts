@@ -90,3 +90,22 @@ describe('U12b: the INTEGRATION role is not let into pages its permissions canno
     expect(SERVER_GROUPS).toContain('sangam-integration');
   });
 });
+
+describe('U12c: Deployments is in the menu of the designers who may open it', () => {
+  // GET /deployments needs deployment.read (DeploymentController); the route guard admits MODELLER and REVIEWER
+  it.each(['sangam-model-author', 'sangam-model-reviewer', 'sangam-model-approver'])('%s sees Deployments in the menu', (group) => {
+    const designer = callerOf(group);
+    expect(designer.permissions).toContain('deployment.read');
+    expect(opens(designer, '/ops/deployments')).toBe(true);
+    expect(menuRoutes(designer)).toContain('/ops/deployments');
+    // and nothing else of Monitor and fix
+    expect(menuRoutes(designer).filter((r) => r.startsWith('/ops'))).toEqual(['/ops/deployments']);
+  });
+  it('operators keep it; a caller the route refuses does not get it', () => {
+    for (const g of ['sangam-operator', 'sangam-engine-admin', 'sangam-admin']) expect(menuRoutes(callerOf(g)), g).toContain('/ops/deployments');
+    for (const g of ['sangam-user', 'sangam-auditor', 'sangam-tenant-admin', 'sangam-model-deployer', 'sangam-integration']) {
+      expect(opens(callerOf(g), '/ops/deployments'), g).toBe(false);
+      expect(menuRoutes(callerOf(g)), g).not.toContain('/ops/deployments');
+    }
+  });
+});
