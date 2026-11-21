@@ -76,7 +76,7 @@ CREATE TABLE SEC_POLICY_CHANGE (
   tenant_id VARCHAR(64) NOT NULL, change_id VARCHAR(64) NOT NULL, policy_id VARCHAR(64) NOT NULL,
   operation VARCHAR(16) NOT NULL, definition TEXT NOT NULL, requested_by VARCHAR(255) NOT NULL,
   requested_at TIMESTAMP WITH TIME ZONE NOT NULL, status VARCHAR(16) NOT NULL, decided_by VARCHAR(255),
-  decided_at TIMESTAMP WITH TIME ZONE, reason VARCHAR(1000),
+  decided_at TIMESTAMP WITH TIME ZONE, reason VARCHAR(1000), decision_reason VARCHAR(1000),
   PRIMARY KEY (tenant_id, change_id)
 );
 CREATE TABLE SEC_ROLE (

@@ -9003,6 +9003,31 @@ export interface Policy {
 }
 
 /**
+ * A requested policy change of the caller's tenant (four-eyes, VI.4, R43). `policy` is the definition the change applies (for DELETE the policy as it is). requestedBy is a person id, or `system` for a change the server requested (module defaults of a new tenant).
+ *
+ * Schema `PolicyChange`.
+ */
+export interface PolicyChange {
+  id: string;
+  policyId: string;
+  /**  One of: CREATE, UPDATE, DELETE. */
+  operation: 'CREATE' | 'UPDATE' | 'DELETE';
+  /**  One of: PENDING, APPLIED, REJECTED, SUPERSEDED. */
+  status: 'PENDING' | 'APPLIED' | 'REJECTED' | 'SUPERSEDED';
+  policy?: Policy;
+  requestedBy: string;
+  requestedAt: string;
+  /** The reason given with the request (R42); never overwritten by the decision */
+  requestReason?: string;
+  /** Person who approved or rejected it; null while PENDING (for SUPERSEDED the system step) */
+  decidedBy?: string;
+  /** When it was decided (database time); null while PENDING */
+  decidedAt?: string;
+  /** The reason given with the approval or rejection (R42); null while PENDING */
+  decisionReason?: string;
+}
+
+/**
  * Policy that matched (deny wins, A-13).
  *
  * Schema `PolicyMatch`.

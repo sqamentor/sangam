@@ -224,6 +224,7 @@ export const NAV: NavArea[] = [
         label: sec('setup', 'access'),
         items: [
           e('setup', 'policies', '/admin/policies'),
+          e('setup', 'policyChanges', '/admin/policy-changes'),
           e('setup', 'sod', '/admin/sod'),
           e('setup', 'idp', '/admin/idp'),
           e('setup', 'principals', '/admin/principals'),

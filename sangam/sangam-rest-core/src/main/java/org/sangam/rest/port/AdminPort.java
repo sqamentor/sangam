@@ -252,6 +252,35 @@ public interface AdminPort {
 
     PolicyVersion policyVersion(RequestContext ctx);
 
+    /**
+     * A four-eyes policy change (E-33 follow-up 3, IFMS EV-M-0968). operation: CREATE | UPDATE | DELETE; status:
+     * PENDING | APPLIED | REJECTED | SUPERSEDED. {@code policy} is what the change applies (for DELETE, the policy it
+     * retires). {@code requestReason} is the requester's and is never overwritten; {@code decisionReason} is the
+     * decider's (or why the change was superseded).
+     */
+    record PolicyChange(String id, String policyId, String operation, String status, Policy policy, String requestedBy,
+                        Instant requestedAt, String requestReason, String decidedBy, Instant decidedAt,
+                        String decisionReason) {
+    }
+
+    /** {@code GET /api/v1/admin/policies/changes}: the caller's tenant's changes; {@code status} null means PENDING. */
+    default Page<PolicyChange> policyChanges(RequestContext ctx, String status, Page.PageRequest page) {
+        throw ApiProblem.notInstalled("policy changes", "sangam-security");
+    }
+
+    /** {@code GET /api/v1/admin/policies/changes/{id}}: 404 for an id of another tenant or none. */
+    default PolicyChange policyChange(RequestContext ctx, String id) {
+        throw ApiProblem.notInstalled("policy changes", "sangam-security");
+    }
+
+    /**
+     * {@code POST /api/v1/admin/policies/changes/{id}/approve|reject}: the four-eyes decision; the requester decides
+     * neither way (422 SOD_VIOLATION), a system identity never decides.
+     */
+    default PolicyChange decidePolicyChange(RequestContext ctx, String id, boolean approve, String reason) {
+        throw ApiProblem.notInstalled("policy changes", "sangam-security");
+    }
+
     Page<Tenant> tenants(RequestContext ctx, AdminFilter filter, Page.PageRequest page);
 
     Tenant tenant(RequestContext ctx, String id);

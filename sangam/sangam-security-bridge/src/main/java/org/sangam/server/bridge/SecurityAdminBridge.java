@@ -404,6 +404,55 @@ public final class SecurityAdminBridge implements AdminPort {
         return new PolicyVersion(ctx.tenantId(), run(c -> security.authorization().policyVersion(c, ctx.tenantId())));
     }
 
+    // ------------------------------------------------------------------ four-eyes policy changes (E-33, EV-M-0968)
+
+    private static final List<String> CHANGE_STATUSES = List.of("PENDING", "APPLIED", "REJECTED", "SUPERSEDED");
+
+    @Override
+    public Page<PolicyChange> policyChanges(RequestContext ctx, String status, Page.PageRequest page) {
+        String s = status == null || status.isBlank() ? "PENDING" : status.trim().toUpperCase(Locale.ROOT);
+        if (!CHANGE_STATUSES.contains(s)) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "status must be one of " + CHANGE_STATUSES)
+                    .with("field", "status");
+        }
+        var p = run(c -> security.directory().policyChangeRows(c, actor(ctx), s, page.firstResult(), page.size(), cap()));
+        return rest(p, r -> change(ctx.tenantId(), r));
+    }
+
+    @Override
+    public PolicyChange policyChange(RequestContext ctx, String id) {
+        return run(c -> security.directory().policyChange(c, actor(ctx), id)).map(r -> change(ctx.tenantId(), r))
+                .orElseThrow(() -> ApiProblem.notFound("policy change", id));
+    }
+
+    /**
+     * The decision and the read of its result in one transaction. UNKNOWN_CHANGE (no change of the caller's tenant) is
+     * 404 NOT_FOUND, as for the read; CHANGE_NOT_PENDING stays 409 and SOD_VIOLATION 422.
+     */
+    @Override
+    public PolicyChange decidePolicyChange(RequestContext ctx, String id, boolean approve, String reason) {
+        SecurityIdentity actor = actor(ctx);
+        try {
+            return run(c -> {
+                security.policies().decide(c, actor, id, approve, reason);
+                return security.directory().policyChange(c, actor, id).map(r -> change(ctx.tenantId(), r)).orElseThrow();
+            });
+        } catch (ApiProblem e) {
+            if ("UNKNOWN_CHANGE".equals(e.code())) {
+                throw ApiProblem.notFound("policy change", id);
+            }
+            throw e;
+        }
+    }
+
+    private static PolicyChange change(String tenant, SecurityDirectoryService.PolicyChangeRow r) {
+        PolicyAdminService.PolicyDefinition d = r.definition();
+        // a change names one principal (decision 392); a pre-392 change of several is SUPERSEDED and shows its first
+        Policy policy = d.subjects().isEmpty() ? null : policy(tenant, d, d.subjects().get(0), 0);
+        return new PolicyChange(r.changeId(), r.policyId(), r.operation(), r.status(), policy, r.requestedBy(),
+                r.requestedAt(), r.requestReason(), r.decidedBy(), r.decidedAt(), r.decisionReason());
+    }
+
     // ------------------------------------------------------------------ tenants
 
     @Override

@@ -31,6 +31,31 @@ final class OperatonProcessDefinitions {
         this.props = props;
     }
 
+    /**
+     * The scope a start by key takes: true = the caller tenant's own definition, false = the shared one (a caller
+     * without a tenant always takes the shared scope). Register E-33 (g): when the caller's tenant has no definition
+     * of the key and the shared scope has none either, the answer is 404 naming the key and the caller's tenant; left
+     * to the engine, it named the shared scope it was sent to ("no processes deployed with key ... and tenant-id
+     * 'null'"). A definition of another tenant is not looked at, so nothing about it is told.
+     */
+    boolean startsInCallersTenant(RequestContext ctx, String key) {
+        if (ctx.tenantId() == null) {
+            return false;
+        }
+        if (count(repository.createProcessDefinitionQuery().processDefinitionKey(key).tenantIdIn(ctx.tenantId())) > 0) {
+            return true;
+        }
+        if (count(repository.createProcessDefinitionQuery().processDefinitionKey(key).withoutTenantId()) == 0) {
+            throw new ApiProblem(404, "NOT_FOUND", "no process with key '" + key + "' is deployed for tenant '"
+                    + ctx.tenantId() + "'");
+        }
+        return false;
+    }
+
+    private static long count(ProcessDefinitionQuery q) {
+        return OperatonSupport.call(q::count);
+    }
+
     Page<ProcessDefinition> list(RequestContext ctx, DefinitionFilter f, Page.PageRequest page) {
         ProcessDefinitionQuery q = repository.createProcessDefinitionQuery();
         if (ctx.tenantId() != null) {

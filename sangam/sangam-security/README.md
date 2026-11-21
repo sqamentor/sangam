@@ -116,7 +116,7 @@ Paths are relative to `src/main/java/org/sangam/security/` unless they start wit
 
 | File | Covers |
 |---|---|
-| `admin/PolicyAdminService.java` | Create, update and delete of ALLOW/DENY policies with conditions. Rejects a non-compilable list policy at deployment. `CHANGE_GRANT` is re-checked in the transaction (K3). **Four-eyes** with pending changes (AJ-01 step 2). Incremental `AUTH_EFFECTIVE` update. `GRANT_CHANGED`/`DENY_CHANGED` |
+| `admin/PolicyAdminService.java` | Create, update and delete of ALLOW/DENY policies with conditions. Rejects a non-compilable list policy at deployment. `CHANGE_GRANT` is re-checked in the transaction (K3). **Four-eyes** with pending changes (AJ-01 step 2); `decide` (the API's approve and reject, E-33 follow-up 3): the requester decides neither way and a system identity never decides (`SOD_VIOLATION`, audited `SOD_VIOLATION_BLOCKED`), the decision reason goes to `decision_reason` and the request reason is kept. Incremental `AUTH_EFFECTIVE` update. `GRANT_CHANGED`/`DENY_CHANGED` (an approved change adds `change_id`, `requested_by`, `decided_by`); a rejection is `POLICY_CHANGE_PENDING` with operation `REJECT` |
 | `admin/RoleAdminService.java` | Roles as permission sets (deny rules allowed). Effective-dated bindings to users, groups or seats. **Tenant bootstrap with two administrators** (AJ-01 step 2) |
 | `admin/TenantAdminService.java` | Tenant lifecycle (EC-17, AJ-01): create (platform admin), configure (languages, calendar, quotas R28, four-eyes), go-live checklist, activation blocked without evidence, suspend and resume, `requireActive` |
 | `admin/WorkerBindingService.java` | R26 / K14: the worker principal is bound to tenant and topic (`WORK` on `WORKER_TOPIC`) |

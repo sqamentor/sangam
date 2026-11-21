@@ -6556,6 +6556,11 @@ ALTER TABLE SEC_SCIM_RESOURCE ADD COLUMN person_id VARCHAR(64);
 ALTER TABLE LDG_ACCOUNTING ADD COLUMN payload_json CHARACTER LARGE OBJECT;
 --rollback ALTER TABLE LDG_ACCOUNTING DROP COLUMN payload_json;
 
+--changeset sangam:0050-01-sec_policy_change-alter dbms:h2
+--comment: E-33 follow-up 3 (b): the decision reason of a four-eyes policy change, beside the request reason
+ALTER TABLE SEC_POLICY_CHANGE ADD COLUMN decision_reason VARCHAR(1000);
+--rollback ALTER TABLE SEC_POLICY_CHANGE DROP COLUMN decision_reason;
+
 --changeset sangam:0033-01-cfg_master_code-data dbms:h2
 --comment: SL-84 root master codes: parent_code '' becomes the absent-key value '-'
 UPDATE CFG_MASTER_CODE SET parent_code = '-' WHERE parent_code = '';

@@ -127,11 +127,8 @@ public class OperatonProcessAdapter implements ProcessPort {
                 b = runtime.createProcessInstanceById(def.getId());
             } else {
                 b = runtime.createProcessInstanceByKey(r.key());
-                if (ctx.tenantId() != null && hasTenantDefinition(ctx.tenantId(), r.key())) {
-                    b = b.processDefinitionTenantId(ctx.tenantId());
-                } else {
-                    b = b.processDefinitionWithoutTenantId();
-                }
+                b = definitions.startsInCallersTenant(ctx, r.key()) ? b.processDefinitionTenantId(ctx.tenantId())
+                        : b.processDefinitionWithoutTenantId();
             }
             if (r.businessKey() != null) {
                 b = b.businessKey(r.businessKey());
@@ -159,11 +156,6 @@ public class OperatonProcessAdapter implements ProcessPort {
             audit.record(ctx, pi.getId(), "CASE_SUBMITTED", s);
             return get(ctx, pi.getId());
         });
-    }
-
-    private boolean hasTenantDefinition(String tenant, String key) {
-        return OperatonSupport.call(() -> repository.createProcessDefinitionQuery().processDefinitionKey(key)
-                .tenantIdIn(tenant).count()) > 0;
     }
 
     @Override

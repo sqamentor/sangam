@@ -8,6 +8,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.sangam.core.security.SecurityIdentity;
 import org.sangam.server.config.KeyAttestation;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -37,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -52,7 +54,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  *   <li>the state as deployed: the tenant exists and serves, no pack is deployed for it, a start is 404, and no call a
  *       tenant administrator can make deploys one;</li>
  *   <li>the two pack settings bind under their environment names, in both spellings, for a tenant id with a dot; a
- *       tenant that is not listed gets nothing and a listed id that is no tenant gets the packs all the same;</li>
+ *       tenant that is not listed gets nothing, and a listed id that is no tenant gets nothing either: the start says
+ *       so at ERROR and deploys for the tenants beside it (register E-33 c);</li>
  *   <li>a fresh database: the start that creates the tenant also deploys its packs;</li>
  *   <li>the fragment carries the two settings for its first-admins tenant, and a restart from it deploys the packs of
  *       the tenant that already exists (seats, postings and funds untouched), once: a further start deploys nothing
@@ -71,6 +74,8 @@ class PacksOfBootstrapTenantAgainstServerTest {
 
     /** The words of the start-up warning for a first-admins tenant without packs (PacksWiring). */
     static final String NO_PACKS = "has no workflow pack deployed";
+    /** The words of the start-up error for an id of the tenant list that is no tenant (PacksWiring, register E-33 c). */
+    static final String NOT_A_TENANT = "is no tenant of this installation";
 
     static final String TENANT = "GOI.FIN";
     /** The two settings as environment names (Spring's system-environment mapping of the property names). */
@@ -189,7 +194,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
      * packs and GOI.FIN, not listed, gets none.
      */
     @Test
-    void thePackSettingsBindUnderTheirEnvironmentNames() throws Exception {
+    void thePackSettingsBindUnderTheirEnvironmentNames(CapturedOutput output) throws Exception {
         int shipped;
         try (ConfigurableApplicationContext ctx = Host.h2(dir.resolve("default")).start(Host.WITHOUT_PACK_SETTINGS)) {
             shipped = shipped(ctx);
@@ -210,6 +215,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
                 fact("env " + name + "=false", "binds: sangam.packs.deploy-on-start=false, 0 packs for " + TENANT);
             }
         }
+        // register E-33 (c): an id in the list that is no tenant gets nothing, and the start says so
         String other = "GOI.OTHER";
         try (ConfigurableApplicationContext ctx = Host.h2(dir.resolve("other")).start(env -> {
             Host.WITHOUT_PACK_SETTINGS.accept(env);
@@ -219,11 +225,34 @@ class PacksOfBootstrapTenantAgainstServerTest {
             assertEquals("true", ctx.getEnvironment().getProperty("sangam.packs.deploy-on-start"));
             assertEquals(other, ctx.getEnvironment().getProperty("sangam.packs.tenants"), TENANTS + " binds");
             assertEquals(List.of(), installed(ctx, TENANT), "a tenant that is not listed gets no pack");
-            assertEquals(shipped, installed(ctx, other).size(), "the listed id gets the packs");
-            assertEquals(null, tenantStatus(ctx, other), "although no such tenant exists");
+            assertEquals(null, tenantStatus(ctx, other), "no such tenant exists");
+            List<String> refused = notATenantLines(output);
             fact("env " + TENANTS + "=" + other + " (no such tenant)", "0 packs for " + TENANT + " (not listed); "
-                    + installed(ctx, other).size() + " of " + shipped + " packs deployed under the id " + other
-                    + ", which has no tenant row; its audit chain " + chain(ctx, other));
+                    + installed(ctx, other).size() + " of " + shipped + " packs and " + deployments(ctx, other).size()
+                    + " deployments under the id " + other + ", which has no tenant row; its audit chain "
+                    + chain(ctx, other) + "; start-up lines saying so: " + refused);
+            assertEquals(List.of(), installed(ctx, other), "an id that is no tenant gets no pack");
+            assertEquals(List.of(), deployments(ctx, other), "and no other deployment");
+            assertEquals(List.of(), chain(ctx, other), "and no audit chain of its own");
+            assertEquals(1, refused.size(), "one line of the start names the id that is no tenant: " + refused);
+            assertTrue(refused.get(0).contains("ERROR") && refused.get(0).contains(other)
+                    && refused.get(0).contains("sangam.packs.tenants"), "at ERROR, with the id and the setting: " + refused);
+        }
+        // the difficult case: the same list also names the tenant this very start creates (fresh database)
+        try (ConfigurableApplicationContext ctx = Host.h2(dir.resolve("mixed")).start(env -> {
+            Host.WITHOUT_PACK_SETTINGS.accept(env);
+            env.put(ON, "true");
+            env.put(TENANTS, other + ", " + TENANT);
+        })) {
+            assertEquals("CREATED", tenantStatus(ctx, TENANT), "created by FirstAdminBootstrap in this start");
+            assertEquals(shipped, installed(ctx, TENANT).size(), "the tenant created in the same start gets its packs");
+            assertEquals(List.of(), installed(ctx, other), "the id beside it that is no tenant gets none");
+            assertEquals(List.of(), chain(ctx, other), "and no audit chain of its own");
+            List<String> refused = notATenantLines(output);
+            assertEquals(2, refused.size(), "one such line per start (this is the second start of the test): " + refused);
+            assertFalse(refused.get(1).contains("'" + TENANT + "'"), "the tenant that exists is not named: " + refused.get(1));
+            fact("env " + TENANTS + "=" + other + ", " + TENANT + " (fresh database)", installed(ctx, TENANT).size() + " of "
+                    + shipped + " packs for " + TENANT + ", " + installed(ctx, other).size() + " for " + other);
         }
     }
 
@@ -256,6 +285,10 @@ class PacksOfBootstrapTenantAgainstServerTest {
             assertTrue(chain.contains("TENANT_CREATED"), chain.toString());
             fact("fresh database: order at start-up", chain.indexOf("TENANT_CREATED") < chain.indexOf("PACKS_DEPLOYED")
                     ? "FirstAdminBootstrap before the pack runner" : "the pack runner before FirstAdminBootstrap");
+            // register E-33 (d): the tenant is created before anything is deployed for it or audited on its chain
+            assertEquals("TENANT_CREATED", chain.get(0), "the chain of the tenant begins with its creation: " + chain);
+            assertTrue(chain.indexOf("TENANT_CREATED") < chain.indexOf("PACKS_DEPLOYED"),
+                    "TENANT_CREATED is audited before PACKS_DEPLOYED: " + chain);
         }
         try (ConfigurableApplicationContext ctx = host.start(settings)) {
             assertEquals(first, installed(ctx, TENANT), "a second start deploys nothing: the same deployments");
@@ -269,6 +302,145 @@ class PacksOfBootstrapTenantAgainstServerTest {
         // the pack runner ran before FirstAdminBootstrap in the first start; the warning is judged after both
         assertEquals(List.of(), output.getOut().lines().filter(l -> l.contains(NO_PACKS)).toList(),
                 "neither start warns: the tenant has its packs when the start is over");
+    }
+
+    /**
+     * Register E-33 (f): the tenant the bootstrap creates has the module defaults a tenant created through the API
+     * gets ({@code SecurityKeysWiring.sangamModuleDefaultsOnboarding}): every module role template. A second start
+     * leaves the tenant's roles as they were. The packs play no part, so the start-up deployment is off.
+     */
+    @Test
+    void theTenantTheBootstrapCreatesHasTheModuleDefaults() throws Exception {
+        Host host = Host.h2(dir.resolve("defaults"));
+        List<String> roles;
+        try (ConfigurableApplicationContext ctx = host.startAsDeployed()) {
+            assertEquals("CREATED", tenantStatus(ctx, TENANT), "FirstAdminBootstrap created the tenant");
+            Set<String> templates = new TreeSet<>(ctx.getBean(org.sangam.security.SangamSecurity.class).defaults()
+                    .roleTemplates().keySet());
+            assertFalse(templates.isEmpty(), "the server has module role templates");
+            roles = roles(ctx, TENANT);
+            Set<String> missing = new TreeSet<>(templates);
+            missing.removeAll(roles);
+            fact("fresh database: module role templates of " + TENANT, (templates.size() - missing.size()) + " of "
+                    + templates.size() + " installed; missing " + missing + "; roles of the tenant " + roles.size());
+            assertEquals(Set.of(), missing, "every module role template is installed for the tenant the bootstrap created");
+            assertTrue(roles.contains(org.sangam.security.admin.TenantAdminService.TENANT_ADMIN_ROLE),
+                    "and its administrators are appointed as before: " + roles);
+        }
+        try (ConfigurableApplicationContext ctx = host.startAsDeployed()) {
+            assertEquals(roles, roles(ctx, TENANT), "a second start leaves the roles of the tenant as they were");
+        }
+    }
+
+    /**
+     * Owner answer to E-33 (EV-M-0960, 2026-11-21: "Yes, keep four-eyes"): the self-service grants among the module
+     * defaults of the tenant the bootstrap creates are not applied by the start; they wait as four-eyes policy changes
+     * ({@code POLICY_CHANGE_PENDING}), requested by the system. They reach the queue of the tenant's administrators,
+     * each identity resolved as the server resolves a request, and a second person approves them: each change is then
+     * APPLIED, decided by that person, its grant in force and audited ({@code GRANT_CHANGED}). The requester cannot
+     * decide its own change, and no system identity of a start can either (every one has person id "system").
+     */
+    @Test
+    void theFourEyesPolicyChangesOfTheBootstrapTenantReachItsApproversAndASecondPersonApprovesThem() throws Exception {
+        Host host = Host.h2(dir.resolve("four-eyes"));
+        try (ConfigurableApplicationContext ctx = host.startAsDeployed()) {
+            org.sangam.security.SangamSecurity security = ctx.getBean(org.sangam.security.SangamSecurity.class);
+            org.sangam.core.layer.Transactions tx = org.sangam.core.layer.Transactions.of(ctx.getBean(javax.sql.DataSource.class));
+            List<String> chain = chain(ctx, TENANT);
+            long pendingEvents = chain.stream().filter("POLICY_CHANGE_PENDING"::equals).count();
+            List<String> pending = query(ctx, "SELECT change_id FROM SEC_POLICY_CHANGE WHERE tenant_id=? AND status='PENDING'"
+                    + " ORDER BY change_id", TENANT);
+            List<String> requesters = query(ctx, "SELECT DISTINCT requested_by FROM SEC_POLICY_CHANGE WHERE tenant_id=?", TENANT);
+            List<String> policies = query(ctx, "SELECT policy_id FROM SEC_POLICY_CHANGE WHERE tenant_id=? ORDER BY policy_id", TENANT);
+            fact("four-eyes: fresh database, policy changes of " + TENANT, pending.size() + " PENDING, "
+                    + pendingEvents + " POLICY_CHANGE_PENDING on sec:" + TENANT + ", requested by " + requesters
+                    + ", policies " + policies);
+            assertEquals(6, pendingEvents, "the six self-service grants wait for four-eyes: " + chain);
+            assertEquals(6, pending.size(), "one PENDING change per event");
+            assertEquals(List.of("system"), requesters, "requested by the start (module defaults), no person");
+            assertEquals(List.of(), active(ctx, policies), "no self-service grant is in force before the approval");
+
+            SecurityIdentity rajendra = resolved(ctx, "rajendra.sharma");
+            SecurityIdentity meenakshi = resolved(ctx, "meenakshi.kanwar");
+            for (SecurityIdentity approver : List.of(rajendra, meenakshi)) {
+                List<String> queue = tx.inTransaction(c -> security.policies().pending(c, approver)).stream()
+                        .map(org.sangam.security.admin.PolicyAdminService.PolicyChange::changeId).sorted().toList();
+                List<String> listed = tx.inTransaction(c -> security.directory().policyChanges(c, approver, "PENDING",
+                        0, 100, 1000)).items().stream()
+                        .map(org.sangam.security.admin.PolicyAdminService.PolicyChange::changeId).sorted().toList();
+                fact("four-eyes: queue of " + approver.personId(), queue.size() + " pending (directory list "
+                        + listed.size() + "), roles " + new TreeSet<>(approver.roles()));
+                assertEquals(pending, queue, "every pending change is in the queue of " + approver.personId());
+                assertEquals(pending, listed, "and in the directory list of pending changes");
+            }
+
+            // the difficult cases: the requester, and any other system identity of a start, cannot decide
+            for (SecurityIdentity self : List.of(SecurityIdentity.system(TENANT, "tenant-onboarding"),
+                    SecurityIdentity.system(TENANT, "install-bootstrap"))) {
+                assertThrows(org.sangam.core.security.SangamSecurityException.SodViolation.class,
+                        () -> tx.inTransaction(c -> { security.policies().approve(c, self, pending.get(0)); return null; }),
+                        "a system identity (" + self.onBehalfOf() + ") cannot approve a change the system requested");
+            }
+            assertEquals(6, query(ctx, "SELECT change_id FROM SEC_POLICY_CHANGE WHERE tenant_id=? AND status='PENDING'",
+                    TENANT).size(), "the refused attempts changed nothing");
+
+            // a second person approves: three by each administrator
+            long grantsBefore = chain(ctx, TENANT).stream().filter("GRANT_CHANGED"::equals).count();
+            for (int i = 0; i < pending.size(); i++) {
+                SecurityIdentity approver = i % 2 == 0 ? rajendra : meenakshi;
+                String id = pending.get(i);
+                tx.inTransaction(c -> { security.policies().approve(c, approver, id); return null; });
+            }
+            List<String> decided = query(ctx, "SELECT status || ' by ' || decided_by FROM SEC_POLICY_CHANGE WHERE tenant_id=?"
+                    + " ORDER BY change_id", TENANT);
+            List<String> after = chain(ctx, TENANT);
+            long grants = after.stream().filter("GRANT_CHANGED"::equals).count() - grantsBefore;
+            List<String> inForce = active(ctx, policies);
+            fact("four-eyes: after the approvals", "changes " + decided + "; GRANT_CHANGED +" + grants + "; grants in force "
+                    + inForce.size() + " of " + policies.size());
+            assertEquals(List.of("APPLIED by meenakshi.kanwar", "APPLIED by meenakshi.kanwar", "APPLIED by meenakshi.kanwar",
+                    "APPLIED by rajendra.sharma", "APPLIED by rajendra.sharma", "APPLIED by rajendra.sharma"),
+                    decided.stream().sorted().toList(), "each change applied, decided by the person who approved it");
+            assertEquals(6, grants, "each applied change is audited on sec:" + TENANT);
+            assertEquals(policies, inForce, "every self-service grant is in force");
+            assertEquals(List.of(), tx.inTransaction(c -> security.policies().pending(c, rajendra)), "the queue is empty");
+        }
+        try (ConfigurableApplicationContext ctx = host.startAsDeployed()) {
+            assertEquals(List.of(), query(ctx, "SELECT change_id FROM SEC_POLICY_CHANGE WHERE tenant_id=? AND status='PENDING'",
+                    TENANT), "a further start requests nothing new");
+            assertEquals(6, chain(ctx, TENANT).stream().filter("POLICY_CHANGE_PENDING"::equals).count(),
+                    "and audits no new pending change");
+        }
+    }
+
+    /** The policy ids among {@code ids} that are ACTIVE for the tenant, sorted. */
+    private static List<String> active(ConfigurableApplicationContext ctx, List<String> ids) throws java.sql.SQLException {
+        List<String> out = new ArrayList<>();
+        for (String id : query(ctx, "SELECT policy_id FROM SEC_POLICY WHERE tenant_id=? AND status='ACTIVE' ORDER BY policy_id",
+                TENANT)) {
+            if (ids.contains(id)) {
+                out.add(id);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * The identity of a first administrator as the server resolves a request of theirs (SecurityIdentityFilter: the
+     * token identity, resolved against the organisation model, then limited to tenant groups), from the token the
+     * other tests of this class send.
+     */
+    private static SecurityIdentity resolved(ConfigurableApplicationContext ctx, String person) {
+        org.sangam.security.SangamSecurity security = ctx.getBean(org.sangam.security.SangamSecurity.class);
+        Set<String> groups = Set.of("sangam-tenant-admin", "sangam-user");
+        SecurityIdentity raw = new SecurityIdentity(TENANT, person, person, groups, groups, Set.of(), Set.of(), "OIDC",
+                null, null, false, Map.of("preferred_username", person));
+        SecurityIdentity resolved = new org.sangam.security.identity.ResolvedIdentityCache(security.dialect(),
+                security.principals()).resolve(org.sangam.core.layer.Transactions.of(ctx.getBean(javax.sql.DataSource.class)),
+                raw, false, person, null);
+        resolved = org.sangam.server.security.PlatformIssuers.tenant(resolved);
+        assertEquals(person, resolved.personId(), "resolved to the person FirstAdminBootstrap appointed");
+        return resolved;
     }
 
     // ------------------------------------------------------------------ the fragment
@@ -568,6 +740,16 @@ class PacksOfBootstrapTenantAgainstServerTest {
                 "sec:" + tenant);
     }
 
+    /** The server's log lines saying an id is no tenant; this test's own fact lines, which quote them, are left out. */
+    private static List<String> notATenantLines(CapturedOutput output) {
+        return output.getOut().lines().filter(l -> l.contains(NOT_A_TENANT) && !l.startsWith("PACKS-TENANT |")).toList();
+    }
+
+    /** The role ids of a tenant (SEC_ROLE), sorted. */
+    static List<String> roles(ConfigurableApplicationContext ctx, String tenant) throws java.sql.SQLException {
+        return query(ctx, "SELECT role_id FROM SEC_ROLE WHERE tenant_id=? ORDER BY role_id", tenant);
+    }
+
     static String tenantStatus(ConfigurableApplicationContext ctx, String tenant) throws java.sql.SQLException {
         List<String> s = query(ctx, "SELECT status FROM SEC_TENANT WHERE tenant_id=?", tenant);
         return s.isEmpty() ? null : s.get(0);
@@ -607,7 +789,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
         return "status " + tenantStatus(ctx, tenant) + " " + counts;
     }
 
-    private static List<String> query(ConfigurableApplicationContext ctx, String sql, String... args) throws java.sql.SQLException {
+    static List<String> query(ConfigurableApplicationContext ctx, String sql, String... args) throws java.sql.SQLException {
         try (java.sql.Connection c = ctx.getBean(javax.sql.DataSource.class).getConnection();
              var ps = c.prepareStatement(sql)) {
             for (int i = 0; i < args.length; i++) {

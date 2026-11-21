@@ -21,7 +21,8 @@ import org.slf4j.LoggerFactory;
  * Deploys the discovered packs (sangam-packs §2) for one tenant: one engine deployment per pack
  * ({@code pack:<id>@<version>}, duplicate filtering on, {@code ModelGuard} checks), so repeated calls are idempotent.
  * Called at start-up for {@code sangam.packs.tenants} and, from WS-REST, when a tenant is created or activated
- * ({@code POST/PUT /admin/tenants}) or before a tenant's first package deploy. Each call is audited
+ * ({@code POST/PUT /admin/tenants}, {@code POST /admin/tenants/{id}/activate}) or before a tenant's first package
+ * deploy. Each call is audited
  * ({@code PACKS_DEPLOYED} on {@code sec:<tenant>}).
  *
  * <p>DEC-225-4 ({@link #useProfileTables}): with the packs, the tenant's own delegation tables from its configuration
@@ -57,6 +58,7 @@ public final class PacksTenantDeployer {
         }
         // DEC-225-4: the profile's own tables are checked before any pack is deployed, so a refused set leaves the
         // tenant as it was
+        long began = System.nanoTime();
         ProfileTableDeployer.Plan plan = planTables(tenantId);
         List<PackDeployer.Result> results;
         try {
@@ -87,7 +89,9 @@ public final class PacksTenantDeployer {
         } catch (RuntimeException e) {
             LOG.warn("PACKS_DEPLOYED audit for tenant {} failed: {}", tenantId, e.toString());
         }
-        LOG.info("Deployed {} packs for tenant {}", packs.size(), tenantId);
+        // register E-33 (8): what a start pays for this tenant; "new" is 0 when every pack was already deployed
+        LOG.info("Deployed {} packs for tenant {} in {} ms ({} new deployments)", packs.size(), tenantId,
+                (System.nanoTime() - began) / 1_000_000, results.stream().filter(PackDeployer.Result::newDeployment).count());
         return out;
     }
 

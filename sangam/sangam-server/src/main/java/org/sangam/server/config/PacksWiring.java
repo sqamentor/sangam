@@ -67,7 +67,14 @@ import org.springframework.core.env.Environment;
  *       simulator / in-memory defaults (logged).</li>
  *   <li>{@link PackRegistry#discover()} + {@link PackDeployer}, and the {@link PacksTenantDeployer} hook; packs are
  *       deployed at start-up for {@code sangam.packs.tenants} when {@code sangam.packs.deploy-on-start} is true
- *       (default: true on the h2 profile, false elsewhere).</li>
+ *       (default: true on the h2 profile, false elsewhere), for tenants of this installation only; an id that is no
+ *       tenant is skipped and named at ERROR (register E-33 c). Owner decision E-33 (a), option a4 (2026-11-21,
+ *       EV-M-0960): the start-up deployment is only for the tenants explicitly listed, and only with
+ *       {@code deploy-on-start} on; a set list does not switch it on, and no tenant (the one of
+ *       {@code sangam.security.first-admins.*} included) gets packs at start-up without being listed. Such a tenant is
+ *       named at WARN ({@link #sangamFirstAdminsTenantPacksCheck}); every other tenant gets its packs through
+ *       onboarding or the reviewed package workflow (AJ-01, AJ-06). Which packs: all shipped ones; a selection is made
+ *       only by onboarding (option b3).</li>
  * </ul>
  * Disable with {@code sangam.modules.packs.enabled=false}.
  */
@@ -320,8 +327,8 @@ public class PacksWiring {
     }
 
     /**
-     * Per-tenant pack provisioning through the REST API: after {@code AdminPort.createTenant} /
-     * {@code AdminPort.updateTenant} (status ACTIVE), and before {@code PackagePort.transition} with action
+     * Per-tenant pack provisioning through the REST API: after {@code AdminPort.createTenant},
+     * {@code AdminPort.updateTenant} and {@code AdminPort.activateTenant} (status ACTIVE), and before {@code PackagePort.transition} with action
      * {@code deploy}, the packs are ensured for that tenant ({@link PacksTenantDeployer#ensureDeployed}). Implemented as
      * a decorator around whichever AdminPort / PackagePort bean is active (sangam-rest default or a module bridge).
      */
@@ -338,6 +345,13 @@ public class PacksWiring {
             }
         };
     }
+
+    /**
+     * The AdminPort calls after which a tenant can be ACTIVE: create, update (PUT with status ACTIVE) and, register
+     * E-33 (e), {@code activateTenant}, the route {@code POST /admin/tenants/{id}/activate} of AJ-01 step 10.
+     */
+    private static final java.util.Set<String> PROVISIONING_CALLS =
+            java.util.Set.of("createTenant", "updateTenant", "activateTenant");
 
     private static Object provisioning(Object target, ObjectProvider<PacksTenantDeployer> deployer) {
         Class<?> port = target instanceof org.sangam.rest.port.AdminPort ? org.sangam.rest.port.AdminPort.class
@@ -356,7 +370,7 @@ public class PacksWiring {
                 throw e.getCause();
             }
             if (port == org.sangam.rest.port.AdminPort.class && result instanceof org.sangam.rest.port.AdminPort.Tenant t
-                    && (name.equals("createTenant") || name.equals("updateTenant")) && "ACTIVE".equals(t.status())) {
+                    && PROVISIONING_CALLS.contains(name) && "ACTIVE".equals(t.status())) {
                 ensure(deployer, t.id());
             }
             return result;
@@ -370,29 +384,77 @@ public class PacksWiring {
         }
     }
 
-    /** Start-up deployment of the packs for the configured tenants (dev: on by default). */
+    /**
+     * Start-up deployment of the packs for the configured tenants (dev: on by default). It runs after
+     * {@link FirstAdminBootstrap} ({@link FirstAdminBootstrap#ORDER}), so the tenant of the install exists first, and
+     * it deploys only for tenants of this installation (register E-33 c, {@link #deployAtStart}). It deploys only for
+     * the tenants explicitly listed (owner decision E-33 a, option a4); see the class comment.
+     */
     @Bean
-    public ApplicationRunner sangamPacksDeployOnStart(PacksTenantDeployer deployer, Environment env) {
+    public ApplicationRunner sangamPacksDeployOnStart(PacksTenantDeployer deployer, Environment env,
+            ObjectProvider<SangamSecurity> security, TxSupport tx) {
         return args -> {
-            boolean h2 = Arrays.asList(env.getActiveProfiles()).contains("h2");
-            if (!env.getProperty("sangam.packs.deploy-on-start", Boolean.class, h2)) {
-                return;
-            }
-            List<String> tenants = new ArrayList<>();
-            for (String t : env.getProperty("sangam.packs.tenants",
-                    env.getProperty("sangam.security.dev-token.tenant", "dev")).split(",")) {
-                if (!t.isBlank()) {
-                    tenants.add(t.trim());
-                }
-            }
-            for (String t : tenants) {
-                try {
-                    deployer.deploy(t);
-                } catch (RuntimeException e) {
-                    LOG.error("Pack deployment for tenant {} failed: {}", t, e.toString());
-                }
-            }
+            SangamSecurity sec = security.getIfAvailable();
+            deployAtStart(deployer::deploy, env,
+                    sec == null ? null : id -> tx.withConnection(c -> sec.tenants().find(c, id).isPresent()));
         };
+    }
+
+    /** {@value}: the tenants whose packs are deployed at start-up, comma-separated. */
+    static final String TENANTS_PROPERTY = "sangam.packs.tenants";
+
+    /**
+     * The start-up deployment: when {@code sangam.packs.deploy-on-start} is true (default: only under profile h2),
+     * {@code deploy} is called for each id of {@value #TENANTS_PROPERTY} (default: the dev-token tenant), in order,
+     * each id once. A list that is set never switches the deployment on by itself (owner decision E-33 a, option a4);
+     * the dev-token default applies only under profile h2 when the list is not set at all. On any other profile a
+     * start with the deployment on and no list stops with an {@link IllegalStateException} naming both settings
+     * (owner decision E-33 follow-up 2, EV-M-0966). Register E-33 (c): an id that is no tenant ({@code isTenant}, the tenant directory of
+     * sangam-security) is skipped and named at ERROR; before, every shipped pack was deployed and an audit chain
+     * begun under an id nobody could ever use. The other ids are deployed all the same, as after a failed deployment.
+     * {@code isTenant} is null when there is no tenant directory (sangam-security absent); then every id is deployed.
+     *
+     * @return the ids {@code deploy} was called for, in order
+     */
+    static List<String> deployAtStart(java.util.function.Consumer<String> deploy, Environment env,
+            java.util.function.Predicate<String> isTenant) {
+        boolean h2 = Arrays.asList(env.getActiveProfiles()).contains("h2");
+        if (!env.getProperty("sangam.packs.deploy-on-start", Boolean.class, h2)) {
+            return List.of();
+        }
+        String listed = env.getProperty(TENANTS_PROPERTY);
+        boolean configured = listed != null; // an empty list is a list: nothing is deployed
+        if (!configured && !h2) {
+            // owner decision E-33 follow-up 2 (EV-M-0966, "Refuse outside tests"): only profile h2 falls back to the
+            // dev-token tenant; anywhere else a start that deploys at start-up names its tenants or does not start
+            throw new IllegalStateException("sangam.packs.deploy-on-start=true needs sangam.packs.tenants "
+                    + "(SANGAM_PACKS_TENANTS): list the tenants whose packs are deployed at start-up, comma-separated, "
+                    + "or set sangam.packs.deploy-on-start=false. Only profile h2 falls back to the dev-token tenant.");
+        }
+        java.util.Set<String> tenants = new java.util.LinkedHashSet<>();
+        for (String t : (configured ? listed : env.getProperty("sangam.security.dev-token.tenant", "dev")).split(",")) {
+            if (!t.isBlank()) {
+                tenants.add(t.trim());
+            }
+        }
+        List<String> called = new ArrayList<>();
+        for (String t : tenants) {
+            try {
+                if (isTenant != null && !isTenant.test(t)) {
+                    LOG.error("Start-up pack deployment: '{}' ({}) is no tenant of this installation, so no pack is "
+                            + "deployed for it. Create the tenant first (onboarding, or sangam.security.first-admins.* "
+                            + "for the first tenant of an install) or take the id out of {}.", t,
+                            configured ? TENANTS_PROPERTY : "the default of " + TENANTS_PROPERTY
+                                    + ", sangam.security.dev-token.tenant", TENANTS_PROPERTY);
+                    continue;
+                }
+                called.add(t);
+                deploy.accept(t);
+            } catch (RuntimeException e) {
+                LOG.error("Pack deployment for tenant {} failed: {}", t, e.toString());
+            }
+        }
+        return called;
     }
 
     /** {@value}: the tenant {@link FirstAdminBootstrap} creates and appoints the first administrators of. */

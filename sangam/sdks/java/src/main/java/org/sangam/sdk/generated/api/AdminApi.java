@@ -7,14 +7,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.sangam.sdk.http.ApiRequest;
 import org.sangam.sdk.http.HttpTransport;
 import org.sangam.sdk.generated.model.Delegation;
-import org.sangam.sdk.generated.model.ExplainRequest;
-import org.sangam.sdk.generated.model.ExplainResult;
 import org.sangam.sdk.generated.model.IdentityProvider;
 import org.sangam.sdk.generated.model.IdentitySyncResult;
 import org.sangam.sdk.generated.model.IdentityTestResult;
 import org.sangam.sdk.generated.model.OrgLevels;
-import org.sangam.sdk.generated.model.Policy;
-import org.sangam.sdk.generated.model.PolicyVersion;
 import org.sangam.sdk.generated.model.ReasonRequest;
 import org.sangam.sdk.generated.model.RoleDefinition;
 import org.sangam.sdk.generated.model.Seat;
@@ -25,7 +21,7 @@ import org.sangam.sdk.generated.model.User;
 import org.sangam.sdk.generated.model.UserRequest;
 
 /**
- * Typed operations of {@code Admin} (34 operations), generated from
+ * Typed operations of {@code Admin} (29 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -39,9 +35,6 @@ public final class AdminApi {
     private static final TypeReference<Delegation> R_createDelegation = new TypeReference<>() { };
     private static final TypeReference<Delegation> R_getDelegation = new TypeReference<>() { };
     private static final TypeReference<Delegation> R_revokeDelegation = new TypeReference<>() { };
-    private static final TypeReference<Policy> R_createPolicy = new TypeReference<>() { };
-    private static final TypeReference<PolicyVersion> R_getPolicyVersion = new TypeReference<>() { };
-    private static final TypeReference<ExplainResult> R_explainPolicy = new TypeReference<>() { };
     private static final TypeReference<SodException> R_createSodException = new TypeReference<>() { };
     private static final TypeReference<SodException> R_approveSodException = new TypeReference<>() { };
     private static final TypeReference<SodException> R_rejectSodException = new TypeReference<>() { };
@@ -248,103 +241,6 @@ public final class AdminApi {
         ApiRequest req = ApiRequest.post("/admin/delegations/" + HttpTransport.seg(String.valueOf(id)) + "/revoke");
         req.body(body);
         return call.json(req, options, R_revokeDelegation);
-    }
-
-    /**
-     * List policys
-     *
-     * <p>Tenant-scoped admin list.
-     *
-     * <p>{@code GET /admin/policies} (operationId {@code listPolicies}); permission {@code policy.admin}.
-     * @param q query parameter {@code q}, or null. Free-text search
-     * @param parentId query parameter {@code parentId}, or null
-     * @param orgUnitId query parameter {@code orgUnitId}, or null
-     * @param seatId query parameter {@code seatId}, or null
-     * @param personId query parameter {@code personId}, or null
-     * @param kind query parameter {@code kind}, or null
-     * @param activeOn query parameter {@code activeOn}, or null
-     * @param includeInactive query parameter {@code includeInactive}, or null
-     * @param page query parameter {@code page}, or null. 0-based page index
-     * @param size query parameter {@code size}, or null. Page size
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response with the A-16 count headers
-     */
-    public org.sangam.sdk.model.Page<Policy> listPolicies(String q, String parentId, String orgUnitId, String seatId, String personId, String kind, java.time.LocalDate activeOn, Boolean includeInactive, Long page, Long size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/admin/policies");
-        req.query("q", q);
-        req.query("parentId", parentId);
-        req.query("orgUnitId", orgUnitId);
-        req.query("seatId", seatId);
-        req.query("personId", personId);
-        req.query("kind", kind);
-        req.query("activeOn", activeOn);
-        req.query("includeInactive", includeInactive);
-        req.query("page", page);
-        req.query("size", size);
-        return call.page(req, options, Policy.class, page, size);
-    }
-
-    /**
-     * Create policy
-     *
-     * <p>Creates and audits on the tenant security chain.
-     *
-     * <p>{@code POST /admin/policies} (operationId {@code createPolicy}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param body request body
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 201 response
-     */
-    public Policy createPolicy(Policy body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/admin/policies");
-        req.body(body);
-        return call.json(req, options, R_createPolicy);
-    }
-
-    /**
-     * Delete policy
-     *
-     * <p>Deletes (reason audited).
-     *
-     * <p>{@code DELETE /admin/policies/by-id} (operationId {@code deletePolicy}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id query parameter {@code id}. The item id (client-chosen; may carry '/' or ':')
-     * @param reason query parameter {@code reason}, or null. Mandatory reason (audited, R42)
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     */
-    public void deletePolicy(String id, String reason, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/admin/policies/by-id");
-        req.query("id", id);
-        req.query("reason", reason);
-        call.none(req, options);
-    }
-
-    /**
-     * Policy version
-     *
-     * <p>Current policy_version of the tenant (VI.4 rule 5).
-     *
-     * <p>{@code GET /admin/policies/version} (operationId {@code getPolicyVersion}); permission {@code policy.admin}.
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public PolicyVersion getPolicyVersion(RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/admin/policies/version");
-        return call.json(req, options, R_getPolicyVersion);
-    }
-
-    /**
-     * Explain an authorization decision
-     *
-     * <p>Which grants and denies match (deny wins, A-13) at the current policy version (VI.4).
-     *
-     * <p>{@code POST /admin/policies/explain} (operationId {@code explainPolicy}); permission {@code policy.admin}.
-     * @param body request body
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public ExplainResult explainPolicy(ExplainRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/admin/policies/explain");
-        req.body(body);
-        return call.json(req, options, R_explainPolicy);
     }
 
     /**
