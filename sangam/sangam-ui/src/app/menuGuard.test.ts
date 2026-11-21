@@ -6,7 +6,7 @@
  * bare role with no permissions.
  */
 import { describe, expect, it } from 'vitest';
-import { ROUTES, menuGroups, menuRoutes, opens } from './routeGuards.testkit';
+import { ROUTES, admits, menuEntryOf, menuGroups, menuRoutes, opens } from './routeGuards.testkit';
 import { SERVER_GROUPS, callerOf } from './serverGroups.testkit';
 
 const DEPARTMENT_TOOLS = ['/m/ledger', '/m/billing', '/m/programmes', '/m/resources', '/m/queues', '/m/rosters', '/m/geo', '/m/field', '/m/ai'];
@@ -196,5 +196,127 @@ describe('U12h: Event types is not offered to a caller without event.admin', () 
     expect(tenantAdmin.permissions).toContain('event.admin');
     expect(opens(tenantAdmin, '/ops/events')).toBe(false);
     expect(menuRoutes(tenantAdmin)).not.toContain('/ops/events');
+  });
+});
+
+/**
+ * Every route of the signed-in table against its menu entry, for the caller GET /me describes per server group.
+ * A cell: M = the guard admits the caller and the entry (for a sub-page: the entry above it) is in his menu;
+ * o = the guard admits him and the page has no menu entry for anyone (opened from a list, the banner or a link);
+ * . = the guard refuses him and his menu does not offer it; R = the guard admits him but his menu has no entry (each
+ * one is listed in INTENDED with its reason); X = his menu offers a page the guard refuses (never).
+ */
+const INTENDED: Record<string, string[]> = {
+  'the status page of the channels is an administrator\'s job (nav.ts channelStatus; kept as built, U12 "no change")': [
+    '/m/channels | sangam-user',
+    '/m/channels | sangam-operator',
+    '/m/channels | sangam-auditor',
+  ],
+  'decision 397 Q6: a task user reads a request\'s history from inside the request; no audit entries in his menu': [
+    '/audit | sangam-user',
+    '/audit/timeline/:businessKey | sangam-user',
+    '/audit/exports | sangam-user',
+  ],
+  'a request page opened from the operator\'s lists (Requests in Monitor and fix); My requests is a task user\'s entry': [
+    '/cases/:id | sangam-operator',
+    '/cases/:id | sangam-admin',
+    '/cases/:id | sangam-engine-admin',
+  ],
+  'U12a: Department tools are not in an auditor\'s menu (he holds the module reads; route guards unchanged)': [
+    '/m/resources | sangam-auditor',
+    '/m/queues | sangam-auditor',
+    '/m/rosters | sangam-auditor',
+    '/m/ledger | sangam-auditor',
+    '/m/billing | sangam-auditor',
+    '/m/programmes | sangam-auditor',
+    '/m/geo | sangam-auditor',
+  ],
+  'U12a: Track and find is not in an administrator\'s menu (he holds the module reads; route guards unchanged)': [
+    '/m/registry | sangam-tenant-admin',
+    '/m/registry | sangam-admin',
+    '/m/case-files | sangam-tenant-admin',
+    '/m/case-files | sangam-admin',
+    '/m/committees | sangam-tenant-admin',
+    '/m/committees | sangam-admin',
+    '/m/references | sangam-tenant-admin',
+    '/m/references | sangam-admin',
+  ],
+  'U12a: Design is the designers\' group; Test run alone does not bring it to operators (route guard unchanged)': [
+    '/design/test | sangam-operator',
+    '/design/test | sangam-admin',
+    '/design/test | sangam-engine-admin',
+  ],
+  'U12h: Event types is hidden from a caller without event.admin; the record changes the menu only, not the guard': [
+    '/ops/events | sangam-operator',
+    '/ops/events | sangam-engine-admin',
+  ],
+};
+
+describe('every route against its menu entry, per server group', () => {
+  const rows = ROUTES.filter((r) => r.kind !== 'redirect');
+  const cell = (path: string, group: string): string => {
+    const r = rows.find((x) => x.path === path)!;
+    const me = callerOf(group);
+    const entry = menuEntryOf(path);
+    const open = admits(r, me);
+    const inMenu = entry !== null && menuRoutes(me).includes(entry);
+    if (open) return entry === null ? 'o' : inMenu ? 'M' : 'R';
+    return entry === path && inMenu ? 'X' : '.';
+  };
+  const cells = (symbol: string) => rows.flatMap((r) => SERVER_GROUPS.filter((g) => cell(r.path, g) === symbol).map((g) => `${r.path} | ${g}`));
+
+  it('no menu offers a page its route guard refuses', () => {
+    expect(cells('X')).toEqual([]);
+  });
+
+  it('a page open to a caller without a menu entry is one of the listed, intended cases, and every listed case exists', () => {
+    const intended = Object.values(INTENDED).flat();
+    expect(new Set(intended).size).toBe(intended.length);
+    expect(cells('R').sort()).toEqual([...intended].sort());
+    expect(intended).toHaveLength(29);
+  });
+
+  it('every menu entry is a route of the table, and every caller\'s menu is covered by the table', () => {
+    for (const g of SERVER_GROUPS) for (const to of menuRoutes(callerOf(g))) expect(rows.some((r) => r.path === to || r.path === `${to}/:tenant?`), `${g} ${to}`).toBe(true);
+  });
+
+  it('writes the table (src/app/__snapshots__/route-menu-table.md)', async () => {
+    const short = (g: string) => g.replace(/^sangam-/, '');
+    const reasonOf = (key: string) => Object.entries(INTENDED).find(([, v]) => v.includes(key))?.[0] ?? '';
+    const lines = [
+      '# Routes against the menu, per server group',
+      '',
+      'Generated by `src/app/menuGuard.test.ts` from `App.tsx` (route guards), `nav.ts` (menu) and the server\'s default',
+      'group permissions (`Permissions.java`, roles as `OperatonWorkspaceAdapter` derives them). Do not edit by hand:',
+      'run `npx vitest --run src/app/menuGuard.test.ts -u`.',
+      '',
+      'M = open and in the menu (for a sub-page: the entry above it); o = open, the page has no menu entry for anyone;',
+      '. = refused and not offered; R = open but not in this caller\'s menu (listed below); X = offered but refused.',
+      '',
+      `| Route | Guard | Menu entry | ${SERVER_GROUPS.map(short).join(' | ')} |`,
+      `|---|---|---|${SERVER_GROUPS.map(() => '---').join('|')}|`,
+      ...rows.map((r) => {
+        const guard = r.kind === 'roles' ? r.roles!.join(', ') : r.kind === 'access' ? [...r.access!.roles, ...r.access!.perms.map((p) => `perm ${p}`)].join(', ') : 'signed in';
+        return `| ${r.path} | ${guard} | ${menuEntryOf(r.path) ?? '-'} | ${SERVER_GROUPS.map((g) => cell(r.path, g)).join(' | ')} |`;
+      }),
+      '',
+      `Redirects: ${ROUTES.filter((r) => r.kind === 'redirect').map((r) => `${r.path} to ${r.redirectTo}`).join('; ')}.`,
+      '',
+      `Totals: ${rows.length} routes x ${SERVER_GROUPS.length} groups = ${rows.length * SERVER_GROUPS.length} cells; M ${cells('M').length}, o ${cells('o').length}, . ${cells('.').length}, R ${cells('R').length}, X ${cells('X').length}.`,
+      '',
+      '## Open without a menu entry (R), each intended',
+      '',
+      '| Route | Group | Reason |',
+      '|---|---|---|',
+      ...cells('R').map((k) => `| ${k.split(' | ')[0]} | ${k.split(' | ')[1]} | ${reasonOf(k)} |`),
+      '',
+      '## Menu per server group',
+      '',
+      '| Group | Roles (GET /me) | Menu groups | Entries |',
+      '|---|---|---|---|',
+      ...SERVER_GROUPS.map((g) => `| ${g} | ${callerOf(g).roles.join(', ') || '-'} | ${menuGroups(callerOf(g)).join(', ')} | ${menuRoutes(callerOf(g)).length} |`),
+      '',
+    ];
+    await expect(lines.join('\n')).toMatchFileSnapshot('./__snapshots__/route-menu-table.md');
   });
 });
