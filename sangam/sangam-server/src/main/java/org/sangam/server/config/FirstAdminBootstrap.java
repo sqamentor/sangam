@@ -27,10 +27,16 @@ import org.springframework.core.env.Environment;
  * creates the tenant if it is missing and appoints them. It acts only when the tenant has no administrator role yet, so
  * later runs change nothing and the settings can be removed after the install.
  * <p>
- * It deploys no workflow pack (register E-25): the tenant is created in sangam-security directly, not through
- * {@code AdminPort}, so the hooks on tenant creation do not run, and which packs a tenant gets is decided by onboarding
- * or by {@code sangam.packs.deploy-on-start} with {@code sangam.packs.tenants}. A start that leaves this tenant without
- * a pack says so at WARN ({@code PacksWiring#sangamFirstAdminsTenantPacksCheck}).
+ * The tenant is created in sangam-security directly, not through {@code AdminPort}, so the hooks on
+ * {@code AdminPort.createTenant} do not run by themselves. The module defaults (role templates and self-service
+ * grants, {@code SecurityKeysWiring#sangamModuleDefaultsOnboarding}) are installed here for a tenant this bootstrap
+ * creates, with the same call (register E-33 f); a tenant that existed before is left as it is, and its
+ * administrators install them with {@code POST /api/v1/admin/security/module-defaults}.
+ * <p>
+ * It deploys no workflow pack (register E-25): which packs a tenant gets is decided by onboarding or by
+ * {@code sangam.packs.deploy-on-start} with {@code sangam.packs.tenants}; that start-up deployment runs after this
+ * bootstrap ({@link #ORDER}). A start that leaves this tenant without a pack says so at WARN
+ * ({@code PacksWiring#sangamFirstAdminsTenantPacksCheck}).
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "sangam.security.first-admins.tenant")
@@ -66,9 +72,11 @@ public class FirstAdminBootstrap {
             }
             SecurityIdentity platform = SecurityIdentity.system(tenant, "install-bootstrap")
                     .withGroupsAndRoles(Set.of(), Set.of("system", TenantAdminService.PLATFORM_ADMIN_ROLE));
+            boolean[] created = {false};
             Transactions.of(ds).inTransaction(c -> {
                 if (security.tenants().find(c, tenant).isEmpty()) {
                     security.tenants().createTenant(c, platform, tenant, tenant, null, null, null, Map.of());
+                    created[0] = true;
                 }
                 try (var ps = c.prepareStatement("SELECT 1 FROM SEC_ROLE WHERE tenant_id=? AND role_id=?")) {
                     ps.setString(1, tenant);
@@ -84,6 +92,10 @@ public class FirstAdminBootstrap {
                 security.roles().bootstrapTenantAdmins(c, platform, tenant, seeds);
                 return null;
             });
+            if (created[0]) {
+                // register E-33 (f): the hook on tenant creation that this bootstrap does not pass through
+                SecurityKeysWiring.installDefaults(security, ds, tenant);
+            }
         };
     }
 }
