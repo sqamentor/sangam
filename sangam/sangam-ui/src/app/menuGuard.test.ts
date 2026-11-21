@@ -6,6 +6,7 @@
  * bare role with no permissions.
  */
 import { describe, expect, it } from 'vitest';
+import { NAV_ITEMS } from './nav';
 import { ROUTES, admits, menuEntryOf, menuGroups, menuRoutes, opens } from './routeGuards.testkit';
 import { SERVER_GROUPS, callerOf } from './serverGroups.testkit';
 
@@ -289,6 +290,19 @@ describe('every route against its menu entry, per server group', () => {
     for (const g of SERVER_GROUPS) for (const to of menuRoutes(callerOf(g))) expect(rows.some((r) => r.path === to || r.path === `${to}/:tenant?`), `${g} ${to}`).toBe(true);
   });
 
+  // Follow-up 2 (2): the platform administrator holds "*" and every administrator role; U12a must not cost him a link.
+  it('every route the platform administrator can open keeps a menu link', () => {
+    const admin = callerOf('sangam-admin');
+    expect(admin).toEqual({ groups: ['sangam-admin', 'sangam-platform'], roles: ['ADMIN', 'PLATFORM_ADMIN', 'PLATFORM_OPERATOR', 'ANALYST'], permissions: ['*'] });
+    const menu = menuRoutes(admin);
+    // every menu entry whose route admits him is in his menu
+    expect(NAV_ITEMS.map((i) => i.to).filter((to) => to !== '/verify' && opens(admin, to) && !menu.includes(to))).toEqual([]);
+    // and every other route he can open is a page under one of his entries, a page without any menu entry, or the
+    // request page, which he opens from Requests in Monitor and fix (/ops/cases, OpsMisc.tsx)
+    const withoutLink = rows.filter((r) => cell(r.path, 'sangam-admin') === 'R').map((r) => r.path);
+    expect(withoutLink).toEqual(['/cases/:id']);
+    expect(menu).toContain('/ops/cases');
+  });
   it('writes the table (src/app/__snapshots__/route-menu-table.md)', async () => {
     const short = (g: string) => g.replace(/^sangam-/, '');
     const reasonOf = (key: string) => Object.entries(INTENDED).find(([, v]) => v.includes(key))?.[0] ?? '';
