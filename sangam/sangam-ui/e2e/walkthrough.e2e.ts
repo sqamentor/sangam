@@ -312,6 +312,41 @@ test('the walkthrough of the presentation: sign-in, seat, bill, dealing hand and
     return 'the sign-in screen is shown again';
   });
 
+  // DIAGNOSTIC ONLY (branch diag/loader-walk-fu3-case): where the case stands, read-only, through the Sangam-authenticated
+  // Operaton REST (/engine-rest, proxied by the UI image)
+  {
+    const eng = await request.newContext({ baseURL: `${API_BASE.replace(/\/api\/v1\/?$/, '')}/engine-rest/`, extraHTTPHeaders: { Authorization: `Bearer ${devToken()}`, Accept: 'application/json' } });
+    const get = async (p: string, params: Record<string, string>) => {
+      const r = await eng.get(p, { params });
+      const txt = await r.text();
+      return { status: r.status(), body: (() => { try { return JSON.parse(txt) as Json[]; } catch { return txt.slice(0, 400) as unknown as Json[]; } })() };
+    };
+    const pis = await get('history/process-instance', { processInstanceBusinessKey: businessKey });
+    console.log(`CASE | instances ${pis.status} | ${JSON.stringify(Array.isArray(pis.body) ? pis.body.map((p) => ({ id: p.id, key: p.processDefinitionKey, state: p.state, end: p.endActivityId, super: p.superProcessInstanceId })) : pis.body).slice(0, 1500)}`);
+    for (const p of Array.isArray(pis.body) ? pis.body : []) {
+      const id = String(p.id);
+      const acts = await get('history/activity-instance', { processInstanceId: id, sortBy: 'startTime', sortOrder: 'asc' });
+      console.log(`CASE | ${String(p.processDefinitionKey)} ${id} activities ${acts.status} | ${JSON.stringify(Array.isArray(acts.body) ? acts.body.map((a) => `${String(a.activityId)}${a.endTime ? '' : '(open)'}${a.canceled ? '(canceled)' : ''}`) : acts.body).slice(0, 2500)}`);
+      const inc = await get('incident', { processInstanceId: id });
+      console.log(`CASE | ${id} incidents ${inc.status} | ${JSON.stringify(Array.isArray(inc.body) ? inc.body.map((i) => ({ act: i.activityId, type: i.incidentType, msg: String(i.incidentMessage ?? '').slice(0, 300) })) : inc.body).slice(0, 2000)}`);
+      const jobs = await get('job', { processInstanceId: id });
+      console.log(`CASE | ${id} jobs ${jobs.status} | ${JSON.stringify(Array.isArray(jobs.body) ? jobs.body.map((j) => ({ retries: j.retries, due: j.dueDate, msg: String(j.exceptionMessage ?? '').slice(0, 300) })) : jobs.body).slice(0, 1500)}`);
+      const vars = await get('history/variable-instance', { processInstanceId: id });
+      const keep = /^(funds|doc|cls|dup|payee|pao|ledger|amount|headOfAccount|ddoCode|billType|enc|seat|scrutiny|dealing|chain|outcome|execution|reason)/i;
+      console.log(`CASE | ${id} variables ${vars.status} | ${JSON.stringify(Array.isArray(vars.body) ? vars.body.filter((v) => keep.test(String(v.name))).map((v) => `${String(v.name)}=${JSON.stringify(v.value)?.slice(0, 80)}`) : vars.body).slice(0, 3000)}`);
+    }
+    const tasks = await get('task', { processInstanceBusinessKey: businessKey });
+    console.log(`CASE | engine tasks ${tasks.status} | ${JSON.stringify(Array.isArray(tasks.body) ? tasks.body.map((x) => ({ id: x.id, key: x.taskDefinitionKey, assignee: x.assignee, pi: x.processInstanceId })) : tasks.body).slice(0, 1500)}`);
+    const api = await admin();
+    const st = await api.get('tasks', { params: { businessKey, size: 100 } });
+    console.log(`CASE | GET /tasks?businessKey ${st.status()} | ${(await st.text()).slice(0, 1500)}`);
+    for (const s of SEATS) {
+      const sr = await (await admin(s)).get('tasks', { params: { businessKey, size: 100 } });
+      console.log(`CASE | GET /tasks?businessKey as ${s} ${sr.status()} | ${(await sr.text()).slice(0, 600)}`);
+    }
+    await api.dispose();
+    await eng.dispose();
+  }
   for (const line of report) {
     console.log(line);
     test.info().annotations.push({ type: 'walkthrough', description: line });
