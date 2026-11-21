@@ -112,12 +112,11 @@ export const ROUTE_ACCESS: Record<string, Access> = {
   // M-034/M-035 /onboarding/**: tenant.admin AND sangam-admin (OnboardingController.java:70-73,
   // PromotionController.java:68-72).
   '/admin/onboarding': PLATFORM_ADMIN_ONLY,
-  // M-031, U12g (owner, 2026-11-21: administrators only). The list call GET /custom-fields needs form.read
-  // (TenantCustomFieldController.java:170), which every task user, operator and designer holds for filling forms, so
-  // that permission brought "Set up" with this one entry into their menus. The page's job, defining and retiring a
-  // field, needs tenant.admin (:190, :212): held by sangam-tenant-admin (role ADMIN, who also holds form.read, SL-166)
-  // and sangam-admin ("*"). This is the one entry that asks for the permission of the page's job, not of its first call.
-  '/admin/custom-fields': { roles: ['ADMIN', 'PLATFORM_ADMIN'], perms: ['tenant.admin'] },
+  // M-031 GET /custom-fields: form.read (TenantCustomFieldController.java:170); held by USER_BASE groups (TASK_USER,
+  // OPERATOR, Permissions.java:113-123), sangam-model-author (MODELLER, :134) and sangam-admin. Defining and retiring need
+  // tenant.admin (:190, :212); the server refuses them to a holder of form.read alone.
+  // U12g: the menu entry is limited to administrators in nav.ts; this route guard is unchanged.
+  '/admin/custom-fields': { roles: ['PLATFORM_ADMIN'], perms: ['form.read'] },
   // M-032 POST /admin/security/module-defaults: tenant.admin (SecurityDefaultsController.java:48), held by
   // sangam-tenant-admin (Permissions.java:128, role ADMIN) and sangam-admin.
   '/admin/security-defaults': { roles: ['ADMIN', 'PLATFORM_ADMIN'], perms: ['tenant.admin'] },

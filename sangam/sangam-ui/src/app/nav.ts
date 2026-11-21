@@ -257,7 +257,8 @@ export const NAV: NavArea[] = [
           // channels.read is a module read held by every staff role; the status page is an administrator's job.
           e('setup', 'channelStatus', '/m/channels', { access: ROUTE_ACCESS['/m/channels'], module: MODULE_OF['/m/channels'], only: ['ADMIN', 'PLATFORM_ADMIN'] }),
           e('setup', 'agents', '/admin/agents'),
-          mod('setup', 'customFields', '/admin/custom-fields'),
+          // U12g: form.read (the list call) is held by every task user, operator and designer; the page is an administrator's job.
+          mod('setup', 'customFields', '/admin/custom-fields', { only: ['ADMIN', 'PLATFORM_ADMIN'] }),
         ],
       },
       {

@@ -107,11 +107,8 @@ describe('W2-C admin screens follow the server gates', () => {
     expect(canAccess(me([], ['ops.tenant.admin']), ROUTE_ACCESS['/admin/bulk'])).toBe(true);
     expect(canAccess(me(['OPERATOR']), ROUTE_ACCESS['/admin/bulk'])).toBe(false);
   });
-  it('custom fields: administrators (tenant.admin), not every holder of form.read (U12g); module defaults: tenant.admin', () => {
-    expect(canAccess(me([], ['form.read']), ROUTE_ACCESS['/admin/custom-fields'])).toBe(false);
-    expect(canAccess(me(['TASK_USER'], ['form.read']), ROUTE_ACCESS['/admin/custom-fields'])).toBe(false);
-    expect(canAccess(me(['ADMIN']), ROUTE_ACCESS['/admin/custom-fields'])).toBe(true);
-    expect(canAccess(me([], ['tenant.admin']), ROUTE_ACCESS['/admin/custom-fields'])).toBe(true);
+  it('custom fields: form.read for the list; module defaults: tenant.admin', () => {
+    expect(canAccess(me([], ['form.read']), ROUTE_ACCESS['/admin/custom-fields'])).toBe(true);
     expect(canAccess(me(['AUDITOR']), ROUTE_ACCESS['/admin/custom-fields'])).toBe(false);
     expect(canAccess(me(['ADMIN']), ROUTE_ACCESS['/admin/security-defaults'])).toBe(true);
     expect(canAccess(me(['TASK_USER']), ROUTE_ACCESS['/admin/security-defaults'])).toBe(false);

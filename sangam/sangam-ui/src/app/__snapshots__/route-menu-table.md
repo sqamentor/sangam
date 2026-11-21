@@ -29,7 +29,7 @@ M = open and in the menu (for a sub-page: the entry above it); o = open, the pag
 | /admin/config | ADMIN, PLATFORM_ADMIN | /admin/config | . | . | . | . | . | M | M | . | . | . | . | . | . | . | . | . |
 | /admin/onboarding | PLATFORM_ADMIN | /admin/onboarding | . | . | . | . | . | . | M | . | . | . | . | . | . | . | . | . |
 | /admin/packs | PLATFORM_ADMIN | /admin/packs | . | . | . | . | . | . | M | . | . | . | . | . | . | . | . | . |
-| /admin/custom-fields | ADMIN, PLATFORM_ADMIN, perm tenant.admin | /admin/custom-fields | . | . | . | . | . | M | M | . | . | . | . | . | . | . | . | . |
+| /admin/custom-fields | PLATFORM_ADMIN, perm form.read | /admin/custom-fields | R | . | R | . | . | M | M | . | R | . | . | . | . | . | . | . |
 | /admin/bulk | ADMIN, PLATFORM_ADMIN, perm ops.tenant.admin | /admin/bulk | . | . | . | . | . | M | M | . | . | . | . | . | . | . | . | . |
 | /admin/security-defaults | ADMIN, PLATFORM_ADMIN, perm tenant.admin | /admin/security-defaults | . | . | . | . | . | M | M | . | . | . | . | . | . | . | . | . |
 | /admin/dsc-certificates | ADMIN, PLATFORM_ADMIN, perm dsc.certificate.approve | /admin/dsc-certificates | . | . | . | . | . | M | M | . | . | . | . | . | . | . | . | . |
@@ -127,7 +127,7 @@ M = open and in the menu (for a sub-page: the entry above it); o = open, the pag
 
 Redirects: /inbox to /tasks; /ops/task-dashboard to /team; /ops/debugger to /design/test.
 
-Totals: 115 routes x 16 groups = 1840 cells; M 339, o 112, . 1360, R 29, X 0.
+Totals: 115 routes x 16 groups = 1840 cells; M 339, o 112, . 1357, R 32, X 0.
 
 ## Open without a menu entry (R), each intended
 
@@ -136,6 +136,9 @@ Totals: 115 routes x 16 groups = 1840 cells; M 339, o 112, . 1360, R 29, X 0.
 | /m/channels | sangam-user | the status page of the channels is an administrator's job (nav.ts channelStatus; kept as built, U12 "no change") |
 | /m/channels | sangam-operator | the status page of the channels is an administrator's job (nav.ts channelStatus; kept as built, U12 "no change") |
 | /m/channels | sangam-auditor | the status page of the channels is an administrator's job (nav.ts channelStatus; kept as built, U12 "no change") |
+| /admin/custom-fields | sangam-user | U12g: Extra fields is an administrator entry; the ruling changes the menu only, the guard (form.read) stays as built |
+| /admin/custom-fields | sangam-operator | U12g: Extra fields is an administrator entry; the ruling changes the menu only, the guard (form.read) stays as built |
+| /admin/custom-fields | sangam-model-author | U12g: Extra fields is an administrator entry; the ruling changes the menu only, the guard (form.read) stays as built |
 | /m/registry | sangam-tenant-admin | U12a: Track and find is not in an administrator's menu (he holds the module reads; route guards unchanged) |
 | /m/registry | sangam-admin | U12a: Track and find is not in an administrator's menu (he holds the module reads; route guards unchanged) |
 | /m/resources | sangam-auditor | U12a: Department tools are not in an auditor's menu (he holds the module reads; route guards unchanged) |
