@@ -1,0 +1,6 @@
+{
+  "modules": "sangam-core",
+  "dbs": "postgres",
+  "chunks": "A-contracts",
+  "ui": false
+}
