@@ -1303,33 +1303,43 @@ op("get", "/admin/policies/version", "getPolicyVersion", "Admin", "Policy versio
 schema("PolicyChange", "A requested policy change of the caller's tenant (four-eyes, VI.4, R43). `policy` is the definition "
        "the change applies (for DELETE the policy as it is). requestedBy is a person id, or `system` for a change the "
        "server requested (module defaults of a new tenant).",
-       "id policyId operation status policy:Policy requestedBy requestedAt:dt reason decidedBy decidedAt:dt",
+       "id policyId operation status policy:Policy requestedBy requestedAt:dt requestReason decidedBy decidedAt:dt "
+       "decisionReason",
        ["id", "policyId", "operation", "status", "requestedBy", "requestedAt"],
        enums={"operation": ["CREATE", "UPDATE", "DELETE"], "status": ["PENDING", "APPLIED", "REJECTED", "SUPERSEDED"]},
-       descs={"reason": "The reason given with the request (R42)",
-              "decidedBy": "Person who approved or rejected it; null while PENDING",
-              "decidedAt": "When it was decided (database time); null while PENDING"})
+       descs={"requestReason": "The reason given with the request (R42); never overwritten by the decision",
+              "decidedBy": "Person who approved or rejected it; null while PENDING (for SUPERSEDED the system step)",
+              "decidedAt": "When it was decided (database time); null while PENDING",
+              "decisionReason": "The reason given with the approval or rejection (R42); null while PENDING"})
 CHANGE_ID = pp("id", "Change id, a UUID the server generates (SEC_POLICY_CHANGE)")
 CHANGE_ID["schema"]["format"] = "uuid"  # decision 393: proven by schema
 op("get", "/admin/policies/changes", "listPolicyChanges", "Admin", "Policy changes",
    "Policy changes of the caller's tenant, newest request first; status PENDING (the default) is the approver's queue. "
-   "Needs policy read in sangam-security (403 ACTION_NOT_PERMITTED, audited AUTH_DENIED).", ["VI.4", "R43", "R19"],
+   "Needs policy read in sangam-security (403 ACTION_NOT_PERMITTED, audited AUTH_DENIED). 421 TENANT_MOVED / "
+   "TENANT_NOT_ON_INSTANCE as on every operation (M-016).", ["VI.4", "R43", "R19"],
    list_=True, params=[q("status", enum=["PENDING", "APPLIED", "REJECTED", "SUPERSEDED"],
                          desc="Default PENDING")], resp=(200, "array:PolicyChange"), perm="policy.admin", errors=STD_R)
 op("get", "/admin/policies/changes/{id}", "getPolicyChange", "Admin", "Policy change",
-   "One policy change of the caller's tenant; 404 NOT_FOUND for an id of another tenant or none.", ["VI.4", "R43"],
+   "One policy change of the caller's tenant; 404 NOT_FOUND for an id of another tenant or none. 421 as on every "
+   "operation (M-016).", ["VI.4", "R43"],
    params=[CHANGE_ID], resp=(200, "PolicyChange"), perm="policy.admin", errors=GET_E)
 for act, verb, effect in (("approve", "Approve", "APPLIED: the change is applied in the same transaction and audited "
-                           "GRANT_CHANGED or DENY_CHANGED (policy_version, change_id, requested_by, decided_by)"),
+                           "GRANT_CHANGED or DENY_CHANGED (new_policy_version, change_id, requested_by, decided_by, "
+                           "reason)"),
                           ("reject", "Reject", "REJECTED: nothing is applied; audited POLICY_CHANGE_PENDING with "
-                           "operation REJECT (change_id, policy_id, reason), as the SUPERSEDE of decision 392")):
+                           "operation REJECT (change_id, policy_id, requested_by, decided_by, reason), as the SUPERSEDE "
+                           "of decision 392")):
     op("post", "/admin/policies/changes/{id}/" + act, act + "PolicyChange", "Admin", verb + " a policy change",
-       "Four-eyes decision of a PENDING change (R43): " + effect + ". The decider must hold policy change-grant in "
-       "sangam-security (403 ACTION_NOT_PERMITTED, audited AUTH_DENIED) and must not be the requester "
-       "(422 SOD_VIOLATION, audited SOD_VIOLATION_BLOCKED; a change requested by `system` can be decided by any person "
-       "who holds the permission, never by a system identity). 404 NOT_FOUND (no such change of the caller's tenant), "
-       "409 CHANGE_NOT_PENDING (already decided or superseded), 400 POLICY_REJECTED (approve of a change that no longer "
-       "compiles, e.g. several principals, decision 392). Idempotency-Key: a replay answers the stored result.",
+       "Four-eyes decision of a PENDING change (R43): " + effect + ". The body's reason is stored as decisionReason; "
+       "requestReason is kept. The decider must hold policy change-grant in sangam-security (403 ACTION_NOT_PERMITTED, "
+       "audited AUTH_DENIED) and must not be the requester, for approve and reject alike (no self-reject, no withdraw): "
+       "422 SOD_VIOLATION, audited SOD_VIOLATION_BLOCKED. A system identity never decides (422 SOD_VIOLATION); a change "
+       "requested by `system` is decided by any person who holds the permission. 404 NOT_FOUND (no such change of the "
+       "caller's tenant), 409 CHANGE_NOT_PENDING (already decided or superseded), 400 VALIDATION_FAILED (reason "
+       "missing) and, for approve, 400 POLICY_REJECTED (a change that no longer compiles, e.g. several principals, "
+       "decision 392). Idempotency-Key: a replay answers the stored result; 503 AUDIT_UNAVAILABLE when a replay's "
+       "IDEMPOTENT_REPLAY audit row cannot be written (every idempotent command, RM-10). 421 TENANT_MOVED / "
+       "TENANT_NOT_ON_INSTANCE as on every operation (M-016).",
        ["VI.4", "R43", "R41", "R42", "CX-8"], params=[CHANGE_ID], body="ReasonRequest",
        resp=(200, "PolicyChange"), cmd="admin.policy-change." + act, perm="policy.admin",
        errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "Conflict", "Unprocessable"))
