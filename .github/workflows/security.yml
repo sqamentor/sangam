@@ -346,6 +346,10 @@ jobs:
           name: ledger-security-gitleaks
           path: results/
           if-no-files-found: error
+      - name: Allowlist proof (each narrow allowlist suppresses its shape only; throw-away repo, random values)
+        env:
+          GITLEAKS_BIN: ${{ runner.temp }}/bin/gitleaks
+        run: python3 -I .github/scripts/test_gitleaks_allowlists.py -v
 
   scorecard:
     name: OpenSSF Scorecard (report-only, not a required check)

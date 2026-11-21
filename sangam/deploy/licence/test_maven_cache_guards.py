@@ -196,6 +196,24 @@ class WriterCoversLaterFetches(unittest.TestCase):
                         bad.append(f"{name}:{job}")
         self.assertEqual(bad, [], "cache writer jobs that do not run .github/actions/maven-cache/prefetch.sh")
 
+    def test_the_default_branch_scope_has_a_cache_writer(self):
+        # A ci/* branch can restore only its own caches and the default branch's (GitHub cache scoping). Before this,
+        # the only writer was ci-lanes `deps`, which runs on ci/** only, so main never held the Maven cache and every
+        # new lane branch started cold (run 44879593721: both keys missed; `gh cache list` 2026-11-21: 43 entries,
+        # 11.1 GB, none on refs/heads/main).
+        found = []
+        for name in sorted(os.listdir(WORKFLOWS)):
+            with open(os.path.join(WORKFLOWS, name), encoding="utf-8") as f:
+                text = f.read()
+            on = re.search(r"(?ms)^on:\s*\n(.*?)^\S", text)
+            if not on or not re.search(r"(?m)^  schedule:", on.group(1)) \
+                    or not re.search(r"(?ms)^  push:\s*\n\s+branches:\s*\[\s*main\s*\]", on.group(1)):
+                continue
+            for job, body in jobs(text):
+                if re.search(r"maven-cache\s*\n\s*with:\s*\n\s*save:\s*\"true\"", body) and "prefetch.sh" in body:
+                    found.append(f"{name}:{job}")
+        self.assertEqual(len(found), 1, f"exactly one main-scope (push main + schedule) Maven cache writer: {found}")
+
     def test_prefetch_runs_the_inventory_through_the_bounded_retry(self):
         with open(os.path.join(ACTION, "prefetch.sh"), encoding="utf-8") as f:
             s = f.read()
@@ -314,6 +332,29 @@ printf 'not the zip' > "$part"; printf '%s' "$code"
         self.assertIn(f"SHA-256 mismatch for {self.FALLBACK}", log)
         self.assertFalse(self.cached, "refused bytes must never land in the distribution cache")
         self.assertNotIn("MVNW_REPOURL", log)
+
+    def test_429_without_retry_after_on_every_attempt_takes_the_archive_once(self):
+        # Run 44879593721 (ci/packs-boot-15ce4cdb-e07382, cold cache): 'HTTP/2 429' with no Retry-After on all 5
+        # attempts (waits 60+120+180+240 s), then the job failed. Waiting longer on the same egress cannot help.
+        rc, log, calls = self.run_fetch(["429", "429", "429", "429", "429", "200"])
+        self.assertEqual(calls, 6, "5 bounded Central attempts, then exactly one archive attempt")
+        self.assertTrue(all(u.startswith("https://repo.maven.apache.org/maven2/") for u in self.urls[:5]), self.urls)
+        self.assertEqual(self.urls[5], self.FALLBACK)
+        self.assertIn(f"SHA-256 mismatch for {self.FALLBACK}", log, "the archive bytes pass the same checksum")
+        self.assertNotEqual(rc, 0)
+        self.assertFalse(self.cached)
+
+    def test_429_then_success_within_the_bound_never_touches_the_archive(self):
+        rc, log, calls = self.run_fetch(["429", "429", "200"])
+        self.assertEqual(calls, 3)
+        self.assertNotIn(self.FALLBACK, self.urls)
+
+    def test_429_exhausted_and_archive_error_fails_naming_both(self):
+        rc, log, calls = self.run_fetch(["429", "429", "429", "429", "429", "403"])
+        self.assertNotEqual(rc, 0)
+        self.assertEqual(calls, 6)
+        self.assertIn("still HTTP 429 after 5 attempts", log, "the Central error is not hidden")
+        self.assertIn(f"::error::{self.FALLBACK} answered HTTP 403", log)
 
     def test_fallback_error_fails_with_its_headers(self):
         rc, log, calls = self.run_fetch(["404:28304", "503"])
