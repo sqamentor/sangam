@@ -203,6 +203,8 @@ public class SecurityWiring {
         return () -> {
             if (workspace.getIfAvailable() instanceof org.sangam.rest.adapter.operaton.OperatonWorkspaceAdapter w) {
                 w.setOwnHoldings(new org.sangam.server.bridge.OwnSeatHoldings(security, tx));
+                // E-32(c), E-31(a): the officer acted for and the holder of a substitute seat, without the admin directory
+                w.setSeatHolders(new org.sangam.server.bridge.SeatHolderDirectory(security, tx));
             }
         };
     }

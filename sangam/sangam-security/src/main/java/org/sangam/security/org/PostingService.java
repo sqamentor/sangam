@@ -188,6 +188,15 @@ public final class PostingService implements SecurityPorts.SeatDirectory {
     }
 
     /**
+     * The person whose regular posting to the seat is in force at {@code at}, on leave or not: the officer a
+     * substitute acts for. Empty for a vacant seat.
+     */
+    public Optional<String> regularHolderAt(Connection c, String tenant, String seatId, Instant at) {
+        return activePostings(c, tenant, "seat_id", seatId, at).stream()
+                .filter(p -> p.kind() == OrgModel.PostingKind.REGULAR).map(OrgModel.Posting::personId).findFirst();
+    }
+
+    /**
      * Sweeper: emits {@code DELEGATION_EXPIRED} once for every acting posting that ended (AJ-04 step 4). Open forms of
      * the former holder fail the K3/K7 re-check at submit (CX-1); the task stays with the seat.
      */
