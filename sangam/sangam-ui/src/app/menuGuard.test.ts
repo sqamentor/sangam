@@ -178,3 +178,23 @@ describe('U12g: Extra fields is an administrator page; holding form.read does no
     expect(SERVER_GROUPS.filter((g) => menuGroups(callerOf(g)).includes('setup'))).toEqual(['sangam-tenant-admin', 'sangam-admin']);
   });
 });
+
+describe('U12h: Event types is not offered to a caller without event.admin', () => {
+  // both first calls, GET /events/channels and GET /events/definitions, need event.admin (EventFormController)
+  it('sangam-operator lacks event.admin and does not get the entry; the rest of Monitor and fix stays', () => {
+    const operator = callerOf('sangam-operator');
+    expect(operator.permissions).not.toContain('event.admin');
+    expect(menuRoutes(operator)).not.toContain('/ops/events');
+    expect(menuRoutes(operator)).toEqual(expect.arrayContaining(['/ops', '/ops/incidents', '/ops/jobs', '/ops/outbox', '/ops/workers', '/ops/notifications', '/ops/reconciliation']));
+  });
+  it('an engine administrator (no permission at all) does not get it either; a platform administrator ("*") does', () => {
+    expect(menuRoutes(callerOf('sangam-engine-admin'))).not.toContain('/ops/events');
+    expect(menuRoutes(callerOf('sangam-admin'))).toContain('/ops/events');
+  });
+  it('holding event.admin without an operator role does not bring Monitor and fix: the route refuses an organisation admin', () => {
+    const tenantAdmin = callerOf('sangam-tenant-admin');
+    expect(tenantAdmin.permissions).toContain('event.admin');
+    expect(opens(tenantAdmin, '/ops/events')).toBe(false);
+    expect(menuRoutes(tenantAdmin)).not.toContain('/ops/events');
+  });
+});
