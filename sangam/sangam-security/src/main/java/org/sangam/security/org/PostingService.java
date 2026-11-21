@@ -299,12 +299,29 @@ public final class PostingService implements SecurityPorts.SeatDirectory {
         List<String[]> due = Jdbc.query(c, "SELECT posting_id, seat_id, person_id, kind FROM SEC_POSTING WHERE tenant_id=?"
                         + " AND kind <> 'REGULAR' AND valid_to IS NOT NULL AND valid_to <= ? AND expiry_notified = 0",
                 rs -> new String[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4)}, tenant, now);
+        int written = 0;
         for (String[] d : due) {
-            Jdbc.update(c, "UPDATE SEC_POSTING SET expiry_notified=1 WHERE tenant_id=? AND posting_id=?", tenant, d[0]);
+            // exactly once: only the sweep that flips the flag writes the event (two nodes may sweep at one time)
+            if (Jdbc.update(c, "UPDATE SEC_POSTING SET expiry_notified=1 WHERE tenant_id=? AND posting_id=? AND expiry_notified=0",
+                    tenant, d[0]) != 1) {
+                continue;
+            }
             audit.security(c, SecurityIdentity.system(tenant, null), SecurityEventType.DELEGATION_EXPIRED,
                     Map.of("posting_id", d[0], "seat", d[1], "person_id", d[2], "kind", d[3]));
+            written++;
         }
-        return due.size();
+        return written;
+    }
+
+    /** {@link #expireDue(Connection, String)} for every tenant that has an ended acting posting not yet notified. */
+    public int expireDue(Connection c) {
+        Instant now = Sql.dbNow(c, dialect);
+        int written = 0;
+        for (String tenant : Jdbc.query(c, "SELECT DISTINCT tenant_id FROM SEC_POSTING WHERE kind <> 'REGULAR'"
+                + " AND valid_to IS NOT NULL AND valid_to <= ? AND expiry_notified = 0 ORDER BY tenant_id", rs -> rs.getString(1), now)) {
+            written += expireDue(c, tenant);
+        }
+        return written;
     }
 
     // ------------------------------------------------------------------ queries (SeatDirectory)

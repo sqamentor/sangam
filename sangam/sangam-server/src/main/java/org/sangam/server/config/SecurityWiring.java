@@ -209,6 +209,21 @@ public class SecurityWiring {
         };
     }
 
+    /**
+     * Register E-31(b): the timer at valid-to of an acting posting (SANGAM.md J-P1-E06, AJ-04 step 4). Every
+     * {@code sangam.security.posting-expiry-interval} (default one minute) one {@code DELEGATION_EXPIRED} is written
+     * for each additional charge or leave substitution that has ended; the seat itself is refused from valid-to on
+     * by the K7 check of every request, with or without this timer.
+     */
+    @Bean
+    public org.sangam.server.bridge.PostingExpiryScheduler sangamPostingExpiryScheduler(
+            Transactions sangamProductTransactions, SangamSecurity security, org.springframework.core.env.Environment env) {
+        return new org.sangam.server.bridge.PostingExpiryScheduler(
+                () -> sangamProductTransactions.inTransaction(c -> security.postings().expireDue(c)),
+                env.getProperty("sangam.security.posting-expiry-interval", java.time.Duration.class,
+                        org.sangam.server.bridge.PostingExpiryScheduler.DEFAULT_INTERVAL));
+    }
+
     @Bean
     public SangamSecurityEnginePlugin sangamSecurityEnginePlugin(SangamSecurity security) {
         return new SangamSecurityEnginePlugin(security);
