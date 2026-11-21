@@ -475,15 +475,61 @@ class DemoLoaderSequenceAgainstServerTest {
             }
             if (out.stream().noneMatch(x -> x.startsWith("payee directory"))) {
                 // the connector keeps only the message of what the directory threw; asked directly, the cause shows
-                try {
-                    out.add("payee directory resolve " + byAccount + ": "
-                            + ctx.getBean(org.sangam.config.api.PayeeDirectory.class).resolve(TENANT, byAccount));
+                try (var con = ctx.getBean(javax.sql.DataSource.class).getConnection()) {
+                    // what RegistryPayeeDirectory.resolve does for a payee named by account: a match probe
+                    Map<String, Object> probe = new LinkedHashMap<>();
+                    probe.put("kind", "PERSON");
+                    probe.put("name", byAccount.get("payee"));
+                    probe.put("identifiers", List.of(new LinkedHashMap<>(Map.of("type", "BANK_ACCOUNT", "value",
+                            byAccount.get("payeeAccount") + "@" + byAccount.get("ifsc")))));
+                    out.add("payee directory resolve " + byAccount + ": matches "
+                            + ctx.getBean(org.sangam.registry.party.PartyService.class).findMatches(con,
+                            org.sangam.registry.RegistryContext.of(TENANT, "system:payments").withPurpose("payment"), probe));
                 } catch (RuntimeException e) {
                     List<String> trace = new ArrayList<>();
                     for (Throwable t = e; t != null && trace.size() < 4; t = t.getCause()) {
                         trace.add(t + " at " + (t.getStackTrace().length == 0 ? "?" : t.getStackTrace()[0]));
                     }
                     out.add("payee directory resolve " + byAccount + ": threw " + trace);
+                }
+            }
+        }
+        // BA-0001 distributes to (2054-00-097-01-00-01, DDO-1) at AUTHORISATION from the stage above it, RELEASE
+        try {
+            Map<String, Object> parent = new LinkedHashMap<>();
+            parent.put("ledgerId", "BUDGET");
+            parent.put("headOfAccount", "2054-00-097-01-00-01");
+            parent.put("holder", "-");
+            parent.put("stage", "RELEASE");
+            var conn = registry.find(TENANT, bindings.binding(TENANT, "ledger.available").orElseThrow().connectorId()).orElseThrow();
+            out.add("ledger.available available " + parent + " (BA-0001 distributes 250000000 from it): "
+                    + conn.invoke(new org.sangam.core.integration.ConnectorRequest(TENANT, java.util.UUID.randomUUID(), "query", 1,
+                    "probe", "probe/BA-0001", "available", parent, java.time.Instant.now().plusSeconds(30))));
+        } catch (RuntimeException e) {
+            out.add("ledger.available of BA-0001's source account: threw " + e);
+        }
+        // the relay's deliveries of the tenant: how many per destination, state and attempts, and the errors kept
+        try (var con = ctx.getBean(javax.sql.DataSource.class).getConnection()) {
+            try (var ps = con.prepareStatement("SELECT destination, state, attempts, COUNT(*) FROM OUTBOX_DELIVERY WHERE tenant_id=?"
+                    + " GROUP BY destination, state, attempts ORDER BY destination, state, attempts")) {
+                ps.setString(1, TENANT);
+                try (var rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        out.add("outbox delivery " + rs.getString(1) + " " + rs.getString(2) + " attempts " + rs.getInt(3) + ": "
+                                + rs.getLong(4));
+                    }
+                }
+            }
+            try (var ps = con.prepareStatement("SELECT destination, state, attempts, last_error FROM OUTBOX_DELIVERY WHERE tenant_id=?"
+                    + " AND last_error IS NOT NULL ORDER BY outbox_id")) {
+                ps.setString(1, TENANT);
+                ps.setMaxRows(6);
+                try (var rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String err = String.valueOf(rs.getString(4)).replaceAll("\\s+", " ");
+                        out.add("outbox delivery error " + rs.getString(1) + " " + rs.getString(2) + " attempts " + rs.getInt(3) + ": "
+                                + (err.length() > 300 ? err.substring(0, 300) + "..." : err));
+                    }
                 }
             }
         }
