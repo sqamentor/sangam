@@ -94,7 +94,7 @@ public final class JdbcUnverifiedPaymentStore implements UnverifiedPaymentStore 
 
     @Override
     public Optional<UnverifiedPayment> find(String tenant, String id) {
-        return tx.inTransaction(c -> Jdbc.one(c, "SELECT " + COLUMNS + " FROM " + TABLE
+        return tx.read(c -> Jdbc.one(c, "SELECT " + COLUMNS + " FROM " + TABLE
                 + " WHERE tenant_id=? AND payment_id=?", JdbcUnverifiedPaymentStore::row, tenant, id));
     }
 
@@ -134,7 +134,7 @@ public final class JdbcUnverifiedPaymentStore implements UnverifiedPaymentStore 
             params.add(q.acceptedBefore());
         }
         Object[] p = params.toArray();
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             long total = Jdbc.one(c, "SELECT COUNT(*) FROM " + TABLE + where, rs -> rs.getLong(1), p).orElse(0L);
             List<UnverifiedPayment> items = total <= q.offset() ? List.of() : Jdbc.query(c, page("SELECT " + COLUMNS
                     + " FROM " + TABLE + where + " ORDER BY accepted_at, payment_id", q.offset(), q.limit()),

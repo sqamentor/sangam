@@ -47,6 +47,11 @@ class PackDocumentSlotNamesTest {
             public <T> T inTransaction(java.util.function.Function<java.sql.Connection, T> work) {
                 throw new IllegalStateException("no database in this test");
             }
+
+            @Override
+            public <T> T read(org.sangam.core.api.ReadWork<T> work) {
+                throw new IllegalStateException("no database in this test");
+            }
         }, java.util.Optional::empty, new AuditChain(Dialect.POSTGRESQL));
         // a malformed question is unbound without asking the database; one it cannot answer fails, never binds
         assertEquals(false, b.isBound("t", java.util.List.of(), "sanctionDocumentId", "SANCTION_NOTE", "doc-1"));
@@ -58,6 +63,11 @@ class PackDocumentSlotNamesTest {
                 new org.sangam.core.layer.Transactions() {
                     @Override
                     public <T> T inTransaction(java.util.function.Function<java.sql.Connection, T> work) {
+                        throw new IllegalStateException("unused");
+                    }
+
+                    @Override
+                    public <T> T read(org.sangam.core.api.ReadWork<T> work) {
                         throw new IllegalStateException("unused");
                     }
                 }, null, new AuditChain(Dialect.POSTGRESQL)));

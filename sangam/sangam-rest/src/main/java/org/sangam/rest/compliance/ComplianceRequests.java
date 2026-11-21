@@ -23,6 +23,15 @@ public final class ComplianceRequests {
     }
 
     /**
+     * The body of {@code POST /reports} (register P-1, owner decision 2026-11-20): the period {@code [from, to)} of the
+     * evidence report to generate, both required. {@code verifyChains} (default true: an omitted one verifies the
+     * audit chains) and {@code format} ({@code json}, the default, or {@code html} for the HTML rendering) are as the
+     * query parameters of the former GET were.
+     */
+    public record GenerateReportRequest(Instant from, Instant to, Boolean verifyChains, String format) {
+    }
+
+    /**
      * The body of {@code PUT /purposes/{code}} (integrator finding on CI run 43717963671, 2026-11-15): the input shape of
      * {@code PurposeDefinition}. The two legal attestations, {@code standardsAttested} and each data item's
      * {@code sensitive}, and {@code active} (whether processing under the purpose may start: consent, notices and

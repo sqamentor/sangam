@@ -116,11 +116,11 @@ public final class DispatchService {
     }
 
     public Unit getUnit(String tenantId, String id) {
-        return tx.inTransaction(c -> unit(c, tenantId, id));
+        return tx.read(c -> unit(c, tenantId, id));
     }
 
     public List<Unit> listUnits(String tenantId, UnitStatus status) {
-        return tx.inTransaction(c -> status == null
+        return tx.read(c -> status == null
                 ? Jdbc.query(c, "SELECT * FROM FLD_UNIT WHERE tenant_id = ? ORDER BY unit_id", DispatchService::mapUnit, tenantId)
                 : Jdbc.query(c, "SELECT * FROM FLD_UNIT WHERE tenant_id = ? AND status = ? ORDER BY unit_id", DispatchService::mapUnit,
                 tenantId, status.name()));
@@ -152,12 +152,12 @@ public final class DispatchService {
     }
 
     public Job getJob(String tenantId, String id) {
-        return tx.inTransaction(c -> job(c, tenantId, id));
+        return tx.read(c -> job(c, tenantId, id));
     }
 
     public List<Job> listJobs(String tenantId, JobStatus status, int limit) {
         int lim = Math.max(1, Math.min(500, limit <= 0 ? 100 : limit));
-        return tx.inTransaction(c -> (status == null
+        return tx.read(c -> (status == null
                 ? Jdbc.query(c, "SELECT * FROM FLD_JOB WHERE tenant_id = ? ORDER BY created_at DESC", DispatchService::mapJob, tenantId)
                 : Jdbc.query(c, "SELECT * FROM FLD_JOB WHERE tenant_id = ? AND status = ? ORDER BY created_at DESC", DispatchService::mapJob,
                 tenantId, status.name())).stream().limit(lim).toList());
@@ -165,7 +165,7 @@ public final class DispatchService {
 
     /** Candidate units: dispatchable, with every required skill, not declined, nearest first (by last fix, else home base). */
     public List<Candidate> candidates(String tenantId, String jobId) {
-        return tx.inTransaction(c -> candidates(c, tenantId, job(c, tenantId, jobId)));
+        return tx.read(c -> candidates(c, tenantId, job(c, tenantId, jobId)));
     }
 
     List<Candidate> candidates(Connection c, String tenantId, Job j) {
@@ -444,7 +444,7 @@ public final class DispatchService {
     }
 
     public Eta eta(String tenantId, String unitId, String jobId) {
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             Unit u = unit(c, tenantId, unitId);
             GeoPoint from = u.lastFix() != null ? u.lastFix().position() : u.homeBase();
             if (from == null) {
@@ -556,12 +556,12 @@ public final class DispatchService {
     }
 
     public List<Trip> listTrips(String tenantId, String unitId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT * FROM FLD_TRIP WHERE tenant_id = ? AND unit_id = ? ORDER BY started_at DESC",
+        return tx.read(c -> Jdbc.query(c, "SELECT * FROM FLD_TRIP WHERE tenant_id = ? AND unit_id = ? ORDER BY started_at DESC",
                 DispatchService::mapTrip, tenantId, unitId));
     }
 
     public List<Offer> offersForUnit(String tenantId, String unitId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT * FROM FLD_OFFER WHERE tenant_id = ? AND unit_id = ? AND status = 'OFFERED' "
+        return tx.read(c -> Jdbc.query(c, "SELECT * FROM FLD_OFFER WHERE tenant_id = ? AND unit_id = ? AND status = 'OFFERED' "
                 + "ORDER BY offered_at", DispatchService::mapOffer, tenantId, unitId));
     }
 

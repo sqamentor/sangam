@@ -112,7 +112,7 @@ public final class OperatonFormAdapter implements FormPort {
         if (formKey == null || formKey.isBlank() || "drafts".equals(formKey)) {
             throw ApiProblem.notFound("Form", formKey);
         }
-        List<Deployment> deployments = OperatonSupport.call(() -> repository.createDeploymentQuery()
+        List<Deployment> deployments = OperatonSupport.readCall(() -> repository.createDeploymentQuery()
                 .tenantIdIn(ctx.tenantId()).includeDeploymentsWithoutTenantId()
                 .orderByDeploymentTime().desc().list());
         boolean first = true;
@@ -342,25 +342,23 @@ public final class OperatonFormAdapter implements FormPort {
 
     @Override
     public Page<Draft> drafts(RequestContext ctx, String taskId, Page.PageRequest page) {
-        purgeExpired(ctx.tenantId());
-        List<Object> params = new ArrayList<>(List.of(ctx.tenantId()));
+        List<Object> params = new ArrayList<>(List.of(ctx.tenantId(), Instant.now()));
         params.add(ctx.effectiveSeatId());
         params.add(ctx.principalId());
-        String where = "tenant_id=? AND ((owner_kind='SEAT' AND owner_seat_id=?) OR (owner_kind='PERSON'"
+        String where = "tenant_id=? AND expires_at>=? AND ((owner_kind='SEAT' AND owner_seat_id=?) OR (owner_kind='PERSON'"
                 + " AND owner_principal_id=?))";
         if (taskId != null) {
             where += " AND task_id=?";
             params.add(taskId);
         }
         String sql = "SELECT " + DRAFT_COLS + " FROM FORM_DRAFT WHERE " + where + " ORDER BY updated_at DESC";
-        List<Draft> visible = tx.withConnection(c -> Jdbc.query(c, sql, this::draftRow, params.toArray()))
+        List<Draft> visible = tx.withReadConnection(c -> Jdbc.query(c, sql, this::draftRow, params.toArray()))
                 .stream().filter(d -> visibleTo(ctx, d)).toList();
         return Page.slice(visible, page, props.getCountCap());
     }
 
     @Override
     public Draft draft(RequestContext ctx, String draftId) {
-        purgeExpired(ctx.tenantId());
         Draft d = draftId == null ? null : load(ctx.tenantId(), draftId);
         if (d == null || !visibleTo(ctx, d)) {
             throw ApiProblem.notFound("Draft", draftId);
@@ -384,6 +382,7 @@ public final class OperatonFormAdapter implements FormPort {
         if (ownerKind.equals("SEAT") && ctx.effectiveSeatId() == null) {
             throw ApiProblem.badRequest("SEAT_CONTEXT_REQUIRED", "A SEAT draft needs the X-Sangam-Seat header");
         }
+        purgeExpired(ctx.tenantId());
         Map<String, Object> data = sized(request.data());
         Instant now = Instant.now();
         Draft d = new Draft(org.sangam.core.layer.Hashes.uuidV7().toString(), ctx.tenantId(), request.taskId(),
@@ -399,6 +398,7 @@ public final class OperatonFormAdapter implements FormPort {
     @Override
     public Draft saveDraft(RequestContext ctx, String draftId, long expectedRevision, SaveDraftRequest request) {
         return tx.inTx(() -> {
+            purgeExpired(ctx.tenantId());
             Draft cur = draft(ctx, draftId);
             if (cur.revision() != expectedRevision) {
                 throw new ApiProblem(409, "DRAFT_CONFLICT", null,
@@ -427,6 +427,7 @@ public final class OperatonFormAdapter implements FormPort {
 
     @Override
     public void deleteDraft(RequestContext ctx, String draftId) {
+        purgeExpired(ctx.tenantId());
         Draft d = draft(ctx, draftId);
         tx.withConnection(c -> Jdbc.update(c, "DELETE FROM FORM_DRAFT WHERE tenant_id=? AND draft_id=?",
                 ctx.tenantId(), draftId));
@@ -462,15 +463,15 @@ public final class OperatonFormAdapter implements FormPort {
         return Objects.equals(ctx.principalId(), d.ownerPrincipalId());
     }
 
-    /** Lazy expiry (X.2.5.8 rule 4): expired drafts of the tenant are deleted before any read. */
+    /** Lazy expiry (X.2.5.8 rule 4): reads hide expired drafts; the draft writes delete them (round 9: a GET never writes). */
     private void purgeExpired(String tenant) {
         tx.withConnection(c -> Jdbc.update(c, "DELETE FROM FORM_DRAFT WHERE tenant_id=? AND expires_at<?",
                 tenant, Instant.now()));
     }
 
     private Draft load(String tenant, String draftId) {
-        return tx.withConnection(c -> Jdbc.one(c, "SELECT " + DRAFT_COLS + " FROM FORM_DRAFT WHERE tenant_id=?"
-                + " AND draft_id=?", this::draftRow, tenant, draftId)).orElse(null);
+        return tx.withReadConnection(c -> Jdbc.one(c, "SELECT " + DRAFT_COLS + " FROM FORM_DRAFT WHERE tenant_id=?"
+                + " AND draft_id=? AND expires_at>=?", this::draftRow, tenant, draftId, Instant.now())).orElse(null);
     }
 
     private Draft draftRow(java.sql.ResultSet rs) throws java.sql.SQLException {

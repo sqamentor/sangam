@@ -30,7 +30,9 @@ import org.sangam.rest.port.RestBackedRecords;
  *       operationId, payload {@code {dataObject, record}}, its canonical hash, business key
  *       {@code data-object:<key>} and no process instance (outside any engine transaction, so the gateway opens its
  *       own).</li>
- *   <li>lookup: {@link ConnectorGateway#lookup}.</li>
+ *   <li>lookup: the outcome GET is an API read (register P-3, CodeQL alert 596), so
+ *       {@link ApiReadGateway#lookupReadOnly} and never {@link ConnectorGateway#lookup}, which may mark a process
+ *       operation RETRY_REQUESTED.</li>
  * </ul>
  */
 public final class RestBackedRecordsGateway implements RestBackedRecords {
@@ -41,8 +43,8 @@ public final class RestBackedRecordsGateway implements RestBackedRecords {
     private final ApiReadGateway reads;
 
     /**
-     * @param gateway effects and their outcomes (submit, lookup)
-     * @param reads   the API-read entry of the same gateway (list)
+     * @param gateway effects (submit)
+     * @param reads   the API-read entry of the same gateway (list, outcome lookup)
      */
     public RestBackedRecordsGateway(ConnectorGateway gateway, ApiReadGateway reads) {
         this.gateway = java.util.Objects.requireNonNull(gateway, "gateway");
@@ -100,7 +102,7 @@ public final class RestBackedRecordsGateway implements RestBackedRecords {
 
     @Override
     public Outcome lookup(String tenantId, String endpointRef, String operationId) {
-        return outcome(gateway.lookup(tenantId, endpointRef, operationId));
+        return outcome(reads.lookupReadOnly(tenantId, endpointRef, operationId));
     }
 
     private static Outcome outcome(ConnectorResult r) {

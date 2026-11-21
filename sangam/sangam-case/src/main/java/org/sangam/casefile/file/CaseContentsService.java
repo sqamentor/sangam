@@ -242,7 +242,7 @@ public class CaseContentsService {
         if (content == null) {
             throw new CaseFileException(CaseFileException.Code.INVALID_STATE, "no content store configured");
         }
-        Document d = tx.inTransaction(c -> document(c, tenant, documentId));
+        Document d = tx.read(c -> document(c, tenant, documentId));
         return content.open(d.contentItemId(), version);
     }
 

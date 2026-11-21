@@ -76,7 +76,7 @@ public class OperatonInstanceHandlerAdapter implements InstanceHandlerPort {
 
     @Override
     public List<Handler> list(RequestContext ctx, String definitionId) {
-        org.operaton.bpm.engine.repository.ProcessDefinition d = OperatonSupport.call(() ->
+        org.operaton.bpm.engine.repository.ProcessDefinition d = OperatonSupport.readCall(() ->
                 repository.createProcessDefinitionQuery().processDefinitionId(definitionId).singleResult());
         if (d == null) {
             throw ApiProblem.notFound("process definition", definitionId);
@@ -86,7 +86,7 @@ public class OperatonInstanceHandlerAdapter implements InstanceHandlerPort {
         }
         InstanceHandlers.Definitions defs;
         try {
-            defs = OperatonSupport.call(() -> handlers.of(definitionId));
+            defs = OperatonSupport.readCall(() -> handlers.of(definitionId));
         } catch (InstanceHandlerException e) {
             throw problem(e);
         }

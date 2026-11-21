@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.ops.utc;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -93,6 +94,12 @@ class UtcGateH2Test {
         public <T> T inTransaction(Function<Connection, T> work) {
             seen.add(gate());
             return tx.inTransaction(work);
+        }
+
+        @Override
+        public <T> T read(ReadWork<T> work) {
+            seen.add(gate());
+            return tx.read(work);
         }
     }
 
@@ -224,6 +231,15 @@ class UtcGateH2Test {
                 }
                 return tx.inTransaction(work);
             }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                // 1 gate close, 2 start (APPLYING), 3 row access, 4 first batch (committed), 5 second batch: stop
+                if (calls.incrementAndGet() == 5) {
+                    throw new IllegalStateException("simulated stop after the first batch");
+                }
+                return tx.read(work);
+            }
         };
         assertThrows(IllegalStateException.class, () -> tool(failing).apply("r1", 1, "MW-1", "operator", "ops"));
         assertEquals("APPLYING", tool.run("r1").orElseThrow().state());
@@ -250,6 +266,14 @@ class UtcGateH2Test {
                 }
                 return tx.inTransaction(work);
             }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                if (calls.incrementAndGet() == 5) {
+                    throw new IllegalStateException("simulated stop after the first batch");
+                }
+                return tx.read(work);
+            }
         };
         assertThrows(IllegalStateException.class, () -> tool(failing).apply("r1", 1, "MW-1", "operator", "ops"));
         assertEquals(UtcGate.CLOSED, gate().state());
@@ -274,6 +298,15 @@ class UtcGateH2Test {
                     throw new IllegalStateException("simulated stop after the rollback started");
                 }
                 return tx.inTransaction(work);
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                // 1 gate close, 2 start (ROLLING_BACK, committed), 3 row access: stop
+                if (calls.incrementAndGet() == 3) {
+                    throw new IllegalStateException("simulated stop after the rollback started");
+                }
+                return tx.read(work);
             }
         };
         assertThrows(IllegalStateException.class, () -> tool(failing).rollback("r1", "MW-2", "operator", "ops"));

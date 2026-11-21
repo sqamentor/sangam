@@ -4,7 +4,7 @@
 package org.sangam.sdk.generated.model;
 
 /**
- * Compliance evidence report (JSON; `?format=html` returns the HTML rendering). X-Sangam-Report-Hash carries its hash.
+ * Compliance evidence report (JSON; format `html` in the request returns the HTML rendering). X-Sangam-Report-Hash carries its hash.
  *
  * <p>Schema {@code ComplianceReport} of sangam-api.yaml 0.1.0.
  *

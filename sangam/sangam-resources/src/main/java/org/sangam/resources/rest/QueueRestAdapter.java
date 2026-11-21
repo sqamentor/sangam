@@ -37,14 +37,14 @@ public final class QueueRestAdapter implements QueueRestPort {
 
     @Override
     public QueueModel.ServicePoint servicePoint(SecurityIdentity actor, String servicePointId) {
-        return tx.inTransaction(c -> queue.servicePoint(c, actor, servicePointId));
+        return tx.read(c -> queue.servicePoint(c, actor, servicePointId));
     }
 
     @Override
     public List<QueueModel.ServicePoint> servicePoints(SecurityIdentity actor, int page, int size) {
         int sz = size <= 0 ? 50 : Math.min(size, VisibleQuery.MAX_PAGE_SIZE);
         int offset = Math.max(page, 0) * sz;
-        return tx.inTransaction(c -> queue.servicePoints(c, actor, offset, sz));
+        return tx.read(c -> queue.servicePoints(c, actor, offset, sz));
     }
 
     @Override
@@ -54,7 +54,7 @@ public final class QueueRestAdapter implements QueueRestPort {
 
     @Override
     public List<QueueModel.Counter> counters(SecurityIdentity actor, String servicePointId) {
-        return tx.inTransaction(c -> queue.counters(c, actor, servicePointId));
+        return tx.read(c -> queue.counters(c, actor, servicePointId));
     }
 
     @Override
@@ -90,13 +90,13 @@ public final class QueueRestAdapter implements QueueRestPort {
         QueueModel.TokenState st = tokenState(state);
         int sz = size <= 0 ? 50 : Math.min(size, 1000);
         int offset = Math.max(page, 0) * sz;
-        return tx.inTransaction(c -> queue.tokens(c, actor, servicePointId, st, offset, sz));
+        return tx.read(c -> queue.tokens(c, actor, servicePointId, st, offset, sz));
     }
 
     @Override
     public VisibleQuery.CappedCount countTokens(SecurityIdentity actor, String servicePointId, String state, int cap) {
         QueueModel.TokenState st = tokenState(state);
-        return tx.inTransaction(c -> queue.countTokens(c, actor, servicePointId, st, cap));
+        return tx.read(c -> queue.countTokens(c, actor, servicePointId, st, cap));
     }
 
     private static QueueModel.TokenState tokenState(String state) {
@@ -109,12 +109,12 @@ public final class QueueRestAdapter implements QueueRestPort {
 
     @Override
     public QueueModel.Token token(SecurityIdentity actor, String tokenId) {
-        return tx.inTransaction(c -> queue.token(c, actor, tokenId));
+        return tx.read(c -> queue.token(c, actor, tokenId));
     }
 
     @Override
     public Map<String, Object> position(SecurityIdentity actor, String tokenId) {
-        return tx.inTransaction(c -> queue.position(c, actor, tokenId));
+        return tx.read(c -> queue.position(c, actor, tokenId));
     }
 
     @Override
@@ -165,7 +165,7 @@ public final class QueueRestAdapter implements QueueRestPort {
 
     @Override
     public List<QueueModel.Token> slaBreaches(SecurityIdentity actor, String servicePointId) {
-        return tx.inTransaction(c -> queue.slaBreaches(c, actor, servicePointId));
+        return tx.read(c -> queue.slaBreaches(c, actor, servicePointId));
     }
 
     @Override
@@ -173,16 +173,16 @@ public final class QueueRestAdapter implements QueueRestPort {
         if (from == null || to == null || !to.isAfter(from)) {
             throw ResourcesException.invalid("RANGE", "from and to are required and to must be after from");
         }
-        return tx.inTransaction(c -> queue.stats(c, actor, servicePointId, from, to));
+        return tx.read(c -> queue.stats(c, actor, servicePointId, from, to));
     }
 
     @Override
     public QueueModel.DisplaySnapshot displaySnapshot(SecurityIdentity actor, String servicePointId, int next) {
-        return tx.inTransaction(c -> queue.displaySnapshot(c, actor, servicePointId, Math.min(Math.max(next, 0), 100)));
+        return tx.read(c -> queue.displaySnapshot(c, actor, servicePointId, Math.min(Math.max(next, 0), 100)));
     }
 
     @Override
     public List<QueueModel.CallEvent> callEvents(SecurityIdentity actor, String servicePointId, long afterEventId, int limit) {
-        return tx.inTransaction(c -> queue.callEvents(c, actor, servicePointId, afterEventId, limit));
+        return tx.read(c -> queue.callEvents(c, actor, servicePointId, afterEventId, limit));
     }
 }

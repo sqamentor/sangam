@@ -123,6 +123,23 @@ class ReconciliationEngineSkipLockedFenceH2Test {
                     throw new IllegalStateException(e);
                 }
             }
+
+            @Override
+            public <T> T read(org.sangam.core.api.ReadWork<T> work) {
+                try (Connection c = DriverManager.getConnection(url, "sa", "")) {
+                    c.setAutoCommit(false);
+                    try {
+                        T r = work.read(raced == null ? c : racing(c, raced, peerSql));
+                        c.commit();
+                        return r;
+                    } catch (RuntimeException e) {
+                        c.rollback();
+                        throw e;
+                    }
+                } catch (SQLException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
         };
     }
 

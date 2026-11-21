@@ -246,10 +246,27 @@ public final class IntegrationConnectorGateway implements ConnectorGateway, ApiR
 
     // ------------------------------------------------------------------ lookup
 
+    /**
+     * {@link ApiReadGateway} (register P-3, CodeQL alert 596): the outcome as {@link #lookup} gives it, read through
+     * {@code Transactions.read}, and the operation's row is never changed. Where {@link #lookup} would mark an UNKNOWN
+     * operation of a process instance RETRY_REQUESTED (the external system has no record of it), this answers UNKNOWN:
+     * the process's own lookup, or reconciliation, makes that change. An unbound pack connector is asked through the
+     * fallback, as {@link #queryReadOnly} does.
+     */
+    @Override
+    public ConnectorResult lookupReadOnly(String tenantId, String connector, String operationId) {
+        return lookup(tenantId, connector, operationId, true);
+    }
+
     @Override
     public ConnectorResult lookup(String tenantId, String connector, String operationId) {
+        return lookup(tenantId, connector, operationId, false);
+    }
+
+    private ConnectorResult lookup(String tenantId, String connector, String operationId, boolean apiRead) {
         String tenant = tenantOf(tenantId);
-        Optional<PackOperationStore.Row> row = tx.inTransaction(c -> store.find(c, tenant, operationId));
+        Optional<PackOperationStore.Row> row = apiRead ? tx.read(c -> store.find(c, tenant, operationId))
+                : tx.inTransaction(c -> store.find(c, tenant, operationId));
         if (row.isEmpty()) {
             return fallback != null && bindings.binding(tenantId, connector).isEmpty() ? fallback.lookup(tenantId, connector, operationId)
                     : ConnectorResult.failed("NOT_FOUND", "no operation " + operationId);
@@ -258,7 +275,8 @@ public final class IntegrationConnectorGateway implements ConnectorGateway, ApiR
         if (r.status() != PackOperationStore.Status.PENDING && r.status() != PackOperationStore.Status.UNKNOWN) {
             return toResult(r);
         }
-        Optional<ConnectorCallJournal.Call> call = tx.inTransaction(c -> journal.find(c, r.ledgerOperationId()));
+        Optional<ConnectorCallJournal.Call> call = apiRead ? tx.read(c -> journal.find(c, r.ledgerOperationId()))
+                : tx.inTransaction(c -> journal.find(c, r.ledgerOperationId()));
         if (call.isEmpty()) {
             return r.status() == PackOperationStore.Status.PENDING ? ConnectorResult.pending(r.externalRef())
                     : ConnectorResult.unknown("no connector call on record");
@@ -283,6 +301,11 @@ public final class IntegrationConnectorGateway implements ConnectorGateway, ApiR
                     f.failureCode() == null ? "DOWNSTREAM_FAILED" : f.failureCode(), "confirmed by lookup", null, f.output());
             case LookupResult.NotFound nf -> {
                 if (r.status() == PackOperationStore.Status.UNKNOWN) {
+                    if (r.processInstanceId() != null && apiRead) {
+                        // an API read changes nothing: the retry request is the process's (or reconciliation's) step
+                        yield ConnectorResult.unknown("the external system has no record of the operation;"
+                                + " the process's own lookup or reconciliation settles it");
+                    }
                     if (r.processInstanceId() != null) {
                         // nothing reached the external system: the pack may retry with the same operationId
                         tx.inTransaction(c -> {

@@ -425,7 +425,7 @@ public class OperatonTaskAdapter implements TaskPort {
         String contentType = null;
         boolean deployed = ref != null || (key != null && key.contains("deployment:"));
         if (forms != null && deployed && ("EMBEDDED".equals(kind) || "FORM".equals(kind))) {
-            content = OperatonSupport.call(() -> {
+            content = OperatonSupport.readCall(() -> {
                 try (java.io.InputStream in = forms.getDeployedTaskForm(taskId)) {
                     return new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
                 } catch (java.io.IOException e) {
@@ -464,7 +464,7 @@ public class OperatonTaskAdapter implements TaskPort {
 
     @Override
     public Map<String, Object> variables(RequestContext ctx, String taskId) {        requireVisible(ctx, taskId);
-        return TypedVariables.toJson(OperatonSupport.call(() -> tasks.getVariables(taskId)));
+        return TypedVariables.toJson(OperatonSupport.readCall(() -> tasks.getVariables(taskId)));
     }
 
     // ------------------------------------------------------------------ commands
@@ -749,7 +749,7 @@ public class OperatonTaskAdapter implements TaskPort {
     @Override
     public List<Comment> comments(RequestContext ctx, String taskId) {
         requireVisible(ctx, taskId);
-        return OperatonSupport.call(() -> tasks.getTaskComments(taskId)).stream()
+        return OperatonSupport.readCall(() -> tasks.getTaskComments(taskId)).stream()
                 .map(c -> new Comment(c.getId(), c.getTaskId(), c.getProcessInstanceId(), c.getUserId(),
                         OperatonSupport.instant(c.getTime()), c.getFullMessage()))
                 .toList();

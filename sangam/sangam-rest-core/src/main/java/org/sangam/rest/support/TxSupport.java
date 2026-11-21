@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.support;
 
+import org.sangam.core.api.ReadSupplier;
+import org.sangam.core.api.ReadWork;
 import java.sql.Connection;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -73,6 +75,18 @@ public abstract class TxSupport {
     /** Always a new, independent transaction (idempotency claim, FAILED_FINAL write, audit of a rejected call). */
     public abstract <T> T inNewTx(Supplier<T> work);
 
+    /**
+     * {@link #withConnection} for work that only reads (round 9): the same transaction, a {@link ReadWork} callback.
+     * Implementations repeat the transaction handling; they never go through {@link #inTxWithStatus}.
+     */
+    public abstract <T> T withReadConnection(ReadWork<T> work);
+
+    /** {@link #inTx} for work that only reads (round 9): joins or starts a transaction around {@code work}. */
+    public abstract <T> T inReadTx(ReadSupplier<T> work);
+
+    /** {@link #inNewTx} for work that only reads, handed the new transaction's connection (round 9). */
+    public abstract <T> T inNewReadTx(ReadWork<T> work);
+
     /** The connection bound to the current transaction (do not close it). */
     public abstract Connection connection();
 
@@ -82,12 +96,32 @@ public abstract class TxSupport {
      */
     public abstract void afterCommit(Runnable work);
 
+    /** core {@link Transactions} view whose units join the current transaction or start one ({@link #withConnection}). */
+    public Transactions joinedTransactions() {
+        return new Transactions() {
+            @Override
+            public <T> T inTransaction(Function<Connection, T> work) {
+                return withConnection(work);
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                return withReadConnection(work);
+            }
+        };
+    }
+
     /** core {@link Transactions} view that runs every unit in its own new transaction. */
     public Transactions newTransactions() {
         return new Transactions() {
             @Override
             public <T> T inTransaction(Function<Connection, T> work) {
                 return inNewTx(() -> work.apply(connection()));
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                return inNewReadTx(work);
             }
         };
     }

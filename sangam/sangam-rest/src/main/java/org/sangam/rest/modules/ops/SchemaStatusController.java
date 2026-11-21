@@ -31,7 +31,7 @@ public class SchemaStatusController {
     @GetMapping("/ops/schema-status")
     public SchemaStatusReader.Status status(RequestContext ctx) {
         permissions.require(ctx, Permissions.OPS_READ);
-        return tx.withConnection(c -> {
+        return tx.withReadConnection(c -> {
             try {
                 return SchemaStatusReader.read(c);
             } catch (SQLException e) {

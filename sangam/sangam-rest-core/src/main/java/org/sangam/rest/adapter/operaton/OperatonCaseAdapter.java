@@ -103,9 +103,9 @@ public class OperatonCaseAdapter implements CasePort {
 
     @Override
     public CaseInstance get(RequestContext ctx, String id) {
-        HistoricCaseInstance h = OperatonSupport.call(() ->
+        HistoricCaseInstance h = OperatonSupport.readCall(() ->
                 history.createHistoricCaseInstanceQuery().caseInstanceId(id).singleResult());
-        org.operaton.bpm.engine.runtime.CaseInstance ci = OperatonSupport.call(() ->
+        org.operaton.bpm.engine.runtime.CaseInstance ci = OperatonSupport.readCall(() ->
                 cases.createCaseInstanceQuery().caseInstanceId(id).singleResult());
         if (h == null && ci == null) {
             throw ApiProblem.notFound("case instance", id);
@@ -114,14 +114,14 @@ public class OperatonCaseAdapter implements CasePort {
         if (ci == null) {
             return fromHistory(h, List.of(), null);
         }
-        List<CaseExecution> executions = OperatonSupport.call(() ->
+        List<CaseExecution> executions = OperatonSupport.readCall(() ->
                 cases.createCaseExecutionQuery().caseInstanceId(id).list()).stream()
                 .filter(e -> !e.getId().equals(id))
                 .map(OperatonCaseAdapter::mapExecution).toList();
-        Map<String, Object> vars = OperatonSupport.call(() -> cases.getVariables(id));
+        Map<String, Object> vars = OperatonSupport.readCall(() -> cases.getVariables(id));
         Object from = vars.get(REACTIVATED_FROM);
         String defId = ci.getCaseDefinitionId();
-        String defKey = OperatonSupport.call(() -> repository.getCaseDefinition(defId)).getKey();
+        String defKey = OperatonSupport.readCall(() -> repository.getCaseDefinition(defId)).getKey();
         return new CaseInstance(ci.getId(), defId, defKey, ci.getBusinessKey(), ci.getTenantId(), state(ci),
                 h == null ? null : OperatonSupport.instant(h.getCreateTime()), executions,
                 from == null ? null : String.valueOf(from));
@@ -259,22 +259,22 @@ public class OperatonCaseAdapter implements CasePort {
 
     @Override
     public Map<String, Object> variables(RequestContext ctx, String caseInstanceId) {
-        org.operaton.bpm.engine.runtime.CaseInstance ci = OperatonSupport.call(() ->
+        org.operaton.bpm.engine.runtime.CaseInstance ci = OperatonSupport.readCall(() ->
                 cases.createCaseInstanceQuery().caseInstanceId(caseInstanceId).singleResult());
         if (ci == null) {
-            HistoricCaseInstance h = OperatonSupport.call(() ->
+            HistoricCaseInstance h = OperatonSupport.readCall(() ->
                     history.createHistoricCaseInstanceQuery().caseInstanceId(caseInstanceId).singleResult());
             if (h == null) {
                 throw ApiProblem.notFound("case instance", caseInstanceId);
             }
             OperatonSupport.checkTenant(ctx, h.getTenantId(), "case instance", caseInstanceId);
             Map<String, Object> out = new LinkedHashMap<>();
-            OperatonSupport.call(() -> history.createHistoricVariableInstanceQuery().caseInstanceId(caseInstanceId)
+            OperatonSupport.readCall(() -> history.createHistoricVariableInstanceQuery().caseInstanceId(caseInstanceId)
                     .list()).forEach(v -> out.put(v.getName(), v.getValue()));
             return TypedVariables.toJson(out);
         }
         OperatonSupport.checkTenant(ctx, ci.getTenantId(), "case instance", caseInstanceId);
-        return TypedVariables.toJson(OperatonSupport.call(() -> cases.getVariables(caseInstanceId)));
+        return TypedVariables.toJson(OperatonSupport.readCall(() -> cases.getVariables(caseInstanceId)));
     }
 
     @Override

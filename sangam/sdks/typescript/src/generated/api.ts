@@ -4394,14 +4394,15 @@ export class ComplianceApi {
   }
 
   /**
-   * Compliance evidence report
+   * Generate the compliance evidence report
    *
-   * Evidence report for [from, to); `format=html` returns text/html.
+   * Generates the evidence report for [from, to), stores its hash (CMP_REPORT) and writes the audit event CMP_EVIDENCE_REPORT_GENERATED; format `html` returns text/html. X-Sangam-Report-Hash carries the hash. A missing `from` or `to` is 400 VALIDATION_FAILED. Generation writes, so there is no GET of this path (405).
    *
-   * `GET /compliance/reports` (operationId `getComplianceReport`); permission `audit.read`.
+   * `POST /compliance/reports` (operationId `generateComplianceReport`); permission `audit.read`; result stored atomically with the state change.
    */
-  async getComplianceReport(params: { from: string; to: string; verifyChains?: boolean; format?: 'json' | 'html' }, options?: RequestOptions): Promise<M.ComplianceReport> {
-    const req: ApiRequest = { method: 'GET', path: `/compliance/reports`, query: { from: params?.from, to: params?.to, verifyChains: params?.verifyChains, format: params?.format } };
+  async generateComplianceReport(body: M.ComplianceReportRequest, options?: RequestOptions): Promise<M.ComplianceReport> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/reports` };
+    if (body !== undefined) req.body = body;
     return this.calls.json<M.ComplianceReport>(req, options);
   }
 

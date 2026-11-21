@@ -94,7 +94,7 @@ public final class ElementTemplates {
     }
 
     public Optional<Template> find(String tenantId, String id, Integer versionOrNull) {
-        return tx.inTransaction(c -> versionOrNull == null
+        return tx.read(c -> versionOrNull == null
                 ? Jdbc.one(c, "SELECT kind,document FROM MOD_TEMPLATE t WHERE tenant_id=? AND template_id=? AND version=(SELECT MAX(version) FROM MOD_TEMPLATE x WHERE x.tenant_id=t.tenant_id AND x.template_id=t.template_id)",
                 rs -> parse(Kind.valueOf(rs.getString(1)), Json.readMap(rs.getString(2))), tenantId, id)
                 : Jdbc.one(c, "SELECT kind,document FROM MOD_TEMPLATE WHERE tenant_id=? AND template_id=? AND version=?", rs -> parse(Kind.valueOf(rs.getString(1)), Json.readMap(rs.getString(2))), tenantId, id, versionOrNull));

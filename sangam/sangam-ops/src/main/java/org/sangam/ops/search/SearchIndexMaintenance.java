@@ -110,13 +110,13 @@ public final class SearchIndexMaintenance {
     }
 
     public Job job(long generation) {
-        return tx.inTransaction(c -> Jdbc.one(c, "SELECT generation,state,indexed,expected,message,reason FROM OPS_INDEX_JOB WHERE generation=?",
+        return tx.read(c -> Jdbc.one(c, "SELECT generation,state,indexed,expected,message,reason FROM OPS_INDEX_JOB WHERE generation=?",
                 rs -> new Job(rs.getLong(1), rs.getString(2), rs.getLong(3), rs.getLong(4), rs.getString(5), rs.getString(6)), generation).orElseThrow());
     }
 
     public List<Drift> drift(String tenantId, List<Reader> readers) {
         Map<String, Long> indexed = new LinkedHashMap<>();
-        tx.inTransaction(c -> Jdbc.query(c, "SELECT d.doc_type, COUNT(*) FROM OPS_SEARCH_DOC d JOIN OPS_SEARCH_ALIAS a ON a.tenant_id=d.tenant_id AND a.generation=d.generation "
+        tx.read(c -> Jdbc.query(c, "SELECT d.doc_type, COUNT(*) FROM OPS_SEARCH_DOC d JOIN OPS_SEARCH_ALIAS a ON a.tenant_id=d.tenant_id AND a.generation=d.generation "
                 + "WHERE d.tenant_id=? GROUP BY d.doc_type", rs -> indexed.put(rs.getString(1), rs.getLong(2)), tenantId));
         return readers.stream().map(r -> new Drift(r.type(), r.count(tenantId), indexed.getOrDefault(r.type(), 0L))).toList();
     }
@@ -126,7 +126,7 @@ public final class SearchIndexMaintenance {
     }
 
     public List<JobRow> jobs(String tenantId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT generation,state,indexed,expected,message,updated_at,reason FROM OPS_INDEX_JOB WHERE tenant_id=? ORDER BY generation DESC",
+        return tx.read(c -> Jdbc.query(c, "SELECT generation,state,indexed,expected,message,updated_at,reason FROM OPS_INDEX_JOB WHERE tenant_id=? ORDER BY generation DESC",
                 rs -> new JobRow(new Job(rs.getLong(1), rs.getString(2), rs.getLong(3), rs.getLong(4), rs.getString(5), rs.getString(7)), rs.getTimestamp(6).toInstant()), tenantId));
     }
 }

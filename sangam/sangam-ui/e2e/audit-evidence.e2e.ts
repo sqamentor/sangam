@@ -13,7 +13,10 @@
  * The evidence tab of /m/compliance shows the same jurisdiction answer to the compliance officer. The report is fetched
  * through the API with an explicit period: the UI's "Generate report" sends the period as optional dates while the
  * server requires both instants (ComplianceController.report), which is listed for the owner, not covered here.
+ * Generating the report is POST /compliance/reports (register P-1, owner decision 2026-11-20): it writes CMP_REPORT
+ * and an audit event, so a GET of that path answers 405.
  */
+import { randomUUID } from 'node:crypto';
 import { apiAs, expect, signInAs, test } from './support/fixtures';
 import { t } from './support/env';
 import { indiaPack, sha256Hex } from './support/compliance';
@@ -57,7 +60,10 @@ test('the evidence report carries the SHA-256 of exactly what is served (C-04)',
   try {
     const to = new Date();
     const from = new Date(to.getTime() - 24 * 3600 * 1000);
-    const res = await officer.get('compliance/reports', { params: { from: from.toISOString(), to: to.toISOString(), format: 'json', verifyChains: true } });
+    // register P-1: generation is a POST with the period in the body; a GET of the path is refused and writes nothing
+    const viaGet = await officer.get('compliance/reports', { params: { from: from.toISOString(), to: to.toISOString(), format: 'json', verifyChains: true } });
+    expect(viaGet.status(), await viaGet.text()).toBe(405);
+    const res = await officer.post('compliance/reports', { headers: { 'Idempotency-Key': randomUUID() }, data: { from: from.toISOString(), to: to.toISOString(), format: 'json', verifyChains: true } });
     expect(res.status(), await res.text()).toBe(200);
     const report = (await res.json()) as { reportId?: string; hash?: string; json?: string; content?: Record<string, unknown> };
     expect(report.reportId).toBeTruthy();

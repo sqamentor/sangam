@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.ports.idm;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -46,6 +47,17 @@ class IdmFacadeTest {
             inside++;
             try {
                 return work.apply(SENTINEL);
+            } finally {
+                inside--;
+            }
+        }
+
+        @Override
+        public <T> T read(ReadWork<T> work) {
+            opened++;
+            inside++;
+            try {
+                return work.read(SENTINEL);
             } finally {
                 inside--;
             }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.security.quota;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -84,6 +85,23 @@ class JdbcTenantQuotasTest {
                     c.setAutoCommit(false);
                     try {
                         T r = work.apply(c);
+                        c.commit();
+                        return r;
+                    } catch (RuntimeException e) {
+                        c.rollback();
+                        throw e;
+                    }
+                } catch (java.sql.SQLException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                try (Connection c = DriverManager.getConnection(url, "sa", "")) {
+                    c.setAutoCommit(false);
+                    try {
+                        T r = work.read(c);
                         c.commit();
                         return r;
                     } catch (RuntimeException e) {
@@ -196,6 +214,12 @@ class JdbcTenantQuotasTest {
             public <T> T inTransaction(Function<Connection, T> work) {
                 leafUnits.incrementAndGet();
                 return t.inTransaction(work);
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                leafUnits.incrementAndGet();
+                return t.read(work);
             }
         };
     }

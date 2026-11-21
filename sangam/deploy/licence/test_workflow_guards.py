@@ -170,11 +170,9 @@ class Images(unittest.TestCase):
 
     # RM-33 ratchet: the third-party images still without a digest. Each needs a registry lookup (Phase C, decision
     # 96: no download now); the list may only shrink, and a new unpinned image fails here.
-    UNPINNED = {
-        (".github/workflows/db-matrix.yml", "mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04"),
-        (".github/workflows/db-matrix.yml", "mariadb:11.4"),
-        (".github/workflows/db-matrix.yml", "icr.io/db2_community/db2:12.1.2.0"),
-    }
+    # 2026-11-19 (fix/release-gates): the last three (db-matrix sqlserver2025, mariadb, db2) are pinned from the
+    # registry v2 manifest API; the set is empty and must stay empty.
+    UNPINNED = set()
 
     def test_rm33_the_repository_has_only_the_listed_unpinned_images(self):
         paths = [os.path.join(REPO, p) for p in ("sangam/deploy/airgap/images.txt", "sangam/deploy/docker",
@@ -198,6 +196,10 @@ class Images(unittest.TestCase):
         pins = re.findall(r"SANGAM_IT_IMAGE_(\w+): (\S+)@sha256:[0-9a-f]{64}", wf)
         self.assertGreaterEqual(len(pins), 4)
         for db, name in pins:
+            if db == "DB2":
+                # SL-112: AcceptanceDatabase refuses the db2 lane before it asks Testcontainers for any image
+                self.assertIn('case "db2" -> throw db2Refusal(', java)
+                continue
             self.assertIn(f'"{name}"', java, f"{db}: {name} is not an image AcceptanceDatabase uses")
         self.assertIn('docker tag "$ref" "${ref%@sha256:*}"', wf)
 
@@ -478,6 +480,71 @@ class FetchTool(unittest.TestCase):
             for k, v in sig.items():
                 if k.endswith("_url"):
                     self.assertEqual(repo_of(v), repo_of(t["url"]), f"{name} {k}")
+
+
+class PinnedToolVersions(unittest.TestCase):
+    """Register P-4: the owner extended the unsigned, checksum-only exception of decision 191 to kubeconform 0.8.0
+    (2026-11-20). The pin, its checksum and the job log line move together."""
+
+    def test_kubeconform_is_pinned_at_0_8_0_checksum_only(self):
+        t = PINS["tools"]["kubeconform"]
+        self.assertEqual(t["version"], "0.8.0")
+        self.assertEqual(t["url"], "https://github.com/yannh/kubeconform/releases/download/v0.8.0/"
+                                   "kubeconform-linux-amd64.tar.gz")
+        # SHA-256 of kubeconform-linux-amd64.tar.gz in the vendor's v0.8.0 CHECKSUMS file (L9 inventory, 2026-11-19)
+        self.assertEqual(t["sha256"], "9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883")
+        sig = ft.signature_record("kubeconform", t)
+        self.assertEqual(sig["kind"], "none", "kubeconform publishes no signature")
+        self.assertEqual(sig["decision"], "191")
+        self.assertIn("v0.8.0", sig["reason"], "the exception names the version it covers")
+        self.assertNotIn("0.7.0", json.dumps(t))
+
+    def test_step_names_state_the_pinned_version_of_each_tool(self):
+        """A step name that gives a pinned tool's version gives the pinned one (the job log is the record)."""
+        seen = set()
+        for name in sorted(os.listdir(WORKFLOWS)):
+            if not name.endswith((".yml", ".yaml")):
+                continue
+            with open(os.path.join(WORKFLOWS, name), encoding="utf-8") as f:
+                for no, line in enumerate(f, 1):
+                    if not re.match(r"\s*- name:", line):
+                        continue
+                    for tool, t in PINS["tools"].items():
+                        for v in re.findall(rf"\b{re.escape(tool)} v?(\d+\.\d+\.\d+)\b", line):
+                            seen.add(tool)
+                            self.assertEqual(v, t["version"], f"{name}:{no} names {tool} {v}")
+        self.assertIn("kubeconform", seen, "the kubeconform step still states its version")
+
+
+class PhpSdkTestToolLock(unittest.TestCase):
+    """Register P-5 (advisory PKSA-z3gr-8qht-p93v): the PHP SDK's test runner is phpunit 11.5.58 or later in the 11.5
+    line, in the committed lock (what CI installs) and as the floor of composer.json (what a re-resolve may pick)."""
+
+    PHP = os.path.join(REPO, "sangam", "sdks", "php")
+    FLOOR = (11, 5, 58)
+
+    def test_the_lock_installs_phpunit_at_or_above_the_fixed_version(self):
+        with open(os.path.join(self.PHP, "composer.lock"), encoding="utf-8") as f:
+            lock = json.load(f)
+        found = [p["version"] for p in lock.get("packages", []) + lock.get("packages-dev", [])
+                 if p["name"] == "phpunit/phpunit"]
+        self.assertEqual(len(found), 1, found)
+        version = tuple(int(x) for x in found[0].lstrip("v").split("."))
+        self.assertEqual(version[:2], (11, 5), found[0])
+        self.assertGreaterEqual(version, self.FLOOR, f"phpunit {found[0]} is in the range of PKSA-z3gr-8qht-p93v")
+
+    def test_composer_json_cannot_resolve_below_the_fixed_version(self):
+        with open(os.path.join(self.PHP, "composer.json"), encoding="utf-8") as f:
+            constraint = json.load(f)["require-dev"]["phpunit/phpunit"]
+        m = re.fullmatch(r"\^(\d+)\.(\d+)\.(\d+)", constraint)
+        self.assertIsNotNone(m, f"a caret constraint with a patch floor is expected, got {constraint!r}")
+        self.assertGreaterEqual(tuple(int(x) for x in m.groups()), self.FLOOR, constraint)
+
+    def test_sdks_workflow_names_no_older_phpunit(self):
+        with open(os.path.join(WORKFLOWS, "sdks.yml"), encoding="utf-8") as f:
+            for no, line in enumerate(f, 1):
+                for v in re.findall(r"phpunit (\d+\.\d+\.\d+)", line):
+                    self.assertGreaterEqual(tuple(int(x) for x in v.split(".")), self.FLOOR, f"sdks.yml:{no}")
 
 
 if __name__ == "__main__":

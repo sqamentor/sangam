@@ -92,7 +92,7 @@ class ArchitectureGuardTest {
         CLASS_SIZE_ALLOWED.put("sangam-case/src/main/java/org/sangam/casefile/rest/CaseRestAdapter.java", 974);
         CLASS_SIZE_ALLOWED.put("sangam-resources/src/main/java/org/sangam/resources/booking/BookingService.java", 913);
         CLASS_SIZE_ALLOWED.put("sangam-integration/src/main/java/org/sangam/integration/pipeline/PipelineRunner.java", 825);
-        CLASS_SIZE_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/jdbc/JdbcIdentityAdminAdapter.java", 821);
+        CLASS_SIZE_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/jdbc/JdbcIdentityAdminAdapter.java", 820);
     }
 
     /**

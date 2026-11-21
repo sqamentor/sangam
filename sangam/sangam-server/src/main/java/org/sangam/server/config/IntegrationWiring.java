@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
+import org.sangam.core.api.ReadWork;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -135,6 +136,11 @@ public class IntegrationWiring {
             @Override
             public <T> T inTransaction(Function<java.sql.Connection, T> work) {
                 return tx.withConnection(work);
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                return tx.withReadConnection(work);
             }
         };
     }

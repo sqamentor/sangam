@@ -45,7 +45,22 @@ class WakeupListenDatabaseIdentityH2Test {
             }
 
             @Override
+            public <T> T inReadTx(org.sangam.core.api.ReadSupplier<T> work) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public <T> T withReadConnection(org.sangam.core.api.ReadWork<T> work) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
             public <T> T inNewTx(Supplier<T> work) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public <T> T inNewReadTx(org.sangam.core.api.ReadWork<T> work) {
                 throw new UnsupportedOperationException();
             }
 

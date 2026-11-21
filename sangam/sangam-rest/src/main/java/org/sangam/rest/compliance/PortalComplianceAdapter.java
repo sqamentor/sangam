@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.compliance;
 
+import org.sangam.core.api.ReadWork;
 import java.sql.Connection;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -101,6 +102,14 @@ public final class PortalComplianceAdapter implements PortalCompliancePort {
         }
     }
 
+    private <T> T rtx(ReadWork<T> work) {
+        try {
+            return compliance.tx.read(work);
+        } catch (ComplianceException e) {
+            throw problem(e);
+        }
+    }
+
     static ApiProblem problem(ComplianceException e) {
         return new ApiProblem(e.httpStatus(), e.code().name(), e.getMessage());
     }
@@ -135,7 +144,7 @@ public final class PortalComplianceAdapter implements PortalCompliancePort {
     public PortalNotice notice(RequestContext ctx, String noticeKey, String language) {
         ComplianceConfig cfg = cfg(ctx.tenantId());
         JurisdictionPack.Language lang = language(cfg, language);
-        return tx(c -> {
+        return rtx(c -> {
             ConsentNoticeService.RenderedNotice n = compliance.notices.get(c, ctx.tenantId(), noticeKey, null, lang);
             String code = n.language().code();
             List<NoticePurpose> purposes = new ArrayList<>();

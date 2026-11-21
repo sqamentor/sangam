@@ -264,7 +264,7 @@ public final class DltRegistrationStore {
     // ------------------------------------------------------------------ reads
 
     public Optional<Snapshot> snapshot(String tenantId) {
-        return tx.inTransaction(c -> snapshot(c, tenantId));
+        return tx.read(c -> snapshot(c, tenantId));
     }
 
     private Optional<Snapshot> snapshot(Connection c, String tenantId) {

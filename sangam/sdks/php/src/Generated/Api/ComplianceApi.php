@@ -678,24 +678,20 @@ final class ComplianceApi
     }
 
     /**
-     * Compliance evidence report
+     * Generate the compliance evidence report
      *
-     * Evidence report for [from, to); `format=html` returns text/html.
+     * Generates the evidence report for [from, to), stores its hash (CMP_REPORT) and writes the audit event CMP_EVIDENCE_REPORT_GENERATED; format `html` returns text/html. X-Sangam-Report-Hash carries the hash. A missing `from` or `to` is 400 VALIDATION_FAILED. Generation writes, so there is no GET of this path (405).
      *
-     * GET /compliance/reports (operationId getComplianceReport); permission audit.read.
-     * @param string $from query from
-     * @param string $to query to
-     * @param bool|null $verifyChains query verifyChains
-     * @param string|null $format query format
+     * POST /compliance/reports (operationId generateComplianceReport); permission audit.read; result stored atomically with the state change.
+     * @param Model\ComplianceReportRequest|array $body request body
      * @return Model\ComplianceReport|null
      */
-    public function getComplianceReport(string $from, string $to, ?bool $verifyChains = null, ?string $format = null, ?RequestOptions $options = null): ?Model\ComplianceReport
+    public function generateComplianceReport(Model\ComplianceReportRequest|array $body, ?RequestOptions $options = null): ?Model\ComplianceReport
     {
-        $req = ApiRequest::get('/compliance/reports');
-        $req->query('from', $from);
-        $req->query('to', $to);
-        $req->query('verifyChains', $verifyChains);
-        $req->query('format', $format);
+        $req = ApiRequest::post('/compliance/reports');
+        if ($body !== null) {
+            $req->body($body);
+        }
         return $this->calls->model($req, $options, Model\ComplianceReport::class);
     }
 

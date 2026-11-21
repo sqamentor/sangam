@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.config;
 
+import org.sangam.core.api.ReadWork;
 import java.sql.Connection;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -45,6 +46,21 @@ public final class SpringTxSupport extends TxSupport {
     @Override
     public <T> T inNewTx(Supplier<T> work) {
         return requiresNew.execute(status -> work.get());
+    }
+
+    @Override
+    public <T> T withReadConnection(ReadWork<T> work) {
+        return required.execute(status -> work.read(connection()));
+    }
+
+    @Override
+    public <T> T inReadTx(org.sangam.core.api.ReadSupplier<T> work) {
+        return required.execute(status -> work.read());
+    }
+
+    @Override
+    public <T> T inNewReadTx(ReadWork<T> work) {
+        return requiresNew.execute(status -> work.read(connection()));
     }
 
     @Override

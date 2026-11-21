@@ -303,7 +303,7 @@ public class PacksWiring {
 
     static PackRuntime.Ports withDocumentRoute(PackRuntime.Ports ports, ProcessEngine engine, TxSupport tx) {
         return ports.withSlotBindings(engine == null ? org.sangam.packs.port.DocumentSlotBindings.NONE
-                : new org.sangam.assembly.packs.AuditDocumentSlotBindings(tx::withConnection,
+                : new org.sangam.assembly.packs.AuditDocumentSlotBindings(tx.joinedTransactions(),
                         PacksWiring::engineCommand, new AuditChain(tx.dialect())));
     }
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.compliance;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -81,6 +82,24 @@ class DenialAuditSurvivesRollbackH2Test {
                     throw new IllegalStateException(e);
                 }
             }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                denialTransactions.incrementAndGet();
+                try (Connection c = DriverManager.getConnection(url, "sa", "")) {
+                    c.setAutoCommit(false);
+                    try {
+                        T r = work.read(c);
+                        c.commit();
+                        return r;
+                    } catch (RuntimeException e) {
+                        c.rollback();
+                        throw e;
+                    }
+                } catch (java.sql.SQLException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
         };
     }
 
@@ -88,6 +107,11 @@ class DenialAuditSurvivesRollbackH2Test {
     static final Transactions CALLER_POOL_UNUSED = new Transactions() {
         @Override
         public <T> T inTransaction(Function<Connection, T> work) {
+            throw new AssertionError("a denial must not open a transaction on the caller's pool (SL-43)");
+        }
+
+        @Override
+        public <T> T read(ReadWork<T> work) {
             throw new AssertionError("a denial must not open a transaction on the caller's pool (SL-43)");
         }
     };

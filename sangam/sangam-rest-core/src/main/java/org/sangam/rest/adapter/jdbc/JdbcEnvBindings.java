@@ -141,7 +141,7 @@ final class JdbcEnvBindings {
         if (state != null && !STATES.contains(state)) {
             throw JdbcSupport.invalid("state", "state must be one of " + new TreeSet<>(STATES));
         }
-        return tx.withConnection(c -> list(c, JdbcSupport.tenant(ctx), env, name, state));
+        return tx.withReadConnection(c -> list(c, JdbcSupport.tenant(ctx), env, name, state));
     }
 
     EnvBinding set(RequestContext ctx, String name, EnvBindingRequest request) {

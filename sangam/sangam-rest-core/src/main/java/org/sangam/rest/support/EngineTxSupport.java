@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.support;
 
+import org.sangam.core.api.ReadWork;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -101,6 +102,95 @@ public final class EngineTxSupport extends TxSupport {
             T value = (T) r.value;
             return value;
         }
+    }
+
+    @Override
+    public <T> T inReadTx(org.sangam.core.api.ReadSupplier<T> work) {
+        Frame joined = current.get();
+        if (joined != null) {
+            return work.read();
+        }
+        try {
+            return engine.inEngineReadTransaction(c -> {
+                Frame f = new Frame(c, null);
+                current.set(f);
+                try {
+                    T value = work.read();
+                    if (f.rollbackOnly) {
+                        throw new RollbackOnly(value);
+                    }
+                    return value;
+                } finally {
+                    current.remove();
+                }
+            });
+        } catch (RollbackOnly r) {
+            @SuppressWarnings("unchecked")
+            T value = (T) r.value;
+            return value;
+        }
+    }
+
+    @Override
+    public <T> T withReadConnection(ReadWork<T> work) {
+        Frame joined = current.get();
+        if (joined != null) {
+            return work.read(joined.connection);
+        }
+        try {
+            return engine.inEngineReadTransaction(c -> {
+                Frame f = new Frame(c, null);
+                current.set(f);
+                try {
+                    T value = work.read(c);
+                    if (f.rollbackOnly) {
+                        throw new RollbackOnly(value);
+                    }
+                    return value;
+                } finally {
+                    current.remove();
+                }
+            });
+        } catch (RollbackOnly r) {
+            @SuppressWarnings("unchecked")
+            T value = (T) r.value;
+            return value;
+        }
+    }
+
+    @Override
+    public <T> T inNewReadTx(ReadWork<T> work) {
+        Frame outer = current.get();
+        List<Runnable> after = new ArrayList<>();
+        T value;
+        try (Connection c = dataSource().getConnection()) {
+            boolean auto = c.getAutoCommit();
+            c.setAutoCommit(false);
+            Frame f = new Frame(c, after);
+            current.set(f);
+            try {
+                value = work.read(c);
+                if (f.rollbackOnly) {
+                    c.rollback();
+                    return value;
+                }
+                c.commit();
+            } catch (RuntimeException | Error e) {
+                c.rollback();
+                throw e;
+            } finally {
+                c.setAutoCommit(auto);
+                if (outer == null) {
+                    current.remove();
+                } else {
+                    current.set(outer);
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("own transaction failed: " + e.getMessage(), e);
+        }
+        after.forEach(Runnable::run);
+        return value;
     }
 
     @Override

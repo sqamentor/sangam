@@ -37,6 +37,7 @@ import org.sangam.sdk.generated.model.CompliancePurpose;
 import org.sangam.sdk.generated.model.ComplianceReasonBody;
 import org.sangam.sdk.generated.model.ComplianceRenderedNotice;
 import org.sangam.sdk.generated.model.ComplianceReport;
+import org.sangam.sdk.generated.model.ComplianceReportRequest;
 import org.sangam.sdk.generated.model.ComplianceRespondLawfulRequest;
 import org.sangam.sdk.generated.model.ComplianceRightsRequest;
 import org.sangam.sdk.generated.model.ComplianceRightsSubmission;
@@ -92,7 +93,7 @@ public final class ComplianceApi {
     private static final TypeReference<ComplianceTransferDecision> R_evaluateTransfer = new TypeReference<>() { };
     private static final TypeReference<ComplianceLogSegment> R_sealComplianceLogs = new TypeReference<>() { };
     private static final TypeReference<ComplianceAuditVerification> R_verifyComplianceLogs = new TypeReference<>() { };
-    private static final TypeReference<ComplianceReport> R_getComplianceReport = new TypeReference<>() { };
+    private static final TypeReference<ComplianceReport> R_generateComplianceReport = new TypeReference<>() { };
     private static final TypeReference<ComplianceJurisdiction> R_getComplianceJurisdiction = new TypeReference<>() { };
 
     private final GeneratedCalls call;
@@ -725,25 +726,19 @@ public final class ComplianceApi {
     }
 
     /**
-     * Compliance evidence report
+     * Generate the compliance evidence report
      *
-     * <p>Evidence report for [from, to); `format=html` returns text/html.
+     * <p>Generates the evidence report for [from, to), stores its hash (CMP_REPORT) and writes the audit event CMP_EVIDENCE_REPORT_GENERATED; format `html` returns text/html. X-Sangam-Report-Hash carries the hash. A missing `from` or `to` is 400 VALIDATION_FAILED. Generation writes, so there is no GET of this path (405).
      *
-     * <p>{@code GET /compliance/reports} (operationId {@code getComplianceReport}); permission {@code audit.read}.
-     * @param from query parameter {@code from}
-     * @param to query parameter {@code to}
-     * @param verifyChains query parameter {@code verifyChains}, or null
-     * @param format query parameter {@code format}, or null.  One of: json, html.
+     * <p>{@code POST /compliance/reports} (operationId {@code generateComplianceReport}); permission {@code audit.read}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param body request body
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public ComplianceReport getComplianceReport(java.time.Instant from, java.time.Instant to, Boolean verifyChains, String format, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/compliance/reports");
-        req.query("from", from);
-        req.query("to", to);
-        req.query("verifyChains", verifyChains);
-        req.query("format", format);
-        return call.json(req, options, R_getComplianceReport);
+    public ComplianceReport generateComplianceReport(ComplianceReportRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/compliance/reports");
+        req.body(body);
+        return call.json(req, options, R_generateComplianceReport);
     }
 
     /**

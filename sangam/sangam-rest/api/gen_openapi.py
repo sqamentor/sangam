@@ -2106,7 +2106,16 @@ schema("ComplianceLogSegment", "A sealed, hash-chained log segment in the home-c
        "segmentId from:dt to:dt events:long sha256 prevSha256 uri")
 schema("ComplianceAuditVerification", "Audit-chain and log-segment integrity of the tenant.",
        "ok:bool chains:obj latestSegment:obj latestSegmentVerified:bool verifiedAt:dt")
-schema("ComplianceReport", "Compliance evidence report (JSON; `?format=html` returns the HTML rendering). X-Sangam-Report-Hash carries its hash.",
+# register P-1 (owner decision 2026-11-20, "Move to POST"; CodeQL alert 298): generating the report inserts CMP_REPORT
+# and writes the audit event, so it is a POST with this body; the GET of /compliance/reports is removed (corrections:
+# in sangam-api-deprecations.yaml)
+schema("ComplianceReportRequest", "The period [from, to) of a compliance evidence report to generate, and how it is answered.",
+       "from:dt to:dt verifyChains:bool format", ["from", "to"], enums={"format": ["json", "html"]},
+       descs={"from": "Start of the period (inclusive). Required.",
+              "to": "End of the period (exclusive). Required.",
+              "verifyChains": "Verify the tenant's audit chains for the report. Default true.",
+              "format": "`json` (default) answers the report as application/json; `html` answers its HTML rendering as text/html."})
+schema("ComplianceReport", "Compliance evidence report (JSON; format `html` in the request returns the HTML rendering). X-Sangam-Report-Hash carries its hash.",
        "reportId hash content:obj json html")
 schema("ComplianceJurisdiction", "The tenant's active jurisdiction pack: languages, rights, authorities, contact roles, limits.",
        "code name homeCountry timeZone defaultLanguage languages:list:obj rights:list:obj authorities:list:obj "
@@ -2267,12 +2276,13 @@ op("post", C + "/logs/segments/seal", "sealComplianceLogs", "Compliance", "Seal 
 op("get", C + "/logs/verify", "verifyComplianceLogs", "Compliance", "Verify audit and log integrity",
    "Verifies the tenant's audit chains and the latest sealed segment.", CR + ["R42", "X.2.3.4"],
    resp=(200, "ComplianceAuditVerification"), perm="audit.read", errors=STD_R)
-op("get", C + "/reports", "getComplianceReport", "Compliance", "Compliance evidence report",
-   "Evidence report for [from, to); `format=html` returns text/html.", CR + ["R42"],
-   params=[q("from", "dt", required=True), q("to", "dt", required=True), q("verifyChains", "bool"),
-           q("format", enum=["json", "html"])],
+op("post", C + "/reports", "generateComplianceReport", "Compliance", "Generate the compliance evidence report",
+   "Generates the evidence report for [from, to), stores its hash (CMP_REPORT) and writes the audit event "
+   "CMP_EVIDENCE_REPORT_GENERATED; format `html` returns text/html. X-Sangam-Report-Hash carries the hash. A missing "
+   "`from` or `to` is 400 VALIDATION_FAILED. Generation writes, so there is no GET of this path (405).",
+   CR + ["R42", "R41"], body="ComplianceReportRequest",
    resp=(200, {"application/json": {"schema": R("ComplianceReport")}, "text/html": {"schema": {"type": "string"}}}),
-   perm="audit.read", errors=STD_R)
+   cmd="compliance.report.generate", perm="audit.read", errors=STD_R)
 op("get", C + "/jurisdiction", "getComplianceJurisdiction", "Compliance", "Active jurisdiction pack",
    "Code, languages, rights, authorities, contact roles and limits of the tenant's jurisdiction (for the UI).", CR,
    resp=(200, "ComplianceJurisdiction"), perm="authenticated", errors=("Unauthorized",))

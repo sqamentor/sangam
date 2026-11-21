@@ -36,7 +36,7 @@ public final class RosterRestAdapter implements RosterRestPort {
 
     @Override
     public List<RosterModel.ShiftTemplate> listShifts(SecurityIdentity actor, int offset, int limit) {
-        return tx.inTransaction(c -> roster.shifts(c, actor, offset, limit));
+        return tx.read(c -> roster.shifts(c, actor, offset, limit));
     }
 
     @Override
@@ -62,7 +62,7 @@ public final class RosterRestAdapter implements RosterRestPort {
 
     @Override
     public List<RosterModel.RotationPattern> listRotations(SecurityIdentity actor, int offset, int limit) {
-        return tx.inTransaction(c -> roster.rotations(c, actor, offset, limit));
+        return tx.read(c -> roster.rotations(c, actor, offset, limit));
     }
 
     @Override
@@ -92,12 +92,12 @@ public final class RosterRestAdapter implements RosterRestPort {
 
     @Override
     public List<RosterModel.RosterPeriod> listPeriods(SecurityIdentity actor, String unitId, int offset, int limit) {
-        return tx.inTransaction(c -> roster.periods(c, actor, unitId, offset, limit));
+        return tx.read(c -> roster.periods(c, actor, unitId, offset, limit));
     }
 
     @Override
     public RosterModel.RosterPeriod getPeriod(SecurityIdentity actor, String periodId) {
-        return tx.inTransaction(c -> roster.period(c, actor, periodId));
+        return tx.read(c -> roster.period(c, actor, periodId));
     }
 
     @Override
@@ -113,7 +113,7 @@ public final class RosterRestAdapter implements RosterRestPort {
 
     @Override
     public List<RosterModel.RosterMember> listMembers(SecurityIdentity actor, String periodId, int offset, int limit) {
-        return tx.inTransaction(c -> roster.members(c, actor, periodId, offset, limit));
+        return tx.read(c -> roster.members(c, actor, periodId, offset, limit));
     }
 
     @Override
@@ -133,7 +133,7 @@ public final class RosterRestAdapter implements RosterRestPort {
 
     @Override
     public List<RosterModel.CoverageDemand> listDemand(SecurityIdentity actor, String periodId, int offset, int limit) {
-        return tx.inTransaction(c -> roster.demands(c, actor, periodId, offset, limit));
+        return tx.read(c -> roster.demands(c, actor, periodId, offset, limit));
     }
 
     @Override
@@ -199,18 +199,18 @@ public final class RosterRestAdapter implements RosterRestPort {
 
     @Override
     public List<RosterModel.RosterAssignment> unitRoster(SecurityIdentity actor, String periodId, int offset, int limit) {
-        return tx.inTransaction(c -> roster.unitRoster(c, actor, periodId, offset, limit));
+        return tx.read(c -> roster.unitRoster(c, actor, periodId, offset, limit));
     }
 
     @Override
     public VisibleQuery.CappedCount countAssignments(SecurityIdentity actor, String periodId, int cap) {
-        return tx.inTransaction(c -> roster.countAssignments(c, actor, periodId, cap));
+        return tx.read(c -> roster.countAssignments(c, actor, periodId, cap));
     }
 
     @Override
     public List<RosterModel.RosterAssignment> onDuty(SecurityIdentity actor, String periodId, Instant at, int offset,
                                                      int limit) {
-        return tx.inTransaction(c -> roster.onDuty(c, actor, periodId, at == null ? roster.now(c) : at, offset, limit));
+        return tx.read(c -> roster.onDuty(c, actor, periodId, at == null ? roster.now(c) : at, offset, limit));
     }
 
     @Override
@@ -235,7 +235,7 @@ public final class RosterRestAdapter implements RosterRestPort {
 
     @Override
     public RosterModel.RosterAssignment getAssignment(SecurityIdentity actor, String assignmentId) {
-        return tx.inTransaction(c -> roster.assignment(c, actor, assignmentId));
+        return tx.read(c -> roster.assignment(c, actor, assignmentId));
     }
 
     @Override
@@ -250,7 +250,7 @@ public final class RosterRestAdapter implements RosterRestPort {
     public List<RosterModel.RosterAssignment> personalRoster(SecurityIdentity actor, String personId, Instant from,
                                                              Instant to, int offset, int limit) {
         String who = personId == null || "me".equals(personId) ? actor.personId() : personId;
-        return tx.inTransaction(c -> roster.personalRoster(c, actor, who, from, to, offset, limit));
+        return tx.read(c -> roster.personalRoster(c, actor, who, from, to, offset, limit));
     }
 
     @Override
@@ -261,12 +261,12 @@ public final class RosterRestAdapter implements RosterRestPort {
 
     @Override
     public List<RosterModel.SwapRequest> listSwaps(SecurityIdentity actor, String periodId, int offset, int limit) {
-        return tx.inTransaction(c -> roster.swaps(c, actor, periodId, offset, limit));
+        return tx.read(c -> roster.swaps(c, actor, periodId, offset, limit));
     }
 
     @Override
     public RosterModel.SwapRequest getSwap(SecurityIdentity actor, String swapId) {
-        return tx.inTransaction(c -> roster.swap(c, actor, swapId));
+        return tx.read(c -> roster.swap(c, actor, swapId));
     }
 
     @Override

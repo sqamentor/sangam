@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.quarkus.host;
 
+import org.sangam.core.api.ReadWork;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
@@ -84,6 +85,60 @@ public final class JtaTxSupport extends TxSupport {
             end(status.marked);
         }
         return result;
+    }
+
+    @Override
+    public <T> T inReadTx(org.sangam.core.api.ReadSupplier<T> work) {
+        Objects.requireNonNull(work, "work");
+        boolean owner = begin();
+        T result;
+        try {
+            result = work.read();
+        } catch (RuntimeException | Error e) {
+            abandon(owner, e);
+            throw e;
+        }
+        if (owner) {
+            end(false);
+        }
+        return result;
+    }
+
+    @Override
+    public <T> T withReadConnection(ReadWork<T> work) {
+        Objects.requireNonNull(work, "work");
+        boolean owner = begin();
+        T result;
+        try {
+            result = work.read(connection());
+        } catch (RuntimeException | Error e) {
+            abandon(owner, e);
+            throw e;
+        }
+        if (owner) {
+            end(false);
+        }
+        return result;
+    }
+
+    @Override
+    public <T> T inNewReadTx(ReadWork<T> work) {
+        Objects.requireNonNull(work, "work");
+        Transaction suspended = suspend();
+        try {
+            beginNew();
+            T result;
+            try {
+                result = work.read(connection());
+            } catch (RuntimeException | Error e) {
+                abandon(true, e);
+                throw e;
+            }
+            end(false);
+            return result;
+        } finally {
+            resume(suspended);
+        }
     }
 
     @Override

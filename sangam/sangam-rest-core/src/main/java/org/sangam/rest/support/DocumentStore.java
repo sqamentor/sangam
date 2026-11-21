@@ -156,7 +156,7 @@ public final class DocumentStore {
     }
 
     public Optional<Doc> get(String tenant, String kind, String id) {
-        return tx.withConnection(c -> Jdbc.one(c, "SELECT " + COLS + " FROM REST_DOCUMENT"
+        return tx.withReadConnection(c -> Jdbc.one(c, "SELECT " + COLS + " FROM REST_DOCUMENT"
                 + " WHERE tenant_id=? AND kind=? AND doc_id=?", DocumentStore::row, tenant, kind, id)).map(this::open);
     }
 
@@ -232,7 +232,7 @@ public final class DocumentStore {
         List<Object> params = new ArrayList<>();
         String where = where(tenant, kind, filter, params);
         int max = limit <= 0 ? 100_000 : Math.addExact(offset, limit);
-        return tx.withConnection(c -> {
+        return tx.withReadConnection(c -> {
             // where() appends only constant column predicates with ? marks; every value is in params and bound below.
             // nosemgrep: sangam-jdbc-sql-concat
             String sql = "SELECT " + COLS + " FROM REST_DOCUMENT WHERE " + where + " ORDER BY created_at, doc_id";

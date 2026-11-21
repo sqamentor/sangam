@@ -56,14 +56,14 @@ public class PartyController {
                                           @RequestParam(defaultValue = "0") int page,
                                           @RequestParam(defaultValue = "50") int size,
                                           @RequestHeader(value = PURPOSE, required = false) String purpose) {
-        return support.tx(purpose, (c, ctx) -> parties.list(c, ctx, kind, status, name, idType, idValue, page, size)
+        return support.rtx(purpose, (c, ctx) -> parties.list(c, ctx, kind, status, name, idType, idValue, page, size)
                 .stream().map(PartyRecords.Party::toMap).toList());
     }
 
     @GetMapping("/{id}")
     public Map<String, Object> get(@PathVariable String id,
                                    @RequestHeader(value = PURPOSE, required = false) String purpose) {
-        return support.tx(purpose, (c, ctx) -> parties.view(c, ctx, id));
+        return support.rtx(purpose, (c, ctx) -> parties.view(c, ctx, id));
     }
 
     @PatchMapping("/{id}")
@@ -86,12 +86,12 @@ public class PartyController {
 
     @GetMapping("/{id}/resolve")
     public Map<String, Object> resolve(@PathVariable String id) {
-        return support.tx((c, ctx) -> Maps.of("partyId", id, "resolvedId", parties.resolve(c, ctx, id)));
+        return support.rtx((c, ctx) -> Maps.of("partyId", id, "resolvedId", parties.resolve(c, ctx, id)));
     }
 
     @GetMapping("/{id}/audit/verify")
     public Object verifyAudit(@PathVariable String id) {
-        return support.tx((c, ctx) -> parties.verifyAudit(c, ctx, id));
+        return support.rtx((c, ctx) -> parties.verifyAudit(c, ctx, id));
     }
 
     // --------------------------------------------------------------------------------------------- identifiers
@@ -99,7 +99,7 @@ public class PartyController {
     @GetMapping("/{id}/identifiers")
     public List<Map<String, Object>> identifiers(@PathVariable String id,
                                                  @RequestHeader(value = PURPOSE, required = false) String purpose) {
-        return support.tx(purpose, (c, ctx) -> parties.listIdentifiers(c, ctx, id));
+        return support.rtx(purpose, (c, ctx) -> parties.listIdentifiers(c, ctx, id));
     }
 
     @PostMapping("/{id}/identifiers")
@@ -129,7 +129,7 @@ public class PartyController {
     @GetMapping("/{id}/relationships")
     public List<Map<String, Object>> relationships(@PathVariable String id,
                                                    @RequestHeader(value = PURPOSE, required = false) String purpose) {
-        return support.tx(purpose, (c, ctx) -> parties.relationships(c, ctx, id).stream()
+        return support.rtx(purpose, (c, ctx) -> parties.relationships(c, ctx, id).stream()
                 .map(PartyRecords.Relationship::toMap).toList());
     }
 
@@ -152,7 +152,7 @@ public class PartyController {
     @GetMapping("/{id}/addresses")
     public List<Map<String, Object>> addresses(@PathVariable String id,
                                                @RequestHeader(value = PURPOSE, required = false) String purpose) {
-        return support.tx(purpose, (c, ctx) -> parties.addresses(c, ctx, id).stream().map(PartyRecords.Address::toMap).toList());
+        return support.rtx(purpose, (c, ctx) -> parties.addresses(c, ctx, id).stream().map(PartyRecords.Address::toMap).toList());
     }
 
     @PostMapping("/{id}/addresses")
@@ -174,7 +174,7 @@ public class PartyController {
     public Map<String, Object> household(@PathVariable String id, @RequestParam(required = false) List<String> types,
                                          @RequestParam(defaultValue = "1") int depth,
                                          @RequestHeader(value = PURPOSE, required = false) String purpose) {
-        return support.tx(purpose, (c, ctx) -> parties.household(c, ctx, id, types, depth).toMap());
+        return support.rtx(purpose, (c, ctx) -> parties.household(c, ctx, id, types, depth).toMap());
     }
 
     // ----------------------------------------------------------------------------------------------- snapshots
@@ -190,18 +190,18 @@ public class PartyController {
     @GetMapping("/snapshots")
     public List<Map<String, Object>> snapshots(@RequestParam(required = false) String reference,
                                                @RequestParam(required = false) String partyId) {
-        return support.tx((c, ctx) -> parties.snapshots(c, ctx, reference, partyId).stream()
+        return support.rtx((c, ctx) -> parties.snapshots(c, ctx, reference, partyId).stream()
                 .map(PartyRecords.Snapshot::toMap).toList());
     }
 
     @GetMapping("/snapshots/{snapshotId}")
     public Map<String, Object> getSnapshot(@PathVariable String snapshotId) {
-        return support.tx((c, ctx) -> parties.getSnapshot(c, ctx, snapshotId).toMap());
+        return support.rtx((c, ctx) -> parties.getSnapshot(c, ctx, snapshotId).toMap());
     }
 
     @GetMapping("/snapshots/{snapshotId}/verify")
     public Map<String, Object> verifySnapshot(@PathVariable String snapshotId) {
-        return support.tx((c, ctx) -> Maps.of("snapshotId", snapshotId, "valid", parties.verifySnapshot(c, ctx, snapshotId)));
+        return support.rtx((c, ctx) -> Maps.of("snapshotId", snapshotId, "valid", parties.verifySnapshot(c, ctx, snapshotId)));
     }
 
     // ------------------------------------------------------------------------------------------------ matching
@@ -222,7 +222,7 @@ public class PartyController {
                                                 @RequestParam(required = false) String partyId,
                                                 @RequestParam(defaultValue = "0") int page,
                                                 @RequestParam(defaultValue = "50") int size) {
-        return support.tx((c, ctx) -> parties.candidates(c, ctx, status, partyId, page, size).stream()
+        return support.rtx((c, ctx) -> parties.candidates(c, ctx, status, partyId, page, size).stream()
                 .map(PartyRecords.Candidate::toMap).toList());
     }
 
@@ -259,14 +259,14 @@ public class PartyController {
 
     @GetMapping("/{id}/merges")
     public List<Map<String, Object>> merges(@PathVariable String id) {
-        return support.tx((c, ctx) -> parties.merges(c, ctx, id).stream().map(PartyRecords.MergeEvent::toMap).toList());
+        return support.rtx((c, ctx) -> parties.merges(c, ctx, id).stream().map(PartyRecords.MergeEvent::toMap).toList());
     }
 
     // ----------------------------------------------------------------------------------------- configuration
 
     @GetMapping("/config/identifier-types")
     public List<Map<String, Object>> identifierTypes() {
-        return support.tx((c, ctx) -> parties.identifierTypes(c, ctx.tenant()).stream().map(IdentifierType::toMap).toList());
+        return support.rtx((c, ctx) -> parties.identifierTypes(c, ctx.tenant()).stream().map(IdentifierType::toMap).toList());
     }
 
     /** Saves identifier types for the caller's tenant (stored; overrides the pack seed). */
@@ -288,7 +288,7 @@ public class PartyController {
 
     @GetMapping("/config/match")
     public Map<String, Object> matchConfig() {
-        return support.tx((c, ctx) -> parties.matchConfig(c, ctx.tenant()).toMap());
+        return support.rtx((c, ctx) -> parties.matchConfig(c, ctx.tenant()).toMap());
     }
 
     /** Saves the match configuration for the caller's tenant (stored; overrides the pack seed). */

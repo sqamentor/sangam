@@ -3796,14 +3796,15 @@ class ComplianceApi:
         req = ApiRequest("GET", f"/compliance/logs/verify")
         return cast("M.ComplianceAuditVerification", self._c.json(req, options))
 
-    def get_compliance_report(self, *, from_: str, to: str, verify_chains: Optional[bool] = None, format: Optional[Literal["json", "html"]] = None, options: Optional[RequestOptions] = None) -> M.ComplianceReport:
-        """Compliance evidence report
+    def generate_compliance_report(self, body: M.ComplianceReportRequest, *, options: Optional[RequestOptions] = None) -> M.ComplianceReport:
+        """Generate the compliance evidence report
 
-        Evidence report for [from, to); `format=html` returns text/html.
+        Generates the evidence report for [from, to), stores its hash (CMP_REPORT) and writes the audit event CMP_EVIDENCE_REPORT_GENERATED; format `html` returns text/html. X-Sangam-Report-Hash carries the hash. A missing `from` or `to` is 400 VALIDATION_FAILED. Generation writes, so there is no GET of this path (405).
 
-        ``GET /compliance/reports`` (operationId ``getComplianceReport``); permission ``audit.read``.
+        ``POST /compliance/reports`` (operationId ``generateComplianceReport``); permission ``audit.read``; result stored atomically with the state change.
         """
-        req = ApiRequest("GET", f"/compliance/reports", query={"from": from_, "to": to, "verifyChains": verify_chains, "format": format})
+        req = ApiRequest("POST", f"/compliance/reports")
+        req.body = body
         return cast("M.ComplianceReport", self._c.json(req, options))
 
     def get_compliance_jurisdiction(self, *, options: Optional[RequestOptions] = None) -> M.ComplianceJurisdiction:

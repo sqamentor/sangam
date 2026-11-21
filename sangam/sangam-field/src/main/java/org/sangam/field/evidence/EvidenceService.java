@@ -160,12 +160,12 @@ public final class EvidenceService {
     }
 
     public List<EvidenceRecord> listForAssignment(String tenantId, String assignmentId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT * FROM FLD_EVIDENCE WHERE tenant_id = ? AND assignment_id = ? ORDER BY uploaded_at",
+        return tx.read(c -> Jdbc.query(c, "SELECT * FROM FLD_EVIDENCE WHERE tenant_id = ? AND assignment_id = ? ORDER BY uploaded_at",
                 EvidenceService::map, tenantId, assignmentId));
     }
 
     public EvidenceRecord get(String tenantId, String id) {
-        return tx.inTransaction(c -> find(c, tenantId, id)).orElseThrow(() -> FieldException.notFound("evidence", id));
+        return tx.read(c -> find(c, tenantId, id)).orElseThrow(() -> FieldException.notFound("evidence", id));
     }
 
     public Optional<byte[]> content(String tenantId, String id) {
@@ -184,7 +184,7 @@ public final class EvidenceService {
      * the previous packet's hash in device_seq order. Gaps in device_seq are reported as GAP (lost or withheld packets).
      */
     public List<ChainBreak> verifyChain(String tenantId, String deviceId) {
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             record Row(String id, long seq, String hash, String prev, String doc) {
             }
             List<Row> rows = Jdbc.query(c, "SELECT packet_id, device_seq, packet_hash, prev_hash, doc_json FROM FLD_PACKET "

@@ -305,14 +305,14 @@ public class ProductBatchService {
     // ------------------------------------------------------------------ queries
 
     public Optional<Batch> batch(String id) {
-        return tx.inTransaction(c -> get(c, id));
+        return tx.read(c -> get(c, id));
     }
 
     /** Batches of a tenant, newest first, optionally by state; paged and count-capped (A-16). */
     public Paging.PageResult<Batch> list(String tenant, State stateOrNull, Paging.PageRequest p) {
         String fw = "FROM PORT_BATCH WHERE tenant_id = ?" + (stateOrNull == null ? "" : " AND state = ?");
         Object[] params = stateOrNull == null ? new Object[]{t(tenant)} : new Object[]{t(tenant), stateOrNull.name()};
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             long total = Jdbc.one(c, Paging.cappedCount(dialect, fw), rs -> rs.getLong(1), params).orElse(0L);
             List<Batch> rows = Jdbc.query(c, "SELECT " + COLS + " " + fw + " ORDER BY created_at DESC, id" + Paging.window(dialect, p),
                     ProductBatchService::map, params);
@@ -328,7 +328,7 @@ public class ProductBatchService {
     public List<Item> items(String batchId, String stateOrNull) {
         String where = stateOrNull == null ? "batch_id = ?" : "batch_id = ? AND state = ?";
         Object[] p = stateOrNull == null ? new Object[]{batchId} : new Object[]{batchId, stateOrNull};
-        return tx.inTransaction(c -> new ArrayList<>(Jdbc.query(c, "SELECT item_seq, item_ref, state, attempts, result FROM PORT_BATCH_ITEM WHERE "
+        return tx.read(c -> new ArrayList<>(Jdbc.query(c, "SELECT item_seq, item_ref, state, attempts, result FROM PORT_BATCH_ITEM WHERE "
                 + where + " ORDER BY item_seq", rs -> new Item(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getInt(4), rs.getString(5)), p)));
     }
 

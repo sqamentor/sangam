@@ -125,7 +125,7 @@ public final class OcrIngestion {
     }
 
     public Optional<Transcript> find(String tenantId, String id) {
-        return tx.inTransaction(c -> read(c, tenantId, id));
+        return tx.read(c -> read(c, tenantId, id));
     }
 
     /** Newest first; {@code stateOrNull} and {@code kbOrNull} filter; {@code limit} is clamped to 1..{@value #MAX_LIST}. */
@@ -146,7 +146,7 @@ public final class OcrIngestion {
             case POSTGRESQL, MYSQL -> " LIMIT " + n;
             case ORACLE, SQLSERVER -> " OFFSET 0 ROWS FETCH NEXT " + n + " ROWS ONLY";
         });
-        return tx.inTransaction(c -> Jdbc.query(c, sql.toString(), OcrIngestion::map, params.toArray())).stream()
+        return tx.read(c -> Jdbc.query(c, sql.toString(), OcrIngestion::map, params.toArray())).stream()
                 .map(t -> new Summary(t.id(), t.kb(), t.kbVersion(), t.documentId(), t.docVersion(), t.mediaType(), t.engine(),
                         t.languages(), t.state(), t.chunks(), t.createdBy(), t.createdAt(), t.reviewedBy(), t.reviewedAt()))
                 .toList();

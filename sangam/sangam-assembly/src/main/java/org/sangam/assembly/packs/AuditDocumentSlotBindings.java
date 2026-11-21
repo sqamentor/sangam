@@ -51,7 +51,7 @@ public final class AuditDocumentSlotBindings implements DocumentSlotBindings {
     private final AuditChain chain;
 
     /**
-     * @param tx joins the caller's transaction or starts one (the server passes its {@code TxSupport::withConnection});
+     * @param tx joins the caller's transaction or starts one (the server passes its {@code TxSupport.joinedTransactions()});
      *           outside an engine command a consumption is written in it
      * @param engineCommand the connection of the engine command running on this thread, or empty outside one (the
      *           Spring host passes {@code EngineTx}); a consumption inside a command is written on it, so it commits or

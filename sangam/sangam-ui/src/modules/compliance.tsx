@@ -411,6 +411,8 @@ export function EvidenceReport() {
   // day after the last); without the tenant's zone nothing is sent (never the reader's zone)
   const zone = tenantLocale().zone;
   const period = reportPeriod(from, to, zone);
+  // register P-1 (owner decision 2026-11-20): generating writes CMP_REPORT and an audit event, so both buttons POST
+  // this as the JSON body of /compliance/reports (never a GET)
   const q = 'error' in period ? undefined : { from: period.from, to: period.to, verifyChains };
   return (
     <Section title={t('mod.compliance.report')}>
@@ -420,10 +422,10 @@ export function EvidenceReport() {
         <TextField label={t('mod.compliance.firstDay')} type="date" required value={from} onChange={setFrom} />
         <TextField label={t('mod.compliance.lastDay')} type="date" required value={to} onChange={setTo} />
         <Checkbox label={t('mod.compliance.verifyChains')} checked={verifyChains} onChange={setVerify} />
-        <button type="button" className="primary" disabled={act.busy || !q} onClick={() => void (q && act.run(() => http.get<typeof report>('/compliance/reports', { ...q, format: 'json' })).then((r) => r && setReport(r)))}>
+        <button type="button" className="primary" disabled={act.busy || !q} onClick={() => void (q && act.run(() => http.post<typeof report>('/compliance/reports', { ...q, format: 'json' })).then((r) => r && setReport(r)))}>
           {t('mod.compliance.generate')}
         </button>
-        <button type="button" disabled={act.busy || !q} onClick={() => void (q && act.run(() => download('/compliance/reports', { ...q, format: 'html' }, 'compliance-report.html').then(() => true)))}>
+        <button type="button" disabled={act.busy || !q} onClick={() => void (q && act.run(() => download('/compliance/reports', undefined, 'compliance-report.html', { ...q, format: 'html' }).then(() => true)))}>
           {t('mod.compliance.downloadHtml')}
         </button>
       </div>

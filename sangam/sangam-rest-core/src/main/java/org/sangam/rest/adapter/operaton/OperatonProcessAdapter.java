@@ -199,9 +199,9 @@ public class OperatonProcessAdapter implements ProcessPort {
 
     @Override
     public ProcessInstance get(RequestContext ctx, String id) {
-        org.operaton.bpm.engine.runtime.ProcessInstance pi = OperatonSupport.call(() ->
+        org.operaton.bpm.engine.runtime.ProcessInstance pi = OperatonSupport.readCall(() ->
                 runtime.createProcessInstanceQuery().processInstanceId(id).singleResult());
-        HistoricProcessInstance h = OperatonSupport.call(() ->
+        HistoricProcessInstance h = OperatonSupport.readCall(() ->
                 history.createHistoricProcessInstanceQuery().processInstanceId(id).singleResult());
         if (pi == null && h == null) {
             throw ApiProblem.notFound("process instance", id);
@@ -209,12 +209,12 @@ public class OperatonProcessAdapter implements ProcessPort {
         String tenant = pi != null ? pi.getTenantId() : h.getTenantId();
         OperatonSupport.checkTenant(ctx, tenant, "process instance", id);
         if (pi != null) {
-            List<String> active = OperatonSupport.call(() -> runtime.getActiveActivityIds(id));
-            Map<String, Object> vars = OperatonSupport.call(() -> runtime.getVariables(id));
+            List<String> active = OperatonSupport.readCall(() -> runtime.getActiveActivityIds(id));
+            Map<String, Object> vars = OperatonSupport.readCall(() -> runtime.getVariables(id));
             long version = TaskVersions.caseVersion(vars);
             Object status = vars.get("sangamBusinessStatus");
             String defId = pi.getProcessDefinitionId();
-            org.operaton.bpm.engine.repository.ProcessDefinition def = OperatonSupport.call(() ->
+            org.operaton.bpm.engine.repository.ProcessDefinition def = OperatonSupport.readCall(() ->
                     repository.getProcessDefinition(defId));
             return new ProcessInstance(pi.getId(), defId, def.getKey(), def.getVersion(), pi.getBusinessKey(),
                     pi.getTenantId(), pi.isSuspended() ? "SUSPENDED" : "ACTIVE", false,
@@ -244,7 +244,7 @@ public class OperatonProcessAdapter implements ProcessPort {
     @Override
     public ActivityInstance activityTree(RequestContext ctx, String id) {
         requireRuntime(ctx, id);
-        org.operaton.bpm.engine.runtime.ActivityInstance tree = OperatonSupport.call(() -> runtime.getActivityInstance(id));
+        org.operaton.bpm.engine.runtime.ActivityInstance tree = OperatonSupport.readCall(() -> runtime.getActivityInstance(id));
         if (tree == null) {
             throw ApiProblem.notFound("process instance", id);
         }
@@ -262,22 +262,22 @@ public class OperatonProcessAdapter implements ProcessPort {
 
     @Override
     public Map<String, Object> variables(RequestContext ctx, String id) {
-        org.operaton.bpm.engine.runtime.ProcessInstance pi = OperatonSupport.call(() ->
+        org.operaton.bpm.engine.runtime.ProcessInstance pi = OperatonSupport.readCall(() ->
                 runtime.createProcessInstanceQuery().processInstanceId(id).singleResult());
         if (pi == null) {
-            HistoricProcessInstance h = OperatonSupport.call(() ->
+            HistoricProcessInstance h = OperatonSupport.readCall(() ->
                     history.createHistoricProcessInstanceQuery().processInstanceId(id).singleResult());
             if (h == null) {
                 throw ApiProblem.notFound("process instance", id);
             }
             OperatonSupport.checkTenant(ctx, h.getTenantId(), "process instance", id);
             Map<String, Object> out = new LinkedHashMap<>();
-            OperatonSupport.call(() -> history.createHistoricVariableInstanceQuery().processInstanceId(id).list())
+            OperatonSupport.readCall(() -> history.createHistoricVariableInstanceQuery().processInstanceId(id).list())
                     .forEach(v -> out.put(v.getName(), v.getValue()));
             return TypedVariables.toJson(out);
         }
         OperatonSupport.checkTenant(ctx, pi.getTenantId(), "process instance", id);
-        return TypedVariables.toJson(OperatonSupport.call(() -> runtime.getVariables(id)));
+        return TypedVariables.toJson(OperatonSupport.readCall(() -> runtime.getVariables(id)));
     }
 
     @Override
@@ -285,23 +285,23 @@ public class OperatonProcessAdapter implements ProcessPort {
         if (activityInstanceId == null || activityInstanceId.isBlank()) {
             return variables(ctx, id);
         }
-        org.operaton.bpm.engine.runtime.ProcessInstance pi = OperatonSupport.call(() ->
+        org.operaton.bpm.engine.runtime.ProcessInstance pi = OperatonSupport.readCall(() ->
                 runtime.createProcessInstanceQuery().processInstanceId(id).singleResult());
         Map<String, Object> out = new LinkedHashMap<>();
         if (pi == null) {
-            HistoricProcessInstance h = OperatonSupport.call(() ->
+            HistoricProcessInstance h = OperatonSupport.readCall(() ->
                     history.createHistoricProcessInstanceQuery().processInstanceId(id).singleResult());
             if (h == null) {
                 throw ApiProblem.notFound("process instance", id);
             }
             OperatonSupport.checkTenant(ctx, h.getTenantId(), "process instance", id);
-            OperatonSupport.call(() -> history.createHistoricVariableInstanceQuery().processInstanceId(id)
+            OperatonSupport.readCall(() -> history.createHistoricVariableInstanceQuery().processInstanceId(id)
                     .activityInstanceIdIn(activityInstanceId).list()).forEach(v -> out.put(v.getName(), v.getValue()));
             return TypedVariables.toJson(out);
         }
         OperatonSupport.checkTenant(ctx, pi.getTenantId(), "process instance", id);
         // processInstanceIdIn bounds the scope to this instance: another instance's activity id matches nothing
-        OperatonSupport.call(() -> runtime.createVariableInstanceQuery().processInstanceIdIn(id)
+        OperatonSupport.readCall(() -> runtime.createVariableInstanceQuery().processInstanceIdIn(id)
                 .activityInstanceIdIn(activityInstanceId).list()).forEach(v -> out.put(v.getName(), v.getValue()));
         return TypedVariables.toJson(out);
     }

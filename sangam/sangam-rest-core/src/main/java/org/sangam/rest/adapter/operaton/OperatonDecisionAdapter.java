@@ -120,7 +120,7 @@ public class OperatonDecisionAdapter implements DecisionPort {
 
     @Override
     public String definitionXml(RequestContext ctx, String definitionId) {
-        org.operaton.bpm.engine.repository.DecisionDefinition d = OperatonSupport.call(() ->
+        org.operaton.bpm.engine.repository.DecisionDefinition d = OperatonSupport.readCall(() ->
                 repository.createDecisionDefinitionQuery().decisionDefinitionId(definitionId).singleResult());
         if (d == null) {
             throw ApiProblem.notFound("decision definition", definitionId);
@@ -128,7 +128,7 @@ public class OperatonDecisionAdapter implements DecisionPort {
         if (d.getTenantId() != null) {
             OperatonSupport.checkTenant(ctx, d.getTenantId(), "decision definition", definitionId);
         }
-        try (InputStream in = OperatonSupport.call(() -> repository.getDecisionModel(definitionId))) {
+        try (InputStream in = OperatonSupport.readCall(() -> repository.getDecisionModel(definitionId))) {
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new ApiProblem(500, "RESOURCE_READ_FAILED", e.getMessage());

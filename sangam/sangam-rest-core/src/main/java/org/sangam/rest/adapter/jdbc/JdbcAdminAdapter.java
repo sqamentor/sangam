@@ -498,7 +498,7 @@ public final class JdbcAdminAdapter implements AdminPort {
     @Override
     public PolicyVersion policyVersion(RequestContext ctx) {
         String t = tid(ctx);
-        long v = tx.withConnection(c -> Jdbc.one(c, "SELECT policy_version FROM AUTH_POLICY_VERSION WHERE tenant_id=?",
+        long v = tx.withReadConnection(c -> Jdbc.one(c, "SELECT policy_version FROM AUTH_POLICY_VERSION WHERE tenant_id=?",
                 rs -> rs.getLong(1), t).orElse(0L));
         return new PolicyVersion(t, v);
     }
