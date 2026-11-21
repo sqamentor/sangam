@@ -17,6 +17,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.core.env.Environment;
 
 /**
@@ -35,9 +36,25 @@ import org.springframework.core.env.Environment;
 @ConditionalOnProperty(name = "sangam.security.first-admins.tenant")
 public class FirstAdminBootstrap {
 
+    /**
+     * The order of {@link #sangamFirstAdmins} among the start-up runners (register E-33 d): before every runner that
+     * declares no order. Spring Boot keeps no order among those, so without this the start-up pack deployment
+     * ({@code PacksWiring#sangamPacksDeployOnStart}) could run, and audit {@code PACKS_DEPLOYED}, before the tenant
+     * of the install existed. Runners that work per tenant find the tenant created.
+     */
+    public static final int ORDER = Ordered.LOWEST_PRECEDENCE - 100;
+
+    /** A start-up runner with the declared {@link #ORDER}. */
+    private interface OrderedRunner extends ApplicationRunner, Ordered {
+        @Override
+        default int getOrder() {
+            return ORDER;
+        }
+    }
+
     @Bean
     public ApplicationRunner sangamFirstAdmins(SangamSecurity security, DataSource ds, Environment env) {
-        return args -> {
+        return (OrderedRunner) args -> {
             String tenant = env.getRequiredProperty("sangam.security.first-admins.tenant");
             List<RoleAdminService.AdminSeed> seeds = new ArrayList<>();
             for (String s : env.getRequiredProperty("sangam.security.first-admins.subjects").split(",")) {
