@@ -61,6 +61,13 @@ export const TEAM_READ: Access = { roles: [], perms: ['team.read'] };
 export const TEAM_WRITE: Access = { roles: [], perms: ['team.write'] };
 
 /**
+ * U12h: GET /events/channels and GET /events/definitions need event.admin (EventFormController), held by
+ * sangam-tenant-admin and sangam-admin ("*") and not by sangam-operator. No role stands in for it: the menu entry of
+ * Event types is shown to an operator only when /me reports the permission.
+ */
+export const EVENT_ADMIN: Access = { roles: [], perms: ['event.admin'] };
+
+/**
  * Route → requirement, for the routes whose screens call module APIs. The permission is the one the server checks
  * on the screen's first call (the first tab's list):
  */

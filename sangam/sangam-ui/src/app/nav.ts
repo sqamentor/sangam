@@ -8,7 +8,7 @@
  * guard in App.tsx, so the menu never offers a screen that the guard would refuse.
  */
 import type { Me, Role } from '../api/types';
-import { ROUTE_ACCESS, TEAM_READ, canAccess, type Access } from './access';
+import { EVENT_ADMIN, ROUTE_ACCESS, TEAM_READ, canAccess, type Access } from './access';
 
 export interface NavItem {
   to: string;
@@ -196,7 +196,8 @@ export const NAV: NavArea[] = [
           e('monitor', 'outbox', '/ops/outbox'),
           e('monitor', 'workers', '/ops/workers'),
           e('monitor', 'notifications', '/ops/notifications'),
-          e('monitor', 'events', '/ops/events'),
+          // U12h: the page loads with event.admin, which an operator does not hold; shown within the group's roles only.
+          e('monitor', 'events', '/ops/events', { access: EVENT_ADMIN, only: OPS }),
           e('monitor', 'money', '/ops/reconciliation'),
         ],
       },
