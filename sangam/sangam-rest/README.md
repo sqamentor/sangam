@@ -31,7 +31,7 @@ The Sangam API, `/api/v1` (ARCHITECTURE.md §4), written as Spring MVC controlle
   - **Fingerprint.** It is computed with the core `IdempotencyStore.fingerprint` over the command type, method, path template, path parameters, the semantic query, `If-Match`, `X-Sangam-Acting-For-Seat` and the canonical JSON body. Decimals in the body are kept as strings; multipart bodies are fingerprinted by part digests.
   - **Claim.** The claim runs in its own transaction.
   - **Execution.** The controller runs inside one Spring transaction, which the Operaton engine joins. `COMPLETED` is written as the last write of that transaction (L6, P-1), and the response is buffered until commit.
-  - **Failures.** Deterministic 4xx results are stored as `FAILED_FINAL`. Transient errors and 401/403 are not stored.
+  - **Failures.** These results are stored as `FAILED_FINAL` (X.2.2.4 step 3): 400, 404, 410, 422, and of the 409s only the version precondition (`REVISION_CONFLICT`, `DRAFT_CONFLICT`). Every other 409 is not stored, whether it depends on server state (for example `UNKNOWN_LEVEL`) or is transient (`CONFLICT_RETRY_EXHAUSTED`, `IDEMPOTENCY_IN_PROGRESS`). Neither are 429, 5xx, 401 or 403. A retry with the same key then runs the command again.
   - **Replays.** A replay re-checks authorization (`PermissionPort.mayReplay`) and carries `Idempotent-Replayed: true|compacted` and `Idempotency-Key-Expires`. Each replay is audited (`IDEMPOTENT_REPLAY`).
   - **Government profile.** With `sangam.rest.government-profile=true`, a missing key returns `400 IDEMPOTENCY_KEY_REQUIRED` for the commands listed in X.2.2.1.
   - **Metrics:** `api.idempotent.replays`, `api.idempotency.conflicts{reason}` and `api.idempotency.in.progress`.

@@ -19,9 +19,10 @@ import org.slf4j.LoggerFactory;
  *   <li>Step 2: the command runs in a Spring transaction that the engine joins; for a 2xx result the
  *       {@code COMPLETED} update is the <b>last write of that same transaction</b> (L6, property P-1). A lost claim
  *       rolls the whole command back.</li>
- *   <li>Step 3: a non-2xx result rolls the command transaction back; deterministic 4xx (400, 404, 409 precondition,
- *       410, 422) are then stored as {@code FAILED_FINAL}; transient results (409 CONFLICT_RETRY_EXHAUSTED or
- *       IDEMPOTENCY_IN_PROGRESS, 429, 5xx) and 401/403 are not stored.</li>
+ *   <li>Step 3: a non-2xx result rolls the command transaction back; deterministic 4xx (400, 404, the 409 version
+ *       precondition {@code REVISION_CONFLICT}/{@code DRAFT_CONFLICT}, 410, 422) are then stored as
+ *       {@code FAILED_FINAL}; every other 409 (state-dependent or transient, such as CONFLICT_RETRY_EXHAUSTED or
+ *       IDEMPOTENCY_IN_PROGRESS), 429, 5xx and 401/403 are not stored.</li>
  * </ul>
  */
 public class JdbcIdempotencyAdapter implements IdempotencyPort {
@@ -121,13 +122,24 @@ public class JdbcIdempotencyAdapter implements IdempotencyPort {
         return outcome;
     }
 
-    /** X.2.2.4 step 3 classification. */
+    /**
+     * The 409 codes of a failed version precondition: the client's revision ({@code If-Match}, or the version in the
+     * body, both part of the fingerprint) is not the stored one. Revisions only grow, so the same request always gets
+     * the same answer.
+     */
+    static final java.util.Set<String> VERSION_PRECONDITION_CODES = java.util.Set.of("REVISION_CONFLICT", "DRAFT_CONFLICT");
+
+    /**
+     * X.2.2.4 step 3 classification. Of all 409 results only the version precondition is stored (E-28); any other 409
+     * depends on server state (for example {@code UNKNOWN_LEVEL}) or is transient, and is not stored, so a retry with
+     * the same key runs the command again. Not storing is always safe: the command transaction was rolled back.
+     */
     static boolean deterministic(int status, byte[] body) {
         return switch (status) {
             case 400, 404, 410, 422 -> true;
             case 409 -> {
-                String code = problemCode(body);
-                yield !"CONFLICT_RETRY_EXHAUSTED".equals(code) && !"IDEMPOTENCY_IN_PROGRESS".equals(code);
+                String code = problemCode(body);   // null for no body, no code or unreadable JSON: not stored
+                yield code != null && VERSION_PRECONDITION_CODES.contains(code);
             }
             default -> false;
         };

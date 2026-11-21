@@ -4792,7 +4792,7 @@ UPDATE IDEMPOTENCY
 |---|---|---|---|
 | 2xx success | Yes | `COMPLETED` | Core purpose |
 | Deterministic business or validation result: 400 validation, 404 unknown definition/task, 409 version precondition failed (`If-Match`), 410 instance deleted, 422 business rule or form validation | Yes, in its own transaction (no engine state changed) | `FAILED_FINAL` | Repeating the same request gives the same answer; the client must use a new key after fixing the request |
-| Transient: `409 CONFLICT_RETRY_EXHAUSTED`, `429`, `503 BACKPRESSURE` (VI.2.4), `500`, DB failover, watchdog timeout | **No**: the row is deleted `WHERE claim_epoch=:mine` | (none) | Engine state rolled back, so retrying is safe and should be allowed at once |
+| Transient: `409 CONFLICT_RETRY_EXHAUSTED`, `409 IDEMPOTENCY_IN_PROGRESS`, `429`, `503 BACKPRESSURE` (VI.2.4), `500`, DB failover, watchdog timeout | **No**: the row is deleted `WHERE claim_epoch=:mine` | (none) | Engine state rolled back, so retrying is safe and should be allowed at once |
 | `401` / `403` | **No**: row deleted | (none) | Authorization is evaluated on every call; storing a denial would freeze it, and storing a grant would leak it |
 
 **Step 4: replay.** A replay **never re-executes** the command. Before returning anything, it:

@@ -77,7 +77,7 @@ class PresentationSeedAgainstServerTest {
     /**
      * EV-M-0932, the state of demo.ifms.dev: an earlier loader run (demo-021498ea60d1, EV-M-0923) sent
      * {@code POST /admin/org-units} for PAO-OFFICE while GOI.FIN had no level types and got 409 UNKNOWN_LEVEL. That
-     * answer is stored as FAILED_FINAL under the request's Idempotency-Key (X.2.2.4 step 3) and replayed to every
+     * answer was stored (before E-28) as FAILED_FINAL under the request's Idempotency-Key and replayed to every
      * later request with the same key and body. The loader derived the key from tenant and object only, so after
      * {@code PUT /admin/org-levels} succeeded on demo-0c3ef79140fa its org unit request still got the stored 409.
      * A new run of the seed is a new command: it must load the tenant whatever an earlier run was answered.
@@ -311,7 +311,7 @@ class PresentationSeedAgainstServerTest {
     enum Earlier {
         /** A tenant no loader has touched. */
         NOTHING,
-        /** The org unit request of the loader up to bac3d46b was refused (409 UNKNOWN_LEVEL) and is stored with its body. */
+        /** The org unit request of the loader up to bac3d46b was refused (409 UNKNOWN_LEVEL); since E-28 it is not stored. */
         ORG_UNIT_REFUSED,
         /**
          * demo.ifms.dev as read on 2026-11-20 (IFMS check 3): the refusal stored, level OFFICE defined by the bac3d46b
@@ -324,12 +324,10 @@ class PresentationSeedAgainstServerTest {
      * The requests exactly as the loader sent them up to bac3d46b (seed_presentation.py: fixed keys
      * {@code idem(tenant, "unit", office)} = UUIDv5(NAMESPACE_URL, "sangam-presentation/GOI.FIN/unit/PAO-OFFICE") and
      * {@code idem(tenant, "org-levels", "OFFICE")}), in the order demo.ifms.dev saw them: the org unit on a tenant with
-     * no level types (409 UNKNOWN_LEVEL, stored); for {@link Earlier#AS_ON_LIVE} then the level types (200), the org
-     * unit again (the stored 409, with its body: EV-M-0932) and the end of the response retention.
-     * <p>
-     * The retention is fixed (IdempotencyStore: 24 h) and the product has no clock to set, so the test moves this one
-     * row's {@code response_expires_at} into the past and then calls the product's own maintenance step
-     * ({@code JdbcIdempotencyAdapter.cleanup()}, the call the scheduler makes), which compacts it.
+     * no level types (409 UNKNOWN_LEVEL, since E-28 not stored, so the same key runs again); for
+     * {@link Earlier#AS_ON_LIVE} then the level types (200) and the row the code before E-28 had stored for the
+     * refusal, past its response retention (COMPACTED 409, EV-M-0932). The product no longer writes that row, so the
+     * test inserts it as legacy data.
      */
     private static void earlierLoader(ConfigurableApplicationContext ctx, String api, String admin, Earlier earlier)
             throws Exception {
@@ -347,38 +345,56 @@ class PresentationSeedAgainstServerTest {
         unit.put("parentId", parent);
         String unitKey = uuid5Url("sangam-presentation/" + TENANT + "/unit/" + OFFICE);
         assertEquals("04851e5a-405b-536e-8b22-3bcb1f941f3d", unitKey, "the key of the stored row on demo.ifms.dev");
-        for (boolean replay : new boolean[]{false, true}) {
+        // E-28 (SANGAM.md X.2.2.4 step 3): 409 UNKNOWN_LEVEL depends on server state and is not stored, so the same
+        // key runs the command again; the second answer is a fresh refusal, not a replay
+        for (int attempt = 0; attempt < 2; attempt++) {
             HttpResponse<String> r = send("POST", api + "/admin/org-units", admin, unitKey, unit);
             assertEquals(409, r.statusCode(), r.body());
             assertEquals("UNKNOWN_LEVEL", JSON.readTree(r.body()).path("code").asText(), r.body());
-            assertEquals(replay, r.headers().firstValue("Idempotent-Replayed").isPresent(),
-                    "the second answer is the stored one: " + r.headers().map());
+            assertTrue(r.headers().firstValue("Idempotent-Replayed").isEmpty(),
+                    "a state-dependent 409 is not replayed: " + r.headers().map());
         }
+        assertEquals(0, idempotencyRows(ctx, "admin.orgunit.create", unitKey), "the refusal is not stored");
         if (earlier != Earlier.AS_ON_LIVE) {
             return;
         }
         HttpResponse<String> levels = send("PUT", api + "/admin/org-levels", admin,
                 uuid5Url("sangam-presentation/" + TENANT + "/org-levels/OFFICE"), Map.of("tenantId", TENANT, "levels", List.of("OFFICE")));
         assertEquals(200, levels.statusCode(), levels.body());
-        // EV-M-0932 as IFMS saw it: the level is there and the org unit request still gets the stored refusal
-        HttpResponse<String> stored = send("POST", api + "/admin/org-units", admin, unitKey, unit);
-        assertEquals(409, stored.statusCode(), stored.body());
-        assertEquals("UNKNOWN_LEVEL", JSON.readTree(stored.body()).path("code").asText(), stored.body());
-        assertEquals("true", stored.headers().firstValue("Idempotent-Replayed").orElse(null));
 
+        // demo.ifms.dev still holds the row that the code before E-28 wrote for the refusal, now past its response
+        // retention (COMPACTED 409). The product no longer writes such a row, so the test puts that legacy row in
+        // place, with the fingerprint the IdempotencyFilter computes for this request and the principal and
+        // fingerprint version of the loader's own org-levels row.
+        var match = ctx.getBean(org.sangam.rest.web.CommandCatalog.class).match("POST", "/api/v1/admin/org-units")
+                .orElseThrow();
+        assertEquals("admin.orgunit.create", match.command().commandType());
+        Map<String, Object> semantic = new java.util.LinkedHashMap<>();
+        semantic.put("query", new java.util.TreeMap<String, Object>());
+        semantic.put("ifMatch", null);
+        semantic.put("actingForSeat", null);
+        byte[] fp = org.sangam.core.layer.IdempotencyStore.fingerprint(match.command().commandType(), "POST",
+                match.command().pathTemplate(), match.pathParams(), semantic,
+                JSON.readValue(JSON.writeValueAsString(unit), Object.class));
         try (var c = ctx.getBean(javax.sql.DataSource.class).getConnection()) {
             c.setAutoCommit(true);
-            try (var ps = c.prepareStatement("UPDATE IDEMPOTENCY_RECORD SET response_expires_at=? WHERE tenant_id=?"
-                    + " AND command_type='admin.orgunit.create' AND idem_key=?")) {
-                ps.setObject(1, java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(1));
-                ps.setString(2, TENANT);
-                ps.setString(3, unitKey);
-                assertEquals(1, ps.executeUpdate(), "the stored refusal");
+            try (var ps = c.prepareStatement("INSERT INTO IDEMPOTENCY_RECORD(tenant_id, command_type, idem_key, fp_version,"
+                    + " fingerprint, principal_id, state, owner_node, claim_epoch, claim_expires_at, created_at, http_status,"
+                    + " completed_at, response_expires_at, key_expires_at)"
+                    + " SELECT tenant_id, 'admin.orgunit.create', ?, fp_version, ?, principal_id, 'COMPACTED', owner_node, 1,"
+                    + " ?, ?, 409, ?, ?, ? FROM IDEMPOTENCY_RECORD WHERE tenant_id=? AND command_type='admin.orglevels.define'")) {
+                java.time.OffsetDateTime now = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC);
+                ps.setString(1, unitKey);
+                ps.setBytes(2, fp);
+                ps.setObject(3, now.minusDays(2));
+                ps.setObject(4, now.minusDays(2));
+                ps.setObject(5, now.minusDays(2));
+                ps.setObject(6, now.minusDays(1));
+                ps.setObject(7, now.plusDays(28));
+                ps.setString(8, TENANT);
+                assertEquals(1, ps.executeUpdate(), "the legacy refusal row");
             }
         }
-        assertTrue(ctx.getBean(org.sangam.rest.port.IdempotencyPort.class)
-                instanceof org.sangam.rest.adapter.jdbc.JdbcIdempotencyAdapter, "the product's idempotency store");
-        ((org.sangam.rest.adapter.jdbc.JdbcIdempotencyAdapter) ctx.getBean(org.sangam.rest.port.IdempotencyPort.class)).cleanup();
         List<String> rows = new ArrayList<>();
         try (var c = ctx.getBean(javax.sql.DataSource.class).getConnection();
              var ps = c.prepareStatement("SELECT command_type, state, http_status FROM IDEMPOTENCY_RECORD WHERE tenant_id=?"
@@ -398,6 +414,20 @@ class PresentationSeedAgainstServerTest {
         assertEquals("", compacted.body(), "a compacted answer has no body");
         assertEquals("compacted", compacted.headers().firstValue("Idempotent-Replayed").orElse(null));
         assertEquals(0, items(get(api + "/admin/org-units", admin)).size(), "no org unit yet, as on demo.ifms.dev");
+    }
+
+    private static int idempotencyRows(ConfigurableApplicationContext ctx, String commandType, String key) throws Exception {
+        try (var c = ctx.getBean(javax.sql.DataSource.class).getConnection();
+             var ps = c.prepareStatement("SELECT COUNT(*) FROM IDEMPOTENCY_RECORD WHERE tenant_id=? AND command_type=?"
+                     + " AND idem_key=?")) {
+            ps.setString(1, TENANT);
+            ps.setString(2, commandType);
+            ps.setString(3, key);
+            try (var rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        }
     }
 
     private static HttpResponse<String> send(String method, String url, String token, String key, Object body) throws Exception {
