@@ -564,7 +564,7 @@ export class AIApi {
   }
 }
 
-/** Typed operations of `Admin` (34 operations). */
+/** Typed operations of `Admin` (29 operations). */
 export class AdminApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -678,68 +678,6 @@ export class AdminApi {
     const req: ApiRequest = { method: 'POST', path: `/admin/delegations/${seg(String(id))}/revoke` };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Delegation>(req, options);
-  }
-
-  /**
-   * List policys
-   *
-   * Tenant-scoped admin list.
-   *
-   * `GET /admin/policies` (operationId `listPolicies`); permission `policy.admin`.
-   */
-  async listPolicies(params?: { q?: string /* Free-text search */; parentId?: string; orgUnitId?: string; seatId?: string; personId?: string; kind?: string; activeOn?: string; includeInactive?: boolean; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.Policy>> {
-    const req: ApiRequest = { method: 'GET', path: `/admin/policies`, query: { q: params?.q, parentId: params?.parentId, orgUnitId: params?.orgUnitId, seatId: params?.seatId, personId: params?.personId, kind: params?.kind, activeOn: params?.activeOn, includeInactive: params?.includeInactive, page: params?.page, size: params?.size } };
-    return this.calls.page<M.Policy>(req, options, params?.page, params?.size);
-  }
-
-  /**
-   * Create policy
-   *
-   * Creates and audits on the tenant security chain.
-   *
-   * `POST /admin/policies` (operationId `createPolicy`); permission `policy.admin`; result stored atomically with the state change.
-   */
-  async createPolicy(body: M.Policy, options?: RequestOptions): Promise<M.Policy> {
-    const req: ApiRequest = { method: 'POST', path: `/admin/policies` };
-    if (body !== undefined) req.body = body;
-    return this.calls.json<M.Policy>(req, options);
-  }
-
-  /**
-   * Delete policy
-   *
-   * Deletes (reason audited).
-   *
-   * `DELETE /admin/policies/by-id` (operationId `deletePolicy`); permission `policy.admin`; result stored atomically with the state change.
-   */
-  async deletePolicy(params: { id: string /* The item id (client-chosen; may carry '/' or ':') */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/admin/policies/by-id`, query: { id: params?.id, reason: params?.reason } };
-    await this.calls.none(req, options);
-  }
-
-  /**
-   * Policy version
-   *
-   * Current policy_version of the tenant (VI.4 rule 5).
-   *
-   * `GET /admin/policies/version` (operationId `getPolicyVersion`); permission `policy.admin`.
-   */
-  async getPolicyVersion(options?: RequestOptions): Promise<M.PolicyVersion> {
-    const req: ApiRequest = { method: 'GET', path: `/admin/policies/version` };
-    return this.calls.json<M.PolicyVersion>(req, options);
-  }
-
-  /**
-   * Explain an authorization decision
-   *
-   * Which grants and denies match (deny wins, A-13) at the current policy version (VI.4).
-   *
-   * `POST /admin/policies/explain` (operationId `explainPolicy`); permission `policy.admin`.
-   */
-  async explainPolicy(body: M.ExplainRequest, options?: RequestOptions): Promise<M.ExplainResult> {
-    const req: ApiRequest = { method: 'POST', path: `/admin/policies/explain` };
-    if (body !== undefined) req.body = body;
-    return this.calls.json<M.ExplainResult>(req, options);
   }
 
   /**
@@ -1245,6 +1183,123 @@ export class AdminOrgUnitsApi {
     const req: ApiRequest = { method: 'POST', path: `/admin/org-units/import` };
     if (body !== undefined) req.rawBody = body;
     return this.calls.json<M.OrgUnitImportResult>(req, options);
+  }
+}
+
+/** Typed operations of `Admin /policies` (9 operations). */
+export class AdminPoliciesApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * List policys
+   *
+   * Tenant-scoped admin list.
+   *
+   * `GET /admin/policies` (operationId `listPolicies`); permission `policy.admin`.
+   */
+  async listPolicies(params?: { q?: string /* Free-text search */; parentId?: string; orgUnitId?: string; seatId?: string; personId?: string; kind?: string; activeOn?: string; includeInactive?: boolean; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.Policy>> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/policies`, query: { q: params?.q, parentId: params?.parentId, orgUnitId: params?.orgUnitId, seatId: params?.seatId, personId: params?.personId, kind: params?.kind, activeOn: params?.activeOn, includeInactive: params?.includeInactive, page: params?.page, size: params?.size } };
+    return this.calls.page<M.Policy>(req, options, params?.page, params?.size);
+  }
+
+  /**
+   * Create policy
+   *
+   * Creates and audits on the tenant security chain.
+   *
+   * `POST /admin/policies` (operationId `createPolicy`); permission `policy.admin`; result stored atomically with the state change.
+   */
+  async createPolicy(body: M.Policy, options?: RequestOptions): Promise<M.Policy> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/policies` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.Policy>(req, options);
+  }
+
+  /**
+   * Delete policy
+   *
+   * Deletes (reason audited).
+   *
+   * `DELETE /admin/policies/by-id` (operationId `deletePolicy`); permission `policy.admin`; result stored atomically with the state change.
+   */
+  async deletePolicy(params: { id: string /* The item id (client-chosen; may carry '/' or ':') */; reason?: string /* Mandatory reason (audited, R42) */ }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/admin/policies/by-id`, query: { id: params?.id, reason: params?.reason } };
+    await this.calls.none(req, options);
+  }
+
+  /**
+   * Policy version
+   *
+   * Current policy_version of the tenant (VI.4 rule 5).
+   *
+   * `GET /admin/policies/version` (operationId `getPolicyVersion`); permission `policy.admin`.
+   */
+  async getPolicyVersion(options?: RequestOptions): Promise<M.PolicyVersion> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/policies/version` };
+    return this.calls.json<M.PolicyVersion>(req, options);
+  }
+
+  /**
+   * Policy changes
+   *
+   * Policy changes of the caller's tenant, newest request first; status PENDING (the default) is the approver's queue. Needs policy read in sangam-security (403 ACTION_NOT_PERMITTED, audited AUTH_DENIED). 421 TENANT_MOVED / TENANT_NOT_ON_INSTANCE as on every operation (M-016).
+   *
+   * `GET /admin/policies/changes` (operationId `listPolicyChanges`); permission `policy.admin`.
+   */
+  async listPolicyChanges(params?: { status?: 'PENDING' | 'APPLIED' | 'REJECTED' | 'SUPERSEDED' /* Default PENDING */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.PolicyChange>> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/policies/changes`, query: { status: params?.status, page: params?.page, size: params?.size } };
+    return this.calls.page<M.PolicyChange>(req, options, params?.page, params?.size);
+  }
+
+  /**
+   * Policy change
+   *
+   * One policy change of the caller's tenant; 404 NOT_FOUND for an id of another tenant or none. 421 as on every operation (M-016).
+   *
+   * `GET /admin/policies/changes/{id}` (operationId `getPolicyChange`); permission `policy.admin`.
+   */
+  async getPolicyChange(id: string, options?: RequestOptions): Promise<M.PolicyChange> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/policies/changes/${seg(String(id))}` };
+    return this.calls.json<M.PolicyChange>(req, options);
+  }
+
+  /**
+   * Approve a policy change
+   *
+   * Four-eyes decision of a PENDING change (R43): APPLIED: the change is applied in the same transaction and audited GRANT_CHANGED or DENY_CHANGED (new_policy_version, change_id, requested_by, decided_by, reason). The body's reason is stored as decisionReason; requestReason is kept. The decider must hold policy change-grant in sangam-security (403 ACTION_NOT_PERMITTED, audited AUTH_DENIED) and must not be the requester, for approve and reject alike (no self-reject, no withdraw): 422 SOD_VIOLATION, audited SOD_VIOLATION_BLOCKED. A system identity never decides (422 SOD_VIOLATION); a change requested by `system` is decided by any person who holds the permission. 404 NOT_FOUND (no such change of the caller's tenant), 409 CHANGE_NOT_PENDING (already decided or superseded), 400 VALIDATION_FAILED (reason missing) and, for approve, 400 POLICY_REJECTED (a change that no longer compiles, e.g. several principals, decision 392). Idempotency-Key: a replay answers the stored result; 503 AUDIT_UNAVAILABLE when a replay's IDEMPOTENT_REPLAY audit row cannot be written (every idempotent command, RM-10). 421 TENANT_MOVED / TENANT_NOT_ON_INSTANCE as on every operation (M-016).
+   *
+   * `POST /admin/policies/changes/{id}/approve` (operationId `approvePolicyChange`); permission `policy.admin`; result stored atomically with the state change.
+   */
+  async approvePolicyChange(id: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.PolicyChange> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/policies/changes/${seg(String(id))}/approve` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.PolicyChange>(req, options);
+  }
+
+  /**
+   * Reject a policy change
+   *
+   * Four-eyes decision of a PENDING change (R43): REJECTED: nothing is applied; audited POLICY_CHANGE_PENDING with operation REJECT (change_id, policy_id, requested_by, decided_by, reason), as the SUPERSEDE of decision 392. The body's reason is stored as decisionReason; requestReason is kept. The decider must hold policy change-grant in sangam-security (403 ACTION_NOT_PERMITTED, audited AUTH_DENIED) and must not be the requester, for approve and reject alike (no self-reject, no withdraw): 422 SOD_VIOLATION, audited SOD_VIOLATION_BLOCKED. A system identity never decides (422 SOD_VIOLATION); a change requested by `system` is decided by any person who holds the permission. 404 NOT_FOUND (no such change of the caller's tenant), 409 CHANGE_NOT_PENDING (already decided or superseded), 400 VALIDATION_FAILED (reason missing) and, for approve, 400 POLICY_REJECTED (a change that no longer compiles, e.g. several principals, decision 392). Idempotency-Key: a replay answers the stored result; 503 AUDIT_UNAVAILABLE when a replay's IDEMPOTENT_REPLAY audit row cannot be written (every idempotent command, RM-10). 421 TENANT_MOVED / TENANT_NOT_ON_INSTANCE as on every operation (M-016).
+   *
+   * `POST /admin/policies/changes/{id}/reject` (operationId `rejectPolicyChange`); permission `policy.admin`; result stored atomically with the state change.
+   */
+  async rejectPolicyChange(id: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.PolicyChange> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/policies/changes/${seg(String(id))}/reject` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.PolicyChange>(req, options);
+  }
+
+  /**
+   * Explain an authorization decision
+   *
+   * Which grants and denies match (deny wins, A-13) at the current policy version (VI.4).
+   *
+   * `POST /admin/policies/explain` (operationId `explainPolicy`); permission `policy.admin`.
+   */
+  async explainPolicy(body: M.ExplainRequest, options?: RequestOptions): Promise<M.ExplainResult> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/policies/explain` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.ExplainResult>(req, options);
   }
 }
 
@@ -15282,13 +15337,14 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1182 operations on 993 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1186 operations on 997 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;
   readonly adminAssignments: AdminAssignmentsApi;
   readonly adminGroups: AdminGroupsApi;
   readonly adminOrgUnits: AdminOrgUnitsApi;
+  readonly adminPolicies: AdminPoliciesApi;
   readonly adminPowerTables: AdminPowerTablesApi;
   readonly adminSecurity: AdminSecurityApi;
   readonly adminTenants: AdminTenantsApi;
@@ -15375,6 +15431,7 @@ export class SangamApis {
     this.adminAssignments = new AdminAssignmentsApi(calls);
     this.adminGroups = new AdminGroupsApi(calls);
     this.adminOrgUnits = new AdminOrgUnitsApi(calls);
+    this.adminPolicies = new AdminPoliciesApi(calls);
     this.adminPowerTables = new AdminPowerTablesApi(calls);
     this.adminSecurity = new AdminSecurityApi(calls);
     this.adminTenants = new AdminTenantsApi(calls);

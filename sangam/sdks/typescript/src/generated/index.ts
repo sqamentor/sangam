@@ -7,6 +7,7 @@ export { AdminApi } from './api.js';
 export { AdminAssignmentsApi } from './api.js';
 export { AdminGroupsApi } from './api.js';
 export { AdminOrgUnitsApi } from './api.js';
+export { AdminPoliciesApi } from './api.js';
 export { AdminPowerTablesApi } from './api.js';
 export { AdminSecurityApi } from './api.js';
 export { AdminTenantsApi } from './api.js';

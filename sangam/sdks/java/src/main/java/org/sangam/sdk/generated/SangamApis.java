@@ -9,6 +9,7 @@ import org.sangam.sdk.generated.api.AdminApi;
 import org.sangam.sdk.generated.api.AdminAssignmentsApi;
 import org.sangam.sdk.generated.api.AdminGroupsApi;
 import org.sangam.sdk.generated.api.AdminOrgUnitsApi;
+import org.sangam.sdk.generated.api.AdminPoliciesApi;
 import org.sangam.sdk.generated.api.AdminPowerTablesApi;
 import org.sangam.sdk.generated.api.AdminSecurityApi;
 import org.sangam.sdk.generated.api.AdminTenantsApi;
@@ -89,7 +90,7 @@ import org.sangam.sdk.generated.api.WorkApi;
 import org.sangam.sdk.generated.api.WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1182 operations on 993 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1186 operations on 997 paths,
  * one accessor per API class (a tag, or a sub-path of a large tag: M-098 class-size gate). Obtain it with {@code SangamClient.api()}; it shares the client's transport
  * (auth, retries, Idempotency-Key, seat headers). The hand-written groups and the worker runtime are unchanged.
  */
@@ -100,6 +101,7 @@ public final class SangamApis {
     private final AdminAssignmentsApi adminAssignments;
     private final AdminGroupsApi adminGroups;
     private final AdminOrgUnitsApi adminOrgUnits;
+    private final AdminPoliciesApi adminPolicies;
     private final AdminPowerTablesApi adminPowerTables;
     private final AdminSecurityApi adminSecurity;
     private final AdminTenantsApi adminTenants;
@@ -185,6 +187,7 @@ public final class SangamApis {
         this.adminAssignments = new AdminAssignmentsApi(http);
         this.adminGroups = new AdminGroupsApi(http);
         this.adminOrgUnits = new AdminOrgUnitsApi(http);
+        this.adminPolicies = new AdminPoliciesApi(http);
         this.adminPowerTables = new AdminPowerTablesApi(http);
         this.adminSecurity = new AdminSecurityApi(http);
         this.adminTenants = new AdminTenantsApi(http);
@@ -267,7 +270,7 @@ public final class SangamApis {
 
     /** {@code AI}: 38 operations. */
     public AIApi ai() { return ai; }
-    /** {@code Admin}: 34 operations. */
+    /** {@code Admin}: 29 operations. */
     public AdminApi admin() { return admin; }
     /** {@code Admin /assignments}: 7 operations. */
     public AdminAssignmentsApi adminAssignments() { return adminAssignments; }
@@ -275,6 +278,8 @@ public final class SangamApis {
     public AdminGroupsApi adminGroups() { return adminGroups; }
     /** {@code Admin /org-units}: 6 operations. */
     public AdminOrgUnitsApi adminOrgUnits() { return adminOrgUnits; }
+    /** {@code Admin /policies}: 9 operations. */
+    public AdminPoliciesApi adminPolicies() { return adminPolicies; }
     /** {@code Admin /power-tables}: 8 operations. */
     public AdminPowerTablesApi adminPowerTables() { return adminPowerTables; }
     /** {@code Admin /security}: 6 operations. */
