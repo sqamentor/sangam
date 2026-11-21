@@ -286,7 +286,8 @@ function AuthedRoutes() {
           <Route path="/ops/debugger" element={<Navigate to="/design/test" replace />} />
           <Route path="/ops/audit-log" element={g([...OPS, 'AUDITOR'], <OperatorAudit />)} />
 
-          <Route path="/admin/tenants" element={g(ADMIN, <Tenants />)} />
+          {/* U12f, decision 397 Q5: the list of organisations is for platform administrators only, as in the menu */}
+          <Route path="/admin/tenants" element={g(['PLATFORM_ADMIN'], <Tenants />)} />
           <Route path="/admin/org" element={g(ADMIN, <OrgHierarchy />)} />
           <Route path="/admin/seats" element={g(ADMIN, <Seats />)} />
           <Route path="/admin/assignments" element={g(ADMIN, <Assignments />)} />
