@@ -45,7 +45,9 @@ public final class OwnSeatHoldings implements Function<RequestContext, List<Admi
     @Override
     public List<AdminPort.Assignment> apply(RequestContext ctx) {
         SecurityIdentity who = SecurityIdentities.of(ctx);
-        if (who.system()) {
+        if (who.system() || "API_KEY".equals(who.authMethod())) {
+            // E-31(e): an API token holds no seat (SecurityIdentityFilter refuses a seat header from one), so it is
+            // offered none; what is offered here is exactly what is accepted when sent back
             return List.of();
         }
         return tx.withConnection(c -> {

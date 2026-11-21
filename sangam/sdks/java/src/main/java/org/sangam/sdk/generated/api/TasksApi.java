@@ -76,12 +76,13 @@ public final class TasksApi {
      * @param dueBefore query parameter {@code dueBefore}, or null. Only tasks due strictly before this ISO-8601 date-time with offset (tasks without a due date never match); 400 VALIDATION_FAILED when malformed or not after dueAfter
      * @param dueAfter query parameter {@code dueAfter}, or null. Only tasks due strictly after this ISO-8601 date-time with offset (tasks without a due date never match)
      * @param overdue query parameter {@code overdue}, or null. true: only tasks due before the server's current time (combined with dueBefore, the earlier bound applies); false: no condition
+     * @param section query parameter {@code section}, or null. Inbox section (S03, register E-32(e)): the task predicate of the section of the same name in GET /tasks/counts, under the same seat context, so the list and its count agree (X-Total-Count equals the count when no other filter is given). MY_SEAT: assigned to me, or a candidate task of the request seat (X-Sangam-Acting-For-Seat when named, else X-Sangam-Seat); ACTING_FOR: a candidate task of a seat I hold now by ADDITIONAL_CHARGE or LEAVE_SUBSTITUTE (listed under either seat context; claim and complete still need the task's seat as the request's seat context, K7); POOL: visible and unassigned; ESCALATED: visible and escalated; RETURNED: visible and the case decision is RETURNED; ALL: visible. Every other filter narrows the section. Absent: no section predicate. Unknown value: 400 VALIDATION_FAILED One of: MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL.
      * @param page query parameter {@code page}, or null. 0-based page index
      * @param size query parameter {@code size}, or null. Page size
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response with the A-16 count headers
      */
-    public org.sangam.sdk.model.Page<Task> listTasks(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId, String processInstanceId, String caseInstanceId, String businessKey, String processDefinitionKey, String taskDefinitionKey, String state, String sortBy, String currency, String sortOrder, java.util.List<String> variableNames, String filterId, Integer priority, Integer minPriority, Integer maxPriority, java.time.Instant dueBefore, java.time.Instant dueAfter, Boolean overdue, Long page, Long size, RequestOptions options) {
+    public org.sangam.sdk.model.Page<Task> listTasks(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId, String processInstanceId, String caseInstanceId, String businessKey, String processDefinitionKey, String taskDefinitionKey, String state, String sortBy, String currency, String sortOrder, java.util.List<String> variableNames, String filterId, Integer priority, Integer minPriority, Integer maxPriority, java.time.Instant dueBefore, java.time.Instant dueAfter, Boolean overdue, String section, Long page, Long size, RequestOptions options) {
         ApiRequest req = ApiRequest.get("/tasks");
         req.query("assignee", assignee);
         req.query("mine", mine);
@@ -105,6 +106,7 @@ public final class TasksApi {
         req.query("dueBefore", dueBefore);
         req.query("dueAfter", dueAfter);
         req.query("overdue", overdue);
+        req.query("section", section);
         req.query("page", page);
         req.query("size", size);
         return call.page(req, options, Task.class, page, size);

@@ -253,7 +253,9 @@ public final class SecurityAdminBridge implements AdminPort {
 
     @Override
     public Assignment assignment(RequestContext ctx, String id) {
+        // a posting, or the leave whose id a LEAVE_SUBSTITUTE assignment was answered with (requested or decided)
         return run(c -> security.postings().posting(c, ctx.tenantId(), id).map(p -> assignment(p, dbNow(c)))
+                .or(() -> security.postings().leave(c, ctx.tenantId(), id).map(l -> leaveAssignment(ctx.tenantId(), l)))
                 .orElseThrow(() -> ApiProblem.notFound("assignment", id)));
     }
 
@@ -271,26 +273,68 @@ public final class SecurityAdminBridge implements AdminPort {
                     OrgModel.PostingKind.REGULAR, from, to, a.orderRef(), null), dbNow(c)));
             case "ADDITIONAL_CHARGE", "ACTING" -> run(c -> assignment(security.postings().grantAdditionalCharge(c, actor,
                     a.seatId(), a.personId(), from, to, a.orderRef(), null), dbNow(c)));
-            case "LEAVE_SUBSTITUTE" -> {
-                String seat = a.actedForSeatId() != null ? a.actedForSeatId() : a.seatId();
-                if (to == null) {
-                    throw ApiProblem.badRequest("VALIDATION_FAILED", "a leave substitution needs validTo")
-                            .with("field", "validTo");
-                }
-                OrgModel.Leave leave = run(c -> {
-                    String holder = security.postings().holdersAt(c, ctx.tenantId(), seat, from).stream()
-                            .filter(h -> !h.actingFor()).map(h -> h.personId()).findFirst()
-                            .orElseThrow(() -> ApiProblem.unprocessable("SEAT_VACANT",
-                                    "Seat " + seat + " has no substantive holder on " + a.validFrom()));
-                    return security.postings().recordLeave(c, actor, holder, from, to, a.personId(), ctx.principalId());
-                });
-                yield new Assignment(leave.leaveId(), ctx.tenantId(), seat, a.personId(), "LEAVE_SUBSTITUTE",
-                        date(leave.validFrom()), date(leave.validTo()), seat, a.orderRef(), ctx.principalId(),
-                        Instant.now(), false);
-            }
+            case "LEAVE_SUBSTITUTE" -> leaveSubstitute(ctx, a, from, to, false);
             default -> throw ApiProblem.badRequest("VALIDATION_FAILED",
                     "kind must be SUBSTANTIVE, ADDITIONAL_CHARGE, LEAVE_SUBSTITUTE or ACTING").with("field", "kind");
         };
+    }
+
+    /**
+     * The officer's own request (S14, {@code POST /me/leave-requests}): a {@code REQUESTED} leave of the caller, who
+     * must be the substantive holder of the seat on the first day. It takes effect only when another person approves it
+     * ({@code SecurityIdentityAdminBridge.decideAssignment}); the assignment id is the leave id.
+     */
+    @Override
+    public Assignment requestLeaveSubstitute(RequestContext ctx, Assignment a) {
+        require(a.seatId(), "seatId");
+        require(a.personId(), "personId");
+        require(a.validFrom(), "validFrom");
+        return leaveSubstitute(ctx, a, start(a.validFrom()), a.validTo() == null ? null : start(a.validTo().plusDays(1)), true);
+    }
+
+    /**
+     * Leave with a substitute (AJ-04 step 5: request and approval, requester cannot approve). The leave is the leave
+     * of the seat's substantive holder on the first day, and that officer is its requester.
+     * <ul>
+     *   <li>{@code request}: the caller is that officer and asks; nothing takes effect yet.</li>
+     *   <li>otherwise ({@code POST /admin/assignments}, A03): an administrator records the approved leave of the
+     *       officer. The administrator is the approver, so an administrator recording a leave of his own seat is
+     *       refused (422 SOD_VIOLATION). Register E-31(a): the caller used to be passed as the requester too, which
+     *       refused every administrator.</li>
+     * </ul>
+     */
+    private Assignment leaveSubstitute(RequestContext ctx, Assignment a, Instant from, Instant to, boolean request) {
+        String seat = a.actedForSeatId() != null ? a.actedForSeatId() : a.seatId();
+        if (to == null) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "a leave substitution needs validTo")
+                    .with("field", "validTo");
+        }
+        SecurityIdentity actor = actor(ctx);
+        OrgModel.Leave leave = run(c -> {
+            String holder = security.postings().holdersAt(c, ctx.tenantId(), seat, from).stream()
+                    .filter(h -> !h.actingFor()).map(h -> h.personId()).findFirst()
+                    .orElseThrow(() -> ApiProblem.unprocessable("SEAT_VACANT",
+                            "Seat " + seat + " has no substantive holder on " + a.validFrom()));
+            if (!request) {
+                return security.postings().recordLeave(c, actor, holder, from, to, a.personId(), holder);
+            }
+            if (!holder.equals(actor.personId())) {
+                throw ApiProblem.forbidden("SEAT_NOT_HELD", "You do not hold seat " + seat + " on " + a.validFrom());
+            }
+            return security.postings().requestLeave(c, actor, from, to, a.personId());
+        });
+        return new Assignment(leave.leaveId(), ctx.tenantId(), seat, a.personId(), "LEAVE_SUBSTITUTE",
+                date(leave.validFrom()), date(leave.validTo()), seat, a.orderRef(), ctx.principalId(),
+                Instant.now(), false);
+    }
+
+    /** A leave (requested, approved or rejected) as the assignment its id was answered as; rejected = ended. */
+    public static Assignment leaveAssignment(String tenantId, org.sangam.security.org.PostingService.LeaveRecord r) {
+        OrgModel.Leave l = r.leave();
+        String seat = r.seats().isEmpty() ? null : r.seats().get(0);
+        return new Assignment(l.leaveId(), tenantId, seat, l.substitutePersonId(), "LEAVE_SUBSTITUTE", date(l.validFrom()),
+                date(l.validTo()), seat, "leave:" + l.leaveId(), r.requestedBy(), r.createdAt(),
+                org.sangam.security.org.PostingService.LEAVE_REJECTED.equals(r.status()));
     }
 
     @Override

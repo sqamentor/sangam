@@ -42,6 +42,17 @@ public class TaskController {
         this.savedLists = savedLists;
     }
 
+    /** {@link #list} without an inbox section (the signature before register E-32(e); in-process callers). */
+    public ResponseEntity<List<TaskPort.Task>> list(RequestContext ctx, String assignee, Boolean mine, Boolean unassigned,
+            String candidateGroup, String seatId, String processInstanceId, String caseInstanceId, String businessKey,
+            String processDefinitionKey, String taskDefinitionKey, String state, String sortBy, String sortOrder,
+            Integer page, Integer size, List<String> variableNames, String currency, String filterId, Integer priority,
+            Integer minPriority, Integer maxPriority, String dueBefore, String dueAfter, Boolean overdue) {
+        return list(ctx, assignee, mine, unassigned, candidateGroup, seatId, processInstanceId, caseInstanceId,
+                businessKey, processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder, page, size, variableNames,
+                currency, filterId, priority, minPriority, maxPriority, dueBefore, dueAfter, overdue, null);
+    }
+
     @GetMapping
     public ResponseEntity<List<TaskPort.Task>> list(RequestContext ctx,
             @RequestParam(required = false) String assignee, @RequestParam(required = false) Boolean mine,
@@ -56,12 +67,13 @@ public class TaskController {
             @RequestParam(required = false) String currency, @RequestParam(required = false) String filterId,
             @RequestParam(required = false) Integer priority, @RequestParam(required = false) Integer minPriority,
             @RequestParam(required = false) Integer maxPriority, @RequestParam(required = false) String dueBefore,
-            @RequestParam(required = false) String dueAfter, @RequestParam(required = false) Boolean overdue) {
+            @RequestParam(required = false) String dueAfter, @RequestParam(required = false) Boolean overdue,
+            @RequestParam(required = false) String section) {
         permissions.require(ctx, Permissions.TASK_READ);
         var filter = new TaskPort.TaskFilter(assignee, mine, unassigned, candidateGroup, seatId, processInstanceId,
                 caseInstanceId, businessKey, processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder,
                 variableNames, currency, priority, minPriority, maxPriority, instant("dueBefore", dueBefore),
-                instant("dueAfter", dueAfter), overdue);
+                instant("dueAfter", dueAfter), overdue, section);
         if (filterId != null) {
             // Owner decision 406: a saved list of the caller's tenant adds its criteria; tenant and visibility of the
             // task list below still apply, so a list only narrows what the caller sees.
@@ -69,7 +81,7 @@ public class TaskController {
             TaskFilterPort port = savedLists.getIfAvailable();
             TaskFilterPort.TaskFilter saved = (port == null ? java.util.Optional.<TaskFilterPort.TaskFilter>empty()
                     : port.get(tenant, filterId)).orElseThrow(() -> ApiProblem.notFound("Task list", filterId));
-            filter = SavedTaskQuery.combine(saved.query(), filter);
+            filter = SavedTaskQuery.combine(saved.query(), filter).withSection(section);   // E-32(e): the section stays
         }
         return Lists.ok(tasks.list(ctx, filter, Lists.page(page, size)));
     }

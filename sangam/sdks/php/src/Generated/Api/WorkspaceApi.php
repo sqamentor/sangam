@@ -23,7 +23,7 @@ final class WorkspaceApi
     /**
      * Inbox counts
      *
-     * Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the list; a capped count is the string "N+" (A-16, K2).
+     * Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the list; a capped count is the string "N+" (A-16, K2). Each count is the predicate of GET /tasks?section=<name> (S03).
      *
      * GET /tasks/counts (operationId getTaskCounts); permission task.read.
      * @return array<string, mixed>

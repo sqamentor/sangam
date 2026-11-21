@@ -97,27 +97,21 @@ public class OperatonTaskAdapter implements TaskPort {
      */
     @Override
     public Page<Task> list(RequestContext ctx, TaskFilter f, Page.PageRequest page) {
-        return reads(() -> listPage(ctx, f, page));
+        // the acting seats are read before the engine read transaction opens (no second connection inside it, SL-43)
+        List<String> acting = f != null && "ACTING_FOR".equals(f.section()) ? actingSeats.apply(ctx) : List.of();
+        return reads(() -> listPage(ctx, f, page, acting));
     }
 
-    private Page<Task> listPage(RequestContext ctx, TaskFilter f, Page.PageRequest page) {
+    private Page<Task> listPage(RequestContext ctx, TaskFilter f, Page.PageRequest page, List<String> acting) {
         TaskQuery q = tasks.createTaskQuery();
         if (ctx.tenantId() != null) {
             q.tenantIdIn(ctx.tenantId());
         }
-        if (!seesAll(ctx)) {
-            // Seats are modelled as candidate groups; Operaton forbids candidateGroup + candidateGroupIn together.
-            List<String> candidateGroups = new ArrayList<>(ctx.groups());
-            if (ctx.effectiveSeatId() != null && !candidateGroups.contains(ctx.effectiveSeatId())) {
-                candidateGroups.add(ctx.effectiveSeatId());   // the seat acted in: the acted-for seat when one is named
-            }
-            // Operaton's or() returns the OR branch: every criterion of the branch and endOr() go on that object (on
-            // q, the engine refuses "cannot set endOr() before or()" and every non-supervisor list failed).
-            TaskQuery any = q.or().taskAssignee(ctx.principalId()).taskCandidateUser(ctx.principalId());
-            if (!candidateGroups.isEmpty()) {
-                any.taskCandidateGroupIn(candidateGroups);
-            }
-            any.endOr();
+        String section = f == null ? null : f.section();   // E-32(e): null is the default visibility (TaskSections)
+        if (section == null) {
+            TaskSections.visible(ctx, q);
+        } else if (!TaskSections.apply(ctx, q, section, () -> acting)) {
+            return new Page<>(List.of(), 0, false);   // ACTING_FOR without an acting seat: the section is empty
         }
         if (f != null) {
             if (f.assignee() != null) {
@@ -272,6 +266,13 @@ public class OperatonTaskAdapter implements TaskPort {
                 List.of(), List.of(), delegatedFrom, DscDocument.of(OperatonSupport.call(() ->
                         tasks.getVariablesLocal(taskId, List.of(DscDocument.SLOT_VARIABLE,
                                 DscDocument.DOCUMENT_VARIABLE)))));
+    }
+
+    private volatile java.util.function.Function<RequestContext, List<String>> actingSeats = c -> List.of();
+
+    /** E-32(e): the caller's acting seats of section ACTING_FOR, bound by {@link OperatonWorkspaceAdapter}. */
+    public void setActingSeats(java.util.function.Function<RequestContext, List<String>> actingSeats) {
+        this.actingSeats = actingSeats == null ? c -> List.of() : actingSeats;
     }
 
     private volatile ReadTransactions readTransactions;
@@ -490,7 +491,7 @@ public class OperatonTaskAdapter implements TaskPort {
             if (t.getAssignee() == null) {
                 return;
             }
-            if (!t.getAssignee().equals(ctx.principalId()) && !seesAll(ctx)) {
+            if (!t.getAssignee().equals(ctx.principalId()) && !TaskSections.seesAll(ctx)) {
                 throw ApiProblem.notPermitted("task.unclaim");
             }
             OperatonSupport.run(() -> tasks.setAssignee(taskId, null));
@@ -779,7 +780,7 @@ public class OperatonTaskAdapter implements TaskPort {
             throw ApiProblem.notFound("task", taskId);
         }
         OperatonSupport.checkTenant(ctx, t.getTenantId(), "task", taskId);
-        if (!seesAll(ctx) && !involved(ctx, t)) {
+        if (!TaskSections.seesAll(ctx) && !involved(ctx, t)) {
             throw ApiProblem.notFound("task", taskId);
         }
         return t;
@@ -806,10 +807,6 @@ public class OperatonTaskAdapter implements TaskPort {
             }
         }
         return false;
-    }
-
-    private static boolean seesAll(RequestContext ctx) {
-        return ctx.inGroup("sangam-admin") || ctx.inGroup("sangam-operator") || ctx.inGroup("sangam-system");
     }
 
     /** K3: the caller holds the task, or it is unassigned and the caller is a candidate. */

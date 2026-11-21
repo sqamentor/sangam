@@ -30,11 +30,21 @@ public final class PrincipalAttributeFilter extends OncePerRequestFilter {
     public static final String SEAT_HEADER = "X-Sangam-Seat";
     public static final String ACTING_FOR_HEADER = "X-Sangam-Acting-For-Seat";
 
+    /**
+     * Told when this filter refuses a seat by the token's seats claim (register E-32(g)): the host writes the
+     * {@code AUTH_DENIED} record, as for every other refused seat context.
+     */
+    @FunctionalInterface
+    public interface SeatRefusal {
+        void refused(HttpServletRequest request, SangamPrincipal principal, String seat, String actingFor);
+    }
+
     private final Function<SangamPrincipal, SeatHoldings> seatDirectory;
+    private final SeatRefusal refusal;
 
     /** With the security module: the holdings come from {@code SecurityIdentityFilter}, which runs after this filter. */
     public PrincipalAttributeFilter() {
-        this(null);
+        this(null, null);
     }
 
     /**
@@ -42,7 +52,17 @@ public final class PrincipalAttributeFilter extends OncePerRequestFilter {
      *                      asked only for a request that names a seat
      */
     public PrincipalAttributeFilter(Function<SangamPrincipal, SeatHoldings> seatDirectory) {
+        this(seatDirectory, null);
+    }
+
+    /**
+     * @param seatDirectory as above
+     * @param refusal       told of a seat refused by the token's seats claim, or null (no audit trail bound:
+     *                      development start without the security module)
+     */
+    public PrincipalAttributeFilter(Function<SangamPrincipal, SeatHoldings> seatDirectory, SeatRefusal refusal) {
         this.seatDirectory = seatDirectory;
+        this.refusal = refusal;
     }
 
     @Override
@@ -55,6 +75,10 @@ public final class PrincipalAttributeFilter extends OncePerRequestFilter {
             String seat = request.getHeader(SEAT_HEADER);
             if (seat != null && !seat.isBlank() && p.claims().get(JwtPrincipalConverter.SEATS) instanceof Collection<?> seats
                     && !seats.contains(seat.trim())) {
+                if (refusal != null) {
+                    String actingFor = request.getHeader(ACTING_FOR_HEADER);
+                    refusal.refused(request, p, seat.trim(), named(actingFor) ? actingFor.trim() : null);
+                }
                 ProblemResponses.write(request, response, 403, SeatHoldings.NOT_HELD, "Seat not held",
                         "The seat '" + seat.trim() + "' is not among the seats of your identity");
                 return;

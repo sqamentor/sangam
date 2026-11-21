@@ -95,6 +95,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
                                     PermissionPort permissions, AuditPort audit, RestProperties props,
                                     org.sangam.rest.support.DocumentStore docs, org.sangam.rest.support.BusinessDates dates) {
         this.dates = java.util.Objects.requireNonNull(dates, "dates");
+        this.held = new WorkspaceSeatHolders(admin, dates);
         this.docs = docs;
         this.taskPort = taskPort;
         this.tasks = tasks;
@@ -106,6 +107,10 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
         this.permissions = permissions;
         this.audit = audit;
         this.props = props;
+        // E-32(e): GET /tasks?section=ACTING_FOR lists the seats this adapter counts (the caller's own seat directory)
+        if (org.sangam.rest.support.VariableMaskingPorts.unwrap(taskPort) instanceof OperatonTaskAdapter a) {
+            a.setActingSeats(this::actingSeats);
+        }
     }
 
     /**
@@ -191,76 +196,59 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
             } catch (ApiProblem ignored) {
                 // seat not in the admin store: show the id only
             }
-            String actingFor = a.actedForSeatId() == null || ownHoldings != null ? null : holderOf(ctx, a.actedForSeatId());
+            String actingFor = a.actedForSeatId() == null ? null : held.actedForName(ctx, a.actedForSeatId());
             out.add(new SeatHolding(a.seatId(), seatName, designation, orgUnitName, a.kind(), actingFor, a.validFrom(),
                     a.validTo(), false));
         }
         return out;
     }
 
-    private volatile java.util.function.Function<RequestContext, List<AdminPort.Assignment>> ownHoldings;
+    /** Who holds which seat: the host's seat directory when bound, else the admin port ({@link WorkspaceSeatHolders}). */
+    private final WorkspaceSeatHolders held;
 
     /**
      * Binds the host's seat directory for the caller's own seats (K7: what the person can act in now), the source of
      * {@code GET /me} seats, the ACTING_FOR count, {@code /me/delegations} and the leave request's check. It needs no
-     * admin permission; the acted-for holder's name (admin posting list) is then not asked. Unbound: the admin port.
+     * admin permission. Unbound: the admin port.
      */
     public void setOwnHoldings(java.util.function.Function<RequestContext, List<AdminPort.Assignment>> ownHoldings) {
-        this.ownHoldings = ownHoldings;
+        held.setOwnHoldings(ownHoldings);
+    }
+
+    /**
+     * Register E-32(c), E-31(a): binds the host's directory of substantive seat holders. It names the officer the
+     * caller acts for ({@code GET /me} {@code actingForPersonName}, asked only for the caller's own acting holdings)
+     * and resolves the substitute seat of a leave request to its holder. It needs no admin permission. Unbound: the
+     * admin port's assignment list (which an officer may not read under the security module).
+     */
+    public void setSeatHolders(
+            java.util.function.BiFunction<RequestContext, String, WorkspaceSeatHolders.SeatHolderRef> seatHolders) {
+        held.setSeatHolders(seatHolders);
     }
 
     private List<AdminPort.Assignment> myAssignments(RequestContext ctx) {
-        java.util.function.Function<RequestContext, List<AdminPort.Assignment>> own = ownHoldings;
-        if (own != null) {
-            return own.apply(ctx);
-        }
-        try {
-            return admin.assignments(ctx, new AdminPort.AdminFilter(null, null, null, null, ctx.principalId(), null,
-                    dates.today(ctx.tenantId()), false), new Page.PageRequest(0, Page.PageRequest.MAX_SIZE)).items();
-        } catch (ApiProblem e) {
-            return List.of();
-        }
-    }
-
-    private List<AdminPort.Assignment> seatAssignments(RequestContext ctx, String seatId) {
-        try {
-            return admin.assignments(ctx, new AdminPort.AdminFilter(null, null, null, seatId, null, null,
-                    dates.today(ctx.tenantId()), false), new Page.PageRequest(0, Page.PageRequest.MAX_SIZE)).items();
-        } catch (ApiProblem e) {
-            return List.of();
-        }
-    }
-
-    /** The person holding a seat substantively today, or null. */
-    private String holderOf(RequestContext ctx, String seatId) {
-        return seatAssignments(ctx, seatId).stream().filter(a -> "SUBSTANTIVE".equals(a.kind()))
-                .map(AdminPort.Assignment::personId).findFirst().orElse(null);
+        return held.myAssignments(ctx);
     }
 
     // ------------------------------------------------------------------ counts and bulk
 
     @Override
     public Map<String, Object> taskCounts(RequestContext ctx) {
+        // E-32(e): each count is the predicate GET /tasks?section=<name> lists with (TaskSections, S03)
         Map<String, Object> out = new LinkedHashMap<>();
-        TaskQuery mySeat = tenant(ctx, tasks.createTaskQuery());
-        if (ctx.effectiveSeatId() != null) {
-            mySeat.or().taskAssignee(ctx.principalId()).taskCandidateGroup(ctx.effectiveSeatId()).endOr();
-        } else {
-            mySeat.taskAssignee(ctx.principalId());
+        java.util.function.Supplier<List<String>> acting = () -> actingSeats(ctx);
+        for (String section : TaskPort.SECTIONS) {
+            TaskQuery q = tenant(ctx, tasks.createTaskQuery());
+            out.put(section, TaskSections.apply(ctx, q, section, acting) ? capped(q.count()) : 0L);
         }
-        out.put("MY_SEAT", capped(mySeat.count()));
-        List<String> actingSeats = myAssignments(ctx).stream()
+        return out;
+    }
+
+    /** The seats the caller holds now by additional charge or leave substitute (K7, the caller's own seat directory). */
+    List<String> actingSeats(RequestContext ctx) {
+        return myAssignments(ctx).stream()
                 .filter(a -> "ADDITIONAL_CHARGE".equals(a.kind()) || "LEAVE_SUBSTITUTE".equals(a.kind()))
                 .map(AdminPort.Assignment::seatId).filter(Objects::nonNull).distinct().toList();
-        out.put("ACTING_FOR", actingSeats.isEmpty() ? 0L
-                : capped(tenant(ctx, tasks.createTaskQuery()).taskCandidateGroupIn(actingSeats).count()));
-        out.put("POOL", capped(involved(ctx, tenant(ctx, tasks.createTaskQuery())).taskUnassigned().count()));
-        out.put("ESCALATED", capped(involved(ctx, tenant(ctx, tasks.createTaskQuery()))
-                .taskVariableValueEquals(ESCALATED, true).count()));
-        out.put("RETURNED", capped(involved(ctx, tenant(ctx, tasks.createTaskQuery()))
-                .processVariableValueEquals(OperatonTaskAdapter.DECISION, "RETURNED").count()));
-        out.put("ALL", capped(involved(ctx, tenant(ctx, tasks.createTaskQuery())).count()));
-        return out;
     }
 
     private Object capped(long n) {
@@ -277,21 +265,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
 
     /** The default visibility rule of {@link OperatonTaskAdapter}: assignee, candidate user or candidate group/seat. */
     private static TaskQuery involved(RequestContext ctx, TaskQuery q) {
-        if (ctx.inGroup("sangam-admin") || ctx.inGroup("sangam-operator") || ctx.inGroup("sangam-system")) {
-            return q;
-        }
-        List<String> groups = new ArrayList<>(ctx.groups());
-        if (ctx.effectiveSeatId() != null && !groups.contains(ctx.effectiveSeatId())) {
-            groups.add(ctx.effectiveSeatId());   // as OperatonTaskAdapter: the acted-for seat when one is named
-        }
-        // Operaton's or() returns the OR branch: every criterion of the branch and endOr() go on that object, as in
-        // OperatonTaskAdapter. On q the engine refused "cannot set endOr() before or()", so every task count and the
-        // field-visit list answered 500 for anyone who is not a supervisor (R7-ui sweep, task-user role).
-        TaskQuery any = q.or().taskAssignee(ctx.principalId()).taskCandidateUser(ctx.principalId());
-        if (!groups.isEmpty()) {
-            any.taskCandidateGroupIn(groups);
-        }
-        return any.endOr();
+        return TaskSections.visible(ctx, q);
     }
 
     @Override
@@ -404,7 +378,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
                                     boolean proposed) {
         long workload = OperatonSupport.call(() -> tenant(ctx, tasks.createTaskQuery()).taskCandidateGroup(seatId)
                 .count());
-        List<AdminPort.Assignment> holders = seatAssignments(ctx, seatId);
+        List<AdminPort.Assignment> holders = held.seatAssignments(ctx, seatId);
         String holder = holders.stream().filter(a -> "SUBSTANTIVE".equals(a.kind()))
                 .map(AdminPort.Assignment::personId).findFirst().orElse(null);
         boolean onLeave = holders.stream().anyMatch(a -> "LEAVE_SUBSTITUTE".equals(a.kind()));
@@ -582,7 +556,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
         }
         String substitute = r.substitutePersonId();
         if (substitute == null && r.substituteSeatId() != null) {
-            substitute = holderOf(ctx, r.substituteSeatId());
+            substitute = held.holderId(ctx, r.substituteSeatId());
         }
         if (substitute == null) {
             throw ApiProblem.unprocessable("SUBSTITUTE_UNKNOWN", "No person holds the substitute seat today");
@@ -590,7 +564,8 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
         if (substitute.equals(ctx.principalId())) {
             throw ApiProblem.unprocessable("SOD_VIOLATION", "You cannot be your own substitute");
         }
-        AdminPort.Assignment created = admin.createAssignment(ctx, new AdminPort.Assignment(null, ctx.tenantId(),
+        // AJ-04 step 5, S14: a request, pending until another person decides it (POST /admin/assignments/{id}/approve)
+        AdminPort.Assignment created = admin.requestLeaveSubstitute(ctx, new AdminPort.Assignment(null, ctx.tenantId(),
                 r.seatId(), substitute, "LEAVE_SUBSTITUTE", r.from(), r.to(), r.seatId(), null, ctx.principalId(),
                 null, false));
         Map<String, Object> p = new LinkedHashMap<>();

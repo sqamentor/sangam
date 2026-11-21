@@ -10,7 +10,7 @@ import { normalise } from '../config';
 import { authStartUrl, completePopupLogin, readPopupResult, signInFailure, signInFromTab, startPopupLogin, teamsPageUrl, teamsView, TeamsSignInError } from './teamsAuth';
 import { TeamsSignIn, TeamsUnavailable } from './TeamsApp';
 
-const auth = { mode: 'oidc' as 'oidc' | 'dev', status: 'anonymous', login: vi.fn(async () => undefined), reload: vi.fn() };
+const auth = { mode: 'oidc' as 'oidc' | 'dev', status: 'anonymous', login: vi.fn(async () => undefined), reload: vi.fn(), signedIn: vi.fn(async (_token: string) => undefined) };
 vi.mock('../auth/AuthProvider', () => ({ useAuth: () => auth }));
 
 beforeAll(() => initI18n('en'));
@@ -67,11 +67,12 @@ describe('pop-up sign-in', () => {
 });
 
 describe('TeamsSignIn', () => {
-  it('signs in through the pop-up, then reloads the session', async () => {
+  it('signs in through the pop-up, then loads the session for the new token', async () => {
     const storeUser = vi.fn(async () => undefined);
     render(<TeamsSignIn authenticate={async () => user().toStorageString()} userManager={{ storeUser, removeUser: vi.fn() }} origin="https://h" base="/" />);
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
-    await waitFor(() => expect(auth.reload).toHaveBeenCalled());
+    // E-29(b): signedIn (not a bare reload), so that a 401 from GET /me is told to the user
+    await waitFor(() => expect(auth.signedIn).toHaveBeenCalledWith('at-1'));
     expect(storeUser).toHaveBeenCalled();
   });
 

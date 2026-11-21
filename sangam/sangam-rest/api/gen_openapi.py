@@ -953,7 +953,9 @@ op("get", "/tasks", "listTasks", "Tasks", "List tasks",
            q("maxPriority", "int", "Only tasks of at most this priority"),
            q("dueBefore", "dt", "Only tasks due strictly before this ISO-8601 date-time with offset (tasks without a due date never match); 400 VALIDATION_FAILED when malformed or not after dueAfter"),
            q("dueAfter", "dt", "Only tasks due strictly after this ISO-8601 date-time with offset (tasks without a due date never match)"),
-           q("overdue", "bool", "true: only tasks due before the server's current time (combined with dueBefore, the earlier bound applies); false: no condition")])
+           q("overdue", "bool", "true: only tasks due before the server's current time (combined with dueBefore, the earlier bound applies); false: no condition"),
+           dict(q("section", desc="Inbox section (S03, register E-32(e)): the task predicate of the section of the same name in GET /tasks/counts, under the same seat context, so the list and its count agree (X-Total-Count equals the count when no other filter is given). MY_SEAT: assigned to me, or a candidate task of the request seat (X-Sangam-Acting-For-Seat when named, else X-Sangam-Seat); ACTING_FOR: a candidate task of a seat I hold now by ADDITIONAL_CHARGE or LEAVE_SUBSTITUTE (listed under either seat context; claim and complete still need the task's seat as the request's seat context, K7); POOL: visible and unassigned; ESCALATED: visible and escalated; RETURNED: visible and the case decision is RETURNED; ALL: visible. Every other filter narrows the section. Absent: no section predicate. Unknown value: 400 VALIDATION_FAILED"),
+                schema={"type": "string", "enum": ["MY_SEAT", "ACTING_FOR", "POOL", "ESCALATED", "RETURNED", "ALL"]})])
 op("get", "/tasks/{id}", "getTask", "Tasks", "Get a task", "Task with variables (field masks applied, K11), the material payload hash and case version (VI.4 rule 5).",
    ["VI.4", "R47"], params=[ID], resp=(200, "TaskDetail"), perm="task.read", errors=GET_E)
 op("get", "/tasks/{id}/variables", "getTaskVariables", "Tasks", "Task variables", "Variables visible on the task (K11).", ["VI.4"],
@@ -1552,7 +1554,7 @@ op("post", "/me/leave-requests", "requestLeave", "Me", "Request leave with a sub
 
 TQ = [ID]
 op("get", "/tasks/counts", "getTaskCounts", "Workspace", "Inbox counts",
-   "Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the list; a capped count is the string \"N+\" (A-16, K2).",
+   "Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the list; a capped count is the string \"N+\" (A-16, K2). Each count is the predicate of GET /tasks?section=<name> (S03).",
    ["VI.4", "A-16", "R76"], resp=(200, {"application/json": {"schema": {"type": "object", "additionalProperties": {
        "anyOf": [{"type": "integer", "format": "int64"}, {"type": "string", "pattern": "^[0-9]+\\+$"}]}}}}),
    perm="task.read", errors=WS_E)

@@ -187,6 +187,109 @@ public final class PostingService implements SecurityPorts.SeatDirectory {
         return new OrgModel.Leave(t, id, personId, from, to, substitutePersonId, approver.personId());
     }
 
+    /** A leave row with what a decision needs: who asked, its status (REQUESTED, APPROVED, REJECTED) and the seats. */
+    public record LeaveRecord(OrgModel.Leave leave, String requestedBy, String status, List<String> seats, Instant createdAt) {
+    }
+
+    public static final String LEAVE_REQUESTED = "REQUESTED";
+    public static final String LEAVE_APPROVED = "APPROVED";
+    public static final String LEAVE_REJECTED = "REJECTED";
+
+    /**
+     * An officer asks for leave with a substitute (AJ-04 step 5, S14). Nothing takes effect: the row waits as
+     * {@code REQUESTED} until another person decides it ({@link #decideLeave}); every reader of leave acts on
+     * {@code APPROVED} rows only. Asking needs no admin permission, but the requester must regularly hold a seat in
+     * that period and cannot be the substitute.
+     */
+    public OrgModel.Leave requestLeave(Connection c, SecurityIdentity requester, Instant from, Instant to,
+                                       String substitutePersonId) {
+        String t = requester.tenantId();
+        String person = requester.personId();
+        if (to == null || !to.isAfter(from)) {
+            throw new SangamSecurityException.AdminConflict("INVALID_RANGE", "leave needs a valid date range");
+        }
+        if (substitutePersonId == null || substitutePersonId.equals(person)) {
+            throw new SangamSecurityException.SodViolation("the officer on leave cannot be the substitute");
+        }
+        if (regularSeatsDuring(c, t, person, from, to).isEmpty()) {
+            throw new SangamSecurityException.AdminConflict("NOT_POSTED", person + " holds no seat in that period");
+        }
+        requirePerson(c, t, substitutePersonId);
+        String id = Sql.newId();
+        Jdbc.update(c, "INSERT INTO SEC_LEAVE(tenant_id, leave_id, person_id, valid_from, valid_to, substitute_person_id,"
+                        + " requested_by, approved_by, status, created_at) VALUES (?,?,?,?,?,?,?,NULL,'" + LEAVE_REQUESTED + "',?)",
+                t, id, person, from, to, substitutePersonId, person, Sql.dbNow(c, dialect));
+        return new OrgModel.Leave(t, id, person, from, to, substitutePersonId, null);
+    }
+
+    /**
+     * The four-eyes decision on a requested leave (AJ-04 step 5: "requester cannot approve"). Approval makes the leave
+     * effective exactly as {@link #recordLeave} does (policy version, {@code LEAVE_RECORDED}, substitute postings);
+     * a rejection changes nothing but the row. Decided once: a second decision is {@code INVALID_TRANSITION}.
+     */
+    public LeaveRecord decideLeave(Connection c, SecurityIdentity approver, String leaveId, boolean approve) {
+        authz.require(c, approver, ResourceRegistry.POSTING, Permission.ADMIN, ResourceRegistry.ANY_ID);
+        String t = approver.tenantId();
+        LeaveRecord r = leave(c, t, leaveId).orElseThrow(() ->
+                new SangamSecurityException.AdminConflict("UNKNOWN_LEAVE", "leave request " + leaveId + " not found"));
+        if (!LEAVE_REQUESTED.equals(r.status())) {
+            throw new SangamSecurityException.AdminConflict("INVALID_TRANSITION",
+                    "the leave request was already " + r.status().toLowerCase(java.util.Locale.ROOT));
+        }
+        OrgModel.Leave l = r.leave();
+        if (approver.personId().equals(r.requestedBy()) || approver.personId().equals(l.personId())) {
+            throw new SangamSecurityException.SodViolation("the requester cannot approve the leave substitution");
+        }
+        String status = approve ? LEAVE_APPROVED : LEAVE_REJECTED;
+        int changed = Jdbc.update(c, "UPDATE SEC_LEAVE SET status=?, approved_by=? WHERE tenant_id=? AND leave_id=? AND status='"
+                + LEAVE_REQUESTED + "'", status, approver.personId(), t, leaveId);
+        if (changed != 1) {   // decided by another node in the meantime
+            throw new SangamSecurityException.AdminConflict("INVALID_TRANSITION", "the leave request was already decided");
+        }
+        if (approve) {
+            memberships.touch(c, t);   // as recordLeave: seat holders change at the leave boundaries (VI.4 rule 5)
+            Map<String, Object> p = new LinkedHashMap<>();
+            p.put("leave_id", leaveId);
+            p.put("person_id", l.personId());
+            p.put("valid_from", l.validFrom());
+            p.put("valid_to", l.validTo());
+            p.put("substitute_person_id", l.substitutePersonId());
+            p.put("requested_by", r.requestedBy());
+            audit.security(c, approver, SecurityEventType.LEAVE_RECORDED, p);
+            if (l.substitutePersonId() != null) {
+                for (String seat : r.seats()) {
+                    post(c, approver, seat, l.substitutePersonId(), OrgModel.PostingKind.LEAVE_SUBSTITUTE, l.validFrom(),
+                            l.validTo(), "leave:" + leaveId, null);
+                }
+            }
+        }
+        return new LeaveRecord(new OrgModel.Leave(t, leaveId, l.personId(), l.validFrom(), l.validTo(), l.substitutePersonId(),
+                approver.personId()), r.requestedBy(), status, r.seats(), r.createdAt());
+    }
+
+    /** A leave row by id, with the seats the person regularly holds in its period. */
+    public Optional<LeaveRecord> leave(Connection c, String tenant, String leaveId) {
+        return Jdbc.one(c, "SELECT person_id, valid_from, valid_to, substitute_person_id, requested_by, approved_by, status,"
+                        + " created_at FROM SEC_LEAVE WHERE tenant_id=? AND leave_id=?",
+                rs -> new Object[]{new OrgModel.Leave(tenant, leaveId, rs.getString(1), Jdbc.instant(rs, "valid_from"),
+                        Jdbc.instant(rs, "valid_to"), rs.getString(4), rs.getString(6)), rs.getString(5), rs.getString(7),
+                        Jdbc.instant(rs, "created_at")}, tenant, leaveId)
+                .map(row -> {
+                    OrgModel.Leave l = (OrgModel.Leave) row[0];
+                    return new LeaveRecord(l, (String) row[1], (String) row[2],
+                            regularSeatsDuring(c, tenant, l.personId(), l.validFrom(), l.validTo()), (Instant) row[3]);
+                });
+    }
+
+    /**
+     * The person whose regular posting to the seat is in force at {@code at}, on leave or not: the officer a
+     * substitute acts for. Empty for a vacant seat.
+     */
+    public Optional<String> regularHolderAt(Connection c, String tenant, String seatId, Instant at) {
+        return activePostings(c, tenant, "seat_id", seatId, at).stream()
+                .filter(p -> p.kind() == OrgModel.PostingKind.REGULAR).map(OrgModel.Posting::personId).findFirst();
+    }
+
     /**
      * Sweeper: emits {@code DELEGATION_EXPIRED} once for every acting posting that ended (AJ-04 step 4). Open forms of
      * the former holder fail the K3/K7 re-check at submit (CX-1); the task stays with the seat.
@@ -196,12 +299,29 @@ public final class PostingService implements SecurityPorts.SeatDirectory {
         List<String[]> due = Jdbc.query(c, "SELECT posting_id, seat_id, person_id, kind FROM SEC_POSTING WHERE tenant_id=?"
                         + " AND kind <> 'REGULAR' AND valid_to IS NOT NULL AND valid_to <= ? AND expiry_notified = 0",
                 rs -> new String[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4)}, tenant, now);
+        int written = 0;
         for (String[] d : due) {
-            Jdbc.update(c, "UPDATE SEC_POSTING SET expiry_notified=1 WHERE tenant_id=? AND posting_id=?", tenant, d[0]);
+            // exactly once: only the sweep that flips the flag writes the event (two nodes may sweep at one time)
+            if (Jdbc.update(c, "UPDATE SEC_POSTING SET expiry_notified=1 WHERE tenant_id=? AND posting_id=? AND expiry_notified=0",
+                    tenant, d[0]) != 1) {
+                continue;
+            }
             audit.security(c, SecurityIdentity.system(tenant, null), SecurityEventType.DELEGATION_EXPIRED,
                     Map.of("posting_id", d[0], "seat", d[1], "person_id", d[2], "kind", d[3]));
+            written++;
         }
-        return due.size();
+        return written;
+    }
+
+    /** {@link #expireDue(Connection, String)} for every tenant that has an ended acting posting not yet notified. */
+    public int expireDue(Connection c) {
+        Instant now = Sql.dbNow(c, dialect);
+        int written = 0;
+        for (String tenant : Jdbc.query(c, "SELECT DISTINCT tenant_id FROM SEC_POSTING WHERE kind <> 'REGULAR'"
+                + " AND valid_to IS NOT NULL AND valid_to <= ? AND expiry_notified = 0 ORDER BY tenant_id", rs -> rs.getString(1), now)) {
+            written += expireDue(c, tenant);
+        }
+        return written;
     }
 
     // ------------------------------------------------------------------ queries (SeatDirectory)

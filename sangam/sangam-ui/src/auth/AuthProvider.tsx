@@ -31,6 +31,11 @@ interface AuthState {
   /** Why the last session ended, when the UI ended it (shown on the sign-in screen until the next sign-in). */
   signedOutReason: SignedOutReason | null;
   completeCallback: () => Promise<string>;
+  /**
+   * A sign-in completed outside this provider (the Teams tab's pop-up) has stored a user: loads the session for its
+   * access token. When GET /me answers 401 to it, the reason "refused" is set, as after the console's callback.
+   */
+  signedIn: (accessToken: string) => Promise<void>;
   setSeat: (seatId: string | null) => void;
   hasRole: (...roles: Role[]) => boolean;
   reload: () => void;
@@ -281,15 +286,22 @@ export function AuthProvider({ children, providerSignOut = true }: { children: R
     [mode, providerSignOut],
   );
 
+  // E-23: the identity provider signed the user in, but GET /me answered 401 to the new token (the server does not
+  // accept it). The user is back on the sign-in screen; without a reason that looked like a sign-in that did nothing,
+  // and pressing "Sign in" again came back the same way. E-29(b): the Teams tab's pop-up sign-in ends here too.
+  const signedIn = useCallback(
+    async (accessToken: string) => {
+      if ((await loadMe(accessToken)) === 'anonymous') setSignedOutReason('refused');
+    },
+    [loadMe],
+  );
+
   const completeCallback = useCallback(async () => {
     const u = await manager().signinRedirectCallback();
-    // E-23: the identity provider signed the user in, but GET /me answered 401 to the new token (the server does not
-    // accept it). The user is back on the sign-in screen; without a reason that looked like a sign-in that did nothing,
-    // and pressing "Sign in" again came back the same way.
-    if ((await loadMe(u.access_token)) === 'anonymous') setSignedOutReason('refused');
+    await signedIn(u.access_token);
     const target = typeof u.state === 'string' && u.state.startsWith('/') ? u.state : '/';
     return target;
-  }, [loadMe]);
+  }, [signedIn]);
 
   const setSeat = useCallback((id: string | null) => {
     setSeatId(id);
@@ -328,6 +340,7 @@ export function AuthProvider({ children, providerSignOut = true }: { children: R
     endSession,
     signedOutReason,
     completeCallback,
+    signedIn,
     setSeat,
     hasRole,
     reload: () => setNonce((n) => n + 1),
