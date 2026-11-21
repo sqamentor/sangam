@@ -1538,6 +1538,11 @@ ALTERS = [
     # (exported_at NULL) is exported later exactly as it would have been. Nullable, no backfill: no row exists before.
     ("0049-01", "RM-05 / decision 126: the exact GL payload of each accounting entry, for a later export",
      "LDG_ACCOUNTING", [("payload_json", "{text}", "")], []),
+    # E-33 follow-up 3 (b), IFMS EV-M-0968: the reason of the approval or rejection of a four-eyes policy change is
+    # stored beside the request reason (column reason), which a decision no longer overwrites. Nullable, no backfill:
+    # a change decided before keeps its one reason column.
+    ("0050-01", "E-33 follow-up 3 (b): the decision reason of a four-eyes policy change, beside the request reason",
+     "SEC_POLICY_CHANGE", [("decision_reason", "{str1k}", "")], []),
 ]
 
 # Data changesets, applied after every table and alter changeset:
