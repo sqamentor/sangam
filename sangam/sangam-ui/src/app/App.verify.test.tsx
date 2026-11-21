@@ -50,7 +50,10 @@ afterEach(() => {
 });
 
 describe('the public form, for a caller who is not signed in', () => {
-  it.each(['unauthenticated', 'loading'])('status %s: the form as built, without the page frame', async (status) => {
+  const seen: string[] = [];
+  // 'anonymous' and 'error' are the states AuthProvider sets for a caller who is not signed in; 'unauthenticated' is the
+  // name under which the page was pinned before the change (any state other than loading and authenticated)
+  it.each(['unauthenticated', 'anonymous', 'error'])('status %s: the form as built, without the page frame', async (status) => {
     auth.status = status;
     at('/verify');
     const { container } = render(<App />);
@@ -60,7 +63,24 @@ describe('the public form, for a caller who is not signed in', () => {
     expect(document.querySelector('footer')).toBeNull();
     // exactly as built: the markup of the public page, written before Q7 part 3 touched it
     // (React's generated field ids are left out: they count the fields rendered before, not the page)
-    expect(container.innerHTML.replace(/_r_\w+_/g, 'ID')).toMatchSnapshot('public verify page');
+    const html = container.innerHTML.replace(/_r_\w+_/g, 'ID');
+    seen.push(html);
+    expect(html).toBe(seen[0]);
+    if (status === 'unauthenticated') expect(html).toMatchSnapshot('public verify page');
+  }, 30_000);
+
+  // Follow-up 2 (5): while the sign-in state is being read (a stored session: GET /me is on its way) neither form is
+  // shown, so a signed-in caller who reloads /verify does not see the public page first. A caller with no stored
+  // session is 'anonymous' at once (AuthProvider reads the browser's own store, no identity provider call).
+  it('status loading: neither the public form nor the frame, only the loading notice', async () => {
+    auth.status = 'loading';
+    at('/verify');
+    const { container } = render(<App />);
+    await new Promise((r) => setTimeout(r, 500));
+    expect(container.querySelector('main.signin')).toBeNull();
+    expect(container.querySelector('form')).toBeNull();
+    expect(document.querySelector('nav')).toBeNull();
+    expect(container.querySelector('.loading[aria-busy="true"]')).toBeTruthy();
   }, 30_000);
 
   it('a QR address fills the issuer, the code and the kind', async () => {
