@@ -26,6 +26,7 @@ vi.mock('../auth/AuthProvider', async (orig) => {
 });
 vi.mock('../auth/IdleSession', () => ({ IdleSession: () => null }));
 vi.mock('../areas/tasklist/TaskInbox', () => ({ TaskInbox: () => <p>inbox</p>, default: () => <p>inbox</p> }));
+vi.mock('../modules/compliance', () => ({ CompliancePage: () => <p>data protection</p> }));
 vi.mock('../areas/tasklist/TeamWorkload', () => ({ TeamWorkload: () => <p>team workload</p> }));
 
 import { App } from './App';
@@ -34,6 +35,7 @@ import { App } from './App';
 // values are written out here and serverGroups.test.ts checks the same values against Permissions.java.
 const SUPERVISOR = { roles: [] as string[], permissions: ['team.read', 'team.write'] };
 const WORKER = { roles: [] as string[], permissions: ['document.read', 'document.write', 'event.publish', 'message.send', 'work.execute'] };
+const DPO = { roles: [] as string[], permissions: ['audit.export', 'audit.read', 'compliance.admin', 'compliance.modify', 'compliance.read', 'document.legal-hold', 'document.read', 'history.read'] };
 const TENANT_ADMIN = { roles: ['ADMIN', 'ANALYST'], permissions: ['admin.read', 'admin.write', 'analytics.read', 'team.read', 'team.write', 'tenant.admin'] };
 
 afterEach(() => {
@@ -84,4 +86,15 @@ it('an organisation admin (team.read and the role ADMIN) keeps /welcome', async 
   auth.seats = [];
   render(<App />);
   await waitFor(() => expect(window.location.pathname).toBe('/welcome'));
+}, 30_000);
+// Owner answer 2026-11-21 (joint ledger line 1234, "Their compliance page"): Home lands on the first page the caller's
+// permissions open; nobody with real work lands on Help. A data protection officer (group sangam-dpo: no role,
+// compliance.read) was sent to /help/about although his menu has Reports and audit > Data protection.
+it('a data protection officer lands on the compliance page, not on /help/about', async () => {
+  auth.roles = DPO.roles;
+  auth.permissions = DPO.permissions;
+  auth.seats = [];
+  const { findByText } = render(<App />);
+  await waitFor(() => expect(window.location.pathname).toBe('/m/compliance'));
+  expect(await findByText('data protection')).toBeTruthy();
 }, 30_000);

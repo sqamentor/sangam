@@ -52,6 +52,7 @@ describe('the server groups the menu tests are built from', () => {
     expect(callerOf('sangam-user').roles).toEqual(['TASK_USER']);
     expect(callerOf('sangam-operator').roles).toEqual(['OPERATOR', 'ANALYST']);
     expect(callerOf('sangam-auditor').roles).toEqual(['AUDITOR', 'ANALYST']);
+    expect(callerOf('sangam-dpo')).toEqual({ groups: ['sangam-dpo'], roles: [], permissions: ['audit.export', 'audit.read', 'compliance.admin', 'compliance.modify', 'compliance.read', 'document.legal-hold', 'document.read', 'history.read'] });
     expect(callerOf('sangam-tenant-admin').roles).toEqual(['ADMIN', 'ANALYST']);
     expect(callerOf('sangam-admin')).toEqual({ groups: ['sangam-admin', 'sangam-platform'], roles: ['ADMIN', 'PLATFORM_ADMIN', 'PLATFORM_OPERATOR', 'ANALYST'], permissions: ['*'] });
     expect(callerOf('sangam-engine-admin')).toEqual({ groups: ['sangam-engine-admin'], roles: ['PLATFORM_OPERATOR'], permissions: [] });
@@ -65,6 +66,7 @@ describe('the server groups the menu tests are built from', () => {
   it('pins the callers App.landing.test.tsx writes out (a jsdom test cannot read the Java source)', () => {
     expect(callerOf('sangam-supervisor')).toEqual({ groups: ['sangam-supervisor'], roles: [], permissions: ['team.read', 'team.write'] });
     expect(callerOf('sangam-worker')).toEqual({ groups: ['sangam-worker'], roles: [], permissions: ['document.read', 'document.write', 'event.publish', 'message.send', 'work.execute'] });
+    expect(callerOf('sangam-dpo')).toEqual({ groups: ['sangam-dpo'], roles: [], permissions: ['audit.export', 'audit.read', 'compliance.admin', 'compliance.modify', 'compliance.read', 'document.legal-hold', 'document.read', 'history.read'] });
     expect(callerOf('sangam-tenant-admin').roles).toEqual(['ADMIN', 'ANALYST']);
     expect(callerOf('sangam-tenant-admin').permissions).toEqual(expect.arrayContaining(['admin.read', 'admin.write', 'analytics.read', 'team.read', 'team.write', 'tenant.admin']));
   });
