@@ -321,7 +321,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
         String refused = host.addKey(DemoLoaderSequenceAgainstServerTest.PAYEE_CUSTODY_FOR_THIS_TEST);
         fact(label + ": payee custody key added (this test only)", "the start with it was refused before the custodian"
                 + " attested it (" + firstLine(refused) + "); every later start has it, over the new attestation");
-        try (ConfigurableApplicationContext ctx = host.start(env -> { })) {
+        try (ConfigurableApplicationContext ctx = host.start(env -> { }, DemoLoaderSequenceAgainstServerTest.CREATION_PROBE)) {
             assertEquals("true", ctx.getEnvironment().getProperty("sangam.packs.deploy-on-start"),
                     "the fragment's environment switches the start-up deployment on (no profile default is relied on)");
             assertEquals(TENANT, ctx.getEnvironment().getProperty("sangam.packs.tenants"),

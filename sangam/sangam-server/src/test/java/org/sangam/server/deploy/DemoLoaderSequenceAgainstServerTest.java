@@ -85,6 +85,78 @@ class DemoLoaderSequenceAgainstServerTest {
     static final String PAYEE_CUSTODY_FOR_THIS_TEST = "--sangam.compliance.national-id-vault.hmac-pepper="
             + java.util.Base64.getEncoder().encodeToString("E-26 payee custody, this test only".getBytes(StandardCharsets.UTF_8));
 
+    /**
+     * Whether the started server can hold a payee's bank account, read from its beans and not only from its settings
+     * (CI 44878472595: with the national-id vault set, the registry still answered 409 "no vault service"): the
+     * national-id vault beans, the registry's identifier vault, and, when the vault is set but the registry does not
+     * use it, the order in which the beans involved were completed and their recorded dependencies.
+     */
+    static String custody(ConfigurableApplicationContext ctx) {
+        boolean set = ctx.getEnvironment().containsProperty("sangam.compliance.national-id-vault.hmac-pepper");
+        String[] vaults = ctx.getBeanNamesForType(org.sangam.compliance.ports.CompliancePorts.NationalIdVault.class);
+        String registry = ctx.getBean(org.sangam.registry.RegistryModule.class).ports().vault().getClass().getSimpleName();
+        String text = (set ? "national-id vault set for this test only (not in the demo fragment; open decision, register"
+                + " E-26 Follow-up 2)" : "no national-id vault (as the demo fragment): a payee's bank account cannot be"
+                + " registered") + "; national-id vault beans " + java.util.Arrays.toString(vaults)
+                + "; the registry's identifier vault " + registry;
+        if (set && !"RegistryCustodyVault".equals(registry)) {
+            org.springframework.beans.factory.config.ConfigurableListableBeanFactory bf = ctx.getBeanFactory();
+            List<String> done = List.of(bf.getSingletonNames());
+            List<String> beans = List.of("sangamNationalIdVault", "sangamFieldEncryptor", "sangamSecurity", "processEngine",
+                    "sangamComplianceConfig", "sangamCompliancePrincipalKey", "sangamCompliance", "sangamRegistryModule");
+            text += "; completed in the order " + beans.stream().map(n -> n + "#" + done.indexOf(n)).toList()
+                    + "; sangamRegistryModule is needed by " + java.util.Arrays.toString(bf.getDependentBeans("sangamRegistryModule"))
+                    + "; it needs " + java.util.Arrays.toString(bf.getDependenciesForBean("sangamRegistryModule"))
+                    + "; sangamNationalIdVault needs " + java.util.Arrays.toString(bf.getDependenciesForBean("sangamNationalIdVault"))
+                    + "; sangamFieldEncryptor needs " + java.util.Arrays.toString(bf.getDependenciesForBean("sangamFieldEncryptor"))
+                    + "; sangamSecurity needs " + java.util.Arrays.toString(bf.getDependenciesForBean("sangamSecurity"))
+                    + "; beans in creation when sangamRegistryModule began " + CreationProbe.chainAtRegistry;
+        }
+        return text;
+    }
+
+    /** Test setting: the start records which beans were in creation when the registry module's creation began. */
+    static final String CREATION_PROBE = "--context.initializer.classes=" + CreationProbe.class.getName();
+
+    /**
+     * A test-only context initializer (Spring Boot's {@code context.initializer.classes}): a bean post-processor that
+     * keeps the stack of singletons in creation on the main thread and, when {@code sangamRegistryModule} begins,
+     * records that stack (outermost first). It changes no bean.
+     */
+    public static final class CreationProbe
+            implements org.springframework.context.ApplicationContextInitializer<ConfigurableApplicationContext> {
+        static volatile String chainAtRegistry = "(not recorded)";
+
+        @Override
+        public void initialize(ConfigurableApplicationContext ctx) {
+            chainAtRegistry = "(registry module not created)";
+            java.util.Deque<String> open = new java.util.ArrayDeque<>();
+            ctx.getBeanFactory().addBeanPostProcessor(
+                    new org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor() {
+                        @Override
+                        public Object postProcessBeforeInstantiation(Class<?> type, String name) {
+                            if (Thread.currentThread().getName().equals("main")) {
+                                if ("sangamRegistryModule".equals(name)) {
+                                    List<String> chain = new ArrayList<>(open);
+                                    java.util.Collections.reverse(chain);
+                                    chainAtRegistry = chain.toString();
+                                }
+                                open.push(name);
+                            }
+                            return null;
+                        }
+
+                        @Override
+                        public Object postProcessAfterInitialization(Object bean, String name) {
+                            if (Thread.currentThread().getName().equals("main") && name.equals(open.peek())) {
+                                open.pop();
+                            }
+                            return bean;
+                        }
+                    });
+        }
+    }
+
     @TempDir
     Path dir;
 
@@ -108,6 +180,7 @@ class DemoLoaderSequenceAgainstServerTest {
     void theLiveSequenceWithThePacksDeployedForTheTenantAtStart() throws Exception {
         List<String> settings = new ArrayList<>(PACKS_AT_START);
         settings.add(PAYEE_CUSTODY_FOR_THIS_TEST);
+        settings.add(CREATION_PROBE);
         run(settings, PACKS_GAPS);
     }
 
@@ -207,10 +280,7 @@ class DemoLoaderSequenceAgainstServerTest {
             }
         }
         status.add("DEMO-SEQUENCE | connectors | INFO | " + connectors(ctx));
-        status.add("DEMO-SEQUENCE | payee custody | INFO | " + (ctx.getEnvironment().containsProperty(
-                "sangam.compliance.national-id-vault.hmac-pepper")
-                ? "national-id vault ON for this test only (not in the demo fragment; open decision, register E-26 Follow-up 2)"
-                : "no national-id vault (as the demo fragment): a payee's bank account cannot be registered"));
+        status.add("DEMO-SEQUENCE | payee custody | INFO | " + custody(ctx));
         if (steps.contains("3b smoke") || steps.contains("4a cases")) {
             // register E-25 point 4: one line per case, so the report lists every case
             stops(ctx).forEach(s -> status.add("DEMO-SEQUENCE | stop | INFO | " + s));
