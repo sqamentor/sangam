@@ -2,6 +2,7 @@
 package org.sangam.server.deploy;
 
 import org.junit.jupiter.api.Test;
+import org.sangam.core.layer.AuditChain;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +38,9 @@ class SeatsClaimRefusalAuditAgainstServerTest extends SeatLeftoversHarness {
         List<String> written = new ArrayList<>(denied());
         written.removeAll(before);
         assertEquals(1, written.size(), "one AUTH_DENIED for the refused request: " + written);
-        for (String part : List.of("SEAT_NOT_HELD", "CL-A", "sl.cl.holder", "GET /api/v1/tasks", "policy_version", "sec:d:")) {   // sec:d:... = the denial chain of the tenant
+        // the denial chain of sec:<tenant> (SL-132): sec:d: + 32 hex of SHA-256(tenant NUL sec:<tenant>), not sec:<tenant>
+        String chain = "\"chain_id\":\"" + AuditChain.denialChain(TENANT, "sec:" + TENANT) + "\"";
+        for (String part : List.of("SEAT_NOT_HELD", "CL-A", "sl.cl.holder", "GET /api/v1/tasks", "policy_version", chain)) {
             assertTrue(written.get(0).contains(part), "AUTH_DENIED names " + part + ": " + written.get(0));
         }
     }
