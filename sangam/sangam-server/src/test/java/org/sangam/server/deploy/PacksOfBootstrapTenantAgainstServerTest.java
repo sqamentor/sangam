@@ -749,7 +749,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
         return "status " + tenantStatus(ctx, tenant) + " " + counts;
     }
 
-    private static List<String> query(ConfigurableApplicationContext ctx, String sql, String... args) throws java.sql.SQLException {
+    static List<String> query(ConfigurableApplicationContext ctx, String sql, String... args) throws java.sql.SQLException {
         try (java.sql.Connection c = ctx.getBean(javax.sql.DataSource.class).getConnection();
              var ps = c.prepareStatement(sql)) {
             for (int i = 0; i < args.length; i++) {
