@@ -123,14 +123,23 @@ class OfficeSeatFailClosedAgainstServerTest {
             fact("given", "core pack deployed for " + TENANT + ": " + deployed.keySet());
             String today = LocalDate.now(ZoneOffset.UTC).toString();
             ok(send("PUT", "/admin/org-levels", admin, Map.of(), Map.of("tenantId", TENANT, "levels", List.of("OFFICE"))));
-            for (String office : List.of(OFFICE_A, OFFICE_B, OFFICE_EMPTY)) {
-                ok(send("POST", "/admin/org-units", admin, Map.of(), map("id", office, "code", office, "name", office,
-                        "level", "OFFICE", "parentId", null)));
-            }
-            ok(send("POST", "/admin/seats", admin, Map.of(), map("id", SEAT_A, "code", SEAT_A, "designation", "SO",
-                    "name", "Section Officer A", "orgUnitId", OFFICE_A, "reportsToSeatId", null, "roles", List.of())));
-            ok(send("POST", "/admin/seats", admin, Map.of(), map("id", SEAT_B, "code", SEAT_B, "designation", "SO",
-                    "name", "Section Officer B", "orgUnitId", OFFICE_B, "reportsToSeatId", null, "roles", List.of())));
+            // The offices and seats are placed from the start of yesterday (UTC), so they are in force at 12:00 business
+            // time of today in any time zone (IfmsPacksIT places the seed seats from a fixed past date too), not through
+            // POST /admin/seats: that places a seat from the moment it is created, and PacksSeatDirectory routes at 12:00
+            // business time of today, so a seat created after 12:00 serves no case until tomorrow (a separate
+            // finding, reported by this lane; seen on H2 at 12:15 IST). The test must not depend on the time of day.
+            org.sangam.security.SangamSecurity security = ctx.getBean(org.sangam.security.SangamSecurity.class);
+            org.sangam.core.security.SecurityIdentity setup = org.sangam.core.security.SecurityIdentity.system(TENANT, "office-fc")
+                    .withGroupsAndRoles(Set.of(), Set.of("system", org.sangam.security.admin.TenantAdminService.PLATFORM_ADMIN_ROLE));
+            java.time.Instant from = LocalDate.now(ZoneOffset.UTC).minusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+            ctx.getBean("sangamProductTransactions", org.sangam.core.layer.Transactions.class).inTransaction(c -> {
+                for (String office : List.of(OFFICE_A, OFFICE_B, OFFICE_EMPTY)) {
+                    security.orgUnits().createUnit(c, setup, office, "OFFICE", null, office, null, from);
+                }
+                security.seats().createSeat(c, setup, SEAT_A, "SO", OFFICE_A, 1, false, null, from);
+                security.seats().createSeat(c, setup, SEAT_B, "SO", OFFICE_B, 1, false, null, from);
+                return null;
+            });
             for (String person : List.of(OFFICER_A, OFFICER_B, INITIATOR)) {
                 assertEquals(200, send("GET", "/me", token(person, SO), Map.of(), null).statusCode(), person + " signs in");
             }
