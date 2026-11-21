@@ -86,16 +86,16 @@ class DemoLoaderSequenceAgainstServerTest {
      */
     @Test
     void theLiveSequenceOnTheServerAsDeployed() throws Exception {
-        run(List.of("--sangam.packs.deploy-on-start=false"));
+        run(List.of("--sangam.packs.deploy-on-start=false"), OPEN_GAPS);
     }
 
     /** The same, with the packs deployed for GOI.FIN at start. */
     @Test
     void theLiveSequenceWithThePacksDeployedForTheTenantAtStart() throws Exception {
-        run(PACKS_AT_START);
+        run(PACKS_AT_START, PACKS_GAPS);
     }
 
-    private void run(List<String> settings) throws Exception {
+    private void run(List<String> settings, java.util.Set<String> gaps) throws Exception {
         DemoComposeFragmentStartupTest.Keys keys = new DemoComposeFragmentStartupTest.Keys(dir);
         Map<String, String> bootstrap = Map.of("SANGAM_KEYS_BOOTSTRAP", "true",
                 "SANGAM_KEYS_FINGERPRINT_EXPORT", dir.resolve("key-fingerprints.txt").toString(),
@@ -104,7 +104,7 @@ class DemoLoaderSequenceAgainstServerTest {
         // the fragment does not set the log archive; keep this test's segments out of the module directory
         all.add("--sangam.compliance.log-archive.root=" + dir.resolve("compliance-logs"));
         try (ConfigurableApplicationContext ctx = DemoComposeFragmentStartupTest.start(keys, bootstrap, all, "h2", "oidc")) {
-            sequence(ctx, String.join(" ", settings), List.of("2c seed", "3a funds", "3b smoke", "4a cases"));
+            sequence(ctx, String.join(" ", settings), List.of("2c seed", "3a funds", "3b smoke", "4a cases"), gaps);
         } finally {
             org.sangam.packs.sim.DemoSandbox.install(java.util.Set.of());
         }
@@ -115,6 +115,24 @@ class DemoLoaderSequenceAgainstServerTest {
      * pass failed, or when a step of {@link #OPEN_GAPS} passed (take it off the list then).
      */
     static void sequence(ConfigurableApplicationContext ctx, String label, List<String> steps) throws Exception {
+        sequence(ctx, label, steps, OPEN_GAPS);
+    }
+
+    /**
+     * Register E-26: the open gaps of a server whose fragment deploys the packs of GOI.FIN. The smoke step is no gap
+     * there, and with the case step come two steps that are never a gap: {@code bill journey} (the seven cases that
+     * end in a bill stand at their targets) and {@code sandbox marks} (each simulated outside check says so).
+     */
+    static final java.util.Set<String> PACKS_GAPS = java.util.Set.of("4a cases");
+
+    /** The cases of the data set that end in a bill (register E-26). */
+    static final List<String> BILL_JOURNEY = List.of("BILL-0001", "BILL-0002", "BILL-0003", "BILL-0004", "BILL-0005",
+            "GPF-0001", "ADV-0001");
+
+    /** {@link #sequence(ConfigurableApplicationContext, String, List)} with the open gaps of this server. */
+    static void sequence(ConfigurableApplicationContext ctx, String label, List<String> steps, java.util.Set<String> gaps)
+            throws Exception {
+        String[] loaderOut = {""};
         String api = "http://localhost:" + ctx.getEnvironment().getRequiredProperty("local.server.port") + "/api/v1";
         Map<String, Step> all = new LinkedHashMap<>();
         all.put("2c seed", () -> {
@@ -131,6 +149,7 @@ class DemoLoaderSequenceAgainstServerTest {
         all.put("4a cases", () -> {
             PresentationSeedAgainstServerTest.Seed s = PresentationSeedAgainstServerTest.script(
                     PRESENTATION.resolve("load_presentation_data.py"), List.of(), personaEnv(api));
+            loaderOut[0] = s.out();
             String states = endStates(api, s.out());
             assertEquals(0, s.exit(), "load_presentation_data.py:\n" + s.out());
             return states;
@@ -139,14 +158,31 @@ class DemoLoaderSequenceAgainstServerTest {
         List<String> wrong = new ArrayList<>();
         for (String name : steps) {
             boolean passed = step(status, name, all.get(name));
-            if (passed == OPEN_GAPS.contains(name)) {
-                wrong.add(passed ? name + " passes now: take it off OPEN_GAPS" : name + " failed");
+            if (passed == gaps.contains(name)) {
+                wrong.add(passed ? name + " passes now: take it off the open gaps" : name + " failed");
             }
         }
         status.add("DEMO-SEQUENCE | connectors | INFO | " + connectors(ctx));
         if (steps.contains("3b smoke") || steps.contains("4a cases")) {
             // register E-25 point 4: one line per case, so the report lists every case
             stops(ctx).forEach(s -> status.add("DEMO-SEQUENCE | stop | INFO | " + s));
+        }
+        if (steps.contains("4a cases")) {
+            // register E-26: where each case ended, read from the engine and the audit chain (a rejected case has
+            // ended too, and is not at a COMPLETED target)
+            List<End> ends = ends(ctx, loaderOut[0]);
+            ends.forEach(e -> status.add("DEMO-SEQUENCE | end | INFO | " + e.id() + " (target " + e.target() + "): "
+                    + (e.atTarget() ? "AT TARGET" : "NOT AT TARGET") + ": " + e.text()));
+            status.add("DEMO-SEQUENCE | targets | INFO | " + ends.stream().filter(End::atTarget).count() + " of " + ends.size()
+                    + " cases at their target; not at target " + ends.stream().filter(e -> !e.atTarget()).map(End::id).toList());
+            if (!gaps.contains("3b smoke")) {
+                if (!step(status, "bill journey", () -> billJourney(ends))) {
+                    wrong.add("bill journey failed");
+                }
+                if (!step(status, "sandbox marks", () -> sandboxMarks(ctx, api))) {
+                    wrong.add("sandbox marks failed");
+                }
+            }
         }
         if (steps.contains("4a cases") && !step(status, "ui seats", () -> uiSeats(ctx, api))) {
             // register E-24 follow-up 1: never an open gap
@@ -156,7 +192,7 @@ class DemoLoaderSequenceAgainstServerTest {
             // register E-24: never an open gap
             wrong.add("seat header failed");
         }
-        String report = "DEMO-SEQUENCE [" + label + "] open gaps " + new java.util.TreeSet<>(OPEN_GAPS) + "\n" + String.join("\n", status);
+        String report = "DEMO-SEQUENCE [" + label + "] open gaps " + new java.util.TreeSet<>(gaps) + "\n" + String.join("\n", status);
         System.out.println(report);
         assertTrue(wrong.isEmpty(), wrong + "\n" + report);
     }
@@ -299,6 +335,194 @@ class DemoLoaderSequenceAgainstServerTest {
             out.add(head + String.join(" | ", at) + (waitsFor.isEmpty() ? "" : " | waits for connector " + waitsFor));
         }
         return out;
+    }
+
+    /** Where one case of the data set ended: whether that is its target, and the evidence. */
+    record End(String id, String target, boolean atTarget, String text) {
+    }
+
+    /**
+     * Register E-26: each case against its target, from the engine and the case's audit chain (the chain of a pack
+     * event is the business key, PacksAuditSink). COMPLETED: the case ended and its chain says CASE_CLOSED and no
+     * CASE_REJECTED (a rejected case has ended too). RUNNING: open, and the loader saw the stop task. PAYMENT_HELD:
+     * open, no task for anyone, no incident, past the PAO (the chain has the payment request EXT_OP_REQUESTED).
+     * WAITING: open, no task, no incident, in the declared case state.
+     */
+    static List<End> ends(ConfigurableApplicationContext ctx, String loaderOut) throws Exception {
+        org.operaton.bpm.engine.ProcessEngine engine = ctx.getBean(org.operaton.bpm.engine.ProcessEngine.class);
+        List<End> out = new ArrayList<>();
+        for (JsonNode c : JSON.readTree(DATA.toFile()).path("cases")) {
+            String id = c.path("id").asText();
+            String bk = c.path("businessKey").asText();
+            String target = c.path("target").asText();
+            String stopAt = c.path("stopAt").asText("");
+            String label = target + (stopAt.isEmpty() ? "" : " at " + stopAt);
+            long started = engine.getHistoryService().createHistoricProcessInstanceQuery().tenantIdIn(TENANT)
+                    .processInstanceBusinessKey(bk).rootProcessInstances().count();
+            if (started == 0) {
+                out.add(new End(id, label, false, "not started"));
+                continue;
+            }
+            List<org.operaton.bpm.engine.runtime.ProcessInstance> roots = engine.getRuntimeService()
+                    .createProcessInstanceQuery().tenantIdIn(TENANT).processInstanceBusinessKey(bk).rootProcessInstances().list();
+            boolean ended = roots.isEmpty();
+            List<String> events = auditTypes(ctx, bk);
+            List<String> tasks = new ArrayList<>();
+            List<String> incidents = new ArrayList<>();
+            java.util.Set<String> at = new java.util.TreeSet<>();
+            Object state = null;
+            for (org.operaton.bpm.engine.runtime.ProcessInstance root : roots) {
+                state = engine.getRuntimeService().getVariable(root.getId(), "caseState");
+                for (org.operaton.bpm.engine.runtime.ProcessInstance pi : engine.getRuntimeService()
+                        .createProcessInstanceQuery().rootProcessInstanceId(root.getId()).list()) {
+                    at.addAll(engine.getRuntimeService().getActiveActivityIds(pi.getId()));
+                    engine.getTaskService().createTaskQuery().processInstanceId(pi.getId()).list()
+                            .forEach(t -> tasks.add(t.getTaskDefinitionKey()));
+                    engine.getRuntimeService().createIncidentQuery().processInstanceId(pi.getId()).list()
+                            .forEach(i -> incidents.add(i.getActivityId() + ": " + String.valueOf(i.getIncidentMessage())
+                                    .replaceAll("\\s+", " ")));
+                }
+            }
+            boolean rejected = events.contains("CASE_REJECTED");
+            String text = (ended ? "ended" + (rejected ? ", REJECTED" : events.contains("CASE_CLOSED") ? ", CLOSED" : "")
+                    : "open at " + at + ", case state " + state + (tasks.isEmpty() ? "" : ", open tasks " + tasks)
+                    + (incidents.isEmpty() ? "" : ", incidents " + incidents));
+            if (rejected) {
+                text += " (" + rejection(ctx, bk) + ")";
+            }
+            boolean right = switch (target) {
+                case "COMPLETED" -> ended && events.contains("CASE_CLOSED") && !rejected;
+                case "RUNNING" -> !ended && incidents.isEmpty() && waitsAt(loaderOut, id, stopAt);
+                case "PAYMENT_HELD" -> !ended && tasks.isEmpty() && incidents.isEmpty() && paymentRequested(ctx, bk);
+                case "WAITING" -> !ended && tasks.isEmpty() && incidents.isEmpty()
+                        && c.path("expectState").asText().equals(String.valueOf(state));
+                default -> false;
+            };
+            out.add(new End(id, label, right, text));
+        }
+        return out;
+    }
+
+    /** The event types of the case's audit chain, in order. */
+    static List<String> auditTypes(ConfigurableApplicationContext ctx, String businessKey) throws Exception {
+        List<String> out = new ArrayList<>();
+        audit(ctx, businessKey).forEach(e -> out.add(e.path("eventType").asText()));
+        return out;
+    }
+
+    /** The case's audit chain, in order: one node per event, {@code eventType} and {@code envelope} (its JSON). */
+    static List<JsonNode> audit(ConfigurableApplicationContext ctx, String businessKey) throws Exception {
+        List<JsonNode> out = new ArrayList<>();
+        try (var c = ctx.getBean(javax.sql.DataSource.class).getConnection();
+             var ps = c.prepareStatement("SELECT event_type, envelope FROM AUDIT_EVENT WHERE tenant_id=? AND chain_id=? ORDER BY seq")) {
+            ps.setString(1, TENANT);
+            ps.setString(2, businessKey);
+            try (var rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    com.fasterxml.jackson.databind.node.ObjectNode n = JSON.createObjectNode();
+                    n.put("eventType", rs.getString(1));
+                    n.set("envelope", JSON.readTree(rs.getString(2)));
+                    out.add(n);
+                }
+            }
+        }
+        return out;
+    }
+
+    /** The first value of {@code field} anywhere in an audit envelope, or a missing node. */
+    static JsonNode field(JsonNode envelope, String field) {
+        JsonNode found = envelope.findValue(field);
+        return found == null ? com.fasterxml.jackson.databind.node.MissingNode.getInstance() : found;
+    }
+
+    /** Why a case was rejected: the reasons of its CASE_REJECTED event and the reason codes of its failed operations. */
+    private static String rejection(ConfigurableApplicationContext ctx, String businessKey) throws Exception {
+        List<String> why = new ArrayList<>();
+        for (JsonNode e : audit(ctx, businessKey)) {
+            String type = e.path("eventType").asText();
+            if ("CASE_REJECTED".equals(type)) {
+                why.add("reasons " + field(e.path("envelope"), "reasons").asText(field(e.path("envelope"), "reasonCodes").asText("?")));
+            } else if ("EXT_OP_FAILED".equals(type)) {
+                why.add(field(e.path("envelope"), "connector").asText("?") + " FAILED "
+                        + field(e.path("envelope"), "reasonCode").asText("?"));
+            }
+        }
+        return String.join("; ", why);
+    }
+
+    /** Whether the case's chain has the request of a payment (a money-out rail of the sandbox). */
+    private static boolean paymentRequested(ConfigurableApplicationContext ctx, String businessKey) throws Exception {
+        for (JsonNode e : audit(ctx, businessKey)) {
+            if ("EXT_OP_REQUESTED".equals(e.path("eventType").asText())
+                    && org.sangam.packs.sim.DemoSandbox.PAYMENT_CONNECTORS.contains(field(e.path("envelope"), "connector").asText())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Register E-26: the seven cases that end in a bill stand at their targets. */
+    private static String billJourney(List<End> ends) {
+        List<String> wrong = new ArrayList<>();
+        int n = 0;
+        for (End e : ends) {
+            if (BILL_JOURNEY.contains(e.id())) {
+                n++;
+                if (!e.atTarget()) {
+                    wrong.add(e.id() + " (target " + e.target() + "): " + e.text());
+                }
+            }
+        }
+        assertEquals(BILL_JOURNEY.size(), n, "the bill cases of the data set");
+        assertTrue(wrong.isEmpty(), wrong.size() + " of " + n + " bill cases not at their target: " + wrong);
+        return n + " of " + n + " bill cases at their target";
+    }
+
+    /**
+     * Register E-26 and its follow-up 1: a simulated outside check never reads as an answer of the outside system. For
+     * every bill case: the duplicate-bill check has exactly one audit record per bill version, it names the connector
+     * and says {@code simulated=true} and {@code sandbox=true}, and the case holds {@code dupSandbox=true} while it is
+     * open; every document issued says the same. {@code GET /me} says {@code sandbox=true} for the tenant, which is
+     * what shows the UI's Sandbox badge on every page (Layout.tsx SandboxBadge), as for W-5's payments.
+     */
+    private static String sandboxMarks(ConfigurableApplicationContext ctx, String api) throws Exception {
+        List<String> wrong = new ArrayList<>();
+        int checks = 0;
+        int documents = 0;
+        for (JsonNode c : JSON.readTree(DATA.toFile()).path("cases")) {
+            if (!BILL_JOURNEY.contains(c.path("id").asText())) {
+                continue;
+            }
+            String id = c.path("id").asText();
+            int mine = 0;
+            for (JsonNode e : audit(ctx, c.path("businessKey").asText())) {
+                JsonNode env = e.path("envelope");
+                String connector = field(env, "connector").asText("");
+                if (!"ifms.duplicateBill".equals(connector) && !"docs.issue".equals(connector)) {
+                    continue;
+                }
+                if (!field(env, "simulated").asBoolean(false) || !field(env, "sandbox").asBoolean(false)) {
+                    wrong.add(id + ": " + e.path("eventType").asText() + " of " + connector + " without simulated=true and sandbox=true");
+                }
+                if ("ifms.duplicateBill".equals(connector)) {
+                    mine++;
+                    checks++;
+                } else {
+                    documents++;
+                }
+            }
+            if (mine != 1) {
+                wrong.add(id + ": " + mine + " audit records of the simulated duplicate check, expected 1");
+            }
+        }
+        JsonNode me = PresentationSeedAgainstServerTest.get(api + "/me",
+                PresentationSeedAgainstServerTest.token("kavita.sharma", List.of("DDO", "sangam-user")));
+        if (!me.path("sandbox").asBoolean(false)) {
+            wrong.add("GET /me of kavita.sharma does not say sandbox=true: " + me.path("sandbox"));
+        }
+        assertTrue(wrong.isEmpty(), String.join("; ", wrong));
+        return checks + " simulated duplicate checks and " + documents + " simulated documents, each audited with its connector,"
+                + " simulated=true and sandbox=true; GET /me says sandbox=true (the UI's Sandbox badge)";
     }
 
     /**

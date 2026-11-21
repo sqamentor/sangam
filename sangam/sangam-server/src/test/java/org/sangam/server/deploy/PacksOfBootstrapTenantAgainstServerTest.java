@@ -331,7 +331,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
                     + ", " + definitions + " process definitions; tenant data unchanged; PACKS_DEPLOYED on sec:" + TENANT + " x1");
             readOnlyCheck(ctx, packs.size());
             DemoLoaderSequenceAgainstServerTest.sequence(ctx, label + ", packs deployed by a restart from the fragment",
-                    List.of("3b smoke", "4a cases"));
+                    List.of("3b smoke", "4a cases"), DemoLoaderSequenceAgainstServerTest.PACKS_GAPS);
             cases = openCases(ctx);
             assertFalse(cases.isEmpty(), "cases are open after step 4a");
             all = deployments(ctx, TENANT);
