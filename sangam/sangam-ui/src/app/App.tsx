@@ -370,8 +370,11 @@ function Gate() {
   const { status } = useAuth();
   const loc = useLocation();
   if (loc.pathname === config().oidc.redirectPath) return <AuthCallback />;
-  // Public page: certificate verification (QR), without the page frame and without waiting for the sign-in state.
-  // Q7 part 3: a signed-in caller gets the same form inside the frame (AuthedRoutes, /verify/:tenant?).
+  // Public page: certificate verification (QR), without the page frame. Q7 part 3: a signed-in caller gets the same
+  // form inside the frame (AuthedRoutes, /verify/:tenant?). While the sign-in state is being read neither is shown, so
+  // a signed-in caller who reloads the page does not see the public form first; a caller without a stored session is
+  // 'anonymous' at once (AuthProvider reads the browser's own store), and a failed GET /me ('error') gets the public form.
+  if (loc.pathname.startsWith('/verify') && status === 'loading') return <Loading />;
   if (loc.pathname.startsWith('/verify') && status !== 'authenticated') return <Suspense fallback={<Loading />}><Routes><Route path="/verify/:tenant?" element={<PublicVerify />} /></Routes></Suspense>;
   if (status === 'loading') return <Loading />;
   // M-033: the privacy policy is public (SecurityConfig.java:80-81); signed-in callers see it inside the app chrome.
