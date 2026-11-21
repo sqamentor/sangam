@@ -109,7 +109,7 @@ public class SangamFeelEngine extends ScalaFeelEngine {
     @Override
     public boolean evaluateSimpleUnaryTests(String expression, String inputVariable, VariableContext ctx) {
         Object input = inputVariable != null && ctx != null && ctx.containsVariable(inputVariable)
-                ? ctx.resolve(inputVariable).getValue() : null;
+                ? utc(ctx.resolve(inputVariable).getValue()) : null;
         EvaluationResult r = feelEngineApi.evaluateUnaryTests(expression, input, new VariableMap(ctx));
         if (r.isFailure()) {
             throw new FeelException("SANGAM-FEEL-STRICT: failed to evaluate '" + expression + "': "
@@ -185,7 +185,25 @@ public class SangamFeelEngine extends ScalaFeelEngine {
         return r.result();
     }
 
-    /** Read-only map view of an Operaton variable context (values resolved on access). */
+    /**
+     * Owner ruling G1 (DAT-1, 2026-11-18): a zoned date-time handed in as a variable enters FEEL as its UTC instant,
+     * so equality between date-time inputs compares instants. Only caller variables pass here; values that FEEL or a
+     * function computes (for example DMN 1.6 {@code date and time(date, time, zone)}) keep their zone.
+     */
+    static Object utc(Object v) {
+        if (v instanceof java.time.ZonedDateTime z) {
+            return z.withZoneSameInstant(java.time.ZoneOffset.UTC);
+        }
+        if (v instanceof java.time.OffsetDateTime o) {
+            return o.atZoneSameInstant(java.time.ZoneOffset.UTC);
+        }
+        if (v instanceof java.time.Instant i) {
+            return java.time.ZonedDateTime.ofInstant(i, java.time.ZoneOffset.UTC);
+        }
+        return v;
+    }
+
+    /** Read-only map view of an Operaton variable context (values resolved on access, date-times as UTC instants). */
     static final class VariableMap extends AbstractMap<String, Object> {
         private final VariableContext ctx;
 
@@ -200,7 +218,7 @@ public class SangamFeelEngine extends ScalaFeelEngine {
 
         @Override
         public Object get(Object key) {
-            return containsKey(key) ? ctx.resolve((String) key).getValue() : null;
+            return containsKey(key) ? utc(ctx.resolve((String) key).getValue()) : null;
         }
 
         @Override
@@ -219,7 +237,7 @@ public class SangamFeelEngine extends ScalaFeelEngine {
                         @Override
                         public Entry<String, Object> next() {
                             String k = it.next();
-                            return new SimpleImmutableEntry<>(k, ctx.resolve(k).getValue());
+                            return new SimpleImmutableEntry<>(k, utc(ctx.resolve(k).getValue()));
                         }
                     };
                 }

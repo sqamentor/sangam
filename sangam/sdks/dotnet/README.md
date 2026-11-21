@@ -256,7 +256,7 @@ net8-only API.
 | R16 (CloudEvents envelope for inbound events) | `Models.cs` (`CloudEvent`), `Apis.cs` (`RepositoryApi.PublishEventAsync`) |
 | RFC 9457 problem+json, OIDC client credentials | `Errors.cs`, `Auth.cs` |
 
-Flowable gap list (`spike/results/FLOWABLE-INTO-OPERATON.md`):
+Flowable gap list (`sangam/docs/records/FLOWABLE-INTO-OPERATON.md`):
 
 | Gap id | How this SDK covers it |
 |---|---|

@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.year-end-closing",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "name": {
     "en": "Year-end closing and annual accounts",
     "hi": "वर्षांत समापन और वार्षिक लेखे"
@@ -36,30 +36,35 @@
   "connectors": [
     {
       "id": "config.profile",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Profile values of the tenant (sangam-config)"
     },
     {
       "id": "config.documentType",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
     },
     {
       "id": "config.classification",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Classification validation (head of account)"
     },
     {
       "id": "config.series",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Number series (token, voucher)"
     },
     {
       "id": "accounts.render",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-AG",
       "purpose": "Render annual accounts"

@@ -119,8 +119,11 @@ python -I deploy/presentation/seed_presentation.py             # apply
 
 1. Keycloak: roles, then each presentation user (created or updated; password from
    `SANGAM_PRESENTATION_PASSWORD_<USERNAME>`).
-2. Sangam: org unit `PAO-OFFICE`, the pack roles and the ten seats of the IFMS pack seed (`ifms-gpf/seed.json`), in
-   reporting order; a 409 means already there. The server does **not** install pack seeds itself: `PackDeployer` loads
+2. Sangam, with a tenant administrator's token: the tenant's org level types (`PUT /admin/org-levels`, levels
+   `OFFICE`; idempotent, fixed once a unit exists), org unit `PAO-OFFICE` (`POST /admin/org-units`), the pack roles
+   (`PUT /admin/roles/by-role-id?roleId=<code>`) and the ten seats of the IFMS pack seed (`ifms-gpf/seed.json`,
+   `POST /admin/seats`, the pack role as designation), in reporting order. Only `409 UNIT_EXISTS` / `409 SEAT_EXISTS`
+   mean already there; any other refusal stops the seed (EV-M-0923). The server does **not** install pack seeds itself: `PackDeployer` loads
    seats and holders only into the simulator seat directory (`InMemorySeatDirectory`), so the pack-seed holders
    (`gp.ddo-1` and so on) never reach a hosted database and do not collide with the presentation holders.
 3. Sangam: one SUBSTANTIVE posting per seat holder, from today. A posting needs the person (`requirePerson`), which JIT

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- Monthly GST TCS. Generated layout; edit freely in the Sangam modeller. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ecom_gst_tcs" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.2">
-  <process id="sangam-sec-ecom-gst-tcs" name="Monthly GST TCS" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
-    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ecom.gst-tcs</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.2</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>period</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ecom_gst_tcs" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.3">
+  <process id="sangam-sec-ecom-gst-tcs" name="Monthly GST TCS" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ecom.gst-tcs</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.3</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>period,amount,payeeAccount,currency,purpose</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="gt_timer" name="First of the month"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 6 1 * ?</timeCycle></timerEventDefinition></startEvent>
     <serviceTask id="gt_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>period=CURRENT;taxSeat=TAX-TEAM;executionConnector=gstn.payment;executionStep=tcs-deposit;verifyApproval=false;reconcileRequired=true;executionPayloadFields=period,tcsAmount</operaton:string></operaton:field></extensionElements></serviceTask>
     <serviceTask id="gt_supplies_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>netSupplies=null</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -19,10 +19,14 @@
     <exclusiveGateway id="gt_review_breachGw" name="Deemed?" default="sec_ecom_gst_tcs_f7"></exclusiveGateway>
     <exclusiveGateway id="gt_review_done" name=""></exclusiveGateway>
     <userTask id="gt_suppliesUnconfirmed" name="Net supplies not confirmed: establish them in the ERP" operaton:candidateGroups="${taxSeat}" operaton:formKey="sangam:sec-ecom-gst-tcs/suppliesUnconfirmed"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
-    <callActivity id="gt_deposit" name="Deposit TCS (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="gt_deposit_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.MoneyFieldsDelegate"><operaton:field name="amount"><operaton:string>tcsAmount</operaton:string></operaton:field><operaton:field name="statutoryParty"><operaton:string>GSTN</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Monthly deposit of GST collected at source</operaton:string></operaton:field></operaton:executionListener><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="gt_deposit_sgw" name="Sanctioned?" default="gt_deposit_sgw_no"></exclusiveGateway>
+    <endEvent id="gt_deposit_notReleased" name="Not released"></endEvent>
+    <callActivity id="gt_deposit" name="Deposit TCS (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <serviceTask id="gt_gstr8" name="File GSTR-8" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>gstn.gstr8</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>file</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>period,tcsAmount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>gstr8</operaton:string></operaton:field><operaton:field name="step"><operaton:string>gstr8</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="gt_fileGw" name="Filed?" default="sec_ecom_gst_tcs_f22"></exclusiveGateway>
     <endEvent id="gt_end" name="Filed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="gt_tcsGw" name="TCS payable?" default="sec_ecom_gst_tcs_f24"></exclusiveGateway>
     <boundaryEvent id="gt_review_warn" name="SLA warning (75%)" attachedToRef="gt_review" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${gt_reviewWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
     <boundaryEvent id="gt_review_breach" name="SLA breached" attachedToRef="gt_review" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${gt_reviewDueAt}</timeDate></timerEventDefinition></boundaryEvent>
     <sequenceFlow id="sec_ecom_gst_tcs_f1" sourceRef="gt_supplies_clear" targetRef="gt_supplies"/>
@@ -42,11 +46,16 @@
     <sequenceFlow id="sec_ecom_gst_tcs_f15" name="confirmed" sourceRef="gt_suppliesGw" targetRef="gt_rate"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f16" sourceRef="gt_rate" targetRef="gt_compute"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f17" sourceRef="gt_compute" targetRef="gt_review_slaPlan"/>
-    <sequenceFlow id="sec_ecom_gst_tcs_f18" sourceRef="gt_review_done" targetRef="gt_deposit"/>
+    <sequenceFlow id="sec_ecom_gst_tcs_f18" sourceRef="gt_review_done" targetRef="gt_tcsGw"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f19" sourceRef="gt_deposit" targetRef="gt_gstr8"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f20" sourceRef="gt_gstr8" targetRef="gt_fileGw"/>
     <sequenceFlow id="sec_ecom_gst_tcs_f21" name="error: correct" sourceRef="gt_fileGw" targetRef="gt_review_slaPlan"><conditionExpression xsi:type="tFormalExpression">${gstr8Status == 'FAILED'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_ecom_gst_tcs_f22" name="filed" sourceRef="gt_fileGw" targetRef="gt_end"/>
+    <sequenceFlow id="gt_deposit_sanction_f" sourceRef="gt_deposit_sanction" targetRef="gt_deposit_sgw"/>
+    <sequenceFlow id="gt_deposit_sgw_yes" name="sanctioned" sourceRef="gt_deposit_sgw" targetRef="gt_deposit"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="gt_deposit_sgw_no" name="not sanctioned" sourceRef="gt_deposit_sgw" targetRef="gt_deposit_notReleased"/>
+    <sequenceFlow id="sec_ecom_gst_tcs_f23" name="TCS payable" sourceRef="gt_tcsGw" targetRef="gt_deposit_sanction"><conditionExpression xsi:type="tFormalExpression">${tcsAmount &gt; 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_gst_tcs_f24" name="nil: nothing to deposit" sourceRef="gt_tcsGw" targetRef="gt_gstr8"/>
   </process>
   <bpmndi:BPMNDiagram id="sec_ecom_gst_tcs_diagram">
     <bpmndi:BPMNPlane id="sec_ecom_gst_tcs_plane" bpmnElement="sangam-sec-ecom-gst-tcs">
@@ -65,10 +74,14 @@
       <bpmndi:BPMNShape id="gt_review_breachGw_di" bpmnElement="gt_review_breachGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gt_review_done_di" bpmnElement="gt_review_done"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gt_suppliesUnconfirmed_di" bpmnElement="gt_suppliesUnconfirmed"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gt_deposit_di" bpmnElement="gt_deposit"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gt_gstr8_di" bpmnElement="gt_gstr8"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gt_fileGw_di" bpmnElement="gt_fileGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gt_end_di" bpmnElement="gt_end"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gt_deposit_sanction_di" bpmnElement="gt_deposit_sanction"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gt_deposit_sgw_di" bpmnElement="gt_deposit_sgw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gt_deposit_notReleased_di" bpmnElement="gt_deposit_notReleased"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gt_deposit_di" bpmnElement="gt_deposit"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gt_gstr8_di" bpmnElement="gt_gstr8"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gt_fileGw_di" bpmnElement="gt_fileGw"><dc:Bounds x="2850" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gt_end_di" bpmnElement="gt_end"><dc:Bounds x="3022" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gt_tcsGw_di" bpmnElement="gt_tcsGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gt_review_warn_di" bpmnElement="gt_review_warn"><dc:Bounds x="1348" y="92" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gt_review_breach_di" bpmnElement="gt_review_breach"><dc:Bounds x="1378" y="92" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f1_di" bpmnElement="sec_ecom_gst_tcs_f1"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
@@ -88,11 +101,16 @@
       <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f15_di" bpmnElement="sec_ecom_gst_tcs_f15"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f16_di" bpmnElement="sec_ecom_gst_tcs_f16"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f17_di" bpmnElement="sec_ecom_gst_tcs_f17"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f18_di" bpmnElement="sec_ecom_gst_tcs_f18"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f19_di" bpmnElement="sec_ecom_gst_tcs_f19"><di:waypoint x="2100" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f20_di" bpmnElement="sec_ecom_gst_tcs_f20"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f21_di" bpmnElement="sec_ecom_gst_tcs_f21"><di:waypoint x="2380" y="95"/><di:waypoint x="2380" y="128"/><di:waypoint x="1225" y="128"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f22_di" bpmnElement="sec_ecom_gst_tcs_f22"><di:waypoint x="2405" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f18_di" bpmnElement="sec_ecom_gst_tcs_f18"><di:waypoint x="1910" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f19_di" bpmnElement="sec_ecom_gst_tcs_f19"><di:waypoint x="2595" y="195"/><di:waypoint x="2627" y="195"/><di:waypoint x="2627" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f20_di" bpmnElement="sec_ecom_gst_tcs_f20"><di:waypoint x="2760" y="70"/><di:waypoint x="2850" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f21_di" bpmnElement="sec_ecom_gst_tcs_f21"><di:waypoint x="2875" y="95"/><di:waypoint x="2875" y="128"/><di:waypoint x="1225" y="128"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f22_di" bpmnElement="sec_ecom_gst_tcs_f22"><di:waypoint x="2900" y="70"/><di:waypoint x="3022" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gt_deposit_sanction_f_di" bpmnElement="gt_deposit_sanction_f"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gt_deposit_sgw_yes_di" bpmnElement="gt_deposit_sgw_yes"><di:waypoint x="2405" y="70"/><di:waypoint x="2450" y="70"/><di:waypoint x="2450" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gt_deposit_sgw_no_di" bpmnElement="gt_deposit_sgw_no"><di:waypoint x="2405" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f23_di" bpmnElement="sec_ecom_gst_tcs_f23"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_gst_tcs_f24_di" bpmnElement="sec_ecom_gst_tcs_f24"><di:waypoint x="2075" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

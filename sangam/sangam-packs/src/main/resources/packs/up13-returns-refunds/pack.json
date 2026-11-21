@@ -1,6 +1,6 @@
 {
   "id": "universal.up13-returns-refunds",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "UP-13 Returns, refunds and partial fulfilment",
     "hi": "यूपी-13 वापसी, धनवापसी एवं आंशिक पूर्ति"
@@ -34,18 +34,24 @@
     {
       "kind": "SEED",
       "path": "packs/up13-returns-refunds/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/up13-returns-refunds/pack.json"
     }
   ],
   "seed": "packs/up13-returns-refunds/seed.json",
   "connectors": [
     {
       "id": "shipping.pickup",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Pickup"
     },
     {
       "id": "payment.refund",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Refund",
@@ -67,7 +73,14 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-execution"
+    "sangam-core-execution",
+    "sangam-core-sanction"
+  ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
   ],
   "placeholders": [
     {
@@ -76,6 +89,15 @@
       "reason": "refund rounding is the tenant's business policy (or its payment provider's); deploy it as a tenant override (decision 139)"
     }
   ],
+  "currency": "INR",
+  "powers": {
+    "u13_refund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

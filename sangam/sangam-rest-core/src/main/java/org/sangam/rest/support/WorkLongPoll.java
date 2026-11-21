@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
@@ -122,14 +123,34 @@ public final class WorkLongPoll implements AutoCloseable {
     private final Set<Entry<?>> waiters = ConcurrentHashMap.newKeySet();
     private final AtomicInteger size = new AtomicInteger();
     private volatile boolean closed;
+    private final LongSupplier nanoTime;
 
     public WorkLongPoll(Settings settings, List<ContextCarrier> carriers) {
+        this(settings, carriers, newTimer(), newPollers(Objects.requireNonNull(settings, "settings")), System::nanoTime);
+    }
+
+    /**
+     * Test seam: the poll timer, the poll threads and the monotonic clock (nanoseconds) the deadline is measured on.
+     * A test drives all three in virtual time, so the schedule is checked without depending on how promptly the
+     * operating system runs a timer thread (UP-L9: on a saturated host every real tick ran 20-120 ms late).
+     */
+    WorkLongPoll(Settings settings, List<ContextCarrier> carriers, ScheduledExecutorService timer, ExecutorService pollers,
+                 LongSupplier nanoTime) {
         this.settings = Objects.requireNonNull(settings, "settings");
         this.carriers = carriers == null ? List.of() : List.copyOf(carriers);
+        this.timer = Objects.requireNonNull(timer, "timer");
+        this.pollers = Objects.requireNonNull(pollers, "pollers");
+        this.nanoTime = Objects.requireNonNull(nanoTime, "nanoTime");
+    }
+
+    private static ScheduledExecutorService newTimer() {
         ScheduledThreadPoolExecutor t = new ScheduledThreadPoolExecutor(1, daemon("sangam-work-longpoll-timer"));
         t.setRemoveOnCancelPolicy(true);
-        this.timer = t;
-        this.pollers = new ThreadPoolExecutor(settings.pollThreads(), settings.pollThreads(), 0, TimeUnit.MILLISECONDS,
+        return t;
+    }
+
+    private static ExecutorService newPollers(Settings settings) {
+        return new ThreadPoolExecutor(settings.pollThreads(), settings.pollThreads(), 0, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(), daemon("sangam-work-longpoll"));
     }
 
@@ -170,7 +191,7 @@ public final class WorkLongPoll implements AutoCloseable {
         if (closed) {
             return null;
         }
-        long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(waitMs);
+        long deadline = nanoTime.getAsLong() + TimeUnit.MILLISECONDS.toNanos(waitMs);
         ContextCarrier.Scope scope = capture();
         while (true) {
             int n = size.get();
@@ -324,7 +345,7 @@ public final class WorkLongPoll implements AutoCloseable {
                 finish(found);
                 return;
             }
-            long left = TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime());
+            long left = TimeUnit.NANOSECONDS.toMillis(deadline - nanoTime.getAsLong());
             if (left <= 0) {
                 finish(List.of());
             } else if (again.getAndSet(false)) {

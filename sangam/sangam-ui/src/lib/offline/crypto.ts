@@ -42,7 +42,7 @@ export function b64(bytes: ArrayBuffer | Uint8Array): string {
   return btoa(s);
 }
 
-export function unb64(s: string): Uint8Array {
+export function unb64(s: string): Uint8Array<ArrayBuffer> {
   const bin = atob(s);
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
@@ -83,7 +83,7 @@ export async function open(subtle: SubtleCrypto, key: CryptoKey, b: Binding, env
   }
 }
 
-function uuidBytes(u: string): Uint8Array {
+function uuidBytes(u: string): Uint8Array<ArrayBuffer> {
   const h = u.replace(/-/g, '');
   if (!/^[0-9a-fA-F]{32}$/.test(h)) throw new Error(`not a UUID: ${u}`);
   const out = new Uint8Array(16);
@@ -106,7 +106,7 @@ export async function uuidV5(subtle: SubtleCrypto, namespace: string, name: stri
 }
 
 /** WebCrypto ECDSA signatures are r||s (IEEE P1363); Java's SHA256withECDSA verifies ASN.1 DER. */
-export function p1363ToDer(sig: Uint8Array): Uint8Array {
+export function p1363ToDer(sig: Uint8Array): Uint8Array<ArrayBuffer> {
   const n = sig.length / 2;
   const int = (x: Uint8Array): number[] => {
     let i = 0;

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 // SPDX-License-Identifier: Apache-2.0
+import type { ReactElement } from 'react';
 /**
  * M-046: axe-core on the shared components and the W2-C screens (WCAG 2.1 A/AA; serious and critical issues fail).
  * This runs in `npm test`, which ui.yml runs on every UI change, so it is the CI gate. Written, not run in this phase.
@@ -24,7 +25,7 @@ import { GuidedRun, PackLifecycle } from './modules/config';
 import { ModuleSecurityDefaults } from './areas/admin/Admin';
 import { NoticeView } from './modules/compliance';
 
-const show = (el: JSX.Element) => render(<MemoryRouter>{el}</MemoryRouter>);
+const show = (el: ReactElement) => render(<MemoryRouter>{el}</MemoryRouter>);
 
 beforeAll(() => initI18n('en'));
 beforeEach(() => {

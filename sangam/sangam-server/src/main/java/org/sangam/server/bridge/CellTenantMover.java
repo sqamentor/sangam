@@ -240,7 +240,7 @@ public final class CellTenantMover {
                 ctx.principalId());
         auditCell(ctx, tenant, "TENANT_EXPORTED", Map.of("moveId", String.valueOf(moveId), "rows", r.rows(),
                 "watermark", r.watermark(), "auditHead", r.head()));
-        LOG.info("Tenant {} exported: {} rows (move {})", tenant, r.rows(), moveId);
+        LOG.info("Tenant {} exported: {} rows (move {})", org.sangam.core.security.LogSafe.text(tenant), r.rows(), org.sangam.core.security.LogSafe.text(moveId));
         return new ExportHandle(adminBaseUrl + "/api/v1/admin/cell/exports/" + exportId, token, r.rows(),
                 r.watermark(), r.head());
     }

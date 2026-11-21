@@ -224,8 +224,8 @@ public final class LedgerService {
             int i = (first + k) % n;
             Movement m = new Movement(leg.key().withSub("S" + i), leg.currency(), leg.deltas(), leg.guardAvailable(), leg.requireOpen());
             last = post(def, r.withReference(k == 0 ? r.reference() : r.reference() + "#S" + i), List.of(m), findings);
-            if (last.applied()) {
-                return last;
+            if (last.applied() || LedgerStore.REFERENCE_CONFLICT.equals(last.reason())) {
+                return last; // a conflicting reference must not move on to post under another stripe reference
             }
         }
         return last;

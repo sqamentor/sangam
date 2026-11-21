@@ -29,18 +29,19 @@ Bytecode level: the parent pom still sets `maven.compiler.release=21`, so JDK 25
 | Spring Boot | 4.1.2 | Fixed by the Operaton starter |
 | Liquibase | 4.33.0 | Below 5.0 (LIC-7) |
 | Jackson (jackson-databind / jackson-bom) | 2.22.x (pinned 2.22.3) | Licence gate floor; 2.22.x only, because the FEEL closure's jackson-module-scala 2.22.3 refuses any other databind minor. `SangamFeel.install` fails fast outside 2.22.x (SG-33): import `io.github.sqamentor:sangam-bom` and set `jackson.version` / import `jackson-bom` 2.22.3 in your own parent pom |
-| Node (UI build only) | 22 | Not a runtime dependency |
+| Node (UI build only) | 22.22.2 or later (owner decision 2026-11-18; CI 22.23.5) | Not a runtime dependency |
 
 ## 3. Databases and drivers (R17, CF-11)
 
 | Database | Tier | Driver | Shipped? | CI cadence |
 |---|---|---|---|---|
 | PostgreSQL 17 | 1 | pgJDBC 42.7.12 | In fat jar | Every PR, nightly, release |
+| PostgreSQL 18 (new installs only) | 1 candidate | pgJDBC 42.7.12 | In fat jar | **Decision 416**: compose and Helm stay on 17.12 (a major version changes the on-disk format; an existing volume needs `pg_upgrade` or dump and restore). CI lane `postgres18` (image `postgres:18.7`, digest pinned in `tools/ci/ci_plan.py`) runs the acceptance ITs on request through route_build/ci-lanes |
 | Oracle Free 23 | 1 | `ojdbc11` / `ojdbc17` | **No**, customer-supplied (LIC-2) | Affected PRs, nightly, release |
-| SQL Server 2022 (RCSI ON) | 1 | mssql-jdbc 12.10.2 | In fat jar | Affected PRs, nightly, release |
-| SQL Server 2025 (RCSI ON) | 1 candidate | mssql-jdbc 12.10.2 | In fat jar | **Being validated (SG-05)**: its own `db-matrix.yml` lane `sqlserver2025` (image `2025-CU10-ubuntu-24.04`, the same as `AcceptanceDatabase`), nightly and on request, reporting but not gating. It becomes tier 1 once its acceptance run is green |
-| MySQL 8.4 (READ COMMITTED, utf8mb4; older servers refused at start, `MYSQL_VERSION_REFUSED`) | 1 | MariaDB Connector/J 3.5.11 | Separate jar in `lib-ext` (LIC-5) | Affected PRs, nightly, release |
-| MariaDB 11.4 | 2 | MariaDB Connector/J 3.5.11 | Separate jar | Weekly, on its own acceptance lane `mariadb` (SL-112: the mysql profile through MariaDB Connector/J, image `mariadb:11.4`). Coded; its first run is in the test phase. MariaDB Connector/J reports a MariaDB server as `MariaDB` and Liquibase 4.33.0 takes it for its `mariadb` type, so the MySQL product changesets and engine patches P-1/P-2 are tagged `dbms:mysql,mariadb` (SL-112 fix, `MariaDbChangelogDbmsTest`); before that fix the product schema would have stayed empty on MariaDB |
+| SQL Server 2022 (RCSI ON) | 1 | mssql-jdbc 13.6.2 | In fat jar | Affected PRs, nightly, release |
+| SQL Server 2025 (RCSI ON) | 1 candidate | mssql-jdbc 13.6.2 | In fat jar | **Being validated (SG-05)**: its own `db-matrix.yml` lane `sqlserver2025` (image `2025-CU10-ubuntu-24.04`, the same as `AcceptanceDatabase`), nightly and on request, reporting but not gating. It becomes tier 1 once its acceptance run is green |
+| MySQL 8.4 (READ COMMITTED, utf8mb4; older servers refused at start, `MYSQL_VERSION_REFUSED`) | 1 | MariaDB Connector/J 4.0.0 | Separate jar in `lib-ext` (LIC-5) | Affected PRs, nightly, release |
+| MariaDB 11.4 | 2 | MariaDB Connector/J 4.0.0 | Separate jar | Weekly, on its own acceptance lane `mariadb` (SL-112: the mysql profile through MariaDB Connector/J, image `mariadb:11.4`). Coded; its first run is in the test phase. MariaDB Connector/J reports a MariaDB server as `MariaDB` and Liquibase 4.33.0 takes it for its `mariadb` type, so the MySQL product changesets and engine patches P-1/P-2 are tagged `dbms:mysql,mariadb` (SL-112 fix, `MariaDbChangelogDbmsTest`); before that fix the product schema would have stayed empty on MariaDB |
 | Db2 | **Unsupported** | JCC | **No**, customer-supplied (LIC-3) | None. Dropped from Tier 2 by the owner on 2026-11-12 ("Drop from Tier 2 (Recommended)", SL-114): Sangam has no Db2 changelog, profile or dialect support, and Db2 stays unsupported until there is customer demand. The weekly `db2` leg only prints a LIC-3 skip notice |
 | CockroachDB | **Experimental** (decisions 156, 205 and 379) | pgJDBC 42.7.12 | In fat jar (the PostgreSQL driver) | None: no CI lane. **No support claim.** The server refuses CockroachDB unless `SANGAM_EXPERIMENTAL_COCKROACHDB=true`; then the PostgreSQL dialect, and the product changelog applies because its PostgreSQL changesets also name Liquibase's `cockroachdb` type (`CockroachDbChangelogDbmsTest`, unit level). NOT_RUN on a real server |
 | YugabyteDB (YSQL) | **Experimental** (M-108, decisions 156 and 323) | pgJDBC 42.7.12 | In fat jar (the PostgreSQL driver) | Nightly and on request, `db-matrix.yml` lane `yugabytedb`, report-only and never gating; it runs `YugabyteDbIT` only. **No support claim.** The server refuses YugabyteDB (`YUGABYTEDB_EXPERIMENTAL_OFF`) unless `SANGAM_EXPERIMENTAL_YUGABYTEDB=true`, and then unless READ COMMITTED is in effect (`YUGABYTEDB_READ_COMMITTED_OFF`, yb-tserver `--yb_enable_read_committed_isolation=true`). Coded; NOT_RUN: the lane's image is not yet pinned by digest, so it records NOT-RUN until the integrator pins it |
@@ -135,7 +136,7 @@ product documentation); Microsoft "Release planning" and "Solution concepts" for
 | Safari | 16.4 | Declared |
 | Any older version, any other browser engine | None | **Unsupported** |
 
-Evidence so far: the baseline is the build target only (Vite 8.3.5 in `sangam-ui/package.json`; no `build.target` in `vite.config.ts` or `vite.embed.config.ts`). The UI unit tests run in jsdom, not in a browser, and the browser end-to-end suite (`ui.yml`, Playwright) has not been run on the Vite 8 build, so no browser row is proven yet. This applies to `sangam-ui` and the embeddable components; the server, gateway and SDKs have no browser requirement.
+Evidence so far: the baseline is the build target only (Vite 8.3.8 in `sangam-ui/package.json`; no `build.target` in `vite.config.ts` or `vite.embed.config.ts`). The UI unit tests run in jsdom, not in a browser, and the browser end-to-end suite (`ui.yml`, Playwright) has not been run on the Vite 8 build, so no browser row is proven yet. This applies to `sangam-ui` and the embeddable components; the server, gateway and SDKs have no browser requirement.
 
 ## Local JDK evidence (SG-06, SG-07)
 

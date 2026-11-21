@@ -1,6 +1,6 @@
 {
   "key": "records/review",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.records",
   "title": {
     "en": "Record review (Public Records Rules r.9)",

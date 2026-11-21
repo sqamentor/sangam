@@ -1,6 +1,6 @@
 {
   "id": "sec.edu.examination",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "name": {
     "en": "Examination, results and revaluation",
     "hi": "परीक्षा, परिणाम एवं पुनर्मूल्यांकन"
@@ -48,24 +48,28 @@
   "connectors": [
     {
       "id": "exam.hallTickets",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Hall tickets"
     },
     {
       "id": "exam.publish",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Publish results"
     },
     {
       "id": "nad.upload",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "DigiLocker / NAD upload"
     },
     {
       "id": "pg.collect",
+      "moneyMovement": "IN",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Revaluation fee"
@@ -86,5 +90,12 @@
   "calls": [
     "sangam-core-committee",
     "sangam-core-execution"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "currencyReason": "owner decision M1: the pack publishes to DigiLocker / NAD with ABC credits, Indian systems in rupees, so the pack declares INR",
+    "variables": []
+  }
 }

@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- DBT batch round. Generated layout; edit freely in the Sangam modeller. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_dbt_batch" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.2">
-  <process id="sangam-dbt-batch" name="DBT batch round" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_dbt_batch" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.3">
+  <process id="sangam-dbt-batch" name="DBT batch round" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
     <documentation>Parent of the GP-09 pattern: no multi-instance.</documentation>
-    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.dbt.batch</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.2</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>schemeId,period,batchTotal</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.dbt.batch</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.3</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>schemeId,period,batchTotal</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="db_start" name="Batch created" operaton:initiator="initiator" operaton:formKey="sangam:dbt-batch/batch"></startEvent>
     <serviceTask id="db_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>caseType=GRANT;batchTotal=0;period=current;routingDecisionKey=p3-sanction-authority;amount=0;retryReasons=ACCOUNT_INVALID,ACCOUNT_CLOSED,AADHAAR_NOT_SEEDED,NAME_MISMATCH;dbtCellSeat=DBT-CELL</operaton:string></operaton:field></extensionElements></serviceTask>
     <serviceTask id="db_load" name="Load sanctioned beneficiary list" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOAD</operaton:string></operaton:field><operaton:field name="connector"><operaton:string>dbt.beneficiaryList</operaton:string></operaton:field><operaton:field name="sampleSize"><operaton:string>5</operaton:string></operaton:field></extensionElements></serviceTask>
-    <callActivity id="db_sanction" name="Batch sanction (core)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="db_sanction" name="Batch sanction (core)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <serviceTask id="db_open" name="Open round" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
     <serviceTask id="db_fanOut" name="Start one instance per item (chunk)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>FAN_OUT</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="childProcessKey"><operaton:string>sangam-dbt-beneficiary-payment</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>200</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>schemeId,period,approvedPayloadHash</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="db_fanGw" name="All started?" default="dbt_batch_f7"></exclusiveGateway>
@@ -24,11 +24,16 @@
     <exclusiveGateway id="db_retryGw" name="Anything to resend?" default="dbt_batch_f20"></exclusiveGateway>
     <serviceTask id="db_report" name="Batch report" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>dbt-batch-report</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="db_end" name="Batch closed"></endEvent>
+    <serviceTask id="db_seal" name="Seal the batch items (count, total, fingerprints; owner decision E1)" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>SEAL</operaton:string></operaton:field><operaton:field name="currency"><operaton:string>INR</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>DBT instalment</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="payeeField"><operaton:string>bankAccount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="db_retry_seal" name="Seal the batch items (count, total, fingerprints; owner decision E1)" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>SEAL</operaton:string></operaton:field><operaton:field name="currency"><operaton:string>INR</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>DBT instalment</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="payeeField"><operaton:string>bankAccount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="db_retry_bsanction" name="Sanction the sealed batch (core sanction, owner decision E1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="db_retry_bsgw" name="Batch sanctioned?" default="db_retry_bsgw_no"></exclusiveGateway>
+    <endEvent id="db_retry_bnotReleased" name="Batch not released"></endEvent>
     <exclusiveGateway id="db_sanctionPrepareGw" name="Document to sign?" default="dbt_batch_f25"></exclusiveGateway>
     <userTask id="db_sanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:dbt-batch/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.DocumentSlotReadyListener"><operaton:field name="slots"><operaton:string>sanctionDocumentId:SANCTION_NOTE</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <sequenceFlow id="dbt_batch_f1" sourceRef="db_start" targetRef="db_defaults"/>
     <sequenceFlow id="dbt_batch_f2" sourceRef="db_defaults" targetRef="db_load"/>
-    <sequenceFlow id="dbt_batch_f3" sourceRef="db_load" targetRef="db_sanctionPrepareGw"/>
+    <sequenceFlow id="dbt_batch_f3" sourceRef="db_load" targetRef="db_seal"/>
     <sequenceFlow id="dbt_batch_f4" sourceRef="db_open" targetRef="db_fanOut"/>
     <sequenceFlow id="dbt_batch_f5" sourceRef="db_fanOut" targetRef="db_fanGw"/>
     <sequenceFlow id="dbt_batch_f6" name="next chunk" sourceRef="db_fanGw" targetRef="db_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
@@ -44,11 +49,16 @@
     <sequenceFlow id="dbt_batch_f16" sourceRef="db_review" targetRef="db_roundGw"/>
     <sequenceFlow id="dbt_batch_f17" name="resend failures" sourceRef="db_roundGw" targetRef="db_nextRound"><conditionExpression xsi:type="tFormalExpression">${roundDecision == 'resubmit'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="dbt_batch_f18" sourceRef="db_nextRound" targetRef="db_retryGw"/>
-    <sequenceFlow id="dbt_batch_f19" name="resend" sourceRef="db_retryGw" targetRef="db_fanOut"><conditionExpression xsi:type="tFormalExpression">${retryCount &gt; 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="dbt_batch_f19" name="resend" sourceRef="db_retryGw" targetRef="db_retry_seal"><conditionExpression xsi:type="tFormalExpression">${retryCount &gt; 0}</conditionExpression></sequenceFlow>
     <sequenceFlow id="dbt_batch_f20" name="nothing retryable" sourceRef="db_retryGw" targetRef="db_report"/>
     <sequenceFlow id="dbt_batch_f21" name="close" sourceRef="db_roundGw" targetRef="db_report"/>
     <sequenceFlow id="dbt_batch_f22" name="all paid" sourceRef="db_failGw" targetRef="db_report"/>
     <sequenceFlow id="dbt_batch_f23" sourceRef="db_report" targetRef="db_end"/>
+    <sequenceFlow id="db_seal_f" sourceRef="db_seal" targetRef="db_sanctionPrepareGw"/>
+    <sequenceFlow id="db_retry_seal_f" sourceRef="db_retry_seal" targetRef="db_retry_bsanction"/>
+    <sequenceFlow id="db_retry_bsanction_f" sourceRef="db_retry_bsanction" targetRef="db_retry_bsgw"/>
+    <sequenceFlow id="db_retry_bsgw_yes" name="sanctioned" sourceRef="db_retry_bsgw" targetRef="db_fanOut"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="db_retry_bsgw_no" name="not sanctioned" sourceRef="db_retry_bsgw" targetRef="db_retry_bnotReleased"/>
     <sequenceFlow id="dbt_batch_f24" name="DSC signature needed" sourceRef="db_sanctionPrepareGw" targetRef="db_sanctionPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
     <sequenceFlow id="dbt_batch_f25" name="no DSC signature" sourceRef="db_sanctionPrepareGw" targetRef="db_sanction"/>
     <sequenceFlow id="dbt_batch_f26" sourceRef="db_sanctionPrepare" targetRef="db_sanction"/>
@@ -58,50 +68,60 @@
       <bpmndi:BPMNShape id="db_start_di" bpmnElement="db_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="db_defaults_di" bpmnElement="db_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="db_load_di" bpmnElement="db_load"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_sanction_di" bpmnElement="db_sanction"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_open_di" bpmnElement="db_open"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_fanOut_di" bpmnElement="db_fanOut"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_fanGw_di" bpmnElement="db_fanGw"><dc:Bounds x="1530" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_poll_di" bpmnElement="db_poll"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_aggregate_di" bpmnElement="db_aggregate"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_doneGw_di" bpmnElement="db_doneGw"><dc:Bounds x="2025" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_sanGw_di" bpmnElement="db_sanGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_endNotSanctioned_di" bpmnElement="db_endNotSanctioned"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_failGw_di" bpmnElement="db_failGw"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_review_di" bpmnElement="db_review"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_nextRound_di" bpmnElement="db_nextRound"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_roundGw_di" bpmnElement="db_roundGw"><dc:Bounds x="2520" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_retryGw_di" bpmnElement="db_retryGw"><dc:Bounds x="2850" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_report_di" bpmnElement="db_report"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_end_di" bpmnElement="db_end"><dc:Bounds x="3187" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_sanctionPrepareGw_di" bpmnElement="db_sanctionPrepareGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="db_sanctionPrepare_di" bpmnElement="db_sanctionPrepare"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_sanction_di" bpmnElement="db_sanction"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_open_di" bpmnElement="db_open"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_fanOut_di" bpmnElement="db_fanOut"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_fanGw_di" bpmnElement="db_fanGw"><dc:Bounds x="1695" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_poll_di" bpmnElement="db_poll"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_aggregate_di" bpmnElement="db_aggregate"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_doneGw_di" bpmnElement="db_doneGw"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_sanGw_di" bpmnElement="db_sanGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_endNotSanctioned_di" bpmnElement="db_endNotSanctioned"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_failGw_di" bpmnElement="db_failGw"><dc:Bounds x="2355" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_review_di" bpmnElement="db_review"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_nextRound_di" bpmnElement="db_nextRound"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_roundGw_di" bpmnElement="db_roundGw"><dc:Bounds x="2685" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_retryGw_di" bpmnElement="db_retryGw"><dc:Bounds x="3015" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_report_di" bpmnElement="db_report"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_end_di" bpmnElement="db_end"><dc:Bounds x="3352" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_seal_di" bpmnElement="db_seal"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_retry_seal_di" bpmnElement="db_retry_seal"><dc:Bounds x="3155" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_retry_bsanction_di" bpmnElement="db_retry_bsanction"><dc:Bounds x="3320" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_retry_bsgw_di" bpmnElement="db_retry_bsgw"><dc:Bounds x="3510" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_retry_bnotReleased_di" bpmnElement="db_retry_bnotReleased"><dc:Bounds x="3682" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_sanctionPrepareGw_di" bpmnElement="db_sanctionPrepareGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="db_sanctionPrepare_di" bpmnElement="db_sanctionPrepare"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="dbt_batch_f1_di" bpmnElement="dbt_batch_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="dbt_batch_f2_di" bpmnElement="dbt_batch_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f3_di" bpmnElement="dbt_batch_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f4_di" bpmnElement="dbt_batch_f4"><di:waypoint x="1275" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f5_di" bpmnElement="dbt_batch_f5"><di:waypoint x="1440" y="195"/><di:waypoint x="1530" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f6_di" bpmnElement="dbt_batch_f6"><di:waypoint x="1555" y="220"/><di:waypoint x="1555" y="260"/><di:waypoint x="1390" y="260"/><di:waypoint x="1390" y="235"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f7_di" bpmnElement="dbt_batch_f7"><di:waypoint x="1580" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f8_di" bpmnElement="dbt_batch_f8"><di:waypoint x="1738" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f9_di" bpmnElement="dbt_batch_f9"><di:waypoint x="1935" y="195"/><di:waypoint x="2025" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f10_di" bpmnElement="dbt_batch_f10"><di:waypoint x="2050" y="220"/><di:waypoint x="2050" y="245"/><di:waypoint x="1720" y="245"/><di:waypoint x="1720" y="213"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f11_di" bpmnElement="dbt_batch_f11"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f12_di" bpmnElement="dbt_batch_f12"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f13_di" bpmnElement="dbt_batch_f13"><di:waypoint x="1085" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f14_di" bpmnElement="dbt_batch_f14"><di:waypoint x="2075" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f15_di" bpmnElement="dbt_batch_f15"><di:waypoint x="2240" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f16_di" bpmnElement="dbt_batch_f16"><di:waypoint x="2430" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f17_di" bpmnElement="dbt_batch_f17"><di:waypoint x="2570" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f18_di" bpmnElement="dbt_batch_f18"><di:waypoint x="2760" y="195"/><di:waypoint x="2850" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f19_di" bpmnElement="dbt_batch_f19"><di:waypoint x="2875" y="220"/><di:waypoint x="2875" y="267"/><di:waypoint x="1390" y="267"/><di:waypoint x="1390" y="235"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f20_di" bpmnElement="dbt_batch_f20"><di:waypoint x="2900" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f21_di" bpmnElement="dbt_batch_f21"><di:waypoint x="2570" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f22_di" bpmnElement="dbt_batch_f22"><di:waypoint x="2240" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f23_di" bpmnElement="dbt_batch_f23"><di:waypoint x="3090" y="195"/><di:waypoint x="3187" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f24_di" bpmnElement="dbt_batch_f24"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f25_di" bpmnElement="dbt_batch_f25"><di:waypoint x="590" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="dbt_batch_f26_di" bpmnElement="dbt_batch_f26"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f3_di" bpmnElement="dbt_batch_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f4_di" bpmnElement="dbt_batch_f4"><di:waypoint x="1440" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f5_di" bpmnElement="dbt_batch_f5"><di:waypoint x="1605" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f6_di" bpmnElement="dbt_batch_f6"><di:waypoint x="1720" y="220"/><di:waypoint x="1720" y="260"/><di:waypoint x="1555" y="260"/><di:waypoint x="1555" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f7_di" bpmnElement="dbt_batch_f7"><di:waypoint x="1745" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f8_di" bpmnElement="dbt_batch_f8"><di:waypoint x="1903" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f9_di" bpmnElement="dbt_batch_f9"><di:waypoint x="2100" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f10_di" bpmnElement="dbt_batch_f10"><di:waypoint x="2215" y="220"/><di:waypoint x="2215" y="245"/><di:waypoint x="1885" y="245"/><di:waypoint x="1885" y="213"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f11_di" bpmnElement="dbt_batch_f11"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f12_di" bpmnElement="dbt_batch_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1295" y="70"/><di:waypoint x="1295" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f13_di" bpmnElement="dbt_batch_f13"><di:waypoint x="1250" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f14_di" bpmnElement="dbt_batch_f14"><di:waypoint x="2240" y="195"/><di:waypoint x="2355" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f15_di" bpmnElement="dbt_batch_f15"><di:waypoint x="2405" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f16_di" bpmnElement="dbt_batch_f16"><di:waypoint x="2595" y="195"/><di:waypoint x="2685" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f17_di" bpmnElement="dbt_batch_f17"><di:waypoint x="2735" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f18_di" bpmnElement="dbt_batch_f18"><di:waypoint x="2925" y="195"/><di:waypoint x="3015" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f19_di" bpmnElement="dbt_batch_f19"><di:waypoint x="3065" y="195"/><di:waypoint x="3110" y="195"/><di:waypoint x="3110" y="320"/><di:waypoint x="3155" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f20_di" bpmnElement="dbt_batch_f20"><di:waypoint x="3065" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f21_di" bpmnElement="dbt_batch_f21"><di:waypoint x="2735" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f22_di" bpmnElement="dbt_batch_f22"><di:waypoint x="2405" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f23_di" bpmnElement="dbt_batch_f23"><di:waypoint x="3255" y="195"/><di:waypoint x="3352" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="db_seal_f_di" bpmnElement="db_seal_f"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="db_retry_seal_f_di" bpmnElement="db_retry_seal_f"><di:waypoint x="3255" y="320"/><di:waypoint x="3320" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="db_retry_bsanction_f_di" bpmnElement="db_retry_bsanction_f"><di:waypoint x="3420" y="320"/><di:waypoint x="3510" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="db_retry_bsgw_yes_di" bpmnElement="db_retry_bsgw_yes"><di:waypoint x="3535" y="345"/><di:waypoint x="3535" y="377"/><di:waypoint x="1555" y="377"/><di:waypoint x="1555" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="db_retry_bsgw_no_di" bpmnElement="db_retry_bsgw_no"><di:waypoint x="3560" y="320"/><di:waypoint x="3682" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f24_di" bpmnElement="dbt_batch_f24"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f25_di" bpmnElement="dbt_batch_f25"><di:waypoint x="755" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_batch_f26_di" bpmnElement="dbt_batch_f26"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

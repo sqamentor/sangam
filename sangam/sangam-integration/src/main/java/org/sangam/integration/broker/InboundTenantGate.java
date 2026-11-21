@@ -11,6 +11,7 @@ import org.sangam.integration.relay.TenantAdmission;
 import org.sangam.ports.events.InboundTenantAdmission;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.sangam.core.security.LogSafe;
 
 /**
  * The event-gateway channels' tenant admission (SL-142, carry C3-06): bridges the flowable-ports port
@@ -53,8 +54,8 @@ public final class InboundTenantGate implements InboundTenantAdmission {
         try {
             d = a.decide(tenant);
         } catch (RuntimeException e) {
-            LOG.warn("tenant admission for {} failed; message {} on channel {} is redelivered: {}", tenant,
-                    message.messageId(), message.channelKey(), e.toString());
+            LOG.warn("tenant admission for {} failed; message {} on channel {} is redelivered: {}", LogSafe.text(tenant),
+                    LogSafe.text(message.messageId()), LogSafe.text(message.channelKey()), LogSafe.text(e));
             return Verdict.REDELIVER;
         }
         if (d == null) {
@@ -70,14 +71,14 @@ public final class InboundTenantGate implements InboundTenantAdmission {
     private Verdict park(String tenant, Message message, TenantAdmission.Decision d) {
         PoisonInbound p = poison.get();
         if (p == null) {
-            LOG.warn("tenant {} is {} but this node has no park store; message {} on channel {} is redelivered", tenant,
-                    d.tenantState(), message.messageId(), message.channelKey());
+            LOG.warn("tenant {} is {} but this node has no park store; message {} on channel {} is redelivered", LogSafe.text(tenant),
+                    d.tenantState(), LogSafe.text(message.messageId()), LogSafe.text(message.channelKey()));
             return Verdict.REDELIVER;
         }
         String id = message.messageId();
         if (id == null || id.isEmpty() || id.length() > 255) {
-            LOG.warn("message on channel {} for {} tenant {} has no usable message id; redelivered", message.channelKey(),
-                    d.tenantState(), tenant);
+            LOG.warn("message on channel {} for {} tenant {} has no usable message id; redelivered", LogSafe.text(message.channelKey()),
+                    d.tenantState(), LogSafe.text(tenant));
             return Verdict.REDELIVER;
         }
         String eventKey = message.eventKey() == null ? "" : message.eventKey();

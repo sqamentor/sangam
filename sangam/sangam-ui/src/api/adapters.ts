@@ -91,6 +91,7 @@ export function normMe(m: Any): T.Me {
     permissions: m.permissions,
     preferredLanguage: m.preferredLanguage,
     locale: m.locale && typeof m.locale === 'object' ? m.locale : undefined,
+    sandbox: m.sandbox === true,
   };
 }
 
@@ -263,6 +264,16 @@ export function normIncident(i: Any): T.Incident {
 }
 
 const BATCH_STATE: Record<string, T.BatchStatus> = { CANCELLED: 'CANCELED', FAILED: 'COMPLETED_WITH_FAILURES' };
+
+/**
+ * The contract's CompleteTaskResult (sangam-api.yaml: taskId, processInstanceId, decision, payloadHash, instanceEnded,
+ * nextTaskIds) has no `state`; the done screen shows one as a badge, and a missing one threw in Badge (e2e tasklist
+ * "claim, then complete": a blank page after a 200). ENDED when the instance ended, else COMPLETED (the task).
+ */
+export function normCompleteResult(r: Any): T.CompleteTaskResult {
+  const x = r ?? {};
+  return { ...x, state: String(x.state ?? (x.instanceEnded ? 'ENDED' : 'COMPLETED')) };
+}
 
 export function normBatch(b: Any): T.Batch {
   const total = Number(b.total ?? 0);

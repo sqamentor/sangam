@@ -1,6 +1,6 @@
 {
   "key": "works/delay",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.works",
   "title": {
     "en": "Completion overdue: assess delay (monthly)",

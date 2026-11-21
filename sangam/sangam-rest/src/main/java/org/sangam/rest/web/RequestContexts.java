@@ -8,10 +8,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.port.SangamPrincipal;
+import org.sangam.rest.port.SeatHoldings;
 
 /**
  * Builds the {@link RequestContext} from the authenticated {@link SangamPrincipal} (request attribute set by the
- * server's authentication layer) and the Sangam headers, and tags the current OpenTelemetry span (R13).
+ * server's authentication layer) and the Sangam headers, and tags the current OpenTelemetry span (R13). The seat
+ * context of the headers is accepted only when it is among the {@link SeatHoldings} the host resolved for the request.
  */
 public final class RequestContexts {
 
@@ -44,8 +46,16 @@ public final class RequestContexts {
             // SL-86: the reserved key of rows shared by all tenants is never a caller's tenant
             throw new ApiProblem(401, "UNAUTHENTICATED", "The token's tenant claim is a reserved value");
         }
-        RequestContext ctx = new RequestContext(p.tenantId(), p.principalId(), p.groups(),
-                blankToNull(request.getHeader(SEAT_HEADER)), blankToNull(request.getHeader(ACTING_FOR_HEADER)),
+        String seat = blankToNull(request.getHeader(SEAT_HEADER));
+        String actingFor = blankToNull(request.getHeader(ACTING_FOR_HEADER));
+        if (seat != null || actingFor != null) {
+            // IX.5 rules 1 and 4, K7: the caller only names the seat context; whether that person holds the seat now
+            // is the host's seat directory's answer for this request. Checked here, where every request context is
+            // built, so no port or adapter ever sees a seat that was not verified (403 SEAT_NOT_HELD otherwise).
+            SeatHoldings.require(request.getAttribute(SeatHoldings.ATTRIBUTE) instanceof SeatHoldings held ? held : null,
+                    seat, actingFor);
+        }
+        RequestContext ctx = new RequestContext(p.tenantId(), p.principalId(), p.groups(), seat, actingFor,
                 blankToNull(request.getHeader(IDEMPOTENCY_HEADER)), traceId(), request.getRemoteAddr(),
                 p.authMethod());
         Telemetry.tagContext(ctx);

@@ -1,5 +1,5 @@
 # Topic keywords per decision citation (DecisionCitationGuardTest). A citation passes when the source lines around it
-# (3 before, 3 after) contain one keyword, case-insensitive. FIO = spike/results/FLOWABLE-INTO-OPERATON.md register;
+# (3 before, 3 after) contain one keyword, case-insensitive. FIO = sangam/docs/records/FLOWABLE-INTO-OPERATON.md register;
 # ADR = SANGAM.md decision register (| D-n | rows).
 ADR:D-1=operaton|base engine
 ADR:D-13=simulat|self-reliant|public detail|air-gapped

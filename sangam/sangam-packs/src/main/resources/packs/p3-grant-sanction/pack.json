@@ -1,6 +1,6 @@
 {
   "id": "gov.p3.grant-sanction",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "P3 Grant / scheme sanction (DBT)",
     "hi": "पी3 अनुदान / योजना स्वीकृति (डीबीटी)"
@@ -72,18 +72,21 @@
   "connectors": [
     {
       "id": "digilocker.pull",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-DL",
       "purpose": "Requester: applicant certificates"
     },
     {
       "id": "registry.beneficiary",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Beneficiary registry / duplicate check"
     },
     {
       "id": "pfms.dbt",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
       "purpose": "DBT record per instalment",
@@ -94,12 +97,14 @@
     },
     {
       "id": "bank.statement",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-PFMS",
       "purpose": "Credit confirmation"
     },
     {
       "id": "esign.sign",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-SIGN",
       "purpose": "Sanction order signature",
@@ -240,6 +245,12 @@
   "currency": "INR",
   "powers": {
     "p3_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GRANT"
+    },
+    "p3_instSanction": {
       "monetary": true,
       "currency": "INR",
       "limitTable": "sangam-core-powers",

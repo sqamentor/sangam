@@ -14,7 +14,7 @@ import org.sangam.ops.bulk.BulkIngest.RowInput;
 import org.sangam.ops.bulk.BulkIngest.RowState;
 import org.sangam.ops.vars.ScopedVariables;
 import org.sangam.persistence.SangamSchema;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 class BulkIngestPostgresIT {
 
-    static PostgreSQLContainer<?> pg;
+    static PostgreSQLContainer pg;
     static PGSimpleDataSource ds;
     static Transactions tx;
     static final Dialect D = Dialect.POSTGRESQL;
@@ -47,7 +47,7 @@ class BulkIngestPostgresIT {
     static void start() {
         String db = System.getProperty("sangam.db", "");
         assumeTrue(db.isBlank() || "postgres".equals(db), "PostgreSQL lane only (sangam.db=" + db + ")");
-        pg = new PostgreSQLContainer<>(DockerImageName.parse("postgres:17")).withDatabaseName("sangam").withUsername("sangam")
+        pg = new PostgreSQLContainer(DockerImageName.parse("postgres:17")).withDatabaseName("sangam").withUsername("sangam")
                 .withPassword("sangam").withStartupTimeout(Duration.ofMinutes(5));
         pg.start();
         ds = new PGSimpleDataSource();
@@ -63,6 +63,10 @@ class BulkIngestPostgresIT {
         if (pg != null) {
             pg.stop();
         }
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        pg = null;
+        ds = null;
+        tx = null;
     }
 
     static final class Crash extends Error {

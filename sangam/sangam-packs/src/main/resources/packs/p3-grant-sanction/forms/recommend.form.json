@@ -1,6 +1,6 @@
 {
   "key": "p3-grant-sanction/recommend",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.p3.grant-sanction",
   "title": {
     "en": "Recommend with entitlement",

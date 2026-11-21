@@ -191,6 +191,22 @@ public class SecurityWiring {
         return new org.sangam.server.bridge.UnverifiedPaymentAuthorityBridge(security, tx);
     }
 
+    /**
+     * Register E-24: {@code GET /me} (and what the workspace derives from the caller's seats) reads the caller's own
+     * seats from sangam-security's seat directory, by the rule the seat context of a request is checked with
+     * ({@link org.sangam.server.bridge.OwnSeatHoldings}); not from the administrators' posting directory, which an
+     * officer may not read.
+     */
+    @Bean
+    public org.springframework.beans.factory.InitializingBean sangamOwnSeatHoldings(
+            ObjectProvider<org.sangam.rest.port.WorkspacePort> workspace, SangamSecurity security, TxSupport tx) {
+        return () -> {
+            if (workspace.getIfAvailable() instanceof org.sangam.rest.adapter.operaton.OperatonWorkspaceAdapter w) {
+                w.setOwnHoldings(new org.sangam.server.bridge.OwnSeatHoldings(security, tx));
+            }
+        };
+    }
+
     @Bean
     public SangamSecurityEnginePlugin sangamSecurityEnginePlugin(SangamSecurity security) {
         return new SangamSecurityEnginePlugin(security);

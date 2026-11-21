@@ -14,7 +14,7 @@ import { API_BASE, BASE_URL, devToken, readSeed, type Seed } from './env';
 export interface SangamApi {
   ctx: APIRequestContext;
   /** Starts an instance of the seeded process and returns its user task id. */
-  newTask(): Promise<{ processInstanceId: string; taskId: string }>;
+  newTask(): Promise<{ processInstanceId: string; taskId: string; businessKey: string }>;
 }
 
 async function signIn(page: Page): Promise<void> {
@@ -55,9 +55,10 @@ export const test = base.extend<{ signedIn: Page; api: SangamApi; offOrigin: str
       extraHTTPHeaders: { Authorization: `Bearer ${devToken()}`, Accept: 'application/json, application/problem+json' },
     });
     const newTask = async () => {
+      const businessKey = `E2E-${randomUUID()}`;
       const res = await ctx.post('process-instances', {
         headers: { 'Idempotency-Key': randomUUID() },
-        data: { key: seed.definitionKey, businessKey: `E2E-${randomUUID()}`, variables: { purpose: { type: 'String', value: 'e2e' } } },
+        data: { key: seed.definitionKey, businessKey, variables: { purpose: { type: 'String', value: 'e2e' } } },
       });
       expect(res.ok(), await res.text()).toBe(true);
       const processInstanceId = ((await res.json()) as { id: string }).id;
@@ -70,7 +71,7 @@ export const test = base.extend<{ signedIn: Page; api: SangamApi; offOrigin: str
           return taskId;
         })
         .toBeTruthy();
-      return { processInstanceId, taskId: taskId! };
+      return { processInstanceId, taskId: taskId!, businessKey };
     };
     await use({ ctx, newTask });
     await ctx.dispose();

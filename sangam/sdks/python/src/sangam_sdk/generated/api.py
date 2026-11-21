@@ -541,7 +541,7 @@ class AIApi:
         return cast("dict[str, Any]", self._c.json(req, options))
 
 class AdminApi:
-    """``Admin`` (32 operations)."""
+    """``Admin`` (34 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -818,6 +818,27 @@ class AdminApi:
         req = ApiRequest("PUT", f"/admin/roles/by-role-id", query={"roleId": role_id})
         req.body = body
         return cast("M.RoleDefinition", self._c.json(req, options))
+
+    def get_org_levels(self, *, options: Optional[RequestOptions] = None) -> M.OrgLevels:
+        """Org level types
+
+        The caller's tenant's org level types, top first (AJ-02); empty when none are defined.
+
+        ``GET /admin/org-levels`` (operationId ``getOrgLevels``); permission ``admin.read``.
+        """
+        req = ApiRequest("GET", f"/admin/org-levels")
+        return cast("M.OrgLevels", self._c.json(req, options))
+
+    def define_org_levels(self, body: M.OrgLevels, *, options: Optional[RequestOptions] = None) -> M.OrgLevels:
+        """Define org level types
+
+        A tenant administrator defines its own tenant's org level types, top first (EV-M-0923; ADMIN on ORG_UNIT; TENANT_CONFIGURED). Idempotent: the same list again changes nothing and records nothing. A different list is refused with 409 LEVELS_IN_USE once an org unit exists; another tenant's levels with 403 TENANT_MISMATCH.
+
+        ``PUT /admin/org-levels`` (operationId ``defineOrgLevels``); permission ``admin.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("PUT", f"/admin/org-levels")
+        req.body = body
+        return cast("M.OrgLevels", self._c.json(req, options))
 
     def list_service_principals(self, *, options: Optional[RequestOptions] = None) -> list[M.ServicePrincipal]:
         """Service principals
@@ -12073,14 +12094,14 @@ class TasksApi:
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
 
-    def list_tasks(self, *, assignee: Optional[str] = None, mine: Optional[bool] = None, unassigned: Optional[bool] = None, candidate_group: Optional[str] = None, seat_id: Optional[str] = None, process_instance_id: Optional[str] = None, case_instance_id: Optional[str] = None, business_key: Optional[str] = None, process_definition_key: Optional[str] = None, task_definition_key: Optional[str] = None, state: Optional[str] = None, sort_by: Optional[str] = None, currency: Optional[str] = None, sort_order: Optional[str] = None, variable_names: Optional[list[str]] = None, filter_id: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Task]:
+    def list_tasks(self, *, assignee: Optional[str] = None, mine: Optional[bool] = None, unassigned: Optional[bool] = None, candidate_group: Optional[str] = None, seat_id: Optional[str] = None, process_instance_id: Optional[str] = None, case_instance_id: Optional[str] = None, business_key: Optional[str] = None, process_definition_key: Optional[str] = None, task_definition_key: Optional[str] = None, state: Optional[str] = None, sort_by: Optional[str] = None, currency: Optional[str] = None, sort_order: Optional[str] = None, variable_names: Optional[list[str]] = None, filter_id: Optional[str] = None, priority: Optional[int] = None, min_priority: Optional[int] = None, max_priority: Optional[int] = None, due_before: Optional[str] = None, due_after: Optional[str] = None, overdue: Optional[bool] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Task]:
         """List tasks
 
         Tasks visible to the caller through the one authorization predicate (VI.4 rules 1–3, K2); BPMN user tasks and CMMN human tasks.
 
         ``GET /tasks`` (operationId ``listTasks``); permission ``task.read``.
         """
-        req = ApiRequest("GET", f"/tasks", query={"assignee": assignee, "mine": mine, "unassigned": unassigned, "candidateGroup": candidate_group, "seatId": seat_id, "processInstanceId": process_instance_id, "caseInstanceId": case_instance_id, "businessKey": business_key, "processDefinitionKey": process_definition_key, "taskDefinitionKey": task_definition_key, "state": state, "sortBy": sort_by, "currency": currency, "sortOrder": sort_order, "variableNames": variable_names, "filterId": filter_id, "page": page, "size": size})
+        req = ApiRequest("GET", f"/tasks", query={"assignee": assignee, "mine": mine, "unassigned": unassigned, "candidateGroup": candidate_group, "seatId": seat_id, "processInstanceId": process_instance_id, "caseInstanceId": case_instance_id, "businessKey": business_key, "processDefinitionKey": process_definition_key, "taskDefinitionKey": task_definition_key, "state": state, "sortBy": sort_by, "currency": currency, "sortOrder": sort_order, "variableNames": variable_names, "filterId": filter_id, "priority": priority, "minPriority": min_priority, "maxPriority": max_priority, "dueBefore": due_before, "dueAfter": due_after, "overdue": overdue, "page": page, "size": size})
         return cast("Page[M.Task]", self._c.page(req, options, page, size))
 
     def get_task(self, id: str, *, options: Optional[RequestOptions] = None) -> M.TaskDetail:
@@ -13033,7 +13054,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1180 operations on 992 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1182 operations on 993 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)

@@ -225,6 +225,9 @@ SHIPS['universal.up21-iot-storm-control'] = ('1.0.1', '1.0.2')
 # R7UI-F7-4: the compliance models changed after HELD_AT (incident report completion guard, isStartableInTasklist).
 # Its pack.json is kept by hand, so this entry is the ledger record of that bump; version_of does not apply to it.
 SHIPS['sangam.compliance'] = ('1.1.0', '1.1.1')
+# PACKFORM-FIELD-KEY (lane compliance-ids, 2026-11-18): 13 compliance forms named their fields 'key' instead of 'id', so the
+# UI rendered them without a name; renamed to 'id' (same names). Held is still 1.1.0, so the change ships within 1.1.1
+# (owner decision 402 (8)); test_the_compliance_pack_ships_no_held_version_with_other_content covers it.
 SHIPS['gov.intl.pfm-breach-case'] = ('1.0.0', '1.0.1')
 SHIPS['gov.intl.pfm-budget-accounting-reconciliation'] = ('1.0.0', '1.0.1')
 SHIPS['gov.intl.pfm-cash-plan'] = ('1.0.0', '1.0.1')
@@ -307,6 +310,164 @@ SHIPS['universal.up14-three-way-match'] = ('1.0.1', '1.0.2')
 SHIPS['universal.up18-capa'] = ('1.0.1', '1.0.2')
 SHIPS['universal.up19-contract-lifecycle'] = ('1.0.1', '1.0.2')
 
+# Lane ARCH-JURIS (owner decisions A1, E1-E3, M1-M3; integrator ruling R3): these packs shipped their held version with
+# changed content, so each ships under the next version (decision 390 (2)); the reason per pack:
+#  - moneyMovement declared on every connector of the pack (owner decision A1: an undeclared connector counts as money
+#    out), pack.json only: sec.bank.aml-str, sec.bank.cheque-return, sec.cap.surveillance-alert, sec.fin.complaint,
+#    sec.fin.cyber-incident, sec.health.abdm-consent, sec.health.blood-bank, sec.health.lab-order, sec.legal.dpdp-rights,
+#    sec.mfg.batch-release, sec.scm.eway-bill, sec.tel.tcccpr, sec.util.disconnection, universal.up06-hitl-ai-review,
+#    universal.up16-provisioning, universal.up20-rpa, universal.up22-external-collaboration, gov.work-order,
+#    gov.ifms.salary-monthly;
+#  - money out now behind a core sanction that binds amount, payee account, currency and purpose (E1-E3, M1-M3), BPMN,
+#    forms and pack.json: gov.ifms.receipts (refund), sec.cap.ipo-allotment (refund), sec.ins.reinsurance (settlement).
+# gov.works pins gov.work-order (calledElementVersionTag), so its pin moves to 1.0.2.
+for _pid in ('sec.bank.aml-str', 'sec.bank.cheque-return', 'sec.cap.surveillance-alert', 'sec.fin.complaint',
+             'sec.fin.cyber-incident', 'sec.health.abdm-consent', 'sec.health.blood-bank', 'sec.health.lab-order',
+             'sec.legal.dpdp-rights', 'sec.mfg.batch-release', 'sec.scm.eway-bill', 'sec.tel.tcccpr',
+             'sec.util.disconnection', 'universal.up06-hitl-ai-review', 'universal.up16-provisioning',
+             'universal.up20-rpa', 'universal.up22-external-collaboration', 'gov.work-order', 'gov.ifms.receipts',
+             'sec.cap.ipo-allotment', 'sec.ins.reinsurance'):
+    SHIPS[_pid] = ('1.0.1', '1.0.2')
+SHIPS['gov.ifms.salary-monthly'] = ('1.0.0', '1.0.1')
+
+
+# Lane ARCH-JURIS, integrator ruling R4 (decision 390 (4): a version that may be deployed is immutable): every pack whose
+# content this lane changed (owner decisions A1, E1-E3, M1-M5: moneyMovement on every connector, money approvals binding
+# amount / payee account / currency / purpose, batch seals, capture refunds, and the pins to bumped packs, sangam.core
+# included) ships one patch above its version on the integration branch at the time of the rebase (6d55a7db), also when
+# it was already above its held version. pack id -> (version on the integration branch, version it ships as); like SHIPS,
+# only that version moves, a pack declaring another one keeps it.
+R4_ARCH_JURIS = {
+    'gov.assets': ('1.0.2', '1.0.3'),
+    'gov.audit-para': ('1.0.2', '1.0.3'),
+    'gov.consultancy': ('1.0.2', '1.0.3'),
+    'gov.contract-management': ('1.0.2', '1.0.3'),
+    'gov.court-case': ('1.0.2', '1.0.3'),
+    'gov.dbt.batch': ('1.0.2', '1.0.3'),
+    'gov.gem-purchase': ('1.0.2', '1.0.3'),
+    'gov.grievance': ('1.0.2', '1.0.3'),
+    'gov.ifms.audit-para-settlement': ('1.0.3', '1.0.4'),
+    'gov.ifms.bill': ('1.0.5', '1.0.6'),
+    'gov.ifms.budget-allocation': ('1.0.2', '1.0.3'),
+    'gov.ifms.budget-formulation': ('1.0.2', '1.0.3'),
+    'gov.ifms.budget-reappropriation': ('1.0.2', '1.0.3'),
+    'gov.ifms.challan-reconciliation': ('1.0.2', '1.0.3'),
+    'gov.ifms.gia-uc': ('1.0.4', '1.0.5'),
+    'gov.ifms.gpf': ('1.0.5', '1.0.6'),
+    'gov.ifms.loans-advances': ('1.0.4', '1.0.5'),
+    'gov.ifms.monthly-accounts': ('1.0.3', '1.0.4'),
+    'gov.ifms.pao-chain': ('1.0.3', '1.0.4'),
+    'gov.ifms.reappropriation': ('1.0.2', '1.0.3'),
+    'gov.ifms.scheme-appraisal': ('1.0.2', '1.0.3'),
+    'gov.ifms.sna-sparsh': ('1.0.4', '1.0.5'),
+    'gov.ifms.supplementary': ('1.0.2', '1.0.3'),
+    'gov.ifms.surrender-lapse': ('1.0.3', '1.0.4'),
+    'gov.ifms.year-end-closing': ('1.0.3', '1.0.4'),
+    'gov.inspection': ('1.0.2', '1.0.3'),
+    'gov.intl.pfm-breach-case': ('1.0.1', '1.0.2'),
+    'gov.intl.pfm-budget-accounting-reconciliation': ('1.0.1', '1.0.2'),
+    'gov.intl.pfm-budget-preparation': ('1.0.1', '1.0.2'),
+    'gov.intl.pfm-cash-plan': ('1.0.1', '1.0.2'),
+    'gov.intl.pfm-debt-operation': ('1.0.1', '1.0.2'),
+    'gov.intl.pfm-do-not-pay': ('1.0.1', '1.0.2'),
+    'gov.intl.pfm-execution': ('1.0.1', '1.0.2'),
+    'gov.intl.pfm-fiscal-transparency': ('1.0.1', '1.0.2'),
+    'gov.intl.pfm-pefa-evidence': ('1.0.1', '1.0.2'),
+    'gov.intl.pfm-procurement-complaint': ('1.0.1', '1.0.2'),
+    'gov.intl.pfm-replenishment': ('1.0.1', '1.0.2'),
+    'gov.intl.pfm-standard-reports': ('1.0.1', '1.0.2'),
+    'gov.intl.pfm-suspense-ageing': ('1.0.1', '1.0.2'),
+    'gov.intl.pfm-transfer-deadline': ('1.0.1', '1.0.2'),
+    'gov.land-acquisition': ('1.0.2', '1.0.3'),
+    'gov.leave': ('1.0.3', '1.0.4'),
+    'gov.p1.bill-payment': ('1.0.2', '1.0.3'),
+    'gov.p2.file-movement': ('1.0.2', '1.0.3'),
+    'gov.p3.grant-sanction': ('1.0.2', '1.0.3'),
+    'gov.p4.licence': ('1.0.2', '1.0.3'),
+    'gov.pension': ('1.0.2', '1.0.3'),
+    'gov.records': ('1.0.2', '1.0.3'),
+    'gov.recruitment': ('1.0.2', '1.0.3'),
+    'gov.rti': ('1.0.2', '1.0.3'),
+    'gov.rtps': ('1.0.2', '1.0.3'),
+    'gov.security-instrument': ('1.0.2', '1.0.3'),
+    'gov.stores': ('1.0.2', '1.0.3'),
+    'gov.tender': ('1.0.2', '1.0.3'),
+    'gov.works': ('1.0.2', '1.0.3'),
+    'sangam.core': ('1.0.2', '1.0.3'),
+    'sec.bank.account-opening': ('1.0.2', '1.0.3'),
+    'sec.bank.collections': ('1.0.2', '1.0.3'),
+    'sec.bank.emandate': ('1.0.2', '1.0.3'),
+    'sec.bank.inoperative-deposits': ('1.0.2', '1.0.3'),
+    'sec.bank.loan-closure': ('1.0.2', '1.0.3'),
+    'sec.bank.loan-origination': ('1.0.2', '1.0.3'),
+    'sec.bank.payment-dual-auth': ('1.0.2', '1.0.3'),
+    'sec.bank.rekyc': ('1.0.2', '1.0.3'),
+    'sec.bank.txn-dispute': ('1.0.2', '1.0.3'),
+    'sec.cap.corporate-action': ('1.0.2', '1.0.3'),
+    'sec.cap.investor-onboarding': ('1.0.2', '1.0.3'),
+    'sec.ecom.gst-tcs': ('1.0.2', '1.0.3'),
+    'sec.ecom.order-to-cash': ('1.0.2', '1.0.3'),
+    'sec.ecom.return-refund': ('1.0.2', '1.0.3'),
+    'sec.ecom.seller-onboarding': ('1.0.2', '1.0.3'),
+    'sec.edu.admission': ('1.0.2', '1.0.3'),
+    'sec.edu.examination': ('1.0.3', '1.0.4'),
+    'sec.edu.scholarship': ('1.0.2', '1.0.3'),
+    'sec.eu.gdpr-dsr': ('1.0.1', '1.0.2'),
+    'sec.health.admission-discharge': ('1.0.2', '1.0.3'),
+    'sec.health.ot-scheduling': ('1.0.2', '1.0.3'),
+    'sec.health.pharmacy-dispense': ('1.0.2', '1.0.3'),
+    'sec.hr.appraisal': ('1.0.2', '1.0.3'),
+    'sec.hr.employee-exit': ('1.0.2', '1.0.3'),
+    'sec.hr.payroll': ('1.0.2', '1.0.3'),
+    'sec.hr.posh-complaint': ('1.0.2', '1.0.3'),
+    'sec.ins.death-claim': ('1.0.2', '1.0.3'),
+    'sec.ins.health-claim': ('1.0.2', '1.0.3'),
+    'sec.ins.intermediary-licensing': ('1.0.2', '1.0.3'),
+    'sec.ins.motor-claim': ('1.0.2', '1.0.3'),
+    'sec.ins.proposal-underwriting': ('1.0.2', '1.0.3'),
+    'sec.legal.litigation': ('1.0.2', '1.0.3'),
+    'sec.mfg.mrp-planning': ('1.0.2', '1.0.3'),
+    'sec.nbfc.digital-lending': ('1.0.2', '1.0.3'),
+    'sec.nbfc.dlg-arrangement': ('1.0.2', '1.0.3'),
+    'sec.scm.procure-to-pay': ('1.0.2', '1.0.3'),
+    'sec.tel.mnp-port-in': ('1.0.2', '1.0.3'),
+    'sec.tel.sim-swap': ('1.0.2', '1.0.3'),
+    'sec.ushealth.access-request': ('1.0.2', '1.0.3'),
+    'sec.ushealth.baa': ('1.0.2', '1.0.3'),
+    'sec.ushealth.breach': ('1.0.2', '1.0.3'),
+    'sec.ushealth.claim': ('1.0.2', '1.0.3'),
+    'sec.ushealth.discharge': ('1.0.2', '1.0.3'),
+    'sec.ushealth.eligibility': ('1.0.2', '1.0.3'),
+    'sec.ushealth.gfe-ppdr': ('1.0.2', '1.0.3'),
+    'sec.ushealth.patient-access': ('1.0.1', '1.0.2'),
+    'sec.ushealth.payer-to-payer': ('1.0.1', '1.0.2'),
+    'sec.ushealth.prior-auth': ('1.0.2', '1.0.3'),
+    'sec.ushealth.provider-access': ('1.0.1', '1.0.2'),
+    'sec.util.meter-to-cash': ('1.0.2', '1.0.3'),
+    'sec.util.new-connection': ('1.0.2', '1.0.3'),
+    'universal.billing-cycle': ('1.0.2', '1.0.3'),
+    'universal.up01-stp-order': ('1.0.2', '1.0.3'),
+    'universal.up02-saga': ('1.0.2', '1.0.3'),
+    'universal.up05-four-eyes': ('1.0.2', '1.0.3'),
+    'universal.up07-improvement-loop': ('1.0.2', '1.0.3'),
+    'universal.up11-change-window': ('1.0.2', '1.0.3'),
+    'universal.up12-order-decomposition': ('1.0.2', '1.0.3'),
+    'universal.up13-returns-refunds': ('1.0.2', '1.0.3'),
+    'universal.up14-three-way-match': ('1.0.2', '1.0.3'),
+    'universal.up15-recertification': ('1.0.2', '1.0.3'),
+    'universal.up17-prior-authorisation': ('1.0.2', '1.0.3'),
+    'universal.up18-capa': ('1.0.2', '1.0.3'),
+    'universal.up19-contract-lifecycle': ('1.0.2', '1.0.3'),
+}
+
+# Lane dmn-money-hold (DEC-5, M1-M5, C4: DMN never rounds money; op EXACT holds a fractional amount for a person to enter
+# one of the two adjacent whole amounts under the same sanction): contract-amendment (LD, price escalation) and pension
+# sanction (pension, retirement gratuity, family pension) gain the hold and its payable-* forms after ruling R4 put 1.0.3
+# on the integration branch (bce8c0ee). A version that may be deployed is immutable (decision 390 (4)): 1.0.4.
+DMN_MONEY_HOLD = {
+    'gov.contract-management': ('1.0.3', '1.0.4'),
+    'gov.pension': ('1.0.3', '1.0.4'),
+}
 
 def version_of(pack_id, declared):
     """The version a pack ships as: NEXT for a BUMPED pack still declaring the RELEASED version, then the SHIPS bump of
@@ -317,7 +478,11 @@ def version_of(pack_id, declared):
     held, ships = SHIPS.get(pack_id, (None, None))
     if v == held:
         v = ships
-    return v
+    frm, to = R4_ARCH_JURIS.get(pack_id, (None, None))
+    if v == frm:
+        v = to
+    frm, to = DMN_MONEY_HOLD.get(pack_id, (None, None))
+    return to if v == frm else v
 
 
 def digest(pack_dir):

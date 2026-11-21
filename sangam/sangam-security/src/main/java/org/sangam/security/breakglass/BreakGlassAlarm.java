@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import org.sangam.core.security.LogSafe;
 
 /**
  * The alarm raised on every use of a break-glass token (M-084, AJ-05 step 7: "every use alerts the CISO"). The audit
@@ -27,7 +28,7 @@ public interface BreakGlassAlarm {
 
         @Override
         public void raised(String tenantId, Map<String, Object> details) {
-            log.error("BREAK-GLASS ACCESS USED in tenant {}: {}", tenantId, details);
+            log.error("BREAK-GLASS ACCESS USED in tenant {}: {}", LogSafe.text(tenantId), LogSafe.text(details));
         }
     };
 }

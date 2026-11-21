@@ -1,6 +1,6 @@
 {
   "id": "gov.p2.file-movement",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "P2 File movement (e-Office)",
     "hi": "पी2 फ़ाइल संचलन (ई-ऑफ़िस)"
@@ -72,12 +72,14 @@
   "connectors": [
     {
       "id": "dsc.sign",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-SIGN",
       "purpose": "DSC signer agent for noting"
     },
     {
       "id": "esign.sign",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-SIGN",
       "purpose": "eSign fallback",
@@ -88,12 +90,14 @@
     },
     {
       "id": "dak.dispatch",
+      "moneyMovement": "NONE",
       "capabilityClass": "c",
       "govTag": "G-MAIL",
       "purpose": "Dispatch: gov.in e-mail, dak register"
     },
     {
       "id": "referral.send",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Referral to another department"

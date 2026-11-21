@@ -81,7 +81,13 @@ All database profiles read `SANGAM_DB_URL`, `SANGAM_DB_USER` and `SANGAM_DB_PASS
 
 Both modes put an `org.sangam.rest.port.SangamPrincipal` on the request as the attribute `SangamPrincipal.ATTRIBUTE`.
 
-**Seat context:** if the token carries a seats list and the header `X-Sangam-Seat` names a seat that is not in it, the request is rejected with 403 problem `SEAT_NOT_HELD`. Whether the seat is held on the action date (effective dating, additional charge) is checked server-side by sangam-security (IX.5, K7). The token's `additional_charge` claim is informational only.
+**Seat context:** the caller names it in `X-Sangam-Seat` (a seat held on any basis) and `X-Sangam-Acting-For-Seat` (a seat held by additional charge or as leave substitute). A seat is never taken from the caller's word (IX.5 rules 1 and 4, K7):
+- For every request, `SecurityIdentityFilter` resolves the seats the person can act in now from sangam-security's postings, additional charge and approved leave at the database time (`PostingService.seatsOf`; an ended or future posting and an officer on leave hold nothing) and puts them on the request as `SeatHoldings`.
+- A named seat that is not in those holdings is rejected with 403 problem `SEAT_NOT_HELD` by `SecurityIdentityFilter` itself, on every route of the chain, and written to the audit trail as `AUTH_DENIED` (action, seat, reason `SEAT_NOT_HELD`, policy version) on the denial chain of `sec:<tenant>`. `RequestContexts.from`, the one place a request context is built, applies the same rule (`SeatHoldings.require`) for every host: a request without holdings (no seat directory in the chain) names no seat.
+- `GET /me` offers exactly those seats (`OwnSeatHoldings`, the same `PostingService.seatsOf`), each as SUBSTANTIVE, ADDITIONAL_CHARGE or LEAVE_SUBSTITUTE; a person's own seats need no admin permission.
+- The seat a caller acts in is the acted-for seat when one is named, else the seat (`RequestContext.effectiveSeatId`): its tasks are the ones listed and open to the caller. The audit records both names (`seat_id`, `acted_for_seat_id`) and `ACTED_FOR`.
+- If the token carries a seats list, `X-Sangam-Seat` must also be in it (`PrincipalAttributeFilter`). The list only limits; it never gives a seat. The token's `additional_charge` claim is informational only. An API token (`sgm_...`) holds no seat.
+- With the security module off (development only), the admin store's assignments in force today are the seat directory (`AdminStoreSeatHoldings`).
 
 Coarse rules:
 - open: `/actuator/health/**`, `/actuator/info`, `/livez`, `/readyz` and `/api/v1/openapi.yaml`;
@@ -212,8 +218,9 @@ Flowable worker compatibility is served at `/api/v1/compat/flowable/external-job
 
 **Packs.**
 - **Runtime ports.** `PackRuntime` gets the audit chain, the security seat directory, the engine clock, and **`JdbcLedgerStore` / `JdbcBatchLedger`** from sangam-engine. The lock timeout is `sangam.packs.ledger.lock-timeout`, default 5 s.
-- **Deployment.** `PackRegistry.discover()` + `PackDeployer`, with start-up deployment for `sangam.packs.tenants` when `sangam.packs.deploy-on-start` is set (default true on h2).
-- **Per-tenant provisioning.** `PacksTenantDeployer.ensureDeployed(tenant)` runs automatically after a tenant is created or activated through `/admin/tenants`, and before a `/packages/{id}/transitions` `deploy`. A decorator in `PacksWiring` does this.
+- **Deployment.** `PackRegistry.discover()` + `PackDeployer`, with start-up deployment for `sangam.packs.tenants` when `sangam.packs.deploy-on-start` is true. Its default is true under profile h2 and false elsewhere, so an install that deploys at start-up sets both (env `SANGAM_PACKS_DEPLOY_ON_START`, `SANGAM_PACKS_TENANTS`); a later start deploys nothing again.
+- **Per-tenant provisioning.** `PacksTenantDeployer.ensureDeployed(tenant)` runs automatically after `POST` or `PUT /admin/tenants` when the tenant it returns is ACTIVE (with sangam-security a new tenant is CREATED, so this is the activation by `PUT`), and before a `/packages/{id}/transitions` `deploy`. A decorator in `PacksWiring` does this. Onboarding deploys the packs it selected (step PACKS).
+- **First-admins tenant (register E-25).** `sangam.security.first-admins.*` (`FirstAdminBootstrap`) creates its tenant in sangam-security directly, not through `/admin/tenants`, and deploys no pack. Such a tenant gets its packs from onboarding or from the two start-up settings; without either, every process start of it answers 404, and each start says so in the log at WARN, with the tenant and the two settings (`PacksWiring.sangamFirstAdminsTenantPacksCheck`, on `ApplicationReadyEvent`; `PacksOfBootstrapTenantAgainstServerTest`).
 - **One operation per pack and tenant (SL-116).** `PacksWiring` gives the one `PackDeployer` a `bridge/PackOperationTxLock`, so deploy, rollback and uninstall of a pack run inside a Spring transaction (joined when the caller has one) that first row-locks the pack's mark in `EVT_DEFINITION_SEQ` (kind `pack`, key = tenant scope and pack id). The engine joins that transaction on the same connection, so the lock and the deployment commit together. The wait is bounded by `sangam.packs.operation.lock-timeout` (default 10 s): PostgreSQL `SET LOCAL lock_timeout`; SQL Server, MySQL and H2 a session lock wait that is set back right after the lock statement; Oracle `FOR UPDATE WAIT 2`. A lock-wait timeout is reported as `PACK_OPERATION_IN_PROGRESS`, which is 409 on the pack lifecycle API and in tenant provisioning (`PacksTenantDeployer`); a rejected pack stays 422 `PACK_REJECTED`. Another pack or another tenant is not blocked. Deploy several packs in one caller transaction only when no concurrent operation on them is possible (sangam-packs README §2). Coded, tests written (`PackOperationLockTest`, `PackOperationTxLockTest`, `PacksTenantDeployerTest`, `PackOperationLockH2Test`, `DefinitionVersionsPackKindH2Test`), not yet run.
 - **REST side of the pack contract** (sangam-rest):
   - the task-local variables `actingPerson`, `actingSeat` and `presentedPayloadHash` are set on every completion and return;
@@ -329,12 +336,12 @@ Flowable worker compatibility is served at `/api/v1/compat/flowable/external-job
 | Spring Boot 4.1.2 starters (webmvc, actuator, security, security-oauth2-resource-server, jdbc, opentelemetry, validation) | Apache-2.0 |
 | Operaton `operaton-bpm-spring-boot-starter-rest` 2.2.0 | Apache-2.0 |
 | Micrometer Prometheus registry | Apache-2.0 |
-| HikariCP 6.3.0 | Apache-2.0 |
+| HikariCP 7.0.2 | Apache-2.0 |
 | Liquibase core 4.33.0 | Apache-2.0 (FSL applies to 5.x only, LIC-7) |
 | H2 2.3.232 (runtime, development) | MPL-2.0 / EPL-1.0 |
 | PostgreSQL JDBC 42.7.12 | BSD-2-Clause |
-| Microsoft mssql-jdbc 12.10.2 | MIT |
-| MariaDB Connector/J 3.5.11 | LGPL-2.1 (runtime class path only, **not** in the fat jar; LIC-4/LIC-5) |
+| Microsoft mssql-jdbc 13.6.2 | MIT |
+| MariaDB Connector/J 4.0.0 | LGPL-2.1 (runtime class path only, **not** in the fat jar; LIC-4/LIC-5) |
 
 ## Generic modules (final integration wave)
 
@@ -446,11 +453,12 @@ Pipeline definitions are read from `classpath:pipelines/<id>.json`. Pipelines st
 | `sangam.ai.worker.tenants`, `.batch`, `.every`, `.lease`, `.external-retry` | unset, 20, 5s, 2m, 5m | Agent worker |
 | `sangam.channels.documents-dir` | `./data/channels` | Channel attachment storage |
 | `sangam.channels.allow-unscanned` | false | Accept attachments with no malware scanner |
+| `sangam.ledger.gl-export-waiver` (env `SANGAM_LEDGER_GLEXPORTWAIVER`) | empty | Production refuses to start without `sangam.ledger.gl-connector` (owner decision 126) unless this names the reason for running without the GL export; the start is a system audit event `LEDGER_GL_EXPORT_WAIVED` with the reason and a WARN line; accounting entries stay in `LDG_ACCOUNTING` (`exported_at` NULL) and are exported once a connector is set. Blank, or set together with a GL connector: refused |
 | `sangam.malware.production-waiver` | empty | Production refuses to start without a malware scanner (owner decision 125) unless this names the reason for running without one; the waiver is logged at every start |
 | `sangam.channels.poll-seconds`, `sangam.channels.poll.<type>.*` | 60 | Polling channel interval and per-type settings |
 | `sangam.channels.bot-process` | unset | Channel type to bot process key |
 | `sangam.channels.teams.jwks-uri` | `https://login.botframework.com/v1/.well-known/keys` | Teams (Bot Framework) token keys |
-| `sangam.channels.egress.<tenant>` | empty | Allowed outbound hosts per tenant |
+| `sangam.channels.egress[<tenant>]` | empty | Allowed outbound hosts per tenant (bracket notation; required for an id with a dot or upper case such as `GOI.FIN`, optional for a simple id) |
 | `sangam.modeller.lease-seconds` | 120 | Model edit lease |
 | `sangam.modeller.mocks.file` | unset | Extra service-mock rules on top of the stored `MOD_SERVICE_MOCK` rules of the default tenant; ignored on a production profile |
 | `sangam.modeller.token-exchange.{token-endpoint,client-id,client-secret-ref,audience,connectors,egress}` | unset | Token exchange for listed connectors |

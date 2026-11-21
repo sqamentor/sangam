@@ -7023,6 +7023,8 @@ export interface Me {
   preferredLanguage?: string;
   /** M-045: money and number formatting of the tenant's resolved profile (locale section); absent when the tenant has no resolved locale */
   locale?: MeLocale;
+  /** Owner option (b) 2026-11-19: true only for a tenant listed in sangam.demo.sandbox-tenants (its verified payees and payments are simulated, audited sandbox=true); absent otherwise */
+  sandbox?: boolean;
 }
 
 /**
@@ -7880,6 +7882,16 @@ export interface OpsUiVariableRequest {
 export interface OpsValue {
   value?: unknown;
   reason?: string;
+}
+
+/**
+ * The org level types of a tenant, top first (AJ-02, SEC_ORG_LEVEL); an org unit's level must be one of them. tenantId is optional on a request and, when given, must be the caller's own tenant.
+ *
+ * Schema `OrgLevels`.
+ */
+export interface OrgLevels {
+  tenantId?: string;
+  levels: Array<string>;
 }
 
 /**
@@ -12551,7 +12563,7 @@ export interface TeamTaskFilterCreateRequest {
   name: string;
   /** Optional, at most 255 characters */
   owner?: string;
-  /** JSON object, at most 16384 characters as JSON. Owner decision 406: only the criteria of GET /tasks by the same names: assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy, sortOrder, currency (ISO 4217) and variableNames (list of 1 to 20 names); strings 1 to 255 characters, mine and unassigned booleans. Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID */
+  /** JSON object, at most 16384 characters as JSON. Owner decision 406: only the criteria of GET /tasks by the same names: assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy, sortOrder, currency (ISO 4217), variableNames (list of 1 to 20 names), priority, minPriority and maxPriority (whole numbers, minPriority not above maxPriority), dueBefore and dueAfter (ISO-8601 date-times with offset, dueAfter before dueBefore) and overdue; strings 1 to 255 characters, mine, unassigned and overdue booleans. Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID */
   query: Record<string, unknown>;
   /** Optional JSON object, at most 16384 characters as JSON */
   properties?: Record<string, unknown>;

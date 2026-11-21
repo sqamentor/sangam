@@ -133,6 +133,40 @@ public final class SecurityAdminBridge implements AdminPort {
                 "Org units are effective-dated and never deleted; move or abolish their seats instead");
     }
 
+    // ------------------------------------------------------------------ org levels (EV-M-0923)
+
+    /** A level type: letters, digits, '_' or '-', at most 64 (SEC_ORG_LEVEL.level_type, e.g. OFFICE, DISTRICT). */
+    private static final java.util.regex.Pattern LEVEL_TYPE = java.util.regex.Pattern.compile("[A-Za-z0-9_-]{1,64}");
+
+    @Override
+    public OrgLevels orgLevels(RequestContext ctx) {
+        return new OrgLevels(ctx.tenantId(), run(c -> security.orgUnits().levels(c, ctx.tenantId())));
+    }
+
+    @Override
+    public OrgLevels defineOrgLevels(RequestContext ctx, OrgLevels body) {
+        if (body != null && body.tenantId() != null && !body.tenantId().equals(ctx.tenantId())) {
+            throw ApiProblem.forbidden("TENANT_MISMATCH", "org levels are defined only for the caller's own tenant");
+        }
+        List<String> levels = body == null ? null : body.levels();
+        if (levels == null || levels.isEmpty()) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "levels is required").with("field", "levels");
+        }
+        for (String l : levels) {
+            if (l == null || !LEVEL_TYPE.matcher(l).matches()) {
+                throw ApiProblem.badRequest("VALIDATION_FAILED", "not a valid level type: " + l).with("field", "levels");
+            }
+        }
+        if (Set.copyOf(levels).size() != levels.size()) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "a level type appears twice").with("field", "levels");
+        }
+        run(c -> {
+            security.orgUnits().defineLevels(c, actor(ctx), List.copyOf(levels));
+            return null;
+        });
+        return orgLevels(ctx);
+    }
+
     // ------------------------------------------------------------------ seats
 
     @Override

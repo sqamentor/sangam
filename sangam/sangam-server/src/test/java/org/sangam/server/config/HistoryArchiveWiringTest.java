@@ -94,7 +94,7 @@ class HistoryArchiveWiringTest {
         assertSame(HistoryArchives.class, HistoryArchiveWiring.archives(
                 on().withProperty("sangam.ops.retention-json", "{\"gov.file\":\"P3649D\"}"), keys, audit).getClass());
         IllegalStateException literal = assertThrows(IllegalStateException.class, () -> HistoryArchiveWiring.archives(
-                on().withProperty("sangam.history.archive.signing.private-key-ref", "MC4CAQAwBQYDK2VwBCIEI"), keys, audit));
+                on().withProperty("sangam.history.archive.signing.private-key-ref", "literal-key-material-not-a-secret-ref"), keys, audit));
         assertTrue(literal.getMessage().contains("secret reference"), literal.getMessage());
         assertThrows(IllegalStateException.class, () -> HistoryArchiveWiring.archives(
                 on().withProperty("sangam.history.archive.signing.trusted-public-key-refs", "secret://archive/missing"),

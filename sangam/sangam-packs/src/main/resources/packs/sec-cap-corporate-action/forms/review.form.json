@@ -1,6 +1,6 @@
 {
   "key": "sec-cap-corporate-action/review",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.cap.corporate-action",
   "title": {
     "en": "Review payment outcome before the 30-day limit",
@@ -21,6 +21,17 @@
       "label": {
         "en": "Remarks",
         "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "unpaidAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Unpaid dividend to move (INR)",
+        "hi": "अदत्त लाभांश राशि (रुपये)"
       }
     }
   ]

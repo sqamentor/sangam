@@ -173,7 +173,7 @@ export function canonicalPacket(p: CapturePacket): string {
 }
 
 /** Java's String.getBytes(UTF_8): a lone surrogate becomes '?' (TextEncoder would write U+FFFD). */
-export function javaUtf8(s: string): Uint8Array {
+export function javaUtf8(s: string): Uint8Array<ArrayBuffer> {
   return new TextEncoder().encode(s.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '?'));
 }
 

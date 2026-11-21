@@ -4,7 +4,7 @@
  * The console (index.html, src/main.tsx) never imports anything under src/teams, so the Teams module can be left out
  * (no teams.html deployed, or teams.enabled false in config.json) without changing any other feature.
  */
-import { StrictMode } from 'react';
+import { StrictMode, type ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../styles.css';
 import { loadConfig } from '../config';
@@ -22,7 +22,7 @@ async function boot() {
   await applyFonts(cfg.fonts);
   initI18n(cfg.defaultLanguage);
   const root = createRoot(document.getElementById('root')!);
-  const render = (node: JSX.Element) => root.render(<StrictMode>{node}</StrictMode>);
+  const render = (node: ReactElement) => root.render(<StrictMode>{node}</StrictMode>);
   if (!cfg.teams.enabled) {
     render(<TeamsUnavailable reason="disabled" />);
     return;

@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-prior-auth/documentation",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ushealth.prior-auth",
   "title": {
     "en": "Complete the documentation questionnaire",

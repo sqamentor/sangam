@@ -190,6 +190,12 @@ public class PacksWiring {
             if (pr != null) {
                 // SL-34: pack SLAs count the tenant's own working days (profile calendar: zone, weekend, holidays)
                 ports = ports.withCalendar(packCalendar(pr, businessClocks, calendarName));
+                // owner decision M1: a money-out step takes the tenant / jurisdiction profile's currency first
+                org.sangam.packs.port.TenantCurrencies.install(tenant -> {
+                    java.util.Currency c = pr.resolve(tenant, ConfigWiring.businessClock(businessClocks).today(tenant))
+                            .locale().money().currency();
+                    return c == null ? null : c.getCurrencyCode();
+                });
             } else {
                 LOG.warn("No ProfileResolver bean: pack SLAs use the default working-day calendar (no tenant holidays)");
             }
@@ -203,6 +209,8 @@ public class PacksWiring {
             org.sangam.assembly.packs.PackDocumentSlotNames.install(registry);
             // decision 292: in production every pack rule row not permitted for PRODUCTION refuses
             ports = withProductionMode(ports, env);
+            // owner option (b) 2026-11-19: demo sandbox tenants (payee + payment simulators for them only)
+            installDemoSandbox(env);
             PackRuntime.install(ports);
             LOG.info("PackRuntime DSC signature check: {}", dsc != null ? "server DSC flow" : "refuse all (DSC off)");
             LOG.info("PackRuntime DSC slot binding: {}", ports.slotBindings() != org.sangam.packs.port.DocumentSlotBindings.NONE
@@ -222,6 +230,47 @@ public class PacksWiring {
      * permittedUse is not PRODUCTION ({@code <PREFIX>_NOT_PERMITTED_IN_PRODUCTION}); outside it, demonstration rows stay
      * usable.
      */
+    /**
+     * Owner option (b) 2026-11-19: {@code GET /me} says {@code sandbox=true} for a demo sandbox tenant (the UI's
+     * "Sandbox" badge), read from the same {@link org.sangam.packs.sim.DemoSandbox} set the packs use.
+     */
+    @Bean
+    public InitializingBean sangamDemoSandboxMe(
+            ObjectProvider<org.sangam.rest.port.WorkspacePort> workspace) {
+        return () -> {
+            if (workspace.getIfAvailable() instanceof org.sangam.rest.adapter.operaton.OperatonWorkspaceAdapter w) {
+                w.setSandboxTenants(org.sangam.packs.sim.DemoSandbox::isSandbox);
+            }
+        };
+    }
+
+    /** {@value #SANDBOX_TENANTS_PROPERTY}: tenant ids, comma-separated; empty (the default) switches it off. */
+    public static final String SANDBOX_TENANTS_PROPERTY = "sangam.demo.sandbox-tenants";
+
+    /**
+     * Owner option (b) 2026-11-19: installs {@code sangam.demo.sandbox-tenants} into the packs
+     * ({@link org.sangam.packs.sim.DemoSandbox}). Allowed in production; it relaxes no production guard. A non-empty
+     * list logs a WARN naming every sandbox tenant at each start.
+     */
+    static java.util.Set<String> installDemoSandbox(Environment env) {
+        String[] raw = env.getProperty(SANDBOX_TENANTS_PROPERTY, String[].class, new String[0]);
+        java.util.List<String> ids = new java.util.ArrayList<>();
+        for (String r : raw) {
+            if (r != null && !r.isBlank()) {
+                ids.add(r.trim());
+            }
+        }
+        org.sangam.packs.sim.DemoSandbox.install(ids);
+        java.util.Set<String> t = org.sangam.packs.sim.DemoSandbox.tenants();
+        if (!t.isEmpty()) {
+            LOG.warn("DEMO SANDBOX tenants {} ({}): their verified payees and payments ({}) are SIMULATED and audited "
+                    + "sandbox=true; production mode {}; every other tenant is unchanged", t, SANDBOX_TENANTS_PROPERTY,
+                    org.sangam.packs.sim.DemoSandbox.PAYMENT_CONNECTORS.stream().sorted().toList(),
+                    ProductionEnvironment.isProduction(env) ? "stays on" : "is off");
+        }
+        return t;
+    }
+
     static PackRuntime.Ports withProductionMode(PackRuntime.Ports ports, Environment env) {
         return ports.withProduction(ProductionEnvironment.isProduction(env));
     }
@@ -338,6 +387,63 @@ public class PacksWiring {
                 }
             }
         };
+    }
+
+    /** {@value}: the tenant {@link FirstAdminBootstrap} creates and appoints the first administrators of. */
+    static final String FIRST_ADMINS_TENANT_PROPERTY = "sangam.security.first-admins.tenant";
+
+    /**
+     * Register E-25: {@code sangam.security.first-admins.*} ({@link FirstAdminBootstrap}) creates its tenant without a
+     * pack. It does not go through the tenant hook above, and which packs a tenant gets is decided by onboarding or by
+     * the start-up settings, not by the bootstrap. A tenant left like that answered every process start with 404, and
+     * nothing said why. When the application is ready (so after FirstAdminBootstrap and after the start-up deployment,
+     * in whichever order those two ran) this says so at WARN, once per start, with the tenant and the ways to its
+     * packs. It deploys nothing and refuses nothing.
+     */
+    @Bean
+    public FirstAdminsTenantPacksCheck sangamFirstAdminsTenantPacksCheck(PackDeployer deployer, Environment env) {
+        return new FirstAdminsTenantPacksCheck(deployer, env);
+    }
+
+    /** See {@link #sangamFirstAdminsTenantPacksCheck}. */
+    public static final class FirstAdminsTenantPacksCheck
+            implements org.springframework.context.ApplicationListener<org.springframework.boot.context.event.ApplicationReadyEvent> {
+
+        private final PackDeployer deployer;
+        private final Environment env;
+
+        FirstAdminsTenantPacksCheck(PackDeployer deployer, Environment env) {
+            this.deployer = deployer;
+            this.env = env;
+        }
+
+        @Override
+        public void onApplicationEvent(org.springframework.boot.context.event.ApplicationReadyEvent event) {
+            warnWhenWithoutPacks();
+        }
+
+        /** True when the first-admins tenant has no pack deployment and the warning was written. */
+        public boolean warnWhenWithoutPacks() {
+            String configured = env.getProperty(FIRST_ADMINS_TENANT_PROPERTY);
+            if (configured == null || configured.isBlank()) {
+                return false;
+            }
+            String tenant = configured.trim();
+            try {
+                if (!deployer.installed(tenant).isEmpty()) {
+                    return false;
+                }
+            } catch (RuntimeException e) {
+                LOG.warn("The packs of tenant {} ({}) could not be checked: {}", tenant, FIRST_ADMINS_TENANT_PROPERTY,
+                        e.toString());
+                return false;
+            }
+            LOG.warn("Tenant {} ({}) has no workflow pack deployed: every process start of it answers 404. Its packs "
+                    + "are deployed at start-up with sangam.packs.deploy-on-start=true and sangam.packs.tenants={} "
+                    + "(SANGAM_PACKS_DEPLOY_ON_START, SANGAM_PACKS_TENANTS), or by onboarding (a platform "
+                    + "administrator).", tenant, FIRST_ADMINS_TENANT_PROPERTY, tenant);
+            return true;
+        }
     }
 
     /** Development only: PACK_OPERATION from the reference DDL (production: sangam-persistence Liquibase). */

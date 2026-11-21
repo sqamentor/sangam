@@ -34,6 +34,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.sangam.core.layer.CanonicalJson;
 import org.sangam.core.layer.Hashes;
+import org.sangam.core.layer.SqlIdentifier;
 
 /**
  * RM-52: exports the engine history of one ended process tree (one tenant) as an engine-neutral ZIP
@@ -96,7 +97,7 @@ public final class HistoryArchiveExporter {
 
     /** @param tablePrefix the engine's table prefix ({@code ""} when none) */
     public HistoryArchiveExporter(String tablePrefix, String sangamVersion) {
-        this.prefix = tablePrefix == null ? "" : tablePrefix;
+        this.prefix = SqlIdentifier.tablePrefix(tablePrefix); // vetted: the only text put into SQL besides constants
         this.sangamVersion = sangamVersion == null ? "unknown" : sangamVersion;
     }
 
@@ -181,6 +182,8 @@ public final class HistoryArchiveExporter {
 
     private List<Member> members(Connection c, String rootId) throws SQLException {
         List<Member> out = new ArrayList<>();
+        // Identifiers cannot be bound: prefix is SqlIdentifier.tablePrefix (constructor), the rest are constants; values are bound.
+        // nosemgrep: sangam-jdbc-sql-concat
         try (PreparedStatement ps = c.prepareStatement("SELECT ID_, TENANT_ID_, ROOT_PROC_INST_ID_, PROC_DEF_ID_,"
                 + " PROC_DEF_KEY_, END_TIME_ FROM " + prefix + "ACT_HI_PROCINST WHERE ROOT_PROC_INST_ID_=? OR ID_=?"
                 + " ORDER BY ID_")) {
@@ -274,6 +277,8 @@ public final class HistoryArchiveExporter {
         }
         if (!columns(c, prefix + "ACT_HI_DECINST").isEmpty()) {
             Set<String> decDefs = new TreeSet<>();
+            // Identifiers cannot be bound: prefix is SqlIdentifier.tablePrefix (constructor), the rest are constants; values are bound.
+            // nosemgrep: sangam-jdbc-sql-concat
             try (PreparedStatement ps = c.prepareStatement("SELECT DISTINCT DEC_DEF_ID_ FROM " + prefix
                     + "ACT_HI_DECINST WHERE ROOT_PROC_INST_ID_=?")) {
                 ps.setString(1, rootId);
@@ -337,6 +342,8 @@ public final class HistoryArchiveExporter {
 
     private void model(Connection c, String table, String definitionId, Map<String, byte[]> files,
                        List<Map<String, Object>> models) throws SQLException {
+        // Identifiers cannot be bound: prefix is SqlIdentifier.tablePrefix, table one of the ACT_RE_* constants; the id is bound.
+        // nosemgrep: sangam-jdbc-sql-concat
         try (PreparedStatement ps = c.prepareStatement("SELECT d.KEY_, d.VERSION_, d.VERSION_TAG_, d.DEPLOYMENT_ID_,"
                 + " d.RESOURCE_NAME_, b.BYTES_ FROM " + prefix + table + " d LEFT JOIN " + prefix + "ACT_GE_BYTEARRAY b"
                 + " ON b.DEPLOYMENT_ID_=d.DEPLOYMENT_ID_ AND b.NAME_=d.RESOURCE_NAME_ WHERE d.ID_=?")) {
@@ -381,7 +388,11 @@ public final class HistoryArchiveExporter {
             throws SQLException {
         Map<String, String> lines = new TreeMap<>();
         String order = cols.contains("ID_") ? " ORDER BY ID_" : cols.contains("ID") ? " ORDER BY ID" : "";
-        try (PreparedStatement ps = c.prepareStatement("SELECT * FROM " + table + " WHERE " + where + order)) {
+        // a catalog name (HRM_* tables are read from the metadata) is statement text only as a validated identifier
+        String vettedTable = SqlIdentifier.qualified(table).sql();
+        // Identifiers cannot be bound: vettedTable is SqlIdentifier.qualified; where is built here from constant columns and ? marks.
+        // nosemgrep: sangam-jdbc-sql-concat
+        try (PreparedStatement ps = c.prepareStatement("SELECT * FROM " + vettedTable + " WHERE " + where + order)) {
             bind(ps, params);
             try (ResultSet rs = ps.executeQuery()) {
                 ResultSetMetaData md = rs.getMetaData();
@@ -542,6 +553,8 @@ public final class HistoryArchiveExporter {
         if (columns(c, prefix + "ACT_GE_PROPERTY").isEmpty()) {
             return "unknown";
         }
+        // Identifiers cannot be bound: prefix is SqlIdentifier.tablePrefix (constructor), the rest are constants; values are bound.
+        // nosemgrep: sangam-jdbc-sql-concat
         try (PreparedStatement ps = c.prepareStatement("SELECT VALUE_ FROM " + prefix
                 + "ACT_GE_PROPERTY WHERE NAME_='schema.version'"); ResultSet rs = ps.executeQuery()) {
             return rs.next() ? rs.getString(1) : "unknown";

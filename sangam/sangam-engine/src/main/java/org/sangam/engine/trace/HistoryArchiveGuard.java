@@ -25,6 +25,7 @@ import org.operaton.bpm.engine.impl.interceptor.CommandContext;
 import org.operaton.bpm.engine.impl.interceptor.Session;
 import org.operaton.bpm.engine.impl.interceptor.SessionFactory;
 import org.sangam.core.history.HistoryArchiveGate;
+import org.sangam.core.layer.SqlIdentifier;
 import org.sangam.engine.tx.CommandState;
 
 /**
@@ -68,13 +69,19 @@ public final class HistoryArchiveGuard {
         }
     }
 
+    /** The only columns {@link #treesOfDecisions} looks a decision instance up by. */
+    static final java.util.Set<String> DECISION_COLUMNS = java.util.Set.of("ID_", "DEC_DEF_ID_");
+
     /** {@code root -> tenant} of the given process instances (an instance without a root is its own root). */
     static Map<String, String> treesOfInstances(Connection c, String prefix, Collection<String> ids) {
+        String vetted = SqlIdentifier.tablePrefix(prefix);
         Map<String, String> out = new TreeMap<>();
         List<String> list = new ArrayList<>(ids);
         for (int i = 0; i < list.size(); i += ProcessTraceHistoryRemoval.IN_CHUNK) {
             List<String> chunk = list.subList(i, Math.min(list.size(), i + ProcessTraceHistoryRemoval.IN_CHUNK));
-            String sql = "SELECT ID_, ROOT_PROC_INST_ID_, TENANT_ID_ FROM " + prefix + "ACT_HI_PROCINST WHERE ID_ IN ("
+            // Identifiers cannot be bound: vetted is SqlIdentifier.tablePrefix; the ids are bind marks.
+            // nosemgrep: sangam-jdbc-sql-concat
+            String sql = "SELECT ID_, ROOT_PROC_INST_ID_, TENANT_ID_ FROM " + vetted + "ACT_HI_PROCINST WHERE ID_ IN ("
                     + String.join(",", java.util.Collections.nCopies(chunk.size(), "?")) + ")";
             try (PreparedStatement ps = c.prepareStatement(sql)) {
                 for (int k = 0; k < chunk.size(); k++) {
@@ -129,11 +136,18 @@ public final class HistoryArchiveGuard {
 
     /** {@code root -> tenant} of decision instances by id or by definition (rows without a root are left out). */
     static Map<String, String> treesOfDecisions(Connection c, String prefix, String column, Collection<String> values) {
+        if (!DECISION_COLUMNS.contains(column)) {
+            throw new IllegalArgumentException("not a decision-instance lookup column: " + column);
+        }
+        String vetted = SqlIdentifier.tablePrefix(prefix);
         Map<String, String> out = new TreeMap<>();
         List<String> list = new ArrayList<>(values);
         for (int i = 0; i < list.size(); i += ProcessTraceHistoryRemoval.IN_CHUNK) {
             List<String> chunk = list.subList(i, Math.min(list.size(), i + ProcessTraceHistoryRemoval.IN_CHUNK));
-            String sql = "SELECT DISTINCT ROOT_PROC_INST_ID_, TENANT_ID_ FROM " + prefix + "ACT_HI_DECINST WHERE "
+            // Identifiers cannot be bound: vetted is SqlIdentifier.tablePrefix, column one of DECISION_COLUMNS; the values
+            // are bind marks.
+            // nosemgrep: sangam-jdbc-sql-concat
+            String sql = "SELECT DISTINCT ROOT_PROC_INST_ID_, TENANT_ID_ FROM " + vetted + "ACT_HI_DECINST WHERE "
                     + column + " IN (" + String.join(",", java.util.Collections.nCopies(chunk.size(), "?")) + ")"
                     + " AND ROOT_PROC_INST_ID_ IS NOT NULL";
             try (PreparedStatement ps = c.prepareStatement(sql)) {
@@ -176,7 +190,7 @@ public final class HistoryArchiveGuard {
     }
 
     static String prefix(ProcessEngineConfigurationImpl cfg) {
-        return cfg.getDatabaseTablePrefix() == null ? "" : cfg.getDatabaseTablePrefix();
+        return SqlIdentifier.tablePrefix(cfg.getDatabaseTablePrefix());
     }
 
     /** The decision-history manager that asks the gate before Operaton's own deletes. */

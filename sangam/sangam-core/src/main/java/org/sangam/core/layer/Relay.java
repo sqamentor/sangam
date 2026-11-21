@@ -146,9 +146,13 @@ public final class Relay implements OutboxRepair {
             List<Object[]> keys = Jdbc.query(c, sql, rs -> new Object[]{rs.getLong(1), rs.getString(2)});
             List<Claimed> out = new ArrayList<>(keys.size());
             for (Object[] k : keys) {
-                Jdbc.update(c, "UPDATE OUTBOX_DELIVERY SET state='CLAIMED', claim_owner=?, claim_epoch=claim_epoch+1, claim_expires_at="
+                // fenced on state='PENDING': a candidate that is no longer pending (a peer claimed it after this
+                // select chose it) is not this relay's claim and is not published
+                if (Jdbc.update(c, "UPDATE OUTBOX_DELIVERY SET state='CLAIMED', claim_owner=?, claim_epoch=claim_epoch+1, claim_expires_at="
                                 + dialect.nowPlusMillisParam() + " WHERE outbox_id=? AND destination=? AND state='PENDING'",
-                        config.node(), config.leaseTtl().toMillis(), k[0], k[1]);
+                        config.node(), config.leaseTtl().toMillis(), k[0], k[1]) != 1) {
+                    continue;
+                }
                 out.add(Jdbc.one(c, "SELECT o.id, o.event_id, o.tenant_id, o.root_id, o.root_seq, o.event_type, o.payload,"
                                 + " d.destination, d.claim_epoch, d.attempts, d.ordered_flag FROM OUTBOX_DELIVERY d"
                                 + " JOIN OUTBOX o ON o.id = d.outbox_id WHERE d.outbox_id=? AND d.destination=?",

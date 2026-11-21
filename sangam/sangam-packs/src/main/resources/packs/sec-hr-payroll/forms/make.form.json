@@ -1,6 +1,6 @@
 {
   "key": "sec-hr-payroll/make",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.hr.payroll",
   "title": {
     "en": "Review payroll register (maker)",

@@ -11,6 +11,9 @@ public final class PackTestTenant {
     /** The tenant of the pack test deployments. */
     public static final String ID = "t-pack-test";
 
+    /** The currency of the test tenant's profile (owner decision M1), installed by {@link PackTestEngines}. */
+    public static final String CURRENCY = "INR";
+
     private PackTestTenant() {
     }
 }

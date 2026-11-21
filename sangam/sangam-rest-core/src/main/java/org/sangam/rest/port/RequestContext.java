@@ -30,6 +30,17 @@ public record RequestContext(String tenantId, String principalId, Set<String> gr
         return groups.contains(group);
     }
 
+    /**
+     * The seat the caller acts in for this request (S02 "acting as"): the acted-for seat when one is named (a seat held
+     * by additional charge or as leave substitute, IX.5 rule 4), else the seat; null without a seat context. Both
+     * names were verified against the caller's holdings where the context was built. This is the seat whose tasks the
+     * caller is shown and may act on, and the one the packs take as {@code actingSeat}; {@link #seatId} and
+     * {@link #actingForSeatId} stay the two names the audit records.
+     */
+    public String effectiveSeatId() {
+        return actingForSeatId != null ? actingForSeatId : seatId;
+    }
+
     /** Principal ids used for candidate/authorization matching: the user plus their groups. */
     public List<String> principalIds() {
         List<String> ids = new ArrayList<>(groups.size() + 1);

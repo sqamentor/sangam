@@ -321,7 +321,7 @@ def ecom_order():
                 ('pg.refund', 'a', '', 'Refund to source'), ('logistics.ship', 'a', '', 'Shipment'),
                 ('logistics.codRemit', 'a', '', 'COD remittance'), ('nodal.settle', 'c', '', 'Seller settlement')])
     p = pk.proc('sangam-sec-ecom-order', 'Marketplace order', '',
-                start={'materialFields': 'orderId,customerId,sellerId,amount,paymentMode'})
+                start={'materialFields': 'orderId,customerId,sellerId,amount,paymentMode,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'eo_start', 'Order placed', 'sec-ecom-order-to-cash/order', 'Order | आदेश',
                     ['orderId*', 'customerId*', 'sellerId*', 'amount*', 'paymentMode*', 'category', 'pincode'])
@@ -412,7 +412,7 @@ def ecom_return():
                ['SEC-ECOM-004', 'SEC-ECOM-005', 'UP-13', 'GP-13', 'GP-12'],
                [('shipping.pickup', 'a', '', 'Reverse pickup'), ('order.replacement', 'a', '', 'Replacement order'),
                 ('pg.refund', 'a', '', 'Refund to source')])
-    p = pk.proc('sangam-sec-ecom-return', 'Return and refund', '', start={'materialFields': 'orderId,returnReason,refundAmount'})
+    p = pk.proc('sangam-sec-ecom-return', 'Return and refund', '', start={'materialFields': 'orderId,returnReason,refundAmount,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'er_start', 'Return requested', 'sec-ecom-return-refund/request', 'Return request | वापसी अनुरोध',
                     ['orderId*', 'customerId*', 'returnReason*', 'refundAmount*', 'resolutionPref*', 'photos'])
@@ -606,7 +606,7 @@ def scm_p2p():
                 ('bank.transfer', 'c', '', 'Supplier payment')],
                depends=('sangam.core', 'universal.up14-three-way-match'))
     p = pk.proc('sangam-sec-scm-p2p', 'Procure to pay', '',
-                start={'materialFields': 'itemDescription,quantity,unitPrice,supplierName'})
+                start={'materialFields': 'itemDescription,quantity,unitPrice,supplierName,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'pp_start', 'Requisition raised', 'sec-scm-procure-to-pay/requisition',
                     'Purchase requisition | क्रय माँग-पत्र',
@@ -744,7 +744,7 @@ def edu_admission():
                ['SEC-EDU-001', 'SEC-EDU-002', 'SEC-EDU-003', 'UP-22', 'GP-16', 'GP-26', 'GP-44'] + SIDE,
                [('digilocker.pull', 'a', '', 'Marksheets'), ('pg.collect', 'b', '', 'Fee'), ('pg.refund', 'a', '', 'Refund'),
                 ('sis.enrol', 'a', '', 'Student information system'), ('abc.register', 'a', '', 'Academic Bank of Credits')])
-    p = pk.proc('sangam-sec-edu-admission', 'Admission', '', start={'materialFields': 'applicantName,programme,score'})
+    p = pk.proc('sangam-sec-edu-admission', 'Admission', '', start={'materialFields': 'applicantName,programme,score,processingFee,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'ed_start', 'Application submitted', 'sec-edu-admission/apply', 'Admission application | प्रवेश आवेदन',
                     ['applicantName*', 'programme*', 'qualification*', 'score*', 'socialCategory*', 'applicantRef', 'documents'])
@@ -812,7 +812,7 @@ def util_connection():
                ['SEC-UTIL-001', 'SEC-UTIL-002', 'GP-06', 'GP-12', 'GP-17'] + SIDE,
                [('pg.collect', 'b', '', 'Connection charges'), ('billing.credit', 'a', '', 'Compensation credit'),
                 ('mdm.install', 'a', '', 'Meter data management; keeps the business key as the connection case of the consumer')])
-    p = pk.proc('sangam-sec-util-connection', 'New connection', '', start={'materialFields': 'applicantName,premisesAddress,loadKw'})
+    p = pk.proc('sangam-sec-util-connection', 'New connection', '', start={'materialFields': 'applicantName,premisesAddress,loadKw,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'uc_start', 'Application', 'sec-util-new-connection/apply', 'New connection application | नए कनेक्शन हेतु आवेदन',
                     ['applicantName*', 'premisesAddress*', 'areaType*', 'loadKw*', 'category', 'applicantRef', 'documents'])
@@ -894,7 +894,7 @@ def hr_exit():
                ['SEC-HR-001', 'SEC-HR-002', 'UP-16', 'GP-05', 'GP-12'] + SIDE,
                [('iam.revokeAll', 'a', '', 'Revoke access'), ('bank.transfer', 'c', '', 'Settlement payment'),
                 ('epfo.exit', 'a', '', 'PF exit'), ('docs.letter', 'a', '', 'Relieving letter')])
-    p = pk.proc('sangam-sec-hr-exit', 'Employee exit', '', start={'materialFields': 'employeeId,exitType'})
+    p = pk.proc('sangam-sec-hr-exit', 'Employee exit', '', start={'materialFields': 'employeeId,exitType,amount,payeeAccount,currency,purpose'})
     s = p.root
     st = start_form(p, s, 'hx_start', 'Exit initiated', 'sec-hr-employee-exit/initiate', 'Exit | निकास',
                     ['employeeId*', 'employeeName*', 'exitType*', 'lastWorkingDay', 'qualifyingService'])

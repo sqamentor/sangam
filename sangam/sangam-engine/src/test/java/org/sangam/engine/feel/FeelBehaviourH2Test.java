@@ -49,7 +49,7 @@ import org.sangam.engine.SangamEngineSettings;
  * is refused at deploy time. Since SG-34 evaluation is strict: a missing variable, a null or mistyped operand,
  * division by zero, an unknown function or an invalid date fails the decision instead of yielding null, and a null
  * decision-table input is an error unless a rule tests it with {@code null} (a catch-all "-" no longer catches it).
- * A genuinely null value ({@code x = null}, an explicit null rule) still works. SG-35: {@code =} on zoned date-times
+ * A genuinely null value ({@code x = null}, an explicit null rule) still works. SG-35 / owner ruling G1: {@code =} against a zoned date-time literal is refused at deploy; {@code =} on zoned date-times
  * still compares the zone (pinned engine; spec says instants), flagged by a deploy-time lint.
  */
 class FeelBehaviourH2Test {
@@ -89,8 +89,6 @@ class FeelBehaviourH2Test {
         LITERALS.put("kolkata", "date and time(\"2026-11-08T10:00:00@Asia/Kolkata\")");
         LITERALS.put("kolkataMinusUtc",
                 "date and time(\"2026-11-08T10:00:00@Asia/Kolkata\") - date and time(\"2026-11-08T04:30:00@UTC\")");
-        LITERALS.put("kolkataEqUtc",
-                "date and time(\"2026-11-08T10:00:00@Asia/Kolkata\") = date and time(\"2026-11-08T04:30:00@UTC\")");
         LITERALS.put("kolkataBeforeUtc",
                 "date and time(\"2026-11-08T10:00:00@Asia/Kolkata\") < date and time(\"2026-11-08T04:30:01@UTC\")");
         LITERALS.put("kolkataDay", "date and time(\"2026-11-08T23:30:00@Asia/Kolkata\").day");
@@ -252,6 +250,8 @@ class FeelBehaviourH2Test {
         if (engine != null) {
             engine.close();
         }
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        engine = null;
     }
 
     // ------------------------------------------------------------------ decimal precision
@@ -435,8 +435,15 @@ class FeelBehaviourH2Test {
         assertEquals(ZoneId.of("Asia/Kolkata"), k.getZone());
         assertEquals(java.time.Instant.parse("2026-11-08T04:30:00Z"), k.toInstant());
         assertEquals(Duration.ZERO, lit("kolkataMinusUtc"));
-        assertEquals(Boolean.FALSE, lit("kolkataEqUtc"),
-                "SG-35 (kept, deviation from DMN 1.3 time-line equality, DMN13-35): '=' also compares the zone in the pinned engine; deploy-time lint SANGAM-DMN-DATETIME-EQ; compare instants with < > or subtraction");
+        // Owner ruling G1 (DAT-1, 2026-11-18): the engine's '=' also compares the zone (DMN13-35), so a model with
+        // '=' against a zoned date-time literal is refused at deploy instead of evaluating to false.
+        String eq = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"https://www.omg.org/spec/DMN/20191111/MODEL/\" "
+                + "id=\"g1\" name=\"g1\" namespace=\"t\"><decision id=\"kolkataEqUtc\" name=\"kolkataEqUtc\"><variable name=\"r\"/>"
+                + "<literalExpression><text>" + xml("date and time(\"2026-11-08T10:00:00@Asia/Kolkata\") = date and time(\"2026-11-08T04:30:00@UTC\")")
+                + "</text></literalExpression></decision></definitions>";
+        RuntimeException refused = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
+                () -> engine.deploy("t1", "g1-eq", Map.of("g1.dmn", eq.getBytes(StandardCharsets.UTF_8))));
+        assertTrue(String.valueOf(refused.getMessage()).contains("SANGAM-DMN-DATETIME-EQ"), refused.getMessage());
         assertEquals(Boolean.TRUE, lit("kolkataBeforeUtc"));
         assertEquals(8L, lit("kolkataDay"));
         assertEquals(Duration.ofHours(26), lit("dur"));

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- Receipt (challan). Generated layout; edit freely in the Sangam modeller. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_receipt" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.1">
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_receipt" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.2">
   <message id="msg_sangam_ifms_challanPaid" name="sangam.ifms.challanPaid"/>
-  <process id="sangam-ifms-receipt" name="Receipt (challan)" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
-    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.receipts</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.1</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>challanNo,receiptHead,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+  <process id="sangam-ifms-receipt" name="Receipt (challan)" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.receipts</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.2</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>challanNo,receiptHead,amount,payeeAccount,currency,purpose</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="rc_start" name="Challan generated" operaton:initiator="initiator" operaton:formKey="sangam:ifms-receipts/challan"></startEvent>
     <serviceTask id="rc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>challanSeries=CHALLAN;amount=0;receiptDeskSeat=AAO-1</operaton:string></operaton:field></extensionElements></serviceTask>
     <serviceTask id="rc_number" name="Challan number (series)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>config.series</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>series.next</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>challanSeries&gt;series,receiptHead&gt;unit</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>chl</operaton:string></operaton:field><operaton:field name="step"><operaton:string>number</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -21,6 +21,9 @@
     <exclusiveGateway id="rc_resolve_breachGw" name="Deemed?" default="ifms_receipt_f13"></exclusiveGateway>
     <exclusiveGateway id="rc_resolve_done" name=""></exclusiveGateway>
     <exclusiveGateway id="rc_resGw" name="" default="ifms_receipt_f21"></exclusiveGateway>
+    <callActivity id="rc_refund_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.MoneyFieldsDelegate"><operaton:field name="amount"><operaton:string>refundAmount</operaton:string></operaton:field><operaton:field name="captureVar"><operaton:string>challanNo</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Refund of a challan receipt to its depositor</operaton:string></operaton:field></operaton:executionListener><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="rc_refund_sgw" name="Sanctioned?" default="rc_refund_sgw_no"></exclusiveGateway>
+    <endEvent id="rc_refund_notReleased" name="Not released"></endEvent>
     <serviceTask id="rc_refund" name="Refund" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>receipt.refund</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>refund</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>challanNo,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>refund</operaton:string></operaton:field><operaton:field name="step"><operaton:string>refund</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="rc_unacc" name="Unaccounted: SOP case"></endEvent>
     <endEvent id="rc_refunded" name="Refunded"></endEvent>
@@ -46,10 +49,13 @@
     <sequenceFlow id="ifms_receipt_f17" name="short / unmatched" sourceRef="rc_matchGw" targetRef="rc_resolve_slaPlan"/>
     <sequenceFlow id="ifms_receipt_f18" sourceRef="rc_resolve_done" targetRef="rc_resGw"/>
     <sequenceFlow id="ifms_receipt_f19" name="book" sourceRef="rc_resGw" targetRef="rc_book"><conditionExpression xsi:type="tFormalExpression">${receiptDecision == 'book'}</conditionExpression></sequenceFlow>
-    <sequenceFlow id="ifms_receipt_f20" name="refund" sourceRef="rc_resGw" targetRef="rc_refund"><conditionExpression xsi:type="tFormalExpression">${receiptDecision == 'refund'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_receipt_f20" name="refund" sourceRef="rc_resGw" targetRef="rc_refund_sanction"><conditionExpression xsi:type="tFormalExpression">${receiptDecision == 'refund'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="ifms_receipt_f21" name="unaccounted" sourceRef="rc_resGw" targetRef="rc_unacc"/>
     <sequenceFlow id="ifms_receipt_f22" sourceRef="rc_refund" targetRef="rc_refunded"/>
     <sequenceFlow id="ifms_receipt_f23" sourceRef="rc_book" targetRef="rc_end"/>
+    <sequenceFlow id="rc_refund_sanction_f" sourceRef="rc_refund_sanction" targetRef="rc_refund_sgw"/>
+    <sequenceFlow id="rc_refund_sgw_yes" name="sanctioned" sourceRef="rc_refund_sgw" targetRef="rc_refund"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rc_refund_sgw_no" name="not sanctioned" sourceRef="rc_refund_sgw" targetRef="rc_refund_notReleased"/>
   </process>
   <bpmndi:BPMNDiagram id="ifms_receipt_diagram">
     <bpmndi:BPMNPlane id="ifms_receipt_plane" bpmnElement="sangam-ifms-receipt">
@@ -69,9 +75,12 @@
       <bpmndi:BPMNShape id="rc_resolve_breachGw_di" bpmnElement="rc_resolve_breachGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="rc_resolve_done_di" bpmnElement="rc_resolve_done"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="rc_resGw_di" bpmnElement="rc_resGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc_refund_di" bpmnElement="rc_refund"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_refund_sanction_di" bpmnElement="rc_refund_sanction"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_refund_sgw_di" bpmnElement="rc_refund_sgw"><dc:Bounds x="2355" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_refund_notReleased_di" bpmnElement="rc_refund_notReleased"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_refund_di" bpmnElement="rc_refund"><dc:Bounds x="2495" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="rc_unacc_di" bpmnElement="rc_unacc"><dc:Bounds x="2197" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="rc_refunded_di" bpmnElement="rc_refunded"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_refunded_di" bpmnElement="rc_refunded"><dc:Bounds x="2692" y="302" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="rc_end_di" bpmnElement="rc_end"><dc:Bounds x="2362" y="302" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="rc_resolve_warn_di" bpmnElement="rc_resolve_warn"><dc:Bounds x="1348" y="92" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="rc_resolve_breach_di" bpmnElement="rc_resolve_breach"><dc:Bounds x="1378" y="92" width="36" height="36"/></bpmndi:BPMNShape>
@@ -96,8 +105,11 @@
       <bpmndi:BPMNEdge id="ifms_receipt_f19_di" bpmnElement="ifms_receipt_f19"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="ifms_receipt_f20_di" bpmnElement="ifms_receipt_f20"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="ifms_receipt_f21_di" bpmnElement="ifms_receipt_f21"><di:waypoint x="2075" y="70"/><di:waypoint x="2197" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="ifms_receipt_f22_di" bpmnElement="ifms_receipt_f22"><di:waypoint x="2265" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f22_di" bpmnElement="ifms_receipt_f22"><di:waypoint x="2595" y="320"/><di:waypoint x="2692" y="320"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="ifms_receipt_f23_di" bpmnElement="ifms_receipt_f23"><di:waypoint x="2265" y="320"/><di:waypoint x="2362" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rc_refund_sanction_f_di" bpmnElement="rc_refund_sanction_f"><di:waypoint x="2265" y="195"/><di:waypoint x="2355" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rc_refund_sgw_yes_di" bpmnElement="rc_refund_sgw_yes"><di:waypoint x="2405" y="195"/><di:waypoint x="2450" y="195"/><di:waypoint x="2450" y="320"/><di:waypoint x="2495" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rc_refund_sgw_no_di" bpmnElement="rc_refund_sgw_no"><di:waypoint x="2405" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

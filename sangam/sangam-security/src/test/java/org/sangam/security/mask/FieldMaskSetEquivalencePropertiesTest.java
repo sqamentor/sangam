@@ -8,20 +8,17 @@ import java.sql.DriverManager;
 import java.sql.Savepoint;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SplittableRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
-import net.jqwik.api.Combinators;
-import net.jqwik.api.ForAll;
-import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
-import net.jqwik.api.lifecycle.AfterContainer;
-import net.jqwik.api.lifecycle.BeforeContainer;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.core.layer.Schema;
@@ -45,7 +42,10 @@ import org.sangam.security.policy.ResourceRegistry;
  * a deny always applies), and the case-variant and unknown ids; a table-backed type ({@code HISTORIC_PROCESS_INSTANCE})
  * and a virtual type ({@code TENANT}); a signed-in caller, a caller with no grant, and the system identity.
  * H2 in PostgreSQL mode, as the server runs it. Each try runs on one connection: the per-row run and the set run each
- * from the same savepoint, then everything is rolled back. Runs in the test phase only (not run here).
+ * from the same savepoint, then everything is rolled back.
+ * Plain JUnit 5 (jqwik removed by owner decision 2026-11-18): each property first runs the edge scenarios (empty
+ * policies/rules/rows, and the maximum sizes, for both types and every caller), then seeded random scenarios up to
+ * the try count. The seed is fixed ({@link #SEED}); a failure names the property, the try, the seed and the scenario.
  */
 class FieldMaskSetEquivalencePropertiesTest {
 
@@ -78,7 +78,7 @@ class FieldMaskSetEquivalencePropertiesTest {
     record Scenario(boolean virtual, List<Policy> policies, List<Rule> rules, List<Map<String, Object>> rows, int caller) {
     }
 
-    @BeforeContainer
+    @BeforeAll
     static void db() throws Exception {
         c = DriverManager.getConnection("jdbc:h2:mem:mask" + System.nanoTime()
                 + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=TRUE", "sa", "");
@@ -102,9 +102,12 @@ class FieldMaskSetEquivalencePropertiesTest {
                 new PolicyCompiler(SecurityDialect.H2, new ResourceRegistry(), Duration.ZERO), audit), audit);
     }
 
-    @AfterContainer
+    @AfterAll
     static void close() throws Exception {
         c.close();
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        c = null;
+        masks = null;
     }
 
     static SecurityIdentity caller(int i) {
@@ -119,38 +122,113 @@ class FieldMaskSetEquivalencePropertiesTest {
         };
     }
 
-    @Provide
-    Arbitrary<Scenario> scenarios() {
-        return Arbitraries.of(false, true).flatMap(virtual -> {
-            List<String> resourceIds = virtual ? VIRTUAL_RESOURCE_IDS : TABLE_RESOURCE_IDS;
-            List<String> rowIds = virtual ? VIRTUAL_IDS : TABLE_IDS;
-            Arbitrary<Long> perms = Arbitraries.of(Permission.READ_VARIABLE.bit(), Permission.READ_SENSITIVE.bit(),
-                    Permission.READ_VARIABLE.bit() | Permission.READ_SENSITIVE.bit(), Permission.READ.bit());
-            Arbitrary<Policy> policy = Combinators.combine(Arbitraries.of(PRINCIPALS), Arbitraries.of(resourceIds),
-                    Arbitraries.of(false, false, true), perms, Arbitraries.of("", "", "c1", "c2", "c3"))
-                    .as((p, r, d, m, cond) -> new Policy(p, r, d, m, cond.isEmpty() ? null : cond));
-            Arbitrary<Rule> rule = Combinators.combine(Arbitraries.of(FIELDS),
-                    Arbitraries.of(Permission.READ_VARIABLE, Permission.READ_SENSITIVE)).as(Rule::new);
-            Arbitrary<Map<String, Object>> row = Combinators.combine(Arbitraries.of(rowIds),
-                    Arbitraries.subsetOf(FIELDS)).as((id, fields) -> {
-                        Map<String, Object> m = new LinkedHashMap<>();
-                        m.put("id", id);
-                        for (String f : FIELDS) {
-                            if (fields.contains(f)) {
-                                m.put(f, f + "-of-" + id);
-                            }
-                        }
-                        m.put("note", "kept");
-                        return m;
-                    });
-            return Combinators.combine(policy.list().ofMaxSize(10), rule.list().ofMaxSize(4).uniqueElements(Rule::field),
-                    row.list().ofMaxSize(40), Arbitraries.integers().between(0, 3))
-                    .as((ps, rs, rows, who) -> new Scenario(virtual, ps, rs, rows, who));
-        });
+    static final long SEED = 0x5A4E_4741_4D08_6L;
+    static final List<Long> PERMS = List.of(Permission.READ_VARIABLE.bit(), Permission.READ_SENSITIVE.bit(),
+            Permission.READ_VARIABLE.bit() | Permission.READ_SENSITIVE.bit(), Permission.READ.bit());
+    static final List<Boolean> DENY = List.of(false, false, true);
+    static final List<String> CONDITION_IDS = List.of("", "", "c1", "c2", "c3");
+    static final List<Permission> RULE_PERMS = List.of(Permission.READ_VARIABLE, Permission.READ_SENSITIVE);
+
+    static <T> T pick(SplittableRandom r, List<T> values) {
+        return values.get(r.nextInt(values.size()));
     }
 
-    @Property(tries = 300)
-    void theSetProjectionEqualsThePerRowMasks(@ForAll("scenarios") Scenario s) throws Exception {
+    static Map<String, Object> row(String id, List<String> fields) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", id);
+        for (String f : FIELDS) {
+            if (fields.contains(f)) {
+                m.put(f, f + "-of-" + id);
+            }
+        }
+        m.put("note", "kept");
+        return m;
+    }
+
+    /** Same value sets and sizes as the former jqwik generator: <= 10 policies, <= 4 rules unique by field, <= 40 rows. */
+    static Scenario scenario(SplittableRandom r) {
+        boolean virtual = r.nextBoolean();
+        List<String> resourceIds = virtual ? VIRTUAL_RESOURCE_IDS : TABLE_RESOURCE_IDS;
+        List<String> rowIds = virtual ? VIRTUAL_IDS : TABLE_IDS;
+        List<Policy> ps = new ArrayList<>();
+        for (int i = r.nextInt(11); i > 0; i--) {
+            String cond = pick(r, CONDITION_IDS);
+            ps.add(new Policy(pick(r, PRINCIPALS), pick(r, resourceIds), pick(r, DENY), pick(r, PERMS),
+                    cond.isEmpty() ? null : cond));
+        }
+        List<Rule> rs = new ArrayList<>();
+        for (int i = r.nextInt(5); i > 0; i--) {
+            Rule rule = new Rule(pick(r, FIELDS), pick(r, RULE_PERMS));
+            if (rs.stream().noneMatch(x -> x.field().equals(rule.field()))) {
+                rs.add(rule);
+            }
+        }
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (int i = r.nextInt(41); i > 0; i--) {
+            List<String> fields = FIELDS.stream().filter(f -> r.nextBoolean()).toList();
+            rows.add(row(pick(r, rowIds), fields));
+        }
+        return new Scenario(virtual, ps, rs, rows, r.nextInt(4));
+    }
+
+    /**
+     * Edge scenarios: for both types and every caller, the empty scenario; one grant on '*' with every rule and every
+     * field; and the maximum sizes (10 policies covering deny and every condition, a rule per field, 40 rows).
+     */
+    static List<Scenario> edges() {
+        List<Scenario> out = new ArrayList<>();
+        long all = Permission.READ_VARIABLE.bit() | Permission.READ_SENSITIVE.bit();
+        for (boolean virtual : new boolean[] {false, true}) {
+            List<String> rowIds = virtual ? VIRTUAL_IDS : TABLE_IDS;
+            List<String> resourceIds = virtual ? VIRTUAL_RESOURCE_IDS : TABLE_RESOURCE_IDS;
+            List<Rule> rules = List.of(new Rule("amount", Permission.READ_VARIABLE),
+                    new Rule("aadhaar", Permission.READ_SENSITIVE), new Rule("remarks", Permission.READ_VARIABLE));
+            List<Map<String, Object>> fullRows = new ArrayList<>();
+            for (int i = 0; i < 40; i++) {
+                fullRows.add(row(rowIds.get(i % rowIds.size()), i % 2 == 0 ? FIELDS : List.of()));
+            }
+            List<Policy> maxPolicies = new ArrayList<>();
+            List<String> conds = Collections.unmodifiableList(java.util.Arrays.asList(null, "c1", "c2", "c3"));
+            for (int i = 0; i < 10; i++) {
+                maxPolicies.add(new Policy(PRINCIPALS.get(i % PRINCIPALS.size()), resourceIds.get(i % resourceIds.size()),
+                        i % 3 == 2, PERMS.get(i % PERMS.size()), conds.get(i % conds.size())));
+            }
+            for (int who = 0; who < 4; who++) {
+                out.add(new Scenario(virtual, List.of(), List.of(), List.of(), who));
+                out.add(new Scenario(virtual, List.of(new Policy("user:al", "*", false, all, null)), rules,
+                        List.of(row(rowIds.get(0), FIELDS)), who));
+                out.add(new Scenario(virtual, maxPolicies, rules, fullRows, who));
+            }
+        }
+        return out;
+    }
+
+    interface Check {
+        void accept(Scenario s) throws Exception;
+    }
+
+    static void forAll(String property, int tries, Check check) {
+        long seed = SEED ^ property.hashCode();
+        SplittableRandom rnd = new SplittableRandom(seed);
+        List<Scenario> edges = edges();
+        int total = Math.max(tries, edges.size());
+        for (int i = 0; i < total; i++) {
+            Scenario s = i < edges.size() ? edges.get(i) : scenario(rnd);
+            try {
+                check.accept(s);
+            } catch (Throwable t) {
+                throw new AssertionError(property + " failed at try " + (i + 1) + "/" + total + " (seed " + seed
+                        + (i < edges.size() ? ", edge case" : "") + "), scenario: " + s, t);
+            }
+        }
+    }
+
+    @Test
+    void theSetProjectionEqualsThePerRowMasks() {
+        forAll("theSetProjectionEqualsThePerRowMasks", 300, FieldMaskSetEquivalencePropertiesTest::setProjectionEqualsPerRow);
+    }
+
+    static void setProjectionEqualsPerRow(Scenario s) throws Exception {
         String type = s.virtual() ? VIRTUAL : HPI;
         SecurityIdentity who = caller(s.caller());
         try {
@@ -171,8 +249,12 @@ class FieldMaskSetEquivalencePropertiesTest {
         }
     }
 
-    @Property(tries = 200)
-    void allowedIdsEqualsTheObjectCheckPerId(@ForAll("scenarios") Scenario s) throws Exception {
+    @Test
+    void allowedIdsEqualsTheObjectCheckPerId() {
+        forAll("allowedIdsEqualsTheObjectCheckPerId", 200, FieldMaskSetEquivalencePropertiesTest::allowedIdsEqualsPerId);
+    }
+
+    static void allowedIdsEqualsPerId(Scenario s) throws Exception {
         String type = s.virtual() ? VIRTUAL : HPI;
         SecurityIdentity who = caller(s.caller());
         AuthorizationService authz = new AuthorizationService(

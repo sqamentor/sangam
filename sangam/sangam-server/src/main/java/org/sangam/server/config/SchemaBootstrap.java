@@ -21,6 +21,10 @@ import liquibase.changelog.ChangeSet;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
+import liquibase.exception.LiquibaseException;
+import liquibase.exception.PreconditionErrorException;
+import liquibase.exception.PreconditionFailedException;
+import liquibase.precondition.core.PreconditionContainer;
 import liquibase.integration.spring.SpringLiquibase;
 import liquibase.resource.ClassLoaderResourceAccessor;
 
@@ -116,15 +120,7 @@ public class SchemaBootstrap {
                 Database db = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(c));
                 Liquibase lb = new Liquibase(path, new ClassLoaderResourceAccessor(SchemaBootstrap.class.getClassLoader()), db);
                 switch (mode) {
-                    case VALIDATE -> {
-                        List<ChangeSet> pending = lb.listUnrunChangeSets(contexts, new LabelExpression());
-                        if (!pending.isEmpty()) {
-                            throw new IllegalStateException("SANGAM_LIQUIBASE_MODE=validate: " + pending.size()
-                                    + " pending changeset(s), first " + pending.get(0).toString(false)
-                                    + "; run the migrate-only job first");
-                        }
-                        LOG.info("Product schema validated: no pending changesets in {}", changelog);
-                    }
+                    case VALIDATE -> validate(lb, db, contexts, changelog);
                     case UPDATE_SQL -> writeUpdateSql(lb, contexts, env.getProperty("SANGAM_LIQUIBASE_SQL_FILE",
                             env.getProperty("sangam.liquibase.sql-file")));
                     case RELEASE_LOCKS -> {
@@ -136,6 +132,46 @@ public class SchemaBootstrap {
                 }
             }
         };
+    }
+
+    /** {@code validate}: refuses start-up when {@link #pendingChangeSets} is not empty. */
+    static void validate(Liquibase lb, Database db, Contexts contexts, String changelog) throws LiquibaseException {
+        List<ChangeSet> pending = pendingChangeSets(lb, db, contexts);
+        if (!pending.isEmpty()) {
+            throw new IllegalStateException("SANGAM_LIQUIBASE_MODE=validate: " + pending.size()
+                    + " pending changeset(s), first " + pending.get(0).toString(false)
+                    + "; run the migrate-only job first");
+        }
+        LOG.info("Product schema validated: no pending changesets in {}", changelog);
+    }
+
+    /**
+     * The unrun changesets that a migrate-only run would apply now. An unrun changeset whose preconditions say
+     * {@code onFail:CONTINUE} and are not met on this database is not pending: Liquibase skips it without recording it,
+     * so migrate-only can never apply it and it would otherwise block {@code validate} forever (0044-08-vector-optional,
+     * decision 170: the pgvector column on PostgreSQL without pgvector). It stays unrun, so once its precondition holds
+     * (pgvector installed) it is pending again and the next migrate-only adds it. Every other unrun changeset, including
+     * one whose precondition fails with {@code HALT}, {@code WARN} or {@code MARK_RAN}, or errors, stays pending.
+     */
+    static List<ChangeSet> pendingChangeSets(Liquibase lb, Database db, Contexts contexts) throws LiquibaseException {
+        List<ChangeSet> unrun = lb.listUnrunChangeSets(contexts, new LabelExpression());
+        List<ChangeSet> pending = new java.util.ArrayList<>(unrun.size());
+        for (ChangeSet cs : unrun) {
+            PreconditionContainer pre = cs.getPreconditions();
+            if (pre != null && pre.getOnFail() == PreconditionContainer.FailOption.CONTINUE) {
+                try {
+                    pre.check(db, cs.getChangeLog(), cs, null);
+                } catch (PreconditionFailedException e) {
+                    LOG.info("validate: {} is skipped by its onFail:CONTINUE precondition on this database; not pending",
+                            cs.toString(false));
+                    continue;
+                } catch (PreconditionErrorException e) {
+                    // an error is not a clean "not met": keep it pending so validate refuses
+                }
+            }
+            pending.add(cs);
+        }
+        return pending;
     }
 
     private static boolean isH2(DataSource dataSource) {

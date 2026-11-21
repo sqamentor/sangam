@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.sangam.packs.engine.DecimalText;
 import org.sangam.packs.engine.LocalDateText;
@@ -36,7 +37,22 @@ import org.sangam.rest.port.ApiProblem;
  */
 public final class TypedVariables {
 
+    /**
+     * RFC 3339 date-time (the JSON Schema {@code date-time} format): {@code Z} or a {@code +HH:MM} offset, colon required.
+     * Checked here, not left to {@link Instant#parse}: JDK 27 also accepts {@code +0000} where JDK 21 and 25 refuse it,
+     * and the API contract must not change with the runtime (build run 44110510044, JDK 27).
+     */
+    private static final Pattern RFC3339_INSTANT =
+            Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|[+-]\\d{2}:\\d{2})");
+
     private TypedVariables() {
+    }
+
+    private static Instant instant(String s) {
+        if (!RFC3339_INSTANT.matcher(s).matches()) {
+            throw new DateTimeParseException("not an RFC 3339 instant", s, 0);
+        }
+        return Instant.parse(s);
     }
 
     public static Map<String, Object> fromJson(Map<String, Object> in) {
@@ -67,7 +83,7 @@ public final class TypedVariables {
                     case "Integer", "integer" -> Integer.parseInt(s);
                     case "Boolean", "boolean" -> bool(s);
                     case "String", "string" -> s;
-                    case "Date", "date-time" -> Date.from(Instant.parse(s));
+                    case "Date", "date-time" -> Date.from(instant(s));
                     case "LocalDate", "date" -> localDate(s);
                     case "Json", "json" -> value;
                     default -> throw ApiProblem.badRequest("VALIDATION_FAILED", "unknown typed variable type " + type);

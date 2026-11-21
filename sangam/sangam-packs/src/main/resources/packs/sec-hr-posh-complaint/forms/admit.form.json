@@ -1,6 +1,6 @@
 {
   "key": "sec-hr-posh-complaint/admit",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.hr.posh-complaint",
   "title": {
     "en": "Admit complaint (limitation three months)",

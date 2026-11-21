@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-payer-to-payer/inbound",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ushealth.payer-to-payer",
   "title": {
     "en": "Request from the new payer",

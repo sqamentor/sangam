@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.patient-access",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Patient Access API: prior authorization information and usage metrics (CMS-0057-F)",
     "es": "API de acceso del paciente: información de autorizaciones previas y métricas de uso (CMS-0057-F)"
@@ -68,18 +68,21 @@
   "connectors": [
     {
       "id": "payer.patientAccess",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Patient Access API of this payer (FHIR): prior authorization information made available to the patient"
     },
     {
       "id": "payer.apiMetrics",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Patient Access API usage metrics of the reporting period"
     },
     {
       "id": "payer.metricsReport",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Submit the usage metrics report (recipient configured by the tenant)"

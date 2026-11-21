@@ -1,6 +1,6 @@
 {
   "id": "sec.edu.admission",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Admission with fee refund on withdrawal",
     "hi": "प्रवेश एवं प्रत्याहरण पर शुल्क वापसी"
@@ -32,38 +32,55 @@
       "path": "packs/sec-edu-admission/forms/accept.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/sec-edu-admission/forms/refund-review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-edu-admission/forms/refund-amount.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/sec-edu-admission/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-edu-admission/pack.json"
     }
   ],
   "seed": "packs/sec-edu-admission/seed.json",
   "connectors": [
     {
       "id": "digilocker.pull",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Marksheets"
     },
     {
       "id": "pg.collect",
+      "moneyMovement": "IN",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Fee"
     },
     {
       "id": "pg.refund",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Refund"
     },
     {
       "id": "sis.enrol",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Student information system"
     },
     {
       "id": "abc.register",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Academic Bank of Credits"
@@ -88,6 +105,33 @@
   "calls": [
     "sangam-core-execution",
     "sangam-core-rejection",
+    "sangam-core-sanction",
     "sangam-core-scrutiny"
-  ]
+  ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "ed_wdRefund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "currencyReason": "owner decision M1: the pack applies the UGC refund schedule and DigiLocker / APAAR, Indian systems in rupees, so the pack declares INR",
+    "variables": [
+      "feeAmount",
+      "processingFee",
+      "refundAmount"
+    ]
+  }
 }

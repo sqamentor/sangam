@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-loan-origination/legal-officer",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.bank.loan-origination",
   "title": {
     "en": "Legal scrutiny of title",

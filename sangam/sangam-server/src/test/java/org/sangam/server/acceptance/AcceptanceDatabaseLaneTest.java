@@ -16,6 +16,7 @@ class AcceptanceDatabaseLaneTest {
     void lanesMapToTheirProfileAndDialectFamily() {
         assertEquals("mysql", AcceptanceDatabase.nameOf("mariadb"), "MariaDB runs the mysql profile");
         assertEquals("sqlserver", AcceptanceDatabase.nameOf("sqlserver2025"));
+        assertEquals("postgres", AcceptanceDatabase.nameOf("postgres18"), "decision 416: the postgres 18 lane runs the postgres profile");
         for (String tier1 : new String[] {"postgres", "oracle", "sqlserver", "mysql"}) {
             assertEquals(tier1, AcceptanceDatabase.nameOf(tier1));
         }

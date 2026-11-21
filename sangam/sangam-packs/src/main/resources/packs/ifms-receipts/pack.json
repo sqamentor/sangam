@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.receipts",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Receipts: challan / e-receipt lifecycle and scroll reconciliation",
     "hi": "प्राप्तियाँ: चालान जीवनचक्र और स्क्रॉल मिलान"
@@ -26,48 +26,59 @@
     {
       "kind": "SEED",
       "path": "packs/ifms-receipts/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/ifms-receipts/pack.json"
     }
   ],
   "seed": "packs/ifms-receipts/seed.json",
   "connectors": [
     {
       "id": "config.profile",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Profile values of the tenant (sangam-config)"
     },
     {
       "id": "config.documentType",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
     },
     {
       "id": "config.classification",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Classification validation (head of account)"
     },
     {
       "id": "config.series",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Number series (token, voucher)"
     },
     {
       "id": "receipt.portal",
+      "moneyMovement": "IN",
       "capabilityClass": "b",
       "govTag": "G-PG",
       "purpose": "Challan / payment portal (Bharatkosh, GRAS, GRIPS ...)"
     },
     {
       "id": "treasury.scroll",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Bank / RBI e-scroll"
     },
     {
       "id": "receipt.refund",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-PG",
       "purpose": "Refund of a deposit"
@@ -112,13 +123,31 @@
     "sangam.core"
   ],
   "tenantOverrides": [],
-  "calls": [],
+  "calls": [
+    "sangam-core-sanction"
+  ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "rc_refund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",
     "exponent": 2,
     "variables": [
-      "amount"
+      "amount",
+      "refundAmount"
     ]
   }
 }

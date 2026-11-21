@@ -1,6 +1,6 @@
 {
   "id": "gov.pension",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "name": {
     "en": "Pension: sanction, PPO and monthly disbursement",
     "hi": "पेंशन: स्वीकृति, पीपीओ एवं मासिक भुगतान"
@@ -45,11 +45,27 @@
     },
     {
       "kind": "FORM",
+      "path": "packs/pension/forms/payable-pensionAmount.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/pension/forms/payable-retirementGratuity.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/pension/forms/payable-familyPension.form.json"
+    },
+    {
+      "kind": "FORM",
       "path": "packs/pension/forms/verify-service.form.json"
     },
     {
       "kind": "FORM",
       "path": "packs/pension/forms/objection.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/pension/forms/prepare-sanction-note.form.json"
     },
     {
       "kind": "FORM",
@@ -68,24 +84,28 @@
   "connectors": [
     {
       "id": "ag.pensionCase",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-PFMS",
       "purpose": "AG / PAO authorisation (e.g. Bhavishya / COMPACT)"
     },
     {
       "id": "pension.rollAdd",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Enter pensioner in the roll"
     },
     {
       "id": "pension.roll",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Monthly roll"
     },
     {
       "id": "pfms.payment",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
       "purpose": "Monthly pension payment",
@@ -139,6 +159,12 @@
       "currency": "INR",
       "limitTable": "pension-powers",
       "ruleCaseType": "PENSION"
+    },
+    "pm_bsanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
     }
   },
   "money": {
@@ -148,11 +174,17 @@
     "variables": [
       "amount",
       "averageEmoluments",
+      "computedFamilyPension",
+      "computedGratuity",
+      "computedPension",
       "familyPension",
+      "familyPensionEntered",
       "lastPay",
       "pensionAmount",
+      "pensionAmountEntered",
       "powerLimit",
-      "retirementGratuity"
+      "retirementGratuity",
+      "retirementGratuityEntered"
     ]
   }
 }

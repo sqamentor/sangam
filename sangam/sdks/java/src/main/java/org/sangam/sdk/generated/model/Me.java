@@ -22,6 +22,7 @@ package org.sangam.sdk.generated.model;
  * @param permissions wire field {@code permissions}
  * @param preferredLanguage wire field {@code preferredLanguage}
  * @param locale wire field {@code locale}. M-045: money and number formatting of the tenant's resolved profile (locale section); absent when the tenant has no resolved locale
+ * @param sandbox wire field {@code sandbox}. Owner option (b) 2026-11-19: true only for a tenant listed in sangam.demo.sandbox-tenants (its verified payees and payments are simulated, audited sandbox=true); absent otherwise
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record Me(
@@ -38,5 +39,6 @@ public record Me(
         @com.fasterxml.jackson.annotation.JsonProperty("authMethod") String authMethod,
         @com.fasterxml.jackson.annotation.JsonProperty("permissions") java.util.List<String> permissions,
         @com.fasterxml.jackson.annotation.JsonProperty("preferredLanguage") String preferredLanguage,
-        @com.fasterxml.jackson.annotation.JsonProperty("locale") MeLocale locale) {
+        @com.fasterxml.jackson.annotation.JsonProperty("locale") MeLocale locale,
+        @com.fasterxml.jackson.annotation.JsonProperty("sandbox") Boolean sandbox) {
 }

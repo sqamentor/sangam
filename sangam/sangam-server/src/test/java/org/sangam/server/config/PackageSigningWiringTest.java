@@ -79,7 +79,7 @@ class PackageSigningWiringTest {
     void aKeyIsOnlyEverAReference() {
         SecretResolver secrets = SecretResolver.of(Map.of("secret://packages/private", "x"));
         IllegalStateException literal = assertThrows(IllegalStateException.class, () -> PackageSigningWiring.signing(env()
-                .withProperty("sangam.packages.signing.private-key-ref", "MC4CAQAwBQYDK2VwBCIEI")
+                .withProperty("sangam.packages.signing.private-key-ref", "literal-key-material-not-a-secret-ref")
                 .withProperty("sangam.packages.signing.public-key-ref", "secret://packages/public"), secrets));
         assertTrue(literal.getMessage().contains("secret reference"), literal.getMessage());
         assertThrows(IllegalStateException.class, () -> PackageSigningWiring.signing(env()

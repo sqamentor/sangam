@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 992,
- "operations": 1180,
- "schemas": 899,
+ "paths": 993,
+ "operations": 1182,
+ "schemas": 900,
  "tags": [
   "AI",
   "Admin",
@@ -72,8 +72,8 @@
    "class": "AdminApi",
    "tag": "Admin",
    "pathPrefix": "",
-   "operations": 32,
-   "maxLines": 645
+   "operations": 34,
+   "maxLines": 678
   },
   {
    "class": "AdminAssignmentsApi",
@@ -577,7 +577,7 @@
    "tag": "Tasks",
    "pathPrefix": "",
    "operations": 15,
-   "maxLines": 321
+   "maxLines": 333
   },
   {
    "class": "TenantOperationsApi",
@@ -1184,6 +1184,7 @@
   "OpsUiSecretRequest",
   "OpsUiVariableRequest",
   "OpsValue",
+  "OrgLevels",
   "OrgUnit",
   "OrgUnitImportResult",
   "OutboxDelivery",
@@ -4856,6 +4857,30 @@
    "python": "admin.define_role",
    "dotnet": "AdminApi#DefineRoleAsync",
    "php": "AdminApi#defineRole"
+  },
+  {
+   "operationId": "getOrgLevels",
+   "method": "GET",
+   "path": "/admin/org-levels",
+   "tag": "Admin",
+   "apiClass": "AdminApi",
+   "java": "AdminApi#getOrgLevels",
+   "typescript": "admin.getOrgLevels",
+   "python": "admin.get_org_levels",
+   "dotnet": "AdminApi#GetOrgLevelsAsync",
+   "php": "AdminApi#getOrgLevels"
+  },
+  {
+   "operationId": "defineOrgLevels",
+   "method": "PUT",
+   "path": "/admin/org-levels",
+   "tag": "Admin",
+   "apiClass": "AdminApi",
+   "java": "AdminApi#defineOrgLevels",
+   "typescript": "admin.defineOrgLevels",
+   "python": "admin.define_org_levels",
+   "dotnet": "AdminApi#DefineOrgLevelsAsync",
+   "php": "AdminApi#defineOrgLevels"
   },
   {
    "operationId": "listServicePrincipals",

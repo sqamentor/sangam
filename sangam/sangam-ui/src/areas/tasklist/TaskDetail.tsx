@@ -60,12 +60,14 @@ export function TaskDetail() {
   const [draftSaved, setDraftSaved] = useState<string>();
   const cmd = useAction();
 
-  useEffect(() => {
-    if (task.data) {
-      setValues({ ...task.data.variables });
-      setErrors({});
-    }
-  }, [task.data]);
+  // A newly loaded task resets the form during render, not in an effect: React 19 may run a passive effect only after
+  // the next event, so the first render would show empty values and a later effect would overwrite what was typed.
+  const [shown, setShown] = useState(task.data);
+  if (task.data && shown !== task.data) {
+    setShown(task.data);
+    setValues({ ...task.data.variables });
+    setErrors({});
+  }
 
   const d = task.data;
   // R47 / SL-37 / M-031: shipped schema, else the deployed form parsed inertly, plus custom fields (shared with M-043).

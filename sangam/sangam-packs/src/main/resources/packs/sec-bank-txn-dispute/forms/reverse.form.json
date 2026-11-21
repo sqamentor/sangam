@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-txn-dispute/reverse",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.bank.txn-dispute",
   "title": {
     "en": "Reverse the failed debit",
@@ -21,6 +21,17 @@
       "label": {
         "en": "Remarks",
         "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "compensationAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Compensation amount (INR)",
+        "hi": "क्षतिपूर्ति राशि (रुपये)"
       }
     }
   ]

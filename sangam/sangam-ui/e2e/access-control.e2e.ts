@@ -45,7 +45,7 @@ test('a signed-in user with no role gets neither the compliance screens nor thei
     const search = await ctx.post('compliance/consents/search', { headers: { 'Idempotency-Key': randomUUID() }, data: { subject: seed.identities.citizen.userId } });
     expect(search.status()).toBe(403);
     await expectNoInternals(search, 'compliance/consents/search');
-    const write = await ctx.post('compliance/contacts/DPO', { headers: { 'Idempotency-Key': randomUUID() }, data: { name: 'Not allowed', email: 'no@e2e.test' } });
+    const write = await ctx.post('compliance/contacts/by-role', { params: { role: 'DPO' }, headers: { 'Idempotency-Key': randomUUID() }, data: { name: 'Not allowed', email: 'no@e2e.test' } });
     expect(write.status()).toBe(403);
   } finally {
     await ctx.dispose();
@@ -92,8 +92,8 @@ test('errors for ids that do not exist carry no stack trace or internals (W-10)'
       ['rights request', officer.get('compliance/rights-requests/e2e-no-such-request')],
       ['breach', officer.get('compliance/breaches/e2e-no-such-breach')],
       ['incident', officer.get('compliance/incidents/e2e-no-such-incident')],
-      ['notice', api.ctx.get('compliance/notices/e2e-no-such-notice')],
-      ['portal application', citizen.get('portal/applications/e2e-no-such-application')],
+      ['notice', api.ctx.get('compliance/notices/by-key', { params: { key: 'e2e-no-such-notice' } })],
+      ['portal application', citizen.get('portal/applications/by-id', { params: { id: 'e2e-no-such-application' } })],
     ];
     for (const [what, call] of probes) {
       const res = await call;

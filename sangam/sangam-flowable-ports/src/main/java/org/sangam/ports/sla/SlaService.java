@@ -150,15 +150,23 @@ public class SlaService {
             List<SlaClock> warn = Jdbc.query(c, dialect.skipLockedSelect(COLS, "SLA_INSTANCE", "s",
                     "s.state = 'RUNNING' AND s.warned_flag = 0 AND s.warn_at IS NOT NULL AND s.warn_at <= " + dialect.now(), "s.warn_at", batch),
                     SlaService::map);
+            // Each UPDATE is fenced on its select's predicate: on Oracle the skip-locked select can return a clock a
+            // peer warned, breached or a caller stopped after the select's snapshot; no second event is emitted for it.
             for (SlaClock s : warn) {
-                Jdbc.update(c, "UPDATE SLA_INSTANCE SET warned_flag = 1 WHERE id = ?", s.id());
+                if (Jdbc.update(c, "UPDATE SLA_INSTANCE SET warned_flag = 1 WHERE id = ? AND state = 'RUNNING' AND warned_flag = 0"
+                        + " AND warn_at IS NOT NULL AND warn_at <= " + dialect.now(), s.id()) != 1) {
+                    continue;
+                }
                 emit(c, s, "sangam.sla.warning");
                 n++;
             }
             List<SlaClock> due = Jdbc.query(c, dialect.skipLockedSelect(COLS, "SLA_INSTANCE", "s",
                     "s.state = 'RUNNING' AND s.due_at <= " + dialect.now(), "s.due_at", batch), SlaService::map);
             for (SlaClock s : due) {
-                Jdbc.update(c, "UPDATE SLA_INSTANCE SET state = 'BREACHED', breached_at = " + dialect.now() + " WHERE id = ?", s.id());
+                if (Jdbc.update(c, "UPDATE SLA_INSTANCE SET state = 'BREACHED', breached_at = " + dialect.now()
+                        + " WHERE id = ? AND state = 'RUNNING' AND due_at <= " + dialect.now(), s.id()) != 1) {
+                    continue;
+                }
                 emit(c, s, "sangam.sla.breached");
                 n++;
             }

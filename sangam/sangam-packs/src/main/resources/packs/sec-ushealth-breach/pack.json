@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.breach",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "HIPAA breach notification",
     "es": "Notificación de violaciones de HIPAA"
@@ -64,18 +64,21 @@
   "connectors": [
     {
       "id": "notify.mail",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Individual notices"
     },
     {
       "id": "hhs.breachPortal",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "HHS OCR breach portal"
     },
     {
       "id": "media.release",
+      "moneyMovement": "NONE",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Media notice"

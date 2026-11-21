@@ -219,15 +219,17 @@ schema("TeamTaskFilterCreateRequest", "Owner decisions 404 and 406: a new shared
        required=("name", "query"),
        descs={"name": "1 to 255 characters after trimming", "owner": "Optional, at most 255 characters",
               "query": "JSON object, at most 16384 characters as JSON. Owner decision 406: only the criteria of GET /tasks "
-                       "by the same names: assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy, sortOrder, currency (ISO 4217) and variableNames (list of 1 to 20 names); strings 1 to 255 characters, mine and unassigned "
+                       "by the same names: assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy, sortOrder, currency (ISO 4217), variableNames (list of 1 to 20 names), priority, minPriority and maxPriority (whole numbers, minPriority not above maxPriority), dueBefore and dueAfter (ISO-8601 date-times with offset, dueAfter before dueBefore) and overdue; strings 1 to 255 characters, mine, unassigned and overdue "
                        "booleans. Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID",
               "properties": "Optional JSON object, at most 16384 characters as JSON"})
 schema("Me", "The authenticated caller: identity, tenant, personas (roles), seats held, current seat context and permissions (K1, S02).",
        "tenantId tenantName principalId userId displayName groups:list:s roles:list:s seats:list:SeatHolding seatId actingForSeatId "
-       "authMethod permissions:list:s preferredLanguage locale:MeLocale",
+       "authMethod permissions:list:s preferredLanguage locale:MeLocale sandbox:bool",
        descs={"roles": "UI personas: TASK_USER, OPERATOR, PLATFORM_OPERATOR, ADMIN, PLATFORM_ADMIN, MODELLER, REVIEWER, ANALYST, AUDITOR, INTEGRATION, CITIZEN",
               "locale": "M-045: money and number formatting of the tenant's resolved profile (locale section); absent when "
-                        "the tenant has no resolved locale"})
+                        "the tenant has no resolved locale",
+              "sandbox": "Owner option (b) 2026-11-19: true only for a tenant listed in sangam.demo.sandbox-tenants (its "
+                         "verified payees and payments are simulated, audited sandbox=true); absent otherwise"})
 schema("NumberGrouping", "Digit grouping of the integer part: the first group (from the right) and every further group, "
                          "e.g. {first: 3, rest: 2} gives 12,34,567.", "first:int rest:int", ["first", "rest"])
 schema("MeLocale", "The tenant's resolved profile locale (sangam-config LocaleSettings): currency, zone and digit grouping.",
@@ -704,6 +706,9 @@ schema("RoleRule", "One rule of a role (decision 368): security permissions on a
        " every id, deny omitted = allow.", "resourceType resourceId permissions:list:s deny:bool", ["resourceType", "permissions"])
 schema("RoleDefinition", "A role of the tenant (SEC_ROLE, decision 368); rules omitted = a role that grants nothing itself.",
        "id name rules:list:RoleRule", ["name"])
+schema("OrgLevels", "The org level types of a tenant, top first (AJ-02, SEC_ORG_LEVEL); an org unit's level must be one of them."
+       " tenantId is optional on a request and, when given, must be the caller's own tenant.",
+       "tenantId levels:list:s", ["levels"])
 schema("OrgUnitImportResult", "Bulk org-unit import result (CSV: id,parentId,code,name,nameHi,level).",
        "created:int updated:int errors:list:s")
 # Registries
@@ -942,7 +947,13 @@ op("get", "/tasks", "listTasks", "Tasks", "List tasks",
            q("taskDefinitionKey"), q("state"), q("sortBy", desc="created, due, priority, name, amount or reference (M-042 task index); a comma-separated list sorts by several keys. amount sorts within the currency filter and needs currency (400 VALIDATION_FAILED otherwise), so only tasks with an amount in that currency are listed; reference sorts by the indexed reference, tasks without one placed by the database's NULL ordering"),
            dict(q("currency", desc="M-042: only tasks whose indexed amount is in this ISO 4217 currency; required when sortBy contains amount"), schema={"type": "string", "pattern": "^[A-Z]{3}$"}), q("sortOrder", desc="asc or desc per key, comma-separated"),
              q("variableNames", "list:s", "P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at most 20 names, repeated or comma-separated"),
-           q("filterId", desc="Owner decision 406: runs a saved task list of the caller's tenant (GET /team/task-filters): its criteria are added to this request's, and the caller's tenant and task visibility still apply, so a list only narrows what the caller sees. 404 NOT_FOUND for a list that is not the caller's tenant's, 403 TENANT_REQUIRED without a tenant, 422 TASK_FILTER_CONFLICT when a request criterion differs from the list's (sortBy, sortOrder and variableNames are taken from the request, variable names merged)")])
+           q("filterId", desc="Owner decision 406: runs a saved task list of the caller's tenant (GET /team/task-filters): its criteria are added to this request's, and the caller's tenant and task visibility still apply, so a list only narrows what the caller sees. 404 NOT_FOUND for a list that is not the caller's tenant's, 403 TENANT_REQUIRED without a tenant, 422 TASK_FILTER_CONFLICT when a request criterion differs from the list's (sortBy, sortOrder and variableNames are taken from the request, variable names merged)"),
+           q("priority", "int", "Only tasks of exactly this priority"),
+           q("minPriority", "int", "Only tasks of at least this priority; 400 VALIDATION_FAILED when greater than maxPriority"),
+           q("maxPriority", "int", "Only tasks of at most this priority"),
+           q("dueBefore", "dt", "Only tasks due strictly before this ISO-8601 date-time with offset (tasks without a due date never match); 400 VALIDATION_FAILED when malformed or not after dueAfter"),
+           q("dueAfter", "dt", "Only tasks due strictly after this ISO-8601 date-time with offset (tasks without a due date never match)"),
+           q("overdue", "bool", "true: only tasks due before the server's current time (combined with dueBefore, the earlier bound applies); false: no condition")])
 op("get", "/tasks/{id}", "getTask", "Tasks", "Get a task", "Task with variables (field masks applied, K11), the material payload hash and case version (VI.4 rule 5).",
    ["VI.4", "R47"], params=[ID], resp=(200, "TaskDetail"), perm="task.read", errors=GET_E)
 op("get", "/tasks/{id}/variables", "getTaskVariables", "Tasks", "Task variables", "Variables visible on the task (K11).", ["VI.4"],
@@ -1789,6 +1800,14 @@ op("put", "/admin/roles/by-role-id", "defineRole", "Admin", "Define a role",
    " token scope is bound to a service principal only when it is a defined role the caller may grant.",
    ["VI.4", "R41"], params=[q("roleId", desc="Role id (ROLE_ID_PATTERN allows ':', e.g. pack:clerk); may carry ':'", required=True)], body="RoleDefinition", resp=(200, "RoleDefinition"), cmd="admin.role.define",
    perm="policy.admin")
+op("get", "/admin/org-levels", "getOrgLevels", "Admin", "Org level types",
+   "The caller's tenant's org level types, top first (AJ-02); empty when none are defined.",
+   ["IX.5", "R19"], resp=(200, "OrgLevels"), perm="admin.read")
+op("put", "/admin/org-levels", "defineOrgLevels", "Admin", "Define org level types",
+   "A tenant administrator defines its own tenant's org level types, top first (EV-M-0923; ADMIN on ORG_UNIT;"
+   " TENANT_CONFIGURED). Idempotent: the same list again changes nothing and records nothing. A different list is"
+   " refused with 409 LEVELS_IN_USE once an org unit exists; another tenant's levels with 403 TENANT_MISMATCH.",
+   ["IX.5", "R19"], body="OrgLevels", resp=(200, "OrgLevels"), cmd="admin.orglevels.define", perm="admin.write")
 op("get", "/admin/service-principals", "listServicePrincipals", "Admin", "Service principals", "Worker and integration principals (R26).",
    ["R26", "K14"], resp=(200, "array:ServicePrincipal"), perm="admin.read", errors=WS_E)
 op("post", "/admin/service-principals", "createServicePrincipal", "Admin", "Create a service principal",

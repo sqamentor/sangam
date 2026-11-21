@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.account-opening",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Account opening with KYC, V-CIP and CKYCR",
     "hi": "केवाईसी, वी-सीआईपी एवं सीकेवाईसीआर सहित खाता खोलना"
@@ -64,42 +64,49 @@
   "connectors": [
     {
       "id": "ckycr.search",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "CKYCR search (CERSAI)"
     },
     {
       "id": "ckycr.download",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "CKYCR download"
     },
     {
       "id": "pan.verify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "PAN verification (ITD / Protean)"
     },
     {
       "id": "uidai.ekyc",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Aadhaar OTP e-KYC (AUA / KUA)"
     },
     {
       "id": "sanctions.screen",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "UNSC / UAPA / PEP screening"
     },
     {
       "id": "cbs.accountOpen",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Core banking: open account (core execution)"
     },
     {
       "id": "ckycr.upload",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "CKYCR upload of the KYC record"

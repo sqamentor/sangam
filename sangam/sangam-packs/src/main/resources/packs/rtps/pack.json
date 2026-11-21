@@ -1,6 +1,6 @@
 {
   "id": "gov.rtps",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Right to public services (time-bound delivery)",
     "hi": "लोक सेवा अधिकार (समयबद्ध प्रदाय)"
@@ -40,12 +40,14 @@
   "connectors": [
     {
       "id": "hr.penaltyRecovery",
+      "moneyMovement": "IN",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Recovery of the penalty from salary"
     },
     {
       "id": "pfms.payment",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
       "purpose": "Compensation to the applicant",

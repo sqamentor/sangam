@@ -44,7 +44,7 @@ def execution():
                                   ('bank.statement', 'a', '', 'Bank / TSA statement')],
               currency='USD')
     p = pk.proc('sangam-intl-pfm-execution', 'Commitment to payment', '',
-                start={'materialFields': 'spendingUnit,budgetLine,amount,payee'})
+                start={'materialFields': 'spendingUnit,budgetLine,amount,payee,payeeAccount,currency,purpose'})
     s = p.root
     st = s.start('pe_start', 'Commitment requested', form='gov-intl-pfm-execution/request')
     p.forms.append(dict(key='gov-intl-pfm-execution/request', name='Commitment request | प्रतिबद्धता अनुरोध',

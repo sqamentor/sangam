@@ -11,8 +11,9 @@
  * The server stays the authority; it refuses anything this check lets through.
  */
 import { CANONICAL_DECIMAL_TEXT, MAX_NUMBER_SCALE, MIN_NUMBER_SCALE, canonicalDecimalOrUndefined, decimalPlaces } from '../lib/decimal';
+import { type Translate } from '../i18n';
 
-type T = (k: string, o?: Record<string, unknown>) => string;
+type T = Translate;
 type Obj = Record<string, unknown>;
 
 const isObj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v);

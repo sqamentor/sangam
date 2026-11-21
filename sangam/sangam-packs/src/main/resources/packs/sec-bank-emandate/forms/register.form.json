@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-emandate/register",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.bank.emandate",
   "title": {
     "en": "Mandate registration",
@@ -21,6 +21,15 @@
       "label": {
         "en": "Customer",
         "hi": "ग्राहक"
+      }
+    },
+    {
+      "id": "payeePartyId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Merchant (verified payee registry id)",
+        "hi": "व्यापारी (सत्यापित पानेवाला पंजी आईडी)"
       }
     },
     {
@@ -50,6 +59,15 @@
       "label": {
         "en": "Amount (INR)",
         "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "amountType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Amount type (FIXED or MAX)",
+        "hi": "राशि का प्रकार (FIXED या MAX)"
       }
     },
     {

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 // SPDX-License-Identifier: Apache-2.0
+import type { ReactElement } from 'react';
 /**
  * M-047 (component tests, first part, W2-C screens): each screen sends exactly the contract body the server reads and
  * shows the server's refusals in words. The API client is mocked; nothing is rendered by a server. Written, not run in
@@ -8,7 +9,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import i18n from 'i18next';
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), page: vi.fn(), request: vi.fn(), download: vi.fn() }));
 
@@ -18,7 +18,7 @@ vi.mock('../api/client', async (orig) => {
 });
 
 import { ApiError } from '../api/client';
-import { initI18n } from '../i18n';
+import { initI18n, tr } from '../i18n';
 import { BulkIngestPage, explain413 } from './bulk';
 import { PackLifecycle, Promotions, GuidedRun, groupPacks, packProblem, promotionProblem } from './config';
 import { ModuleSecurityDefaults } from '../areas/admin/Admin';
@@ -27,8 +27,8 @@ import { BulkTestReport, reportRows, runRows } from './platform';
 import { ActionMenu } from '../components/ActionMenu';
 import { ActionDialog } from './engine';
 
-const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
-const show = (el: JSX.Element) => render(<MemoryRouter>{el}</MemoryRouter>);
+const T = tr;
+const show = (el: ReactElement) => render(<MemoryRouter>{el}</MemoryRouter>);
 const problem = (status: number, code: string, extra: Record<string, unknown> = {}) => new ApiError({ status, title: 't', code, ...extra });
 const dialog = () => screen.getByRole('dialog');
 

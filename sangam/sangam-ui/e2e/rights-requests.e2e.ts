@@ -46,12 +46,26 @@ test('the rights-request and contact forms offer exactly the India pack codes (D
   await rights.getByRole('button', { name: t('common.cancel') }).click();
   await expect(rights).toHaveCount(0);
 
+  // owner decision 345 (compliance.tsx ContactsTab): the role is picked on the tab first, and "Set contact" opens the
+  // form of that role with the fields the pack requires for it; with no role chosen the button is disabled
   await page.getByRole('tab', { name: t('mod.compliance.contacts') }).click();
-  await page.getByRole('tabpanel').getByRole('button', { name: t('act.setContact') }).click();
-  const contact = page.getByRole('dialog');
-  const role = contact.getByLabel(t('fld.role'));
+  const tab = page.getByRole('tabpanel');
+  const setContact = tab.getByRole('button', { name: t('act.setContact') });
+  await expect(setContact).toBeDisabled();
+  const role = tab.getByLabel(t('fld.role'));
   expect(await optionValues(role)).toEqual(pack.contactRoles.map((r) => r.code));
   await expect(role.locator('option[value="CERT_IN_POC"]')).toHaveText(t('opt.CERT_IN_POC'));
+  await role.selectOption('CERT_IN_POC');
+  await setContact.click();
+  const contact = page.getByRole('dialog');
+  // IN CERT_IN_POC requires designation, mobile and address (CERT-In Directions Annexure II, pack contactRoles)
+  const poc = pack.contactRoles.find((r) => r.code === 'CERT_IN_POC') as { requiredFields?: string[] } | undefined;
+  expect(poc?.requiredFields?.length ?? 0).toBeGreaterThan(0);
+  // the field's own label, optionally followed by the required marker (ui.tsx FieldWrap), never a longer label
+  const label = (key: string) => new RegExp(`^${t(key).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s*\\*.*)?$`);
+  for (const field of poc?.requiredFields ?? []) await expect(contact.getByLabel(label(`fld.${field}`))).toBeVisible();
+  await contact.getByRole('button', { name: t('common.cancel') }).click();
+  await expect(contact).toHaveCount(0);
 });
 
 test('a data principal files a data-rights request in the portal and gets a reference and a due date within the pack maximum (D-22)', async ({ page, seed }) => {

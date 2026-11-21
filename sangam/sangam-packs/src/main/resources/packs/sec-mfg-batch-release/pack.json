@@ -1,6 +1,6 @@
 {
   "id": "sec.mfg.batch-release",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Manufacturing batch record review and release",
     "hi": "विनिर्माण बैच अभिलेख समीक्षा एवं निर्गमन"
@@ -36,12 +36,14 @@
   "connectors": [
     {
       "id": "mes.batchRecord",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Batch record"
     },
     {
       "id": "wms.release",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Release to warehouse"

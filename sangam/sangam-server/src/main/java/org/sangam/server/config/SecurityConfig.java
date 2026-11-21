@@ -58,7 +58,9 @@ public class SecurityConfig {
     public SecurityFilterChain sangamSecurityFilterChain(HttpSecurity http, SangamSecurityProperties props,
                                                          ObjectProvider<JwtDecoder> jwtDecoder, Environment env,
                                                          ObjectProvider<org.sangam.server.bridge.SecurityChainContributions> module,
-                                                         ObjectProvider<org.operaton.bpm.engine.ProcessEngine> engine)
+                                                         ObjectProvider<org.operaton.bpm.engine.ProcessEngine> engine,
+                                                         ObjectProvider<org.sangam.rest.port.AdminPort> adminPort,
+                                                         ObjectProvider<org.sangam.core.time.BusinessClock> businessClock)
             throws Exception {
         ProblemResponses problems = new ProblemResponses();
         // decision 126 part 1: production requires signed audit checkpoints for every tenant (this chain is always on)
@@ -168,8 +170,13 @@ public class SecurityConfig {
         } else {
             LOG.warn("SL-70: no sangam.security.platform-issuer configured: nobody is a platform administrator");
         }
-        http.addFilterAfter(new PrincipalAttributeFilter(), AuthorizationFilter.class);
         org.sangam.server.bridge.SecurityChainContributions contributions = module.getIfAvailable();
+        // IX.5 rules 1 and 4, K7: who holds a seat now. With sangam-security its identity filter (below) resolves it
+        // from the postings; without the module (development only, decision 75) the admin store is the seat directory.
+        http.addFilterAfter(contributions != null ? new PrincipalAttributeFilter()
+                : new PrincipalAttributeFilter(new org.sangam.server.security.AdminStoreSeatHoldings(
+                        adminPort::getIfAvailable, new org.sangam.rest.support.BusinessDates(businessClock::getIfAvailable))),
+                AuthorizationFilter.class);
         if (contributions != null) {
             // sangam-security in the same (single) chain: API tokens (sgm_..., R26) before bearer/JWT authentication;
             // identity resolution against the organisation model + TenantContext after the principal attribute is set.

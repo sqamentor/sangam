@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-procurement-complaint/decision",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.intl.pfm-procurement-complaint",
   "title": {
     "en": "Decide the complaint with reasons",

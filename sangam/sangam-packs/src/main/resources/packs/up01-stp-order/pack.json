@@ -1,6 +1,6 @@
 {
   "id": "universal.up01-stp-order",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "UP-01 Straight-through order processing",
     "hi": "यूपी-01 सीधा आदेश प्रसंस्करण"
@@ -24,24 +24,28 @@
   "connectors": [
     {
       "id": "order.validate",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Validation"
     },
     {
       "id": "inventory.reserve",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Reservation"
     },
     {
       "id": "saga.charge",
+      "moneyMovement": "IN",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Payment capture"
     },
     {
       "id": "shipping.create",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Shipment"

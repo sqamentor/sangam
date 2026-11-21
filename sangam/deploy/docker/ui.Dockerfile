@@ -18,7 +18,7 @@
 # build | prebuilt
 ARG DIST_SOURCE=build
 
-FROM node:26.3.0-alpine3.22@sha256:c7932b9e5e337b0e733d6e16abc1b0e104759e8b05e59ed56586cce967d26dfe AS build
+FROM node:26.13.1-alpine3.24@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS build
 WORKDIR /src
 COPY sangam-ui/package.json sangam-ui/package-lock.json* ./
 # npm ci honours an offline mirror through NPM_CONFIG_REGISTRY / .npmrc (see deploy/README.md "Offline builds").
@@ -27,22 +27,25 @@ ARG NPM_CONFIG_REGISTRY
 # after npm ci. rolldown and lightningcss load their native binary from a prebuilt optional package
 # (@rolldown/binding-linux-*, lightningcss-linux-*; plain optionalDependencies selected by os and cpu, no
 # hasInstallScript). esbuild, whose postinstall used to be rebuilt here by name, is no longer in package-lock.json.
-# The packages that do have an install script are not run: @carbon/grid and @carbon/layout (ibmtelemetry, install-time
-# telemetry), inferno (opencollective banner) and fsevents (macOS only, optional).
+# The packages that do have an install script are not run: inferno (opencollective banner) and fsevents (macOS only,
+# optional). @carbon/grid and @carbon/layout (ibmtelemetry, install-time telemetry) left the tree with form-js 2.2 (UP-L6b).
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --ignore-scripts --no-audit --no-fund
 COPY sangam-ui/ ./
 # Decision 120 (RM-24): scripts/deploy-fonts.mjs reads the approved Noto TTFs, their OFL texts and the SHA-256 table
 # from ../deploy/fonts relative to the UI root (/src), so they go to /deploy/fonts; a missing or changed file fails the build.
 COPY deploy/fonts/*.ttf deploy/fonts/OFL-*.txt deploy/fonts/README.md /deploy/fonts/
+# compliancePackCodes.test.ts (type-checked by npm run build) reads the India compliance pack at ../../../sangam-compliance
+# relative to src/modules, i.e. /sangam-compliance here; without it tsc fails (TS2307, ci-build run 44458833009).
+COPY sangam-compliance/src/main/resources/compliance/jurisdictions/IN/pack.json /sangam-compliance/src/main/resources/compliance/jurisdictions/IN/pack.json
 RUN npm run build && test -f dist/index.html && mkdir -p /out && cp -r dist/. /out/
 
-FROM node:26.3.0-alpine3.22@sha256:c7932b9e5e337b0e733d6e16abc1b0e104759e8b05e59ed56586cce967d26dfe AS prebuilt
+FROM node:26.13.1-alpine3.24@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS prebuilt
 COPY sangam-ui/dist/ /out/
 
 FROM ${DIST_SOURCE} AS dist
 
-FROM nginxinc/nginx-unprivileged:1.28.0-alpine3.21@sha256:c97ff0bf7cbae369953c6da1232ec14ad9f971d66360c5698db0856a4cd657a0 AS runtime
+FROM nginxinc/nginx-unprivileged:1.30.6-alpine3.24@sha256:f5116ed4606f3eb015dd4a8e28cb9b351476dc0ad4bc6e9f93b19cec130cdf03 AS runtime
 LABEL org.opencontainers.image.title="sangam-ui" \
       org.opencontainers.image.description="Sangam web UI (tasklist, cockpit, admin, modeller)" \
       org.opencontainers.image.licenses="Apache-2.0" \

@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.sangam.config.api.ConfigConnector;
@@ -324,5 +325,12 @@ class BillTypeCrosswalkTest {
 
     private static Object label(Map<String, Map<String, Object>> rows, String id, String field) {
         return Tree.map(rows.get(id).get("provenance")).get(field);
+    }
+
+    @AfterAll
+    static void releaseStatics() {
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        resolver = null;
+        connector = null;
     }
 }

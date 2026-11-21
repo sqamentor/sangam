@@ -7,7 +7,8 @@ realm files and a hosted Keycloak get the same people. Two parts, each skipped w
   1. Keycloak (admin REST API): the realm roles exist; each user exists with name, e-mail, attributes tenant, seat,
      office; its password is (re)set from SANGAM_PRESENTATION_PASSWORD_<USERNAME>; its realm roles are added.
      A user whose password variable is empty is created without a password and reported.
-  2. Sangam (REST API, a tenant administrator's bearer token): the org unit, roles and seats of the IFMS pack seed
+  2. Sangam (REST API, a tenant administrator's bearer token): the tenant's org level types (PUT /admin/org-levels),
+     then the org unit, roles and seats of the IFMS pack seed
      (the server does not install pack seeds), then every seat-holding user who has signed in once (JIT person)
      gets a SUBSTANTIVE assignment to its seat from today, unless it holds it already.
 
@@ -46,6 +47,8 @@ def load_lists():
 
 
 def http(method, url, token=None, body=None, form=None, headers=None):
+    """(status, JSON body). An error stops the seed; it says so when the server did not execute the request but
+    replayed the answer stored for its Idempotency-Key (response header Idempotent-Replayed)."""
     h = dict(headers or {})
     data = None
     if token:
@@ -64,7 +67,8 @@ def http(method, url, token=None, body=None, form=None, headers=None):
     except urllib.error.HTTPError as e:
         raw = e.read()
         detail = raw.decode("utf-8", "replace")[:300]
-        raise SystemExit(f"{method} {url.split('?')[0]} -> {e.code}: {detail}") from None
+        stored = " (stored answer replayed for this Idempotency-Key, not executed)" if e.headers.get("Idempotent-Replayed") else ""
+        raise SystemExit(f"{method} {url.split('?')[0]} -> {e.code}{stored}: {detail}") from None
 
 
 class Keycloak:
@@ -109,7 +113,7 @@ def user_rep(entry, tenant, office):
     attrs = {"tenant": [tenant], "seat": list(seats)}
     if seats:
         attrs["office"] = [office]
-    return {"username": uname, "enabled": True, "emailVerified": True, "email": f"{uname}@sangam.test",
+    return {"username": uname, "enabled": True, "emailVerified": True, "email": f"{uname}@ifms-jaipur.invalid",
             "firstName": first, "lastName": last, "attributes": attrs}
 
 
@@ -117,17 +121,34 @@ def items_of(body):
     return body if isinstance(body, list) else (body or {}).get("items", [])
 
 
+# One Idempotency-Key per command of THIS run. The server stores the answer to a key, a refusal included (409 other
+# than a retry conflict, 400, 404, 422: FAILED_FINAL), and replays it to every later request with the same key and
+# body for 30 days without executing it. A key built from tenant and object only made every later run the same
+# command: the org unit refused once with 409 UNKNOWN_LEVEL (no level types yet) stayed refused after the level
+# types were defined (EV-M-0932). What makes a second run change nothing is the state of the tenant, checked by
+# each step below (same level list, UNIT_EXISTS, SEAT_EXISTS, same role content, an active assignment), not the key.
+RUN = uuid.uuid4().hex
+
+
 def idem(*parts):
-    return {"Idempotency-Key": str(uuid.uuid5(uuid.NAMESPACE_URL, "sangam-presentation/" + "/".join(parts)))}
+    return {"Idempotency-Key": str(uuid.uuid5(uuid.NAMESPACE_URL, f"sangam-presentation/{RUN}/" + "/".join(parts)))}
+
+
+# The 409 codes that mean "already there" (OrgUnitService UNIT_EXISTS, SeatService SEAT_EXISTS). Every other 409
+# (UNKNOWN_LEVEL, UNKNOWN_UNIT, UNKNOWN_SEAT, ...) is a real refusal and stops the seed (EV-M-0923: a blanket 409
+# reported "exists" for an org unit that was never created).
+EXISTS_CODES = ("UNIT_EXISTS", "SEAT_EXISTS")
+# The org level types this seed uses, top first: PAO-OFFICE is created at level OFFICE (no parent).
+ORG_LEVELS = ("OFFICE",)
 
 
 def create_if_absent(what, method, url, tok, body, headers):
-    """POST/PUT; a 409 (already there) counts as present. Other errors stop the seed."""
+    """POST/PUT; a 409 with an "already there" code counts as present. Other errors stop the seed."""
     try:
         http(method, url, tok, body, headers=headers)
         print(f"  {what}: created")
     except SystemExit as e:
-        if "-> 409" not in str(e):
+        if "-> 409" not in str(e) or not any(f'"code":"{c}"' in str(e) for c in EXISTS_CODES):
             raise
         print(f"  {what}: exists")
 
@@ -157,12 +178,20 @@ def seed_sangam(base, tok, g, tenant, office, today):
     with open(SEED, encoding="utf-8") as f:
         seed = json.load(f)
     unit = next(o for o in seed["offices"] if o["id"] == office)
+    # The tenant's org level types come first: an org unit's level must be one of them (409 UNKNOWN_LEVEL otherwise,
+    # EV-M-0923). PUT /admin/org-levels is idempotent: the same list again changes nothing; a different list once
+    # units exist is refused (409 LEVELS_IN_USE) and stops the seed.
+    _, levels = http("PUT", f"{base}/admin/org-levels", tok, {"tenantId": tenant, "levels": list(ORG_LEVELS)},
+                     headers=idem(tenant, "org-levels", *ORG_LEVELS))
+    print(f"  org levels: {', '.join(levels['levels'])}")
     create_if_absent(f"org unit {office}", "POST", f"{base}/admin/org-units", tok,
                      {"id": office, "code": office, "name": "Jaipur", "level": "OFFICE",
                       "parentId": unit.get("parent") or None}, idem(tenant, "unit", office))
+    # PUT /admin/roles/by-role-id?roleId= (IdentityAdminController.defineRole, decision 393: a role id may carry ':',
+    # so it is a query parameter, never a path segment). Defining a role again replaces it with the same content.
     for r in seed["roles"]:
-        http("PUT", f"{base}/admin/roles/{urllib.parse.quote(r['code'])}", tok, {"id": r["code"], "name": r["name"]["en"]},
-             headers=idem(tenant, "role", r["code"]))
+        http("PUT", f"{base}/admin/roles/by-role-id?" + urllib.parse.urlencode({"roleId": r["code"]}), tok,
+             {"id": r["code"], "name": r["name"]["en"]}, headers=idem(tenant, "role", r["code"]))
     print(f"  roles: {len(seed['roles'])} defined")
     for s in seats_in_order(seed):
         reports = s.get("reportsTo") if s.get("reportsTo") in {x["id"] for x in seed["seats"]} else None
@@ -201,13 +230,16 @@ def main():
     g = load_lists()
     tenant, office = g.PRESENTATION_TENANT, g.PRESENTATION_OFFICE
     env = os.environ.get
-    today = datetime.date.today().isoformat()
+    # The UTC date: the admin API reads validFrom and activeOn as UTC days (a posting starts at 00:00 UTC of its
+    # validFrom). The host's local date can be a day ahead of UTC (India: 00:00 to 05:30), and a posting from that
+    # date would start only at the next UTC midnight: the holder would not hold the seat until then.
+    today = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
     plan = [(env("KEYCLOAK_REALM", "sangam"), g.PRESENTATION_USERS),
             (env("KEYCLOAK_PLATFORM_REALM", "sangam-platform"), g.PRESENTATION_PLATFORM_USERS)]
     kc_ready = all(env(k) for k in ("KEYCLOAK_URL", "KEYCLOAK_ADMIN_USER", "KEYCLOAK_ADMIN_PASSWORD"))
     api_ready = all(env(k) for k in ("SANGAM_API_BASE", "SANGAM_ADMIN_TOKEN"))
 
-    print(f"tenant {tenant}, office {office}, today {today}" + (" (dry run: no network)" if dry else ""))
+    print(f"tenant {tenant}, office {office}, today {today} (UTC)" + (" (dry run: no network)" if dry else ""))
     for realm, users in plan:
         for e in users:
             pw = "set" if env(g.presentation_env_name(e[0])) else "MISSING"

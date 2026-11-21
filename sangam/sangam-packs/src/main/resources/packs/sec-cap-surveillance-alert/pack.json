@@ -1,6 +1,6 @@
 {
   "id": "sec.cap.surveillance-alert",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Trade surveillance alert",
     "hi": "व्यापार निगरानी चेतावनी"
@@ -40,18 +40,21 @@
   "connectors": [
     {
       "id": "exchange.alerts",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Exchange alert feed"
     },
     {
       "id": "exchange.report",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Report to the exchange"
     },
     {
       "id": "fiu.finnet",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "STR"

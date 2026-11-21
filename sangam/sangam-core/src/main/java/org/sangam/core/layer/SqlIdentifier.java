@@ -84,6 +84,25 @@ public final class SqlIdentifier {
         return new SqlIdentifier(name);
     }
 
+    /**
+     * A vetted engine table prefix ({@code databaseTablePrefix}), returned as text: {@code null} or empty gives
+     * {@code ""}; anything else must be such that prefix + a simple table name is a {@link #qualified} name, so
+     * {@code SANGAM_}, {@code ops.} and {@code ops.SG_} pass while a quote, space, semicolon, comment marker or an empty
+     * part ({@code ..}) is refused. Code that puts {@code prefix + "ACT_..."} into statement text takes the prefix only
+     * through this method.
+     */
+    public static String tablePrefix(String prefix) {
+        if (prefix == null || prefix.isEmpty()) {
+            return "";
+        }
+        try {
+            qualified(prefix + "T");
+        } catch (IllegalArgumentException e) {
+            throw refused(prefix, "is not a table prefix (schema. and/or name part of A-Z, a-z, 0-9, _)");
+        }
+        return prefix;
+    }
+
     /** Every name of {@code names} as a simple identifier, in order. */
     public static List<SqlIdentifier> allOf(Collection<String> names) {
         return names.stream().map(SqlIdentifier::of).toList();

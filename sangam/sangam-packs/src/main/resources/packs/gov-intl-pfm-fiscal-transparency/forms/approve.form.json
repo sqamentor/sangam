@@ -1,6 +1,6 @@
 {
   "key": "gov-intl-pfm-fiscal-transparency/approve",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "gov.intl.pfm-fiscal-transparency",
   "title": {
     "en": "Approve the publication (not the preparer)",

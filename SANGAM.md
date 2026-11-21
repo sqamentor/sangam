@@ -765,7 +765,7 @@ Goal: a system that lives for **10+ years**, stays **compatible** across upgrade
 | P2 | **Test-first for the engine core** | TDD for behaviors and commands; every bug fix starts with a failing test |
 | P3 | **Test pyramid** | Unit → engine integration (H2 + Postgres) → DB matrix (all databases via Testcontainers) → contract tests (SDKs) → end-to-end (UI, Playwright) |
 | P4 | **Mutation testing** | PIT on core modules, so tests are proven to catch faults and not just raise coverage |
-| P5 | **Property-based and model-based tests** | jqwik generates random BPMN/CMMN models and event orders and checks invariants: no lost tokens, no double completion, history matches runtime |
+| P5 | **Property-based and model-based tests** | Seeded JUnit 5 generators (fixed seed; jqwik removed, owner decision 2026-11-18) generate random BPMN/CMMN models and event orders and checks invariants: no lost tokens, no double completion, history matches runtime |
 | P6 | **Fuzz all parsers and inputs** | XML (BPMN/CMMN/DMN), FEEL, JSON variables and API payloads are fuzzed with Jazzer, covering XXE, billion-laughs and deserialization attacks |
 | P7 | **Code review rules** | Two reviewers for core and security-sensitive modules; CODEOWNERS per module |
 | P8 | **Documentation as code** | Docs, C4 diagrams, ADRs and the API reference live in the repo and build in CI; a feature without docs is not done |
@@ -2781,7 +2781,7 @@ Checked and found **consistent**, so not listed above:
 - pp.15–16 18 technical choices: covered by B §6.
 - pp.16–17 C1–C17: covered by B §7.
 - pp.17–18 ATAM: covered by B §8.
-- pp.18–20 FMEA F1–F24: covered by B §9 (it adds tool names jqwik and Jazzer, and R-numbers in the cells, all from B §19 / A §14.3).
+- pp.18–20 FMEA F1–F24: covered by B §9 (it adds tool names jqwik and Jazzer; jqwik was later replaced by seeded JUnit 5 generators, owner decision 2026-11-18; and R-numbers in the cells, all from B §19 / A §14.3).
 - p.20 fault trees T1–T4: covered by B §10.
 - p.20 local code checks: covered by B §12 (X12 is the causal claim).
 - pp.20–21 defaults: covered by B §12 (new column is N7).
@@ -4260,7 +4260,7 @@ No login, CAPTCHA or other protection was bypassed. When a search engine showed 
 
 | Field | Content |
 |---|---|
-| Owner's decision (paraphrased from Hindi) | Testing stops: the Stage B evidence is enough. **Operaton is final as the base engine.** All of Flowable's strengths are to be brought into Operaton/Sangam; the gap list is `spike/results/FLOWABLE-INTO-OPERATON.md`. Answers to the doubts raised: dependency + plugins; Apache 2.0; public GitHub now; run all Stage C work in parallel; publish after removing local paths. |
+| Owner's decision (paraphrased from Hindi) | Testing stops: the Stage B evidence is enough. **Operaton is final as the base engine.** All of Flowable's strengths are to be brought into Operaton/Sangam; the gap list is `sangam/docs/records/FLOWABLE-INTO-OPERATON.md`. Answers to the doubts raised: dependency + plugins; Apache 2.0; public GitHub now; run all Stage C work in parallel; publish after removing local paths. |
 | **ADR-D-1 FINAL** | Base engine = **Operaton 2.2.x** (XI.10: 85.2 vs 72.1). The "owner may override" clause is closed. Flowable is no longer a candidate. Its adapter and results stay in `spike/` only as evidence. |
 | **ADR-D-16 Integration model** | Sangam consumes Operaton as **Maven dependencies** and adds behaviour through **plugins and SPIs**: process-engine plugins, parse listeners, command interceptors, history handlers, the DMN SPI and the product layer. A change to the engine source is allowed only when no extension point exists. Each such change is recorded in the patch ledger (P-n), kept minimal, and **offered upstream** to Operaton. The first example is P-1 (MySQL datetime precision). Sangam does not maintain a hard fork. |
 | **ADR-D-17 Licence** | **Apache License 2.0** for all Sangam code, matching Operaton and Flowable. Ported code keeps its original headers and is marked modified (NOTICE). The rules LIC-1…11 stay in force: no GraalJS; no bundled Oracle, Db2 or MySQL drivers; Liquibase pinned at 4.33.0. |
@@ -4313,9 +4313,12 @@ The FEEL engine is kept as pinned (feel-scala 1.22.1 behind operaton-engine-dmn 
 | Strict evaluation (SG-34) | A FEEL failure or suppressed failure fails the decision with `SANGAM-FEEL-STRICT`. This covers a missing variable, a null or mistyped operand, division by zero, an unknown function, an invalid literal date/time/duration/number, and a null condition. Native FEEL would return null, take the else branch, or fire a catch-all rule. A value that is genuinely null is still a value: `x = null` and `x != null` work. |
 | Null decision-table input (SG-34) | A null input is an error (`SANGAM-DMN-NULL-INPUT`) unless at least one rule tests that input with `null`. A catch-all `-` never catches a null. With an explicit null rule, a null input matches only the null tests. |
 | Failure handling | The check runs inside the engine command, before the result reaches the process. No rule's output is used and the command rolls back. On an async business rule task the result is an incident on the task. After the data is corrected, a job retry evaluates again and resolves the incident. |
-| Date-time equality (SG-35) | DMN 1.3 compares date-times on the time line (OMG issue DMN13-35, resolved in DMN 1.3: `=` is the same instant). The pinned engine's `=` also compares the zone (feel-scala issue #767), and an operator cannot be overridden without changing the engine, which the SG-27 pin forbids. **Policy: the spec semantics, same instant.** Until the engine is upgraded, the deploy-time lint `SANGAM-DMN-DATETIME-EQ` warns on `=`/`!=`, and on a bare input entry, against a zoned date-time literal. Models compare instants with `<`, `>`, ranges, or `a - b = duration("PT0S")`. This is a documented gap, not a silent rule. |
-| Known residual | A built-in conversion (`date(x)`, `duration(x)`, …) whose argument is a **variable** holding an invalid string still yields null in the pinned engine (built-ins cannot be overridden). Literal arguments are refused. A null that reaches a later operator, a decision-table input or a required output is still caught (strict evaluation, null-input rule, R10 `requiredOutputs`). |
-| Status | Decision: DECIDED (SG-33/34/35 root-cause fixes, 2026-11-08). Delivery: IMPLEMENTED (`sangam-engine` `org.sangam.engine.feel`). Tests: `FeelBehaviourH2Test`, `DmnModelLintTest`. |
+| Date-time equality (SG-35) | DMN 1.3 compares date-times on the time line (OMG issue DMN13-35, resolved in DMN 1.3: `=` is the same instant). The pinned engine's `=` also compares the zone (feel-scala issue #767), and an operator cannot be overridden without changing the engine, which the SG-27 pin forbids. **Policy: the spec semantics, same instant** (owner ruling G1, 2026-11-18). Deploy **refuses** `=`/`!=`, and a bare input entry, against a zoned date-time literal (`SANGAM-DMN-DATETIME-EQ`, an error). A `ZonedDateTime`, `OffsetDateTime` or `Instant` input is normalised to its UTC instant at the Sangam boundary (`SangamFeelEngine`, the variables handed to FEEL; values FEEL computes keep their zone; no engine change), so equality between date-time variables compares instants. Models compare literals with `<`, `>`, ranges, or `a - b = duration("PT0S")`. Tests: `DateTimeUtcBoundaryTest`, `DmnModelLintTest`. |
+| Built-in conversion of a variable (SG-34) | A built-in conversion (`date(x)`, `duration(x)`, …) whose argument is a **variable** holding an invalid string fails the decision with `SANGAM-FEEL-STRICT`, like a literal argument (verified 2026-11-18 on Operaton 2.2.1: `DmnGateRulesTest.aBuiltInConversionOfAnInvalidVariableStringFails`; this row earlier said such a call yields null, which was stale). |
+| Decision tables (ADR-DMN-ENGINE D1) | COLLECT SUM, MIN and MAX are exact (`Long` or `BigDecimal`, never `double`; `DecisionTableRules`). A constant `defaultOutputEntry` is the result when no rule matches (DMN 1.5 8.2.11); a non-constant one is refused at parse (`SANGAM-DMN-DEFAULT-OUTPUT`). Operaton's history keeps an aggregated COLLECT value in a double column (display copy); the exact value is the decision result and the per-rule output rows. |
+| Not supported (owner decision D2) | Business knowledge models, decision services, boxed contexts, relations, invocations and function definitions are refused at deploy (`SANGAM-DMN-UNSUPPORTED`). |
+| Money is never rounded in DMN (owner DEC-5) | `decimal(...)` in an output entry, default output entry or literal expression whose output is money is refused at deploy (`SANGAM-DMN-MONEY-ROUNDING`). Rounding belongs to the financial core. |
+| Status | Decision: DECIDED (SG-33/34/35 root-cause fixes, 2026-11-08). Delivery: IMPLEMENTED (`sangam-engine` `org.sangam.engine.feel`). Tests: `FeelBehaviourH2Test`, `DmnModelLintTest`, `DmnGateRulesTest`, `DecisionTableRulesH2Test`. |
 
 ## X.0h ADR-D-27: the engine JVM runs in UTC (DECIDED 2026-11-09)
 
@@ -6658,7 +6661,7 @@ Methods are in `spike/results/scorecard.md`. The patch and market-fit methods ar
 
 **Evidence:**
 - `sangam/`: 32 reactor modules (`sangam/pom.xml`, `<module>` entries, including `sangam-bom`, `sdks/java` and `tools/sangam-cli`), four more Tier-1 SDKs, the UI, `deploy/` and `perf/`. Each has a README coverage map, except `sangam-core`. (The 2026-11-05 edition counted 25 Maven modules.)
-- `spike/results/TRACEABILITY-REGISTER.md` and `TRACEABILITY-REGISTER.csv`.
+- `sangam/docs/records/TRACEABILITY-REGISTER.md` and `TRACEABILITY-REGISTER.csv`.
 
 **Status (updated 2026-11-12):** the code compiles (compile-only gate). The 2026-11-05 statement "only H2 fast tests exist" no longer holds. Besides the unit and H2 tests, there are 38 integration/acceptance suites (`*IT`, failsafe profile `sangam-db-it`, Testcontainers):
 - `sangam-server` acceptance: `ServerStartsIT`, `E1CorpusCoverageIT`, `E2AuthorizationIT`, `E3LeaseIT`, `E4IdempotencyIT`, `E5OutboxInboxIT`, `E7DeleteIT`, `E8DstTimerIT`, `E10PlatformFitIT`, `E11GapSetIT`, `E16aPatternsIT`, `E16bPatternsIT`, `E16cPatternIT`, `E17aDomainsIT`, `E17bDomainIT`, `E17cDomainIT`, `PlugAndPlayIT`, `T08PoisonOutboxIT`, `T35RestoreIT`, `TScaleLoadIT`, `CrossTenantIsolationIT`, `FwtWorkerCompatIT`, `WorkApiLedgerIT`, `TenantQuotaIT`, `NullBindDialectIT`, `MysqlUtf8mb4PatchIT`;
@@ -6716,7 +6719,7 @@ Earlier runs of some of these are recorded in `sangam/TESTING-GAP-REGISTER.md` (
 
 ## XII.3 Traceability register
 
-The register is [`spike/results/TRACEABILITY-REGISTER.md`](spike/results/TRACEABILITY-REGISTER.md), with the full table in `TRACEABILITY-REGISTER.csv`. For every id it records:
+The register is [`sangam/docs/records/TRACEABILITY-REGISTER.md`](sangam/docs/records/TRACEABILITY-REGISTER.md), with the full table in `TRACEABILITY-REGISTER.csv`. For every id it records:
 - its status;
 - the module, file or pack that covers it;
 - the tests that will prove it.
@@ -7344,7 +7347,7 @@ JUnit 5 एक्सटेंशन्स,
 @Deployment , मॉक बिहेवियर
 फ़ैक्ट्री।
 दोनों + Mutation (PIT),
-Property (jqwik), Fuzzing
+Property (JUnit 5 seeded), Fuzzing
 (Jazzer), Jepsen व Replay
 टेस्ट।
 22. Legacy
@@ -8964,7 +8967,7 @@ Flowable
 इंटरसेप्टर
 मॉडल-
 आधारित
-(jqwik) टेस्ट
+(JUnit 5 seeded) टेस्ट
 7×2×3 =
 42
 F5
@@ -9613,7 +9616,7 @@ System Design (D1–D12): Hexagonal Architecture (कोर में Spring/MyB
 Migrate → Contract बैकवड कम्पैटिबिलिटी, डिज़ाइन से Observability, कोर में पूण Determinism (कोई
 System.currentTimeMillis , new Date() या ThreadLocal नहीं), और स्टैंडड्स को प्राथमिकता।
 System Development (P1–P10): Trunk-based विकास, कोर के लिए TDD, टेस्ट पिरामिड, कोर पर PIT
-Mutation Testing (≥ 70% स्कोर, ≥ 85% लाइन कवरेज), jqwik प्रॉपर्टी-आधारित टेस्ट, Jazzer पासर फ़ज़िंंग, कोर व
+Mutation Testing (≥ 70% स्कोर, ≥ 85% लाइन कवरेज), JUnit 5 (seeded) प्रॉपर्टी-आधारित टेस्ट, Jazzer पासर फ़ज़िंंग, कोर व
 सुरक्षा मॉड्यूूल्स के लिए 2 रिव्यूअस, Docs-as-Code, सख्त Definition of Done और पिन किए गए डिपेंडेंसीज़ के साथ
 Reproducible Builds।
 10+ वष का लाइफसाइकिल और कानूनी नियम (§12, §14.7): हर 3 महीने में माइनर रिलीज़ और हर 2 साल में 5-वर्षीय सुरक्षा

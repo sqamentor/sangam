@@ -8,7 +8,7 @@
  * - M-125 semantic compare of two versions of one file (POST /models/diff) and M-101 presence (who else has it open);
  * - lifecycle draft → review → approved → deployed → retired; reviewer ≠ author; "play" deploys to the sandbox tenant.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api/endpoints';
@@ -127,7 +127,7 @@ export function PackageWorkspace() {
   const { me } = useAuth();
   const pkg = useAsync(() => api.packages.get(id), [id]);
   const [current, setCurrent] = useState<string>();
-  const handle = useRef<EditorHandle>();
+  const handle = useRef<EditorHandle | undefined>(undefined);
   const [dirty, setDirty] = useState(false);
   const [tab, setTab] = useState('edit');
   const [issues, setIssues] = useState<ValidationIssue[]>();
@@ -139,17 +139,16 @@ export function PackageWorkspace() {
   const [lease, setLease] = useState<LeaseState>();
   const act = useAction();
 
-  useEffect(() => {
-    if (pkg.data && !current && pkg.data.artifacts.length) setCurrent(pkg.data.artifacts[0].id);
-  }, [pkg.data, current]);
-
   if (pkg.loading && !pkg.data) return <Loading />;
   if (!pkg.data) return <ProblemAlert error={pkg.error} onRetry={pkg.reload} />;
   const p = pkg.data;
   const editable = p.state === 'DRAFT' || p.state === 'REJECTED';
   // Someone else holds the lease: the server refuses the save (EDIT_LEASE_REQUIRED / EDIT_LEASE_LOST), so the UI does too.
   const leaseBlocks = lease !== undefined && !lease.mine;
-  const art = p.artifacts.find((a) => a.id === current);
+  // The open artifact defaults to the first one, derived during render (UP-L6b: an effect left React 19 rendering a
+  // frame of the loaded package without its editor).
+  const shownId = current ?? p.artifacts[0]?.id;
+  const art = p.artifacts.find((a) => a.id === shownId);
   const scan = scanArtifacts(p.artifacts);
 
   const save = async (): Promise<boolean> => {
@@ -252,7 +251,7 @@ export function PackageWorkspace() {
             <ul>
               {p.artifacts.map((a) => (
                 <li key={a.id}>
-                  <button type="button" aria-current={a.id === current ? 'true' : undefined} onClick={() => void switchTo(a.id)}>
+                  <button type="button" aria-current={a.id === shownId ? 'true' : undefined} onClick={() => void switchTo(a.id)}>
                     <span className="badge badge-info">{a.kind}</span> {a.name}
                   </button>
                 </li>

@@ -138,6 +138,8 @@ class QuotaVariableCheckReadsH2Test {
         if (engine != null) {
             engine.close();
         }
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        engine = null;
     }
 
     @BeforeEach

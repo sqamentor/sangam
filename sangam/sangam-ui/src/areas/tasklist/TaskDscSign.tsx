@@ -27,6 +27,7 @@ import { DscSigner } from '../../components/DscSigner';
 import { Notice, ProblemAlert, SelectField } from '../../components/ui';
 import type { DscCertificate, DscSignature, DscToSign } from '../../lib/dscAgent';
 import { announce } from '../../lib/hooks';
+import { type Translate } from '../../i18n';
 
 /** A verification outcome other than VERIFIED_VALID, raised so the signer screen offers signing again. */
 export class DscOutcomeError extends Error {
@@ -41,7 +42,7 @@ export function isPdf(a: Pick<Attachment, 'name' | 'contentType'>): boolean {
 }
 
 /** The user's words for a refused DSC step (contract problem codes of prepare and complete) or a failed outcome. */
-export function explainDscProblem(e: unknown, t: (k: string, o?: Record<string, unknown>) => string): string {
+export function explainDscProblem(e: unknown, t: Translate): string {
   if (e instanceof DscOutcomeError) {
     const r = e.result;
     if (r.reasonCode === 'CERTIFICATE_NOT_ENROLLED') return t('dsc.task.revokedMeanwhile');

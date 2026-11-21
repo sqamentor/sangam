@@ -1,6 +1,6 @@
 {
   "id": "sec.ins.reinsurance",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Reinsurance cession and recovery",
     "hi": "पुनर्बीमा अभ्यर्पण एवं वसूली"
@@ -40,18 +40,22 @@
   "connectors": [
     {
       "id": "re.cede",
+      "moneyMovement": "NONE",
+      "moneyMovementReason": "owner decision M3: records a cession in the reinsurance register; no money moves",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Cession register"
     },
     {
       "id": "re.placeFac",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Facultative placement"
     },
     {
       "id": "re.recovery",
+      "moneyMovement": "IN",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Recovery claim"

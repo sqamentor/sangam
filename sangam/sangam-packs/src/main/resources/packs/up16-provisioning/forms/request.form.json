@@ -1,6 +1,6 @@
 {
   "key": "up16-provisioning/request",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "universal.up16-provisioning",
   "title": {
     "en": "Joiner / leaver",

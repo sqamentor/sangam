@@ -83,7 +83,7 @@ test('a saved inbox filter keeps neither the search text nor the user id in loca
   const side = page.getByRole('complementary', { name: t('task.filterSidebar') });
   await side.getByLabel(t('common.name')).fill(filterName);
   await side.getByRole('button', { name: t('common.save') }).click();
-  await expect(side.getByRole('button', { name: filterName })).toBeVisible();
+  await expect(side.getByRole('button', { name: filterName, exact: true })).toBeVisible();
 
   await expect.poll(async () => JSON.stringify((await webStorage(page)).local)).toContain(filterName);
   const { local } = await webStorage(page);
@@ -95,6 +95,6 @@ test('a saved inbox filter keeps neither the search text nor the user id in loca
 
   // the filter survives a reload (it is kept), and applying it does not bring the search text back
   await page.reload();
-  await side.getByRole('button', { name: filterName }).click();
+  await side.getByRole('button', { name: filterName, exact: true }).click();
   await expect(page.getByRole('searchbox', { name: t('task.search'), exact: true })).toHaveValue('');
 });

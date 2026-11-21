@@ -45,6 +45,41 @@ class SangamModelValidatorTest {
         assertTrue(codes(check(withAdHoc, "<adHocSubProcess id=\"ah\"/>"), Severity.ERROR).isEmpty());
     }
 
+    /**
+     * R10-bpmn: a data store (reference) is documentation only (profile NOT_EXECUTABLE), so it is accepted with a
+     * warning; it used to be refused, which refused MIWG B.1.0, B.2.0, C.4.0, C.5.0 and C.10.0. The standard loop is
+     * accepted once P-6 is installed.
+     */
+    @Test
+    void dataStoresAreDocumentationAndTheStandardLoopNeedsP6() {
+        SangamModelValidator v = new SangamModelValidator(new SangamModelValidator.Options(true, true));
+        List<Finding> f = check(v, "<dataStoreReference id=\"ds\"/><userTask id=\"u\"><standardLoopCharacteristics loopMaximum=\"2\"/></userTask>");
+        assertTrue(codes(f, Severity.ERROR).isEmpty(), f.toString());
+        assertEquals(Set.of("DOC-ONLY"), codes(f, Severity.WARNING));
+
+        SangamModelValidator noP6 = new SangamModelValidator(new SangamModelValidator.Options(true));
+        assertEquals(Set.of("D-52"), codes(check(noP6, "<userTask id=\"u\"><standardLoopCharacteristics loopMaximum=\"2\"/></userTask>"),
+                Severity.ERROR));
+
+        try (PortsH2Engine h2 = PortsH2Engine.start(null)) {
+            String xml = HEAD.replace("<process ", "<dataStore id=\"store\"/><process ")
+                    + "<startEvent id=\"s\"/><dataStoreReference id=\"ds\" dataStoreRef=\"store\"/>" + TAIL;
+            h2.engine.getRepositoryService().createDeployment().addString("ds.bpmn", xml).deploy();
+            assertEquals(1, h2.engine.getRepositoryService().createProcessDefinitionQuery().processDefinitionKey("p").count());
+        }
+    }
+
+    @Test
+    void optionsFromSettingsCarryEveryInstalledPatch() {
+        org.sangam.ports.PortsSettings settings = new org.sangam.ports.PortsSettings();
+        assertEquals(new SangamModelValidator.Options(true, true), SangamModelValidator.Options.of(settings));
+        settings.setStandardLoop(false);
+        assertEquals(new SangamModelValidator.Options(true, false), SangamModelValidator.Options.of(settings));
+        settings.setAdHocSubProcess(false);
+        settings.setStandardLoop(true);
+        assertEquals(new SangamModelValidator.Options(false, true), SangamModelValidator.Options.of(settings));
+    }
+
     @Test
     void rejectsDoctypeAndIgnoresOtherResources() {
         SangamModelValidator v = new SangamModelValidator(new SangamModelValidator.Options(true));

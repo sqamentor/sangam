@@ -103,7 +103,7 @@ class ProductionStartupFailFastTest {
     }
 
     /** Valid production settings; each case changes one of them. */
-    private static Map<String, String> baseline(String db) {
+    static Map<String, String> baseline(String db) {
         Map<String, String> m = new LinkedHashMap<>();
         m.put("sangam.security.production", "true");
         m.put("spring.datasource.url", "jdbc:h2:mem:" + db + ";DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000;MODE=PostgreSQL");
@@ -129,6 +129,8 @@ class ProductionStartupFailFastTest {
         m.put("sangam.keys.foreign-fingerprints", FOREIGN.toString());
         // decision 126 part 2 (W4-A): the ledger module is on by default and needs its GL export connector id
         m.put("sangam.ledger.gl-connector", "gl-test");
+        // ... and that id must name a connector (LEDGER_GL_CONNECTOR_UNKNOWN): here a declared tenant SAP OData connector
+        m.put("sangam.channels.enterprise.t1.gl-test.type", "sap-odata");
         // decision 371 (1) (DEC-371-1): production refuses to start without the trusted proxies (UI and ingress)
         m.put("sangam.http.trusted-proxies", "10.0.0.0/8");
         // the h2 profile's development conveniences, which production refuses or must not use
@@ -143,7 +145,7 @@ class ProductionStartupFailFastTest {
         return m;
     }
 
-    private static ConfigurableApplicationContext start(Map<String, String> settings) {
+    static ConfigurableApplicationContext start(Map<String, String> settings) {
         String[] args = settings.entrySet().stream().map(e -> "--" + e.getKey() + "=" + e.getValue()).toArray(String[]::new);
         return new SpringApplicationBuilder(SangamServerApplication.class).profiles("h2").run(args);
     }
@@ -273,6 +275,60 @@ class ProductionStartupFailFastTest {
         Path list = fingerprintList("staging " + publicKeyFingerprint(REGISTRY_SIGNER[1]) + "\n");
         assertRefused("sg38-key-env-shared", m -> m.put("sangam.keys.foreign-fingerprints", list.toString()),
                 "KEY_SHARED_ACROSS_ENVIRONMENTS");
+    }
+
+    @Test
+    void aGlConnectorIdNamingNoConnectorIsRefused() {
+        // owner decision 126 / RM-05: an unknown id would dead-letter every accounting entry instead of reaching the GL
+        assertRefused("sg38-gl-unknown", m -> m.put("sangam.ledger.gl-connector", "no-such-gl"),
+                "LEDGER_GL_CONNECTOR_UNKNOWN");
+    }
+
+    /** Owner decision 126, "Audited GL waiver now" (2026-11-19): production without a GL connector under a written reason. */
+    static Consumer<Map<String, String>> waiver(String reason) {
+        return m -> {
+            m.remove("sangam.ledger.gl-connector");
+            m.remove("sangam.channels.enterprise.t1.gl-test.type");
+            m.put("sangam.ledger.gl-export-waiver", reason);
+        };
+    }
+
+    @Test
+    void productionStartsUnderAnAuditedGlExportWaiver() throws Exception {
+        String reason = "IFMS GL connector not live until go-live; entries kept for later export";
+        Map<String, String> settings = baseline("sg38-gl-waiver");
+        waiver(reason).accept(settings);
+        try (ConfigurableApplicationContext ctx = start(settings)) {
+            assertTrue(ctx.isActive());
+            javax.sql.DataSource ds = ctx.getBean(javax.sql.DataSource.class);
+            long audited = 0;
+            for (int i = 0; i < 100 && audited == 0; i++) {   // pending, or drained onto the chain (payload in AUDIT_PAYLOAD)
+                try (java.sql.Connection c = ds.getConnection(); java.sql.Statement st = c.createStatement();
+                     java.sql.ResultSet rs = st.executeQuery("SELECT (SELECT COUNT(*) FROM AUDIT_PENDING WHERE"
+                             + " event_type='LEDGER_GL_EXPORT_WAIVED' AND tenant_id LIKE 'system:%' AND payload LIKE '%"
+                             + reason + "%') + (SELECT COUNT(*) FROM AUDIT_EVENT e JOIN AUDIT_PAYLOAD p ON p.event_id = e.event_id"
+                             + " WHERE e.event_type='LEDGER_GL_EXPORT_WAIVED' AND e.tenant_id LIKE 'system:%'"
+                             + " AND p.payload LIKE '%" + reason + "%')")) {
+                    rs.next();
+                    audited = rs.getLong(1);
+                }
+                if (audited == 0) {
+                    Thread.sleep(50);
+                }
+            }
+            assertTrue(audited == 1, "one system audit event with the reason, found " + audited);
+        }
+    }
+
+    @Test
+    void aGlExportWaiverTogetherWithAGlConnectorIsRefused() {
+        assertRefused("sg38-gl-waiver-both", m -> m.put("sangam.ledger.gl-export-waiver", "both set"),
+                "ambiguous");
+    }
+
+    @Test
+    void aBlankGlExportWaiverIsRefused() {
+        assertRefused("sg38-gl-waiver-blank", waiver("   "), "needs a written reason");
     }
 
     @Test

@@ -203,7 +203,7 @@ PAdES signing (`PadesSigning`), RFC 3161 time-stamps, `PdfSignatureValidator` an
 | `IntegrationMaintenance.java` | R29 leader-elected cleanup; VI.2.4 sampling; X.2.2 step 5; VI.5 rule 4 sweep |
 | `schema/IntegrationSchema.java` | Reference DDL of this module's tables (see §4) |
 
-### Flowable gap-list items (`spike/results/FLOWABLE-INTO-OPERATON.md`) covered here
+### Flowable gap-list items (`sangam/docs/records/FLOWABLE-INTO-OPERATON.md`) covered here
 
 | Item | Where | Notes |
 |---|---|---|

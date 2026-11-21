@@ -1,0 +1,83 @@
+{
+  "_comment": "Sangam clients for the EXISTING realm oneifms (HOSTING-KEYCLOAK, deploy/presentation/README.md section 4). Import with: kcadm.sh create clients -r oneifms -f <one client object>, or Realm settings > Partial import (clients). No secret is in this file: sangam-server is bearer-only and used only as the audience. Users also need the user attribute tenant=GOI.FIN and the realm roles listed in realmRoles.",
+  "realm": "oneifms",
+  "realmRoles": ["sangam-user", "sangam-tenant-admin", "sangam-auditor", "DDO", "HOO", "BILL_DISTRIBUTOR", "DEALING_HAND", "AAO", "PAO", "SECOND_SIGNATORY", "FA"],
+  "clients": [
+    {
+      "clientId": "sangam-ui",
+      "name": "Sangam UI",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "rootUrl": "https://demo.ifms.dev/sangam/",
+      "baseUrl": "https://demo.ifms.dev/sangam/",
+      "redirectUris": ["https://demo.ifms.dev/sangam/*"],
+      "webOrigins": ["https://demo.ifms.dev"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "https://demo.ifms.dev/sangam/*",
+        "access.token.lifespan": "900"
+      },
+      "defaultClientScopes": ["profile", "email", "roles", "web-origins"],
+      "protocolMappers": [
+        {
+          "name": "audience sangam-server",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "sangam-server",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "tenant",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "tenant",
+            "claim.name": "tenant",
+            "jsonType.label": "String",
+            "multivalued": "false",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "sangam-server",
+      "name": "Sangam API (audience only)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "bearerOnly": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false
+    }
+  ]
+}

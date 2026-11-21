@@ -6,8 +6,7 @@
  */
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import i18n from 'i18next';
-import { initI18n } from '../i18n';
+import { initI18n, tr } from '../i18n';
 import { normalise } from '../config';
 import { ApiError } from '../api/client';
 import { ProblemAlert, TraceRef } from '../components/ui';
@@ -15,7 +14,7 @@ import { isTraceId, traceIdOf, traceUrl } from './trace';
 import { blockingA11yIssues } from '../test/axe';
 
 const ID = '4bf92f3577b34da6a3ce929d0e0e4736';
-const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
+const T = tr;
 
 beforeAll(() => initI18n('en'));
 afterEach(cleanup);

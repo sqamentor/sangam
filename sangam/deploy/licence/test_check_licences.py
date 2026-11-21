@@ -154,7 +154,7 @@ class Elections(unittest.TestCase):
         self.assertTrue(ch.errors, "a new version has no election, so the AND reading fails")
 
     def test_an_elected_licence_that_is_not_offered_fails(self):
-        ch = check([comp("pkg:maven/com.h2database/h2@2.3.232", "EPL-1.0")])
+        ch = check([comp("pkg:maven/com.h2database/h2@2.5.252", "EPL-1.0")])
         self.assertTrue(any("ELECTION MISMATCH" in e for e in ch.errors), ch.errors)
 
     def test_verapdf_election_is_live_only_in_the_pdf_validator(self):
@@ -293,8 +293,8 @@ class ReviewedLicences(unittest.TestCase):
     """ui.yml "Licence policy (strict, distribution ui)", 2026-11-15: nine bpmn.io packages declare the pointer
     "SEE LICENSE IN LICENSE" and component-props declares nothing, so the gate saw no licence it could judge although
     each version is in the decision register with the licence read from its files."""
-    BPMN = "pkg:npm/bpmn-js@17.11.1"
-    FORM = "pkg:npm/%40bpmn-io/form-js-editor@1.12.0"
+    BPMN = "pkg:npm/bpmn-js@18.33.0"
+    FORM = "pkg:npm/%40bpmn-io/form-js-editor@2.2.0"
     PROPS = "pkg:npm/component-props@1.1.1"
 
     def test_a_reviewed_bpmn_io_version_is_judged_by_its_recorded_licence_and_stays_conditional(self):
@@ -512,7 +512,7 @@ class Cli(unittest.TestCase):
         self.assertEqual(2, cl.main(["--policy", self.policy, "--jar", os.path.join(self.tmp.name, "sangam-server-0.1.0.jar")]))
 
     def test_annotate_records_elections_in_the_sbom(self):
-        p = self.write_bom([comp("pkg:maven/com.h2database/h2@2.3.232", expr="MPL-2.0 OR EPL-1.0")])
+        p = self.write_bom([comp("pkg:maven/com.h2database/h2@2.5.252", expr="MPL-2.0 OR EPL-1.0")])
         self.assertEqual(0, cl.main(["--policy", self.policy, "--sbom", p, "--annotate"]))
         with open(p, encoding="utf-8") as f:
             bom = json.load(f)

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- Return and refund. Generated layout; edit freely in the Sangam modeller. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ecom_return" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.2">
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ecom_return" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.3">
   <message id="msg_sangam_returnReceived" name="sangam.returnReceived"/>
-  <process id="sangam-sec-ecom-return" name="Return and refund" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
-    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ecom.return-refund</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.2</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>orderId,returnReason,refundAmount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+  <process id="sangam-sec-ecom-return" name="Return and refund" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ecom.return-refund</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.3</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>orderId,returnReason,refundAmount,amount,payeeAccount,currency,purpose</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="er_start" name="Return requested" operaton:initiator="initiator" operaton:formKey="sangam:sec-ecom-return-refund/request"></startEvent>
     <serviceTask id="er_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>returnReason=DAMAGED;resolutionPref=REFUND;category=GENERAL;qcSeat=RETURNS-QC;executionConnector=pg.refund;executionStep=refund;verifyApproval=false;reconcileRequired=false;executionPayloadFields=orderId,refundAmount;applicantRef=@customerId</operaton:string></operaton:field></extensionElements></serviceTask>
     <businessRuleTask id="er_policy" name="Return policy (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ecom-return-policy</operaton:string></operaton:field></extensionElements></businessRuleTask>
@@ -25,7 +25,10 @@
     <exclusiveGateway id="er_resGw" name="Refund or replacement?" default="sec_ecom_return_f21"></exclusiveGateway>
     <serviceTask id="er_replace" name="Create replacement order" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>order.replacement</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>create</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>repl</operaton:string></operaton:field><operaton:field name="step"><operaton:string>replacement</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="er_endReplaced" name="Replaced"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
-    <callActivity id="er_refund" name="Refund to the original method (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="er_refund_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.MoneyFieldsDelegate"><operaton:field name="amount"><operaton:string>refundAmount</operaton:string></operaton:field><operaton:field name="captureVar"><operaton:string>originalPaymentRef</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Return refund to the original payment</operaton:string></operaton:field></operaton:executionListener><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="er_refund_sgw" name="Sanctioned?" default="er_refund_sgw_no"></exclusiveGateway>
+    <endEvent id="er_refund_notReleased" name="Not released"></endEvent>
+    <callActivity id="er_refund" name="Refund to the original method (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <endEvent id="er_end" name="Refunded"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <sequenceFlow id="sec_ecom_return_f1" sourceRef="er_start" targetRef="er_defaults"/>
     <sequenceFlow id="sec_ecom_return_f2" sourceRef="er_defaults" targetRef="er_policy"/>
@@ -47,8 +50,11 @@
     <sequenceFlow id="sec_ecom_return_f18" name="customer" sourceRef="er_dispGw" targetRef="er_resGw"/>
     <sequenceFlow id="sec_ecom_return_f19" name="replace" sourceRef="er_resGw" targetRef="er_replace"><conditionExpression xsi:type="tFormalExpression">${resolutionPref == 'REPLACE'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_ecom_return_f20" sourceRef="er_replace" targetRef="er_endReplaced"/>
-    <sequenceFlow id="sec_ecom_return_f21" name="refund" sourceRef="er_resGw" targetRef="er_refund"/>
+    <sequenceFlow id="sec_ecom_return_f21" name="refund" sourceRef="er_resGw" targetRef="er_refund_sanction"/>
     <sequenceFlow id="sec_ecom_return_f22" sourceRef="er_refund" targetRef="er_end"/>
+    <sequenceFlow id="er_refund_sanction_f" sourceRef="er_refund_sanction" targetRef="er_refund_sgw"/>
+    <sequenceFlow id="er_refund_sgw_yes" name="sanctioned" sourceRef="er_refund_sgw" targetRef="er_refund"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="er_refund_sgw_no" name="not sanctioned" sourceRef="er_refund_sgw" targetRef="er_refund_notReleased"/>
   </process>
   <bpmndi:BPMNDiagram id="sec_ecom_return_diagram">
     <bpmndi:BPMNPlane id="sec_ecom_return_plane" bpmnElement="sangam-sec-ecom-return">
@@ -72,8 +78,11 @@
       <bpmndi:BPMNShape id="er_resGw_di" bpmnElement="er_resGw"><dc:Bounds x="1860" y="170" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="er_replace_di" bpmnElement="er_replace"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="er_endReplaced_di" bpmnElement="er_endReplaced"><dc:Bounds x="2197" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="er_refund_di" bpmnElement="er_refund"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="er_end_di" bpmnElement="er_end"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_refund_sanction_di" bpmnElement="er_refund_sanction"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_refund_sgw_di" bpmnElement="er_refund_sgw"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_refund_notReleased_di" bpmnElement="er_refund_notReleased"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_refund_di" bpmnElement="er_refund"><dc:Bounds x="2330" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_end_di" bpmnElement="er_end"><dc:Bounds x="2527" y="302" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="sec_ecom_return_f1_di" bpmnElement="sec_ecom_return_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ecom_return_f2_di" bpmnElement="sec_ecom_return_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ecom_return_f3_di" bpmnElement="sec_ecom_return_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
@@ -95,7 +104,10 @@
       <bpmndi:BPMNEdge id="sec_ecom_return_f19_di" bpmnElement="sec_ecom_return_f19"><di:waypoint x="1910" y="195"/><di:waypoint x="1955" y="195"/><di:waypoint x="1955" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ecom_return_f20_di" bpmnElement="sec_ecom_return_f20"><di:waypoint x="2100" y="320"/><di:waypoint x="2197" y="320"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_ecom_return_f21_di" bpmnElement="sec_ecom_return_f21"><di:waypoint x="1910" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_ecom_return_f22_di" bpmnElement="sec_ecom_return_f22"><di:waypoint x="2100" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f22_di" bpmnElement="sec_ecom_return_f22"><di:waypoint x="2430" y="320"/><di:waypoint x="2527" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="er_refund_sanction_f_di" bpmnElement="er_refund_sanction_f"><di:waypoint x="2100" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="er_refund_sgw_yes_di" bpmnElement="er_refund_sgw_yes"><di:waypoint x="2240" y="195"/><di:waypoint x="2285" y="195"/><di:waypoint x="2285" y="320"/><di:waypoint x="2330" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="er_refund_sgw_no_di" bpmnElement="er_refund_sgw_no"><di:waypoint x="2240" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

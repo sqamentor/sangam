@@ -1,6 +1,6 @@
 {
   "key": "sec-scm-procure-to-pay/prepare-sanction-note",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.scm.procure-to-pay",
   "title": {
     "en": "Prepare the document to sign",

@@ -14,8 +14,22 @@ import { LogoutPrompt } from './LogoutPrompt';
 import { navEnd, visibleNav } from './nav';
 import { useInstalledModules } from './installed';
 import { usePlugins } from '../plugins/host';
-import { GlobalSearch } from '../modules/platform';
+import { GlobalSearch } from './GlobalSearch';
 import { config } from '../config';
+
+/**
+ * Owner option (b) 2026-11-19: the "Sandbox" badge, shown only when the server says the signed-in tenant is a demo
+ * sandbox tenant (GET /me sandbox=true, from sangam.demo.sandbox-tenants). Nothing is shown otherwise.
+ */
+export function SandboxBadge({ sandbox }: { sandbox?: boolean }) {
+  const { t } = useTranslation();
+  if (sandbox !== true) return null;
+  return (
+    <span className="badge badge-warn" data-testid="sandbox-badge" title={t('auth.sandboxNotice')}>
+      {t('auth.sandbox')}
+    </span>
+  );
+}
 
 /** Owner decision Q-06 / 397 Q11: 0.1.0 is English only; the switch shows only when more than one locale is configured. */
 export function LanguageSwitch() {
@@ -146,6 +160,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 {me.displayName}
                 {me.tenantName ? ` · ${me.tenantName}` : ''}
               </Link>
+              <SandboxBadge sandbox={me.sandbox} />
               {mode === 'dev' && <span className="badge badge-warn">{t('auth.devMode')}</span>}
               <button type="button" onClick={() => void signOut()}>
                 {t('auth.signOut')}

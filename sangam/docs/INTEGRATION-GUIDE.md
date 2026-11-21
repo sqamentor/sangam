@@ -278,7 +278,8 @@ Worker credentials are a service-principal API token, or the Keycloak client `sa
 **Deployment**
 - `PackDeployer.deployAll(tenantId)` makes one engine deployment per pack (`pack:<id>@<version>`).
 - A version is immutable (`PACK_VERSION_IMMUTABLE`, answered as `422 PACK_REJECTED`). A rollback rolls forward.
-- `sangam.packs.deploy-on-start` is true only on the h2 profile. `sangam.packs.tenants` lists the tenants (`sangam-server/.../config/PacksWiring.java:66-68,261-282`).
+- Start-up deployment: with `sangam.packs.deploy-on-start=true` every shipped pack is deployed for the tenants listed in `sangam.packs.tenants` (comma-separated); a later start deploys nothing again. The default of `deploy-on-start` is true only under profile `h2`, so every other install that deploys at start-up sets both, for example `SANGAM_PACKS_DEPLOY_ON_START=true` and `SANGAM_PACKS_TENANTS=GOI.FIN` (`sangam-server/.../config/PacksWiring.java`, `sangamPacksDeployOnStart`). The listed ids are not checked against the tenant directory.
+- A tenant created by `sangam.security.first-admins.*` gets no pack from that bootstrap (`FirstAdminBootstrap` does not go through `/admin/tenants`). It gets its packs from onboarding (a platform administrator) or from the two settings above; without either, every process start of it answers 404 (register E-25, `PacksOfBootstrapTenantAgainstServerTest`).
 - Routes: `GET /packs/installed`, `POST /packs/{id}/uninstall` (`404 PACK_NOT_INSTALLED`, `409 PACK_HAS_DEPENDANTS`) and `POST /packs/{id}/rollback`.
 
 **Jurisdiction packs**

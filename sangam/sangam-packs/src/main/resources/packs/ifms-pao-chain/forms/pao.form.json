@@ -1,6 +1,6 @@
 {
   "key": "ifms-pao-chain/pao",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "pack": "gov.ifms.pao-chain",
   "title": {
     "en": "PAO pass, object or return",

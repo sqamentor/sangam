@@ -98,6 +98,7 @@ import org.operaton.bpm.engine.delegate.JavaDelegate;
  *       {@code result} is the exact sum of that field over the items (each whole minor units, not negative, keys
  *       unique, the register not empty); nothing is rounded, so no policy. For example the gross wages of a payroll
  *       taken from the frozen register, never one case figure.</li>
+ *   <li>{@code EXACT} (ruling C): never rounds; fields {@code min}/{@code max}; see {@link MoneyExactCalculation}.</li>
  * </ul>
  * <b>Wage period (decision 223).</b> Optional fields {@code periodFrom} and {@code periodTo} name the variables
  * holding the first and last day (ISO dates) of the period the amounts are for. When set, the policy DMN and the
@@ -149,6 +150,8 @@ public class MoneyCalculationDelegate implements JavaDelegate {
     private Expression joiner;
     private Expression exemptBasis;
     private Expression periodUnit;
+    private Expression min;
+    private Expression max;
 
     /** The computational part of a policy row. */
     public record Policy(String id, String version, String evidence, String use, RoundingMode mode,
@@ -239,11 +242,16 @@ public class MoneyCalculationDelegate implements JavaDelegate {
         String operation = Vars.field(op, ex, "FORMULA");
         Map<String, Object> inputs = new LinkedHashMap<>();
         if ("SUM".equals(operation)) {
-            sum(ex, target, inputs);
+            MoneyExactCalculation.sum(ex, target, Vars.field(formula, ex), inputs);
             return;
         }
         if ("TOTAL".equals(operation)) {
             total(ex, target);
+            return;
+        }
+        if ("EXACT".equals(operation)) {
+            MoneyExactCalculation.exact(ex, target, Vars.field(formula, ex), Vars.field(min, ex), Vars.field(max, ex),
+                    inputs);
             return;
         }
         if (Vars.fieldBool(ratio, ex, false)) {
@@ -302,28 +310,6 @@ public class MoneyCalculationDelegate implements JavaDelegate {
         }
         Vars.audit(ex, AUDIT_TYPE, details);
     }
-
-    /** {@code SUM}: variables added or subtracted, each already whole minor units; nothing is rounded. */
-    private void sum(DelegateExecution ex, String target, Map<String, Object> inputs) {
-        String text = Vars.field(formula, ex);
-        if (text == null || !SUM_FORMULA.matcher(text).matches()) {
-            throw refused("CALCULATION_INVALID", "op SUM takes variables joined by + or - only, not '" + text + "'");
-        }
-        DecimalFormula f = DecimalFormula.parse(text);
-        BigDecimal value = f.evaluate(name -> {
-            BigDecimal v = read(ex, name, inputs);
-            if (v != null && v.signum() != 0 && v.stripTrailingZeros().scale() > 0) {
-                throw refused("CALCULATION_INVALID", "op SUM: " + name + " = " + v + " is not whole minor units");
-            }
-            return v;
-        }, v -> v);
-        ex.setVariable(target, Vars.engineValue(value));
-        Vars.audit(ex, AUDIT_TYPE, Vars.map("result", target, "formula", text, "inputs", inputs,
-                "exact", value.toString(), "value", value.toPlainString(), "policy", "SUM_OF_ROUNDED"));
-    }
-
-    private static final java.util.regex.Pattern SUM_FORMULA =
-            java.util.regex.Pattern.compile("[A-Za-z_]\\w*( *[+-] *[A-Za-z_]\\w*)*");
 
     /** Instalment {@code k} (1-based) of {@code n} of {@code t}: each the policy share, the residual one the rest. */
     static BigDecimal instalment(Policy p, BigDecimal t, BigDecimal n, BigDecimal k) {
@@ -781,7 +767,7 @@ public class MoneyCalculationDelegate implements JavaDelegate {
         return r == null ? Map.of() : r;
     }
 
-    private static BigDecimal read(DelegateExecution ex, String name, Map<String, Object> inputs) {
+    static BigDecimal read(DelegateExecution ex, String name, Map<String, Object> inputs) {
         BigDecimal v = Vars.decimal(ex.getVariable(name));
         inputs.put(name, v == null ? null : v.toString());
         return v;

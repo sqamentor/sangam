@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_fin_complaint_tat" name="Complaint clocks by regulator scheme" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-fin-complaint-tat" name="Complaint clocks by regulator scheme" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+  <decision id="sec-fin-complaint-tat" name="Complaint clocks by regulator scheme" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
     <decisionTable id="sec-fin-complaint-tat_t" hitPolicy="FIRST">
       <input id="sec-fin-complaint-tat_i0" label="Scheme"><inputExpression id="sec-fin-complaint-tat_ie0" typeRef="string"><text>regulatorScheme</text></inputExpression></input>
       <output id="sec-fin-complaint-tat_o0" label="Resolve within" name="resolveSpec" typeRef="string"/>

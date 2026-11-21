@@ -1,5 +1,10 @@
 # Sangam Stage B spike
 
+> **ARCHIVED, UNSUPPORTED (2026-11-18).** This Stage B spike is a historical record: not built by CI, not maintained,
+> not scanned for new vulnerabilities, not for production use. Do not build or deploy from it. The exact source is
+> tag `spike-archive-0d28f052` (commit `0d28f052`); the live inputs that were here (traceability register, FIO gap
+> list, IFMS requirement documents) moved to `sangam/docs/records/`. See `../sangam/docs/records/SPIKE-ARCHIVE.md`.
+
 Implements the plan in `../SANGAM.md` Part XI. It answers ADR-D-1: which base engine to choose, Flowable 8.0.0 or Operaton 2.2.0.
 
 ## Modules

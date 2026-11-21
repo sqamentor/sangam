@@ -1533,6 +1533,11 @@ ALTERS = [
     # only then creates the unique index (SQL Server counts NULLs as equal in a unique index).
     ("0046-02", "decision 393 (a): the Sangam person or group id behind an opaque SCIM id", "SEC_SCIM_RESOURCE",
      [("person_id", "{str64}", "")], []),
+    # Owner decision 126 + audited GL waiver (2026-11-19), RM-05: every accounting entry is kept in LDG_ACCOUNTING with
+    # its exact GL payload (canonical JSON, decimals as strings), so an entry written while no GL connector is set
+    # (exported_at NULL) is exported later exactly as it would have been. Nullable, no backfill: no row exists before.
+    ("0049-01", "RM-05 / decision 126: the exact GL payload of each accounting entry, for a later export",
+     "LDG_ACCOUNTING", [("payload_json", "{text}", "")], []),
 ]
 
 # Data changesets, applied after every table and alter changeset:

@@ -83,6 +83,8 @@ class Dmn16DeploymentH2Test {
         if (engine != null) {
             engine.close();
         }
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        engine = null;
     }
 
     private static Object evaluate(Object amount) {
@@ -137,7 +139,11 @@ class Dmn16DeploymentH2Test {
         for (Throwable t = e; t != null; t = t.getCause()) {
             chain.append(t.getMessage()).append(" | ");
         }
-        assertTrue(chain.toString().contains(org.sangam.feel.Dmn16Support.CODE_ONNX), chain.toString());
+        // Owner D2 (2026-11-18): DmnModelLint refuses functionDefinition/context before the DMN 1.6 reader runs, so
+        // the deploy path reports SANGAM-DMN-UNSUPPORTED; the reader's own CODE_ONNX refusal stays pinned by
+        // Dmn16SupportTest (sangam-feel).
+        assertTrue(chain.toString().contains("SANGAM-DMN-UNSUPPORTED") && chain.toString().contains("functionDefinition fx"),
+                chain.toString());
         assertEquals(0, engine.processEngine().getRepositoryService().createDecisionDefinitionQuery()
                 .decisionDefinitionKey("fee16b").count(), "nothing of the refused deployment is stored");
     }

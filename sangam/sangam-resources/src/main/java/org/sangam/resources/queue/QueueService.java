@@ -415,7 +415,7 @@ public final class QueueService {
                 List<String[]> got = Jdbc.query(c, d.skipLockedSelect("t.token_id, t.row_version", "RES_TOKEN", "t",
                                 "t.tenant_id=? AND t.token_id=? AND t.state='WAITING'", "t.token_id", 1),
                         rs -> new String[]{rs.getString(1), rs.getString(2)}, t, id);
-                if (!got.isEmpty()) {
+                if (!got.isEmpty() && tokenRaw(c, t, got.get(0)[0]).state() == TokenState.WAITING) { // committed state: Oracle snapshot
                     picked = Optional.of(got.get(0));
                     break;
                 }

@@ -4,7 +4,8 @@
 #     target (85% lines on core) is a JaCoCo check with haltOnFailure=false.
 #   - mutation: PIT 1.30.2 + pitest-junit5-plugin 1.2.3 on sangam-core (-Psangam-mutation); the 70% target is reported,
 #     mutationThreshold 0 keeps it non-blocking.
-# jqwik, Jazzer and Cucumber are managed in sangam/pom.xml; their harnesses arrive with the module owners in Wave 2.
+# Jazzer and Cucumber are managed in sangam/pom.xml; their harnesses arrive with the module owners in Wave 2.
+# Property tests are plain JUnit 5 with seeded generators (jqwik removed, owner decision 2026-11-18).
 # Weekly and on demand only: these runs are long and are not a pull-request gate.
 # CR-01 (W4-C): the thresholds are report-only (haltOnFailure=false, mutationThreshold 0), but a failing build, test or
 # tool run fails the job: there is no continue-on-error. Each job records a results-ledger line NOT-RUN (report-only).
@@ -40,8 +41,9 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
-        with: { distribution: temurin, java-version: "25.0.1", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with: { distribution: temurin, java-version: "25.0.5+8" }
+      - uses: ./.github/actions/maven-cache
       - name: Unit tests with the JaCoCo agent
         run: |
           mvn $MAVEN_ARGS -Psangam-coverage -Dsangam.db=h2 -DskipITs -Dsangam.it.skip=true verify
@@ -68,8 +70,9 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
-        with: { distribution: temurin, java-version: "25.0.1", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with: { distribution: temurin, java-version: "25.0.5+8" }
+      - uses: ./.github/actions/maven-cache
       - name: Compile sangam-core and its tests
         run: mvn $MAVEN_ARGS -pl sangam-core -am -DskipTests install
       - name: PIT mutationCoverage (mutationThreshold 0)

@@ -8,6 +8,7 @@ import { loadConfig } from './config';
 import { applyFonts } from './fonts';
 import { initI18n } from './i18n';
 import { AuthProvider } from './auth/AuthProvider';
+import { SeatContextGuard } from './auth/SeatContextGuard';
 import { App } from './app/App';
 
 async function boot() {
@@ -17,7 +18,9 @@ async function boot() {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <AuthProvider>
-        <App />
+        <SeatContextGuard>
+          <App />
+        </SeatContextGuard>
       </AuthProvider>
     </StrictMode>,
   );

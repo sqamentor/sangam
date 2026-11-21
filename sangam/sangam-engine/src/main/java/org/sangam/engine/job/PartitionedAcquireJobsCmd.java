@@ -18,6 +18,7 @@ import org.operaton.bpm.engine.impl.persistence.entity.AcquirableJobEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.JobEntity;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
+import org.sangam.core.layer.SkipLockedRecheck;
 import org.sangam.engine.tx.CommandState;
 
 /**
@@ -80,6 +81,11 @@ public class PartitionedAcquireJobsCmd extends AcquireJobsCmd {
 
     /** The candidate query (package-private for tests). */
     static String candidateSql(Dialect dialect, ProcessEngineConfigurationImpl cfg, int limit) {
+        return dialect.skipLockedSelect("j.ID_", "ACT_RU_JOB", "j", candidateWhere(dialect, cfg), candidateOrder(cfg), limit);
+    }
+
+    /** The candidate predicate (placeholders: now, now, now, incarnation). */
+    static String candidateWhere(Dialect dialect, ProcessEngineConfigurationImpl cfg) {
         String scopeCol = cfg.isJobExecutorAcquireExclusiveOverProcessHierarchies() ? "ROOT_PROC_INST_ID_"
                 : "PROCESS_INSTANCE_ID_";
         String t = dialect == Dialect.POSTGRESQL ? "TRUE" : "1";
@@ -98,6 +104,10 @@ public class PartitionedAcquireJobsCmd extends AcquireJobsCmd {
         }
         where.append(" AND (").append(String.format(OWNED, now)).append(" OR ").append(String.format(NOT_LIVE_OWNED, now))
                 .append(")");
+        return where.toString();
+    }
+
+    private static String candidateOrder(ProcessEngineConfigurationImpl cfg) {
         List<String> order = new ArrayList<>();
         if (cfg.isJobExecutorAcquireByPriority()) {
             order.add("j.PRIORITY_ DESC");
@@ -109,7 +119,7 @@ public class PartitionedAcquireJobsCmd extends AcquireJobsCmd {
             order.add("j.DUEDATE_");
         }
         order.add("j.ID_");
-        return dialect.skipLockedSelect("j.ID_", "ACT_RU_JOB", "j", where.toString(), String.join(", ", order), limit);
+        return String.join(", ", order);
     }
 
     @Override
@@ -122,7 +132,13 @@ public class PartitionedAcquireJobsCmd extends AcquireJobsCmd {
         Map<String, long[]> owned = ownedSlots(c, ids);
         boolean byRoot = isAcquireExclusiveOverProcessHierarchies(cc);
         Map<String, List<String>> exclusive = new LinkedHashMap<>();
+        String candidates = candidateWhere(dialect, cc.getProcessEngineConfiguration());
         for (String id : ids) {
+            // On Oracle the skip-locked select can return a job another node locked after the select's snapshot; its
+            // fresh revision would let lockJob overwrite that live lock and both nodes would run the job
+            if (!SkipLockedRecheck.stillMatches(c, "ACT_RU_JOB", "j", "ID_", id, candidates, now, now, now, incarnation)) {
+                continue;
+            }
             long[] partitionEpoch = owned.get(id);
             if (partitionEpoch != null && !fence(c, id, partitionEpoch)) {
                 continue; // the partition changed owner since the query: not ours to run (X.2.1.5)

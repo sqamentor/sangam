@@ -1,6 +1,6 @@
 {
   "id": "gov.intl.pfm-replenishment",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Designated account replenishment (worldwide PFM)",
     "hi": "नामित खाता पुनःपूर्ति (अंतरराष्ट्रीय सार्वजनिक वित्त)"
@@ -56,12 +56,14 @@
   "connectors": [
     {
       "id": "donor.withdrawal",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Withdrawal application to the financing partner"
     },
     {
       "id": "tsa.credit",
+      "moneyMovement": "IN",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Credit in the designated account"

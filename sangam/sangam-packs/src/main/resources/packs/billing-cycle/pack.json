@@ -1,6 +1,6 @@
 {
   "id": "universal.billing-cycle",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Billing cycle: invoice, collection, arrears, penalty, waiver",
     "hi": "बिलिंग चक्र: बीजक, संग्रह, बकाया, दंड, माफ़ी"
@@ -36,36 +36,42 @@
   "connectors": [
     {
       "id": "billing.accounts",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Accounts billed in the cycle (register)"
     },
     {
       "id": "billing.invoice",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Raise the invoice (receivable demand)"
     },
     {
       "id": "billing.collect",
+      "moneyMovement": "IN",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Record a confirmed payment and receipt"
     },
     {
       "id": "billing.arrears",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Outstanding and arrears of the account"
     },
     {
       "id": "billing.penalty",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Levy penalty / interest per tariff"
     },
     {
       "id": "billing.waive",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Waiver / write-off"

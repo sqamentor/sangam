@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.prior-auth",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Prior authorization (CRD, DTR, PAS) with CMS-0057-F clocks",
     "es": "Autorización previa (CRD, DTR, PAS) con plazos de CMS-0057-F"
@@ -60,24 +60,28 @@
   "connectors": [
     {
       "id": "cdshooks.crd",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "CRD order-sign"
     },
     {
       "id": "davinci.dtr",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "DTR questionnaire package"
     },
     {
       "id": "davinci.pas",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "PAS Claim/$submit"
     },
     {
       "id": "payer.appeal",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Appeal / reconsideration"

@@ -1,6 +1,6 @@
 {
   "id": "sec.util.new-connection",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "New electricity connection with standards of performance",
     "hi": "प्रदर्शन मानकों सहित नया विद्युत कनेक्शन"
@@ -42,24 +42,31 @@
     {
       "kind": "SEED",
       "path": "packs/sec-util-new-connection/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-util-new-connection/pack.json"
     }
   ],
   "seed": "packs/sec-util-new-connection/seed.json",
   "connectors": [
     {
       "id": "pg.collect",
+      "moneyMovement": "IN",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Connection charges"
     },
     {
       "id": "billing.credit",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Compensation credit"
     },
     {
       "id": "mdm.install",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Meter data management; keeps the business key as the connection case of the consumer"
@@ -83,8 +90,24 @@
     "sangam-core-cancellation",
     "sangam-core-execution",
     "sangam-core-rejection",
+    "sangam-core-sanction",
     "sangam-core-scrutiny"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "uc_comp_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

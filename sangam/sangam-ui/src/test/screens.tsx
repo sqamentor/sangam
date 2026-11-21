@@ -11,11 +11,12 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import i18n from 'i18next';
 import { ApiError } from '../api/client';
+import { tr } from '../i18n';
 
 /** The English text of an i18n key; a missing key fails the test instead of passing as its own name. */
 export function T(k: string, o?: Record<string, unknown>): string {
   expect(i18n.exists(k), `i18n key ${k}`).toBe(true);
-  return i18n.t(k, o) as string;
+  return tr(k, o);
 }
 
 export const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

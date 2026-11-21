@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Admin (32 operations).
+/// Typed operations of Admin (34 operations).
 /// </summary>
 public sealed class AdminApi
 {
@@ -355,6 +355,29 @@ public sealed class AdminApi
         req.WithQuery("roleId", GeneratedCalls.Q(roleId));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.RoleDefinition?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Org level types
+    /// The caller's tenant's org level types, top first (AJ-02); empty when none are defined.
+    /// GET /admin/org-levels (operationId getOrgLevels); permission admin.read.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.OrgLevels?> GetOrgLevelsAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/admin/org-levels");
+        return await _calls.JsonAsync<M.OrgLevels?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Define org level types
+    /// A tenant administrator defines its own tenant's org level types, top first (EV-M-0923; ADMIN on ORG_UNIT; TENANT_CONFIGURED). Idempotent: the same list again changes nothing and records nothing. A different list is refused with 409 LEVELS_IN_USE once an org unit exists; another tenant's levels with 403 TENANT_MISMATCH.
+    /// PUT /admin/org-levels (operationId defineOrgLevels); permission admin.write; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.OrgLevels?> DefineOrgLevelsAsync(M.OrgLevels body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Put($"/admin/org-levels");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.OrgLevels?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

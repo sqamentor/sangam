@@ -10,7 +10,7 @@ package org.sangam.sdk.generated.model;
  *
  * @param name wire field {@code name} (required). 1 to 255 characters after trimming
  * @param owner wire field {@code owner}. Optional, at most 255 characters
- * @param query wire field {@code query} (required). JSON object, at most 16384 characters as JSON. Owner decision 406: only the criteria of GET /tasks by the same names: assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy, sortOrder, currency (ISO 4217) and variableNames (list of 1 to 20 names); strings 1 to 255 characters, mine and unassigned booleans. Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID
+ * @param query wire field {@code query} (required). JSON object, at most 16384 characters as JSON. Owner decision 406: only the criteria of GET /tasks by the same names: assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy, sortOrder, currency (ISO 4217), variableNames (list of 1 to 20 names), priority, minPriority and maxPriority (whole numbers, minPriority not above maxPriority), dueBefore and dueAfter (ISO-8601 date-times with offset, dueAfter before dueBefore) and overdue; strings 1 to 255 characters, mine, unassigned and overdue booleans. Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID
  * @param properties wire field {@code properties}. Optional JSON object, at most 16384 characters as JSON
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

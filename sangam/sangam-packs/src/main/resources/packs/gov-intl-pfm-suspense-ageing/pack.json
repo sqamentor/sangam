@@ -1,6 +1,6 @@
 {
   "id": "gov.intl.pfm-suspense-ageing",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Suspense item clearance and ageing (worldwide PFM)",
     "hi": "उचंत मद निपटान एवं आयु निगरानी (अंतरराष्ट्रीय सार्वजनिक वित्त)"
@@ -44,6 +44,7 @@
   "connectors": [
     {
       "id": "ledger.reclassify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Reclassify the item from suspense to the correct head"

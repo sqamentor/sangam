@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-inoperative-deposits/verify",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.bank.inoperative-deposits",
   "title": {
     "en": "Verify KYC and entitlement (holder, nominee, legal heir)",
@@ -39,6 +39,17 @@
       "label": {
         "en": "Remarks",
         "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "payableAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount payable with interest (INR)",
+        "hi": "ब्याज सहित देय राशि (रुपये)"
       }
     }
   ],

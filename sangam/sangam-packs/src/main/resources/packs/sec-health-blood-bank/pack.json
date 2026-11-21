@@ -1,6 +1,6 @@
 {
   "id": "sec.health.blood-bank",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Blood centre: donation, testing and transfusion",
     "hi": "रक्त केंद्र: दान, परीक्षण एवं आधान"
@@ -60,12 +60,14 @@
   "connectors": [
     {
       "id": "bbms.inventory",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Blood inventory (e-RaktKosh)"
     },
     {
       "id": "hvpi.report",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Haemovigilance report"

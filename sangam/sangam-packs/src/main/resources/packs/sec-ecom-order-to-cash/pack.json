@@ -1,6 +1,6 @@
 {
   "id": "sec.ecom.order-to-cash",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Marketplace order to cash",
     "hi": "मार्केटप्लेस आदेश से नकद प्राप्ति तक"
@@ -36,44 +36,63 @@
       "path": "packs/sec-ecom-order-to-cash/forms/delay.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-order-to-cash/forms/commission-amount.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-order-to-cash/forms/prepare-sanction-note.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/sec-ecom-order-to-cash/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-ecom-order-to-cash/pack.json"
     }
   ],
   "seed": "packs/sec-ecom-order-to-cash/seed.json",
   "connectors": [
     {
       "id": "fraud.score",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Risk screen"
     },
     {
       "id": "pg.authorise",
+      "moneyMovement": "IN",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Payment authorisation"
     },
     {
       "id": "pg.refund",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Refund to source"
     },
     {
       "id": "logistics.ship",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Shipment"
     },
     {
       "id": "logistics.codRemit",
+      "moneyMovement": "IN",
+      "moneyMovementReason": "owner decision M3: cash collected on delivery is remitted TO the platform (money in)",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "COD remittance"
     },
     {
       "id": "nodal.settle",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Seller settlement"
@@ -96,14 +115,44 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-execution"
+    "sangam-core-execution",
+    "sangam-core-sanction"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "eo_refund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    },
+    "eo_settle_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    },
+    "eo_cxRefund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",
     "exponent": 2,
     "variables": [
-      "amount"
+      "amount",
+      "commissionAmount",
+      "payableAmount"
     ]
   }
 }

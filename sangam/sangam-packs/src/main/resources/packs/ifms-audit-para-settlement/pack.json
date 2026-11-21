@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.audit-para-settlement",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "name": {
     "en": "Audit para settlement (ATN / internal audit)",
     "hi": "लेखापरीक्षा पैरा निपटान (एटीएन / आंतरिक लेखापरीक्षा)"
@@ -40,30 +40,35 @@
   "connectors": [
     {
       "id": "config.profile",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Profile values of the tenant (sangam-config)"
     },
     {
       "id": "config.documentType",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
     },
     {
       "id": "config.classification",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Classification validation (head of account)"
     },
     {
       "id": "config.series",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-CONFIG",
       "purpose": "Number series (token, voucher)"
     },
     {
       "id": "audit.apms",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-CAG",
       "purpose": "Audit para monitoring system"

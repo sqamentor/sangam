@@ -1,0 +1,29 @@
+{
+  "key": "contract-management/payable-ldAmount",
+  "version": "1.0.4",
+  "pack": "gov.contract-management",
+  "title": {
+    "en": "Payable ldAmount: exact value held, rounding rule not configured",
+    "hi": "देय राशि दर्ज करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "ldAmountEntered",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Payable liquidated damages (INR), one of the two whole amounts next to the exact value",
+        "hi": "देय परिनिर्धारित नुकसानी (रुपये)"
+      }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "key": "ifms-year-end-closing/cut",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "pack": "gov.ifms.year-end-closing",
   "title": {
     "en": "Closing cut",

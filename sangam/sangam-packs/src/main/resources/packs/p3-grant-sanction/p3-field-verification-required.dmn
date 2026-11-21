@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_p3_field_verification_required" name="P3 field verification required?" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="p3-field-verification-required" name="P3 field verification required?" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
+  <decision id="p3-field-verification-required" name="P3 field verification required?" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
     <decisionTable id="p3-field-verification-required_t" hitPolicy="FIRST">
       <input id="p3-field-verification-required_i0" label="Land holding (ha)"><inputExpression id="p3-field-verification-required_ie0" typeRef="number"><text>landHolding</text></inputExpression></input>
       <input id="p3-field-verification-required_i1" label="Self-uploaded documents"><inputExpression id="p3-field-verification-required_ie1" typeRef="boolean"><text>documentsSelfUploaded</text></inputExpression></input>

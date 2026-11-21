@@ -16,6 +16,7 @@ import org.sangam.core.layer.Transactions;
 import org.sangam.core.security.SangamSecurityException;
 import org.sangam.core.security.SecurityIdentity;
 import org.sangam.rest.port.SangamPrincipal;
+import org.sangam.rest.port.SeatHoldings;
 import org.sangam.security.SangamSecurity;
 import org.sangam.security.audit.LoginEventBatcher;
 import org.sangam.security.spring.SangamAuthenticationToken;
@@ -37,7 +38,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *       acting-for seats, roles, memberships; JIT provisioning for the tenants in
  *       {@code sangam.security.jit-provisioning-tenants}); MFA is required where configured;</li>
  *   <li>the resolved identity is bound with {@link TenantContext} for the request and also put on the request as
- *       {@link SecurityIdentities#ATTRIBUTE}; first sight of a session writes a batched {@code LOGIN} event.</li>
+ *       {@link SecurityIdentities#ATTRIBUTE}; first sight of a session writes a batched {@code LOGIN} event;</li>
+ *   <li>the seats of the resolved identity are put on the request as {@link SeatHoldings#ATTRIBUTE}: the only source
+ *       of the seat context sangam-rest accepts ({@code X-Sangam-Seat}, {@code X-Sangam-Acting-For-Seat}; a seat the
+ *       person does not hold now is 403 {@code SEAT_NOT_HELD}; IX.5 rules 1 and 4, K7). An API token holds no
+ *       seat.</li>
  * </ul>
  * A {@link SangamSecurityException} (unknown person, MFA missing, tenant suspended) is answered with problem+json.
  * SL-70: an API token is always a tenant identity, and a tenant identity keeps no platform-only group or role, also
@@ -99,6 +104,38 @@ public final class SecurityIdentityFilter extends OncePerRequestFilter {
     public static boolean isDevelopmentIssued(SecurityIdentity raw) {
         return org.sangam.security.identity.PrincipalResolver.isDevelopmentIdentity(raw)
                 || (raw.attributes() != null && PlatformIssuers.DEV_TOKEN_ISSUER.equals(raw.attributes().get("iss")));
+    }
+
+    static final String SEAT_HEADER = "X-Sangam-Seat";
+    static final String ACTING_FOR_HEADER = "X-Sangam-Acting-For-Seat";
+
+    private static String named(String header) {
+        return header == null || header.isBlank() ? null : header.trim();
+    }
+
+    /**
+     * {@code AUTH_DENIED} for a seat context the person does not hold now: action (method and path), the named seat and
+     * acted-for seat, reason {@code SEAT_NOT_HELD}; the policy version is added by the audit service. It goes to the
+     * denial chain of {@code sec:<tenant>} and commits on its own. Deny-only: when the record cannot be written the
+     * refusal stands and the failure is logged.
+     */
+    private void seatDenied(SecurityIdentity who, HttpServletRequest req, String seat, String actingFor) {
+        Map<String, Object> p = new LinkedHashMap<>();
+        p.put("action", req.getMethod() + " " + req.getRequestURI());
+        p.put("seat_id", seat);
+        p.put("acted_for_seat_id", actingFor);
+        p.put("person_id", who.personId());
+        p.put("outcome", "DENIED");
+        p.put("reason", SeatHoldings.NOT_HELD);
+        try {
+            tx.inTransaction(c -> {
+                security.audit().denial(c, who, org.sangam.security.audit.SecurityEventType.AUTH_DENIED, null, p);
+                return null;
+            });
+        } catch (RuntimeException e) {
+            org.slf4j.LoggerFactory.getLogger(SecurityIdentityFilter.class).warn(
+                    "the AUTH_DENIED record of a refused seat context could not be written: {}", e.toString());
+        }
     }
 
     @Override
@@ -180,6 +217,24 @@ public final class SecurityIdentityFilter extends OncePerRequestFilter {
             }
         }
         req.setAttribute(SecurityIdentities.ATTRIBUTE, resolved);
+        // IX.5 rules 1 and 4, K7: the seats this person can act in now, from the postings, additional charge and leave
+        // in force at the database time (PostingService.seatsOf, re-read whenever one of them changed or reached an
+        // effective date). The request context accepts X-Sangam-Seat / X-Sangam-Acting-For-Seat only from here.
+        SeatHoldings held = new SeatHoldings(resolved.seats(), resolved.actingForSeats());
+        req.setAttribute(SeatHoldings.ATTRIBUTE, held);
+        String seat = named(req.getHeader(SEAT_HEADER));
+        String actingFor = named(req.getHeader(ACTING_FOR_HEADER));
+        if (seat != null || actingFor != null) {
+            try {
+                SeatHoldings.require(held, seat, actingFor);
+            } catch (org.sangam.rest.port.ApiProblem refused) {
+                // K7 refusal: recorded (X.2.3 identity events, CX-1, J-P1-E05 "AUTH_DENIED (if old holder tries)") and
+                // answered here, on every route of the chain, with the one rule (SeatHoldings.require)
+                seatDenied(resolved, req, seat, actingFor);
+                ProblemResponses.write(req, res, refused.status(), refused.code(), "Seat not held", refused.detail());
+                return;
+            }
+        }
         TenantContext.set(resolved);
         try {
             chain.doFilter(req, res);

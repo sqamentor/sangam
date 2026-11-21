@@ -1,6 +1,6 @@
 {
   "key": "up14-three-way-match/invoice",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "universal.up14-three-way-match",
   "title": {
     "en": "Supplier invoice",
@@ -70,6 +70,15 @@
       "label": {
         "en": "Invoiced unit price",
         "hi": "बीजक इकाई मूल्य"
+      }
+    },
+    {
+      "id": "payeePartyId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Supplier (verified payee registry id)",
+        "hi": "आपूर्तिकर्ता (सत्यापित पंजी आईडी)"
       }
     }
   ]

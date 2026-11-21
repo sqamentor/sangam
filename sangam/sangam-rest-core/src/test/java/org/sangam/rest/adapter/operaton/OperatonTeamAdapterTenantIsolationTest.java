@@ -47,6 +47,8 @@ class OperatonTeamAdapterTenantIsolationTest {
     @AfterAll
     static void stop() {
         engine.close();
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        engine = null;
     }
 
     private static void task(TaskService ts, String id, String tenant, String group, String assignee) {

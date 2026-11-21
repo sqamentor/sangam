@@ -1,6 +1,6 @@
 {
   "id": "gov.recruitment",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "e-Recruitment",
     "hi": "ई-भर्ती"
@@ -68,24 +68,28 @@
   "connectors": [
     {
       "id": "recruit.publish",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "Notification on the recruitment portal"
     },
     {
       "id": "paygov.fee",
+      "moneyMovement": "IN",
       "capabilityClass": "b",
       "govTag": "G-PG",
       "purpose": "Application fee"
     },
     {
       "id": "exam.score",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Score of a candidate for a key version"
     },
     {
       "id": "docs.render",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-LANG",
       "purpose": "Admit cards and offer letters (external task)"

@@ -1,6 +1,6 @@
 {
   "id": "sec.ecom.seller-onboarding",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Marketplace seller onboarding",
     "hi": "मार्केटप्लेस विक्रेता पंजीकरण"
@@ -48,30 +48,35 @@
   "connectors": [
     {
       "id": "gst.verify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "GSTIN status"
     },
     {
       "id": "pan.verify",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "PAN"
     },
     {
       "id": "bene.validate",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Penny drop"
     },
     {
       "id": "marketplace.createSeller",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Seller account"
     },
     {
       "id": "catalogue.publishSeller",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Seller profile"

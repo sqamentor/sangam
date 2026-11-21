@@ -5,10 +5,10 @@
  * - the tenant's jurisdiction must be IN. The CI job sets it on the test-mode server (ui.yml "Start the stack",
  *   SPRING_APPLICATION_JSON sangam.compliance.*; ComplianceConfigProvider). Anything else stops the run here: every
  *   CERT-In / DPDP spec is about the India pack, and a run on another pack would prove nothing;
- * - the Data Protection Officer contact (POST /compliance/contacts/DPO; ContactDirectory: IN requires residency), which
+ * - the Data Protection Officer contact (POST /compliance/contacts/by-role?role=DPO; ContactDirectory: IN requires residency), which
  *   the privacy policy publishes (DPDP s.8(9), r.9) and notice publishing requires;
- * - one active consent purpose with itemised personal data (PUT /compliance/purposes/{code}; LegitimateUseRegistry);
- * - a published consent notice for that purpose (POST /compliance/notices/{key}/publish; ConsentNoticeService.publish,
+ * - one active consent purpose with itemised personal data (PUT /compliance/purposes/by-code?code=; LegitimateUseRegistry);
+ * - a published consent notice for that purpose (POST /compliance/notices/by-key/publish?key=; ConsentNoticeService.publish,
  *   which also needs the withdraw, rights and complaint links of the server configuration).
  */
 import { createHash, randomUUID } from 'node:crypto';
@@ -61,11 +61,12 @@ export function uniqueCode(prefix: string): string {
   return `${prefix}_${randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase()}`;
 }
 
-/** PUT /compliance/purposes/{code}: a consent purpose shaped like the seeded one, with the given English text. */
+/** PUT /compliance/purposes/by-code?code=: a consent purpose shaped like the seeded one, with the given English text. */
 export async function definePurpose(admin: APIRequestContext, code: string, text: { name: string; description: string }, active: boolean): Promise<void> {
   await must(
-    `PUT /compliance/purposes/${code}`,
-    await admin.put(`compliance/purposes/${code}`, {
+    `PUT /compliance/purposes/by-code?code=${code}`,
+    await admin.put('compliance/purposes/by-code', {
+      params: { code },
       headers: key(),
       data: {
         names: { en: text.name },
@@ -104,16 +105,18 @@ export async function seedCompliance(admin: APIRequestContext): Promise<Complian
     throw new Error(`seed: the tenant's jurisdiction is ${j.code ?? 'not set'}, the CERT-In / DPDP specs need IN (set sangam.compliance.jurisdictions on the test-mode server)`);
   }
   await must(
-    'POST /compliance/contacts/DPO',
-    await admin.post('compliance/contacts/DPO', {
+    'POST /compliance/contacts/by-role?role=DPO',
+    await admin.post('compliance/contacts/by-role', {
+      params: { role: 'DPO' },
       headers: key(),
       data: { name: E2E_DPO.name, designation: 'Data Protection Officer', organisation: 'Sangam e2e', email: E2E_DPO.email, phone: '+91 11 0000 0000', address: 'New Delhi, India', resident: true },
     }),
     [200, 204],
   );
   await must(
-    `PUT /compliance/purposes/${E2E_PURPOSE}`,
-    await admin.put(`compliance/purposes/${E2E_PURPOSE}`, {
+    `PUT /compliance/purposes/by-code?code=${E2E_PURPOSE}`,
+    await admin.put('compliance/purposes/by-code', {
+      params: { code: E2E_PURPOSE },
       headers: key(),
       data: {
         names: { en: 'E2E service delivery' },
@@ -131,8 +134,8 @@ export async function seedCompliance(admin: APIRequestContext): Promise<Complian
     [200],
   );
   const published = (await must(
-    `POST /compliance/notices/${E2E_NOTICE}/publish`,
-    await admin.post(`compliance/notices/${E2E_NOTICE}/publish`, { headers: key(), data: { purposes: [E2E_PURPOSE] } }),
+    `POST /compliance/notices/by-key/publish?key=${E2E_NOTICE}`,
+    await admin.post('compliance/notices/by-key/publish', { params: { key: E2E_NOTICE }, headers: key(), data: { purposes: [E2E_PURPOSE] } }),
     [200, 201],
   )) as { version?: number };
   if (typeof published.version !== 'number') throw new Error('seed: the notice publication returned no version');

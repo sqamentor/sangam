@@ -113,6 +113,10 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         org.sangam.engine.replay.CaptureListener.requireAllowed(s.getCaptureListener(), s.getCaptureProduction(),
                 s.getActiveProfiles());
 
+        // SEQ-PARALLEL I-1 (B-49, I-30): engine-owned variables are refused on every caller-facing service and builder;
+        // set before the configuration initialises its services, so they get the command executor as usual
+        org.sangam.engine.state.EngineOwnedServices.install(cfg);
+
         // engine defaults
         cfg.setIdGenerator(new StrongUuidGenerator());
         cfg.setAuthorizationEnabled(false);
@@ -245,6 +249,10 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
                 s.getDeployAllowedBeans(), components.auditSink(), () -> components.workTenants().systemAuditScope()));
         cfg.setCustomPreDeployers(preDeployers);
         cfg.setDmnEngineConfiguration(dmn);
+        if (cfg.getDmnHistoryEventProducer() == null) {
+            // ADR-DMN-ENGINE D1 / HIT-8: history accepts the exact COLLECT aggregate of DecisionTableRules
+            cfg.setDmnHistoryEventProducer(new org.sangam.engine.history.ExactCollectDmnHistoryEventProducer());
+        }
 
         // deploy-time validation
         List<BpmnParseListener> bpmn = cfg.getCustomPostBPMNParseListeners() == null ? new ArrayList<>()

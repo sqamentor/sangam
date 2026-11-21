@@ -104,8 +104,8 @@ public final class ProcessTraceHistoryRemoval extends HistoricProcessInstanceMan
         return super.deleteHistoricProcessInstancesByRemovalTime(removalTime, minuteFrom, minuteTo, batchSize);
     }
 
-    private static String prefix(ProcessEngineConfigurationImpl cfg) {
-        return cfg.getDatabaseTablePrefix() == null ? "" : cfg.getDatabaseTablePrefix();
+    static String prefix(ProcessEngineConfigurationImpl cfg) {
+        return org.sangam.core.layer.SqlIdentifier.tablePrefix(cfg.getDatabaseTablePrefix());
     }
 
     /**

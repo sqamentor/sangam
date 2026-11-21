@@ -75,4 +75,16 @@ class TenantLocalesTest {
                 null, "OIDC", List.of(), null, new WorkspacePort.MeLocale("EUR", null, null));
         assertTrue(JSON.writeValueAsString(with).contains("\"locale\":{\"currency\":\"EUR\"}"));
     }
+
+    /** Owner option (b) 2026-11-19: sandbox appears on /me only for a demo sandbox tenant. */
+    @Test
+    void meCarriesSandboxOnlyForASandboxTenant() throws Exception {
+        WorkspacePort.Me plain = new WorkspacePort.Me("t1", null, "p", "p", "p", List.of(), List.of(), List.of(), null,
+                null, "OIDC", List.of(), null);
+        assertNull(plain.sandbox());
+        assertFalse(JSON.writeValueAsString(plain).contains("sandbox"));
+        WorkspacePort.Me sandbox = new WorkspacePort.Me("t1", null, "p", "p", "p", List.of(), List.of(), List.of(),
+                null, null, "OIDC", List.of(), null, null, Boolean.TRUE);
+        assertTrue(JSON.writeValueAsString(sandbox).contains("\"sandbox\":true"));
+    }
 }

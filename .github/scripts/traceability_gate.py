@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """M-096 traceability gate (SANGAM.md A1/A5, BACKLOG P1-029): a requirement without a proving test.
 
-Reads spike/results/TRACEABILITY-REGISTER.csv and lists every requirement row that claims code coverage but names no
+Reads sangam/docs/records/TRACEABILITY-REGISTER.csv and lists every requirement row that claims code coverage but names no
 test that proves it.
 
 * A row is a requirement under the gate when its status is one of SUBJECT_STATUSES and its family is not "T" (the T
@@ -86,7 +86,7 @@ def summary_markdown(findings: list[dict[str, str]], subjects: int, enforce: boo
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("--register", type=Path, default=Path("spike/results/TRACEABILITY-REGISTER.csv"))
+    p.add_argument("--register", type=Path, default=Path("sangam/docs/records/TRACEABILITY-REGISTER.csv"))
     p.add_argument("--summary", type=Path, help="append a Markdown summary here (e.g. $GITHUB_STEP_SUMMARY)")
     p.add_argument("--enforce", action="store_true", help="exit 1 when a requirement has no proving test")
     a = p.parse_args(argv)

@@ -63,9 +63,10 @@ jobs:
             build-mode: none
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         if: matrix.language == 'java-kotlin'
-        with: { distribution: temurin, java-version: "25.0.1", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+        with: { distribution: temurin, java-version: "25.0.5+8" }
+      - uses: ./.github/actions/maven-cache
       - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           languages: ${{ matrix.language }}
@@ -114,9 +115,10 @@ jobs:
             exit 1
           fi
           echo "run=true" >> "$GITHUB_OUTPUT"
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         if: steps.oidc.outputs.run == 'true'
-        with: { distribution: temurin, java-version: "25.0.1", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+        with: { distribution: temurin, java-version: "25.0.5+8" }
+      - uses: ./.github/actions/maven-cache
       - name: AWS credentials (OIDC, role sangam-ci)
         if: steps.oidc.outputs.run == 'true'
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
@@ -147,7 +149,7 @@ jobs:
           echo "NVD_API_KEY=$value" >> "$GITHUB_ENV"
       - name: NVD data cache
         if: steps.oidc.outputs.run == 'true'
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.m2/repository/org/owasp/dependency-check-data
           # Keyed by plugin version: 12.2.2 widened the reference URL column (DependencyCheck #8467), so an H2
@@ -196,8 +198,9 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
-        with: { distribution: temurin, java-version: "25.0.1", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with: { distribution: temurin, java-version: "25.0.5+8" }
+      - uses: ./.github/actions/maven-cache
       - name: Compile with Error Prone + NullAway (warnings), then SpotBugs + FindSecBugs at verify
         working-directory: sangam
         # sangam/pom.xml profiles sangam-static-analysis and sangam-spotbugs (versions in its properties); no tests run
@@ -263,7 +266,7 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.13.7"
-      - name: Semgrep CLI 1.185.0 in its own venv (LGPL-2.1 build-time tool, licence-policy.json build_time_tools)
+      - name: Semgrep CLI 1.186.0 in its own venv (LGPL-2.1 build-time tool, licence-policy.json build_time_tools)
         run: |
           python -m venv "$RUNNER_TEMP/semgrep-venv"
           "$RUNNER_TEMP/semgrep-venv/bin/python" -m pip install --disable-pip-version-check -q --require-hashes --no-deps -r sangam/deploy/licence/ci-req-semgrep.txt
@@ -283,6 +286,10 @@ jobs:
           $RL run --check semgrep-report --report-only --ledger-dir "$LEDGER" -- \
             semgrep scan --metrics=off --config semgrep/ --sarif --output semgrep.sarif --error \
               --exclude spike --exclude reference --exclude handoff --exclude node_modules --exclude 'target*' sangam
+      - name: Leave reviewed in-source suppressions (nosemgrep with a reason) out of the uploaded SARIF
+        # GitHub keeps a SARIF result with suppressions kind inSource as an open alert; the review is the comment.
+        if: always() && hashFiles('semgrep.sarif') != ''
+        run: python -I .github/scripts/sarif_drop_suppressed.py semgrep.sarif semgrep.sarif
       - name: Gate - Semgrep errors in the authorisation, money and audit paths (decision 133)
         run: |
           for p in $SEMGREP_GATE_PATHS; do
@@ -380,8 +387,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
-        with: { distribution: temurin, java-version: "25.0.1", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with: { distribution: temurin, java-version: "25.0.5+8" }
+      - uses: ./.github/actions/maven-cache
       - name: Unit tests with coverage, then the Sonar analysis (no quality-gate wait)
         working-directory: sangam
         env:

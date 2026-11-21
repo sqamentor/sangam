@@ -93,6 +93,42 @@ public final class JdbcLedgerStore implements LedgerStore {
         return journal != null;
     }
 
+    /**
+     * Hands every accounting entry kept while no GL export was configured ({@code exported_at} NULL) to the GL export,
+     * one transaction per entry, oldest first (owner decision 126, RM-05). Safe on several nodes at once.
+     *
+     * @return the number of entries this call exported
+     */
+    public int exportPendingAccounting() {
+        if (!(journal instanceof LedgerJournal j) || !j.exports()) {
+            throw new IllegalStateException("this ledger store has no GL export: accounting entries stay in LDG_ACCOUNTING");
+        }
+        List<Long> ids = inTx(LedgerJournal::pendingExport);
+        int n = 0;
+        for (long id : ids) {
+            if (inTx(c -> j.exportPending(c, id))) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    private <T> T inTx(java.util.function.Function<Connection, T> work) {
+        try (Connection c = ds.getConnection()) {
+            c.setAutoCommit(false);
+            try {
+                T r = work.apply(c);
+                c.commit();
+                return r;
+            } catch (RuntimeException ex) {
+                c.rollback();
+                throw ex;
+            }
+        } catch (SQLException ex) {
+            throw new Jdbc.LayerSqlException("ledger accounting export", ex);
+        }
+    }
+
     @Override
     public PostResult post(Entry e) {
         return post(e, List.of());
@@ -138,7 +174,14 @@ public final class JdbcLedgerStore implements LedgerStore {
                         e.reference(), e.operation(), e.auditRef(), e.actor(), e.at() == null ? Instant.now() : e.at(),
                         legsJson(e.legs()), CanonicalJson.write(e.info() == null ? Map.of() : e.info()));
                 if (!inserted) {
+                    // owner decision 9: the reference names one posting; only an exact replay is idempotent
+                    String stored = Jdbc.one(c, "SELECT legs_json FROM LDG_ENTRY WHERE tenant_id = ? AND reference = ?",
+                            rs -> rs.getString(1), e.tenant(), e.reference())
+                            .orElseThrow(() -> new IllegalStateException("ledger entry " + e.reference() + " vanished"));
                     c.rollback();
+                    if (!canonicalLegs(stored).equals(canonicalLegs(legsJson(e.legs())))) {
+                        return new PostResult(false, false, REFERENCE_CONFLICT, List.of());
+                    }
                     List<Balance> after = new ArrayList<>();
                     for (Movement m : e.legs()) {
                         get(m.key()).ifPresent(after::add);
@@ -291,7 +334,36 @@ public final class JdbcLedgerStore implements LedgerStore {
                 rs.getString("state"), rs.getLong("version"), map(rs.getString("attrs_json")));
     }
 
-    private static String legsJson(List<Movement> legs) {
+    /**
+     * Order- and scale-independent form of stored legs: one {@code account|currency|BUCKET=amount,...} line per leg,
+     * zero deltas dropped, amounts without trailing zeros, sorted. Two postings with equal canonical legs move the
+     * same amounts on the same accounts.
+     */
+    @SuppressWarnings("unchecked")
+    static List<String> canonicalLegs(String legsJson) {
+        List<Map<String, Object>> legs;
+        try {
+            legs = JSON.readValue(legsJson, List.class);
+        } catch (JsonProcessingException ex) {
+            throw new IllegalStateException("corrupt ledger JSON", ex);
+        }
+        List<String> out = new ArrayList<>();
+        for (Map<String, Object> leg : legs) {
+            Map<String, Object> d = (Map<String, Object>) leg.getOrDefault("deltas", Map.of());
+            StringBuilder b = new StringBuilder().append(leg.get("account")).append('|').append(leg.get("currency"));
+            new java.util.TreeMap<>(d).forEach((bucket, v) -> {
+                BigDecimal x = new BigDecimal(String.valueOf(v));
+                if (x.signum() != 0) {
+                    b.append('|').append(bucket).append('=').append(x.stripTrailingZeros().toPlainString());
+                }
+            });
+            out.add(b.toString());
+        }
+        out.sort(Comparator.naturalOrder());
+        return out;
+    }
+
+    static String legsJson(List<Movement> legs) {
         List<Map<String, Object>> out = new ArrayList<>();
         for (Movement m : legs) {
             Map<String, Object> x = new LinkedHashMap<>();

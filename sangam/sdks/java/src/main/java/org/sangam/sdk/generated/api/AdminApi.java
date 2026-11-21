@@ -12,6 +12,7 @@ import org.sangam.sdk.generated.model.ExplainResult;
 import org.sangam.sdk.generated.model.IdentityProvider;
 import org.sangam.sdk.generated.model.IdentitySyncResult;
 import org.sangam.sdk.generated.model.IdentityTestResult;
+import org.sangam.sdk.generated.model.OrgLevels;
 import org.sangam.sdk.generated.model.Policy;
 import org.sangam.sdk.generated.model.PolicyVersion;
 import org.sangam.sdk.generated.model.ReasonRequest;
@@ -24,7 +25,7 @@ import org.sangam.sdk.generated.model.User;
 import org.sangam.sdk.generated.model.UserRequest;
 
 /**
- * Typed operations of {@code Admin} (32 operations), generated from
+ * Typed operations of {@code Admin} (34 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -51,6 +52,8 @@ public final class AdminApi {
     private static final TypeReference<IdentityTestResult> R_testIdentityProvider = new TypeReference<>() { };
     private static final TypeReference<IdentitySyncResult> R_syncIdentityProvider = new TypeReference<>() { };
     private static final TypeReference<RoleDefinition> R_defineRole = new TypeReference<>() { };
+    private static final TypeReference<OrgLevels> R_getOrgLevels = new TypeReference<>() { };
+    private static final TypeReference<OrgLevels> R_defineOrgLevels = new TypeReference<>() { };
     private static final TypeReference<java.util.List<ServicePrincipal>> R_listServicePrincipals = new TypeReference<>() { };
     private static final TypeReference<ServicePrincipalSecret> R_createServicePrincipal = new TypeReference<>() { };
     private static final TypeReference<ServicePrincipalSecret> R_rotateServicePrincipal = new TypeReference<>() { };
@@ -543,6 +546,36 @@ public final class AdminApi {
         req.body(body);
         req.query("roleId", roleId);
         return call.json(req, options, R_defineRole);
+    }
+
+    /**
+     * Org level types
+     *
+     * <p>The caller's tenant's org level types, top first (AJ-02); empty when none are defined.
+     *
+     * <p>{@code GET /admin/org-levels} (operationId {@code getOrgLevels}); permission {@code admin.read}.
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public OrgLevels getOrgLevels(RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/admin/org-levels");
+        return call.json(req, options, R_getOrgLevels);
+    }
+
+    /**
+     * Define org level types
+     *
+     * <p>A tenant administrator defines its own tenant's org level types, top first (EV-M-0923; ADMIN on ORG_UNIT; TENANT_CONFIGURED). Idempotent: the same list again changes nothing and records nothing. A different list is refused with 409 LEVELS_IN_USE once an org unit exists; another tenant's levels with 403 TENANT_MISMATCH.
+     *
+     * <p>{@code PUT /admin/org-levels} (operationId {@code defineOrgLevels}); permission {@code admin.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public OrgLevels defineOrgLevels(OrgLevels body, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/admin/org-levels");
+        req.body(body);
+        return call.json(req, options, R_defineOrgLevels);
     }
 
     /**

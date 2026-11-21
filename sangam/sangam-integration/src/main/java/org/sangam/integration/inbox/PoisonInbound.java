@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.sangam.core.security.LogSafe;
 
 /**
  * Poison inbound messages (R38, VI.2.6): a broker message that can never be stored, because its body is not valid JSON
@@ -199,8 +200,8 @@ public final class PoisonInbound {
                 return item;
             });
         } catch (RuntimeException e) {
-            LOG.error("cannot park message {} from {} for tenant {}; it will be redelivered", m.messageId(), binding.source(),
-                    tenant, e);
+            LOG.error("cannot park message {} from {} for tenant {}; it will be redelivered", LogSafe.text(m.messageId()),
+                    LogSafe.text(binding.source()), LogSafe.text(tenant), e);
             return -1;
         }
     }

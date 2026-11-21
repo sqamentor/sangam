@@ -20,7 +20,8 @@ beforeEach(() => window.localStorage.clear());
 describe('decision 337 saved inbox filters', () => {
   it('the key is a SHA-256 of tenant|user: no user name, a different key per tenant, none without Web Crypto', async () => {
     const key = await savedFiltersKey(c, owner);
-    expect(key).toMatch(new RegExp(`^${SAVED_FILTERS_PREFIX.replace(/\./g, '\\.')}[0-9a-f]{64}$`));
+    expect(key!.startsWith(SAVED_FILTERS_PREFIX)).toBe(true);
+    expect(key!.slice(SAVED_FILTERS_PREFIX.length)).toMatch(/^[0-9a-f]{64}$/);
     expect(key).not.toContain('asha');
     expect(await savedFiltersKey(c, { ...owner, tenantId: 't2' })).not.toBe(key);
     expect(await savedFiltersKey(undefined, owner)).toBeNull();

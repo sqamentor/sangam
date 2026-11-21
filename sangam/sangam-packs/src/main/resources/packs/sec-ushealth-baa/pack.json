@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.baa",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Business associate agreement management",
     "es": "Gestión de acuerdos de socio comercial (BAA)"
@@ -56,6 +56,7 @@
   "connectors": [
     {
       "id": "esign.baa",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "BAA e-signature"

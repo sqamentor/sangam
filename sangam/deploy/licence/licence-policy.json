@@ -83,12 +83,13 @@
       "pkg:maven/org.javassist/javassist@3.33.0-GA", "pkg:maven/com.rabbitmq/amqp-client@5.37.1",
       "pkg:maven/com.github.javaparser/javaparser-core@3.28.2", "pkg:maven/net.java.dev.jna/jna@5.13.0",
       "pkg:maven/net.java.dev.jna/jna@5.17.0", "pkg:maven/net.java.dev.jna/jna-platform@5.17.0",
-      "pkg:npm/dompurify@3.4.17", "pkg:cargo/ryu@1.0.17"
+      "pkg:maven/net.java.dev.jna/jna@5.18.1",
+      "pkg:npm/dompurify@3.4.18", "pkg:cargo/ryu@1.0.17"
     ] },
     { "elected": "Apache-2.0", "decision": "90", "purls": ["pkg:maven/org.cryptacular/cryptacular@1.3.0"] },
     { "elected": "CDDL-1.1", "decision": "117", "purls": ["pkg:maven/javax.xml.bind/jaxb-api@2.3.1"] },
     { "elected": "BSD-2-Clause", "decision": "117", "purls": ["pkg:maven/org.hdrhistogram/HdrHistogram@2.2.2"] },
-    { "elected": "MPL-2.0", "decision": "117 (H2 election MPL-2.0)", "purls": ["pkg:maven/com.h2database/h2@2.3.232"] },
+    { "elected": "MPL-2.0", "decision": "117 (H2 election MPL-2.0)", "purls": ["pkg:maven/com.h2database/h2@2.5.252"] },
     { "elected": "MPL-2.0", "decision": "94 (veraPDF 1.30.4, wcag-algorithms 1.30.3; only in the PDF validator, decisions 114 and 119)",
       "purl_prefix": "pkg:maven/org.verapdf/", "versions": ["1.30.4", "1.30.3"], "allowed_in": ["pdf-validator"] },
     { "elected": "Apache-2.0", "decision": "383 (the Rust crates offered as MIT OR Apache-2.0 elect Apache-2.0, the project licence)",
@@ -102,10 +103,10 @@
     { "licence": "LicenseRef-bpmn.io", "declared": "SEE LICENSE IN LICENSE",
       "evidence": "LICENSE file of the package: the bpmn.io licence, MIT terms plus the watermark clause; LIC-8",
       "purls": [
-        "pkg:npm/bpmn-js@17.11.1", "pkg:npm/dmn-js@16.8.2", "pkg:npm/dmn-js-shared@16.8.2", "pkg:npm/dmn-js-drd@16.8.2",
-        "pkg:npm/dmn-js-decision-table@16.8.2", "pkg:npm/dmn-js-literal-expression@16.8.2",
-        "pkg:npm/dmn-js-boxed-expression@16.8.2", "pkg:npm/%40bpmn-io/form-js-editor@1.12.0",
-        "pkg:npm/%40bpmn-io/form-js-viewer@1.12.0"
+        "pkg:npm/bpmn-js@18.33.0", "pkg:npm/dmn-js@18.0.3", "pkg:npm/dmn-js-shared@18.0.1", "pkg:npm/dmn-js-drd@18.0.1",
+        "pkg:npm/dmn-js-decision-table@18.0.3", "pkg:npm/dmn-js-literal-expression@18.0.1",
+        "pkg:npm/dmn-js-boxed-expression@18.0.1", "pkg:npm/%40bpmn-io/form-js-editor@2.2.0",
+        "pkg:npm/%40bpmn-io/form-js-viewer@2.2.0"
       ] },
     { "licence": "BSD-3-Clause", "declared": ["BSD-4-Clause", "BSD"],
       "evidence": "decision 176 (DR-02): upstream LICENSE.txt at the release tag is BSD-3-Clause (attributions/paranamer-2.8.3.txt); the parent POM names 'BSD' with the bsd-3-clause URL, which the CycloneDX Maven plugin reports as BSD-4-Clause",
@@ -186,7 +187,7 @@
   "build_time_tools": [
     { "tool": "SpotBugs", "coordinate": "com.github.spotbugs:spotbugs:4.10.5", "via": "com.github.spotbugs:spotbugs-maven-plugin:4.10.5.0", "license": "LGPL-2.1", "never_ship": "pkg:maven/com.github.spotbugs/spotbugs@", "decision": "owner 2026-11-12: build-time tool, never shipped" },
     { "tool": "FindSecBugs", "coordinate": "com.h3xstream.findsecbugs:findsecbugs-plugin:1.14.0", "via": "SpotBugs plugin", "license": "LGPL-3.0", "never_ship": "pkg:maven/com.h3xstream.findsecbugs/findsecbugs-plugin", "decision": "owner 2026-11-12: build-time tool, never shipped" },
-    { "tool": "Semgrep CLI", "coordinate": "pypi:semgrep==1.185.0", "via": "CI runner only (pip, security.yml)", "license": "LGPL-2.1", "never_ship": "pkg:pypi/semgrep@", "decision": "owner 2026-11-12: build-time tool, never shipped" },
+    { "tool": "Semgrep CLI", "coordinate": "pypi:semgrep==1.186.0", "via": "CI runner only (pip, security.yml)", "license": "LGPL-2.1", "never_ship": "pkg:pypi/semgrep@", "decision": "owner 2026-11-12: build-time tool, never shipped" },
     { "tool": "sonar-maven-plugin", "coordinate": "org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211", "via": "Maven plugin (CI only)", "license": "LGPL-3.0", "never_ship": "pkg:maven/org.sonarsource.scanner.maven/", "decision": "owner 2026-11-12: build-time tool, never shipped" },
     { "tool": "spotbugs-annotations", "coordinate": "com.github.spotbugs:spotbugs-annotations:4.10.5", "via": "transitive of com.github.spotbugs:spotbugs:4.10.5", "license": "LGPL-2.1", "never_ship": "pkg:maven/com.github.spotbugs/spotbugs-annotations@", "decision": "owner 2026-11-12: build-time only, never shipped" },
     { "tool": "sonar-scanner-java-library", "coordinate": "org.sonarsource.scanner.lib:sonar-scanner-java-library:4.1.2.1663", "via": "transitive of sonar-maven-plugin:5.8.0.7211", "license": "LGPL-3.0", "never_ship": "pkg:maven/org.sonarsource.scanner.lib/sonar-scanner-java-library@", "decision": "owner 2026-11-12: build-time only, never shipped" },

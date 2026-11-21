@@ -1,6 +1,6 @@
 {
   "id": "sec.ecom.return-refund",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Return, replacement and refund",
     "hi": "वापसी, प्रतिस्थापन एवं धनवापसी"
@@ -34,24 +34,31 @@
     {
       "kind": "SEED",
       "path": "packs/sec-ecom-return-refund/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-ecom-return-refund/pack.json"
     }
   ],
   "seed": "packs/sec-ecom-return-refund/seed.json",
   "connectors": [
     {
       "id": "shipping.pickup",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Reverse pickup"
     },
     {
       "id": "order.replacement",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Replacement order"
     },
     {
       "id": "pg.refund",
+      "moneyMovement": "OUT",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Refund to source"
@@ -70,8 +77,24 @@
   ],
   "tenantOverrides": [],
   "calls": [
-    "sangam-core-execution"
+    "sangam-core-execution",
+    "sangam-core-sanction"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "er_refund_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

@@ -403,7 +403,7 @@ public class PortsWiring {
         // through POST /deployments (DEPLOYMENT_WRITE permission); the requester is recorded as the approver.
         AppDeploymentService.ApprovalPolicy approval = (tenant, bundle, requestedBy) -> requestedBy;
         return new AppDeploymentService(engine, settings.getDialect(),
-                new SangamModelValidator(new SangamModelValidator.Options(settings.isAdHocSubProcess())), approval, forms,
+                new SangamModelValidator(SangamModelValidator.Options.of(settings)), approval, forms,
                 events, channels);
     }
 

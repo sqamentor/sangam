@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "inputs": {
     "compatibility": "sangam-ui/src/modeller/compatibility.json",
-    "compatibilityGeneratedAt": "2026-11-04T22:29:11.468Z",
+    "compatibilityGeneratedAt": "2026-11-18T00:04:26.287Z",
     "feelPolicy": "SANGAM.md X.0g (ADR-D-26)"
   },
   "notations": [
@@ -13,10 +13,10 @@
       "counts": {
         "SUPPORTED": 25,
         "SUPPORTED_WITH_RULES": 7,
-        "PORTED": 1,
+        "PORTED": 2,
         "NOT_EXECUTABLE": 4,
-        "REJECTED": 1,
-        "UNSUPPORTED": 3
+        "REJECTED": 2,
+        "UNSUPPORTED": 2
       }
     },
     {
@@ -441,6 +441,18 @@
     },
     {
       "notation": "BPMN",
+      "construct": "StandardLoopCharacteristics",
+      "status": "PORTED",
+      "modeller": "PROPERTIES",
+      "engineParses": false,
+      "note": "Loop body around the activity: loopCondition (do-while, or while with testBefore), loopMaximum; a loop with neither is refused; a non-boolean condition fails the step (R10-bpmn).",
+      "source": "sangam-flowable-ports P-6 StandardLoopActivityBehavior",
+      "xml": [
+        "standardLoopCharacteristics"
+      ]
+    },
+    {
+      "notation": "BPMN",
       "construct": "DataObjectReference",
       "status": "NOT_EXECUTABLE",
       "modeller": "PALETTE",
@@ -457,8 +469,8 @@
       "status": "NOT_EXECUTABLE",
       "modeller": "PALETTE",
       "engineParses": false,
-      "note": "Documentation only; data stores are not executed (D-52).",
-      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "note": "Documentation only; accepted with a DOC-ONLY warning, not executed (D-52; refused before R10-bpmn).",
+      "source": "sangam-flowable-ports SangamModelValidator",
       "xml": [
         "dataStoreReference"
       ]
@@ -489,6 +501,18 @@
     },
     {
       "notation": "BPMN",
+      "construct": "FormalExpression.XPath",
+      "status": "REJECTED",
+      "modeller": "IMPORT_ONLY",
+      "engineParses": false,
+      "note": "XPath is not evaluated: definitions/@expressionLanguage or a language attribute naming XPath is refused at deploy (XPATH) on H2, the server and the CLI; only JUEL and FEEL (owner ruling F3, R10-bpmn).",
+      "source": "sangam-flowable-ports SangamModelValidator; owner ruling F3",
+      "xml": [
+        "formalExpression"
+      ]
+    },
+    {
+      "notation": "BPMN",
       "construct": "ScriptTask",
       "status": "REJECTED",
       "modeller": "REPLACE_MENU",
@@ -505,8 +529,8 @@
       "status": "UNSUPPORTED",
       "modeller": "REPLACE_MENU",
       "engineParses": false,
-      "note": "Parsed but no runtime join semantics in either engine (D-52).",
-      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "note": "Refused at deploy (D-52): no runtime join semantics; not supported by owner ruling F1 (R10-bpmn).",
+      "source": "FLOWABLE-INTO-OPERATON D-52; owner ruling F1",
       "xml": [
         "complexGateway"
       ]
@@ -517,22 +541,10 @@
       "status": "UNSUPPORTED",
       "modeller": "IMPORT_ONLY",
       "engineParses": false,
-      "note": "Multiple / parallel-multiple events are not executed (D-52).",
-      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "note": "Multiple / parallel-multiple events (more than one event definition) are refused at deploy (D-52); not supported by owner ruling F2 (R10-bpmn).",
+      "source": "FLOWABLE-INTO-OPERATON D-52; owner ruling F2",
       "xml": [
         "multipleEventDefinition"
-      ]
-    },
-    {
-      "notation": "BPMN",
-      "construct": "StandardLoopCharacteristics",
-      "status": "UNSUPPORTED",
-      "modeller": "PROPERTIES",
-      "engineParses": false,
-      "note": "Standard loop is not executed (D-52); use multi-instance or a gateway loop.",
-      "source": "FLOWABLE-INTO-OPERATON D-52",
-      "xml": [
-        "standardLoopCharacteristics"
       ]
     },
     {
@@ -917,15 +929,27 @@
     },
     {
       "topic": "Date-time equality (SG-35)",
-      "rule": "DMN 1.3 compares date-times on the time line (OMG issue DMN13-35, resolved in DMN 1.3: `=` is the same instant). The pinned engine's `=` also compares the zone (feel-scala issue #767), and an operator cannot be overridden without changing the engine, which the SG-27 pin forbids. **Policy: the spec semantics, same instant.** Until the engine is upgraded, the deploy-time lint `SANGAM-DMN-DATETIME-EQ` warns on `=`/`!=`, and on a bare input entry, against a zoned date-time literal. Models compare instants with `<`, `>`, ranges, or `a - b = duration(\"PT0S\")`. This is a documented gap, not a silent rule."
+      "rule": "DMN 1.3 compares date-times on the time line (OMG issue DMN13-35, resolved in DMN 1.3: `=` is the same instant). The pinned engine's `=` also compares the zone (feel-scala issue #767), and an operator cannot be overridden without changing the engine, which the SG-27 pin forbids. **Policy: the spec semantics, same instant** (owner ruling G1, 2026-11-18). Deploy **refuses** `=`/`!=`, and a bare input entry, against a zoned date-time literal (`SANGAM-DMN-DATETIME-EQ`, an error). A `ZonedDateTime`, `OffsetDateTime` or `Instant` input is normalised to its UTC instant at the Sangam boundary (`SangamFeelEngine`, the variables handed to FEEL; values FEEL computes keep their zone; no engine change), so equality between date-time variables compares instants. Models compare literals with `<`, `>`, ranges, or `a - b = duration(\"PT0S\")`. Tests: `DateTimeUtcBoundaryTest`, `DmnModelLintTest`."
     },
     {
-      "topic": "Known residual",
-      "rule": "A built-in conversion (`date(x)`, `duration(x)`, …) whose argument is a **variable** holding an invalid string still yields null in the pinned engine (built-ins cannot be overridden). Literal arguments are refused. A null that reaches a later operator, a decision-table input or a required output is still caught (strict evaluation, null-input rule, R10 `requiredOutputs`)."
+      "topic": "Built-in conversion of a variable (SG-34)",
+      "rule": "A built-in conversion (`date(x)`, `duration(x)`, …) whose argument is a **variable** holding an invalid string fails the decision with `SANGAM-FEEL-STRICT`, like a literal argument (verified 2026-11-18 on Operaton 2.2.1: `DmnGateRulesTest.aBuiltInConversionOfAnInvalidVariableStringFails`; this row earlier said such a call yields null, which was stale)."
+    },
+    {
+      "topic": "Decision tables (ADR-DMN-ENGINE D1)",
+      "rule": "COLLECT SUM, MIN and MAX are exact (`Long` or `BigDecimal`, never `double`; `DecisionTableRules`). A constant `defaultOutputEntry` is the result when no rule matches (DMN 1.5 8.2.11); a non-constant one is refused at parse (`SANGAM-DMN-DEFAULT-OUTPUT`). Operaton's history keeps an aggregated COLLECT value in a double column (display copy); the exact value is the decision result and the per-rule output rows."
+    },
+    {
+      "topic": "Not supported (owner decision D2)",
+      "rule": "Business knowledge models, decision services, boxed contexts, relations, invocations and function definitions are refused at deploy (`SANGAM-DMN-UNSUPPORTED`)."
+    },
+    {
+      "topic": "Money is never rounded in DMN (owner DEC-5)",
+      "rule": "`decimal(...)` in an output entry, default output entry or literal expression whose output is money is refused at deploy (`SANGAM-DMN-MONEY-ROUNDING`). Rounding belongs to the financial core."
     },
     {
       "topic": "Status",
-      "rule": "Decision: DECIDED (SG-33/34/35 root-cause fixes, 2026-11-08). Delivery: IMPLEMENTED (`sangam-engine` `org.sangam.engine.feel`). Tests: `FeelBehaviourH2Test`, `DmnModelLintTest`."
+      "rule": "Decision: DECIDED (SG-33/34/35 root-cause fixes, 2026-11-08). Delivery: IMPLEMENTED (`sangam-engine` `org.sangam.engine.feel`). Tests: `FeelBehaviourH2Test`, `DmnModelLintTest`, `DmnGateRulesTest`, `DecisionTableRulesH2Test`."
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "key": "p4-licence/prepare-sanction-note",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "gov.p4.licence",
   "title": {
     "en": "Prepare the document to sign",

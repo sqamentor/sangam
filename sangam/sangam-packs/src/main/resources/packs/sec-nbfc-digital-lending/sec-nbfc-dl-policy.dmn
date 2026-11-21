@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_nbfc_dl_policy" name="Digital credit policy (SYNTHETIC)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-nbfc-dl-policy" name="Digital credit policy (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
+  <decision id="sec-nbfc-dl-policy" name="Digital credit policy (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
     <decisionTable id="sec-nbfc-dl-policy_t" hitPolicy="FIRST">
       <input id="sec-nbfc-dl-policy_i0" label="Bureau score"><inputExpression id="sec-nbfc-dl-policy_ie0" typeRef="integer"><text>bureauScore</text></inputExpression></input>
       <input id="sec-nbfc-dl-policy_i1" label="Tenure (days)"><inputExpression id="sec-nbfc-dl-policy_ie1" typeRef="integer"><text>tenureDays</text></inputExpression></input>

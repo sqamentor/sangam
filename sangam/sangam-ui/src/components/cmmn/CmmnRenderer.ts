@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Owner decision 161 (M-041): draws CMMN 1.1 shapes (CMMN 1.1 section 7, notation) on diagram-js 14.11.3.
+ * Owner decision 161 (M-041): draws CMMN 1.1 shapes (CMMN 1.1 section 7, notation) on diagram-js 15.30.0.
  * Case plan model: a folder with a tab. Stage: a rectangle with cut corners. Tasks: rounded rectangles with the type
  * marker in the top-left corner. Milestone: a fully rounded rectangle. Event listeners: double circles. Entry
  * criterion: a white diamond; exit criterion: a black diamond. Sentry on-parts: dashed connectors.

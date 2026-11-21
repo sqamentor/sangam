@@ -75,10 +75,14 @@ function Detail({ id, onDecided }: { id: string; onDecided: () => void }) {
   const [decided, setDecided] = useState(false);
   const act = useAction();
   const x = d.data;
-  useEffect(() => {
+  // A new transcript resets the inputs during render, not in an effect: with React 19 the passive effect of the load
+  // can still be pending when the reviewer clicks, and would then wipe what the click just set (UP-L6b).
+  const [shown, setShown] = useState(x);
+  if (shown !== x) {
+    setShown(x);
     setCorrected(x?.correctedText ?? '');
     setNote('');
-  }, [x]);
+  }
   useEffect(() => setDecided(false), [id]);
   const decide = (approve: boolean) => {
     if (!x) return;

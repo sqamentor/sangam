@@ -1,0 +1,38 @@
+{
+  "key": "sec-edu-admission/refund-amount",
+  "version": "1.0.3",
+  "pack": "sec.edu.admission",
+  "title": {
+    "en": "Withdrawal refund: payable amount",
+    "hi": "प्रत्याहरण वापसी: देय राशि"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "refundAmountEntered",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Refund payable (INR, whole paise next to the exact value)",
+        "hi": "देय वापसी (रुपये, सटीक मान के निकट पूर्ण पैसे)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

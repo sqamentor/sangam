@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Apache-2.0
+# ClusterFuzzLite (owner-approved, round 9; OpenSSF Scorecard Fuzzing): builds .clusterfuzzlite/ and runs the Jazzer
+# @FuzzTest targets of sangam-packs PackParserFuzzTest. Report-only; read-only token; every action pinned by commit.
+name: ClusterFuzzLite
+on:
+  push:
+    # ci/* lanes prove a change before it reaches main (a new workflow cannot be dispatched before it is on main)
+    branches: ["ci/**"]
+    paths: ["sangam/sangam-packs/**", ".clusterfuzzlite/**", ".github/workflows/cflite.yml"]
+  pull_request:
+    paths: ["sangam/sangam-packs/**", ".clusterfuzzlite/**", ".github/workflows/cflite.yml"]
+  schedule:
+    - cron: "0 22 * * 3"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cflite-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  fuzz:
+    name: Jazzer fuzz (PackParserFuzzTest)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - name: Build fuzzers
+        id: build
+        uses: google/clusterfuzzlite/actions/build_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          language: jvm
+          sanitizer: address
+      - name: Run fuzzers
+        uses: google/clusterfuzzlite/actions/run_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          language: jvm
+          sanitizer: address
+          fuzz-seconds: 600
+          mode: ${{ github.event_name == 'pull_request' && 'code-change' || 'batch' }}

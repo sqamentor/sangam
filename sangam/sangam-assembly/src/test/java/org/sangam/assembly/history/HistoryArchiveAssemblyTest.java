@@ -116,7 +116,7 @@ class HistoryArchiveAssemblyTest {
         HistoryArchiveAssembly.archives(props(with(on(), "sangam.ops.retention-json", "{\"gov.file\":\"P3649D\"}")),
                 keys, audit, "t");
         IllegalStateException literal = assertThrows(IllegalStateException.class, () -> HistoryArchiveAssembly.archives(
-                props(with(on(), "sangam.history.archive.signing.private-key-ref", "MC4CAQAwBQYDK2VwBCIEI")), keys, audit, "t"));
+                props(with(on(), "sangam.history.archive.signing.private-key-ref", "literal-key-material-not-a-secret-ref")), keys, audit, "t"));
         assertTrue(literal.getMessage().contains("secret reference"), literal.getMessage());
         assertThrows(IllegalStateException.class, () -> HistoryArchiveAssembly.archives(props(with(on(),
                 "sangam.history.archive.signing.trusted-public-key-refs", "secret://archive/missing")), keys, audit, "t"));

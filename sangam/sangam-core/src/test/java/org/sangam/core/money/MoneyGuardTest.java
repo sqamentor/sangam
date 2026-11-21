@@ -55,6 +55,7 @@ class MoneyGuardTest {
 
     static {
         // --- rule 1: ratios / scores / telemetry, not money (each a dimensionless or physical double) ---
+        FLOAT_ALLOWED.put("sangam-feel/src/main/java/org/sangam/feel/DecisionTableRules.java", 1);           // COLLECT over a non-money double output column (money doubles refused by DmnModelLint), converted to exact BigDecimal
         FLOAT_ALLOWED.put("sangam-field/src/main/java/org/sangam/field/schedule/RouteOrdering.java", 1);         // route distance total (km)
         FLOAT_ALLOWED.put("sangam-flowable-ports/src/main/java/org/sangam/ports/sla/SlaService.java", 1);         // breach ratio of task counts
         FLOAT_ALLOWED.put("sangam-programme/src/main/java/org/sangam/programme/period/PeriodService.java", 1);    // elapsed fraction of a period (days)

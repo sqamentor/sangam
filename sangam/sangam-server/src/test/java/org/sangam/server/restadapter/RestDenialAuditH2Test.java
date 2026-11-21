@@ -60,6 +60,10 @@ class RestDenialAuditH2Test {
     @AfterAll
     static void tearDown() {
         fx.close();
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        fx = null;
+        audit = null;
+        tasks = null;
     }
 
     /** The leaf pool: its own (uncounted) connections. */

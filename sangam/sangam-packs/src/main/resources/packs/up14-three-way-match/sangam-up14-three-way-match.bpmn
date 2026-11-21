@@ -1,33 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- UP-14 Three-way match. Generated layout; edit freely in the Sangam modeller. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up14_three_way_match" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.2">
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up14_three_way_match" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.3">
   <message id="msg_sangam_supplierResponse" name="sangam.supplierResponse"/>
-  <process id="sangam-up14-three-way-match" name="UP-14 Three-way match" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
-    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up14-three-way-match</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.2</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>poQty,grnQty,invoiceQty,poPrice,invoicePrice</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+  <process id="sangam-up14-three-way-match" name="UP-14 Three-way match" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up14-three-way-match</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.3</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>poQty,grnQty,invoiceQty,poPrice,invoicePrice,amount,payeeAccount,currency,purpose</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="u14_start" name="Invoice received" operaton:initiator="initiator" operaton:formKey="sangam:up14-three-way-match/invoice"></startEvent>
     <serviceTask id="u14_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>apSeat=AP-CLERK;executionConnector=ap.post;executionStep=post;verifyApproval=false;reconcileRequired=false</operaton:string></operaton:field></extensionElements></serviceTask>
     <businessRuleTask id="u14_match" name="Match with tolerances (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>up14-tolerance</operaton:string></operaton:field></extensionElements></businessRuleTask>
     <exclusiveGateway id="u14_gw" name="Result?" default="up14_three_way_match_f5"></exclusiveGateway>
-    <callActivity id="u14_post" name="Post (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="u14_post_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.MoneyFieldsDelegate"><operaton:field name="amount"><operaton:string>payableAmount</operaton:string></operaton:field><operaton:field name="payeeKeys"><operaton:string>payeePartyId</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Supplier invoice payable after the three-way match</operaton:string></operaton:field></operaton:executionListener><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="u14_post_sgw" name="Sanctioned?" default="u14_post_sgw_no"></exclusiveGateway>
+    <endEvent id="u14_post_notReleased" name="Not released"></endEvent>
+    <callActivity id="u14_post" name="Post (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <userTask id="u14_exception" name="Resolve match exception" operaton:candidateGroups="${apSeat}" operaton:formKey="sangam:up14-three-way-match/exception"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>exceptionDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
     <exclusiveGateway id="u14_eg" name="" default="up14_three_way_match_f11"></exclusiveGateway>
     <serviceTask id="u14_ask" name="Ask supplier to clarify" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>supplier-clarification</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>supplierName</operaton:string></operaton:field></extensionElements></serviceTask>
     <intermediateCatchEvent id="u14_response" name="Supplier response (credit note / corrected invoice)"><messageEventDefinition messageRef="msg_sangam_supplierResponse"/></intermediateCatchEvent>
     <endEvent id="u14_endRejected" name="Invoice rejected"></endEvent>
     <endEvent id="u14_end" name="Posted"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="u14_payable" name="Payable: invoiced quantity at the invoice price, exact (owner rule C4)" operaton:class="org.sangam.packs.core.MoneyCalculationDelegate"><extensionElements><operaton:field name="result"><operaton:string>payableAmount</operaton:string></operaton:field><operaton:field name="op"><operaton:string>EXACT</operaton:string></operaton:field><operaton:field name="formula"><operaton:string>invoiceQty * invoicePrice</operaton:string></operaton:field><operaton:field name="min"><operaton:string>0</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u14_payable_heldGw" name="Exact in minor units?" default="u14_payable_heldGw_exact"></exclusiveGateway>
+    <userTask id="u14_payable_enter" name="Enter the payable payableAmount (exact value held, owner rule C4)" operaton:candidateGroups="${apSeat}" operaton:formKey="sangam:up14-three-way-match/payable-amount"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="u14_post_sanctionPrepareGw" name="Document to sign?" default="up14_three_way_match_f14"></exclusiveGateway>
+    <userTask id="u14_post_sanctionPrepare" name="Prepare the document to sign" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:up14-three-way-match/prepare-sanction-note"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.DocumentSlotReadyListener"><operaton:field name="slots"><operaton:string>sanctionDocumentId:SANCTION_NOTE</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <sequenceFlow id="up14_three_way_match_f1" sourceRef="u14_start" targetRef="u14_defaults"/>
     <sequenceFlow id="up14_three_way_match_f2" sourceRef="u14_defaults" targetRef="u14_match"/>
     <sequenceFlow id="up14_three_way_match_f3" sourceRef="u14_match" targetRef="u14_gw"/>
-    <sequenceFlow id="up14_three_way_match_f4" name="match / within tolerance" sourceRef="u14_gw" targetRef="u14_post"><conditionExpression xsi:type="tFormalExpression">${matchResult != 'EXCEPTION'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up14_three_way_match_f4" name="match / within tolerance" sourceRef="u14_gw" targetRef="u14_payable"><conditionExpression xsi:type="tFormalExpression">${matchResult != 'EXCEPTION'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="up14_three_way_match_f5" name="exception" sourceRef="u14_gw" targetRef="u14_exception"/>
     <sequenceFlow id="up14_three_way_match_f6" sourceRef="u14_exception" targetRef="u14_eg"/>
-    <sequenceFlow id="up14_three_way_match_f7" name="approve" sourceRef="u14_eg" targetRef="u14_post"><conditionExpression xsi:type="tFormalExpression">${exceptionDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up14_three_way_match_f7" name="approve" sourceRef="u14_eg" targetRef="u14_payable"><conditionExpression xsi:type="tFormalExpression">${exceptionDecision == 'approve'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="up14_three_way_match_f8" name="clarify" sourceRef="u14_eg" targetRef="u14_ask"><conditionExpression xsi:type="tFormalExpression">${exceptionDecision == 'clarify'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="up14_three_way_match_f9" sourceRef="u14_ask" targetRef="u14_response"/>
     <sequenceFlow id="up14_three_way_match_f10" sourceRef="u14_response" targetRef="u14_match"/>
     <sequenceFlow id="up14_three_way_match_f11" name="reject" sourceRef="u14_eg" targetRef="u14_endRejected"/>
     <sequenceFlow id="up14_three_way_match_f12" sourceRef="u14_post" targetRef="u14_end"/>
+    <sequenceFlow id="u14_post_sanction_f" sourceRef="u14_post_sanction" targetRef="u14_post_sgw"/>
+    <sequenceFlow id="u14_post_sgw_yes" name="sanctioned" sourceRef="u14_post_sgw" targetRef="u14_post"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="u14_post_sgw_no" name="not sanctioned" sourceRef="u14_post_sgw" targetRef="u14_post_notReleased"/>
+    <sequenceFlow id="up14_f9003" sourceRef="u14_payable" targetRef="u14_payable_heldGw"/>
+    <sequenceFlow id="u14_payable_heldGw_exact" name="exact" sourceRef="u14_payable_heldGw" targetRef="u14_post_sanctionPrepareGw"/>
+    <sequenceFlow id="u14_payable_heldGw_held" name="held: reviewer enters the amount" sourceRef="u14_payable_heldGw" targetRef="u14_payable_enter"><conditionExpression xsi:type="tFormalExpression">${payableAmountHeld == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="u14_payable_enter_back" sourceRef="u14_payable_enter" targetRef="u14_payable"/>
+    <sequenceFlow id="up14_three_way_match_f13" name="DSC signature needed" sourceRef="u14_post_sanctionPrepareGw" targetRef="u14_post_sanctionPrepare"><conditionExpression xsi:type="tFormalExpression">${execution.getVariable('signatureRequired') == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up14_three_way_match_f14" name="no DSC signature" sourceRef="u14_post_sanctionPrepareGw" targetRef="u14_post_sanction"/>
+    <sequenceFlow id="up14_three_way_match_f15" sourceRef="u14_post_sanctionPrepare" targetRef="u14_post_sanction"/>
   </process>
   <bpmndi:BPMNDiagram id="up14_three_way_match_diagram">
     <bpmndi:BPMNPlane id="up14_three_way_match_plane" bpmnElement="sangam-up14-three-way-match">
@@ -35,13 +53,21 @@
       <bpmndi:BPMNShape id="u14_defaults_di" bpmnElement="u14_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u14_match_di" bpmnElement="u14_match"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u14_gw_di" bpmnElement="u14_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="u14_post_di" bpmnElement="u14_post"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u14_post_sanction_di" bpmnElement="u14_post_sanction"><dc:Bounds x="1670" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u14_post_sgw_di" bpmnElement="u14_post_sgw"><dc:Bounds x="1860" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u14_post_notReleased_di" bpmnElement="u14_post_notReleased"><dc:Bounds x="2032" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u14_post_di" bpmnElement="u14_post"><dc:Bounds x="2000" y="530" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u14_exception_di" bpmnElement="u14_exception"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u14_eg_di" bpmnElement="u14_eg"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u14_ask_di" bpmnElement="u14_ask"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u14_response_di" bpmnElement="u14_response"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="u14_endRejected_di" bpmnElement="u14_endRejected"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="u14_end_di" bpmnElement="u14_end"><dc:Bounds x="1207" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u14_end_di" bpmnElement="u14_end"><dc:Bounds x="2197" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u14_payable_di" bpmnElement="u14_payable"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u14_payable_heldGw_di" bpmnElement="u14_payable_heldGw"><dc:Bounds x="1200" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u14_payable_enter_di" bpmnElement="u14_payable_enter"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u14_post_sanctionPrepareGw_di" bpmnElement="u14_post_sanctionPrepareGw"><dc:Bounds x="1365" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u14_post_sanctionPrepare_di" bpmnElement="u14_post_sanctionPrepare"><dc:Bounds x="1505" y="405" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="up14_three_way_match_f1_di" bpmnElement="up14_three_way_match_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="up14_three_way_match_f2_di" bpmnElement="up14_three_way_match_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="up14_three_way_match_f3_di" bpmnElement="up14_three_way_match_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
@@ -53,7 +79,17 @@
       <bpmndi:BPMNEdge id="up14_three_way_match_f9_di" bpmnElement="up14_three_way_match_f9"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="up14_three_way_match_f10_di" bpmnElement="up14_three_way_match_f10"><di:waypoint x="1225" y="213"/><di:waypoint x="1225" y="238"/><di:waypoint x="400" y="238"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="up14_three_way_match_f11_di" bpmnElement="up14_three_way_match_f11"><di:waypoint x="920" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="up14_three_way_match_f12_di" bpmnElement="up14_three_way_match_f12"><di:waypoint x="1110" y="320"/><di:waypoint x="1207" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up14_three_way_match_f12_di" bpmnElement="up14_three_way_match_f12"><di:waypoint x="2100" y="570"/><di:waypoint x="2197" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="u14_post_sanction_f_di" bpmnElement="u14_post_sanction_f"><di:waypoint x="1770" y="445"/><di:waypoint x="1860" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="u14_post_sgw_yes_di" bpmnElement="u14_post_sgw_yes"><di:waypoint x="1910" y="445"/><di:waypoint x="1955" y="445"/><di:waypoint x="1955" y="570"/><di:waypoint x="2000" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="u14_post_sgw_no_di" bpmnElement="u14_post_sgw_no"><di:waypoint x="1910" y="445"/><di:waypoint x="2032" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up14_f9003_di" bpmnElement="up14_f9003"><di:waypoint x="1110" y="320"/><di:waypoint x="1200" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="u14_payable_heldGw_exact_di" bpmnElement="u14_payable_heldGw_exact"><di:waypoint x="1250" y="320"/><di:waypoint x="1307" y="320"/><di:waypoint x="1307" y="445"/><di:waypoint x="1365" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="u14_payable_heldGw_held_di" bpmnElement="u14_payable_heldGw_held"><di:waypoint x="1250" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="u14_payable_enter_back_di" bpmnElement="u14_payable_enter_back"><di:waypoint x="1390" y="360"/><di:waypoint x="1390" y="392"/><di:waypoint x="1060" y="392"/><di:waypoint x="1060" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up14_three_way_match_f13_di" bpmnElement="up14_three_way_match_f13"><di:waypoint x="1415" y="445"/><di:waypoint x="1505" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up14_three_way_match_f14_di" bpmnElement="up14_three_way_match_f14"><di:waypoint x="1415" y="445"/><di:waypoint x="1670" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up14_three_way_match_f15_di" bpmnElement="up14_three_way_match_f15"><di:waypoint x="1605" y="445"/><di:waypoint x="1670" y="445"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

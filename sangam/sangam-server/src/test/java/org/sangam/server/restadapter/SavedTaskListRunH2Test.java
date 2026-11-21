@@ -66,6 +66,10 @@ class SavedTaskListRunH2Test {
     @AfterAll
     static void tearDown() {
         fx.close();
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        fx = null;
+        controller = null;
+        lists = null;
     }
 
     private static void task(TaskService ts, String id, String tenant, String group, String assignee) {
@@ -81,7 +85,7 @@ class SavedTaskListRunH2Test {
 
     private static List<String> run(RequestContext ctx, String filterId, String candidateGroup) {
         return controller.list(ctx, null, null, null, candidateGroup, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, filterId).getBody().stream().map(TaskPort.Task::id).sorted()
+                null, null, null, null, null, null, filterId, null, null, null, null, null, null).getBody().stream().map(TaskPort.Task::id).sorted()
                 .toList();
     }
 

@@ -37,7 +37,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *       distribution as the include.</li>
  * </ul>
  * The enforcer run over the real dependency graph does the rest: a banned coordinate that reaches any other module in
- * a shipped scope fails that module's build. The rule (enforcer 3.6.1) does not look at optional dependencies, so a
+ * a shipped scope fails that module's build. The rule (enforcer 3.6.3; 3.7.0 held, it checks them) does not look at optional dependencies, so a
  * module that only compiles against a scoped coordinate needs no include today; the optional branch above is what
  * such a module must satisfy if it ever carries one. Run from sangam-core, so the reactor root is the parent folder.
  */

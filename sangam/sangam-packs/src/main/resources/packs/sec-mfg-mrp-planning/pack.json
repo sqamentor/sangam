@@ -1,6 +1,6 @@
 {
   "id": "sec.mfg.mrp-planning",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Material requirements planning run",
     "hi": "सामग्री आवश्यकता नियोजन"
@@ -36,18 +36,21 @@
   "connectors": [
     {
       "id": "erp.mrpRun",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "MRP run"
     },
     {
       "id": "erp.plannedOrders",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Planned orders"
     },
     {
       "id": "erp.productionOrder",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Production order"

@@ -266,9 +266,17 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
 
     /** Given: the employee is a payee of the party registry (the registry.party connector the bill resolves). */
     private void registerPayee() {
+        registerPayee("A Subscriber", "XXXX1001");
+        registerPayee(LATE_PAYEE, "XXXX1002");
+    }
+
+    /** The subscriber of gpfAdvanceStatementLate: the bill's duplicate check flags a second claim of one payee. */
+    static final String LATE_PAYEE = "B Subscriber";
+
+    private void registerPayee(String payee, String account) {
         ConnectorResult r = connectors.require(TENANT, "registry.party").invoke(new ConnectorRequest(TENANT,
-                UUID.randomUUID(), "acc-setup-1", 1, "acc-setup", "acc-setup/payee", "payee.register",
-                Map.of("payee", "A Subscriber", "payeeAccount", "XXXX1001", "ifsc", "SBIN0000001", "payeeKind", "PERSON"),
+                UUID.randomUUID(), "acc-setup-" + account, 1, "acc-setup", "acc-setup/payee/" + account, "payee.register",
+                Map.of("payee", payee, "payeeAccount", account, "ifsc", "SBIN0000001", "payeeKind", "PERSON"),
                 null));
         assertThat(r).as("payee registered: " + r).isInstanceOf(ConnectorResult.Success.class);
     }
@@ -573,6 +581,8 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
         static final String ID = "it-bank-statement";
         final Set<String> lines = java.util.concurrent.ConcurrentHashMap.newKeySet();
         final List<String> asked = new java.util.concurrent.CopyOnWriteArrayList<>();
+        /** Lines the bank posts late: the first query answers PENDING, the line is on the statement from then on. */
+        final Set<String> postedLate = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
         @Override
         public org.sangam.core.integration.ConnectorDescriptor descriptor() {
@@ -585,8 +595,12 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
         public org.sangam.core.integration.ConnectorResult invoke(org.sangam.core.integration.ConnectorRequest request) {
             String op = String.valueOf(request.input().get("operationId"));
             asked.add(op);
+            boolean onStatement = lines.contains(op);
+            if (!onStatement && postedLate.remove(op)) {
+                lines.add(op); // the bank posts the line after this query
+            }
             return org.sangam.core.integration.ConnectorResult.Success.of(
-                    Map.of("match", lines.contains(op) ? "MATCHED" : "PENDING"), "STMT-" + op);
+                    Map.of("match", onStatement ? "MATCHED" : "PENDING"), "STMT-" + op);
         }
     }
 
@@ -597,8 +611,7 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
     void gpfAdvance() throws Exception {
         // reconcileRequired stays (designed behaviour): the payment closes when the bank statement shows it. The
         // statement already carries the payment's line when the case first reconciles (operationId = UUIDv5 of the
-        // case, the step 'pay' and attempt 1, Vars.operationId). The later-arrival path (PENDING, then the hourly
-        // re-query) is a test gap: the driver runs no job before its due date (TESTING-GAP-REGISTER).
+        // case, the step 'pay' and attempt 1, Vars.operationId). The later-arrival path is gpfAdvanceStatementLate.
         StatementSource statement = new StatementSource();
         connectors.register(TENANT, statement);
         packBindings.bindForTenant(TENANT, "bank.statement", StatementSource.ID, "match");
@@ -610,6 +623,39 @@ class IfmsPacksIT extends AbstractAcceptanceIT {
                 "payee", "A Subscriber", "payeeAccount", "XXXX1001", "ifsc", "SBIN0000001"));
         assertClosed("GPF advance", r);
         assertThat(statement.asked).as("the payment was reconciled against the bank statement").contains(payment);
+    }
+
+    /**
+     * R8PK-RECON-LATE: the bank statement does not yet show the payment at the first reconciliation (PENDING); the case
+     * waits in core execution's ex_reconWait for reconRetry and matches on the re-query. reconRetry is pack configuration
+     * the department sets at start (core execution's ex_defaults sets PT1H only when it is still null); this department
+     * re-queries after 2 seconds, so the driver runs the re-query timer when it is really due. No clock is moved and
+     * no due date is changed (advanceWaitingTimer never touches a timer inside a called core block).
+     */
+    @Test
+    void gpfAdvanceStatementLate() throws Exception {
+        StatementSource statement = new StatementSource();
+        connectors.register(TENANT, statement);
+        packBindings.bindForTenant(TENANT, "bank.statement", StatementSource.ID, "match");
+        String gpf = bk("GPFL");
+        String payment = org.sangam.packs.core.Vars.operationId(TENANT, gpf, "pay", 1);
+        statement.postedLate.add(payment);
+        // another subscriber than gpfAdvance's: the bill's duplicate check rejects a second claim of one payee
+        Map<String, Object> vars = employee("gpfAccount", "GPF-124", "gpfPurpose", "ADVANCE",
+                "amount", 5_000_000L, "gpfBalance", 40_000_000L, "qualifyingService", new BigDecimal("12.0"), "employeeId", EMPLOYEE,
+                "payee", LATE_PAYEE, "payeeAccount", "XXXX1002", "ifsc", "SBIN0000001");
+        vars.put("reconRetry", "PT2S");
+        Run r = drive("sangam-ifms-gpf", gpf, vars);
+        assertClosed("GPF advance, statement line arrives late", r);
+        assertThat(statement.asked.stream().filter(payment::equals).count())
+                .as("first reconciliation PENDING, the re-query matched").isEqualTo(2);
+        List<String> waited = new ArrayList<>();
+        for (var h : engine.getHistoryService().createHistoricProcessInstanceQuery().tenantIdIn(TENANT)
+                .processInstanceBusinessKey(gpf).processDefinitionKey("sangam-core-execution").list()) {
+            engine.getHistoryService().createHistoricActivityInstanceQuery().processInstanceId(h.getId())
+                    .activityId("ex_reconWait").finished().list().forEach(a -> waited.add(a.getActivityId()));
+        }
+        assertThat(waited).as("the payment waited once in ex_reconWait before it matched").containsExactly("ex_reconWait");
     }
 
     @Test

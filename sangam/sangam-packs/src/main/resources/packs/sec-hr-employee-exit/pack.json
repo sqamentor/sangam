@@ -1,6 +1,6 @@
 {
   "id": "sec.hr.employee-exit",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Employee exit and full and final settlement",
     "hi": "कर्मचारी निकास एवं पूर्ण एवं अंतिम निपटान"
@@ -46,30 +46,38 @@
     {
       "kind": "SEED",
       "path": "packs/sec-hr-employee-exit/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-hr-employee-exit/pack.json"
     }
   ],
   "seed": "packs/sec-hr-employee-exit/seed.json",
   "connectors": [
     {
       "id": "iam.revokeAll",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Revoke access"
     },
     {
       "id": "bank.transfer",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Settlement payment"
     },
     {
       "id": "epfo.exit",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "PF exit"
     },
     {
       "id": "docs.letter",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Relieving letter"
@@ -91,8 +99,30 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-cancellation",
-    "sangam-core-execution"
+    "sangam-core-execution",
+    "sangam-core-sanction"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "hx_pay_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    },
+    "hx_gratPay_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GENERAL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

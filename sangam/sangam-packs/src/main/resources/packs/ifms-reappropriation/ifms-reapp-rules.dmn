@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_reapp_rules" name="Re-appropriation rules (DFPR 2024 Rule 10 and GoI decisions)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- FIRST hit, ordered: refusals, then Finance Ministry cases, then Parliament reporting, then within CAA powers. Thresholds come from the GOI profile budgetControl.reappropriation; a State deploys its own table as a tenant override. -->
-  <decision id="ifms-reapp-rules" name="Re-appropriation rules (DFPR 2024 Rule 10 and GoI decisions)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
+  <decision id="ifms-reapp-rules" name="Re-appropriation rules (DFPR 2024 Rule 10 and GoI decisions)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
     <decisionTable id="ifms-reapp-rules_t" hitPolicy="FIRST">
       <input id="ifms-reapp-rules_i0" label="Charged to voted"><inputExpression id="ifms-reapp-rules_ie0" typeRef="boolean"><text>chargedToVoted</text></inputExpression></input>
       <input id="ifms-reapp-rules_i1" label="Capital to revenue"><inputExpression id="ifms-reapp-rules_ie1" typeRef="boolean"><text>capitalRevenue</text></inputExpression></input>

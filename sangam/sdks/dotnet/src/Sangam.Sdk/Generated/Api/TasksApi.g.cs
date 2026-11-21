@@ -20,7 +20,7 @@ public sealed class TasksApi
     /// Tasks visible to the caller through the one authorization predicate (VI.4 rules 1–3, K2); BPMN user tasks and CMMN human tasks.
     /// GET /tasks (operationId listTasks); permission task.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.Task>> ListTasksAsync(string? assignee = null, bool? mine = null, bool? unassigned = null, string? candidateGroup = null, string? seatId = null, string? processInstanceId = null, string? caseInstanceId = null, string? businessKey = null, string? processDefinitionKey = null, string? taskDefinitionKey = null, string? state = null, string? sortBy = null, string? currency = null, string? sortOrder = null, global::System.Collections.Generic.List<string>? variableNames = null, string? filterId = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.Task>> ListTasksAsync(string? assignee = null, bool? mine = null, bool? unassigned = null, string? candidateGroup = null, string? seatId = null, string? processInstanceId = null, string? caseInstanceId = null, string? businessKey = null, string? processDefinitionKey = null, string? taskDefinitionKey = null, string? state = null, string? sortBy = null, string? currency = null, string? sortOrder = null, global::System.Collections.Generic.List<string>? variableNames = null, string? filterId = null, int? priority = null, int? minPriority = null, int? maxPriority = null, global::System.DateTimeOffset? dueBefore = null, global::System.DateTimeOffset? dueAfter = null, bool? overdue = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Get($"/tasks");
         req.WithQuery("assignee", GeneratedCalls.Q(assignee));
@@ -39,6 +39,12 @@ public sealed class TasksApi
         req.WithQuery("sortOrder", GeneratedCalls.Q(sortOrder));
         req.WithQuery("variableNames", GeneratedCalls.Q(variableNames));
         req.WithQuery("filterId", GeneratedCalls.Q(filterId));
+        req.WithQuery("priority", GeneratedCalls.Q(priority));
+        req.WithQuery("minPriority", GeneratedCalls.Q(minPriority));
+        req.WithQuery("maxPriority", GeneratedCalls.Q(maxPriority));
+        req.WithQuery("dueBefore", GeneratedCalls.Q(dueBefore));
+        req.WithQuery("dueAfter", GeneratedCalls.Q(dueAfter));
+        req.WithQuery("overdue", GeneratedCalls.Q(overdue));
         req.WithQuery("page", GeneratedCalls.Q(page));
         req.WithQuery("size", GeneratedCalls.Q(size));
         return await _calls.PageAsync<M.Task>(req, options, page, size, cancellationToken).ConfigureAwait(false);

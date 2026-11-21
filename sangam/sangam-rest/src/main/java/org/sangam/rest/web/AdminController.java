@@ -85,6 +85,21 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
+    // ---------------------------------------------------------------- org levels (EV-M-0923)
+
+    @GetMapping("/org-levels")
+    public AdminPort.OrgLevels orgLevels(RequestContext ctx) {
+        permissions.require(ctx, Permissions.ADMIN_READ);
+        return admin.orgLevels(ctx);
+    }
+
+    /** The caller's own tenant's level types, top first; idempotent (the same list again changes nothing). */
+    @PutMapping("/org-levels")
+    public AdminPort.OrgLevels defineOrgLevels(RequestContext ctx, @RequestBody AdminPort.OrgLevels body) {
+        permissions.require(ctx, Permissions.ADMIN_WRITE);
+        return admin.defineOrgLevels(ctx, body);
+    }
+
     // ---------------------------------------------------------------- seats
 
     @GetMapping("/seats")

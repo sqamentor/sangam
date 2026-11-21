@@ -1,6 +1,6 @@
 {
   "id": "sec.edu.scholarship",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Scholarship through the National Scholarship Portal",
     "hi": "राष्ट्रीय छात्रवृत्ति पोर्टल द्वारा छात्रवृत्ति"
@@ -52,12 +52,14 @@
   "connectors": [
     {
       "id": "nsp.application",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "NSP application"
     },
     {
       "id": "pfms.dbt",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "DBT payment",

@@ -57,6 +57,9 @@ class OperatonWorkTopicGuardH2Test {
     @AfterAll
     static void tearDown() {
         fx.close();
+        // R9-statics: a test class stays loaded for the whole run; its statics must not pin what they held
+        fx = null;
+        work = null;
     }
 
     static String start(String tenant, String bk) {

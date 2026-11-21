@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- Land acquisition. Generated layout; edit freely in the Sangam modeller. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_land_acquisition" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.2">
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_land_acquisition" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.3">
   <message id="msg_sangam_objectionReceived" name="sangam.objectionReceived"/>
-  <process id="sangam-land-acquisition" name="Land acquisition" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
-    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.land-acquisition</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.2</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>projectName,areaHectares</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+  <process id="sangam-land-acquisition" name="Land acquisition" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.land-acquisition</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.3</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>projectName,areaHectares</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="la_start" name="Requisition" operaton:initiator="initiator" operaton:formKey="sangam:land-acquisition/requisition"></startEvent>
     <serviceTask id="la_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>siaSeat=SIA-UNIT;collectorSeat=COLLECTOR;committeeSeats=EXPERT-1,EXPERT-2,EXPERT-3;quorumRule=MAJORITY;objectionWindow=P60D;awardWindow=P365D;objectionCount=0;caseType=LAND;amount=0;routingDecisionKey=land-authority;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
     <serviceTask id="la_sia_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>la_sia</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>P180D</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -14,13 +14,13 @@
     <serviceTask id="la_sia_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>la_sia</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>siaSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="la_sia_breachGw" name="Deemed?" default="land_acquisition_f6"></exclusiveGateway>
     <exclusiveGateway id="la_sia_done" name=""></exclusiveGateway>
-    <callActivity id="la_expert" name="Expert group appraisal (core committee)" calledElement="sangam-core-committee" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="la_expert" name="Expert group appraisal (core committee)" calledElement="sangam-core-committee" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <exclusiveGateway id="la_expertGw" name="Recommended?" default="land_acquisition_f14"></exclusiveGateway>
-    <callActivity id="la_decide" name="Appropriate government decides (core sanction)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="la_decide" name="Appropriate government decides (core sanction)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <endEvent id="la_endDropped" name="Proposal dropped"></endEvent>
     <serviceTask id="la_s11" name="Preliminary notification (s.11)" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>preliminary-notification-s11</operaton:string></operaton:field></extensionElements></serviceTask>
     <serviceTask id="la_gazette11" name="Publish (gazette, newspapers, website)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>gazette.publish</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>publish</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>projectName,areaHectares</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>gazette11</operaton:string></operaton:field><operaton:field name="step"><operaton:string>s11</operaton:string></operaton:field></extensionElements></serviceTask>
-    <callActivity id="la_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="la_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <endEvent id="la_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <exclusiveGateway id="la_govGw" name="sanctionOutcome?" default="land_acquisition_f17"></exclusiveGateway>
     <serviceTask id="la_objWindow" name="Objection window (s.15, 60 days)" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>objection</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${objectionWindow}</operaton:expression></operaton:field></extensionElements></serviceTask>
@@ -29,7 +29,7 @@
     <serviceTask id="la_countObj" name="Count" operaton:expression="${execution.setVariable('objectionCount', objectionCount + 1)}"></serviceTask>
     <intermediateCatchEvent id="la_objClose" name="Window closes"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${objectionDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
     <userTask id="la_hearing" name="Hear objections (s.15)" operaton:candidateGroups="${collectorSeat}" operaton:formKey="sangam:land-acquisition/hearing"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
-    <callActivity id="la_declare" name="Declaration (s.19) (core sanction)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="la_declare" name="Declaration (s.19) (core sanction)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <serviceTask id="la_s19" name="Declaration notified" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>declaration-s19</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="la_dclGw" name="sanctionOutcome?" default="land_acquisition_f29"></exclusiveGateway>
     <serviceTask id="la_awardClock" name="Award within 12 months (s.25)" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>award</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${awardWindow}</operaton:expression></operaton:field></extensionElements></serviceTask>
@@ -45,8 +45,12 @@
     <serviceTask id="la_aggregate" name="Aggregate outcomes" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>AGGREGATE</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="la_doneGw" name="Round complete?" default="land_acquisition_f45"></exclusiveGateway>
     <userTask id="la_possession" name="Take possession" operaton:candidateGroups="${collectorSeat}" operaton:formKey="sangam:land-acquisition/possession"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
-    <callActivity id="la_close" name="Close (core)" calledElement="sangam-core-closure" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="la_close" name="Close (core)" calledElement="sangam-core-closure" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <endEvent id="la_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="la_seal" name="Seal the batch items (count, total, fingerprints; owner decision E1)" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>SEAL</operaton:string></operaton:field><operaton:field name="currency"><operaton:string>INR</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Land acquisition compensation</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="la_bsanction" name="Sanction the sealed batch (core sanction, owner decision E1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="la_bsgw" name="Batch sanctioned?" default="la_bsgw_no"></exclusiveGateway>
+    <endEvent id="la_bnotReleased" name="Batch not released"></endEvent>
     <boundaryEvent id="la_sia_warn" name="SLA warning (75%)" attachedToRef="la_sia" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${la_siaWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
     <boundaryEvent id="la_sia_breach" name="SLA breached" attachedToRef="la_sia" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${la_siaDueAt}</timeDate></timerEventDefinition></boundaryEvent>
     <boundaryEvent id="la_lapse" name="Proceedings lapse (s.25)" attachedToRef="la_award" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${awardDueAt}</timeDate></timerEventDefinition></boundaryEvent>
@@ -93,10 +97,14 @@
     <sequenceFlow id="land_acquisition_f41" sourceRef="la_poll" targetRef="la_aggregate"/>
     <sequenceFlow id="land_acquisition_f42" sourceRef="la_aggregate" targetRef="la_doneGw"/>
     <sequenceFlow id="land_acquisition_f43" name="not yet" sourceRef="la_doneGw" targetRef="la_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
-    <sequenceFlow id="land_acquisition_f44" sourceRef="la_awardees" targetRef="la_open"/>
+    <sequenceFlow id="land_acquisition_f44" sourceRef="la_awardees" targetRef="la_seal"/>
     <sequenceFlow id="land_acquisition_f45" name="compensation paid" sourceRef="la_doneGw" targetRef="la_possession"/>
     <sequenceFlow id="land_acquisition_f46" sourceRef="la_possession" targetRef="la_close"/>
     <sequenceFlow id="land_acquisition_f47" sourceRef="la_close" targetRef="la_end"/>
+    <sequenceFlow id="la_seal_f" sourceRef="la_seal" targetRef="la_bsanction"/>
+    <sequenceFlow id="la_bsanction_f" sourceRef="la_bsanction" targetRef="la_bsgw"/>
+    <sequenceFlow id="la_bsgw_yes" name="sanctioned" sourceRef="la_bsgw" targetRef="la_open"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="la_bsgw_no" name="not sanctioned" sourceRef="la_bsgw" targetRef="la_bnotReleased"/>
   </process>
   <bpmndi:BPMNDiagram id="land_acquisition_diagram">
     <bpmndi:BPMNPlane id="land_acquisition_plane" bpmnElement="sangam-land-acquisition">
@@ -133,15 +141,19 @@
       <bpmndi:BPMNShape id="la_endLapsed_di" bpmnElement="la_endLapsed"><dc:Bounds x="3847" y="427" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="la_rr_di" bpmnElement="la_rr"><dc:Bounds x="3650" y="280" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="la_awardees_di" bpmnElement="la_awardees"><dc:Bounds x="3815" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="la_open_di" bpmnElement="la_open"><dc:Bounds x="3980" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="la_fanOut_di" bpmnElement="la_fanOut"><dc:Bounds x="4145" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="la_fanGw_di" bpmnElement="la_fanGw"><dc:Bounds x="4335" y="295" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="la_poll_di" bpmnElement="la_poll"><dc:Bounds x="4507" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="la_aggregate_di" bpmnElement="la_aggregate"><dc:Bounds x="4640" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="la_doneGw_di" bpmnElement="la_doneGw"><dc:Bounds x="4830" y="295" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="la_possession_di" bpmnElement="la_possession"><dc:Bounds x="4970" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="la_close_di" bpmnElement="la_close"><dc:Bounds x="5135" y="280" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="la_end_di" bpmnElement="la_end"><dc:Bounds x="5332" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="la_open_di" bpmnElement="la_open"><dc:Bounds x="4475" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="la_fanOut_di" bpmnElement="la_fanOut"><dc:Bounds x="4640" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="la_fanGw_di" bpmnElement="la_fanGw"><dc:Bounds x="4830" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="la_poll_di" bpmnElement="la_poll"><dc:Bounds x="5002" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="la_aggregate_di" bpmnElement="la_aggregate"><dc:Bounds x="5135" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="la_doneGw_di" bpmnElement="la_doneGw"><dc:Bounds x="5325" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="la_possession_di" bpmnElement="la_possession"><dc:Bounds x="5465" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="la_close_di" bpmnElement="la_close"><dc:Bounds x="5630" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="la_end_di" bpmnElement="la_end"><dc:Bounds x="5827" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="la_seal_di" bpmnElement="la_seal"><dc:Bounds x="3980" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="la_bsanction_di" bpmnElement="la_bsanction"><dc:Bounds x="4145" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="la_bsgw_di" bpmnElement="la_bsgw"><dc:Bounds x="4335" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="la_bnotReleased_di" bpmnElement="la_bnotReleased"><dc:Bounds x="4507" y="302" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="la_sia_warn_di" bpmnElement="la_sia_warn"><dc:Bounds x="523" y="92" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="la_sia_breach_di" bpmnElement="la_sia_breach"><dc:Bounds x="553" y="92" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="la_lapse_di" bpmnElement="la_lapse"><dc:Bounds x="3493" y="342" width="36" height="36"/></bpmndi:BPMNShape>
@@ -181,17 +193,21 @@
       <bpmndi:BPMNEdge id="land_acquisition_f34_di" bpmnElement="land_acquisition_f34"><di:waypoint x="3750" y="445"/><di:waypoint x="3847" y="445"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="land_acquisition_f35_di" bpmnElement="land_acquisition_f35"><di:waypoint x="3585" y="320"/><di:waypoint x="3650" y="320"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="land_acquisition_f36_di" bpmnElement="land_acquisition_f36"><di:waypoint x="3750" y="320"/><di:waypoint x="3815" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="land_acquisition_f37_di" bpmnElement="land_acquisition_f37"><di:waypoint x="4080" y="320"/><di:waypoint x="4145" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="land_acquisition_f38_di" bpmnElement="land_acquisition_f38"><di:waypoint x="4245" y="320"/><di:waypoint x="4335" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="land_acquisition_f39_di" bpmnElement="land_acquisition_f39"><di:waypoint x="4360" y="345"/><di:waypoint x="4360" y="392"/><di:waypoint x="4195" y="392"/><di:waypoint x="4195" y="360"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="land_acquisition_f40_di" bpmnElement="land_acquisition_f40"><di:waypoint x="4385" y="320"/><di:waypoint x="4507" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="land_acquisition_f41_di" bpmnElement="land_acquisition_f41"><di:waypoint x="4543" y="320"/><di:waypoint x="4640" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="land_acquisition_f42_di" bpmnElement="land_acquisition_f42"><di:waypoint x="4740" y="320"/><di:waypoint x="4830" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="land_acquisition_f43_di" bpmnElement="land_acquisition_f43"><di:waypoint x="4855" y="345"/><di:waypoint x="4855" y="377"/><di:waypoint x="4525" y="377"/><di:waypoint x="4525" y="338"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_acquisition_f37_di" bpmnElement="land_acquisition_f37"><di:waypoint x="4575" y="445"/><di:waypoint x="4640" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_acquisition_f38_di" bpmnElement="land_acquisition_f38"><di:waypoint x="4740" y="445"/><di:waypoint x="4830" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_acquisition_f39_di" bpmnElement="land_acquisition_f39"><di:waypoint x="4855" y="470"/><di:waypoint x="4855" y="517"/><di:waypoint x="4690" y="517"/><di:waypoint x="4690" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_acquisition_f40_di" bpmnElement="land_acquisition_f40"><di:waypoint x="4880" y="445"/><di:waypoint x="5002" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_acquisition_f41_di" bpmnElement="land_acquisition_f41"><di:waypoint x="5038" y="445"/><di:waypoint x="5135" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_acquisition_f42_di" bpmnElement="land_acquisition_f42"><di:waypoint x="5235" y="445"/><di:waypoint x="5325" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_acquisition_f43_di" bpmnElement="land_acquisition_f43"><di:waypoint x="5350" y="470"/><di:waypoint x="5350" y="502"/><di:waypoint x="5020" y="502"/><di:waypoint x="5020" y="463"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="land_acquisition_f44_di" bpmnElement="land_acquisition_f44"><di:waypoint x="3915" y="320"/><di:waypoint x="3980" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="land_acquisition_f45_di" bpmnElement="land_acquisition_f45"><di:waypoint x="4880" y="320"/><di:waypoint x="4970" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="land_acquisition_f46_di" bpmnElement="land_acquisition_f46"><di:waypoint x="5070" y="320"/><di:waypoint x="5135" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="land_acquisition_f47_di" bpmnElement="land_acquisition_f47"><di:waypoint x="5235" y="320"/><di:waypoint x="5332" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_acquisition_f45_di" bpmnElement="land_acquisition_f45"><di:waypoint x="5375" y="445"/><di:waypoint x="5465" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_acquisition_f46_di" bpmnElement="land_acquisition_f46"><di:waypoint x="5565" y="445"/><di:waypoint x="5630" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_acquisition_f47_di" bpmnElement="land_acquisition_f47"><di:waypoint x="5730" y="445"/><di:waypoint x="5827" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="la_seal_f_di" bpmnElement="la_seal_f"><di:waypoint x="4080" y="320"/><di:waypoint x="4145" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="la_bsanction_f_di" bpmnElement="la_bsanction_f"><di:waypoint x="4245" y="320"/><di:waypoint x="4335" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="la_bsgw_yes_di" bpmnElement="la_bsgw_yes"><di:waypoint x="4385" y="320"/><di:waypoint x="4430" y="320"/><di:waypoint x="4430" y="445"/><di:waypoint x="4475" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="la_bsgw_no_di" bpmnElement="la_bsgw_no"><di:waypoint x="4385" y="320"/><di:waypoint x="4507" y="320"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

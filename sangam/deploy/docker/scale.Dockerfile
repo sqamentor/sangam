@@ -19,7 +19,7 @@ RUN --mount=type=cache,target=/root/.m2 \
  && jar=$(ls ${MODULE}/target/${MODULE}-*.jar | grep -v -e '\.original$' -e '-plain\.jar$' -e '-sources\.jar$' | head -n 1) \
  && cp "$jar" /out.jar
 
-FROM eclipse-temurin:24.0.2_12-jre-noble@sha256:b416d02335e702b0403ff280de9475a3348e29382285969c9d4e17862ce632e7 AS runtime
+FROM eclipse-temurin:25.0.5_8-jre-noble@sha256:e3b6f7887a50f20d8f07abf279d8a81a5953fb398a9555bd9edd56b9bd15968c AS runtime
 ARG MODULE
 LABEL org.opencontainers.image.title="${MODULE}" org.opencontainers.image.licenses="Apache-2.0"
 RUN groupadd -g 10001 sangam && useradd -u 10001 -g sangam -M -d /opt/sangam sangam \

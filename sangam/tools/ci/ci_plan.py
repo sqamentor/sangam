@@ -10,7 +10,7 @@ overrides), then ci-lane.json at the repository root, then the defaults below.
 
   ci-lane.json = {"modules": "sangam-engine", "dbs": "postgres", "chunks": "A-contracts", "ui": false}
     modules  comma list of Maven modules for the build job (-pl <modules> -am); "" = the whole reactor
-    dbs      comma list of postgres, oracle, sqlserver, sqlserver2025, mysql; "" = no IT job
+    dbs      comma list of postgres, oracle, sqlserver, sqlserver2025, mysql, postgres18; "" = no IT job
     chunks   comma list of chunk names below, or "all"; "" = every IT of the listed modules (no -Dit.test)
     ui       true = run the UI job (npm test)
 
@@ -28,25 +28,28 @@ CHUNKS = {
     "A-contracts": "AuditChainIT,AuthorizationPolicyIT,DialectSchemaIT,E4IdempotencyIT,E5OutboxInboxIT,E7DeleteIT,"
                    "IdempotencyStoreIT,InboxIT,OperationLedgerIT,OutboxRelayIT,TenantQuotaIT,TombstonesIT,"
                    "UtcConversionVendorIT,WebhookRelayIT,WorkApiLedgerIT,UnverifiedPaymentVendorIT,NullBindDialectIT,"
-                   "ExplicitOnlyPermissionDialectIT,MysqlUtf8mb4PatchIT,ServerStartsIT,NowPlusMillisDialectIT",
+                   "ExplicitOnlyPermissionDialectIT,MysqlUtf8mb4PatchIT,ServerStartsIT,NowPlusMillisDialectIT,"
+                   "ValidateAfterMigrateIT,PresentationSeedOnLaneDatabaseIT",
     "B-engine": "E1CorpusCoverageIT,E10PlatformFitIT,E11GapSetIT,E8DstTimerIT,DecimalVariableIT,FetchLockVerificationIT,"
                 "FlowableMigrationStoreIT,FwtWorkerCompatIT,MultiInstanceCompensationIT,E46ConformanceIT,IfmsPacksIT,"
-                "E3LeaseIT",
+                "E3LeaseIT,MiwgConformanceIT,BpmnConstructPortsIT",
     "B2-e2": "E2AuthorizationIT",
     "C-e16a": "E16aPatternsIT",
     "D-e16bc": "E16bPatternsIT,E16cPatternIT",
     "E-e17": "E17aDomainsIT,E17bDomainIT,E17cDomainIT",
     "F-platform": "CrossTenantIsolationIT,PlugAndPlayIT,T08PoisonOutboxIT,T35RestoreIT,ScimAcceptanceIT,TScaleLoadIT",
 }
-DBS = ["postgres", "oracle", "sqlserver", "sqlserver2025", "mysql"]
+DBS = ["postgres", "oracle", "sqlserver", "sqlserver2025", "mysql", "postgres18"]
 # Images: the names AcceptanceDatabase asks Testcontainers for; digests as in db-matrix.yml (RM-33). The leg pulls
 # the digest and tags it with the name, so the pinned bytes are what runs (sqlserver2025 has no digest pin yet, SG-05).
 IMAGES = {
-    "postgres": "postgres:17@sha256:846a7ddaa67a4b354ae1d21087b683901aa6113a4ed626d3787cfbf6c85e3e07",
+    "postgres": "postgres:17@sha256:0d938e975177bef9f1f61f3f9dbcf2e0aa0a139568f66d3415ed8892eb97f6ac",
     "oracle": "gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093",
     "sqlserver": "mcr.microsoft.com/mssql/server:2022-latest@sha256:4525e3efac9f3e241cb003bb2ff2a82818b502f37e12049d788b1a9fa7e13b7f",
     "sqlserver2025": "mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04",
     "mysql": "mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902",
+    # Decision 416: deployments stay on postgres 17.12; this leg tests 18 for new installs (18.7 digest, 2026-11-19)
+    "postgres18": "postgres:18.7@sha256:e754b839f447639b7004895f4d8a4bfcb4e9dbe3a1bc035f27f646562a16fd61",
 }
 # Decision 122: vendor terms are accepted by the operator (repository variable / CodeBuild environment), never here.
 TERMS = {"oracle": "SANGAM_ACCEPT_ORACLE_FREE_TERMS", "sqlserver": "SANGAM_ACCEPT_MSSQL_EULA",

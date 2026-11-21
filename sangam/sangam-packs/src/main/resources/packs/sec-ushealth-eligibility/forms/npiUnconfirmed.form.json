@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-eligibility/npiUnconfirmed",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sec.ushealth.eligibility",
   "title": {
     "en": "Provider NPI not confirmed: correct it",

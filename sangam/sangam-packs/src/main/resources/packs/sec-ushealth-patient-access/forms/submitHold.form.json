@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-patient-access/submitHold",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "pack": "sec.ushealth.patient-access",
   "title": {
     "en": "Submission not confirmed: confirm the receipt and resend",

@@ -128,6 +128,8 @@ public final class PackDeployer {
             contents.add(bytes);
             if (r.kind() == PackResource.Kind.BPMN) {
                 violations.addAll(ModelGuard.check(r.path(), bytes));
+                violations.addAll(MoneyPathGuard.check(r.path(), bytes, ConnectorMoneyMovements::enforced, topics(d),
+                        models()));
             }
         }
         if (!violations.isEmpty()) {
@@ -544,11 +546,30 @@ public final class PackDeployer {
         return l != null && !l.isEmpty();
     }
 
+    private volatile MoneyPathGuard.Models models;
+
+    /** Processes and decisions of every registered pack, for the money-path guard (called processes, rail DMNs). */
+    private MoneyPathGuard.Models models() {
+        MoneyPathGuard.Models m = models;
+        if (m == null) {
+            m = MoneyPathGuard.Models.of(registry.all());
+            models = m;
+        }
+        return m;
+    }
+
     private static byte[] read(SangamPack pack, String path) {
         try (InputStream in = pack.open(path)) {
             return in.readAllBytes();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    /** The pack's external-task topics and the connector serving each (owner decision A1, MoneyPathGuard). */
+    private static java.util.Map<String, String> topics(PackDescriptor d) {
+        java.util.Map<String, String> m = new java.util.HashMap<>();
+        d.workers().forEach(w -> m.put(w.topic(), w.connector()));
+        return m;
     }
 }

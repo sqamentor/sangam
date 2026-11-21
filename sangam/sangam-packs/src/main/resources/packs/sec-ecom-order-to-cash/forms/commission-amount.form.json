@@ -1,0 +1,38 @@
+{
+  "key": "sec-ecom-order-to-cash/commission-amount",
+  "version": "1.0.3",
+  "pack": "sec.ecom.order-to-cash",
+  "title": {
+    "en": "Commission amount",
+    "hi": "कमीशन राशि"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "commissionAmountEntered",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Commission (INR, whole paise next to the exact value)",
+        "hi": "कमीशन (रुपये, सटीक मान के निकट पूर्ण पैसे)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

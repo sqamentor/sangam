@@ -1,1 +1,1 @@
-{"key":"compliance/incident-prepare","title":{"en":"Prepare incident report"},"fields":[{"key":"actionsTaken","type":"textarea","label":{"en":"Actions taken"}}]}
+{"key":"compliance/incident-prepare","title":{"en":"Prepare incident report"},"fields":[{"id":"actionsTaken","type":"textarea","label":{"en":"Actions taken"}}]}

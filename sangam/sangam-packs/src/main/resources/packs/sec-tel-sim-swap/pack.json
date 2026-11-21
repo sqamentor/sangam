@@ -1,6 +1,6 @@
 {
   "id": "sec.tel.sim-swap",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "SIM replacement with re-verification",
     "hi": "पुनः सत्यापन सहित सिम प्रतिस्थापन"
@@ -28,18 +28,21 @@
   "connectors": [
     {
       "id": "dot.kyc",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Re-verification"
     },
     {
       "id": "hlr.swap",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Swap"
     },
     {
       "id": "hlr.smsBar",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "SMS barring"

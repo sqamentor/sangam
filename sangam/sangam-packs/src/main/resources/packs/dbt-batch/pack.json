@@ -1,6 +1,6 @@
 {
   "id": "gov.dbt.batch",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "DBT batch with partial failure",
     "hi": "आंशिक विफलता सहित डीबीटी बैच"
@@ -52,12 +52,14 @@
   "connectors": [
     {
       "id": "dbt.beneficiaryList",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Sanctioned list for the period"
     },
     {
       "id": "pfms.dbt",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
       "purpose": "DBT record",
@@ -68,6 +70,7 @@
     },
     {
       "id": "bank.statement",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "G-PFMS",
       "purpose": "Credit confirmation"
@@ -171,7 +174,14 @@
   "currency": "INR",
   "powers": {
     "db_sanction": {
-      "monetary": false,
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GRANT"
+    },
+    "db_retry_bsanction": {
+      "monetary": true,
+      "currency": "INR",
       "limitTable": "sangam-core-powers",
       "ruleCaseType": "GRANT"
     }

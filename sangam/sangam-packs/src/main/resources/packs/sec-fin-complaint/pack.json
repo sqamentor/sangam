@@ -1,6 +1,6 @@
 {
   "id": "sec.fin.complaint",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "Customer complaint with regulator timelines",
     "hi": "नियामक समय-सीमा सहित ग्राहक शिकायत"
@@ -40,6 +40,7 @@
   "connectors": [
     {
       "id": "crm.case",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "CRM / CMS case reference"

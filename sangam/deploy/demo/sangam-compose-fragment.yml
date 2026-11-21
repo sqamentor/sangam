@@ -1,0 +1,210 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam on demo.ifms.dev (owner yes 2026-11-19; IFMS hosting facts: one EC2 host in ap-south-1, docker compose,
+# Cloudflare Tunnel (cloudflared) in front, Keycloak realm `oneifms` in the same stack). The IFMS go-live lane is the
+# only deployer; this file is merged with the IFMS stack:
+#
+#   SANGAM_SECRETS_DIR=<dir> sh generate-demo-keys.sh     # once; idempotent, prints no key material
+#   docker compose -f <ifms compose file> -f sangam-compose-fragment.yml --env-file sangam-demo.env \
+#     --env-file <dir>/sangam-keys.env up -d \
+#     sangam-postgres sangam-server sangam-front
+#
+# Path layout (B10): https://demo.ifms.dev/sangam/ is the UI, https://demo.ifms.dev/sangam/api/v1 the API. The
+# cloudflared ingress rule for path ^/sangam(/.*)?$ points at http://sangam-front:8080 with the path unchanged; the
+# front (deploy/presentation) removes /sangam before proxying to the server. The database is on sangam-internal only;
+# the server joins the IFMS network only to fetch the realm keys and is reached by the front over sangam-internal.
+#
+# Secrets: every ${VAR:?} below is REQUIRED and has NO value in this file. The deployer puts the values in
+# sangam-demo.env (never committed) or exports them from the host's secret store.
+# Images: loaded from the CI hand-over artifact (docker load, see README.md); never pulled from a registry.
+# Money: no payment rail is configured (connector base URLs empty, simulators off), so a bill payment cannot leave
+# Sangam; it stops HELD / as an incident (SD-553: money paths are NOT YET for IFMS).
+# HARD PRECONDITIONS before the demo data load (runbook P1-P3): demo_preflight.py money (pfms.payment binding sandbox or
+# held, no payment connector URL set), persona tokens from a temporary Keycloak client, demo_preflight.py smoke first.
+
+networks:
+  sangam-internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${SANGAM_INTERNAL_SUBNET:-172.29.250.0/24}
+  # The IFMS stack's network that cloudflared is on. Name given by the IFMS deployer.
+  ifms-edge:
+    external: true
+    name: ${IFMS_EDGE_NETWORK:?name of the IFMS docker network that cloudflared is attached to}
+
+volumes:
+  sangam-pg-data: {}
+  sangam-server-state: {}
+
+services:
+
+  sangam-postgres:
+    # Owner decision 2026-11-19: Sangam has its OWN postgres:17.12 with its own credentials, never IFMS's Oracle.
+    # Same digest as deploy/compose/docker-compose.yml and the Helm chart (decision 416).
+    image: postgres:17.12@sha256:0d938e975177bef9f1f61f3f9dbcf2e0aa0a139568f66d3415ed8892eb97f6ac
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sangam
+      POSTGRES_USER: sangam
+      POSTGRES_PASSWORD: ${SANGAM_PG_PASSWORD:?Sangam postgres password (secret, no default)}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8 --data-checksums"
+      TZ: UTC
+      PGTZ: UTC
+    command: ["postgres", "-c", "max_connections=120", "-c", "timezone=UTC", "-c", "shared_buffers=256MB"]
+    volumes:
+      - sangam-pg-data:/var/lib/postgresql/data
+    networks: [sangam-internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sangam -d sangam"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 1g }
+        reservations: { memory: 512m }
+
+  sangam-server:
+    image: sangam-server:${SANGAM_IMAGE_TAG:?demo image tag from IMAGES.txt, e.g. demo-<12 hex>}
+    restart: unless-stopped
+    depends_on:
+      sangam-postgres: { condition: service_healthy }
+    # sangam-internal: the front reaches the server only by the alias sangam-server-internal, so the peer address the
+    # server sees is in SANGAM_INTERNAL_SUBNET. ifms-edge: to fetch the realm keys from Keycloak.
+    networks:
+      sangam-internal: { aliases: [sangam-server-internal] }
+      ifms-edge: {}
+    # Key material: generated on the host by generate-demo-keys.sh into SANGAM_SECRETS_DIR (never committed, never
+    # printed). sangam-keys.env carries the env-only keys (pass it as a second --env-file); files/ is the file secret
+    # provider's root, mounted read-only.
+    volumes:
+      - sangam-server-state:/var/lib/sangam
+      - ${SANGAM_SECRETS_DIR:?host directory written by generate-demo-keys.sh}/files:/run/sangam-secrets:ro
+      # the custodian's signed attestation (step 2 of section 5.1); empty until the first start has been attested
+      - ${SANGAM_SECRETS_DIR:?}/attestation:/opt/sangam/attestation:ro
+    # The full production start set (ProductionStartupFailFastTest.baseline(); bound by DemoComposeFragmentStartupTest).
+    environment:
+      TZ: UTC
+      SPRING_PROFILES_ACTIVE: postgres,oidc
+      SANGAM_SECURITY_PRODUCTION: "true"
+      SANGAM_DB_URL: jdbc:postgresql://sangam-postgres:5432/sangam
+      SANGAM_DB_USER: sangam
+      SANGAM_DB_PASSWORD: ${SANGAM_PG_PASSWORD:?}
+      # runbook step 4: migrate-only once (one-shot), then serve (EV-M-0890 answer 3)
+      SANGAM_LIQUIBASE_MODE: ${SANGAM_LIQUIBASE_MODE:?migrate-only for the one-shot, then the serve mode of runbook step 4}
+      SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE: system:platform
+      SANGAM_TENANT_DEFAULT: GOI.FIN
+      SANGAM_COMPLIANCE_JURISDICTIONS: IN
+      SANGAM_COMPLIANCE_LOG_ARCHIVE_COUNTRY: IN
+      SANGAM_COMPLIANCE_ORGANISATION: ${SANGAM_COMPLIANCE_ORGANISATION:-OneIFMS}
+      SANGAM_COMPLIANCE_TENANTS: GOI.FIN
+      # key encryption key (sangam.security.kek.*), registry signer (Ed25519) and vault pepper: env-only keys
+      SANGAM_SECURITY_KEK_KEYS_K1: ${SANGAM_SECURITY_KEK_KEYS_K1:?from sangam-keys.env}
+      SANGAM_SECURITY_KEK_CURRENTID: k1
+      SANGAM_REGISTRY_SIGNER_PRIVATEKEY: ${SANGAM_REGISTRY_SIGNER_PRIVATEKEY:?from sangam-keys.env}
+      SANGAM_REGISTRY_SIGNER_PUBLICKEY: ${SANGAM_REGISTRY_SIGNER_PUBLICKEY:?from sangam-keys.env}
+      SANGAM_REGISTRY_VAULT_HMACPEPPER: ${SANGAM_REGISTRY_VAULT_HMACPEPPER:?from sangam-keys.env}
+      # file secret provider: <root>/compliance/principal-key, <root>/audit/checkpoint-private, checkpoint-public
+      SANGAM_SECRETS_PROVIDERS: file
+      SANGAM_SECRETS_FILE_ROOT: /run/sangam-secrets
+      SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF: secret://compliance/principal-key
+      SANGAM_AUDIT_CHECKPOINT_PRIVATEKEYREF: secret://audit/checkpoint-private
+      SANGAM_AUDIT_CHECKPOINT_PUBLICKEYREF: secret://audit/checkpoint-public
+      # Decision 387(4) / 390(4), deploy/README.md section 5.1 (tool: sangam-key-attestation.sh, shipped in the handover):
+      #   first start  SANGAM_KEYS_BOOTSTRAP=true, no attestation: audited one-time start, writes the fingerprint export;
+      #   custodian    signs the export on the host (sangam-key-attestation.sh sign) into the attestation directory;
+      #   later starts SANGAM_KEYS_BOOTSTRAP=false, SANGAM_KEYS_ATTESTATION and SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY set.
+      # A second bootstrap, or a later start without the attestation, is refused before any port opens.
+      SANGAM_KEYS_ENVIRONMENT: demo-ifms
+      SANGAM_KEYS_BOOTSTRAP: ${SANGAM_KEYS_BOOTSTRAP:-false}
+      SANGAM_KEYS_FINGERPRINT_EXPORT: /var/lib/sangam/key-fingerprints.txt
+      SANGAM_KEYS_ATTESTATION: ${SANGAM_KEYS_ATTESTATION:-}
+      SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY: ${SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY:-}
+      # GL export (decision 126): no IFMS GL connector yet, so sangam.ledger.gl-connector stays unset and the start runs
+      # under the audited waiver (LEDGER_GL_EXPORT_WAIVED); entries are kept in LDG_ACCOUNTING, exported once a
+      # connector is set: stored with exported_at NULL and exported later. Schema changeset 0049-01 (gl-export) is applied
+      # by the migrate-only one-shot before the serving start.
+      SANGAM_LEDGER_GLEXPORTWAIVER: "demo.ifms.dev, IFMS GL connector not built yet; entries kept in LDG_ACCOUNTING unexported"
+      # Owner decision 2026-11-19 (option (b), "enable for GOI.FIN"): demo sandbox tenant (sangam.demo.sandbox-tenants).
+      # GOI.FIN only: verified payee, payment and bank statement answered by the in-process simulator, audit marked
+      # sandbox=true, UI shows "Sandbox"; no real money. No production guard is relaxed.
+      SANGAM_DEMO_SANDBOXTENANTS: GOI.FIN
+      # EV-M-0916: the supported tenant creation (FirstAdminBootstrap). At start-up it creates GOI.FIN if missing and
+      # appoints the two tenant administrators; it changes nothing once GOI.FIN has a tenant-admin role, so the two lines
+      # may stay or be removed after the tenant exists. Entry format person-id:external-subject:Display name, where the
+      # external subject is the token's PRINCIPAL claim (sangam.security.oidc.claims.principal, default
+      # preferred_username), NOT sub: realm oneifms's sangam-ui tokens carry no sub. Do not put ':' or ',' in a name.
+      SANGAM_SECURITY_FIRSTADMINS_TENANT: GOI.FIN
+      SANGAM_SECURITY_FIRSTADMINS_SUBJECTS: ${SANGAM_SECURITY_FIRSTADMINS_SUBJECTS:-rajendra.sharma:rajendra.sharma:Rajendra Prasad Sharma,meenakshi.kanwar:meenakshi.kanwar:Meenakshi Kanwar}
+      # Register E-25: the workflow packs of GOI.FIN. FirstAdminBootstrap creates the tenant and deploys no pack, and
+      # the demo has no platform administrator who could onboard it, so the packs are deployed at start-up for the
+      # tenants listed here: one engine deployment per shipped pack (pack:<id>@<version>); a later start deploys
+      # nothing again and leaves running cases alone. BOTH lines are needed: outside profile h2
+      # sangam.packs.deploy-on-start defaults to false. Keep the list equal to SANGAM_SECURITY_FIRSTADMINS_TENANT.
+      # Without them every process start of the tenant answers 404 (no process definition).
+      SANGAM_PACKS_DEPLOY_ON_START: "true"
+      SANGAM_PACKS_TENANTS: GOI.FIN
+      # Owner decision 2026-11-19 (EV-M-0890 (a)): written demo waiver, no scanner.
+      SANGAM_MALWARE_SCANNER: none
+      SANGAM_MALWARE_PRODUCTIONWAIVER: "demo.ifms.dev, synthetic data only, behind Cloudflare Access"
+      # Keycloak in the IFMS stack, realm oneifms (HOSTING-KEYCLOAK). Public issuer = the iss in the browser's tokens;
+      # keys fetched over the IFMS network name given by the deployer.
+      SANGAM_OIDC_ISSUER: ${SANGAM_OIDC_ISSUER:?public issuer, e.g. https://<auth host>/realms/oneifms}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: ${SANGAM_OIDC_JWKS_INTERNAL:?internal JWKS URL of realm oneifms}
+      SANGAM_SECURITY_OIDC_AUDIENCE: sangam-server
+      SANGAM_SECURITY_OIDC_TENANT_CLAIM: tenant
+      SANGAM_SECURITY_OIDC_ROLES_CLAIM: roles
+      SANGAM_SECURITY_OIDC_SEATS_CLAIM: seats
+      SANGAM_SECURITY_JITPROVISIONINGTENANTS: GOI.FIN
+      # SL-70: a platform realm separate from oneifms; empty = no platform administrator in the demo
+      SANGAM_SECURITY_PLATFORM_ISSUER: ${SANGAM_SECURITY_PLATFORM_ISSUER:-}
+      SANGAM_CORS_ORIGINS: ""
+      # B9 (trusted-proxies.env): the front's subnet plus the Cloudflare ranges; client address = CF-Connecting-IP.
+      SANGAM_TRUSTED_PROXIES: ${SANGAM_TRUSTED_PROXIES:?the list in trusted-proxies.env}
+      SANGAM_CLIENT_IP_HEADERS: CF-Connecting-IP,X-Forwarded-For
+      # Money held / sandbox: no simulator (refused in production mode anyway) and no payment rail.
+      SANGAM_INTEGRATION_SIMULATORS_ENABLED: "false"
+      SANGAM_CONNECTORS_PAYGOV_BASE_URL: ""
+      SANGAM_CONNECTORS_IFMS_BASE_URL: ""
+      SANGAM_CONNECTORS_PFMS_DIRECTORY: ""
+      SANGAM_OTLP_ENABLED: "false"
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=70
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8081 && printf \"GET /actuator/health/readiness HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q UP <&3'"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 180s
+    deploy:
+      resources:
+        limits: { cpus: "2.0", memory: 3g }
+        reservations: { memory: 1536m }
+
+  sangam-front:
+    # deploy/presentation/Dockerfile: the UI built with base /sangam/, /sangam/config.json, /sangam/api/* proxied to
+    # the server with the prefix removed. No host port: only cloudflared reaches it over the IFMS network.
+    image: sangam-front:${SANGAM_IMAGE_TAG:?}
+    restart: unless-stopped
+    depends_on:
+      sangam-server: { condition: service_healthy }
+    networks: [sangam-internal, ifms-edge]
+    environment:
+      SANGAM_API_UPSTREAM: http://sangam-server-internal:8080
+      SANGAM_PUBLIC_API_BASE: /sangam/api/v1
+      SANGAM_OIDC_ISSUER: ${SANGAM_OIDC_ISSUER:?}
+      SANGAM_OIDC_CLIENT_ID: sangam-ui
+      SANGAM_DEFAULT_LOCALE: en
+      SANGAM_LOCALES: en
+      SANGAM_ENV_LABEL: demo
+      SANGAM_UI_IDLE_MINUTES: "30"
+      SANGAM_CSP_CONNECT_EXTRA: ${SANGAM_CSP_CONNECT_EXTRA:?the auth origin, e.g. https://<auth host>}
+    read_only: true
+    # EV-M-0916: the image runs as uid 101 (deploy/presentation/Dockerfile USER); a tmpfs without uid/gid is root-owned
+    # and nginx could not write conf.d (it listened on nothing). Checked by DemoComposeFragmentStartupTest.
+    tmpfs:
+      - /tmp:uid=101,gid=101,mode=0700
+      - /var/cache/nginx:uid=101,gid=101,mode=0700
+      - /etc/nginx/conf.d:uid=101,gid=101,mode=0755
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 256m }

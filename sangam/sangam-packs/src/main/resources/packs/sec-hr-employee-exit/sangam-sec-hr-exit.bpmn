@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- Employee exit. Generated layout; edit freely in the Sangam modeller. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_hr_exit" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.2">
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_hr_exit" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.3">
   <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
   <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
-  <process id="sangam-sec-hr-exit" name="Employee exit" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.2">
-    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.hr.employee-exit</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.2</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>employeeId,exitType</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+  <process id="sangam-sec-hr-exit" name="Employee exit" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.hr.employee-exit</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.3</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>employeeId,exitType,amount,payeeAccount,currency,purpose</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="hx_start" name="Exit initiated" operaton:initiator="initiator" operaton:formKey="sangam:sec-hr-employee-exit/initiate"></startEvent>
     <serviceTask id="hx_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>exitType=RESIGNATION;qualifyingService=3;managerSeat=LINE-MANAGER;hrSeat=HR-PAYROLL;executionConnector=bank.transfer;executionStep=fnf;verifyApproval=false;reconcileRequired=false;executionPayloadFields=employeeId,fnfAmount;fnfAmount=0;gratuityAmount=0</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="hx_typeGw" name="Resignation?" default="sec_hr_exit_f7"></exclusiveGateway>
@@ -27,7 +27,10 @@
     <serviceTask id="hx_fnf_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hx_fnf</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>hrSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="hx_fnf_breachGw" name="Deemed?" default="sec_hr_exit_f22"></exclusiveGateway>
     <exclusiveGateway id="hx_fnf_done" name=""></exclusiveGateway>
-    <callActivity id="hx_pay" name="Pay settlement (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="hx_pay_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.MoneyFieldsDelegate"><operaton:field name="amount"><operaton:string>fnfAmount</operaton:string></operaton:field><operaton:field name="payeeKeys"><operaton:string>employeeId</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Full and final settlement</operaton:string></operaton:field></operaton:executionListener><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="hx_pay_sgw" name="Sanctioned?" default="hx_pay_sgw_no"></exclusiveGateway>
+    <endEvent id="hx_pay_notReleased" name="Not released"></endEvent>
+    <callActivity id="hx_pay" name="Pay settlement (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <exclusiveGateway id="hx_gratGw" name="Gratuity payable?" default="sec_hr_exit_f39"></exclusiveGateway>
     <serviceTask id="hx_gratuity_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hx_gratuity</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${gratuitySpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
     <userTask id="hx_gratuity" name="Gratuity (30 days)" operaton:candidateGroups="${hrSeat}" operaton:formKey="sangam:sec-hr-employee-exit/gratuity" operaton:dueDate="${hx_gratuityDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
@@ -37,7 +40,10 @@
     <exclusiveGateway id="hx_gratuity_breachGw" name="Deemed?" default="sec_hr_exit_f33"></exclusiveGateway>
     <exclusiveGateway id="hx_gratuity_done" name=""></exclusiveGateway>
     <serviceTask id="hx_gratCfg" name="Gratuity payment" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>executionStep=gratuity;executionPayloadFields=employeeId,gratuityAmount</operaton:string></operaton:field></extensionElements></serviceTask>
-    <callActivity id="hx_gratPay" name="Pay gratuity (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="hx_gratPay_sanction" name="Approve release of money (core sanction, owner decision A1)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.MoneyFieldsDelegate"><operaton:field name="amount"><operaton:string>gratuityAmount</operaton:string></operaton:field><operaton:field name="payeeKeys"><operaton:string>employeeId</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>Gratuity</operaton:string></operaton:field></operaton:executionListener><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:in sourceExpression="${true}" target="moneyOutRelease"/><operaton:in sourceExpression="${'ESCALATE'}" target="sanctionOnBreach"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="hx_gratPay_sgw" name="Sanctioned?" default="hx_gratPay_sgw_no"></exclusiveGateway>
+    <endEvent id="hx_gratPay_notReleased" name="Not released"></endEvent>
+    <callActivity id="hx_gratPay" name="Pay gratuity (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
     <serviceTask id="hx_letter" name="Relieving and experience letters; PF exit" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>docs.letter</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>relieving</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId,employeeName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>letter</operaton:string></operaton:field><operaton:field name="step"><operaton:string>letters</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="hx_end" name="Exited"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <boundaryEvent id="hx_fnf_warn" name="SLA warning (75%)" attachedToRef="hx_fnf" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hx_fnfWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
@@ -69,7 +75,7 @@
     <sequenceFlow id="sec_hr_exit_f23" sourceRef="hx_fnf_slaPlan" targetRef="hx_fnf"/>
     <sequenceFlow id="sec_hr_exit_f24" sourceRef="hx_fnf" targetRef="hx_fnf_done"/>
     <sequenceFlow id="sec_hr_exit_f25" sourceRef="hx_join" targetRef="hx_fnf_slaPlan"/>
-    <sequenceFlow id="sec_hr_exit_f26" sourceRef="hx_fnf_done" targetRef="hx_pay"/>
+    <sequenceFlow id="sec_hr_exit_f26" sourceRef="hx_fnf_done" targetRef="hx_pay_sanction"/>
     <sequenceFlow id="sec_hr_exit_f27" sourceRef="hx_pay" targetRef="hx_gratGw"/>
     <sequenceFlow id="sec_hr_exit_f28" sourceRef="hx_gratuity_warn" targetRef="hx_gratuity_warnNotify"/>
     <sequenceFlow id="sec_hr_exit_f29" sourceRef="hx_gratuity_warnNotify" targetRef="hx_gratuity_warnEnd"/>
@@ -81,14 +87,20 @@
     <sequenceFlow id="sec_hr_exit_f35" sourceRef="hx_gratuity" targetRef="hx_gratuity_done"/>
     <sequenceFlow id="sec_hr_exit_f36" name="yes" sourceRef="hx_gratGw" targetRef="hx_gratuity_slaPlan"><conditionExpression xsi:type="tFormalExpression">${gratuityPayable}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_hr_exit_f37" sourceRef="hx_gratuity_done" targetRef="hx_gratCfg"/>
-    <sequenceFlow id="sec_hr_exit_f38" sourceRef="hx_gratCfg" targetRef="hx_gratPay"/>
+    <sequenceFlow id="sec_hr_exit_f38" sourceRef="hx_gratCfg" targetRef="hx_gratPay_sanction"/>
     <sequenceFlow id="sec_hr_exit_f39" name="no" sourceRef="hx_gratGw" targetRef="hx_letter"/>
     <sequenceFlow id="sec_hr_exit_f40" sourceRef="hx_gratPay" targetRef="hx_letter"/>
     <sequenceFlow id="sec_hr_exit_f41" sourceRef="hx_letter" targetRef="hx_end"/>
+    <sequenceFlow id="hx_gratPay_sanction_f" sourceRef="hx_gratPay_sanction" targetRef="hx_gratPay_sgw"/>
+    <sequenceFlow id="hx_gratPay_sgw_yes" name="sanctioned" sourceRef="hx_gratPay_sgw" targetRef="hx_gratPay"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="hx_gratPay_sgw_no" name="not sanctioned" sourceRef="hx_gratPay_sgw" targetRef="hx_gratPay_notReleased"/>
+    <sequenceFlow id="hx_pay_sanction_f" sourceRef="hx_pay_sanction" targetRef="hx_pay_sgw"/>
+    <sequenceFlow id="hx_pay_sgw_yes" name="sanctioned" sourceRef="hx_pay_sgw" targetRef="hx_pay"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="hx_pay_sgw_no" name="not sanctioned" sourceRef="hx_pay_sgw" targetRef="hx_pay_notReleased"/>
     <subProcess id="hx_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
       <startEvent id="hx_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
       <serviceTask id="hx_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
-      <callActivity id="hx_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <callActivity id="hx_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
       <endEvent id="hx_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
       <sequenceFlow id="sec_hr_exit_f42" sourceRef="hx_withdrawStart" targetRef="hx_withdrawKind"/>
       <sequenceFlow id="sec_hr_exit_f43" sourceRef="hx_withdrawKind" targetRef="hx_withdrawCall"/>
@@ -97,7 +109,7 @@
     <subProcess id="hx_cancel" name="Authorised cancellation" triggeredByEvent="true">
       <startEvent id="hx_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
       <serviceTask id="hx_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
-      <callActivity id="hx_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.2"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <callActivity id="hx_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.3"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
       <endEvent id="hx_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
       <sequenceFlow id="sec_hr_exit_f45" sourceRef="hx_cancelStart" targetRef="hx_cancelKind"/>
       <sequenceFlow id="sec_hr_exit_f46" sourceRef="hx_cancelKind" targetRef="hx_cancelCall"/>
@@ -127,23 +139,29 @@
       <bpmndi:BPMNShape id="hx_fnf_breachAct_di" bpmnElement="hx_fnf_breachAct"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_fnf_breachGw_di" bpmnElement="hx_fnf_breachGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_fnf_done_di" bpmnElement="hx_fnf_done"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_pay_di" bpmnElement="hx_pay"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_gratGw_di" bpmnElement="hx_gratGw"><dc:Bounds x="2850" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_gratuity_slaPlan_di" bpmnElement="hx_gratuity_slaPlan"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_gratuity_di" bpmnElement="hx_gratuity"><dc:Bounds x="3155" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_gratuity_warnNotify_di" bpmnElement="hx_gratuity_warnNotify"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_gratuity_warnEnd_di" bpmnElement="hx_gratuity_warnEnd"><dc:Bounds x="3517" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_gratuity_breachAct_di" bpmnElement="hx_gratuity_breachAct"><dc:Bounds x="3320" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_gratuity_breachGw_di" bpmnElement="hx_gratuity_breachGw"><dc:Bounds x="3510" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_gratuity_done_di" bpmnElement="hx_gratuity_done"><dc:Bounds x="3675" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_gratCfg_di" bpmnElement="hx_gratCfg"><dc:Bounds x="3815" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_gratPay_di" bpmnElement="hx_gratPay"><dc:Bounds x="3980" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_letter_di" bpmnElement="hx_letter"><dc:Bounds x="4145" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_end_di" bpmnElement="hx_end"><dc:Bounds x="4342" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_pay_sanction_di" bpmnElement="hx_pay_sanction"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_pay_sgw_di" bpmnElement="hx_pay_sgw"><dc:Bounds x="2850" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_pay_notReleased_di" bpmnElement="hx_pay_notReleased"><dc:Bounds x="3022" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_pay_di" bpmnElement="hx_pay"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratGw_di" bpmnElement="hx_gratGw"><dc:Bounds x="3180" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_slaPlan_di" bpmnElement="hx_gratuity_slaPlan"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_di" bpmnElement="hx_gratuity"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_warnNotify_di" bpmnElement="hx_gratuity_warnNotify"><dc:Bounds x="3650" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_warnEnd_di" bpmnElement="hx_gratuity_warnEnd"><dc:Bounds x="3847" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_breachAct_di" bpmnElement="hx_gratuity_breachAct"><dc:Bounds x="3650" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_breachGw_di" bpmnElement="hx_gratuity_breachGw"><dc:Bounds x="3840" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_done_di" bpmnElement="hx_gratuity_done"><dc:Bounds x="4005" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratCfg_di" bpmnElement="hx_gratCfg"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratPay_sanction_di" bpmnElement="hx_gratPay_sanction"><dc:Bounds x="4310" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratPay_sgw_di" bpmnElement="hx_gratPay_sgw"><dc:Bounds x="4500" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratPay_notReleased_di" bpmnElement="hx_gratPay_notReleased"><dc:Bounds x="4672" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratPay_di" bpmnElement="hx_gratPay"><dc:Bounds x="4640" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_letter_di" bpmnElement="hx_letter"><dc:Bounds x="4805" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_end_di" bpmnElement="hx_end"><dc:Bounds x="5002" y="177" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_fnf_warn_di" bpmnElement="hx_fnf_warn"><dc:Bounds x="2008" y="92" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_fnf_breach_di" bpmnElement="hx_fnf_breach"><dc:Bounds x="2038" y="92" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_gratuity_warn_di" bpmnElement="hx_gratuity_warn"><dc:Bounds x="3163" y="92" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="hx_gratuity_breach_di" bpmnElement="hx_gratuity_breach"><dc:Bounds x="3193" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_warn_di" bpmnElement="hx_gratuity_warn"><dc:Bounds x="3493" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_breach_di" bpmnElement="hx_gratuity_breach"><dc:Bounds x="3523" y="217" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_withdraw_di" bpmnElement="hx_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_withdrawStart_di" bpmnElement="hx_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="hx_withdrawKind_di" bpmnElement="hx_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
@@ -180,21 +198,27 @@
       <bpmndi:BPMNEdge id="sec_hr_exit_f24_di" bpmnElement="sec_hr_exit_f24"><di:waypoint x="2100" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_hr_exit_f25_di" bpmnElement="sec_hr_exit_f25"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_hr_exit_f26_di" bpmnElement="sec_hr_exit_f26"><di:waypoint x="2570" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f27_di" bpmnElement="sec_hr_exit_f27"><di:waypoint x="2760" y="70"/><di:waypoint x="2850" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f28_di" bpmnElement="sec_hr_exit_f28"><di:waypoint x="3181" y="128"/><di:waypoint x="3181" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f29_di" bpmnElement="sec_hr_exit_f29"><di:waypoint x="3420" y="195"/><di:waypoint x="3517" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f30_di" bpmnElement="sec_hr_exit_f30"><di:waypoint x="3211" y="128"/><di:waypoint x="3211" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f31_di" bpmnElement="sec_hr_exit_f31"><di:waypoint x="3420" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f32_di" bpmnElement="sec_hr_exit_f32"><di:waypoint x="3560" y="70"/><di:waypoint x="3675" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f33_di" bpmnElement="sec_hr_exit_f33"><di:waypoint x="3535" y="95"/><di:waypoint x="3535" y="128"/><di:waypoint x="3040" y="128"/><di:waypoint x="3040" y="110"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f34_di" bpmnElement="sec_hr_exit_f34"><di:waypoint x="3090" y="70"/><di:waypoint x="3155" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f35_di" bpmnElement="sec_hr_exit_f35"><di:waypoint x="3255" y="70"/><di:waypoint x="3675" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f36_di" bpmnElement="sec_hr_exit_f36"><di:waypoint x="2900" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f37_di" bpmnElement="sec_hr_exit_f37"><di:waypoint x="3725" y="70"/><di:waypoint x="3815" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f38_di" bpmnElement="sec_hr_exit_f38"><di:waypoint x="3915" y="70"/><di:waypoint x="3980" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f39_di" bpmnElement="sec_hr_exit_f39"><di:waypoint x="2900" y="70"/><di:waypoint x="4145" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f40_di" bpmnElement="sec_hr_exit_f40"><di:waypoint x="4080" y="70"/><di:waypoint x="4145" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_hr_exit_f41_di" bpmnElement="sec_hr_exit_f41"><di:waypoint x="4245" y="70"/><di:waypoint x="4342" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f27_di" bpmnElement="sec_hr_exit_f27"><di:waypoint x="3090" y="195"/><di:waypoint x="3180" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f28_di" bpmnElement="sec_hr_exit_f28"><di:waypoint x="3511" y="253"/><di:waypoint x="3511" y="320"/><di:waypoint x="3650" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f29_di" bpmnElement="sec_hr_exit_f29"><di:waypoint x="3750" y="320"/><di:waypoint x="3847" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f30_di" bpmnElement="sec_hr_exit_f30"><di:waypoint x="3541" y="253"/><di:waypoint x="3541" y="195"/><di:waypoint x="3650" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f31_di" bpmnElement="sec_hr_exit_f31"><di:waypoint x="3750" y="195"/><di:waypoint x="3840" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f32_di" bpmnElement="sec_hr_exit_f32"><di:waypoint x="3890" y="195"/><di:waypoint x="4005" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f33_di" bpmnElement="sec_hr_exit_f33"><di:waypoint x="3865" y="220"/><di:waypoint x="3865" y="253"/><di:waypoint x="3370" y="253"/><di:waypoint x="3370" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f34_di" bpmnElement="sec_hr_exit_f34"><di:waypoint x="3420" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f35_di" bpmnElement="sec_hr_exit_f35"><di:waypoint x="3585" y="195"/><di:waypoint x="4005" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f36_di" bpmnElement="sec_hr_exit_f36"><di:waypoint x="3230" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f37_di" bpmnElement="sec_hr_exit_f37"><di:waypoint x="4055" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f38_di" bpmnElement="sec_hr_exit_f38"><di:waypoint x="4245" y="195"/><di:waypoint x="4310" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f39_di" bpmnElement="sec_hr_exit_f39"><di:waypoint x="3230" y="195"/><di:waypoint x="4805" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f40_di" bpmnElement="sec_hr_exit_f40"><di:waypoint x="4740" y="320"/><di:waypoint x="4772" y="320"/><di:waypoint x="4772" y="195"/><di:waypoint x="4805" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f41_di" bpmnElement="sec_hr_exit_f41"><di:waypoint x="4905" y="195"/><di:waypoint x="5002" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="hx_gratPay_sanction_f_di" bpmnElement="hx_gratPay_sanction_f"><di:waypoint x="4410" y="195"/><di:waypoint x="4500" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="hx_gratPay_sgw_yes_di" bpmnElement="hx_gratPay_sgw_yes"><di:waypoint x="4550" y="195"/><di:waypoint x="4595" y="195"/><di:waypoint x="4595" y="320"/><di:waypoint x="4640" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="hx_gratPay_sgw_no_di" bpmnElement="hx_gratPay_sgw_no"><di:waypoint x="4550" y="195"/><di:waypoint x="4672" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="hx_pay_sanction_f_di" bpmnElement="hx_pay_sanction_f"><di:waypoint x="2760" y="70"/><di:waypoint x="2850" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="hx_pay_sgw_yes_di" bpmnElement="hx_pay_sgw_yes"><di:waypoint x="2900" y="70"/><di:waypoint x="2945" y="70"/><di:waypoint x="2945" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="hx_pay_sgw_no_di" bpmnElement="hx_pay_sgw_no"><di:waypoint x="2900" y="70"/><di:waypoint x="3022" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_hr_exit_f42_di" bpmnElement="sec_hr_exit_f42"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_hr_exit_f43_di" bpmnElement="sec_hr_exit_f43"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_hr_exit_f44_di" bpmnElement="sec_hr_exit_f44"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>

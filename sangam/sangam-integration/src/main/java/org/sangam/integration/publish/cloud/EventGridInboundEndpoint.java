@@ -27,6 +27,7 @@ import org.sangam.ports.events.pipeline.CloudEventsFormat;
 import org.sangam.ports.support.PortsProblem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.sangam.core.security.LogSafe;
 
 /**
  * Owner decision 189 (SL-170): Azure Event Grid push delivery into an inbound {@code eventgrid} channel. The channel is
@@ -188,7 +189,7 @@ public final class EventGridInboundEndpoint {
             InboundEventProcessor.Delivery d = processor.deliver(tenant, ch.key(), Json.write(e), eh, e.path("id").asText());
             if (!d.ack()) {
                 // which event and why stay in the server log: the event id is the sender's text
-                LOG.warn("Event Grid delivery on channel {}: an event is to be offered again ({})", ch.key(), d.reason());
+                LOG.warn("Event Grid delivery on channel {}: an event is to be offered again ({})", LogSafe.text(ch.key()), LogSafe.text(d.reason()));
                 return Answer.refusal(503, CODE_REDELIVERY_REQUIRED,
                         "An event of this delivery could not be accepted yet; send the delivery again", 30);
             }

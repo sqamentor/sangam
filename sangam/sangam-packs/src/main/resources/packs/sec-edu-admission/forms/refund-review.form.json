@@ -1,0 +1,38 @@
+{
+  "key": "sec-edu-admission/refund-review",
+  "version": "1.0.3",
+  "pack": "sec.edu.admission",
+  "title": {
+    "en": "Withdrawal refund: processing fee",
+    "hi": "प्रत्याहरण वापसी: प्रसंस्करण शुल्क"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "processingFee",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Processing fee deducted (INR, 0 if none)",
+        "hi": "काटा गया प्रसंस्करण शुल्क (रुपये, न हो तो 0)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

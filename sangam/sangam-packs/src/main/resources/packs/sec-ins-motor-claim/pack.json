@@ -1,6 +1,6 @@
 {
   "id": "sec.ins.motor-claim",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Motor claim: own damage, theft and third party",
     "hi": "मोटर दावा: स्वयं क्षति, चोरी एवं तृतीय पक्ष"
@@ -68,24 +68,28 @@
   "connectors": [
     {
       "id": "policy.coverCheck",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Policy in force"
     },
     {
       "id": "fraud.score",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Fraud analytics"
     },
     {
       "id": "claims.pay",
+      "moneyMovement": "OUT",
       "capabilityClass": "c",
       "govTag": "",
       "purpose": "Claim payment"
     },
     {
       "id": "salvage.auction",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Salvage disposal"

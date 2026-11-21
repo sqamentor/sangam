@@ -222,7 +222,7 @@ The NestJS adapter is the separate package `sdks/typescript-nestjs` (`@sangam/ne
 | `src/logger.ts` | ARCHITECTURE §1.8 (JSON logs with operationId and businessKey) |
 | `examples/bill-payment-worker.ts` | IX.4 P1, AC-01, AC-03, R36, R33 |
 
-### Flowable gap list ids (spike/results/FLOWABLE-INTO-OPERATON.md)
+### Flowable gap list ids (sangam/docs/records/FLOWABLE-INTO-OPERATON.md)
 
 | Id | How this SDK covers it |
 |---|---|

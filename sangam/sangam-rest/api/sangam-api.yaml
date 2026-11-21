@@ -659,6 +659,42 @@ paths:
           request''s, and the caller''s tenant and task visibility still apply, so a list only narrows what the caller sees. 404 NOT_FOUND for
           a list that is not the caller''s tenant''s, 403 TENANT_REQUIRED without a tenant, 422 TASK_FILTER_CONFLICT when a request criterion
           differs from the list''s (sortBy, sortOrder and variableNames are taken from the request, variable names merged)'
+      - name: priority
+        in: query
+        schema:
+          type: integer
+          format: int32
+        description: Only tasks of exactly this priority
+      - name: minPriority
+        in: query
+        schema:
+          type: integer
+          format: int32
+        description: Only tasks of at least this priority; 400 VALIDATION_FAILED when greater than maxPriority
+      - name: maxPriority
+        in: query
+        schema:
+          type: integer
+          format: int32
+        description: Only tasks of at most this priority
+      - name: dueBefore
+        in: query
+        schema:
+          type: string
+          format: date-time
+        description: Only tasks due strictly before this ISO-8601 date-time with offset (tasks without a due date never match); 400 VALIDATION_FAILED
+          when malformed or not after dueAfter
+      - name: dueAfter
+        in: query
+        schema:
+          type: string
+          format: date-time
+        description: Only tasks due strictly after this ISO-8601 date-time with offset (tasks without a due date never match)
+      - name: overdue
+        in: query
+        schema:
+          type: boolean
+        description: 'true: only tasks due before the server''s current time (combined with dueBefore, the earlier bound applies); false: no condition'
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/size'
       x-sangam-permission: task.read
@@ -13459,6 +13495,86 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RoleDefinition'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /admin/org-levels:
+    get:
+      operationId: getOrgLevels
+      tags:
+      - Admin
+      summary: Org level types
+      description: The caller's tenant's org level types, top first (AJ-02); empty when none are defined.
+      x-sangam-permission: admin.read
+      x-sangam-requirements:
+      - IX.5
+      - R19
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgLevels'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+    put:
+      operationId: defineOrgLevels
+      tags:
+      - Admin
+      summary: Define org level types
+      description: 'A tenant administrator defines its own tenant''s org level types, top first (EV-M-0923; ADMIN on ORG_UNIT; TENANT_CONFIGURED).
+        Idempotent: the same list again changes nothing and records nothing. A different list is refused with 409 LEVELS_IN_USE once an org unit
+        exists; another tenant''s levels with 403 TENANT_MISMATCH.'
+      x-sangam-command-type: admin.orglevels.define
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: admin.write
+      x-sangam-requirements:
+      - IX.5
+      - R19
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgLevels'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgLevels'
           headers:
             Idempotent-Replayed:
               $ref: '#/components/headers/Idempotent-Replayed'
@@ -60652,8 +60768,9 @@ components:
           additionalProperties: true
           description: 'JSON object, at most 16384 characters as JSON. Owner decision 406: only the criteria of GET /tasks by the same names:
             assignee, mine, unassigned, candidateGroup, processDefinitionKey, taskDefinitionKey, businessKey, state (ACTIVE or SUSPENDED), sortBy,
-            sortOrder, currency (ISO 4217) and variableNames (list of 1 to 20 names); strings 1 to 255 characters, mine and unassigned booleans.
-            Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID'
+            sortOrder, currency (ISO 4217), variableNames (list of 1 to 20 names), priority, minPriority and maxPriority (whole numbers, minPriority
+            not above maxPriority), dueBefore and dueAfter (ISO-8601 date-times with offset, dueAfter before dueBefore) and overdue; strings 1
+            to 255 characters, mine, unassigned and overdue booleans. Any other key, tenant* or withoutTenant* included, is 422 TASK_FILTER_INVALID'
         properties:
           type: object
           additionalProperties: true
@@ -60706,6 +60823,10 @@ components:
           - $ref: '#/components/schemas/MeLocale'
           description: 'M-045: money and number formatting of the tenant''s resolved profile (locale section); absent when the tenant has no resolved
             locale'
+        sandbox:
+          type: boolean
+          description: 'Owner option (b) 2026-11-19: true only for a tenant listed in sangam.demo.sandbox-tenants (its verified payees and payments
+            are simulated, audited sandbox=true); absent otherwise'
     NumberGrouping:
       type: object
       description: 'Digit grouping of the integer part: the first group (from the right) and every further group, e.g. {first: 3, rest: 2} gives
@@ -65177,6 +65298,19 @@ components:
             $ref: '#/components/schemas/RoleRule'
       required:
       - name
+    OrgLevels:
+      type: object
+      description: The org level types of a tenant, top first (AJ-02, SEC_ORG_LEVEL); an org unit's level must be one of them. tenantId is optional
+        on a request and, when given, must be the caller's own tenant.
+      properties:
+        tenantId:
+          type: string
+        levels:
+          type: array
+          items:
+            type: string
+      required:
+      - levels
     OrgUnitImportResult:
       type: object
       description: 'Bulk org-unit import result (CSV: id,parentId,code,name,nameHi,level).'

@@ -1,6 +1,6 @@
 {
   "id": "gov.assets",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": {
     "en": "Assets and vehicles: register to disposal",
     "hi": "परिसंपत्ति एवं वाहन: पंजीकरण से निपटान"
@@ -48,18 +48,21 @@
   "connectors": [
     {
       "id": "assets.register",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Asset register"
     },
     {
       "id": "eauction.list",
+      "moneyMovement": "NONE",
       "capabilityClass": "b",
       "govTag": "",
       "purpose": "e-Auction listing"
     },
     {
       "id": "assets.remove",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Removal from register"

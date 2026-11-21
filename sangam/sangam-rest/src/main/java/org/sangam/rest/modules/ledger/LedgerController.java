@@ -175,6 +175,10 @@ public class LedgerController {
         } catch (IllegalArgumentException e) { // SG-22 / SG-23: sub-minor-unit or non-positive amount
             throw ApiProblem.badRequest("VALIDATION_FAILED", e.getMessage());
         }
+        if (org.sangam.ledger.LedgerStore.REFERENCE_CONFLICT.equals(res.reason())) { // owner decision 9
+            throw ApiProblem.conflict(org.sangam.ledger.LedgerStore.REFERENCE_CONFLICT, "reference " + reference
+                    + " is already used by a ledger posting with other legs or amounts");
+        }
         return Lists.okRef(reference, ResultView.of(res));
     }
 

@@ -1,0 +1,60 @@
+{
+  "key": "sec-ins-proposal-underwriting/free-look-refund",
+  "version": "1.0.3",
+  "pack": "sec.ins.proposal-underwriting",
+  "title": {
+    "en": "Free-look refund: deductions",
+    "hi": "फ्री-लुक वापसी: कटौतियाँ"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "riskPremiumDeduction",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Proportionate risk premium (INR)",
+        "hi": "आनुपातिक जोखिम प्रीमियम (रुपये)"
+      }
+    },
+    {
+      "id": "medicalCostDeduction",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Medical examination cost (INR)",
+        "hi": "चिकित्सा जाँच लागत (रुपये)"
+      }
+    },
+    {
+      "id": "stampDutyDeduction",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Stamp duty (INR)",
+        "hi": "स्टांप शुल्क (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

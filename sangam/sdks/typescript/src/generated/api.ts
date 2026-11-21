@@ -564,7 +564,7 @@ export class AIApi {
   }
 }
 
-/** Typed operations of `Admin` (32 operations). */
+/** Typed operations of `Admin` (34 operations). */
 export class AdminApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -891,6 +891,31 @@ export class AdminApi {
     const req: ApiRequest = { method: 'PUT', path: `/admin/roles/by-role-id`, query: { roleId: params?.roleId } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.RoleDefinition>(req, options);
+  }
+
+  /**
+   * Org level types
+   *
+   * The caller's tenant's org level types, top first (AJ-02); empty when none are defined.
+   *
+   * `GET /admin/org-levels` (operationId `getOrgLevels`); permission `admin.read`.
+   */
+  async getOrgLevels(options?: RequestOptions): Promise<M.OrgLevels> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/org-levels` };
+    return this.calls.json<M.OrgLevels>(req, options);
+  }
+
+  /**
+   * Define org level types
+   *
+   * A tenant administrator defines its own tenant's org level types, top first (EV-M-0923; ADMIN on ORG_UNIT; TENANT_CONFIGURED). Idempotent: the same list again changes nothing and records nothing. A different list is refused with 409 LEVELS_IN_USE once an org unit exists; another tenant's levels with 403 TENANT_MISMATCH.
+   *
+   * `PUT /admin/org-levels` (operationId `defineOrgLevels`); permission `admin.write`; result stored atomically with the state change.
+   */
+  async defineOrgLevels(body: M.OrgLevels, options?: RequestOptions): Promise<M.OrgLevels> {
+    const req: ApiRequest = { method: 'PUT', path: `/admin/org-levels` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.OrgLevels>(req, options);
   }
 
   /**
@@ -14140,8 +14165,8 @@ export class TasksApi {
    *
    * `GET /tasks` (operationId `listTasks`); permission `task.read`.
    */
-  async listTasks(params?: { assignee?: string; mine?: boolean /* Assigned to me or I am a candidate */; unassigned?: boolean; candidateGroup?: string; seatId?: string; processInstanceId?: string; caseInstanceId?: string; businessKey?: string; processDefinitionKey?: string; taskDefinitionKey?: string; state?: string; sortBy?: string /* created, due, priority, name, amount or reference (M-042 task index); a comma-separated list sorts by several keys. amount sorts within the currency filter and needs currency (400 VALIDATION_FAILED otherwise), so only tasks with an amount in that currency are listed; reference sorts by the indexed reference, tasks without one placed by the database's NULL ordering */; currency?: string /* M-042: only tasks whose indexed amount is in this ISO 4217 currency; required when sortBy contains amount */; sortOrder?: string /* asc or desc per key, comma-separated */; variableNames?: Array<string> /* P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at most 20 names, repeated or comma-separated */; filterId?: string /* Owner decision 406: runs a saved task list of the caller's tenant (GET /team/task-filters): its criteria are added to this request's, and the caller's tenant and task visibility still apply, so a list only narrows what the caller sees. 404 NOT_FOUND for a list that is not the caller's tenant's, 403 TENANT_REQUIRED without a tenant, 422 TASK_FILTER_CONFLICT when a request criterion differs from the list's (sortBy, sortOrder and variableNames are taken from the request, variable names merged) */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.Task>> {
-    const req: ApiRequest = { method: 'GET', path: `/tasks`, query: { assignee: params?.assignee, mine: params?.mine, unassigned: params?.unassigned, candidateGroup: params?.candidateGroup, seatId: params?.seatId, processInstanceId: params?.processInstanceId, caseInstanceId: params?.caseInstanceId, businessKey: params?.businessKey, processDefinitionKey: params?.processDefinitionKey, taskDefinitionKey: params?.taskDefinitionKey, state: params?.state, sortBy: params?.sortBy, currency: params?.currency, sortOrder: params?.sortOrder, variableNames: params?.variableNames, filterId: params?.filterId, page: params?.page, size: params?.size } };
+  async listTasks(params?: { assignee?: string; mine?: boolean /* Assigned to me or I am a candidate */; unassigned?: boolean; candidateGroup?: string; seatId?: string; processInstanceId?: string; caseInstanceId?: string; businessKey?: string; processDefinitionKey?: string; taskDefinitionKey?: string; state?: string; sortBy?: string /* created, due, priority, name, amount or reference (M-042 task index); a comma-separated list sorts by several keys. amount sorts within the currency filter and needs currency (400 VALIDATION_FAILED otherwise), so only tasks with an amount in that currency are listed; reference sorts by the indexed reference, tasks without one placed by the database's NULL ordering */; currency?: string /* M-042: only tasks whose indexed amount is in this ISO 4217 currency; required when sortBy contains amount */; sortOrder?: string /* asc or desc per key, comma-separated */; variableNames?: Array<string> /* P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at most 20 names, repeated or comma-separated */; filterId?: string /* Owner decision 406: runs a saved task list of the caller's tenant (GET /team/task-filters): its criteria are added to this request's, and the caller's tenant and task visibility still apply, so a list only narrows what the caller sees. 404 NOT_FOUND for a list that is not the caller's tenant's, 403 TENANT_REQUIRED without a tenant, 422 TASK_FILTER_CONFLICT when a request criterion differs from the list's (sortBy, sortOrder and variableNames are taken from the request, variable names merged) */; priority?: number /* Only tasks of exactly this priority */; minPriority?: number /* Only tasks of at least this priority; 400 VALIDATION_FAILED when greater than maxPriority */; maxPriority?: number /* Only tasks of at most this priority */; dueBefore?: string /* Only tasks due strictly before this ISO-8601 date-time with offset (tasks without a due date never match); 400 VALIDATION_FAILED when malformed or not after dueAfter */; dueAfter?: string /* Only tasks due strictly after this ISO-8601 date-time with offset (tasks without a due date never match) */; overdue?: boolean /* true: only tasks due before the server's current time (combined with dueBefore, the earlier bound applies); false: no condition */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.Task>> {
+    const req: ApiRequest = { method: 'GET', path: `/tasks`, query: { assignee: params?.assignee, mine: params?.mine, unassigned: params?.unassigned, candidateGroup: params?.candidateGroup, seatId: params?.seatId, processInstanceId: params?.processInstanceId, caseInstanceId: params?.caseInstanceId, businessKey: params?.businessKey, processDefinitionKey: params?.processDefinitionKey, taskDefinitionKey: params?.taskDefinitionKey, state: params?.state, sortBy: params?.sortBy, currency: params?.currency, sortOrder: params?.sortOrder, variableNames: params?.variableNames, filterId: params?.filterId, priority: params?.priority, minPriority: params?.minPriority, maxPriority: params?.maxPriority, dueBefore: params?.dueBefore, dueAfter: params?.dueAfter, overdue: params?.overdue, page: params?.page, size: params?.size } };
     return this.calls.page<M.Task>(req, options, params?.page, params?.size);
   }
 
@@ -15257,7 +15282,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1180 operations on 992 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1182 operations on 993 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;

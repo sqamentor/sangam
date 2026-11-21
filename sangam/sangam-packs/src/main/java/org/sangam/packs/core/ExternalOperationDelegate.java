@@ -97,7 +97,11 @@ public class ExternalOperationDelegate implements JavaDelegate {
         if (suffix != null && !suffix.isBlank()) {
             s = s + ":" + suffix; // one operation per instalment / item of the same step
         }
-        if (Vars.fieldBool(verifyApproval, ex, true)) {
+        // owner decision A1: money out (and an undeclared connector) always needs the bound approval; the
+        // verifyApproval field may only relax the check for IN / NONE connectors
+        boolean moneyOut = org.sangam.packs.spi.ConnectorMoneyMovements.enforced(conn(ex))
+                == org.sangam.packs.spi.MoneyMovement.OUT;
+        if (moneyOut || Vars.fieldBool(verifyApproval, ex, true)) {
             String approved = Vars.str(ex, Vars.APPROVED_HASH);
             if (approved == null) {
                 Vars.audit(ex, "APPROVAL_INVALIDATED", Vars.map("reason", "no approval recorded", "step", s));
@@ -118,6 +122,17 @@ public class ExternalOperationDelegate implements JavaDelegate {
                 ex.setVariable(Vars.APPROVED_HASH, null);
                 ex.setVariable("approvalInvalidated", true);
                 throw new BpmnError("APPROVAL_INVALIDATED", "material payload changed after approval: " + changed);
+            }
+        }
+        if (moneyOut) {
+            // owner decisions E2 (a deemed approval never releases money) and E3 (amount, payee account, currency
+            // and purpose bound in the approval)
+            String held = MoneyOutApproval.refusal(conn(ex), ex::getVariable);
+            if (held != null) {
+                Vars.audit(ex, "APPROVAL_INVALIDATED", Vars.map("reason", held, "step", s));
+                // held as an incident with the reason: core execution has no catch for it, and an uncaught BPMN
+                // error would end the call quietly, so the caller would go on without executionOutcome
+                throw new org.operaton.bpm.engine.ProcessEngineException(MoneyOutApproval.HELD + ": " + held);
             }
         }
         int attempt = Vars.intVal(ex, s + "Attempt", 1);

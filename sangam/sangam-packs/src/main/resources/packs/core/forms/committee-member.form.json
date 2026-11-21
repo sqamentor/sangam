@@ -1,6 +1,6 @@
 {
   "key": "core/committee-member",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "pack": "sangam.core",
   "title": {
     "en": "Committee member decision",

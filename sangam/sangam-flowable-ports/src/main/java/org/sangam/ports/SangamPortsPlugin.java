@@ -90,7 +90,7 @@ public class SangamPortsPlugin implements ProcessEnginePlugin {
         taskLifecycle = new TaskLifecycleService(settings.getDialect(), tx);
         aggregation = new MultiInstanceAggregation(settings.getDialect());
 
-        if (settings.isAdHocSubProcess()) {
+        if (settings.isAdHocSubProcess() || settings.isStandardLoop()) {
             cfg.setBpmnParseFactory(new SangamBpmnParseFactory());
         }
 
@@ -150,7 +150,7 @@ public class SangamPortsPlugin implements ProcessEnginePlugin {
 
         if (settings.isPreDeployValidator()) {
             List<Deployer> pre = cfg.getCustomPreDeployers() == null ? new ArrayList<>() : new ArrayList<>(cfg.getCustomPreDeployers());
-            pre.add(new SangamModelValidator(new SangamModelValidator.Options(settings.isAdHocSubProcess())).deployer());
+            pre.add(new SangamModelValidator(SangamModelValidator.Options.of(settings)).deployer());
             cfg.setCustomPreDeployers(pre);
         }
 

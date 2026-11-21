@@ -256,13 +256,70 @@ class E5OutboxInboxIT extends ContractSupport {
         Outbox.Appended a = slow.get(30, TimeUnit.SECONDS);
         ex.shutdown();
         boolean aOnFirstPass = consumer.applied(HISTORY, a.eventId()) || consumer.applied(WEBHOOK, a.eventId());
-        relay.drain(5);
         assertTrue(a.outboxId() < b.outboxId(), "A got the lower id but committed later");
         assertTrue(bOnFirstPass, "B's two deliveries were published on the first pass");
         assertFalse(aOnFirstPass, "A was not visible on the first pass");
+        // Run 44462054979: the server's relay held the claim on A's delivery while this test drained, so drain skipped
+        // it and the committed state was still PENDING (in flight). Reproduced by e5_4r. The contract is the settled
+        // state, whichever relay delivers A: both deliveries DONE.
+        awaitDelivered(a);
         assertEquals("DONE", state(a.outboxId(), HISTORY));
         assertEquals("DONE", state(a.outboxId(), WEBHOOK));
         assertTrue(consumer.applied(HISTORY, a.eventId()));
+    }
+
+    /**
+     * Run 44462054979 (sqlserver2025, e5_4): right after A committed, the server's background relay held the claim on
+     * A's delivery while this test drained. The test relay skipped the locked row (SKIP LOCKED / READPAST), claimed
+     * nothing, so drain stopped at once, and the committed state was still PENDING. Here a second connection plays that
+     * in-flight claim, so the interleaving happens on every run.
+     */
+    @Test
+    @Order(4)
+    void e5_4r_committedEventWhileAnotherRelayHoldsTheClaim() throws Exception {
+        String pid = startChecker(key("e5-4r"));
+        Outbox.Appended a = completeAndAppend(pid, singleTask(pid, "checkerReview").id(),
+                Map.of("checkerDecision", "forward"), null, false);
+        Connection competitor = holdCompetingClaim(c -> Jdbc.query(c, dialect().skipLockedSelect("d.outbox_id",
+                        "OUTBOX_DELIVERY", "d", "d.outbox_id = ? AND d.destination = ? AND d.state = 'PENDING'", "d.outbox_id", 1),
+                rs -> rs.getLong(1), a.outboxId(), HISTORY), List.of(a.outboxId()),
+                () -> "PENDING".equals(state(a.outboxId(), HISTORY)));
+        if (competitor != null) {   // null: the server's relay delivered A first; the interleaving is gone this run
+            try {
+                relay.drain(5);
+                assertEquals("PENDING", state(a.outboxId(), HISTORY),
+                        "the competing claim is not committed: the delivery is in flight, skipped, not published twice");
+                assertFalse(consumer.applied(HISTORY, a.eventId()), "a claimed delivery is not published by this relay");
+            } finally {
+                competitor.rollback();   // the competing relay crashed mid-claim; its claim never committed
+                competitor.close();
+            }
+        }
+        awaitDelivered(a);
+        assertEquals("DONE", state(a.outboxId(), HISTORY));
+        assertEquals("DONE", state(a.outboxId(), WEBHOOK));
+        assertTrue(consumer.applied(HISTORY, a.eventId()));
+    }
+
+    /**
+     * The settled state of a committed event is DONE on each destination, whichever relay (this test's or the server's
+     * background relay) delivers it; PENDING and CLAIMED are in-flight states of a competing claim and the delivery must
+     * never be PARKED or SKIPPED here. Drives this test's relay until both deliveries settle (at most 30 s).
+     */
+    private void awaitDelivered(Outbox.Appended a) throws InterruptedException {
+        long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
+        while (System.nanoTime() < deadline) {
+            String h = state(a.outboxId(), HISTORY);
+            String w = state(a.outboxId(), WEBHOOK);
+            if ("DONE".equals(h) && "DONE".equals(w)) {
+                return;
+            }
+            for (String s : List.of(h, w)) {
+                assertTrue("DONE".equals(s) || "PENDING".equals(s) || "CLAIMED".equals(s), "delivery of A reached " + s);
+            }
+            relay.drain(5);
+            Thread.sleep(200);
+        }
     }
 
     private static void await(CountDownLatch l) {
@@ -297,6 +354,124 @@ class E5OutboxInboxIT extends ContractSupport {
         };
     }
 
+    /**
+     * Deterministic reproduction of run 44233540674 (postgres: expected BUFFERED, was RECEIVED). The server's own inbox
+     * loop claims every due row; while its claim transaction holds the row (skip-locked select, not yet committed), this
+     * test's {@code processOnce} skips the row and returns 0, and the committed state is still RECEIVED. Here a second
+     * connection plays that in-flight claim, so the interleaving happens on every run.
+     */
+    @Test
+    @Order(6)
+    void e5_5r_earlyMessageWhileAnotherInboxHoldsTheClaim() throws Exception {
+        String bk = key("lic-e5-5r");
+        String source = key("applicant-portal");
+        String msgId = key("msg-e5-5r");
+        inboxService.registerSourceHandler(source, clarificationHandler());
+        engine.startProcess(T, licenceKey, bk, Map.of("applicationId", bk));
+        assertEquals(Inbox.ReceiveResult.ACCEPTED, inbox.receive(T, source, msgId, bk, "documents attached", Duration.ofHours(24)));
+        try (Connection competitor = holdCompetingClaim(c -> claimInboxRow(c, source, msgId), List.of(msgId), () -> true)) {
+            try {
+                // the server's loop may have buffered the row before the competitor got it; either way it is held now
+                Inbox.State held = inTx(c -> Inbox.state(c, T, source, msgId));
+                assertTrue(held == Inbox.State.RECEIVED || held == Inbox.State.BUFFERED, "held row is " + held);
+                int before = correlated.size();
+                assertEquals(0, inbox.processOnce(10, clarificationHandler()), "a claimed row is skipped, never processed twice");
+                assertEquals(held, inTx(c -> Inbox.state(c, T, source, msgId)),
+                        "the competing claim is not committed: the row is in flight, its state unchanged");
+                assertEquals(before, correlated.size());
+            } finally {
+                competitor.rollback();   // the competing inbox crashed mid-claim; its claim never committed
+            }
+        }
+        int before = correlated.size();
+        assertEquals(Inbox.State.BUFFERED, awaitEarlyBuffered(source, msgId));
+        assertEquals(before, correlated.size(), "no subscription yet: nothing correlated");
+    }
+
+    /**
+     * Opens a transaction that holds a competing skip-locked claim, as another node's inbox or relay would. The server's
+     * own loop may hold or take the row first (it claims every due row), so a one-shot claim can find nothing; retry in a
+     * fresh transaction until the claim returns {@code expected} (at most 30 s, 200 ms apart). Returns null once
+     * {@code stillClaimable} says the row has settled elsewhere. The caller rolls back.
+     */
+    private <T> Connection holdCompetingClaim(java.util.function.Function<Connection, List<T>> claim, List<T> expected,
+            java.util.function.BooleanSupplier stillClaimable) throws Exception {
+        long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
+        while (true) {
+            if (!stillClaimable.getAsBoolean()) {
+                return null;
+            }
+            Connection c = dataSource.getConnection();
+            c.setAutoCommit(false);
+            if (expected.equals(claim.apply(c))) {
+                return c;
+            }
+            c.rollback();
+            c.close();
+            assertTrue(System.nanoTime() < deadline, "precondition: the competing claim never held the row");
+            Thread.sleep(200);
+        }
+    }
+
+    /** The skip-locked claim e5_5r's competing inbox takes on one message (the same predicate as core Inbox.claim). */
+    private List<String> claimInboxRow(Connection c, String source, String msgId) {
+        return Jdbc.query(c, dialect().skipLockedSelect("i.message_id", "INBOX", "i",
+                        "i.tenant_id = ? AND i.source = ? AND i.message_id = ? AND i.state IN ('RECEIVED','BUFFERED')",
+                        "i.received_at", 1),
+                rs -> rs.getString(1), T, source, msgId);
+    }
+
+    /**
+     * Run 44498412338 (oracle, e5_5r): the precondition "the competing claim holds the row" failed. The server's own
+     * inbox loop claims every due row, whatever its source, so its claim on the new message could be in flight when
+     * e5_5r's competitor asked for the row; SKIP LOCKED then skipped it and the competitor held nothing. Here a third
+     * connection plays the server's in-flight claim and releases it a second later, so the interleaving happens on every
+     * run.
+     */
+    @Test
+    @Order(6)
+    void e5_5rs_competingClaimSetupWhileTheServerInboxHoldsTheRow() throws Exception {
+        String source = key("applicant-portal");
+        String msgId = key("msg-e5-5rs");
+        assertEquals(Inbox.ReceiveResult.ACCEPTED, inbox.receive(T, source, msgId, key("lic-e5-5rs"), "documents attached",
+                Duration.ofHours(24)));
+        Connection server = dataSource.getConnection();
+        server.setAutoCommit(false);
+        assertEquals(List.of(msgId), claimInboxRow(server, source, msgId), "precondition: the server-side claim holds the row");
+        ExecutorService ex = Executors.newSingleThreadExecutor();
+        Future<?> release = ex.submit(() -> {
+            Thread.sleep(1000);
+            server.rollback();
+            server.close();
+            return null;
+        });
+        try (Connection competitor = holdCompetingClaim(c -> claimInboxRow(c, source, msgId), List.of(msgId), () -> true)) {
+            competitor.rollback();
+        } finally {
+            release.get(30, TimeUnit.SECONDS);
+            ex.shutdown();
+        }
+    }
+
+    /**
+     * Before the instance waits at the message catch, the only settled state is BUFFERED, whichever inbox (this test's
+     * or the server's own loop) claims the row. RECEIVED and CLAIMED are in-flight states of a competing claim; the row
+     * must never be PROCESSED or EXPIRED here. Drives this test's inbox until the row settles.
+     */
+    private Inbox.State awaitEarlyBuffered(String source, String msgId) throws InterruptedException {
+        long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
+        Inbox.State s = inTx(c -> Inbox.state(c, T, source, msgId));
+        while (s != Inbox.State.BUFFERED && System.nanoTime() < deadline) {
+            assertTrue(s == Inbox.State.RECEIVED || s == Inbox.State.CLAIMED, "early message reached " + s);
+            assertEquals(0, inbox.processOnce(10, clarificationHandler()), "no subscription yet: nothing processed");
+            s = inTx(c -> Inbox.state(c, T, source, msgId));
+            if (s != Inbox.State.BUFFERED) {
+                Thread.sleep(200);
+            }
+        }
+        return s;
+    }
+
     @Test
     @Order(5)
     void e5_5_earlyMessageBufferedThenCorrelated() throws InterruptedException {
@@ -307,10 +482,13 @@ class E5OutboxInboxIT extends ContractSupport {
         String pid = engine.startProcess(T, licenceKey, bk, Map.of("applicationId", bk));
         Inbox.ReceiveResult first = inbox.receive(T, source, msgId, bk, "documents attached", Duration.ofHours(24));
         int processedEarly = inbox.processOnce(10, clarificationHandler());
-        Inbox.State early = inTx(c -> Inbox.state(c, T, source, msgId));
         assertEquals(Inbox.ReceiveResult.ACCEPTED, first);
         assertEquals(0, processedEarly);
-        assertEquals(Inbox.State.BUFFERED, early);
+        // Run 44233540674: the server's inbox loop (registered above) held the claim while this processOnce ran, so it
+        // skipped the row and the committed state was still RECEIVED (in flight). Reproduced by e5_5r. The contract is
+        // the settled state, whichever inbox claims it: BUFFERED, nothing correlated.
+        assertEquals(Inbox.State.BUFFERED, awaitEarlyBuffered(source, msgId));
+        assertTrue(correlated.isEmpty(), "no subscription yet: nothing correlated");
 
         engine.completeTask(singleTask(pid, "scrutiny").id(), Map.of("scrutinyDecision", "clarify"));
         assertTrue(engine.getInstance(pid).activeActivityIds().contains("awaitApplicantResponse"));

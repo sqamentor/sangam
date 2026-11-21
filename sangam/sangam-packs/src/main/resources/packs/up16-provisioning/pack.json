@@ -1,6 +1,6 @@
 {
   "id": "universal.up16-provisioning",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": {
     "en": "UP-16 Fan-out provisioning and de-provisioning with deadline and evidence",
     "hi": "यूपी-16 समय-सीमा एवं साक्ष्य सहित प्रावधान एवं प्रावधान-निरसन"
@@ -28,36 +28,42 @@
   "connectors": [
     {
       "id": "provision.account",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Accounts"
     },
     {
       "id": "provision.badge",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Badge"
     },
     {
       "id": "provision.laptop",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Laptop"
     },
     {
       "id": "iam.revokeAll",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Revoke all access"
     },
     {
       "id": "provision.recoverAssets",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Recover assets"
     },
     {
       "id": "provision.undo",
+      "moneyMovement": "NONE",
       "capabilityClass": "a",
       "govTag": "",
       "purpose": "Undo (compensation)"

@@ -72,8 +72,13 @@ public final class InboundMediaQueue {
                     "s.media_next_at, s.message_id", batch), rs -> new String[] {rs.getString(1), rs.getString(2), rs.getString(3)});
             List<Pending> out = new ArrayList<>();
             for (String[] k : keys) {
-                Jdbc.update(c, "UPDATE CH_INBOUND_SEEN SET media_state='CLAIMED', media_owner=?, media_epoch=media_epoch+1, media_next_at="
-                        + dialect.nowPlusMillisParam() + KEY, node, lease.toMillis(), k[0], k[1], k[2]);
+                // fenced on the claim predicate: on Oracle the skip-locked select can return a row a peer claimed or
+                // completed after the select's snapshot; a row this UPDATE does not move is not this node's claim
+                if (Jdbc.update(c, "UPDATE CH_INBOUND_SEEN SET media_state='CLAIMED', media_owner=?, media_epoch=media_epoch+1, media_next_at="
+                        + dialect.nowPlusMillisParam() + KEY + " AND media_state IN ('PENDING','CLAIMED') AND media_next_at <= " + dialect.now(),
+                        node, lease.toMillis(), k[0], k[1], k[2]) != 1) {
+                    continue;
+                }
                 out.add(Jdbc.one(c, "SELECT tenant_id, channel, message_id, external_id, principal_id, media_ref, media_attempt, media_epoch,"
                                 + " media_doc FROM CH_INBOUND_SEEN" + KEY,
                         rs -> new Pending(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6),
