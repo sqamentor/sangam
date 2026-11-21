@@ -110,7 +110,7 @@
     "completing": "Completing sign-in…",
     "devMode": "Dev token mode",
     "sandbox": "Sandbox",
-    "sandboxNotice": "Demo sandbox tenant: verified payees and payments are simulated, no real money moves",
+    "sandboxNotice": "Sandbox tenant: payees, payments, the duplicate-bill check and issued document numbers are simulated. No real money moves.",
     "devNotice": "Development mode: the server's dev profile accepts a static token. Never use this in production.",
     "devToken": "Dev token",
     "idleSignedOut": "You were signed out after {{minutes}} minutes without activity. Sign in again to continue.",
