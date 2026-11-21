@@ -2,7 +2,7 @@
  "contractVersion": "0.1.0",
  "paths": 993,
  "operations": 1182,
- "schemas": 900,
+ "schemas": 901,
  "tags": [
   "AI",
   "Admin",
@@ -199,7 +199,7 @@
    "tag": "Compliance",
    "pathPrefix": "",
    "operations": 39,
-   "maxLines": 762
+   "maxLines": 757
   },
   {
    "class": "ConfigApi",
@@ -911,6 +911,7 @@
   "ComplianceReasonBody",
   "ComplianceRenderedNotice",
   "ComplianceReport",
+  "ComplianceReportRequest",
   "ComplianceRespondLawfulRequest",
   "ComplianceRightsRequest",
   "ComplianceRightsSubmission",
@@ -6131,16 +6132,16 @@
    "php": "ComplianceApi#verifyComplianceLogs"
   },
   {
-   "operationId": "getComplianceReport",
-   "method": "GET",
+   "operationId": "generateComplianceReport",
+   "method": "POST",
    "path": "/compliance/reports",
    "tag": "Compliance",
    "apiClass": "ComplianceApi",
-   "java": "ComplianceApi#getComplianceReport",
-   "typescript": "compliance.getComplianceReport",
-   "python": "compliance.get_compliance_report",
-   "dotnet": "ComplianceApi#GetComplianceReportAsync",
-   "php": "ComplianceApi#getComplianceReport"
+   "java": "ComplianceApi#generateComplianceReport",
+   "typescript": "compliance.generateComplianceReport",
+   "python": "compliance.generate_compliance_report",
+   "dotnet": "ComplianceApi#GenerateComplianceReportAsync",
+   "php": "ComplianceApi#generateComplianceReport"
   },
   {
    "operationId": "getComplianceJurisdiction",

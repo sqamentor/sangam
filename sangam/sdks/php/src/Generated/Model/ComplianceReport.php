@@ -8,7 +8,7 @@ namespace Sangam\Sdk\Generated\Model;
 use Sangam\Sdk\Generated\Support;
 
 /**
- * Compliance evidence report (JSON; `?format=html` returns the HTML rendering). X-Sangam-Report-Hash carries its hash.
+ * Compliance evidence report (JSON; format `html` in the request returns the HTML rendering). X-Sangam-Report-Hash carries its hash.
  *
  * Schema ComplianceReport of sangam-api.yaml 0.1.0.
  *

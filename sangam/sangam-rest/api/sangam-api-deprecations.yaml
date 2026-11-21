@@ -2558,3 +2558,11 @@ corrections:
     to: "/admin/plugins/by-id/disable?id= (literal route, the value as a query parameter; the old route is removed)"
     reason: "decision 393: a plugin id is the id the jar declares (PluginManager.java:168) and may carry '/' or ':'; the servlet connector refuses an encoded '/' (%2F) in a path segment with an HTML 400 before the application, and the owner moved every value that can carry '/' or ':' to a query parameter"
     decision: "owner 393 / 406, batch 1b lane R7-ui (0.1.0 unreleased)"
+  - method: GET
+    path: /compliance/reports
+    corrected: 2026-11-21
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "GET /compliance/reports?from&to&verifyChains&format (operationId getComplianceReport): the period and the format as query parameters"
+    to: "POST /compliance/reports with the JSON body ComplianceReportRequest {from, to, verifyChains, format} and an Idempotency-Key (operationId generateComplianceReport, command compliance.report.generate); same answers and permission; the GET is removed (405)"
+    reason: "generation inserts CMP_REPORT and audit REPORT_GENERATED; a GET must not write (CodeQL alert 298)"
+    decision: "owner, 2026-11-20 (register P-1, 'Move to POST'; 0.1.0 unreleased)"

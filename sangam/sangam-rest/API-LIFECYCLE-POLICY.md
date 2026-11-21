@@ -38,6 +38,11 @@
 At each release the released `sangam-api.yaml` is copied to `api/baseline/sangam-api-<version>.yaml` and the test
 points at it.
 
+While the baseline version is not released (no release tag), a shape in it that is wrong may be corrected in the
+baseline together with the contract, only with an owner decision; every such correction is an entry under
+`corrections:` in `api/sangam-api-deprecations.yaml` (method, path, date, from, to, reason, decision). After the
+release, section 2 is the only way to remove or change an operation.
+
 ## 4. Changelog
 
 - Each deprecation entry links to its changelog section. The changelog states what is deprecated, the sunset date,

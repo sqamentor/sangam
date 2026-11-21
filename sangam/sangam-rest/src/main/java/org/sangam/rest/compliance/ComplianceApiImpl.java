@@ -398,7 +398,8 @@ public final class ComplianceApiImpl implements ComplianceRestService {
     @Override
     public ComplianceEvidenceReportGenerator.Report report(SecurityIdentity id, Instant from, Instant to,
                                                            boolean verifyChains) {
-        return rtx(c -> compliance.reports.generate(c, id.tenantId(), from, to, verifyChains, id.personId()));
+        // a write (CMP_REPORT, audit event CMP_EVIDENCE_REPORT_GENERATED): the write callback, never the read twin
+        return tx(c -> compliance.reports.generate(c, id.tenantId(), from, to, verifyChains, id.personId()));
     }
 
     @Override

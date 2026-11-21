@@ -3908,7 +3908,7 @@ export interface ComplianceRenderedNotice {
 }
 
 /**
- * Compliance evidence report (JSON; `?format=html` returns the HTML rendering). X-Sangam-Report-Hash carries its hash.
+ * Compliance evidence report (JSON; format `html` in the request returns the HTML rendering). X-Sangam-Report-Hash carries its hash.
  *
  * Schema `ComplianceReport`.
  */
@@ -3918,6 +3918,22 @@ export interface ComplianceReport {
   content?: Record<string, unknown>;
   json?: string;
   html?: string;
+}
+
+/**
+ * The period [from, to) of a compliance evidence report to generate, and how it is answered.
+ *
+ * Schema `ComplianceReportRequest`.
+ */
+export interface ComplianceReportRequest {
+  /** Start of the period (inclusive). Required. */
+  from: string;
+  /** End of the period (exclusive). Required. */
+  to: string;
+  /** Verify the tenant's audit chains for the report. Default true. */
+  verifyChains?: boolean;
+  /** `json` (default) answers the report as application/json; `html` answers its HTML rendering as text/html. One of: json, html. */
+  format?: 'json' | 'html';
 }
 
 /**
