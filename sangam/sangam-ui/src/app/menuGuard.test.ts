@@ -127,3 +127,19 @@ describe('U12d: the operator audit log is in an auditor\'s menu', () => {
     }
   });
 });
+
+describe('U12e: Retention is not open to an auditor', () => {
+  // GET /admin/retention-classes needs admin.read (RegistryController), which sangam-auditor does not hold
+  it('the route refuses sangam-auditor, and the menu never offered it', () => {
+    const auditor = callerOf('sangam-auditor');
+    expect(auditor.permissions).not.toContain('admin.read');
+    expect(opens(auditor, '/admin/retention')).toBe(false);
+    expect(menuRoutes(auditor)).not.toContain('/admin/retention');
+  });
+  it('administrators keep it, in the route and in the menu', () => {
+    for (const g of ['sangam-tenant-admin', 'sangam-admin']) {
+      expect(opens(callerOf(g), '/admin/retention'), g).toBe(true);
+      expect(menuRoutes(callerOf(g)), g).toContain('/admin/retention');
+    }
+  });
+});
