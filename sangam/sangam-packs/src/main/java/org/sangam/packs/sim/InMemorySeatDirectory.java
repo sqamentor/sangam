@@ -120,22 +120,19 @@ public class InMemorySeatDirectory implements SeatDirectory {
 
     @Override
     public Optional<String> seatForRole(String tenantId, String roleCode, String officeId) {
+        // the case office, then its ancestors up to the root; no office (or none above the root) is no seat, never a
+        // seat of the role in another office (IX.5 rules 1 and 2, P-6 finding 4)
         Map<String, Seat> all = seats.getOrDefault(t(tenantId), Map.of());
-        String office = officeId;
-        int guard = 0;
-        while (guard++ < 64) {
+        Map<String, String> parents = officeParent.getOrDefault(t(tenantId), Map.of());
+        String office = officeId == null || officeId.isBlank() ? null : officeId;
+        for (int guard = 0; office != null && guard < 64; guard++) {
             for (Seat s : all.values()) {
-                if (s.role().equals(roleCode) && (office == null || office.isBlank() || s.office().equals(office))) {
+                if (s.role().equals(roleCode) && s.office().equals(office)) {
                     return Optional.of(s.id());
                 }
             }
-            if (office == null || office.isBlank()) {
-                return Optional.empty();
-            }
-            office = officeParent.getOrDefault(t(tenantId), Map.of()).getOrDefault(office, "");
-            if (office.isBlank()) {
-                office = null;
-            }
+            String up = parents.getOrDefault(office, "");
+            office = up.isBlank() ? null : up;
         }
         return Optional.empty();
     }
@@ -143,8 +140,11 @@ public class InMemorySeatDirectory implements SeatDirectory {
     @Override
     public List<String> eligibleSeats(String tenantId, String roleCode, String officeId, LocalDate date) {
         List<String> out = new ArrayList<>();
+        if (officeId == null || officeId.isBlank()) {
+            return out;   // as PacksSeatDirectory: no office, no candidate (never every seat of the role)
+        }
         for (Seat s : seats.getOrDefault(t(tenantId), Map.of()).values()) {
-            if (s.role().equals(roleCode) && (officeId == null || s.office().equals(officeId))
+            if (s.role().equals(roleCode) && s.office().equals(officeId)
                     && holderOf(tenantId, s.id(), date).isPresent()) {
                 out.add(s.id());
             }
