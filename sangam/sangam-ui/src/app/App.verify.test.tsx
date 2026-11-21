@@ -5,9 +5,10 @@
  * for a signed-in caller. The public form (no sign-in, a QR code on a certificate opens it) stays exactly as built:
  * its markup is pinned by a snapshot taken before the change. No role's access changes: the route has no guard.
  */
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import type { Role } from '../api/types';
+import { setConfig } from '../config';
 import { initI18n } from '../i18n';
 
 const auth = vi.hoisted(() => ({ status: 'authenticated', roles: [] as string[], permissions: [] as string[] }));
@@ -30,7 +31,12 @@ vi.mock('../auth/IdleSession', () => ({ IdleSession: () => null }));
 
 import { App } from './App';
 
-beforeAll(() => initI18n('en'));
+beforeAll(() => {
+  initI18n('en');
+  // the public page was pinned with both languages offered (the UI default when the snapshot was taken)
+  setConfig({ locales: 'en,hi' });
+});
+afterAll(() => void setConfig({}));
 
 const at = (path: string) => window.history.replaceState(null, '', path);
 const field = (label: string) => {

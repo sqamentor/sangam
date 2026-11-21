@@ -10,7 +10,7 @@ import nginxTemplate from '../../../deploy/docker/ui/default.conf.template?raw';
 import chartTemplate from '../../../deploy/helm/sangam/templates/ui.yaml?raw';
 import chartValues from '../../../deploy/helm/sangam/values.yaml?raw';
 import layoutSource from './Layout.tsx?raw';
-import { normalise } from '../config';
+import { config, normalise, setConfig } from '../config';
 
 /** The value of a key directly under the top-level `ui:` block of values.yaml. */
 function uiValue(key: string): string | undefined {
@@ -42,6 +42,15 @@ describe('Q6: English only by default', () => {
     expect(nginxTemplate).toContain('"locales":"${SANGAM_LOCALES}"');
     expect(normalise({ locales: 'en', defaultLocale: 'en' }).locales).toEqual(['en']);
     expect(layoutSource).toContain('if (offered.length < 2) return null;');
+  });
+
+  it('a /config.json that names no languages (the dev server, a failed read) gives English only too (src/config.ts)', () => {
+    expect(normalise({}).locales).toEqual(['en']);
+    expect(normalise({ locales: '' }).locales).toEqual(['en']);
+    expect(normalise({ locales: 'xx' }).locales).toEqual(['en']);
+    expect(setConfig({}).locales).toEqual(['en']);
+    expect(config().locales).toEqual(['en']);
+    expect(normalise({}).defaultLanguage).toBe('en');
   });
 
   it('the switch stays for a deployment that sets en,hi', () => {
