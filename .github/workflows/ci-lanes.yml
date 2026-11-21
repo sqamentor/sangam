@@ -121,6 +121,18 @@ jobs:
           [ "${#args[@]}" -gt 0 ] || { echo "ci_plan refused the selection (see its message above); nothing built"; exit 2; }
           echo "mvnw ${args[*]}"
           bash ./mvnw $MAVEN_ARGS "${args[@]}"
+      - name: Clean tree after the tests (E-3)
+        # E-3: the test phase must leave the checkout exactly as checked out. Every path git reports (untracked,
+        # modified, deleted) is printed and fails the job; build output lives in ignored folders (target/, node_modules/).
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          dirty=$(git status --porcelain --untracked-files=all)
+          if [ -n "$dirty" ]; then
+            while IFS= read -r line; do echo "::error::the test phase left the tree dirty: $line"; done <<< "$dirty"
+            exit 1
+          fi
+          echo "tree clean after the tests"
       - name: Maven fetch count (Maven Central 429 evidence)
         if: always()
         run: bash "$GITHUB_WORKSPACE/.github/actions/maven-cache/fetch-count.sh"
@@ -194,6 +206,18 @@ jobs:
           [ "${#args[@]}" -gt 0 ] || { echo "ci_plan refused the selection (see its message above); nothing built"; exit 2; }
           echo "mvnw ${args[*]}"
           bash ./mvnw $MAVEN_ARGS "${args[@]}"
+      - name: Clean tree after the tests (E-3)
+        # E-3: the test phase must leave the checkout exactly as checked out. Every path git reports (untracked,
+        # modified, deleted) is printed and fails the job; build output lives in ignored folders (target/, node_modules/).
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          dirty=$(git status --porcelain --untracked-files=all)
+          if [ -n "$dirty" ]; then
+            while IFS= read -r line; do echo "::error::the test phase left the tree dirty: $line"; done <<< "$dirty"
+            exit 1
+          fi
+          echo "tree clean after the tests"
       - name: Maven fetch count (Maven Central 429 evidence)
         if: always()
         run: bash "$GITHUB_WORKSPACE/.github/actions/maven-cache/fetch-count.sh"
@@ -235,3 +259,15 @@ jobs:
           test -f node_modules/@playwright/test/package.json || { echo "::error::@playwright/test is not installed from package-lock.json"; exit 1; }
           ./node_modules/.bin/playwright install --with-deps chromium
           ./node_modules/.bin/playwright test --config playwright.config.ts --project=chromium --list
+      - name: Clean tree after the tests (E-3)
+        # E-3: the test phase must leave the checkout exactly as checked out. Every path git reports (untracked,
+        # modified, deleted) is printed and fails the job; build output lives in ignored folders (target/, node_modules/).
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          dirty=$(git status --porcelain --untracked-files=all)
+          if [ -n "$dirty" ]; then
+            while IFS= read -r line; do echo "::error::the test phase left the tree dirty: $line"; done <<< "$dirty"
+            exit 1
+          fi
+          echo "tree clean after the tests"
