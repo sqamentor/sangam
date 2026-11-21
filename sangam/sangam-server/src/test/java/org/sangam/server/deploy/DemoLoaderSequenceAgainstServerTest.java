@@ -473,6 +473,39 @@ class DemoLoaderSequenceAgainstServerTest {
                 out.add(connector + " " + operation + " " + q.getValue() + " (amount of " + c.path("id").asText() + ": "
                         + v.path("amount").asText() + "): " + answer.replaceAll("\\s+", " "));
             }
+            if (out.stream().noneMatch(x -> x.startsWith("payee directory"))) {
+                // the connector keeps only the message of what the directory threw; asked directly, the cause shows
+                try {
+                    out.add("payee directory resolve " + byAccount + ": "
+                            + ctx.getBean(org.sangam.config.api.PayeeDirectory.class).resolve(TENANT, byAccount));
+                } catch (RuntimeException e) {
+                    List<String> trace = new ArrayList<>();
+                    for (Throwable t = e; t != null && trace.size() < 4; t = t.getCause()) {
+                        trace.add(t + " at " + (t.getStackTrace().length == 0 ? "?" : t.getStackTrace()[0]));
+                    }
+                    out.add("payee directory resolve " + byAccount + ": threw " + trace);
+                }
+            }
+        }
+        // the operations of bound connectors that have not completed, and every budget distribution, as stored
+        try (var con = ctx.getBean(javax.sql.DataSource.class).getConnection();
+             var ps = con.prepareStatement("SELECT * FROM PACK_OPERATION WHERE tenant_id=? AND (status<>'COMPLETED' OR connector='ledger.distribute')")) {
+            ps.setString(1, TENANT);
+            try (var rs = ps.executeQuery()) {
+                var md = rs.getMetaData();
+                java.util.Set<String> shown = java.util.Set.of("connector", "operation", "status", "reason_code", "dispatched",
+                        "generation", "business_key", "result_json", "cancel_requested");
+                while (rs.next()) {
+                    Map<String, Object> row = new java.util.TreeMap<>();
+                    for (int i = 1; i <= md.getColumnCount(); i++) {
+                        String name = md.getColumnLabel(i).toLowerCase(Locale.ROOT);
+                        if (shown.contains(name)) {
+                            row.put(name, rs.getString(i));
+                        }
+                    }
+                    out.add("pack operation " + row);
+                }
+            }
         }
         return out;
     }
