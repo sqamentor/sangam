@@ -49,6 +49,7 @@ const mOp = () => import('../modules/operaton');
 const mBulk = () => import('../modules/bulk');
 const RegistryPage = named(mReg, 'RegistryPage');
 const PublicVerify = named(mReg, 'PublicVerify');
+const VerifyDocument = named(mReg, 'VerifyDocument');
 const ResourcesPage = named(mRes, 'ResourcesPage');
 const QueuesPage = named(mRes, 'QueuesPage');
 const QueueDisplay = named(mRes, 'QueueDisplay');
@@ -337,6 +338,8 @@ function AuthedRoutes() {
           <Route path="/portal/consents" element={g(CITIZEN, <PortalConsents />)} />
           <Route path="/portal/notices" element={g(CITIZEN, <PortalNotices />)} />
 
+          {/* Q7 part 3: public on the server, so no guard; signed-out callers get PublicVerify from Gate */}
+          <Route path="/verify/:tenant?" element={<VerifyDocument />} />
           <Route path="/help/accessibility" element={<Accessibility />} />
           <Route path="/help/about" element={<About />} />
           <Route path="/help/glossary" element={<Glossary />} />
@@ -365,8 +368,9 @@ function Gate() {
   const { status } = useAuth();
   const loc = useLocation();
   if (loc.pathname === config().oidc.redirectPath) return <AuthCallback />;
-  // Public page: certificate verification (QR).
-  if (loc.pathname.startsWith('/verify')) return <Suspense fallback={<Loading />}><Routes><Route path="/verify/:tenant?" element={<PublicVerify />} /></Routes></Suspense>;
+  // Public page: certificate verification (QR), without the page frame and without waiting for the sign-in state.
+  // Q7 part 3: a signed-in caller gets the same form inside the frame (AuthedRoutes, /verify/:tenant?).
+  if (loc.pathname.startsWith('/verify') && status !== 'authenticated') return <Suspense fallback={<Loading />}><Routes><Route path="/verify/:tenant?" element={<PublicVerify />} /></Routes></Suspense>;
   if (status === 'loading') return <Loading />;
   // M-033: the privacy policy is public (SecurityConfig.java:80-81); signed-in callers see it inside the app chrome.
   if (status !== 'authenticated' && loc.pathname.startsWith('/privacy')) return <Suspense fallback={<Loading />}><Routes><Route path="/privacy/:tenant?" element={<PublicPrivacy />} /></Routes></Suspense>;
