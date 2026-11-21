@@ -242,7 +242,7 @@ class PackAcceptanceTest {
         String stopAt = run.path("stopAt").asText(null);
         Map<String, Object> vars = AllPacksSmokeTest.bag();
         vars.putAll(JSON.convertValue(s.node().path("startVariables"), Map.class));
-        engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(vars)
+        engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(PackStartOffice.apply(key, vars))
                 .processDefinitionTenantId(PackTestTenant.ID).execute();
         FormAnswers base = new FormAnswers(engine);
         Map<String, Integer> seen = new HashMap<>();

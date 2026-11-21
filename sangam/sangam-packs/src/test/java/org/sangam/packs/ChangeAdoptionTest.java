@@ -108,7 +108,7 @@ class ChangeAdoptionTest {
         java.util.Map<String, Object> v = AllPacksSmokeTest.bag();
         v.put("amount", amount);
         return engine.getRuntimeService().createProcessInstanceByKey("sangam-sec-bank-payment").businessKey(bk)
-                .setVariables(v).processDefinitionTenantId(PackTestTenant.ID).execute().getId();
+                .setVariables(PackStartOffice.apply("sangam-sec-bank-payment", v)).processDefinitionTenantId(PackTestTenant.ID).execute().getId();
     }
 
     @Test

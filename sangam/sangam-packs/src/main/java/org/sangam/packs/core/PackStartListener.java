@@ -22,6 +22,8 @@ import org.sangam.packs.port.PackRuntime;
  *   <li>binds the pack id and version to the case (R43, K10) as {@code packVersion = id@version};</li>
  *   <li>records the initiator person and seat for segregation of duties (K5): the REST layer passes
  *       {@code initiatorPerson} (or Operaton's {@code operaton:initiator}) and {@code actingSeat};</li>
+ *   <li>gives a case without an {@code officeId} the office of the starting seat, audited as
+ *       {@code CASE_OFFICE_ASSIGNED} (IX.5 rule 7, {@link #assignStarterOffice});</li>
  *   <li>stores the material field list and the submitted payload hash (K4) and starts {@code caseVersion} at 1;</li>
  *   <li>starts the case-level statutory clock {@code caseDueAt} when {@code caseSla} is given (R31, GP-35);</li>
  *   <li>decision 394: refuses the start ({@code 422 VALIDATION_FAILED}) when a field named in {@code durationFields}
@@ -84,6 +86,7 @@ public class PackStartListener implements ExecutionListener {
         if (joinsCase) {
             return;
         }
+        assignStarterOffice(ex, tenant);
         ex.setVariable("lastActorPerson", Vars.str(ex, Vars.INITIATOR_PERSON));
         ex.setVariable("lastActorSeat", Vars.str(ex, Vars.INITIATOR_SEAT));
         ex.setVariable(Vars.CASE_VERSION, 1);
@@ -107,6 +110,34 @@ public class PackStartListener implements ExecutionListener {
                 "profileVersion", ex.getVariable("profileVersion")));
         Vars.audit(ex, st.auditEvent(), Vars.map("package", id + "@" + ver,
                 "payloadHash", Vars.str(ex, "submittedPayloadHash")));
+    }
+
+    /**
+     * SANGAM.md IX.5 rule 7 (owner decision 2026-11-21, "Starter seat's office"): a case started without an
+     * {@code officeId} takes the office (org unit) of the seat that starts it, the seat acted with (the REST layer's
+     * {@code X-Sangam-Seat} or acted-for seat), and the assignment is audited. A supplied office is kept. A starter
+     * without a seat, or with a seat the directory gives no office, leaves the case without one: nothing is invented,
+     * and the first seat step is refused ({@code 422 SEAT_UNRESOLVED}) unless the pack itself sets the office.
+     */
+    static void assignStarterOffice(DelegateExecution ex, String tenant) {
+        String office = Vars.str(ex, "officeId");
+        if (office != null && !office.isBlank()) {
+            return;
+        }
+        String seat = Vars.str(ex, "actingSeat");
+        if (seat == null || seat.isBlank()) {
+            seat = Vars.str(ex, Vars.INITIATOR_SEAT);
+        }
+        if (seat == null || seat.isBlank()) {
+            return;
+        }
+        String starterOffice = PackRuntime.seats().officeOf(tenant, seat).filter(o -> !o.isBlank()).orElse(null);
+        if (starterOffice == null) {
+            return;
+        }
+        ex.setVariable("officeId", starterOffice);
+        Vars.audit(ex, "CASE_OFFICE_ASSIGNED", Vars.map("officeId", starterOffice, "seat", seat,
+                "basis", "starter seat"));
     }
 
     /** IFT-6: started by a call activity of another process instance with the same business key (the same case). */
