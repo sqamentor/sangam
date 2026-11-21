@@ -20,6 +20,7 @@ import org.operaton.bpm.engine.runtime.ProcessInstance;
 import org.operaton.bpm.engine.task.IdentityLink;
 import org.operaton.bpm.engine.task.IdentityLinkType;
 import org.operaton.bpm.engine.task.TaskQuery;
+import org.sangam.rest.adapter.jdbc.DenialAudit;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.port.Page;
@@ -587,7 +588,7 @@ public class OperatonTaskAdapter implements TaskPort {
         return tx.inTx(() -> {
             org.operaton.bpm.engine.task.Task t = requireVisible(ctx, taskId);
             Map<String, Object> vars = OperatonSupport.call(() -> tasks.getVariables(taskId));
-            ensureMayAct(ctx, t);
+            ensureMayAct(ctx, t, "task.complete");
             checkSod(ctx, t, vars);
             TaskVersions.check(vars, req.caseVersion(), req.payloadHash(), req.formVersion());
             if (t.getAssignee() == null) {
@@ -649,7 +650,7 @@ public class OperatonTaskAdapter implements TaskPort {
         return tx.inTx(() -> {
             org.operaton.bpm.engine.task.Task t = requireVisible(ctx, taskId);
             Map<String, Object> vars = OperatonSupport.call(() -> tasks.getVariables(taskId));
-            ensureMayAct(ctx, t);
+            ensureMayAct(ctx, t, "task.return");
             checkSod(ctx, t, vars);
             TaskVersions.check(vars, r.caseVersion(), r.payloadHash(), null);
             String pi = t.getProcessInstanceId();
@@ -719,7 +720,7 @@ public class OperatonTaskAdapter implements TaskPort {
         }
         tx.runInTx(() -> {
             org.operaton.bpm.engine.task.Task t = requireVisible(ctx, taskId);
-            ensureMayAct(ctx, t);
+            ensureMayAct(ctx, t, "task.delegate");
             if (r.toUserId() != null) {
                 if (t.getAssignee() == null) {
                     OperatonSupport.run(() -> tasks.claim(taskId, ctx.principalId()));
@@ -812,18 +813,28 @@ public class OperatonTaskAdapter implements TaskPort {
         return ctx.inGroup("sangam-admin") || ctx.inGroup("sangam-operator") || ctx.inGroup("sangam-system");
     }
 
-    /** K3: the caller holds the task, or it is unassigned and the caller is a candidate. */
-    private void ensureMayAct(RequestContext ctx, org.operaton.bpm.engine.task.Task t) {
+    /** K3: the caller holds the task, or it is unassigned and the caller is a candidate; a refusal is AUTH_DENIED (CX-1). */
+    private void ensureMayAct(RequestContext ctx, org.operaton.bpm.engine.task.Task t, String action) {
         if (ctx.principalId().equals(t.getAssignee())) {
             return;
         }
         if (t.getAssignee() != null) {
+            deny(ctx, t, "AUTH_DENIED", DenialAudit.refusal(action, "task", t.getId(), "TASK_HELD_BY_ANOTHER"));
             throw ApiProblem.forbidden("ACTION_NOT_PERMITTED", "The task is held by another officer")
                     .with("claimedBy", t.getAssignee());
         }
         if (!isCandidate(ctx, t.getId())) {
+            deny(ctx, t, "AUTH_DENIED", DenialAudit.refusal(action, "task", t.getId(), "NOT_A_CANDIDATE"));
             throw ApiProblem.notPermitted("task.complete");
         }
+    }
+
+    /**
+     * SL-132: the refusal rolls the command back, so its denial commits alone (root's denial chain, leaf pool, no ROOT_SEQ wait).
+     */
+    private void deny(RequestContext ctx, org.operaton.bpm.engine.task.Task t, String type, Map<String, Object> extra) {
+        extra.put("processInstanceId", t.getProcessInstanceId());
+        denials().record(ctx, root(t), type, taskPayload(ctx, t, extra));
     }
 
     /** K5: same person may not act twice where the model forbids it (IX.5 rule 5). */
@@ -841,12 +852,7 @@ public class OperatonTaskAdapter implements TaskPort {
             violation = true;
         }
         if (violation) {
-            // SL-132: the refusal rolls the completion back, so the denial commits on its own: on the root's denial
-            // chain (no wait for the root chain's ROOT_SEQ row this transaction may hold) through the denial-audit
-            // leaf pool (no second main-pool connection while this transaction holds one).
-            Map<String, Object> extra = new LinkedHashMap<>();
-            extra.put("processInstanceId", t.getProcessInstanceId());
-            denials().record(ctx, root(t), "SOD_VIOLATION_BLOCKED", taskPayload(ctx, t, extra));
+            deny(ctx, t, "SOD_VIOLATION_BLOCKED", new LinkedHashMap<>());
             throw ApiProblem.unprocessable("SOD_VIOLATION",
                     "You acted earlier on this case and cannot act on this step (segregation of duties)");
         }
@@ -921,14 +927,8 @@ public class OperatonTaskAdapter implements TaskPort {
         p.put("actor", ctx.actor());
         p.put("seat_id", ctx.seatId());
         p.put("acted_for_seat_id", ctx.actingForSeatId());
-        if (extra != null) {
-            extra.forEach((k, v) -> {
-                if (v != null) {
-                    p.put(k, v);
-                }
-            });
-        }
-        p.values().removeIf(Objects::isNull);
+        p.putAll(extra == null ? Map.of() : extra);
+        p.values().removeIf(Objects::isNull);   // the task's and the extra's empty fields alike
         return p;
     }
 

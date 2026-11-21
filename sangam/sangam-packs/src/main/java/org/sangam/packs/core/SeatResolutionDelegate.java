@@ -23,13 +23,15 @@ import org.sangam.packs.port.SeatDirectory;
  * Seat resolution by hierarchy, never by person (IX.5 rules 1 and 2). Field {@code op}:
  * <ul>
  *   <li>{@code ROLE}: {@code targetVar} = the seat with role {@code roleVar} (or {@code role}) serving the case office
- *       {@code officeId} (nearest ancestor); if none, the {@code fallbackSeat} (J-P1-E07 no-candidate fallback);</li>
+ *       {@code officeId} (nearest ancestor); if none, the {@code fallbackSeat} (J-P1-E07 no-candidate fallback); with
+ *       neither, the step is refused with {@code 422 SEAT_UNRESOLVED} (fail closed: never the role code as a pool);</li>
  *   <li>{@code ROLES}: maps a comma list of roles (variable {@code rolesVar}) to a comma list of seats in
- *       {@code targetVar} (the n-level recommendation chain, P2 "put up to" path);</li>
+ *       {@code targetVar} (the n-level recommendation chain, P2 "put up to" path); a role without a seat takes the
+ *       fallback seat, else {@code 422 SEAT_UNRESOLVED};</li>
  *   <li>{@code CANDIDATES}: the eligible seats of role {@code role} today, excluding the initiator's seat and any seat
  *       the initiator holds (K5), as {@code <targetVar>Candidates}; the selected seat (variable
  *       {@code selectedSeat}) is re-validated against that list (S07, J-P1-H step 7); with no candidate the
- *       fallback seat is used and {@code assignmentBasis=fallback};</li>
+ *       fallback seat is used and {@code assignmentBasis=fallback}, and without one {@code 422 SEAT_UNRESOLVED};</li>
  *   <li>{@code ESCALATE}: {@code targetVar} = the reporting seat of the seat in {@code targetVar} (power forward,
  *       J-P3-E05);</li>
  *   <li>{@code EXCLUDE_ACTORS}: {@code targetVar} = the seats of the comma list in variable {@code seatsVar}, in that
@@ -72,7 +74,7 @@ public class SeatResolutionDelegate implements JavaDelegate {
                 }
                 String seat = r == null ? null : dir.seatForRole(tenant, r, office).orElse(null);
                 if (seat == null) {
-                    seat = fallback != null ? fallback : r; // the role code doubles as a pooled seat group
+                    seat = fallbackOrRefuse(fallback, r, office);
                     ex.setVariable("assignmentBasis", "fallback");
                 } else {
                     ex.setVariable("assignmentBasis", "hierarchy");
@@ -84,7 +86,7 @@ public class SeatResolutionDelegate implements JavaDelegate {
             case "ROLES" -> {
                 List<String> seats = new ArrayList<>();
                 for (String r : Vars.csv(Vars.str(ex, Vars.field(rolesVar, ex, "recommendationRoles")))) {
-                    seats.add(dir.seatForRole(tenant, r, office).orElse(r));
+                    seats.add(dir.seatForRole(tenant, r, office).orElseGet(() -> fallbackOrRefuse(fallback, r, office)));
                 }
                 ex.setVariable(target, Vars.joinCsv(seats));
             }
@@ -104,6 +106,23 @@ public class SeatResolutionDelegate implements JavaDelegate {
             case "EXCLUDE_ACTORS" -> excludeActors(ex, dir, tenant, target);
             default -> throw new ProcessEngineException("unknown seat op");
         }
+    }
+
+    /** Refusal code of a step for which no seat resolves and the pack names no fallback seat. */
+    public static final String SEAT_UNRESOLVED = "422 SEAT_UNRESOLVED";
+
+    /**
+     * No seat of {@code role} serves {@code office}: the pack's fallback seat (J-P1-E07), else the step is refused with
+     * {@value #SEAT_UNRESOLVED}. Never the role code: a role code as candidate group would offer the step to every
+     * holder of the role in every office (IX.5 rule 1: a task goes to a seat, designation plus office).
+     */
+    static String fallbackOrRefuse(String fallback, String role, String office) {
+        if (fallback != null && !fallback.isBlank()) {
+            return fallback;
+        }
+        throw new ProcessEngineException(SEAT_UNRESOLVED + ": no seat of role " + role + " serves "
+                + (office == null || office.isBlank() ? "the case (it names no officeId)" : "office " + office)
+                + " and the pack names no fallbackSeat (IX.5 rules 1 and 2, J-P1-E07)");
     }
 
     /**
@@ -205,7 +224,7 @@ public class SeatResolutionDelegate implements JavaDelegate {
             chosen = out.get(0);
             basis = "first eligible";
         } else {
-            chosen = fallback == null ? r : fallback;
+            chosen = fallbackOrRefuse(fallback, r, office);
             basis = "fallback";
         }
         ex.setVariable(target, chosen);
