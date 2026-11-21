@@ -11,6 +11,7 @@ import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import { IdleSession } from '../auth/IdleSession';
+import { SeatContextGuard } from '../auth/SeatContextGuard';
 import { SignedOutNotice } from '../auth/SignedOutNotice';
 import { Loading, Notice, PageHeader, ProblemAlert } from '../components/ui';
 import { signInFromTab, TeamsSignInError } from './teamsAuth';
@@ -41,8 +42,10 @@ export function TeamsSignIn({ authenticate, userManager, origin, base }: TeamsTa
     try {
       if (auth.mode === 'dev') await auth.login();
       else {
-        await signInFromTab(authenticate, userManager, origin, base);
-        auth.reload();
+        const user = await signInFromTab(authenticate, userManager, origin, base);
+        // E-29(b): the session is loaded for the new token; when GET /me answers 401 to it, the sign-in below says
+        // that the server did not accept the sign-in (SignedOutNotice), as the console's sign-in screen does
+        await auth.signedIn(user.access_token);
       }
     } catch (e) {
       setFailure(e instanceof TeamsSignInError ? e : new TeamsSignInError('failed', String(e)));
@@ -75,6 +78,8 @@ export function TeamsTab(props: TeamsTabProps) {
     );
   }
   return (
+    // E-32(d): a seat the server no longer accepts (403 SEAT_NOT_HELD) is dropped with a plain message, as in the console
+    <SeatContextGuard>
     <MemoryRouter initialEntries={['/tasks']}>
       {/* decision 359: the same idle sign-out as the console (warning, then the session ends; IdleSession.tsx) */}
       <IdleSession />
@@ -98,6 +103,7 @@ export function TeamsTab(props: TeamsTabProps) {
         </Suspense>
       </main>
     </MemoryRouter>
+    </SeatContextGuard>
   );
 }
 
