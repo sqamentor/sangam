@@ -179,6 +179,19 @@ What the bill journey also needs on the tenant, none of it a connector (found by
 - budget for the account each bill is charged to (its head of account and its `ddoCode`, at the consuming stage of
   ledger BUDGET). A bill whose account holds less than the bill waits at "Held for budget". For this data set:
   head `2054-00-001-01-00-13`, Rs 1,97,050 for `JPR-DDO-0420` (BILL-0001..0005) and Rs 1,50,000 for `DDO-1` (GPF-0001);
-- payees named by account (payee, `payeeAccount`, `ifsc`), not by a party id the registry did not issue;
-- not reached yet: BILL-0003 (the sandbox pays, so the bill closes instead of standing at "payment held") and
-  ADV-0001 (the advance's bill asks ledger `RECOVERY`, which is not defined for the tenant's profile).
+- payees named by account (payee, `payeeAccount`, `ifsc`), not by a party id the registry did not issue, and each a
+  party of the registry: a payee the registry does not hold is refused (`registry.party` answers
+  `PAYEE_NOT_REGISTERED`, the bill is rejected `PAYEE_CHECK_NOT_CONFIRMED`, the refused check is audited
+  `EXT_OP_FAILED` with that reason code). `load_presentation_data.py` registers the six payees of the data set
+  (`payees`) by account through `POST /registry/parties` unless the registry already holds them;
+- budget for BA-0001: `load_presentation_data.py` releases `setup.budget` through the ledger API (ALLOCATE, then
+  DISTRIBUTE) with `SANGAM_ADMIN_TOKEN`. The amount is ASSUMED, not an IFMS figure:
+
+  | Ledger | Head | Stages | Amount | Why |
+  |---|---|---|---|---|
+  | BUDGET, FY 2026-27 | `2054-00-097-01-00-01` | APPROPRIATION > ALLOCATION > RELEASE (holder `-`) | Rs 43,00,000 | BA-0001 distributes Rs 25,00,000 from the released stage; BA-0002 Rs 18,00,000 once sanctioned |
+
+- not reached, named gaps: BILL-0003 (the sandbox pays, so the bill closes instead of standing at "payment held";
+  SANGAM.md defines no payment-hold directive for a hosted load, so the loader sends none) and ADV-0001 ("IFMS
+  ledger RECOVERY not available": the advance's bill asks ledger `RECOVERY`; it closes when the IFMS ledger connector
+  exists, no RECOVERY ledger is defined here).

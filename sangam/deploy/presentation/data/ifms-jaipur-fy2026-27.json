@@ -114,6 +114,20 @@
       "designation": "Lower Division Clerk"
     }
   ],
+  "setup": {
+    "comment": "Register E-26 Follow-up 2 (v), joint decision EV-M-0964: budget the cases draw on that no runbook step releases. load_presentation_data.py makes each release through the ledger API (ALLOCATE at the first stage, then one DISTRIBUTE per further stage) with SANGAM_ADMIN_TOKEN, never by a database write, and skips it when the first-stage account already holds the amount. Every amount here is ASSUMED: it is not an IFMS figure; the integrator puts it to the owner before the image.",
+    "budget": [
+      {
+        "ledger": "BUDGET",
+        "headOfAccount": "2054-00-097-01-00-01",
+        "stages": ["APPROPRIATION", "ALLOCATION", "RELEASE"],
+        "amount": 430000000,
+        "assumed": true,
+        "why": "the released budget BA-0001 distributes from (Rs 25,00,000) plus that of BA-0002 (Rs 18,00,000) when it is sanctioned",
+        "auditRef": "Budget distribution order, FY 2026-27"
+      }
+    ]
+  },
   "cases": [
     {
       "id": "BILL-0001",

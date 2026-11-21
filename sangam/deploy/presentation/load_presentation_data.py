@@ -3,6 +3,12 @@
 DEMO-DATA lane 2026-11-19; reworked against a production-mode server by DEMO-LOADER (EV-M-0932, 2026-11-20).
 Run after seed_presentation.py (tenant, seats, postings exist; every person signed in once).
 
+Before the cases, the data set's own set-up is applied with a tenant administrator's token (SANGAM_ADMIN_TOKEN, as for
+the seed and the preflight; register E-26 Follow-up 2): each payee of 'payees' is registered in the party registry by
+its bank account unless the registry already holds it (a bill's payee must be a registered party), and each release
+of 'setup.budget' is made through the ledger's ALLOCATE and DISTRIBUTE operations unless its first-stage account
+already holds the amount. Every such amount is ASSUMED and printed so. Without the token the load is refused.
+
 Each case is started by the person the data set names (startedBy) and every task it opens is completed by the person
 who holds the task's seat, each with that person's own bearer token and seat (header X-Sangam-Seat), so separation of
 duties and the audit chain are the real ones:
@@ -60,10 +66,11 @@ def token_of(user):
     return os.environ.get("SANGAM_PRESENTATION_TOKEN_" + user.upper().replace(".", "_").replace("-", "_"))
 
 
-def http(method, url, token, body=None, seat=None):
+def http(method, url, token, body=None, seat=None, headers=None):
     h = {"Authorization": "Bearer " + token, "Accept": "application/json"}
     if seat:
         h["X-Sangam-Seat"] = seat
+    h.update(headers or {})
     data = None
     if body is not None:
         data = json.dumps(body).encode("utf-8")
@@ -210,6 +217,94 @@ def run_case(base, case, people, dry, settle):
     return ok
 
 
+def rupees(paise):
+    """Integer paise (the data set's money, SD-398) as the ledger API's decimal rupees."""
+    return f"{paise // 100}.{paise % 100:02d}"
+
+
+def setup_payees(base, ds, tok, dry):
+    """Register E-26 Follow-up 2 (vi): a bill's payee must be a party of the registry (an unregistered payee is
+    refused). Each payee of the data set is registered once by its bank account (POST /registry/parties), after a
+    lookup by that account (GET /registry/parties?idType=BANK_ACCOUNT): one holder is kept as it is, none is created,
+    more than one is reported and nothing is changed. Returns what went wrong."""
+    wrong = []
+    for p in ds.get("payees") or []:
+        account = f"{p['payeeAccount']}@{p['ifsc']}"
+        if dry:
+            print(f"  set-up payee {p['employeeId']}: register by account if absent")
+            continue
+        q = urllib.parse.urlencode({"idType": "BANK_ACCOUNT", "idValue": account, "size": 10})
+        found = items_of(http("GET", f"{base}/registry/parties?{q}", tok, headers={"X-Purpose": "payment"}))
+        if len(found) > 1:
+            wrong.append(f"payee {p['employeeId']}: {len(found)} parties hold its account")
+            print(f"  set-up payee {p['employeeId']}: {len(found)} parties hold the account, nothing changed")
+            continue
+        if found:
+            print(f"  set-up payee {p['employeeId']}: already registered")
+            continue
+        http("POST", f"{base}/registry/parties", tok,
+             {"kind": "PERSON", "name": p["payee"], "source": "payments",
+              "identifiers": [{"type": "BANK_ACCOUNT", "value": account}]},
+             headers={"Idempotency-Key": f"presentation-payee-{ds['dataSet']}-{p['employeeId']}", "X-Purpose": "payment"})
+        print(f"  set-up payee {p['employeeId']}: registered")
+    return wrong
+
+
+def setup_budget(base, ds, tok, dry):
+    """Register E-26 Follow-up 2 (v): budget the data set's cases draw on that no other step releases, through the
+    ledger's own operations (POST /ledger/by-ledger/operations: ALLOCATE at the first stage, one DISTRIBUTE per further
+    stage), never a database write. Every amount is ASSUMED (setup.budget[].assumed) and printed so. A release whose
+    first-stage account already holds the amount is not repeated (a second run changes nothing)."""
+    for b in (ds.get("setup") or {}).get("budget") or []:
+        ledger, head, stages, amount = b["ledger"], b["headOfAccount"], b["stages"], b["amount"]
+        period = ds["fiscalYear"]
+        line = (f"set-up budget {ledger} {period} head {head}: Rs {rupees(amount)} through {' > '.join(stages)}"
+                + (" (ASSUMED: " + b["why"] + ")" if b.get("assumed") else ""))
+        if dry:
+            print("  " + line + " [plan]")
+            continue
+        q = urllib.parse.urlencode({"ledger": ledger, "period": period, "line": head, "holder": "-", "stage": stages[0]})
+        held = [a for a in items_of(http("GET", f"{base}/ledger/by-ledger/accounts?{q}", tok))
+                if float(a.get("total") or 0) * 100 >= amount]
+        if held:
+            print("  " + line + ": already released")
+            continue
+
+        def account(stage):
+            return {"period": period, "line": head, "holder": "-", "stage": stage}
+
+        steps = [("ALLOCATE", account(stages[0]), None)] + [
+            ("DISTRIBUTE", account(stages[i - 1]), account(stages[i])) for i in range(1, len(stages))]
+        for op, at, to in steps:
+            ref = f"{ledger}/{period}/{head}/{op}/{at['stage']}" + (f">{to['stage']}" if to else "")
+            body = {"operation": op, "account": at, "amount": rupees(amount), "reference": ref,
+                    "auditRef": b["auditRef"], "fromCommitment": False, "fromEncumbrance": False, "holdIfShort": False}
+            if to:
+                body["target"] = to
+            r = http("POST", f"{base}/ledger/by-ledger/operations?ledger={urllib.parse.quote(ledger)}", tok, body,
+                     headers={"Idempotency-Key": f"presentation-{ds['dataSet']}-{ref}"})
+            if not (r or {}).get("applied"):
+                raise Refused("POST", f"{base}/ledger/by-ledger/operations", 200, f"{op} {ref} not applied: {r}")
+        print("  " + line + ": released")
+    return []
+
+
+def setup(base, ds, dry):
+    """The data set's set-up (payees, budget) with a tenant administrator's token (SANGAM_ADMIN_TOKEN, the token the
+    seed and the preflight use). Without it nothing is set up and the load is refused: the cases would only fail."""
+    if not (ds.get("payees") or (ds.get("setup") or {}).get("budget")):
+        return []
+    tok = os.environ.get("SANGAM_ADMIN_TOKEN")
+    if not dry and not tok:
+        print("  set-up refused: SANGAM_ADMIN_TOKEN is not set")
+        return ["set-up (SANGAM_ADMIN_TOKEN is not set)"]
+    try:
+        return setup_payees(base, ds, tok, dry) + setup_budget(base, ds, tok, dry)
+    except Refused as e:
+        print(f"  set-up stopped: {e}")
+        return [f"set-up ({e})"]
+
+
 def main():
     dry = "--dry-run" in sys.argv[1:]
     sets = sys.argv[sys.argv.index("--data") + 1:sys.argv.index("--data") + 2] if "--data" in sys.argv else [DATA]
@@ -223,6 +318,7 @@ def main():
             ds = json.load(f)
         print(f"data set {ds['dataSet']} {ds['version']}: tenant {ds['tenant']}, {len(ds['cases'])} cases"
               + (" (dry run: no network)" if dry else ""))
+        wrong += setup(base, ds, dry)
         for case in ds["cases"]:
             try:
                 if not run_case(base, case, ds["people"], dry, settle):
