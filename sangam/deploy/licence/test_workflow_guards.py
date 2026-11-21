@@ -482,5 +482,39 @@ class FetchTool(unittest.TestCase):
                     self.assertEqual(repo_of(v), repo_of(t["url"]), f"{name} {k}")
 
 
+class PinnedToolVersions(unittest.TestCase):
+    """Register P-4: the owner extended the unsigned, checksum-only exception of decision 191 to kubeconform 0.8.0
+    (2026-11-20). The pin, its checksum and the job log line move together."""
+
+    def test_kubeconform_is_pinned_at_0_8_0_checksum_only(self):
+        t = PINS["tools"]["kubeconform"]
+        self.assertEqual(t["version"], "0.8.0")
+        self.assertEqual(t["url"], "https://github.com/yannh/kubeconform/releases/download/v0.8.0/"
+                                   "kubeconform-linux-amd64.tar.gz")
+        # SHA-256 of kubeconform-linux-amd64.tar.gz in the vendor's v0.8.0 CHECKSUMS file (L9 inventory, 2026-11-19)
+        self.assertEqual(t["sha256"], "9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883")
+        sig = ft.signature_record("kubeconform", t)
+        self.assertEqual(sig["kind"], "none", "kubeconform publishes no signature")
+        self.assertEqual(sig["decision"], "191")
+        self.assertIn("v0.8.0", sig["reason"], "the exception names the version it covers")
+        self.assertNotIn("0.7.0", json.dumps(t))
+
+    def test_step_names_state_the_pinned_version_of_each_tool(self):
+        """A step name that gives a pinned tool's version gives the pinned one (the job log is the record)."""
+        seen = set()
+        for name in sorted(os.listdir(WORKFLOWS)):
+            if not name.endswith((".yml", ".yaml")):
+                continue
+            with open(os.path.join(WORKFLOWS, name), encoding="utf-8") as f:
+                for no, line in enumerate(f, 1):
+                    if not re.match(r"\s*- name:", line):
+                        continue
+                    for tool, t in PINS["tools"].items():
+                        for v in re.findall(rf"\b{re.escape(tool)} v?(\d+\.\d+\.\d+)\b", line):
+                            seen.add(tool)
+                            self.assertEqual(v, t["version"], f"{name}:{no} names {tool} {v}")
+        self.assertIn("kubeconform", seen, "the kubeconform step still states its version")
+
+
 if __name__ == "__main__":
     unittest.main()
