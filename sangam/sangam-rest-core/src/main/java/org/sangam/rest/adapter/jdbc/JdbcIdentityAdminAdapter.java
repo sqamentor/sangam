@@ -296,14 +296,14 @@ public final class JdbcIdentityAdminAdapter implements IdentityAdminPort {
     }
 
     // ------------------------------------------------------------------ SoD exceptions (IX.5 rule 5)
-
     @Override
     public Page<SodException> sodExceptions(RequestContext ctx, String status, Page.PageRequest page) {
         if (status != null) {
             JdbcSupport.oneOf(status, "status", SOD_STATUSES);
         }
         String tenant = JdbcSupport.tenant(ctx);
-        // Round 9 CSRF: a read never writes; expiry is loadSod's effective status (enforcement checks expires_at)
+        tx.withConnection(c -> Jdbc.update(c, "UPDATE SEC_SOD_EXCEPTION SET status='EXPIRED' WHERE tenant_id=?"
+                + " AND status IN ('PENDING','APPROVED') AND expires_at < " + tx.dialect().now(), tenant));
         List<SodException> all = loadSod(tenant, null).stream().filter(e -> status == null || status.equals(e.status()))
                 .sorted(Comparator.comparing(SodException::expiresAt, Comparator.nullsLast(Comparator.naturalOrder())))
                 .toList();
