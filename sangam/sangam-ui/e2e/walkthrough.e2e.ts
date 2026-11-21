@@ -22,7 +22,14 @@ import { request, type APIRequestContext, type Page } from '@playwright/test';
 import { test, expect } from './support/fixtures';
 import { API_BASE, devToken, t } from './support/env';
 
-const OPEN_STEPS: Record<string, string> = {};
+const OPEN_STEPS: Record<string, string> = {
+  // ui.yml run 44863340501 (chromium and firefox): the bill started on the Start page stops at the task bl_bindingHold
+  // ("Profile binding missing: bind the bill type in the profile, then check again"); the test-mode tenant has no
+  // profile binding for the bill type, so the case never reaches the PAO chain, and the task list names no seat for
+  // that task (seatId empty). Not a wait for the sandbox bill journey (register E-26): that is the demo build's.
+  '4 dealing hand acts': 'the bill stops at bl_bindingHold on the e2e stack: no profile binding for the bill type in the test-mode tenant',
+  '5 PAO acts': 'as step 4: the case does not reach pc_pao on the e2e stack',
+};
 
 const OFFICE = 'E2E-WALK-OFFICE';
 /** The seats the bill and its PAO chain route to (pack defaults: scrutinySeat, dealingSeat, the chain's own seats). */
