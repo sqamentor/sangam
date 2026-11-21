@@ -163,7 +163,12 @@ class PolicyChangeQueueAgainstServerTest {
         }
     }
 
-    /** Another tenant's change id is 404 for read and decision alike, and the change is left as it was. */
+    /**
+     * Another tenant's change id is 404 for read and decision alike, and the change is left as it was. The routes first
+     * answer the caller's own change (200), and each 404 names the resource {@code policy change}: a missing route also
+     * answers 404 NOT_FOUND ("No such endpoint"), so without both checks this test passed before the routes existed
+     * (red run 44877035833).
+     */
     @Test
     void anotherTenantsChangeIdIs404() throws Exception {
         try (ConfigurableApplicationContext ctx = start("other-tenant")) {
@@ -176,16 +181,21 @@ class PolicyChangeQueueAgainstServerTest {
                 assertEquals(1, ps.executeUpdate());
             }
             String admin = admin(RAJENDRA);
+            HttpResponse<String> list = send("GET", api(ctx) + "/admin/policies/changes", admin, null);
+            assertEquals(200, list.statusCode(), "the queue route answers the caller's tenant: " + list.body());
+            String own = items(list.body()).get(0).path("id").asText();
+            HttpResponse<String> mine = send("GET", api(ctx) + "/admin/policies/changes/" + own, admin, null);
+            assertEquals(200, mine.statusCode(), "the caller's own change is readable: " + mine.body());
+
             HttpResponse<String> get = send("GET", api(ctx) + "/admin/policies/changes/" + other, admin, null);
-            assertEquals(404, get.statusCode(), get.body());
-            assertEquals("NOT_FOUND", code(get), get.body());
+            assertGuarded404(get, "read of another tenant's change");
             for (String act : List.of("approve", "reject")) {
                 HttpResponse<String> r = send("POST", api(ctx) + "/admin/policies/changes/" + other + "/" + act, admin,
                         Map.of("reason", "not mine"));
-                assertEquals(404, r.statusCode(), act + ": " + r.body());
+                assertGuarded404(r, act + " of another tenant's change");
             }
             HttpResponse<String> none = send("GET", api(ctx) + "/admin/policies/changes/" + UUID.randomUUID(), admin, null);
-            assertEquals(404, none.statusCode(), none.body());
+            assertGuarded404(none, "read of an id that is no change");
             assertFalse(send("GET", api(ctx) + "/admin/policies/changes", admin, null).body().contains(other),
                     "the list holds only the caller's tenant");
             assertEquals(List.of("PENDING"), PacksOfBootstrapTenantAgainstServerTest.query(ctx,
@@ -275,6 +285,13 @@ class PolicyChangeQueueAgainstServerTest {
         List<JsonNode> out = new ArrayList<>();
         list.forEach(out::add);
         return out;
+    }
+
+    /** 404 NOT_FOUND from the queue's own tenant guard: the problem names the resource (not "No such endpoint"). */
+    private static void assertGuarded404(HttpResponse<String> r, String what) throws Exception {
+        assertEquals(404, r.statusCode(), what + ": " + r.body());
+        assertEquals("NOT_FOUND", code(r), what + ": " + r.body());
+        assertEquals("policy change", JSON.readTree(r.body()).path("resource").asText(), what + ": " + r.body());
     }
 
     private static String code(HttpResponse<String> r) {
