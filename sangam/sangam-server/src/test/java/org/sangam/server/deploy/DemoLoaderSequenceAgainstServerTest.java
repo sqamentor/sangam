@@ -156,7 +156,12 @@ class DemoLoaderSequenceAgainstServerTest {
         });
         List<String> status = new ArrayList<>();
         List<String> wrong = new ArrayList<>();
+        // a gap set other than the as-deployed one is that of a server whose packs are deployed (register E-26)
+        boolean packs = gaps != OPEN_GAPS;
         for (String name : steps) {
+            if (packs && "3b smoke".equals(name) && !step(status, "3a bill funds", () -> fundBills(api))) {
+                wrong.add("3a bill funds failed");
+            }
             boolean passed = step(status, name, all.get(name));
             if (passed == gaps.contains(name)) {
                 wrong.add(passed ? name + " passes now: take it off the open gaps" : name + " failed");
@@ -175,10 +180,11 @@ class DemoLoaderSequenceAgainstServerTest {
                     + (e.atTarget() ? "AT TARGET" : "NOT AT TARGET") + ": " + e.text()));
             status.add("DEMO-SEQUENCE | targets | INFO | " + ends.stream().filter(End::atTarget).count() + " of " + ends.size()
                     + " cases at their target; not at target " + ends.stream().filter(e -> !e.atTarget()).map(End::id).toList());
-            if (!gaps.contains("3b smoke")) {
+            if (packs) {
                 probes(ctx).forEach(p -> status.add("DEMO-SEQUENCE | probe | INFO | " + p));
-                if (!step(status, "bill journey", () -> billJourney(ends))) {
-                    wrong.add("bill journey failed");
+                boolean passed = step(status, "bill journey", () -> billJourney(ends));
+                if (passed == gaps.contains("bill journey")) {
+                    wrong.add(passed ? "bill journey passes now: take it off the open gaps" : "bill journey failed");
                 }
                 if (!step(status, "sandbox marks", () -> sandboxMarks(ctx, api))) {
                     wrong.add("sandbox marks failed");
@@ -224,12 +230,17 @@ class DemoLoaderSequenceAgainstServerTest {
             }
         }
         var bindings = ctx.getBean(org.sangam.integration.packs.PackConnectorBindings.class);
+        var registered = ctx.getBean(org.sangam.integration.connector.ConnectorRegistry.class);
         List<String> bound = new ArrayList<>();
         List<String> sandbox = new ArrayList<>();
         List<String> nobody = new ArrayList<>();
         for (String id : ids) {
             boolean sim = org.sangam.packs.sim.DemoSandbox.simulates(TENANT, id);
-            (sim ? sandbox : bindings.binding(TENANT, id).isPresent() ? bound : nobody).add(id);
+            // register E-26: a binding to an integration connector that is not registered here answers nothing
+            var binding = bindings.binding(TENANT, id);
+            boolean answered = binding.isPresent() && registered.find(TENANT, binding.get().connectorId()).isPresent();
+            (sim ? sandbox : answered ? bound : nobody).add(id + (binding.isPresent() && !answered && !sim
+                    ? " (bound to " + binding.get().connectorId() + ", which is not registered)" : ""));
         }
         return "bound " + bound + "; sandbox " + sandbox + "; NOT CONFIGURED " + nobody;
     }
@@ -884,45 +895,78 @@ class DemoLoaderSequenceAgainstServerTest {
 
     /** 3a: ALLOCATE at the first stage, then one DISTRIBUTE per further stage; DDO-1 holds the consuming stage. */
     private static String fund(String api) throws Exception {
+        return fund(api, HEAD, "DDO-1", RUPEES);
+    }
+
+    /** ALLOCATE {@code rupees} on {@code head} at the first stage, then DISTRIBUTE down to {@code holder}. */
+    private static String fund(String api, String head, String holder, String rupees) throws Exception {
         String admin = PresentationSeedAgainstServerTest.token("rajendra.sharma", List.of("sangam-tenant-admin", "sangam-user"));
         String period = JSON.readTree(DATA.toFile()).path("fiscalYear").asText();
         assertEquals("2026-27", period);
-        Map<String, Object> at = account(period, "-", STAGES.get(0));
-        operation(api, admin, "ALLOCATE", at, null);
+        Map<String, Object> at = account(period, head, "-", STAGES.get(0));
+        operation(api, admin, "ALLOCATE", at, null, rupees, holder);
         for (int i = 1; i < STAGES.size(); i++) {
-            Map<String, Object> next = account(period, i == STAGES.size() - 1 ? "DDO-1" : "-", STAGES.get(i));
-            operation(api, admin, "DISTRIBUTE", at, next);
+            Map<String, Object> next = account(period, head, i == STAGES.size() - 1 ? holder : "-", STAGES.get(i));
+            operation(api, admin, "DISTRIBUTE", at, next, rupees, holder);
             at = next;
         }
         JsonNode accounts = PresentationSeedAgainstServerTest.get(api + "/ledger/by-ledger/accounts?ledger=BUDGET&period=" + period
-                + "&line=" + HEAD + "&holder=DDO-1&stage=" + STAGES.get(STAGES.size() - 1), admin);
+                + "&line=" + head + "&holder=" + holder + "&stage=" + STAGES.get(STAGES.size() - 1), admin);
         assertEquals(1, accounts.size(), accounts.toString());
-        assertEquals(0, new java.math.BigDecimal(RUPEES).compareTo(new java.math.BigDecimal(accounts.get(0).path("available").asText())),
-                "Rs 25 lakh available to DDO-1: " + accounts);
-        return "ALLOCATE + " + (STAGES.size() - 1) + " DISTRIBUTE applied; available to DDO-1 at " + STAGES.get(STAGES.size() - 1)
+        assertEquals(0, new java.math.BigDecimal(rupees).compareTo(new java.math.BigDecimal(accounts.get(0).path("available").asText())),
+                "Rs " + rupees + " available to " + holder + ": " + accounts);
+        return "ALLOCATE + " + (STAGES.size() - 1) + " DISTRIBUTE applied; available to " + holder + " at " + STAGES.get(STAGES.size() - 1)
                 + " = " + accounts.get(0).path("available").asText() + " " + accounts.get(0).path("currency").asText();
     }
 
-    private static Map<String, Object> account(String period, String holder, String stage) {
+    /**
+     * Register E-26: the budget the bill cases are charged to. Step 3a allots head 2210-00-101-01-00-31 to DDO-1 only;
+     * a bill asks the ledger for its own head and drawing officer (bl_funds) and waits for budget when that account
+     * holds less than the bill. Per account (head of account, {@code ddoCode}; the bill pack's defaults where the case
+     * names none) the sum of the bill cases charged to ledger BUDGET, allotted the way step 3a allots.
+     */
+    private static String fundBills(String api) throws Exception {
+        Map<String, Long> paise = new java.util.TreeMap<>();
+        for (JsonNode c : JSON.readTree(DATA.toFile()).path("cases")) {
+            // an advance is charged to ledger RECOVERY (av_defaults), which is not this ledger
+            if (BILL_JOURNEY.contains(c.path("id").asText()) && !"sangam-ifms-advance".equals(c.path("process").asText())) {
+                JsonNode v = c.path("variables");
+                paise.merge(v.path("headOfAccount").asText("2054-00-001-01-00-13") + "|" + v.path("ddoCode").asText("DDO-1"),
+                        v.path("amount").asLong(), Long::sum);
+            }
+        }
+        List<String> done = new ArrayList<>();
+        for (Map.Entry<String, Long> e : paise.entrySet()) {
+            String head = e.getKey().substring(0, e.getKey().indexOf('|'));
+            String holder = e.getKey().substring(e.getKey().indexOf('|') + 1);
+            String rupees = java.math.BigDecimal.valueOf(e.getValue(), 2).toPlainString();
+            fund(api, head, holder, rupees);
+            done.add(head + " to " + holder + ": Rs " + rupees);
+        }
+        return "allotted " + done;
+    }
+
+    private static Map<String, Object> account(String period, String head, String holder, String stage) {
         Map<String, Object> a = new LinkedHashMap<>();
         a.put("period", period);
-        a.put("line", HEAD);
+        a.put("line", head);
         a.put("holder", holder);
         a.put("stage", stage);
         return a;
     }
 
-    private static void operation(String api, String admin, String op, Map<String, Object> account, Map<String, Object> target)
-            throws Exception {
+    private static void operation(String api, String admin, String op, Map<String, Object> account, Map<String, Object> target,
+                                  String rupees, String holder) throws Exception {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("operation", op);
         body.put("account", account);
         if (target != null) {
             body.put("target", target);
         }
-        body.put("amount", RUPEES);
-        body.put("reference", "BUDGET/" + account.get("period") + "/" + HEAD + "/" + op + "/" + account.get("stage")
-                + (target == null ? "" : ">" + target.get("stage")));
+        body.put("amount", rupees);
+        // step 3a's own references are kept as they are on the live host (head 2210-00-101-01-00-31, DDO-1)
+        body.put("reference", "BUDGET/" + account.get("period") + "/" + account.get("line") + "/" + op + "/" + account.get("stage")
+                + (target == null ? "" : ">" + target.get("stage")) + ("DDO-1".equals(holder) && HEAD.equals(account.get("line")) ? "" : "/" + holder));
         body.put("auditRef", "Budget distribution order, FY 2026-27");
         // the three flags are required booleans of the request (400 VALIDATION_FAILED when one is missing)
         body.put("fromCommitment", false);
