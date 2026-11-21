@@ -109,3 +109,21 @@ describe('U12c: Deployments is in the menu of the designers who may open it', ()
     }
   });
 });
+
+describe('U12d: the operator audit log is in an auditor\'s menu', () => {
+  // GET /history/operation-log needs history.read (HistoryAuditController), which sangam-auditor holds
+  it('sangam-auditor may open it and finds it in the menu, alone from Monitor and fix', () => {
+    const auditor = callerOf('sangam-auditor');
+    expect(auditor.permissions).toContain('history.read');
+    expect(opens(auditor, '/ops/audit-log')).toBe(true);
+    expect(menuRoutes(auditor)).toContain('/ops/audit-log');
+    expect(menuRoutes(auditor).filter((r) => r.startsWith('/ops'))).toEqual(['/ops/audit-log']);
+  });
+  it('operators keep it; a caller the route refuses does not get it', () => {
+    for (const g of ['sangam-operator', 'sangam-engine-admin', 'sangam-admin']) expect(menuRoutes(callerOf(g)), g).toContain('/ops/audit-log');
+    for (const g of ['sangam-user', 'sangam-tenant-admin', 'sangam-dpo', 'sangam-model-author']) {
+      expect(opens(callerOf(g), '/ops/audit-log'), g).toBe(false);
+      expect(menuRoutes(callerOf(g)), g).not.toContain('/ops/audit-log');
+    }
+  });
+});
