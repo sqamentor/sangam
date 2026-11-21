@@ -15,16 +15,25 @@ duties and the audit chain are the real ones:
     the fields are reported.
 
 A case stops at its 'stopAt' task (RUNNING). After the last task the case is read back and compared with the target
-the data set declares: COMPLETED (ended), RUNNING (open at stopAt), WAITING (open, no task for anyone, in the
+the data set declares: COMPLETED (ended, in case state CLOSED), RUNNING (open at stopAt), WAITING (open, no task for anyone, in the
 declared case state) or PAYMENT_HELD (open, no task for anyone, past the PAO). The exit code is 1 when a case is not
 at its target. A task at a seat that none of the data set's people holds is seen by nobody here: the case then shows
 as not at its target. Nothing here pays anything: the tenant's payment
 connector must be the sandbox or a held rail (money paths are not live for IFMS, SD-553).
 
 Tokens never come from this repository: SANGAM_PRESENTATION_TOKEN_<USERNAME> (upper case, '.' and '-' as '_') holds
-a bearer token of that user, obtained by signing in. Nothing secret is printed. A second run changes nothing: a case
-whose business key already exists is not started again; its open tasks are continued, so a run that stopped half way
-(a dropped connection, an expired token) is resumed by the next run.
+a bearer token of that user, obtained by signing in. Nothing secret is printed.
+
+A reload after a partial load. The server has no rule that a business key is unique (a second start with the same key
+is a second instance), so this script is the guard: a case whose business key already exists, open or ended, is never
+started again. It is continued from where it stands (its open tasks are completed, an outside answer is sent only
+where the case waits for it), so a run that stopped half way (a killed process, a dropped connection, an expired
+token) is resumed by the next run, and a run on a finished load changes nothing. What the next run finds is judged
+like any case: an instance that ended without reaching CLOSED (rejected, cancelled) is NOT AT TARGET, and so is an
+open one on which an incident is recorded (the server's list answers with every instance that ever had one, so a case
+whose incident an operator has resolved is still shown to a person to look at). Two instances on one key are reported
+and neither is touched. The script never cancels or removes anything: what to do with an instance that cannot reach
+its target any more is an operator's decision.
 
   python -I deploy/presentation/load_presentation_data.py --dry-run     # plan only, no network
   python -I deploy/presentation/load_presentation_data.py               # apply (SANGAM_API_BASE + tokens)
@@ -122,26 +131,49 @@ def open_tasks(base, bk, people):
     return out
 
 
+def tree(base, bk, tok, incidents=False):
+    """Every process instance that carries the business key, ended ones included: the case's own instance and the
+    processes it called (a call passes the key on). With incidents=True only those on which an incident is recorded."""
+    q = {"businessKey": bk, "size": 100}
+    if incidents:
+        q["withIncidents"] = "true"
+    return items_of(http("GET", f"{base}/process-instances?{urllib.parse.urlencode(q)}", tok))
+
+
+def own(found):
+    """The instances no other instance called. One is the case; none means it was never started. The server has no
+    rule that a business key is unique, so more than one is possible, and then nobody can say which is the case."""
+    return [i for i in found if not i.get("superProcessInstanceId")]
+
+
 def instance(base, bk, tok):
     """The case's own process instance (the one no other instance called), or None."""
-    q = urllib.parse.urlencode({"businessKey": bk, "size": 100})
-    found = items_of(http("GET", f"{base}/process-instances?{q}", tok))
-    roots = [i for i in found if not i.get("superProcessInstanceId")]
+    roots = own(tree(base, bk, tok))
     # the list leaves activeActivityIds empty; the instance itself names where it stands
     return http("GET", f"{base}/process-instances/{urllib.parse.quote(roots[0]['id'])}", tok) if roots else None
 
 
-def at_target(case, inst, waits_at, open_keys, case_state):
+def waits_where(base, bk, tok):
+    """The activities the case stands at, over its own instance and the processes it called."""
+    out = set()
+    for i in tree(base, bk, tok):
+        if not i.get("ended"):
+            one = http("GET", f"{base}/process-instances/{urllib.parse.quote(i['id'])}", tok) or {}
+            out.update(one.get("activeActivityIds") or [])
+    return out
+
+
+def at_target(case, inst, waits_at, open_keys, case_state, incident=False):
     """The rules of PresentationDataSetH2Test, as far as the REST API shows them to the person who started the case."""
     target = case["target"]
     if inst is None:
         return False
-    if target == "COMPLETED":
-        return bool(inst.get("ended"))
+    if target == "COMPLETED":    # ended is not enough: a rejected or cancelled case has ended too
+        return bool(inst.get("ended")) and case_state == "CLOSED"
     if target == "RUNNING":
         return not inst.get("ended") and waits_at == case.get("stopAt")
-    if inst.get("ended") or open_keys:
-        return False
+    if inst.get("ended") or open_keys or incident:
+        return False             # a case that stopped at a failed step is open with no task too; it waits for nothing
     if target == "WAITING":      # waits for time or an outside answer, in the state the data set declares
         return case_state == case.get("expectState")
     # PAYMENT_HELD: passed by the PAO and not closed; a case still as it was submitted has not got that far
@@ -160,7 +192,12 @@ def run_case(base, case, people, dry, settle):
         print(f"    skipped: no token for {by}")
         return False
     seat = (people.get(by) or {}).get("seat")
-    if instance(base, bk, tok) is None:
+    roots = own(tree(base, bk, tok))
+    if len(roots) > 1:
+        print(f"    {len(roots)} instances carry this business key: not continued and nothing started (one case is one "
+              "instance; which of them is the case is an operator's decision)")
+        return False
+    if not roots:
         http("POST", f"{base}/process-instances", tok,
              {"key": case["process"], "businessKey": bk, "variables": case["variables"]}, seat=seat)
         print("    started")
@@ -178,14 +215,18 @@ def run_case(base, case, people, dry, settle):
             inst = instance(base, bk, tok)
             if inst and inst.get("ended"):
                 break
-            if not sent and quiet >= min(settle, 6) and case.get("events"):
-                for ev in case["events"]:
-                    # an outside answer the data set declares (the citizen's rating): POST /messages by business key
-                    http("POST", f"{base}/messages", tok, {"messageName": ev["message"], "businessKey": bk,
-                                                            "variables": ev.get("variables", {}), "all": False})
-                    print(f"    message {ev['message']} delivered")
-                sent, quiet = True, 0.0
-                continue
+            if not sent and case.get("events"):
+                # An outside answer the data set declares (the citizen's rating) is sent where the case waits for it
+                # ('when', the rule of PresentationDataSetH2Test) and nowhere else: a case that stands somewhere
+                # else has no use for it. An event without 'when' is sent once the case has been quiet for a while.
+                where = waits_where(base, bk, tok)
+                if all(ev["when"] in where if ev.get("when") else quiet >= min(settle, 6) for ev in case["events"]):
+                    for ev in case["events"]:
+                        http("POST", f"{base}/messages", tok, {"messageName": ev["message"], "businessKey": bk,
+                                                                "variables": ev.get("variables", {}), "all": False})
+                        print(f"    message {ev['message']} delivered")
+                    sent, quiet = True, 0.0
+                    continue
             time.sleep(2)
             quiet += 2
             continue
@@ -199,13 +240,18 @@ def run_case(base, case, people, dry, settle):
             print(f"    {t.get('taskDefinitionKey')} done by {who}")
     inst = instance(base, bk, tok)
     open_keys = [t.get("taskDefinitionKey") for t, _, _ in open_tasks(base, bk, people)]
-    case_state = None
-    if inst is not None and not inst.get("ended"):
+    case_state, incident = None, False
+    if inst is not None:
+        # an ended instance answers with the variables it ended with (the server reads them from its history)
         case_state = (http("GET", f"{base}/process-instances/{urllib.parse.quote(inst['id'])}/variables", tok) or {}).get("caseState")
-    ok = at_target(case, inst, waits_at, open_keys, case_state)
+        if isinstance(case_state, dict):
+            case_state = case_state.get("value")
+        incident = not inst.get("ended") and bool(tree(base, bk, tok, incidents=True))
+    ok = at_target(case, inst, waits_at, open_keys, case_state, incident)
     state = "no instance" if inst is None else ("ended" if inst.get("ended") else "open at " + ", ".join(
         inst.get("activeActivityIds") or ["(nothing active)"]))
     print(f"    {'OK' if ok else 'NOT AT TARGET'}: {state}" + (f", case state {case_state}" if case_state else "")
+          + ("; an incident is recorded on the case (a step failed: the operator's view names it)" if incident else "")
           + (f"; open tasks {', '.join(open_keys)}" if open_keys else ""))
     return ok
 
@@ -229,6 +275,9 @@ def main():
                     wrong.append(case["id"])
             except Refused as e:
                 print(f"    stopped: {e}")
+                wrong.append(case["id"])
+            except OSError as e:     # the connection dropped or timed out: the next run continues from here
+                print(f"    stopped: no answer from the server ({type(e).__name__}); run again to continue")
                 wrong.append(case["id"])
     if wrong:
         raise SystemExit(f"{len(wrong)} case(s) not at their target: {', '.join(wrong)}")
