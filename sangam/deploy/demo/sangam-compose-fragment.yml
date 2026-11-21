@@ -136,6 +136,14 @@ services:
       # preferred_username), NOT sub: realm oneifms's sangam-ui tokens carry no sub. Do not put ':' or ',' in a name.
       SANGAM_SECURITY_FIRSTADMINS_TENANT: GOI.FIN
       SANGAM_SECURITY_FIRSTADMINS_SUBJECTS: ${SANGAM_SECURITY_FIRSTADMINS_SUBJECTS:-rajendra.sharma:rajendra.sharma:Rajendra Prasad Sharma,meenakshi.kanwar:meenakshi.kanwar:Meenakshi Kanwar}
+      # Register E-25: the workflow packs of GOI.FIN. FirstAdminBootstrap creates the tenant and deploys no pack, and
+      # the demo has no platform administrator who could onboard it, so the packs are deployed at start-up for the
+      # tenants listed here: one engine deployment per shipped pack (pack:<id>@<version>); a later start deploys
+      # nothing again and leaves running cases alone. BOTH lines are needed: outside profile h2
+      # sangam.packs.deploy-on-start defaults to false. Keep the list equal to SANGAM_SECURITY_FIRSTADMINS_TENANT.
+      # Without them every process start of the tenant answers 404 (no process definition).
+      SANGAM_PACKS_DEPLOY_ON_START: "true"
+      SANGAM_PACKS_TENANTS: GOI.FIN
       # Owner decision 2026-11-19 (EV-M-0890 (a)): written demo waiver, no scanner.
       SANGAM_MALWARE_SCANNER: none
       SANGAM_MALWARE_PRODUCTIONWAIVER: "demo.ifms.dev, synthetic data only, behind Cloudflare Access"

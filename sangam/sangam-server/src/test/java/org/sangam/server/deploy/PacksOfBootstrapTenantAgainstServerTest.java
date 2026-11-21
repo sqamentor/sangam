@@ -144,6 +144,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
 
             assertEquals("CREATED", tenantStatus(ctx, TENANT), "nothing above changed the tenant");
             assertEquals(List.of(), installed(ctx, TENANT), "and nothing above deployed a pack");
+            readOnlyCheck(ctx, 0);
 
             // the other half of the hook: before PackagePort.transition with action deploy. An officer reaches the
             // route (package.read); for a package that does not exist the answer is 404 and no pack is deployed. A
@@ -327,38 +328,30 @@ class PacksOfBootstrapTenantAgainstServerTest {
     }
 
     /**
-     * The check IFMS can run on the host without changing anything, as any signed-in user of the tenant: the tenant's
-     * deployments are listed, one {@code pack:<id>@<version>} per shipped pack, and the definition the first smoke case
-     * starts is there.
+     * The check IFMS can run on the host without changing anything, as any signed-in user of the tenant (the two
+     * commands of deploy/demo/README.md): one page of {@code GET /deployments} holds one {@code "name":"pack:<id>@<version>"}
+     * per shipped pack (none as deployed), and the definition the first smoke case starts is there (or is not). The
+     * list also holds the deployments that belong to no tenant, so its {@code X-Total-Count} is only reported.
      */
     private static void readOnlyCheck(ConfigurableApplicationContext ctx, int expected) throws Exception {
         String api = api(ctx);
         String officer = token("kavita.sharma", List.of("DDO", "sangam-user"));
+        HttpResponse<String> page = send("GET", api + "/deployments?page=0&size=500", officer, null);
+        assertEquals(200, page.statusCode(), page.body());
         Set<String> names = new TreeSet<>();
-        String total = null;
-        for (int page = 0; page < 50; page++) {
-            HttpResponse<String> r = send("GET", api + "/deployments?page=" + page + "&size=100", officer, null);
-            assertEquals(200, r.statusCode(), r.body());
-            total = r.headers().firstValue("X-Total-Count").orElse(total);
-            JsonNode body = JSON.readTree(r.body());
-            JsonNode list = body.isArray() ? body : body.path("items");
-            list.forEach(d -> {
-                if (d.path("name").asText().startsWith("pack:")) {
-                    names.add(d.path("name").asText());
-                }
-            });
-            if (list.size() < 100) {
-                break;
-            }
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"name\":\"pack:[^\"]*\"").matcher(page.body());
+        while (m.find()) {
+            names.add(m.group());
         }
         JsonNode bill = PresentationSeedAgainstServerTest.get(api + "/process-definitions?key=sangam-ifms-bill&latest=true", officer);
         int found = (bill.isArray() ? bill : bill.path("items")).size();
-        fact("read-only check: GET /deployments as an officer", names.size() + " deployments named pack:<id>@<version>"
-                + " (X-Total-Count " + total + "); GET /process-definitions?key=sangam-ifms-bill&latest=true: " + found);
+        fact("read-only check: GET /deployments?page=0&size=500 as an officer", names.size()
+                + " distinct \"name\":\"pack:<id>@<version>\" (X-Total-Count " + page.headers().firstValue("X-Total-Count").orElse("-")
+                + ", deployments of the tenant in the engine " + deployments(ctx, TENANT).size()
+                + "); GET /process-definitions?key=sangam-ifms-bill&latest=true: " + found);
         assertEquals(expected, names.size(), "one pack deployment per shipped pack is listed: " + names);
-        assertEquals(1, found, bill.toString());
+        assertEquals(expected == 0 ? 0 : 1, found, bill.toString());
     }
-
     // ------------------------------------------------------------------ one demo host across starts
 
     /** One demo host: its database, its keys and its key attestation, across starts (decision 387(4)). */
@@ -530,7 +523,8 @@ class PacksOfBootstrapTenantAgainstServerTest {
             try (java.sql.ResultSet rs = c.getMetaData().getColumns(c.getCatalog(), null, null, null)) {
                 while (rs.next()) {
                     String table = rs.getString("TABLE_NAME").toUpperCase(java.util.Locale.ROOT);
-                    if ("TENANT_ID".equalsIgnoreCase(rs.getString("COLUMN_NAME"))
+                    // a quota window is a rate counter of the running server, not data of the tenant
+                    if ("TENANT_ID".equalsIgnoreCase(rs.getString("COLUMN_NAME")) && !table.endsWith("_WINDOW")
                             && (table.startsWith("SEC_") || table.startsWith("LDG_"))) {
                         tables.add(table);
                     }

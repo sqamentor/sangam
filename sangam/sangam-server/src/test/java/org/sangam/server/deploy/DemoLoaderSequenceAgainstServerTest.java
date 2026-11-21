@@ -202,9 +202,14 @@ class DemoLoaderSequenceAgainstServerTest {
     /**
      * Register E-25 point 4: where each case of the data set (and the two smoke cases, which are among them) stands,
      * read from the engine. Per case: its target, then every open process instance of its tree (the case's own and the
-     * processes it called) with the activities it waits at, the open tasks with their seats, and every incident and
-     * failed job with its message; {@code waits for connector} names the connector ids of {@link #connectors} that such
-     * a message cites. A case that was never started, or has ended, says so.
+     * processes it called) with the activities it waits at, the open tasks with their seats, every incident and
+     * failed job with its message, and every connector step whose committed outcome is not COMPLETED: the variables
+     * {@code <prefix>Status} and {@code <prefix>ReasonCode} that ConnectorCallDelegate writes, with the connector id the
+     * instance's own deployed model gives that prefix ({@link #connectorsByPrefix}); for the core execution step
+     * (prefix {@code op}) the connector is the instance's {@code executionConnector}. {@code waits for connector} names
+     * the connector ids found that way, those a message cites, and {@code docs.issue} for a document that could not be
+     * issued (DocumentDelegate). A failed job is rolled back to its last asynchronous point, so its activity is where
+     * the job starts, not always where the connector is called. A case that was never started, or has ended, says so.
      */
     static List<String> stops(ConfigurableApplicationContext ctx) throws Exception {
         org.operaton.bpm.engine.ProcessEngine engine = ctx.getBean(org.operaton.bpm.engine.ProcessEngine.class);
@@ -256,13 +261,65 @@ class DemoLoaderSequenceAgainstServerTest {
                     }
                     for (String m : messages) {
                         known.stream().filter(String.valueOf(m)::contains).forEach(waitsFor::add);
+                        if (String.valueOf(m).contains("could not be issued")) {
+                            waitsFor.add("docs.issue");
+                        }
                         String line = String.valueOf(m).replaceAll("\\s+", " ");
                         sb.append(", ").append(line.length() > 260 ? line.substring(0, 260) + "..." : line);
+                    }
+                    Map<String, Object> variables = engine.getRuntimeService().getVariables(pi.getId());
+                    Map<String, String> byPrefix;
+                    try (java.io.InputStream model = engine.getRepositoryService().getProcessModel(pi.getProcessDefinitionId())) {
+                        byPrefix = connectorsByPrefix(new String(model.readAllBytes(), StandardCharsets.UTF_8));
+                    }
+                    Map<String, String> open = new java.util.TreeMap<>();
+                    variables.forEach((name, value) -> {
+                        // a connector step writes both variables (the reason code also when it is null)
+                        if (name.endsWith("Status") && value instanceof String status && !"COMPLETED".equals(status)
+                                && variables.containsKey(name.substring(0, name.length() - "Status".length()) + "ReasonCode")) {
+                            String prefix = name.substring(0, name.length() - "Status".length());
+                            String connector = "op".equals(prefix) && variables.get("executionConnector") != null
+                                    ? String.valueOf(variables.get("executionConnector")) : byPrefix.get(prefix);
+                            open.put(connector == null ? "(prefix " + prefix + ")" : connector,
+                                    status + "/" + variables.get(prefix + "ReasonCode"));
+                            if (connector != null) {
+                                waitsFor.add(connector);
+                            }
+                        }
+                    });
+                    if (!open.isEmpty()) {
+                        sb.append(", connector steps not completed ").append(open);
+                    }
+                    if (variables.get("caseState") != null) {
+                        sb.append(", case state ").append(variables.get("caseState"));
                     }
                     at.add(sb.toString());
                 }
             }
             out.add(head + String.join(" | ", at) + (waitsFor.isEmpty() ? "" : " | waits for connector " + waitsFor));
+        }
+        return out;
+    }
+
+    /**
+     * The connector steps of one process model: result prefix to connector id, as ConnectorCallDelegate reads its
+     * fields ({@code resultPrefix}, else the last segment of {@code connector}). A connector given as an expression is
+     * left out.
+     */
+    static Map<String, String> connectorsByPrefix(String bpmn) {
+        Map<String, String> out = new java.util.TreeMap<>();
+        Matcher task = Pattern.compile("<serviceTask\\b[^>]*>(.*?)</serviceTask>", Pattern.DOTALL).matcher(bpmn);
+        Pattern field = Pattern.compile("<operaton:field name=\"(connector|resultPrefix)\">\\s*<operaton:string>([^<]*)<");
+        while (task.find()) {
+            Map<String, String> fields = new LinkedHashMap<>();
+            Matcher f = field.matcher(task.group(1));
+            while (f.find()) {
+                fields.put(f.group(1), f.group(2).strip());
+            }
+            String connector = fields.get("connector");
+            if (connector != null && !connector.contains("${")) {
+                out.put(fields.getOrDefault("resultPrefix", connector.substring(connector.lastIndexOf('.') + 1)), connector);
+            }
         }
         return out;
     }

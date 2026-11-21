@@ -41,3 +41,38 @@ docker image inspect -f '{{.Id}}' sangam-front:demo-<tag>    # must equal the im
 
 The `<RUN_ID>` and `<tag>` of the current hand-over are given in the runbook. Set `SANGAM_IMAGE_TAG=demo-<tag>` in
 `sangam-demo.env`.
+
+## Workflow packs of GOI.FIN (register E-25)
+
+`FirstAdminBootstrap` creates the tenant `GOI.FIN` and deploys no workflow pack, and the demo has no platform
+administrator who could onboard the tenant. The fragment therefore carries two settings on `sangam-server`:
+
+```
+SANGAM_PACKS_DEPLOY_ON_START: "true"
+SANGAM_PACKS_TENANTS: GOI.FIN
+```
+
+At every start the server then makes sure each pack shipped in the image is deployed for `GOI.FIN`, one engine
+deployment per pack named `pack:<id>@<version>`. The first such start deploys them; a later start deploys nothing
+again and leaves running cases on the definitions they were started on. Both lines are needed (outside profile `h2`
+the default of `sangam.packs.deploy-on-start` is false), and they need no new image: on a host that already runs,
+add the two lines and recreate the server container (`up -d sangam-server`). Without them every process start of the
+tenant answers `404` (no process definition). Proven by `PacksOfBootstrapTenantAgainstServerTest` (H2) and
+`PresentationSeedOnLaneDatabaseIT` (PostgreSQL, the fragment's own profiles).
+
+Read-only check, as any signed-in user of the tenant (role `sangam-user`; `<token>` is that user's bearer token):
+
+```
+curl -sS -H "Authorization: Bearer <token>" "https://demo.ifms.dev/sangam/api/v1/deployments?page=0&size=500" \
+  | grep -o '"name":"pack:[^"]*"' | sort -u | wc -l     # the number of packs in the image
+curl -sS -H "Authorization: Bearer <token>" \
+  "https://demo.ifms.dev/sangam/api/v1/process-definitions?key=sangam-ifms-bill&latest=true"   # one definition
+```
+
+Before the packs are deployed the first command prints `0` and the second an empty list; afterwards the first prints
+the number of packs the image ships (the server log of the start says `Deployed <n> packs for tenant GOI.FIN` with
+the same number) and the second one definition. The tenant's audit chain `sec:GOI.FIN` gets one `PACKS_DEPLOYED`
+event per start.
+
+Connectors are a separate matter (register E-26): with the packs deployed, cases still stop where a pack calls a
+connector that nothing answers on the demo. No `SANGAM_CONNECTORS_*` value is part of this change.
