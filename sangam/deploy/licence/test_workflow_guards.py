@@ -516,5 +516,36 @@ class PinnedToolVersions(unittest.TestCase):
         self.assertIn("kubeconform", seen, "the kubeconform step still states its version")
 
 
+class PhpSdkTestToolLock(unittest.TestCase):
+    """Register P-5 (advisory PKSA-z3gr-8qht-p93v): the PHP SDK's test runner is phpunit 11.5.58 or later in the 11.5
+    line, in the committed lock (what CI installs) and as the floor of composer.json (what a re-resolve may pick)."""
+
+    PHP = os.path.join(REPO, "sangam", "sdks", "php")
+    FLOOR = (11, 5, 58)
+
+    def test_the_lock_installs_phpunit_at_or_above_the_fixed_version(self):
+        with open(os.path.join(self.PHP, "composer.lock"), encoding="utf-8") as f:
+            lock = json.load(f)
+        found = [p["version"] for p in lock.get("packages", []) + lock.get("packages-dev", [])
+                 if p["name"] == "phpunit/phpunit"]
+        self.assertEqual(len(found), 1, found)
+        version = tuple(int(x) for x in found[0].lstrip("v").split("."))
+        self.assertEqual(version[:2], (11, 5), found[0])
+        self.assertGreaterEqual(version, self.FLOOR, f"phpunit {found[0]} is in the range of PKSA-z3gr-8qht-p93v")
+
+    def test_composer_json_cannot_resolve_below_the_fixed_version(self):
+        with open(os.path.join(self.PHP, "composer.json"), encoding="utf-8") as f:
+            constraint = json.load(f)["require-dev"]["phpunit/phpunit"]
+        m = re.fullmatch(r"\^(\d+)\.(\d+)\.(\d+)", constraint)
+        self.assertIsNotNone(m, f"a caret constraint with a patch floor is expected, got {constraint!r}")
+        self.assertGreaterEqual(tuple(int(x) for x in m.groups()), self.FLOOR, constraint)
+
+    def test_sdks_workflow_names_no_older_phpunit(self):
+        with open(os.path.join(WORKFLOWS, "sdks.yml"), encoding="utf-8") as f:
+            for no, line in enumerate(f, 1):
+                for v in re.findall(r"phpunit (\d+\.\d+\.\d+)", line):
+                    self.assertGreaterEqual(tuple(int(x) for x in v.split(".")), self.FLOOR, f"sdks.yml:{no}")
+
+
 if __name__ == "__main__":
     unittest.main()
