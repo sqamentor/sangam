@@ -275,8 +275,10 @@ function AuthedRoutes() {
           <Route path="/ops/migration" element={g(OPS, <Migration />)} />
           <Route path="/ops/jobs" element={g(OPS, <Jobs />)} />
           <Route path="/ops/outbox" element={g(OPS, <OutboxInbox />)} />
-          <Route path="/ops/workers" element={g([...OPS, 'INTEGRATION'], <Workers />)} />
-          <Route path="/ops/events" element={g([...OPS, 'INTEGRATION'], <EventRegistry />)} />
+          {/* U12b: sangam-integration holds none of the permissions these four pages load with (ops.read, event.admin,
+              admin.read), so its role is not in their guards; a console for that persona (PER-9) is a later decision */}
+          <Route path="/ops/workers" element={g(OPS, <Workers />)} />
+          <Route path="/ops/events" element={g(OPS, <EventRegistry />)} />
           <Route path="/ops/notifications" element={g(OPS, <NotificationFailures />)} />
           <Route path="/ops/deployments" element={g([...OPS, ...MODEL], <Deployments />)} />
           <Route path="/ops/cleanup" element={g(OPS, <Cleanup />)} />
@@ -295,8 +297,8 @@ function AuthedRoutes() {
           <Route path="/admin/users" element={g(ADMIN, <Users />)} />
           <Route path="/admin/groups" element={g(ADMIN, <Groups />)} />
           <Route path="/admin/idp" element={g(ADMIN, <IdentityProviders />)} />
-          <Route path="/admin/principals" element={g([...ADMIN, 'INTEGRATION'], <ServicePrincipals />)} />
-          <Route path="/admin/services" element={g([...ADMIN, 'INTEGRATION'], <ServiceRegistry />)} />
+          <Route path="/admin/principals" element={g(ADMIN, <ServicePrincipals />)} />
+          <Route path="/admin/services" element={g(ADMIN, <ServiceRegistry />)} />
           <Route path="/admin/sla" element={g(ADMIN, <SlaModels />)} />
           <Route path="/admin/routing" element={g(ADMIN, <RoutingStrategies />)} />
           <Route path="/admin/templates" element={g(ADMIN, <Templates />)} />
