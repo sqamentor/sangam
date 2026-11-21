@@ -24,8 +24,11 @@ describe('test support reads the route table', () => {
 });
 
 describe('U12a: a menu group shows only for the callers it is meant for', () => {
-  it('an auditor does not get My work (it held only Department tools)', () => {
+  it('an auditor does not get My work (it held only Department tools: 7 of the 9 entries)', () => {
     const auditor = callerOf('sangam-auditor');
+    // the section has 9 entries; an auditor may open 7: /m/field and /m/ai need field.capture and ai.use (USER_EXTRA_HOLDERS)
+    expect(DEPARTMENT_TOOLS).toHaveLength(9);
+    expect(DEPARTMENT_TOOLS.filter((r) => opens(auditor, r))).toEqual(['/m/ledger', '/m/billing', '/m/programmes', '/m/resources', '/m/queues', '/m/rosters', '/m/geo']);
     expect(menuGroups(auditor)).not.toContain('work');
     for (const r of DEPARTMENT_TOOLS) expect(menuRoutes(auditor), r).not.toContain(r);
     // what an auditor is meant to see stays: Track and find, Reports and audit
@@ -159,16 +162,17 @@ describe('U12f: the list of organisations is for platform administrators only (d
   });
 });
 
-describe('U12g: Extra fields is an administrator page; holding form.read does not bring Set up into the menu', () => {
+describe('U12g: Extra fields is an administrator entry; holding form.read does not bring Set up into the menu', () => {
+  // Integrator ruling 2026-11-21 (joint ledger [AGREE] 03:57 UTC): the menu entry only; the route guard stays as built.
   // GET /custom-fields needs form.read, which every user, operator and designer holds for filling forms; defining and
   // retiring a field need tenant.admin (TenantCustomFieldController), the page's job
-  it.each(['sangam-user', 'sangam-operator', 'sangam-model-author'])('%s holds form.read and gets neither Set up nor the page', (group) => {
+  it.each(['sangam-user', 'sangam-operator', 'sangam-model-author'])('%s holds form.read and does not get Set up; the route guard is unchanged', (group) => {
     const caller = callerOf(group);
     expect(caller.permissions).toContain('form.read');
     expect(caller.permissions).not.toContain('tenant.admin');
     expect(menuGroups(caller)).not.toContain('setup');
     expect(menuRoutes(caller)).not.toContain('/admin/custom-fields');
-    expect(opens(caller, '/admin/custom-fields')).toBe(false);
+    expect(opens(caller, '/admin/custom-fields')).toBe(true);
   });
   it('an organisation admin and a platform admin keep it, in the route and in the menu; nobody else has Set up', () => {
     for (const g of ['sangam-tenant-admin', 'sangam-admin']) {
@@ -246,6 +250,11 @@ const INTENDED: Record<string, string[]> = {
     '/design/test | sangam-admin',
     '/design/test | sangam-engine-admin',
   ],
+  'U12g: Extra fields is an administrator entry; the ruling changes the menu only, the guard (form.read) stays as built': [
+    '/admin/custom-fields | sangam-user',
+    '/admin/custom-fields | sangam-operator',
+    '/admin/custom-fields | sangam-model-author',
+  ],
   'U12h: Event types is hidden from a caller without event.admin; the record changes the menu only, not the guard': [
     '/ops/events | sangam-operator',
     '/ops/events | sangam-engine-admin',
@@ -273,7 +282,7 @@ describe('every route against its menu entry, per server group', () => {
     const intended = Object.values(INTENDED).flat();
     expect(new Set(intended).size).toBe(intended.length);
     expect(cells('R').sort()).toEqual([...intended].sort());
-    expect(intended).toHaveLength(29);
+    expect(intended).toHaveLength(32);
   });
 
   it('every menu entry is a route of the table, and every caller\'s menu is covered by the table', () => {
