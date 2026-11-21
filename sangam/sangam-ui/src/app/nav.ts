@@ -203,8 +203,8 @@ export const NAV: NavArea[] = [
           e('monitor', 'outbox', '/ops/outbox'),
           e('monitor', 'workers', '/ops/workers'),
           e('monitor', 'notifications', '/ops/notifications'),
-          // U12h: the page loads with event.admin, which an operator does not hold; shown within the group's roles only.
-          e('monitor', 'events', '/ops/events', { access: EVENT_ADMIN, only: OPS }),
+          // U12h: the page and its route guard follow event.admin, which an operator does not hold and an organisation admin does.
+          e('monitor', 'events', '/ops/events', { access: EVENT_ADMIN }),
           e('monitor', 'money', '/ops/reconciliation'),
         ],
       },

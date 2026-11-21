@@ -8,7 +8,7 @@ import type { Role } from '../api/types';
 import { config } from '../config';
 import { Layout } from './Layout';
 import { NAV, visibleNav } from './nav';
-import { ROUTE_ACCESS, TEAM_READ, canAccess, type Access } from './access';
+import { EVENT_ADMIN, ROUTE_ACCESS, TEAM_READ, canAccess, type Access } from './access';
 import { AuthCallback, SignIn } from '../areas/auth/SignIn';
 import { IdleSession } from '../auth/IdleSession';
 import { Loading, Notice, PageHeader } from '../components/ui';
@@ -282,7 +282,8 @@ function AuthedRoutes() {
           {/* U12b: sangam-integration holds none of the permissions these four pages load with (ops.read, event.admin,
               admin.read), so its role is not in their guards; a console for that persona (PER-9) is a later decision */}
           <Route path="/ops/workers" element={g(OPS, <Workers />)} />
-          <Route path="/ops/events" element={g(OPS, <EventRegistry />)} />
+          {/* U12h (owner, 2026-11-21): the page loads with event.admin, so the guard follows that permission, not a role */}
+          <Route path="/ops/events" element={<Guard access={EVENT_ADMIN}>{<EventRegistry />}</Guard>} />
           <Route path="/ops/notifications" element={g(OPS, <NotificationFailures />)} />
           <Route path="/ops/deployments" element={g([...OPS, ...MODEL], <Deployments />)} />
           <Route path="/ops/cleanup" element={g(OPS, <Cleanup />)} />

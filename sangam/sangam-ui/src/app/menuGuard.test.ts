@@ -90,7 +90,9 @@ describe('U12b: the INTEGRATION role is not let into pages its permissions canno
   });
   it('no route names the INTEGRATION role any more, and the callers who had these pages keep them', () => {
     expect(ROUTES.filter((r) => r.roles?.includes('INTEGRATION')).map((r) => r.path)).toEqual([]);
-    for (const p of ['/ops/workers', '/ops/events']) for (const g of ['sangam-operator', 'sangam-engine-admin', 'sangam-admin']) expect(opens(callerOf(g), p), `${g} ${p}`).toBe(true);
+    for (const g of ['sangam-operator', 'sangam-engine-admin', 'sangam-admin']) expect(opens(callerOf(g), '/ops/workers'), g).toBe(true);
+    // /ops/events follows event.admin (U12h)
+    for (const g of ['sangam-tenant-admin', 'sangam-admin']) expect(opens(callerOf(g), '/ops/events'), g).toBe(true);
     for (const p of ['/admin/principals', '/admin/services']) for (const g of ['sangam-tenant-admin', 'sangam-admin']) expect(opens(callerOf(g), p), `${g} ${p}`).toBe(true);
     expect(SERVER_GROUPS).toContain('sangam-integration');
   });

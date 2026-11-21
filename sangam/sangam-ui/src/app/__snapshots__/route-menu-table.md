@@ -71,7 +71,7 @@ M = open and in the menu (for a sub-page: the entry above it); o = open, the pag
 | /ops/jobs | OPERATOR, PLATFORM_OPERATOR | /ops/jobs | . | . | M | . | . | . | M | M | . | . | . | . | . | . | . | . |
 | /ops/outbox | OPERATOR, PLATFORM_OPERATOR | /ops/outbox | . | . | M | . | . | . | M | M | . | . | . | . | . | . | . | . |
 | /ops/workers | OPERATOR, PLATFORM_OPERATOR | /ops/workers | . | . | M | . | . | . | M | M | . | . | . | . | . | . | . | . |
-| /ops/events | OPERATOR, PLATFORM_OPERATOR | /ops/events | . | . | R | . | . | . | M | R | . | . | . | . | . | . | . | . |
+| /ops/events | perm event.admin | /ops/events | . | . | . | . | . | M | M | . | . | . | . | . | . | . | . | . |
 | /ops/notifications | OPERATOR, PLATFORM_OPERATOR | /ops/notifications | . | . | M | . | . | . | M | M | . | . | . | . | . | . | . | . |
 | /ops/deployments | OPERATOR, PLATFORM_OPERATOR, MODELLER, REVIEWER | /ops/deployments | . | . | M | . | . | . | M | M | M | M | M | . | . | . | . | . |
 | /ops/cleanup | OPERATOR, PLATFORM_OPERATOR | /ops/cleanup | . | . | M | . | . | . | M | M | . | . | . | . | . | . | . | . |
@@ -127,7 +127,7 @@ M = open and in the menu (for a sub-page: the entry above it); o = open, the pag
 
 Redirects: /inbox to /tasks; /ops/task-dashboard to /team; /ops/debugger to /design/test.
 
-Totals: 115 routes x 16 groups = 1840 cells; M 344, o 112, . 1357, R 27, X 0.
+Totals: 115 routes x 16 groups = 1840 cells; M 345, o 112, . 1358, R 25, X 0.
 
 ## Open without a menu entry (R), each intended
 
@@ -153,8 +153,6 @@ Totals: 115 routes x 16 groups = 1840 cells; M 344, o 112, . 1357, R 27, X 0.
 | /cases/:id | sangam-operator | a request page opened from the operator's lists (Requests in Monitor and fix); My requests is a task user's entry |
 | /cases/:id | sangam-admin | a request page opened from the operator's lists (Requests in Monitor and fix); My requests is a task user's entry |
 | /cases/:id | sangam-engine-admin | a request page opened from the operator's lists (Requests in Monitor and fix); My requests is a task user's entry |
-| /ops/events | sangam-operator | U12h: Event types is hidden from a caller without event.admin; the record changes the menu only, not the guard |
-| /ops/events | sangam-engine-admin | U12h: Event types is hidden from a caller without event.admin; the record changes the menu only, not the guard |
 | /design/test | sangam-operator | U12a: Design is the designers' group; Test run alone does not bring it to operators (route guard unchanged) |
 | /design/test | sangam-engine-admin | U12a: Design is the designers' group; Test run alone does not bring it to operators (route guard unchanged) |
 | /audit | sangam-user | decision 397 Q6: a task user reads a request's history from inside the request; no audit entries in his menu |
@@ -170,7 +168,7 @@ Totals: 115 routes x 16 groups = 1840 cells; M 344, o 112, . 1357, R 27, X 0.
 | sangam-operator | OPERATOR, ANALYST | work, find, monitor, reports, help | 46 |
 | sangam-auditor | AUDITOR, ANALYST | find, monitor, reports, help | 19 |
 | sangam-dpo | - | reports, help | 6 |
-| sangam-tenant-admin | ADMIN, ANALYST | work, setup, reports, help | 43 |
+| sangam-tenant-admin | ADMIN, ANALYST | work, monitor, setup, reports, help | 44 |
 | sangam-admin | ADMIN, PLATFORM_ADMIN, PLATFORM_OPERATOR, ANALYST | work, find, design, monitor, setup, reports, help | 75 |
 | sangam-engine-admin | PLATFORM_OPERATOR | monitor, help | 23 |
 | sangam-model-author | MODELLER | design, monitor, help | 14 |
