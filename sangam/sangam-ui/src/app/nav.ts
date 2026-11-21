@@ -69,7 +69,18 @@ export const MODULE_OF: Readonly<Record<string, string>> = {
   '/m/geo': 'geo',
   '/m/compliance': 'compliance',
 };
-const mod = (group: string, entry: string, to: string) => e(group, entry, to, { access: ROUTE_ACCESS[to], module: MODULE_OF[to] });
+const mod = (group: string, entry: string, to: string, extra: Partial<NavItem> = {}) => e(group, entry, to, { access: ROUTE_ACCESS[to], module: MODULE_OF[to], ...extra });
+/**
+ * U12a (owner, 2026-11-21): a group shows only for the callers it is meant for. An entry with its own `access` is
+ * admitted by the server permission of its screen, which more callers hold than the group is meant for (every staff
+ * role holds the module reads), so such an entry also names whose job it is with `only`; its route guard is unchanged.
+ */
+/** Department tools: not an auditor's work (an auditor holds the module reads, Permissions.java GROUP_AUDITOR). */
+const DEPARTMENT: Role[] = ['TASK_USER', 'OPERATOR', 'ADMIN', 'PLATFORM_ADMIN'];
+/** Track and find: the group's own roles; administrators hold the module reads too. */
+const FIND: Role[] = ['TASK_USER', 'OPERATOR', 'AUDITOR'];
+const dept = (entry: string, to: string) => mod('work', entry, to, { only: DEPARTMENT });
+const find = (entry: string, to: string) => mod('find', entry, to, { only: FIND });
 
 export const NAV: NavArea[] = [
   {
@@ -94,15 +105,15 @@ export const NAV: NavArea[] = [
       {
         label: sec('work', 'department'),
         items: [
-          mod('work', 'ledger', '/m/ledger'),
-          mod('work', 'billing', '/m/billing'),
-          mod('work', 'programmes', '/m/programmes'),
-          mod('work', 'resources', '/m/resources'),
-          mod('work', 'queues', '/m/queues'),
-          mod('work', 'rosters', '/m/rosters'),
-          mod('work', 'geo', '/m/geo'),
-          mod('work', 'fieldSetup', '/m/field'),
-          mod('work', 'ai', '/m/ai'),
+          dept('ledger', '/m/ledger'),
+          dept('billing', '/m/billing'),
+          dept('programmes', '/m/programmes'),
+          dept('resources', '/m/resources'),
+          dept('queues', '/m/queues'),
+          dept('rosters', '/m/rosters'),
+          dept('geo', '/m/geo'),
+          dept('fieldSetup', '/m/field'),
+          dept('ai', '/m/ai'),
         ],
       },
     ],
@@ -127,14 +138,14 @@ export const NAV: NavArea[] = [
     id: 'find',
     label: 'menu.find.title',
     // The guard of /documents (App.tsx AUDIT).
-    roles: ['TASK_USER', 'OPERATOR', 'AUDITOR'],
+    roles: FIND,
     sections: [
       {
         items: [
-          mod('find', 'caseFiles', '/m/case-files'),
-          mod('find', 'committees', '/m/committees'),
-          mod('find', 'references', '/m/references'),
-          mod('find', 'registers', '/m/registry'),
+          find('caseFiles', '/m/case-files'),
+          find('committees', '/m/committees'),
+          find('references', '/m/references'),
+          find('registers', '/m/registry'),
           e('find', 'documents', '/documents'),
         ],
       },
@@ -151,7 +162,8 @@ export const NAV: NavArea[] = [
           e('design', 'review', '/modeller/review'),
           e('design', 'recordTypes', '/modeller/data-objects'),
           e('design', 'screens', '/modeller/pages'),
-          e('design', 'testRun', '/design/test', { access: { roles: [...MODEL, ...OPS], perms: [] } }),
+          // U12a: the route admits operators too (App.tsx), but Design is the designers' group.
+          e('design', 'testRun', '/design/test', { access: { roles: [...MODEL, ...OPS], perms: [] }, only: MODEL }),
         ],
       },
       {

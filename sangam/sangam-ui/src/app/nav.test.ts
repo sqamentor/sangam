@@ -78,7 +78,9 @@ describe('persona menus', () => {
     for (const no of ['/audit', '/audit/exports', '/tasks/filters', '/team']) expect(r).not.toContain(no);
   });
   it('a platform operator sees the engine filters; Team workload and Shared task lists need team.read (decisions 401, 404)', () => {
-    expect(routesOf(['PLATFORM_OPERATOR'])).toEqual(expect.arrayContaining(['/ops/engine/filters', '/ops/engine', '/design/test']));
+    expect(routesOf(['PLATFORM_OPERATOR'])).toEqual(expect.arrayContaining(['/ops/engine/filters', '/ops/engine']));
+    // U12a: Design is the designers' group; Test run alone no longer brings it into an operator's menu
+    expect(routesOf(['PLATFORM_OPERATOR'])).not.toContain('/design/test');
     expect(routesOf(['PLATFORM_OPERATOR'])).not.toContain('/team');
     expect(routesOf(['PLATFORM_OPERATOR'])).not.toContain('/tasks/filters');
   });
@@ -87,8 +89,8 @@ describe('persona menus', () => {
     expect(r.filter((x) => !x.startsWith('/help') && x !== '/verify')).toEqual(['/team', '/tasks/filters']);
     expect(visibleNav(me([], ['*'])).flatMap((a) => a.sections.flatMap((s) => s.items.map((i) => i.to)))).toContain('/team');
   });
-  it('an operator sees Monitor and fix, Reports and audit, but not engine screens', () => {
-    expect(menuOf(['OPERATOR'])).toEqual(['work', 'find', 'design', 'monitor', 'reports', 'help']);
+  it('an operator sees Monitor and fix, Reports and audit, but not engine screens and not Design (U12a)', () => {
+    expect(menuOf(['OPERATOR'])).toEqual(['work', 'find', 'monitor', 'reports', 'help']);
     expect(routesOf(['OPERATOR'])).not.toContain('/ops/engine');
   });
   it('a designer sees Design with Test run', () => {
