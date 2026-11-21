@@ -708,6 +708,7 @@ class DemoLoaderSequenceAgainstServerTest {
         List<String> wrong = new ArrayList<>();
         int checks = 0;
         int documents = 0;
+        Map<String, Integer> timelineCounts = new java.util.TreeMap<>();
         for (JsonNode c : JSON.readTree(DATA.toFile()).path("cases")) {
             if (!BILL_JOURNEY.contains(c.path("id").asText())) {
                 continue;
@@ -733,6 +734,23 @@ class DemoLoaderSequenceAgainstServerTest {
             if (mine != 1) {
                 wrong.add(id + ": " + mine + " audit records of the simulated duplicate check, expected 1");
             }
+            // Follow-up 1 (IFMS joint condition): what the UI shows. The case and task views link to the Case timeline
+            // (GET /audit/timeline, Audit.tsx Timeline, its "Details" of each event). There a simulated check and a
+            // simulated document must read as simulated exactly as a W-5 payment does: simulated=true, sandbox=true.
+            for (String gap : timelineMarks(api, c.path("businessKey").asText(), id, timelineCounts)) {
+                wrong.add(gap);
+            }
+        }
+        if (timelineCounts.getOrDefault("ifms.duplicateBill", 0) != checks) {
+            wrong.add("Case timeline shows " + timelineCounts.getOrDefault("ifms.duplicateBill", 0)
+                    + " simulated duplicate checks, the audit chain holds " + checks);
+        }
+        if (timelineCounts.getOrDefault("docs.issue", 0) != documents) {
+            wrong.add("Case timeline shows " + timelineCounts.getOrDefault("docs.issue", 0)
+                    + " simulated documents, the audit chain holds " + documents);
+        }
+        if (timelineCounts.getOrDefault("pfms.payment", 0) == 0) {
+            wrong.add("Case timeline shows no W-5 payment event of pfms.payment to compare the marking with");
         }
         JsonNode me = PresentationSeedAgainstServerTest.get(api + "/me",
                 PresentationSeedAgainstServerTest.token("kavita.sharma", List.of("DDO", "sangam-user")));
@@ -741,7 +759,37 @@ class DemoLoaderSequenceAgainstServerTest {
         }
         assertTrue(wrong.isEmpty(), String.join("; ", wrong));
         return checks + " simulated duplicate checks and " + documents + " simulated documents, each audited with its connector,"
-                + " simulated=true and sandbox=true; GET /me says sandbox=true (the UI's Sandbox badge)";
+                + " simulated=true and sandbox=true; GET /me says sandbox=true (the UI's Sandbox badge); the Case timeline"
+                + " (GET /audit/timeline) shows them so, as it shows the W-5 payments: " + timelineCounts;
+    }
+
+    /** The connectors whose events the Case timeline must mark simulated: the two E-26 checks and W-5's rail. */
+    private static final List<String> TIMELINE_SIMULATED = List.of("ifms.duplicateBill", "docs.issue", "pfms.payment");
+
+    /**
+     * Follow-up 1: the events of one case as the UI's Case timeline reads them ({@code GET /audit/timeline}, the
+     * tenant administrator's token); every event naming a connector of {@link #TIMELINE_SIMULATED} must carry
+     * {@code simulated=true} and {@code sandbox=true} in what the timeline's "Details" shows. Counts per connector.
+     */
+    private static List<String> timelineMarks(String api, String businessKey, String id, Map<String, Integer> counts) throws Exception {
+        String admin = PresentationSeedAgainstServerTest.token("rajendra.sharma", List.of("sangam-tenant-admin", "sangam-user"));
+        JsonNode page = PresentationSeedAgainstServerTest.get(api + "/audit/timeline?businessKey="
+                + URLEncoder.encode(businessKey, StandardCharsets.UTF_8) + "&includeHistory=true&size=200", admin);
+        JsonNode items = page.isArray() ? page : page.path("items");
+        List<String> wrong = new ArrayList<>();
+        for (JsonNode e : items) {
+            JsonNode details = e.has("details") ? e.path("details") : e.path("payload");
+            String connector = field(details, "connector").asText("");
+            if (!TIMELINE_SIMULATED.contains(connector)) {
+                continue;
+            }
+            counts.merge(connector, 1, Integer::sum);
+            if (!field(details, "simulated").asBoolean(false) || !field(details, "sandbox").asBoolean(false)) {
+                wrong.add(id + ": Case timeline event " + e.path("type").asText() + " of " + connector
+                        + " does not show simulated=true and sandbox=true: " + details);
+            }
+        }
+        return wrong;
     }
 
     /**
