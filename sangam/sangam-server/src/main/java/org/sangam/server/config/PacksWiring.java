@@ -68,7 +68,13 @@ import org.springframework.core.env.Environment;
  *   <li>{@link PackRegistry#discover()} + {@link PackDeployer}, and the {@link PacksTenantDeployer} hook; packs are
  *       deployed at start-up for {@code sangam.packs.tenants} when {@code sangam.packs.deploy-on-start} is true
  *       (default: true on the h2 profile, false elsewhere), for tenants of this installation only; an id that is no
- *       tenant is skipped and named at ERROR (register E-33 c).</li>
+ *       tenant is skipped and named at ERROR (register E-33 c). Owner decision E-33 (a), option a4 (2026-11-21,
+ *       EV-M-0960): the start-up deployment is only for the tenants explicitly listed, and only with
+ *       {@code deploy-on-start} on; a set list does not switch it on, and no tenant (the one of
+ *       {@code sangam.security.first-admins.*} included) gets packs at start-up without being listed. Such a tenant is
+ *       named at WARN ({@link #sangamFirstAdminsTenantPacksCheck}); every other tenant gets its packs through
+ *       onboarding or the reviewed package workflow (AJ-01, AJ-06). Which packs: all shipped ones; a selection is made
+ *       only by onboarding (option b3).</li>
  * </ul>
  * Disable with {@code sangam.modules.packs.enabled=false}.
  */
@@ -375,7 +381,8 @@ public class PacksWiring {
     /**
      * Start-up deployment of the packs for the configured tenants (dev: on by default). It runs after
      * {@link FirstAdminBootstrap} ({@link FirstAdminBootstrap#ORDER}), so the tenant of the install exists first, and
-     * it deploys only for tenants of this installation (register E-33 c, {@link #deployAtStart}).
+     * it deploys only for tenants of this installation (register E-33 c, {@link #deployAtStart}). It deploys only for
+     * the tenants explicitly listed (owner decision E-33 a, option a4); see the class comment.
      */
     @Bean
     public ApplicationRunner sangamPacksDeployOnStart(PacksTenantDeployer deployer, Environment env,
@@ -393,7 +400,9 @@ public class PacksWiring {
     /**
      * The start-up deployment: when {@code sangam.packs.deploy-on-start} is true (default: only under profile h2),
      * {@code deploy} is called for each id of {@value #TENANTS_PROPERTY} (default: the dev-token tenant), in order,
-     * each id once. Register E-33 (c): an id that is no tenant ({@code isTenant}, the tenant directory of
+     * each id once. A list that is set never switches the deployment on by itself (owner decision E-33 a, option a4);
+     * the dev-token default applies only when the list is not set at all, and an install that deploys at start-up
+     * lists its tenants. Register E-33 (c): an id that is no tenant ({@code isTenant}, the tenant directory of
      * sangam-security) is skipped and named at ERROR; before, every shipped pack was deployed and an audit chain
      * begun under an id nobody could ever use. The other ids are deployed all the same, as after a failed deployment.
      * {@code isTenant} is null when there is no tenant directory (sangam-security absent); then every id is deployed.
