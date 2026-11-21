@@ -52,6 +52,16 @@ else
       hdrs "$code" "$fallback"
       rm -f "$dest.part" "$dest.hdr"; echo "::error::$fallback answered HTTP $code"; exit 1
     fi
+    if [ "$attempt" -ge 5 ] && [ "$code" = 429 ]; then
+      # Run 44879593721: 'HTTP/2 429' with no Retry-After on all 5 attempts (10 min of backoff). The edge keeps
+      # refusing this runner's egress, so the same pinned file is taken once from the Apache archive (checksum below).
+      echo "::warning::$url still HTTP $code after 5 attempts; fetching the same pinned file once from $fallback"
+      src=$fallback
+      code=$(curl -sSL -D "$dest.hdr" -o "$dest.part" -w '%{http_code}' "$fallback" || true)
+      [ "$code" = 200 ] && break
+      hdrs "$code" "$fallback"
+      rm -f "$dest.part" "$dest.hdr"; echo "::error::$fallback answered HTTP $code"; exit 1
+    fi
     [ "$attempt" -lt 5 ] || { rm -f "$dest.part" "$dest.hdr"; echo "::error::$url still HTTP $code after 5 attempts"; exit 1; }
     s=${ra:-$(( attempt * 60 ))}; [ "$s" -le 300 ] || s=300
     echo "::warning::$url answered HTTP $code (attempt $attempt), Retry-After ${ra:-none}; waiting ${s}s"
