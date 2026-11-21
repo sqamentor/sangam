@@ -2,6 +2,7 @@
 package org.sangam.server.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -62,12 +63,47 @@ class PacksStartupDeploymentTest {
         assertEquals(List.of(), deployed(on("goi.fin"), directory::contains), "a tenant id is matched exactly");
     }
 
+    private static MockEnvironment h2(MockEnvironment env) {
+        env.setActiveProfiles("h2");
+        return env;
+    }
+
     @Test
-    void theDefaultTenantIsCheckedLikeAListedOne() {
-        MockEnvironment env = on(null).withProperty("sangam.security.dev-token.tenant", "GOI.FIN");
+    void underProfileH2TheDefaultTenantIsCheckedLikeAListedOne() {
+        MockEnvironment env = h2(on(null).withProperty("sangam.security.dev-token.tenant", "GOI.FIN"));
         assertEquals(List.of("GOI.FIN"), deployed(env, "GOI.FIN"::equals), "the dev-token tenant, when it is a tenant");
         assertEquals(List.of(), deployed(env, id -> false), "and not when it is none");
-        assertEquals(List.of("dev"), deployed(on(null), "dev"::equals), "without a dev-token tenant the id is dev");
+        assertEquals(List.of("dev"), deployed(h2(on(null)), "dev"::equals), "without a dev-token tenant the id is dev");
+        assertEquals(List.of("dev"), deployed(h2(new MockEnvironment()), "dev"::equals),
+                "under h2 the deployment is on by default, and so is its default tenant");
+    }
+
+    /**
+     * Owner decision E-33 follow-up 2 (EV-M-0966, "Refuse outside tests"): only profile h2 falls back to the dev-token
+     * tenant. Any other start with {@code sangam.packs.deploy-on-start=true} and no {@code sangam.packs.tenants} stops,
+     * with an error that names both settings; nothing is deployed, not even for a dev-token tenant that exists.
+     */
+    @Test
+    void outsideProfileH2AStartThatDeploysWithoutATenantListIsRefused() {
+        for (String[] profiles : List.of(new String[0], new String[]{"postgres", "oidc"}, new String[]{"dev"})) {
+            MockEnvironment env = on(null).withProperty("sangam.security.dev-token.tenant", "GOI.FIN");
+            env.setActiveProfiles(profiles);
+            List<String> calls = new ArrayList<>();
+            IllegalStateException refused = assertThrows(IllegalStateException.class,
+                    () -> PacksWiring.deployAtStart(calls::add, env, id -> true), List.of(profiles).toString());
+            assertTrue(refused.getMessage().contains("sangam.packs.deploy-on-start")
+                    && refused.getMessage().contains("sangam.packs.tenants"), "names both settings: " + refused.getMessage());
+            assertEquals(List.of(), calls, "nothing is deployed, the dev-token tenant included");
+        }
+        MockEnvironment off = new MockEnvironment();
+        off.setActiveProfiles("postgres");
+        assertEquals(List.of(), deployed(off, id -> true), "without deploy-on-start nothing is refused: the default is off");
+        MockEnvironment empty = on("");
+        empty.setActiveProfiles("postgres");
+        assertEquals(List.of(), deployed(empty, id -> true), "an empty list is a list: nothing deployed, nothing refused");
+        MockEnvironment listed = on("GOI.FIN");
+        listed.setActiveProfiles("postgres");
+        assertEquals(List.of("GOI.FIN"), deployed(listed, id -> true), "a listed tenant is deployed as before");
     }
 
     @Test
