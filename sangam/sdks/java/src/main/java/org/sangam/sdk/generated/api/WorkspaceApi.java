@@ -41,7 +41,7 @@ public final class WorkspaceApi {
     /**
      * Inbox counts
      *
-     * <p>Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the list; a capped count is the string "N+" (A-16, K2).
+     * <p>Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the list; a capped count is the string "N+" (A-16, K2). Each count is the predicate of GET /tasks?section=&lt;name&gt; (S03).
      *
      * <p>{@code GET /tasks/counts} (operationId {@code getTaskCounts}); permission {@code task.read}.
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null

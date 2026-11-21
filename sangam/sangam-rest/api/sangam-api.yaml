@@ -695,6 +695,23 @@ paths:
         schema:
           type: boolean
         description: 'true: only tasks due before the server''s current time (combined with dueBefore, the earlier bound applies); false: no condition'
+      - name: section
+        in: query
+        schema:
+          type: string
+          enum:
+          - MY_SEAT
+          - ACTING_FOR
+          - POOL
+          - ESCALATED
+          - RETURNED
+          - ALL
+        description: 'Inbox section (S03, register E-32(e)): the task predicate of the section of the same name in GET /tasks/counts, under the
+          same seat context, so the list and its count agree (X-Total-Count equals the count when no other filter is given). MY_SEAT: assigned
+          to me, or a candidate task of the request seat (X-Sangam-Acting-For-Seat when named, else X-Sangam-Seat); ACTING_FOR: a candidate task
+          of a seat I hold now by ADDITIONAL_CHARGE or LEAVE_SUBSTITUTE (listed under either seat context; claim and complete still need the task''s
+          seat as the request''s seat context, K7); POOL: visible and unassigned; ESCALATED: visible and escalated; RETURNED: visible and the
+          case decision is RETURNED; ALL: visible. Every other filter narrows the section. Absent: no section predicate. Unknown value: 400 VALIDATION_FAILED'
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/size'
       x-sangam-permission: task.read
@@ -9066,7 +9083,7 @@ paths:
       - Workspace
       summary: Inbox counts
       description: Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the
-        list; a capped count is the string "N+" (A-16, K2).
+        list; a capped count is the string "N+" (A-16, K2). Each count is the predicate of GET /tasks?section=<name> (S03).
       x-sangam-permission: task.read
       x-sangam-requirements:
       - VI.4

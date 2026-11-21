@@ -153,7 +153,8 @@ export const api = {
   // ------------------------------------------------------------ tasks
   tasks: {
     /**
-     * GET /tasks. Inbox sections map onto contract filters; `section` is also sent for the richer server. M-042:
+     * GET /tasks. Register E-32(e): `section` is the server's predicate of the inbox section, the one GET /tasks/counts
+     * counts with (S03), so no other filter is derived from it (mine=true would narrow My seat to claimed tasks). M-042:
      * `currency` (ISO 4217) keeps only tasks whose indexed amount is in that currency; the server requires it with
      * sortBy=amount (400 VALIDATION_FAILED otherwise), and the inbox only offers the amount sort once one is chosen.
      */
@@ -166,9 +167,6 @@ export const api = {
         processDefinitionKey: q.packKey,
         section: s,
         slaState: q.slaState,
-        mine: s === 'MY_SEAT' ? true : undefined,
-        unassigned: s === 'POOL' ? true : undefined,
-        state: s === 'ESCALATED' || s === 'RETURNED' ? s : undefined,
         seatId: q.seatId,
         variableNames: q.variableNames?.length ? q.variableNames : undefined, // P45 card variables
         currency: q.currency || undefined,

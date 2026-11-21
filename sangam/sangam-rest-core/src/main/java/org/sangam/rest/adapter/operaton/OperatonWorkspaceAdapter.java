@@ -107,6 +107,10 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
         this.permissions = permissions;
         this.audit = audit;
         this.props = props;
+        // E-32(e): GET /tasks?section=ACTING_FOR lists the seats this adapter counts (the caller's own seat directory)
+        if (org.sangam.rest.support.VariableMaskingPorts.unwrap(taskPort) instanceof OperatonTaskAdapter a) {
+            a.setActingSeats(this::actingSeats);
+        }
     }
 
     /**
@@ -230,26 +234,21 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
 
     @Override
     public Map<String, Object> taskCounts(RequestContext ctx) {
+        // E-32(e): each count is the predicate GET /tasks?section=<name> lists with (TaskSections, S03)
         Map<String, Object> out = new LinkedHashMap<>();
-        TaskQuery mySeat = tenant(ctx, tasks.createTaskQuery());
-        if (ctx.effectiveSeatId() != null) {
-            mySeat.or().taskAssignee(ctx.principalId()).taskCandidateGroup(ctx.effectiveSeatId()).endOr();
-        } else {
-            mySeat.taskAssignee(ctx.principalId());
+        java.util.function.Supplier<List<String>> acting = () -> actingSeats(ctx);
+        for (String section : TaskPort.SECTIONS) {
+            TaskQuery q = tenant(ctx, tasks.createTaskQuery());
+            out.put(section, TaskSections.apply(ctx, q, section, acting) ? capped(q.count()) : 0L);
         }
-        out.put("MY_SEAT", capped(mySeat.count()));
-        List<String> actingSeats = myAssignments(ctx).stream()
+        return out;
+    }
+
+    /** The seats the caller holds now by additional charge or leave substitute (K7, the caller's own seat directory). */
+    List<String> actingSeats(RequestContext ctx) {
+        return myAssignments(ctx).stream()
                 .filter(a -> "ADDITIONAL_CHARGE".equals(a.kind()) || "LEAVE_SUBSTITUTE".equals(a.kind()))
                 .map(AdminPort.Assignment::seatId).filter(Objects::nonNull).distinct().toList();
-        out.put("ACTING_FOR", actingSeats.isEmpty() ? 0L
-                : capped(tenant(ctx, tasks.createTaskQuery()).taskCandidateGroupIn(actingSeats).count()));
-        out.put("POOL", capped(involved(ctx, tenant(ctx, tasks.createTaskQuery())).taskUnassigned().count()));
-        out.put("ESCALATED", capped(involved(ctx, tenant(ctx, tasks.createTaskQuery()))
-                .taskVariableValueEquals(ESCALATED, true).count()));
-        out.put("RETURNED", capped(involved(ctx, tenant(ctx, tasks.createTaskQuery()))
-                .processVariableValueEquals(OperatonTaskAdapter.DECISION, "RETURNED").count()));
-        out.put("ALL", capped(involved(ctx, tenant(ctx, tasks.createTaskQuery())).count()));
-        return out;
     }
 
     private Object capped(long n) {
@@ -266,21 +265,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
 
     /** The default visibility rule of {@link OperatonTaskAdapter}: assignee, candidate user or candidate group/seat. */
     private static TaskQuery involved(RequestContext ctx, TaskQuery q) {
-        if (ctx.inGroup("sangam-admin") || ctx.inGroup("sangam-operator") || ctx.inGroup("sangam-system")) {
-            return q;
-        }
-        List<String> groups = new ArrayList<>(ctx.groups());
-        if (ctx.effectiveSeatId() != null && !groups.contains(ctx.effectiveSeatId())) {
-            groups.add(ctx.effectiveSeatId());   // as OperatonTaskAdapter: the acted-for seat when one is named
-        }
-        // Operaton's or() returns the OR branch: every criterion of the branch and endOr() go on that object, as in
-        // OperatonTaskAdapter. On q the engine refused "cannot set endOr() before or()", so every task count and the
-        // field-visit list answered 500 for anyone who is not a supervisor (R7-ui sweep, task-user role).
-        TaskQuery any = q.or().taskAssignee(ctx.principalId()).taskCandidateUser(ctx.principalId());
-        if (!groups.isEmpty()) {
-            any.taskCandidateGroupIn(groups);
-        }
-        return any.endOr();
+        return TaskSections.visible(ctx, q);
     }
 
     @Override

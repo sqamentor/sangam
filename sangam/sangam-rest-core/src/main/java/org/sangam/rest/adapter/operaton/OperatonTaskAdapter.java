@@ -97,27 +97,23 @@ public class OperatonTaskAdapter implements TaskPort {
      */
     @Override
     public Page<Task> list(RequestContext ctx, TaskFilter f, Page.PageRequest page) {
-        return reads(() -> listPage(ctx, f, page));
+        // the acting seats are read before the engine read transaction opens (no second connection inside it, SL-43)
+        List<String> acting = f != null && "ACTING_FOR".equals(f.section()) ? actingSeats.apply(ctx) : List.of();
+        return reads(() -> listPage(ctx, f, page, acting));
     }
 
-    private Page<Task> listPage(RequestContext ctx, TaskFilter f, Page.PageRequest page) {
+    private Page<Task> listPage(RequestContext ctx, TaskFilter f, Page.PageRequest page, List<String> acting) {
         TaskQuery q = tasks.createTaskQuery();
         if (ctx.tenantId() != null) {
             q.tenantIdIn(ctx.tenantId());
         }
-        if (!seesAll(ctx)) {
-            // Seats are modelled as candidate groups; Operaton forbids candidateGroup + candidateGroupIn together.
-            List<String> candidateGroups = new ArrayList<>(ctx.groups());
-            if (ctx.effectiveSeatId() != null && !candidateGroups.contains(ctx.effectiveSeatId())) {
-                candidateGroups.add(ctx.effectiveSeatId());   // the seat acted in: the acted-for seat when one is named
-            }
-            // Operaton's or() returns the OR branch: every criterion of the branch and endOr() go on that object (on
-            // q, the engine refuses "cannot set endOr() before or()" and every non-supervisor list failed).
-            TaskQuery any = q.or().taskAssignee(ctx.principalId()).taskCandidateUser(ctx.principalId());
-            if (!candidateGroups.isEmpty()) {
-                any.taskCandidateGroupIn(candidateGroups);
-            }
-            any.endOr();
+        String section = f == null ? null : f.section();
+        if (section == null) {
+            // Seats are modelled as candidate groups; the default visibility puts its candidateGroupIn in an OR branch,
+            // so a candidateGroup/seatId filter below does not clash with it
+            TaskSections.visible(ctx, q);
+        } else if (!TaskSections.apply(ctx, q, section, () -> acting)) {
+            return new Page<>(List.of(), 0, false);   // ACTING_FOR without an acting seat: the section is empty
         }
         if (f != null) {
             if (f.assignee() != null) {
@@ -272,6 +268,17 @@ public class OperatonTaskAdapter implements TaskPort {
                 List.of(), List.of(), delegatedFrom, DscDocument.of(OperatonSupport.call(() ->
                         tasks.getVariablesLocal(taskId, List.of(DscDocument.SLOT_VARIABLE,
                                 DscDocument.DOCUMENT_VARIABLE)))));
+    }
+
+    private volatile java.util.function.Function<RequestContext, List<String>> actingSeats = c -> List.of();
+
+    /**
+     * E-32(e): the seats the caller holds now by additional charge or leave substitute, the {@code ACTING_FOR} section
+     * of {@code GET /tasks?section=} (bound by {@link OperatonWorkspaceAdapter}, which counts the same section).
+     * Unbound: none, so the section lists nothing.
+     */
+    public void setActingSeats(java.util.function.Function<RequestContext, List<String>> actingSeats) {
+        this.actingSeats = actingSeats == null ? c -> List.of() : actingSeats;
     }
 
     private volatile ReadTransactions readTransactions;

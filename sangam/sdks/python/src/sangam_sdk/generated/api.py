@@ -12094,14 +12094,14 @@ class TasksApi:
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
 
-    def list_tasks(self, *, assignee: Optional[str] = None, mine: Optional[bool] = None, unassigned: Optional[bool] = None, candidate_group: Optional[str] = None, seat_id: Optional[str] = None, process_instance_id: Optional[str] = None, case_instance_id: Optional[str] = None, business_key: Optional[str] = None, process_definition_key: Optional[str] = None, task_definition_key: Optional[str] = None, state: Optional[str] = None, sort_by: Optional[str] = None, currency: Optional[str] = None, sort_order: Optional[str] = None, variable_names: Optional[list[str]] = None, filter_id: Optional[str] = None, priority: Optional[int] = None, min_priority: Optional[int] = None, max_priority: Optional[int] = None, due_before: Optional[str] = None, due_after: Optional[str] = None, overdue: Optional[bool] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Task]:
+    def list_tasks(self, *, assignee: Optional[str] = None, mine: Optional[bool] = None, unassigned: Optional[bool] = None, candidate_group: Optional[str] = None, seat_id: Optional[str] = None, process_instance_id: Optional[str] = None, case_instance_id: Optional[str] = None, business_key: Optional[str] = None, process_definition_key: Optional[str] = None, task_definition_key: Optional[str] = None, state: Optional[str] = None, sort_by: Optional[str] = None, currency: Optional[str] = None, sort_order: Optional[str] = None, variable_names: Optional[list[str]] = None, filter_id: Optional[str] = None, priority: Optional[int] = None, min_priority: Optional[int] = None, max_priority: Optional[int] = None, due_before: Optional[str] = None, due_after: Optional[str] = None, overdue: Optional[bool] = None, section: Optional[Literal["MY_SEAT", "ACTING_FOR", "POOL", "ESCALATED", "RETURNED", "ALL"]] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Task]:
         """List tasks
 
         Tasks visible to the caller through the one authorization predicate (VI.4 rules 1–3, K2); BPMN user tasks and CMMN human tasks.
 
         ``GET /tasks`` (operationId ``listTasks``); permission ``task.read``.
         """
-        req = ApiRequest("GET", f"/tasks", query={"assignee": assignee, "mine": mine, "unassigned": unassigned, "candidateGroup": candidate_group, "seatId": seat_id, "processInstanceId": process_instance_id, "caseInstanceId": case_instance_id, "businessKey": business_key, "processDefinitionKey": process_definition_key, "taskDefinitionKey": task_definition_key, "state": state, "sortBy": sort_by, "currency": currency, "sortOrder": sort_order, "variableNames": variable_names, "filterId": filter_id, "priority": priority, "minPriority": min_priority, "maxPriority": max_priority, "dueBefore": due_before, "dueAfter": due_after, "overdue": overdue, "page": page, "size": size})
+        req = ApiRequest("GET", f"/tasks", query={"assignee": assignee, "mine": mine, "unassigned": unassigned, "candidateGroup": candidate_group, "seatId": seat_id, "processInstanceId": process_instance_id, "caseInstanceId": case_instance_id, "businessKey": business_key, "processDefinitionKey": process_definition_key, "taskDefinitionKey": task_definition_key, "state": state, "sortBy": sort_by, "currency": currency, "sortOrder": sort_order, "variableNames": variable_names, "filterId": filter_id, "priority": priority, "minPriority": min_priority, "maxPriority": max_priority, "dueBefore": due_before, "dueAfter": due_after, "overdue": overdue, "section": section, "page": page, "size": size})
         return cast("Page[M.Task]", self._c.page(req, options, page, size))
 
     def get_task(self, id: str, *, options: Optional[RequestOptions] = None) -> M.TaskDetail:
@@ -12983,7 +12983,7 @@ class WorkspaceApi:
     def get_task_counts(self, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Inbox counts
 
-        Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the list; a capped count is the string "N+" (A-16, K2).
+        Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the list; a capped count is the string "N+" (A-16, K2). Each count is the predicate of GET /tasks?section=<name> (S03).
 
         ``GET /tasks/counts`` (operationId ``getTaskCounts``); permission ``task.read``.
         """

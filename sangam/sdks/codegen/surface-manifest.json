@@ -577,7 +577,7 @@
    "tag": "Tasks",
    "pathPrefix": "",
    "operations": 15,
-   "maxLines": 333
+   "maxLines": 335
   },
   {
    "class": "TenantOperationsApi",
