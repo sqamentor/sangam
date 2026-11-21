@@ -458,7 +458,7 @@ Pipeline definitions are read from `classpath:pipelines/<id>.json`. Pipelines st
 | `sangam.channels.poll-seconds`, `sangam.channels.poll.<type>.*` | 60 | Polling channel interval and per-type settings |
 | `sangam.channels.bot-process` | unset | Channel type to bot process key |
 | `sangam.channels.teams.jwks-uri` | `https://login.botframework.com/v1/.well-known/keys` | Teams (Bot Framework) token keys |
-| `sangam.channels.egress.<tenant>` | empty | Allowed outbound hosts per tenant |
+| `sangam.channels.egress[<tenant>]` | empty | Allowed outbound hosts per tenant (bracket notation; required for an id with a dot or upper case such as `GOI.FIN`, optional for a simple id) |
 | `sangam.modeller.lease-seconds` | 120 | Model edit lease |
 | `sangam.modeller.mocks.file` | unset | Extra service-mock rules on top of the stored `MOD_SERVICE_MOCK` rules of the default tenant; ignored on a production profile |
 | `sangam.modeller.token-exchange.{token-endpoint,client-id,client-secret-ref,audience,connectors,egress}` | unset | Token exchange for listed connectors |

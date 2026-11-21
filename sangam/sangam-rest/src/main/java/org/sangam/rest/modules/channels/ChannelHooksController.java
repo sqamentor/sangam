@@ -21,6 +21,7 @@ import org.sangam.channels.messenger.WebhookVerifiers;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.integration.connector.SecretResolver;
 import org.sangam.rest.port.ApiProblem;
+import org.sangam.rest.config.TenantConfig;
 import org.sangam.rest.support.TxSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,7 +146,7 @@ public class ChannelHooksController {
     public ResponseEntity<HookResult> teams(@PathVariable String tenant, @RequestBody byte[] raw,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         String audience = configured(tenant, "teams.audience");
-        String issuer = env.getProperty(prefix(tenant) + "teams.issuer", WebhookVerifiers.BOT_FRAMEWORK_ISSUER);
+        String issuer = webhookSettings(tenant).getOrDefault("teams.issuer", WebhookVerifiers.BOT_FRAMEWORK_ISSUER);
         if (!WebhookVerifiers.botFramework(authorization, issuer, audience, serviceUrl(raw), kid -> botKeys.apply(tenant, kid), Instant.now())) {
             throw refused();
         }
@@ -260,15 +261,20 @@ public class ChannelHooksController {
     }
 
     private String configured(String tenant, String key) {
-        String v = tenant.matches("[A-Za-z0-9_-]{1,64}") ? env.getProperty(prefix(tenant) + key) : null;
+        String v = webhookSettings(tenant).get(key);
         if (v == null || v.isBlank()) {
             throw ApiProblem.notFound("channel webhook", tenant + "/" + key.substring(0, key.indexOf('.')).toLowerCase(Locale.ROOT));
         }
         return v;
     }
 
-    private static String prefix(String tenant) {
-        return "sangam.channels.webhooks." + tenant + ".";
+    /**
+     * The tenant's {@code sangam.channels.webhooks[<tenant>].*} keys (bracket notation for an id with a dot, such as
+     * {@code GOI.FIN}); empty for an unusable id.
+     */
+    private Map<String, String> webhookSettings(String tenant) {
+        return TenantConfig.<Map<String, String>>bind(env, "sangam.channels.webhooks", tenant,
+                org.springframework.core.ResolvableType.forClassWithGenerics(Map.class, String.class, String.class)).orElse(Map.of());
     }
 
     private static ApiProblem refused() {

@@ -192,8 +192,7 @@ class E7DeleteIT extends ContractSupport {
         Rest del = restDelete(pid, "technical delete");
         assertEquals(200, del.status(), del.body());
         Thread.sleep(800);                                    // the tombstone lease end is on the DB clock
-        int swept = inEngineTx(tombstones::sweepExpiredLeases);
-        assertEquals(1, swept);
+        awaitSweptToUnknownOutcome(lw.work().id());           // by this sweep or the server's lifecycle maintenance
         Tombstones.Tombstone ts = inEngineTx(c -> tombstones.find(c, T, lw.work().id()).orElseThrow());
         assertEquals(Tombstones.State.UNKNOWN_OUTCOME, ts.state());
         List<ReconciliationQueue.Item> open = inEngineTx(c -> reconciliation.listOpen(c, T)).stream()
@@ -202,6 +201,53 @@ class E7DeleteIT extends ContractSupport {
         assertEquals(ReconciliationQueue.Kind.UNKNOWN_OUTCOME, open.get(0).kind());
         assertEquals(OperationLedger.State.UNKNOWN_OUTCOME, inEngineTx(c -> ledger.find(c, intent.operationId()).orElseThrow()).state());
         assertTrue(deleted(pid));
+    }
+
+    /**
+     * Run 44515408887 (oracle, e7_2:196 "expected 1 but was 0"): the server's leader-elected lifecycle maintenance
+     * ({@code InstanceLifecycleService.maintain}, which calls {@code Tombstones.sweepExpiredLeases}) swept the expired
+     * tombstone first and opened the UNKNOWN_OUTCOME item (reconciliation item 3 in the log, escalated 30 ms before the
+     * test's sweep). The test's own sweep then correctly found nothing: the fence from 1a0d5ec3 keeps a second sweep from
+     * opening a second item. Here a peer sweep plays the server's maintenance, so the interleaving happens every run.
+     */
+    @Test
+    @Order(2)
+    void e7_2r_tombstonedLeaseSweptByTheServerFirst() throws Exception {
+        String topic = key("pay-e7-2r");
+        String pid = toPayment("2r", topic);
+        PaymentWorker w = worker("worker-1", topic);
+        LeasedWork lw = w.fetch();
+        OperationLedger.Intent intent = w.intent(lw);
+        w.dispatch(lw, intent);
+        clock = clock.plus(LEASE.minusMillis(400));
+        engine.setClock(clock);
+        Rest del = restDelete(pid, "technical delete");
+        assertEquals(200, del.status(), del.body());
+        Thread.sleep(800);
+        awaitSweptToUnknownOutcome(lw.work().id());           // the server's lifecycle maintenance sweeps first
+        assertEquals(0, (int) inEngineTx(tombstones::sweepExpiredLeases), "a swept tombstone is never swept twice");
+        long items = inEngineTx(c -> reconciliation.listOpen(c, T)).stream()
+                .filter(i -> intent.operationId().equals(i.operationId())).count();
+        assertEquals(1, items, "exactly one UNKNOWN_OUTCOME item, whoever swept");
+        assertTrue(deleted(pid));
+    }
+
+    /**
+     * The settled state of an expired tombstoned lease is UNKNOWN_OUTCOME, whichever sweep (this test's or the server's
+     * lifecycle maintenance) gets it; CANCEL_REQUESTED is the only state before. Sweeps until settled (at most 30 s).
+     */
+    private void awaitSweptToUnknownOutcome(String taskId) throws InterruptedException {
+        long deadline = System.nanoTime() + Duration.ofSeconds(30).toNanos();
+        while (true) {
+            Tombstones.State s = inEngineTx(c -> tombstones.find(c, T, taskId).orElseThrow()).state();
+            if (s == Tombstones.State.UNKNOWN_OUTCOME) {
+                return;
+            }
+            assertEquals(Tombstones.State.CANCEL_REQUESTED, s, "tombstone reached " + s);
+            assertTrue(System.nanoTime() < deadline, "tombstone never swept to UNKNOWN_OUTCOME");
+            inEngineTx(tombstones::sweepExpiredLeases);
+            Thread.sleep(200);
+        }
     }
 
     @Test

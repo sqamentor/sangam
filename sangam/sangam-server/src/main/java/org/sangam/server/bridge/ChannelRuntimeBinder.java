@@ -31,10 +31,9 @@ import org.sangam.rest.modules.channels.ChannelStatusSource;
 import org.sangam.rest.port.Page;
 import org.sangam.rest.port.RegistryPort;
 import org.sangam.rest.port.RequestContext;
+import org.sangam.rest.config.TenantConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.properties.bind.Bindable;
-import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.env.Environment;
 
@@ -151,13 +150,9 @@ public final class ChannelRuntimeBinder implements ChannelStatusSource {
 
     @SuppressWarnings("unchecked")
     private Map<String, Map<String, String>> enterprise(String tenant) {
-        if (!ID.matcher(tenant).matches()) {
-            return Map.of();
-        }
         ResolvableType inner = ResolvableType.forClassWithGenerics(Map.class, String.class, String.class);
         ResolvableType outer = ResolvableType.forClassWithGenerics(Map.class, ResolvableType.forClass(String.class), inner);
-        return (Map<String, Map<String, String>>) Binder.get(env).bind("sangam.channels.enterprise." + tenant, Bindable.of(outer))
-                .orElse(Map.of());
+        return TenantConfig.<Map<String, Map<String, String>>>bind(env, "sangam.channels.enterprise", tenant, outer).orElse(Map.of());
     }
 
     @Override
@@ -171,7 +166,8 @@ public final class ChannelRuntimeBinder implements ChannelStatusSource {
     }
 
     public EgressPolicy egress(String tenant) {
-        List<String> specs = Binder.get(env).bind("sangam.channels.egress." + tenant, Bindable.listOf(String.class)).orElse(List.of());
+        List<String> specs = TenantConfig.<List<String>>bind(env, "sangam.channels.egress", tenant,
+                ResolvableType.forClassWithGenerics(List.class, String.class)).orElse(List.of());
         List<EgressPolicy.Rule> rules = new ArrayList<>();
         for (String spec : specs) {
             rules.add(EgressPolicy.Rule.parse(tenant, spec, false));
