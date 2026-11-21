@@ -344,7 +344,7 @@ public final class OperatonFormAdapter implements FormPort {
     public Page<Draft> drafts(RequestContext ctx, String taskId, Page.PageRequest page) {
         purgeExpired(ctx.tenantId());
         List<Object> params = new ArrayList<>(List.of(ctx.tenantId()));
-        params.add(ctx.seatId());
+        params.add(ctx.effectiveSeatId());
         params.add(ctx.principalId());
         String where = "tenant_id=? AND ((owner_kind='SEAT' AND owner_seat_id=?) OR (owner_kind='PERSON'"
                 + " AND owner_principal_id=?))";
@@ -377,18 +377,18 @@ public final class OperatonFormAdapter implements FormPort {
             requireTask(ctx, request.taskId());
         }
         String ownerKind = request.ownerKind() != null ? request.ownerKind()
-                : (ctx.seatId() != null && request.taskId() != null ? "SEAT" : "PERSON");
+                : (ctx.effectiveSeatId() != null && request.taskId() != null ? "SEAT" : "PERSON");
         if (!ownerKind.equals("PERSON") && !ownerKind.equals("SEAT")) {
             throw ApiProblem.badRequest("VALIDATION_FAILED", "ownerKind must be PERSON or SEAT").with("field", "ownerKind");
         }
-        if (ownerKind.equals("SEAT") && ctx.seatId() == null) {
+        if (ownerKind.equals("SEAT") && ctx.effectiveSeatId() == null) {
             throw ApiProblem.badRequest("SEAT_CONTEXT_REQUIRED", "A SEAT draft needs the X-Sangam-Seat header");
         }
         Map<String, Object> data = sized(request.data());
         Instant now = Instant.now();
         Draft d = new Draft(org.sangam.core.layer.Hashes.uuidV7().toString(), ctx.tenantId(), request.taskId(),
                 request.formKey(), request.formVersion(), ownerKind, ctx.principalId(),
-                ownerKind.equals("SEAT") ? ctx.seatId() : null, 1, data, now, now.plus(DRAFT_TTL), ctx.principalId());
+                ownerKind.equals("SEAT") ? ctx.effectiveSeatId() : null, 1, data, now, now.plus(DRAFT_TTL), ctx.principalId());
         tx.withConnection(c -> Jdbc.update(c, "INSERT INTO FORM_DRAFT(" + DRAFT_COLS + ", form_version, key_id)"
                         + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,0,'" + KEY_ID + "')", d.tenantId(), d.draftId(), d.taskId(), d.formKey(),
                 d.formVersion(), d.ownerKind(), d.ownerPrincipalId(), d.ownerSeatId(), d.revision(), bytes(d.tenantId(), d.draftId(), d.data()),
@@ -457,7 +457,7 @@ public final class OperatonFormAdapter implements FormPort {
             return false;
         }
         if ("SEAT".equals(d.ownerKind())) {
-            return ctx.seatId() != null && ctx.seatId().equals(d.ownerSeatId());
+            return ctx.effectiveSeatId() != null && ctx.effectiveSeatId().equals(d.ownerSeatId());
         }
         return Objects.equals(ctx.principalId(), d.ownerPrincipalId());
     }
