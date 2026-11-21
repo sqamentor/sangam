@@ -158,3 +158,23 @@ describe('U12f: the list of organisations is for platform administrators only (d
     expect(SERVER_GROUPS.filter((g) => opens(callerOf(g), '/admin/tenants'))).toEqual(['sangam-admin']);
   });
 });
+
+describe('U12g: Extra fields is an administrator page; holding form.read does not bring Set up into the menu', () => {
+  // GET /custom-fields needs form.read, which every user, operator and designer holds for filling forms; defining and
+  // retiring a field need tenant.admin (TenantCustomFieldController), the page's job
+  it.each(['sangam-user', 'sangam-operator', 'sangam-model-author'])('%s holds form.read and gets neither Set up nor the page', (group) => {
+    const caller = callerOf(group);
+    expect(caller.permissions).toContain('form.read');
+    expect(caller.permissions).not.toContain('tenant.admin');
+    expect(menuGroups(caller)).not.toContain('setup');
+    expect(menuRoutes(caller)).not.toContain('/admin/custom-fields');
+    expect(opens(caller, '/admin/custom-fields')).toBe(false);
+  });
+  it('an organisation admin and a platform admin keep it, in the route and in the menu; nobody else has Set up', () => {
+    for (const g of ['sangam-tenant-admin', 'sangam-admin']) {
+      expect(opens(callerOf(g), '/admin/custom-fields'), g).toBe(true);
+      expect(menuRoutes(callerOf(g)), g).toContain('/admin/custom-fields');
+    }
+    expect(SERVER_GROUPS.filter((g) => menuGroups(callerOf(g)).includes('setup'))).toEqual(['sangam-tenant-admin', 'sangam-admin']);
+  });
+});
