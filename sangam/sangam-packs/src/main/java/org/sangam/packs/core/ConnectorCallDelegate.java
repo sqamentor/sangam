@@ -88,9 +88,11 @@ public class ConnectorCallDelegate implements JavaDelegate {
             if ("true".equalsIgnoreCase(Vars.field(failedWhenInvalid, ex))) {
                 r = failedWhenInvalid(r);
             }
-            if (org.sangam.packs.sim.DemoSandbox.simulates(Vars.tenant(ex), c)) {
+            if (org.sangam.packs.sim.DemoSandbox.simulates(Vars.tenant(ex), c) || r.status() == OperationStatus.FAILED) {
                 // register E-26: a check the demo sandbox answered is on the audit trail, named and marked simulated
-                // (Vars.audit), as the sandbox's payments are; a query the installed gateway answers writes no event
+                // (Vars.audit), as the sandbox's payments are. Follow-up 2 (vi): a check that FAILED is on the audit
+                // trail too, with its reason code (an unregistered payee: PAYEE_NOT_REGISTERED), so a rejection that
+                // follows from it names its cause; a query the installed gateway answers writes no event otherwise
                 Vars.audit(ex, r.status() == OperationStatus.FAILED ? "EXT_OP_FAILED" : "EXT_OP_ACKNOWLEDGED",
                         Vars.map("connector", c, "operation", opName, "mode", "query", "status", r.status().name(),
                                 "reasonCode", r.reasonCode(), "externalRef", r.externalRef()));
