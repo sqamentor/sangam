@@ -68,6 +68,11 @@ class SlaServiceSkipLockedFenceH2Test {
             public <T> T inTransaction(java.util.function.Function<Connection, T> work) {
                 return tx.inTransaction(c -> work.apply(racing(c, races, fired)));
             }
+
+            @Override
+            public <T> T read(org.sangam.core.api.ReadWork<T> work) {
+                return tx.read(c -> work.read(racing(c, races, fired)));
+            }
         };
         SlaService sla = new SlaService(Dialect.POSTGRESQL, racing, sink, name -> null);
 
