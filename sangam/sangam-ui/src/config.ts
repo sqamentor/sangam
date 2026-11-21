@@ -98,7 +98,8 @@ const defaults: SangamConfig = {
   },
   devToken: 'dev-token',
   defaultLanguage: 'en',
-  locales: ['en', 'hi'],
+  // Q6 (owner, 2026-11-21; decisions Q-06, 397 Q11): English only unless /config.json names more ("en,hi").
+  locales: ['en'],
   welcomeLinks: [],
   fonts: {},
   traceUrlTemplate: '',
