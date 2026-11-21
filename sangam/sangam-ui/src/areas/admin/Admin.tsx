@@ -895,6 +895,104 @@ export function Policies() {
   );
 }
 
+const CHANGE_STATUSES = ['PENDING', 'APPLIED', 'REJECTED', 'SUPERSEDED'] as const;
+
+/**
+ * Four-eyes policy changes (E-33, IFMS EV-M-0968): the queue of changes to access rules and their history. A second
+ * administrator approves (the change applies at once) or rejects, with a reason; the requester decides neither way, so
+ * their own requests carry no buttons (the server refuses them with SOD_VIOLATION as well).
+ */
+export function PolicyChanges() {
+  const { t } = useTranslation();
+  const { me } = useAuth();
+  const [status, setStatus] = useState<(typeof CHANGE_STATUSES)[number]>('PENDING');
+  const list = usePaged((p) => api.admin.policyChanges({ ...p, status }), [status]);
+  const [decide, setDecide] = useState<{ id: string; approve: boolean } | null>(null);
+  const act = useAction();
+  return (
+    <>
+      <PageHeader title={t('admin.policyChangesTitle')} description={t('admin.policyChangesDesc')} />
+      <div className="filters">
+        <SelectField
+          label={t('admin.status')}
+          value={status}
+          onChange={(v) => setStatus(v as (typeof CHANGE_STATUSES)[number])}
+          options={CHANGE_STATUSES.map((s) => ({ value: s, label: t(`enum.${s}`, { defaultValue: s }) }))}
+        />
+      </div>
+      <ProblemAlert error={list.error ?? act.error} onRetry={list.reload} />
+      {list.data && list.data.items.length === 0 && <Empty message={t('admin.policyChangesNone')} />}
+      {list.data && list.data.items.length > 0 && (
+        <DataTable
+          caption={t('admin.policyChangesTitle')}
+          captionHidden
+          rows={list.data.items}
+          rowKey={(r) => r.id}
+          columns={[
+            { key: 'status', header: t('admin.status'), render: (r) => <Badge value={r.status} /> },
+            { key: 'operation', header: t('admin.changeOperation'), render: (r) => t(`admin.changeOp.${r.operation}`, { defaultValue: r.operation }) },
+            {
+              key: 'what',
+              header: t('admin.policy'),
+              render: (r) =>
+                r.policy ? (
+                  <>
+                    <Badge value={r.policy.effect} /> {`${r.policy.principalType}:${r.policy.principalId}`} · {`${r.policy.resourceType}/${r.policy.resourceId}`} ·{' '}
+                    {(r.policy.actions ?? []).join(', ')}
+                  </>
+                ) : (
+                  <code>{r.policyId}</code>
+                ),
+            },
+            { key: 'requestedBy', header: t('admin.requestedBy') },
+            { key: 'requestedAt', header: t('admin.requestedAt'), render: (r) => fmtDate(r.requestedAt) },
+            { key: 'requestReason', header: t('admin.requestReason'), render: (r) => r.requestReason ?? '—' },
+            {
+              key: 'decision',
+              header: t('admin.decision'),
+              render: (r) => (r.decidedBy ? `${r.decidedBy}${r.decisionReason ? `: ${r.decisionReason}` : ''}` : '—'),
+            },
+            {
+              key: 'a',
+              header: t('common.actions'),
+              render: (r) =>
+                r.status !== 'PENDING' ? null : r.requestedBy === me?.userId ? (
+                  <span className="hint">{t('admin.policyChangeOwn')}</span>
+                ) : (
+                  <span className="toolbar inline">
+                    <button type="button" className="link" onClick={() => setDecide({ id: r.id, approve: true })}>
+                      {t('admin.approve')}
+                    </button>
+                    <button type="button" className="link danger" onClick={() => setDecide({ id: r.id, approve: false })}>
+                      {t('admin.reject')}
+                    </button>
+                  </span>
+                ),
+            },
+          ]}
+        />
+      )}
+      <Pagination data={list.data} page={list.page} size={list.size} setPage={list.setPage} setSize={list.setSize} />
+      <ReasonDialog
+        open={decide !== null}
+        danger={decide?.approve === false}
+        title={decide?.approve ? t('admin.approve') : t('admin.reject')}
+        busy={act.busy}
+        error={act.error}
+        onClose={() => setDecide(null)}
+        onConfirm={(reason) =>
+          void act.run(() => api.admin.decidePolicyChange(decide!.id, decide!.approve, reason).then(() => true)).then((ok) => {
+            if (ok) {
+              setDecide(null);
+              list.reload();
+            }
+          })
+        }
+      />
+    </>
+  );
+}
+
 export function SodExceptions() {
   const { t } = useTranslation();
   const list = usePaged((p) => api.admin.sodExceptions(p), []);

@@ -685,6 +685,10 @@ export const api = {
     policyVersion: () => http.get<{ version?: number; policyVersion?: number }>('/admin/policies/version'),
     explain: (body: { principalId: string; action: string; resourceType: string; resourceId: string }) =>
       http.post<{ allowed: boolean; matched: { policyId: string; effect: 'ALLOW' | 'DENY'; scope: string }[]; policyVersion: number }>('/admin/policies/explain', body),
+    /** Four-eyes policy changes (E-33): status PENDING (the server's default) is the approver's queue. */
+    policyChanges: (q: ListQuery & { status?: T.PolicyChange['status'] }) => http.page<T.PolicyChange>('/admin/policies/changes', q),
+    decidePolicyChange: (id: string, approve: boolean, reason: string) =>
+      http.post<T.PolicyChange>(`/admin/policies/changes/${enc(id)}/${approve ? 'approve' : 'reject'}`, { reason }),
     sodExceptions: (q: ListQuery) => http.page<T.SodException>('/admin/sod-exceptions', q),
     saveSodException: (e: Partial<T.SodException>) => http.post<T.SodException>('/admin/sod-exceptions', e),
     decideSodException: (id: string, approve: boolean, reason: string) => http.post<void>(`/admin/sod-exceptions/${enc(id)}/${approve ? 'approve' : 'reject'}`, { reason }),

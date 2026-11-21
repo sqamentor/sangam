@@ -969,6 +969,24 @@ export interface Policy {
   createdAt?: Iso;
 }
 
+/**
+ * A four-eyes policy change (GET /admin/policies/changes, E-33, IFMS EV-M-0968). requestReason is the requester's and
+ * is never overwritten; decisionReason is the decider's (or why the change was superseded).
+ */
+export interface PolicyChange {
+  id: Id;
+  policyId: Id;
+  operation: 'CREATE' | 'UPDATE' | 'DELETE';
+  status: 'PENDING' | 'APPLIED' | 'REJECTED' | 'SUPERSEDED';
+  policy?: Policy;
+  requestedBy: string;
+  requestedAt: Iso;
+  requestReason?: string;
+  decidedBy?: string;
+  decidedAt?: Iso;
+  decisionReason?: string;
+}
+
 export interface SodException {
   id: Id;
   rule: string;

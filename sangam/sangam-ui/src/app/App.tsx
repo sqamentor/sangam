@@ -123,6 +123,7 @@ const Assignments = named(ad, 'Assignments');
 const DelegationTables = named(ad, 'DelegationTables');
 const DelegationTableEditor = named(ad, 'DelegationTableEditor');
 const Policies = named(ad, 'Policies');
+const PolicyChanges = named(ad, 'PolicyChanges');
 const SodExceptions = named(ad, 'SodExceptions');
 const Users = named(ad, 'Users');
 const Groups = named(ad, 'Groups');
@@ -291,6 +292,7 @@ function AuthedRoutes() {
           <Route path="/admin/delegations" element={g(ADMIN, <DelegationTables />)} />
           <Route path="/admin/delegations/:id" element={g(ADMIN, <DelegationTableEditor />)} />
           <Route path="/admin/policies" element={g(ADMIN, <Policies />)} />
+          <Route path="/admin/policy-changes" element={g(ADMIN, <PolicyChanges />)} />
           <Route path="/admin/sod" element={g(ADMIN, <SodExceptions />)} />
           <Route path="/admin/users" element={g(ADMIN, <Users />)} />
           <Route path="/admin/groups" element={g(ADMIN, <Groups />)} />
