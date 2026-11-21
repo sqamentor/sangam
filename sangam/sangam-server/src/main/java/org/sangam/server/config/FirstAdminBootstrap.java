@@ -25,6 +25,11 @@ import org.springframework.core.env.Environment;
  * {@code sangam.security.first-admins.subjects} (two different {@code person:subject:Display name} entries), start-up
  * creates the tenant if it is missing and appoints them. It acts only when the tenant has no administrator role yet, so
  * later runs change nothing and the settings can be removed after the install.
+ * <p>
+ * It deploys no workflow pack (register E-25): the tenant is created in sangam-security directly, not through
+ * {@code AdminPort}, so the hooks on tenant creation do not run, and which packs a tenant gets is decided by onboarding
+ * or by {@code sangam.packs.deploy-on-start} with {@code sangam.packs.tenants}. A start that leaves this tenant without
+ * a pack says so at WARN ({@code PacksWiring#sangamFirstAdminsTenantPacksCheck}).
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "sangam.security.first-admins.tenant")

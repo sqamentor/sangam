@@ -389,6 +389,63 @@ public class PacksWiring {
         };
     }
 
+    /** {@value}: the tenant {@link FirstAdminBootstrap} creates and appoints the first administrators of. */
+    static final String FIRST_ADMINS_TENANT_PROPERTY = "sangam.security.first-admins.tenant";
+
+    /**
+     * Register E-25: {@code sangam.security.first-admins.*} ({@link FirstAdminBootstrap}) creates its tenant without a
+     * pack. It does not go through the tenant hook above, and which packs a tenant gets is decided by onboarding or by
+     * the start-up settings, not by the bootstrap. A tenant left like that answered every process start with 404, and
+     * nothing said why. When the application is ready (so after FirstAdminBootstrap and after the start-up deployment,
+     * in whichever order those two ran) this says so at WARN, once per start, with the tenant and the ways to its
+     * packs. It deploys nothing and refuses nothing.
+     */
+    @Bean
+    public FirstAdminsTenantPacksCheck sangamFirstAdminsTenantPacksCheck(PackDeployer deployer, Environment env) {
+        return new FirstAdminsTenantPacksCheck(deployer, env);
+    }
+
+    /** See {@link #sangamFirstAdminsTenantPacksCheck}. */
+    public static final class FirstAdminsTenantPacksCheck
+            implements org.springframework.context.ApplicationListener<org.springframework.boot.context.event.ApplicationReadyEvent> {
+
+        private final PackDeployer deployer;
+        private final Environment env;
+
+        FirstAdminsTenantPacksCheck(PackDeployer deployer, Environment env) {
+            this.deployer = deployer;
+            this.env = env;
+        }
+
+        @Override
+        public void onApplicationEvent(org.springframework.boot.context.event.ApplicationReadyEvent event) {
+            warnWhenWithoutPacks();
+        }
+
+        /** True when the first-admins tenant has no pack deployment and the warning was written. */
+        public boolean warnWhenWithoutPacks() {
+            String configured = env.getProperty(FIRST_ADMINS_TENANT_PROPERTY);
+            if (configured == null || configured.isBlank()) {
+                return false;
+            }
+            String tenant = configured.trim();
+            try {
+                if (!deployer.installed(tenant).isEmpty()) {
+                    return false;
+                }
+            } catch (RuntimeException e) {
+                LOG.warn("The packs of tenant {} ({}) could not be checked: {}", tenant, FIRST_ADMINS_TENANT_PROPERTY,
+                        e.toString());
+                return false;
+            }
+            LOG.warn("Tenant {} ({}) has no workflow pack deployed: every process start of it answers 404. Its packs "
+                    + "are deployed at start-up with sangam.packs.deploy-on-start=true and sangam.packs.tenants={} "
+                    + "(SANGAM_PACKS_DEPLOY_ON_START, SANGAM_PACKS_TENANTS), or by onboarding (a platform "
+                    + "administrator).", tenant, FIRST_ADMINS_TENANT_PROPERTY, tenant);
+            return true;
+        }
+    }
+
     /** Development only: PACK_OPERATION from the reference DDL (production: sangam-persistence Liquibase). */
     private static void createPackOperationTable(TxSupport tx, Dialect dialect) {
         tx.withConnection(c -> {
