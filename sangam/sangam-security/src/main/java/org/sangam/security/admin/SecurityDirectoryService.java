@@ -247,6 +247,44 @@ public final class SecurityDirectoryService {
                         rs.getString(5)));
     }
 
+    /**
+     * A policy change with what it applies and both reasons (E-33 follow-up 3, IFMS EV-M-0968): {@code requestReason}
+     * is the requester's, {@code decisionReason} the decider's (or why the change was superseded).
+     */
+    public record PolicyChangeRow(String changeId, String policyId, String operation, String status,
+                                  PolicyAdminService.PolicyDefinition definition, String requestedBy, Instant requestedAt,
+                                  String requestReason, String decidedBy, Instant decidedAt, String decisionReason) {
+    }
+
+    private static final String CHANGE_SELECT = "SELECT change_id, policy_id, operation, status, definition, requested_by,"
+            + " requested_at, reason, decided_by, decided_at, decision_reason";
+
+    private static PolicyChangeRow changeRow(java.sql.ResultSet rs) throws java.sql.SQLException {
+        return new PolicyChangeRow(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4),
+                PolicyAdminService.fromJson(rs.getString(2), rs.getString(5)), rs.getString(6),
+                Jdbc.instant(rs, "requested_at"), rs.getString(8), rs.getString(9), Jdbc.instant(rs, "decided_at"),
+                rs.getString(11));
+    }
+
+    /** The tenant's policy changes of one status (all when {@code status} is null), newest request first. */
+    public Page<PolicyChangeRow> policyChangeRows(Connection c, SecurityIdentity actor, String status, int offset, int limit,
+                                                  int cap) {
+        authz.require(c, actor, ResourceRegistry.POLICY, Permission.READ, ResourceRegistry.ANY_ID);
+        Where w = new Where("tenant_id = ?", actor.tenantId());
+        if (status != null) {
+            w.and("status = ?", status.toUpperCase(Locale.ROOT));
+        }
+        return page(c, CHANGE_SELECT, List.of(), "FROM SEC_POLICY_CHANGE", w, "requested_at DESC, change_id", offset, limit,
+                cap, SecurityDirectoryService::changeRow);
+    }
+
+    /** One policy change of the caller's tenant; empty for an id of another tenant or none. */
+    public java.util.Optional<PolicyChangeRow> policyChange(Connection c, SecurityIdentity actor, String changeId) {
+        authz.require(c, actor, ResourceRegistry.POLICY, Permission.READ, ResourceRegistry.ANY_ID);
+        return Jdbc.one(c, CHANGE_SELECT + " FROM SEC_POLICY_CHANGE WHERE tenant_id=? AND change_id=?",
+                SecurityDirectoryService::changeRow, actor.tenantId(), changeId);
+    }
+
     // ------------------------------------------------------------------ roles and groups
 
     public Page<RoleRow> roles(Connection c, SecurityIdentity actor, String q, int offset, int limit, int cap) {

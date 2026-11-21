@@ -227,6 +227,42 @@ public class AdminController {
         return admin.policyVersion(ctx);
     }
 
+    // ---------------------------------------------------------------- four-eyes policy changes (E-33, EV-M-0968)
+
+    /** The caller's tenant's policy changes, newest request first; {@code status} PENDING (the default) is the queue. */
+    @GetMapping("/policies/changes")
+    public ResponseEntity<List<AdminPort.PolicyChange>> policyChanges(RequestContext ctx,
+                                                                      @RequestParam(required = false) String status,
+                                                                      @RequestParam(required = false) Integer page,
+                                                                      @RequestParam(required = false) Integer size) {
+        permissions.require(ctx, Permissions.POLICY_ADMIN);
+        return Lists.ok(admin.policyChanges(ctx, status, Lists.page(page, size)));
+    }
+
+    @GetMapping("/policies/changes/{id}")
+    public AdminPort.PolicyChange policyChange(RequestContext ctx, @PathVariable String id) {
+        permissions.require(ctx, Permissions.POLICY_ADMIN);
+        return admin.policyChange(ctx, id);
+    }
+
+    /** Four-eyes approve: applied in the same transaction; the requester and a system identity never decide. */
+    @PostMapping("/policies/changes/{id}/approve")
+    public ResponseEntity<AdminPort.PolicyChange> approvePolicyChange(RequestContext ctx, @PathVariable String id,
+                                                                      @RequestBody ReasonRequest body) {
+        permissions.require(ctx, Permissions.POLICY_ADMIN);
+        ProcessController.requireReason(body == null ? null : body.reason());
+        return Lists.okRef(id, admin.decidePolicyChange(ctx, id, true, body.reason()));
+    }
+
+    /** Four-eyes reject: nothing applied; the requester cannot reject (no self-reject, no withdraw). */
+    @PostMapping("/policies/changes/{id}/reject")
+    public ResponseEntity<AdminPort.PolicyChange> rejectPolicyChange(RequestContext ctx, @PathVariable String id,
+                                                                     @RequestBody ReasonRequest body) {
+        permissions.require(ctx, Permissions.POLICY_ADMIN);
+        ProcessController.requireReason(body == null ? null : body.reason());
+        return Lists.okRef(id, admin.decidePolicyChange(ctx, id, false, body.reason()));
+    }
+
     // ---------------------------------------------------------------- tenants
 
     @GetMapping("/tenants")

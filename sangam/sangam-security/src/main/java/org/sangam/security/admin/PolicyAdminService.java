@@ -95,33 +95,113 @@ public final class PolicyAdminService {
         return change(c, actor, policyId, "DELETE", def, reason);
     }
 
-    /** Second administrator approves a pending change (four-eyes). */
+    /**
+     * Second administrator approves a pending change (four-eyes), without a decision reason. Used by start-up steps
+     * (the dev bootstrap approves as the system principal); the API decides through {@link #decide}, which refuses a
+     * system identity.
+     */
     public void approve(Connection c, SecurityIdentity approver, String changeId) {
         authz.require(c, approver, ResourceRegistry.POLICY, Permission.CHANGE_GRANT, ResourceRegistry.ANY_ID);
         String t = approver.tenantId();
+        String[] row = pendingRow(c, t, changeId);
+        if (approver.personId().equals(row[3])) {
+            throw new SangamSecurityException.SodViolation("the requester cannot approve their own policy change");
+        }
+        mark(c, approver, changeId, true, null);
+        apply(c, approver, row[0], row[1], fromJson(row[0], row[2]), decision(changeId, row[3], approver, null));
+    }
+
+    /** Rejects a pending change; the same rules as {@link #decide} with {@code approve=false}. */
+    public void reject(Connection c, SecurityIdentity approver, String changeId, String reason) {
+        decide(c, approver, changeId, false, reason);
+    }
+
+    /**
+     * The four-eyes decision of the API (E-33 follow-up 3, IFMS EV-M-0968): approve applies the change in the caller's
+     * transaction (GRANT_CHANGED / DENY_CHANGED with change_id, requested_by, decided_by and reason); reject applies
+     * nothing (POLICY_CHANGE_PENDING, operation REJECT). The decision reason is stored in {@code decision_reason}; the
+     * request reason is never overwritten.
+     *
+     * <ul>
+     *   <li>A system identity never decides: SOD_VIOLATION, audited SOD_VIOLATION_BLOCKED.</li>
+     *   <li>The decider needs {@code CHANGE_GRANT} on policies.</li>
+     *   <li>{@code UNKNOWN_CHANGE} for no change of the decider's tenant; {@code CHANGE_NOT_PENDING} once decided.</li>
+     *   <li>The requester decides neither way (no self-approve, no self-reject, no withdraw): SOD_VIOLATION, audited
+     *       SOD_VIOLATION_BLOCKED (a leaf transaction, so the event survives the rollback of the refused request).</li>
+     * </ul>
+     */
+    public void decide(Connection c, SecurityIdentity decider, String changeId, boolean approve, String reason) {
+        String verb = approve ? "approve" : "reject";
+        if (decider.system()) {
+            refuse(c, decider, changeId, approve, null, "a system identity never decides a policy change; a person who"
+                    + " holds the permission does");
+        }
+        authz.require(c, decider, ResourceRegistry.POLICY, Permission.CHANGE_GRANT, ResourceRegistry.ANY_ID);
+        String[] row = pendingRow(c, decider.tenantId(), changeId);
+        if (decider.personId().equals(row[3])) {
+            refuse(c, decider, changeId, approve, row[3], "the requester cannot " + verb + " their own policy change");
+        }
+        mark(c, decider, changeId, approve, reason);
+        Map<String, Object> about = decision(changeId, row[3], decider, reason);
+        if (approve) {
+            apply(c, decider, row[0], row[1], fromJson(row[0], row[2]), about);
+            return;
+        }
+        Map<String, Object> p = new LinkedHashMap<>();
+        p.put("change_id", changeId);
+        p.put("policy_id", row[0]);
+        p.put("operation", "REJECT");
+        p.put("change_operation", row[1]);
+        p.putAll(about);
+        audit.security(c, decider, SecurityEventType.POLICY_CHANGE_PENDING, p);
+    }
+
+    /** policy_id, operation, definition, requested_by of a PENDING change of the tenant. */
+    private static String[] pendingRow(Connection c, String tenant, String changeId) {
         String[] row = Jdbc.one(c, "SELECT policy_id, operation, definition, requested_by, status FROM SEC_POLICY_CHANGE"
                         + " WHERE tenant_id=? AND change_id=?",
-                rs -> new String[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)}, t, changeId)
+                rs -> new String[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)},
+                tenant, changeId)
                 .orElseThrow(() -> new SangamSecurityException.AdminConflict("UNKNOWN_CHANGE", "change not found"));
         if (!"PENDING".equals(row[4])) {
             throw new SangamSecurityException.AdminConflict("CHANGE_NOT_PENDING", "change is " + row[4]);
         }
-        if (approver.personId().equals(row[3])) {
-            throw new SangamSecurityException.SodViolation("the requester cannot approve their own policy change");
-        }
-        Jdbc.update(c, "UPDATE SEC_POLICY_CHANGE SET status='APPLIED', decided_by=?, decided_at=? WHERE tenant_id=? AND change_id=?",
-                approver.personId(), Sql.dbNow(c, dialect), t, changeId);
-        apply(c, approver, row[0], row[1], fromJson(row[0], row[2]));
+        return row;
     }
 
-    public void reject(Connection c, SecurityIdentity approver, String changeId, String reason) {
-        authz.require(c, approver, ResourceRegistry.POLICY, Permission.CHANGE_GRANT, ResourceRegistry.ANY_ID);
-        int n = Jdbc.update(c, "UPDATE SEC_POLICY_CHANGE SET status='REJECTED', decided_by=?, decided_at=?, reason=?"
-                        + " WHERE tenant_id=? AND change_id=? AND status='PENDING'",
-                approver.personId(), Sql.dbNow(c, dialect), reason, approver.tenantId(), changeId);
+    /** Marks a PENDING change decided; a concurrent decision leaves nothing to mark (CHANGE_NOT_PENDING). */
+    private void mark(Connection c, SecurityIdentity decider, String changeId, boolean approve, String reason) {
+        int n = Jdbc.update(c, "UPDATE SEC_POLICY_CHANGE SET status=?, decided_by=?, decided_at=?, decision_reason=?"
+                        + " WHERE tenant_id=? AND change_id=? AND status='PENDING'", approve ? "APPLIED" : "REJECTED",
+                decider.personId(), Sql.dbNow(c, dialect), reason, decider.tenantId(), changeId);
         if (n != 1) {
             throw new SangamSecurityException.AdminConflict("CHANGE_NOT_PENDING", "no pending change " + changeId);
         }
+    }
+
+    private static Map<String, Object> decision(String changeId, String requestedBy, SecurityIdentity decider, String reason) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("change_id", changeId);
+        m.put("requested_by", requestedBy);
+        m.put("decided_by", decider.personId());
+        m.put("reason", reason == null ? "" : reason);
+        return m;
+    }
+
+    private void refuse(Connection c, SecurityIdentity decider, String changeId, boolean approve, String requestedBy,
+                        String why) {
+        Map<String, Object> p = new LinkedHashMap<>();
+        p.put("code", "SOD_VIOLATION");
+        p.put("change_id", changeId);
+        p.put("decision", approve ? "APPROVE" : "REJECT");
+        p.put("decided_by", decider.personId());
+        if (requestedBy != null) {
+            p.put("requested_by", requestedBy);
+        }
+        p.put("system", decider.system());
+        p.put("reason", why);
+        audit.denial(c, decider, SecurityEventType.SOD_VIOLATION_BLOCKED, null, p);
+        throw new SangamSecurityException.SodViolation(why);
     }
 
     public Optional<PolicyDefinition> find(Connection c, String tenant, String policyId) {
@@ -167,11 +247,13 @@ public final class PolicyAdminService {
                     "operation", op, "reason", reason == null ? "" : reason));
             return new PolicyChange(id, policyId, op, "PENDING", actor.personId());
         }
-        apply(c, actor, policyId, op, def);
+        apply(c, actor, policyId, op, def, Map.of());
         return new PolicyChange(id, policyId, op, "APPLIED", actor.personId());
     }
 
-    private void apply(Connection c, SecurityIdentity actor, String policyId, String op, PolicyDefinition def) {
+    /** {@code about}: the four-eyes decision (change_id, requested_by, decided_by, reason) when a change is approved. */
+    private void apply(Connection c, SecurityIdentity actor, String policyId, String op, PolicyDefinition def,
+                       Map<String, Object> about) {
         String t = actor.tenantId();
         long version;
         if ("DELETE".equals(op)) {
@@ -197,6 +279,7 @@ public final class PolicyAdminService {
         p.put("resource_id", def.resourceId());
         p.put("permissions", def.permissions().stream().map(Enum::name).sorted().toList());
         p.put("new_policy_version", version);
+        p.putAll(about);
         audit.security(c, actor, def.effect() == Effect.DENY ? SecurityEventType.DENY_CHANGED : SecurityEventType.GRANT_CHANGED, p);
     }
 
@@ -334,7 +417,8 @@ public final class PolicyAdminService {
             if (!split.containsKey(row[1]) && fromJson(row[1], row[2]).subjects().size() <= 1) {
                 continue;
             }
-            int n = Jdbc.update(c, "UPDATE SEC_POLICY_CHANGE SET status='SUPERSEDED', decided_by=?, decided_at=?, reason=?"
+            // E-33 follow-up 3 (b): the request reason stays; why the change was superseded is its decision reason
+            int n = Jdbc.update(c, "UPDATE SEC_POLICY_CHANGE SET status='SUPERSEDED', decided_by=?, decided_at=?, decision_reason=?"
                     + " WHERE tenant_id=? AND change_id=? AND status='PENDING'", actor.personId(), Sql.dbNow(c, dialect),
                     SUPERSEDED_REASON, t, row[0]);
             if (n == 1) {
