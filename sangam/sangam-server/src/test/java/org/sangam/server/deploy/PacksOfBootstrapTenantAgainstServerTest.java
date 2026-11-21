@@ -254,6 +254,10 @@ class PacksOfBootstrapTenantAgainstServerTest {
             assertTrue(chain.contains("TENANT_CREATED"), chain.toString());
             fact("fresh database: order at start-up", chain.indexOf("TENANT_CREATED") < chain.indexOf("PACKS_DEPLOYED")
                     ? "FirstAdminBootstrap before the pack runner" : "the pack runner before FirstAdminBootstrap");
+            // register E-33 (d): the tenant is created before anything is deployed for it or audited on its chain
+            assertEquals("TENANT_CREATED", chain.get(0), "the chain of the tenant begins with its creation: " + chain);
+            assertTrue(chain.indexOf("TENANT_CREATED") < chain.indexOf("PACKS_DEPLOYED"),
+                    "TENANT_CREATED is audited before PACKS_DEPLOYED: " + chain);
         }
         try (ConfigurableApplicationContext ctx = host.start(settings)) {
             assertEquals(first, installed(ctx, TENANT), "a second start deploys nothing: the same deployments");
