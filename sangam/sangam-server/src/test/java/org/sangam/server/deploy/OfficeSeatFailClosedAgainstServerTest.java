@@ -58,6 +58,8 @@ class OfficeSeatFailClosedAgainstServerTest {
     static final String OFFICE_EMPTY = "FC-OFFICE-EMPTY";
     static final String SEAT_A = "FC-SO-A";
     static final String SEAT_B = "FC-SO-B";
+    /** The initiator's seat in office A (IX.5 rule 7: a case started from it without an officeId is office A's). */
+    static final String CLERK_A = "FC-CLERK-A";
     static final String OFFICER_A = "fc.so.a";
     static final String OFFICER_B = "fc.so.b";
     static final String INITIATOR = "fc.initiator";
@@ -107,6 +109,7 @@ class OfficeSeatFailClosedAgainstServerTest {
         void all() throws Exception {
             given();
             withOffice();
+            restStartTakesTheStarterSeatsOffice();
             withPackFallbackSeat();
             withoutResolvableSeat("no-office", null);
             withoutResolvableSeat("office-without-SO-seat", OFFICE_EMPTY);
@@ -123,28 +126,25 @@ class OfficeSeatFailClosedAgainstServerTest {
             fact("given", "core pack deployed for " + TENANT + ": " + deployed.keySet());
             String today = LocalDate.now(ZoneOffset.UTC).toString();
             ok(send("PUT", "/admin/org-levels", admin, Map.of(), Map.of("tenantId", TENANT, "levels", List.of("OFFICE"))));
-            // The offices and seats are placed from the start of yesterday (UTC), so they are in force at 12:00 business
-            // time of today in any time zone (IfmsPacksIT places the seed seats from a fixed past date too), not through
-            // POST /admin/seats: that places a seat from the moment it is created, and PacksSeatDirectory routes at 12:00
-            // business time of today, so a seat created after 12:00 serves no case until tomorrow (a separate
-            // finding, reported by this lane; seen on H2 at 12:15 IST). The test must not depend on the time of day.
-            org.sangam.security.SangamSecurity security = ctx.getBean(org.sangam.security.SangamSecurity.class);
-            org.sangam.core.security.SecurityIdentity setup = org.sangam.core.security.SecurityIdentity.system(TENANT, "office-fc")
-                    .withGroupsAndRoles(Set.of(), Set.of("system", org.sangam.security.admin.TenantAdminService.PLATFORM_ADMIN_ROLE));
-            java.time.Instant from = LocalDate.now(ZoneOffset.UTC).minusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
-            ctx.getBean("sangamProductTransactions", org.sangam.core.layer.Transactions.class).inTransaction(c -> {
-                for (String office : List.of(OFFICE_A, OFFICE_B, OFFICE_EMPTY)) {
-                    security.orgUnits().createUnit(c, setup, office, "OFFICE", null, office, null, from);
-                }
-                security.seats().createSeat(c, setup, SEAT_A, "SO", OFFICE_A, 1, false, null, from);
-                security.seats().createSeat(c, setup, SEAT_B, "SO", OFFICE_B, 1, false, null, from);
-                return null;
-            });
+            // P-6 Step 2: the offices and seats are made the way the product makes them, through the admin API now
+            // (POST /admin/seats places a seat from the moment it is created). PacksSeatDirectory resolves today's
+            // seats at the instant of the action, so this holds at any time of day (before Step 2 a seat made after
+            // 12:00 business time served no case until the next day).
+            for (String office : List.of(OFFICE_A, OFFICE_B, OFFICE_EMPTY)) {
+                ok(send("POST", "/admin/org-units", admin, Map.of(), map("id", office, "code", office, "name", office,
+                        "level", "OFFICE", "parentId", null)));
+            }
+            for (String[] seat : List.of(new String[] {SEAT_A, "SO", OFFICE_A}, new String[] {SEAT_B, "SO", OFFICE_B},
+                    new String[] {CLERK_A, "CLERK", OFFICE_A})) {
+                ok(send("POST", "/admin/seats", admin, Map.of(), map("id", seat[0], "code", seat[0], "designation", seat[1],
+                        "name", seat[0], "orgUnitId", seat[2], "reportsToSeatId", null, "roles", List.of())));
+            }
             for (String person : List.of(OFFICER_A, OFFICER_B, INITIATOR)) {
                 assertEquals(200, send("GET", "/me", token(person, SO), Map.of(), null).statusCode(), person + " signs in");
             }
             post(SEAT_A, OFFICER_A, today);
             post(SEAT_B, OFFICER_B, today);
+            post(CLERK_A, INITIATOR, today);
         }
 
         // ------------------------------------------------------------------ normal case
@@ -161,6 +161,29 @@ class OfficeSeatFailClosedAgainstServerTest {
             check("with-office", groups(s.taskId()).equals(List.of(SEAT_A)), "the task is on " + SEAT_A + " only: " + groups(s.taskId()));
             check("with-office", listed(OFFICER_A, SEAT_A, s.bk()), "officer A in " + SEAT_A + " is offered the task");
             otherOfficerIsRefused("with-office", s);
+        }
+
+        /**
+         * IX.5 rule 7 on the REST start: the initiator, in seat {@value #CLERK_A} of office A, starts the case with
+         * {@code X-Sangam-Seat} and no officeId; the case takes office A, so the step is on seat A only.
+         */
+        void restStartTakesTheStarterSeatsOffice() throws Exception {
+            String label = "rest-start-starter-seat";
+            String bk = "FC/" + label + "/" + java.util.UUID.randomUUID().toString().substring(0, 8);
+            HttpResponse<String> r = send("POST", "/process-instances", token(INITIATOR, SO), Map.of("X-Sangam-Seat", CLERK_A),
+                    map("key", KEY, "businessKey", bk, "variables", Map.of("amount", 5000, "caseType", "GENERAL")));
+            fact(label, "POST /process-instances with X-Sangam-Seat " + CLERK_A + ": " + r.statusCode() + " " + code(r));
+            check(label, r.statusCode() / 100 == 2, "the REST start is accepted: " + r.statusCode() + " " + r.body());
+            if (r.statusCode() / 100 != 2) {
+                return;
+            }
+            String pid = JSON.readTree(r.body()).path("id").asText();
+            Object office = historic(pid, "officeId");
+            var task = engine.getTaskService().createTaskQuery().processInstanceBusinessKey(bk).taskDefinitionKey("sn_sanction")
+                    .singleResult();
+            fact(label, "officeId " + office + ", task " + (task == null ? null : groups(task.getId())));
+            check(label, OFFICE_A.equals(office), "the case takes the starter seat's office " + OFFICE_A + ": " + office);
+            check(label, task != null && groups(task.getId()).equals(List.of(SEAT_A)), "the task is on " + SEAT_A + " only");
         }
 
         // ------------------------------------------------------------------ boundary: J-P1-E07 kept

@@ -109,7 +109,7 @@ class IfmsPackScenariosTest {
         String bk = "IFMS/" + prefix + "/" + (++seq);
         Map<String, Object> v = AllPacksSmokeTest.bag();
         v.putAll(extra);
-        engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(v)
+        engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(PackStartOffice.apply(key, v))
                 .processDefinitionTenantId(PackTestTenant.ID).execute();
         return bk;
     }
