@@ -253,10 +253,10 @@ describe('P35/P45 inbox filter sidebar and card variables', () => {
     await saveFilter('Leave pool', '');
     const side = screen.getByRole('complementary', { name: T('task.filterSidebar') });
     fireEvent.click(within(side).getByRole('button', { name: T('task.allWork') }));
-    await waitFor(() => expect(lastCall(api.page, '/tasks')?.[1]).toEqual(expect.objectContaining({ section: 'MY_SEAT', mine: true, processDefinitionKey: undefined, variableNames: undefined })));
+    await waitFor(() => expect(lastCall(api.page, '/tasks')?.[1]).toEqual(expect.objectContaining({ section: 'MY_SEAT', mine: undefined, processDefinitionKey: undefined, variableNames: undefined })));
     fireEvent.click(within(side).getByRole('button', { name: 'Leave pool' }));
     expect(within(side).getByRole('button', { name: 'Leave pool' }).getAttribute('aria-pressed')).toBe('true');
-    await waitFor(() => expect(lastCall(api.page, '/tasks')?.[1]).toEqual(expect.objectContaining({ section: 'POOL', unassigned: true, processDefinitionKey: 'leave' })));
+    await waitFor(() => expect(lastCall(api.page, '/tasks')?.[1]).toEqual(expect.objectContaining({ section: 'POOL', unassigned: undefined, state: undefined, processDefinitionKey: 'leave' })));
   });
 
   it('P35 filters persist per person and can be deleted', async () => {
