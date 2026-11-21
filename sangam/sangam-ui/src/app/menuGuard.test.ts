@@ -185,26 +185,33 @@ describe('U12g: Extra fields is an administrator entry; holding form.read does n
   });
 });
 
-describe('U12h: Event types is not offered to a caller without event.admin', () => {
-  // both first calls, GET /events/channels and GET /events/definitions, need event.admin (EventFormController)
-  it('sangam-operator lacks event.admin and does not get the entry; the rest of Monitor and fix stays', () => {
+describe('U12h: Event types follows the permission event.admin, in the route guard and in the menu', () => {
+  // both first calls, GET /events/channels and GET /events/definitions, need event.admin (EventFormController).
+  // Owner answer 2026-11-21 (joint ledger line 1234, "Guard follows permission"): the guard admits only its holders.
+  it('sangam-operator lacks event.admin: no entry and the route refuses him; the rest of Monitor and fix stays', () => {
     const operator = callerOf('sangam-operator');
     expect(operator.permissions).not.toContain('event.admin');
     expect(menuRoutes(operator)).not.toContain('/ops/events');
+    expect(opens(operator, '/ops/events')).toBe(false);
     expect(menuRoutes(operator)).toEqual(expect.arrayContaining(['/ops', '/ops/incidents', '/ops/jobs', '/ops/outbox', '/ops/workers', '/ops/notifications', '/ops/reconciliation']));
   });
-  it('an engine administrator (no permission at all) does not get it either; a platform administrator ("*") does', () => {
+  it('an engine administrator (no permission at all) is refused too; a platform administrator ("*") keeps it', () => {
     expect(menuRoutes(callerOf('sangam-engine-admin'))).not.toContain('/ops/events');
+    expect(opens(callerOf('sangam-engine-admin'), '/ops/events')).toBe(false);
     expect(menuRoutes(callerOf('sangam-admin'))).toContain('/ops/events');
+    expect(opens(callerOf('sangam-admin'), '/ops/events')).toBe(true);
   });
-  it('holding event.admin without an operator role does not bring Monitor and fix: the route refuses an organisation admin', () => {
+  it('an organisation admin holds event.admin: the route admits him and his menu offers it, alone from Monitor and fix', () => {
     const tenantAdmin = callerOf('sangam-tenant-admin');
     expect(tenantAdmin.permissions).toContain('event.admin');
-    expect(opens(tenantAdmin, '/ops/events')).toBe(false);
-    expect(menuRoutes(tenantAdmin)).not.toContain('/ops/events');
+    expect(opens(tenantAdmin, '/ops/events')).toBe(true);
+    expect(menuRoutes(tenantAdmin).filter((r) => r.startsWith('/ops'))).toEqual(['/ops/events']);
+  });
+  it('exactly the holders of event.admin open it', () => {
+    expect(SERVER_GROUPS.filter((g) => opens(callerOf(g), '/ops/events'))).toEqual(['sangam-tenant-admin', 'sangam-admin']);
+    expect(SERVER_GROUPS.filter((g) => callerOf(g).permissions.some((p) => p === 'event.admin' || p === '*'))).toEqual(['sangam-tenant-admin', 'sangam-admin']);
   });
 });
-
 /**
  * Every route of the signed-in table against its menu entry, for the caller GET /me describes per server group.
  * A cell: M = the guard admits the caller and the entry (for a sub-page: the entry above it) is in his menu;
@@ -252,10 +259,6 @@ const INTENDED: Record<string, string[]> = {
     '/admin/custom-fields | sangam-operator',
     '/admin/custom-fields | sangam-model-author',
   ],
-  'U12h: Event types is hidden from a caller without event.admin; the record changes the menu only, not the guard': [
-    '/ops/events | sangam-operator',
-    '/ops/events | sangam-engine-admin',
-  ],
 };
 
 describe('every route against its menu entry, per server group', () => {
@@ -279,7 +282,7 @@ describe('every route against its menu entry, per server group', () => {
     const intended = Object.values(INTENDED).flat();
     expect(new Set(intended).size).toBe(intended.length);
     expect(cells('R').sort()).toEqual([...intended].sort());
-    expect(intended).toHaveLength(27);
+    expect(intended).toHaveLength(25);
   });
 
   it('every menu entry is a route of the table, and every caller\'s menu is covered by the table', () => {

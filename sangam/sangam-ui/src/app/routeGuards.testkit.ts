@@ -5,6 +5,7 @@
  */
 import appSource from './App.tsx?raw';
 import type { Me, Role } from '../api/types';
+import * as access from './access';
 import { ROUTE_ACCESS, TEAM_READ, canAccess, type Access } from './access';
 import { NAV_ITEMS, visibleNav } from './nav';
 
@@ -23,7 +24,7 @@ export interface GuardedRoute {
 const ROLE_LISTS: Record<string, Role[]> = Object.fromEntries(
   [...appSource.matchAll(/^const (\w+): Role\[\] = \[([^\]]*)\];/gm)].map((m) => [m[1], [...m[2].matchAll(/'(\w+)'/g)].map((r) => r[1] as Role)]),
 );
-const NAMED_ACCESS: Record<string, Access> = { TEAM_READ };
+const NAMED_ACCESS: Record<string, Access> = { TEAM_READ, ...(access as unknown as Record<string, Access>) };
 
 /** WORK, ['PLATFORM_ADMIN'] or [...OPS, 'AUDITOR'] → roles. */
 function rolesOf(expr: string): Role[] {
