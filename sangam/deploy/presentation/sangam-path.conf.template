@@ -41,7 +41,7 @@ server {
         default_type application/json;
         add_header Cache-Control "no-store" always;
         include /etc/nginx/conf.d/security-headers.inc;
-        return 200 '{"apiBase":"${SANGAM_PUBLIC_API_BASE}","oidc":{"issuer":"${SANGAM_OIDC_ISSUER}","clientId":"${SANGAM_OIDC_CLIENT_ID}"},"defaultLocale":"${SANGAM_DEFAULT_LOCALE}","locales":"${SANGAM_LOCALES}","environment":"${SANGAM_ENV_LABEL}","traceUrlTemplate":"","teams":{"enabled":false},"dsc":{"agentUrl":""},"session":{"idleMinutes":${SANGAM_UI_IDLE_MINUTES_CHECKED}}}';
+        return 200 '{"apiBase":"${SANGAM_PUBLIC_API_BASE}","oidc":{"issuer":"${SANGAM_OIDC_ISSUER}","clientId":"${SANGAM_OIDC_CLIENT_ID}"},"defaultLocale":"${SANGAM_DEFAULT_LOCALE}","locales":"${SANGAM_LOCALES}","environment":"${SANGAM_ENV_LABEL}","traceUrlTemplate":"","teams":{"enabled":false},"dsc":{"agentUrl":""},"session":{"idleMinutes":${SANGAM_UI_IDLE_MINUTES_CHECKED}},"fonts":{"manifest":"${SANGAM_FONTS_MANIFEST}"}}';
     }
 
     # API and the Sangam-authenticated Operaton REST: /sangam/api/... -> <upstream>/api/... (prefix removed).

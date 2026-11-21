@@ -199,6 +199,10 @@ services:
       # /sangam/config.json, which every browser reads; the UI shows it nowhere and only reads it to choose the sign-in
       # mode (the value dev means the development token, anything else OIDC).
       SANGAM_ENV_LABEL: ""
+      # Register L-7: no site fonts are installed on this host, so the optional site font manifest is turned off
+      # (config.json fonts.manifest; fonts.ts asks for nothing then). Without this line the UI asks for
+      # /sangam/fonts/site/fonts.json at every page load and gets a 404.
+      SANGAM_FONTS_MANIFEST: ""
       SANGAM_UI_IDLE_MINUTES: "30"
       SANGAM_CSP_CONNECT_EXTRA: ${SANGAM_CSP_CONNECT_EXTRA:?the auth origin, e.g. https://<auth host>}
     read_only: true

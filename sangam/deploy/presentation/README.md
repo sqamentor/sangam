@@ -44,6 +44,7 @@ Front:
 | `SANGAM_OIDC_CLIENT_ID` | `sangam-ui` | public PKCE client |
 | `SANGAM_DEFAULT_LOCALE`, `SANGAM_LOCALES` | `en`, `en` | English only in 0.1.0 (Q-06) |
 | `SANGAM_ENV_LABEL` | empty | sent to the browser as `environment` in `/sangam/config.json`; the UI shows it nowhere and reads it only to choose the sign-in mode (`dev` = development token, anything else OIDC); leave empty |
+| `SANGAM_FONTS_MANIFEST` | `/sangam/fonts/site/fonts.json` | the optional site font manifest (`fonts.manifest` in `/sangam/config.json`, sangam-ui FONTS.md); the default is the path the UI asks for anyway; set it empty where no site fonts are installed, and the UI asks for none (otherwise a 404 at every page load) |
 | `SANGAM_UI_IDLE_MINUTES` | `30` | UI idle sign-out, 1-480 |
 | `SANGAM_CSP_CONNECT_EXTRA` | empty | extra `connect-src` origins, if any |
 
