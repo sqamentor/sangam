@@ -71,6 +71,18 @@ class DemoLoaderSequenceAgainstServerTest {
     /** The settings that deploy the packs for GOI.FIN at start (configuration only, no code change). */
     static final List<String> PACKS_AT_START = List.of("--sangam.packs.deploy-on-start=true", "--sangam.packs.tenants=" + TENANT);
 
+    /**
+     * Register E-26 Follow-up 2 (vi), OPEN DECISION (sync board REQUEST): a payee's bank account is a sensitive
+     * identifier, and the party registry holds its clear value only in the compliance national-id vault (decision 389,
+     * RegistryWiring). The demo fragment configures no such vault, so on the host every registration of a payee is
+     * refused (409 "no vault service is configured to hold clear identifier values (type BANK_ACCOUNT)") and, with an
+     * unregistered payee refused, no bill gets past its payee check. This setting, a test value and no secret, switches
+     * the vault on for the packs-deployed runs of this test ONLY, to show the journey once the host has one; it is not
+     * in the fragment and is not proposed for it here.
+     */
+    static final String PAYEE_CUSTODY_FOR_THIS_TEST = "--sangam.compliance.national-id-vault.hmac-pepper="
+            + java.util.Base64.getEncoder().encodeToString("E-26 payee custody, this test only".getBytes(StandardCharsets.UTF_8));
+
     @TempDir
     Path dir;
 
@@ -92,7 +104,9 @@ class DemoLoaderSequenceAgainstServerTest {
     /** The same, with the packs deployed for GOI.FIN at start. */
     @Test
     void theLiveSequenceWithThePacksDeployedForTheTenantAtStart() throws Exception {
-        run(PACKS_AT_START, PACKS_GAPS);
+        List<String> settings = new ArrayList<>(PACKS_AT_START);
+        settings.add(PAYEE_CUSTODY_FOR_THIS_TEST);
+        run(settings, PACKS_GAPS);
     }
 
     private void run(List<String> settings, java.util.Set<String> gaps) throws Exception {
@@ -191,6 +205,10 @@ class DemoLoaderSequenceAgainstServerTest {
             }
         }
         status.add("DEMO-SEQUENCE | connectors | INFO | " + connectors(ctx));
+        status.add("DEMO-SEQUENCE | payee custody | INFO | " + (ctx.getEnvironment().containsProperty(
+                "sangam.compliance.national-id-vault.hmac-pepper")
+                ? "national-id vault ON for this test only (not in the demo fragment; open decision, register E-26 Follow-up 2)"
+                : "no national-id vault (as the demo fragment): a payee's bank account cannot be registered"));
         if (steps.contains("3b smoke") || steps.contains("4a cases")) {
             // register E-25 point 4: one line per case, so the report lists every case
             stops(ctx).forEach(s -> status.add("DEMO-SEQUENCE | stop | INFO | " + s));

@@ -314,7 +314,8 @@ class PacksOfBootstrapTenantAgainstServerTest {
         List<String> all;
         long definitions;
         Map<String, String> cases;
-        try (ConfigurableApplicationContext ctx = host.start(env -> { })) {
+        // register E-26 Follow-up 2 (vi): the payee custody vault, for this test only (open decision, see the constant)
+        try (ConfigurableApplicationContext ctx = host.start(env -> { }, DemoLoaderSequenceAgainstServerTest.PAYEE_CUSTODY_FOR_THIS_TEST)) {
             assertEquals("true", ctx.getEnvironment().getProperty("sangam.packs.deploy-on-start"),
                     "the fragment's environment switches the start-up deployment on (no profile default is relied on)");
             assertEquals(TENANT, ctx.getEnvironment().getProperty("sangam.packs.tenants"),
@@ -336,7 +337,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
             assertFalse(cases.isEmpty(), "cases are open after step 4a");
             all = deployments(ctx, TENANT);
         }
-        try (ConfigurableApplicationContext ctx = host.start(env -> { })) {
+        try (ConfigurableApplicationContext ctx = host.start(env -> { }, DemoLoaderSequenceAgainstServerTest.PAYEE_CUSTODY_FOR_THIS_TEST)) {
             assertEquals(packs, installed(ctx, TENANT), "a further start deploys nothing: the same deployments");
             assertEquals(all, deployments(ctx, TENANT), "packs and the tenant's own tables alike");
             assertEquals(definitions, definitions(ctx, TENANT), "and no new definition version");
