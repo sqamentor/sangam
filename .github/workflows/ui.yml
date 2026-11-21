@@ -172,7 +172,14 @@ jobs:
           # codes are refused with PRINCIPAL_KEY_NOT_CONFIGURED.
           principal_key=$(python3 -I -c "import base64, secrets; print(base64.b64encode(secrets.token_bytes(32)).decode())")
           echo "::add-mask::$principal_key"
+          # Joint decision EV-M-0961 (A), register L-3: the tenant of the development token is a scope under a shipped
+          # profile. ProfileResolver resolves a tenant id by its dot prefixes (GOI, then GOI.E2E), so GOI.E2E runs on the
+          # shipped chain GOI > IN > REGIME-WESTMINSTER-SUPPLY, as the presentation tenant GOI.FIN does; the default "dev"
+          # of application-h2.yaml has no profile ("Tenant dev has no active profile"), and the bill then stops at
+          # bl_bindingHold. Bootstrap, JIT provisioning and the packs deployed at start follow the same variable. Test
+          # configuration only: no profile or product data changes.
           docker run -d --name sangam-server --network e2e -e SANGAM_DEV_TOKEN="$token" \
+            -e SANGAM_TENANT_DEFAULT=GOI.E2E \
             -e SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF=secret://compliance/principal-key \
             -e SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY="$principal_key" \
             -e SANGAM_SECURITY_CORS_ALLOWEDORIGINS=https://host.e2e.test \
@@ -236,6 +243,44 @@ jobs:
           if rc != 0 or failed or skipped or ran == 0:
               sys.exit("::error title=ui-e2e::end-to-end run failed, skipped tests or ran none (a skip is not a pass)")
           PY'
+      - name: Redirects carry a relative Location (EV-M-0969)
+        # nginx's defaults (absolute_redirect on, port_in_redirect on) made GET demo.ifms.dev/sangam answer
+        # Location http://demo.ifms.dev:8080/sangam/, the container's own port. Both nginx configurations of the UI
+        # build set absolute_redirect off (UiNginxConfTest); here the running fronts answer: the e2e UI image (its own
+        # directory redirect /assets -> /assets/) and a second container of the same image rendering the presentation
+        # path configuration (deploy/presentation/sangam-path.conf.template: /sangam -> /sangam/, and the directory
+        # redirect under the prefix). The Location must be exactly the path: no scheme, no host, no port. No image is
+        # pulled: the second container is sangam-ui:e2e with the presentation template mounted in place of its own.
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          docker run -d --name sangam-front-path --network e2e -p 127.0.0.1:8090:8080 \
+            -v "$PWD/deploy/presentation/sangam-path.conf.template:/etc/nginx/templates/default.conf.template:ro" \
+            -e SANGAM_API_UPSTREAM=http://sangam-server:8080 -e SANGAM_PUBLIC_API_BASE=/sangam/api/v1 \
+            -e SANGAM_ENV_LABEL= -e SANGAM_FONTS_MANIFEST= sangam-ui:e2e
+          up=""
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8090/healthz > /dev/null; then up=yes; break; fi
+            sleep 1
+          done
+          [ -n "$up" ] || { docker logs sangam-front-path; echo "::error::the presentation-path front did not start"; exit 1; }
+          bad=0
+          check() {  # url, expected Location
+            local head status location
+            head=$(curl -s -o /dev/null -D - "$1" | tr -d '\r')
+            status=$(printf '%s\n' "$head" | head -n1 | awk '{print $2}')
+            location=$(printf '%s\n' "$head" | sed -n 's/^[Ll]ocation: //p')
+            echo "GET $1 -> $status, Location '$location' (expected 301 '$2')"
+            if [ "$status" != "301" ] || [ "$location" != "$2" ]; then
+              echo "::error title=EV-M-0969::GET $1 answered $status with Location '$location', expected 301 with '$2'"
+              bad=1
+            fi
+          }
+          check http://127.0.0.1:8090/sangam /sangam/
+          check http://127.0.0.1:8090/sangam/assets /sangam/assets/
+          check http://127.0.0.1:8080/assets /assets/
+          docker rm -f sangam-front-path > /dev/null
+          exit $bad
       - name: Server log on failure
         if: failure()
         run: docker logs sangam-server

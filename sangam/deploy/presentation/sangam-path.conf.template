@@ -17,6 +17,11 @@ server {
     listen       [::]:8080;
     server_name  _;
     root         /usr/share/nginx/html;
+    # EV-M-0969: every redirect names a path only (Location /sangam/), never this container's own scheme, host and
+    # port. With nginx's defaults (absolute_redirect and port_in_redirect both enabled) GET demo.ifms.dev/sangam answered
+    # http://demo.ifms.dev:8080/sangam/, the port the host's proxy forwards to. This covers the return 301 below and
+    # nginx's own directory redirects (try_files $uri/). UiNginxConfTest; ui.yml e2e checks it on the running front.
+    absolute_redirect off;
     client_max_body_size 50m;
     gzip on;
     gzip_types text/plain text/css application/json application/javascript application/xml image/svg+xml;
@@ -41,7 +46,7 @@ server {
         default_type application/json;
         add_header Cache-Control "no-store" always;
         include /etc/nginx/conf.d/security-headers.inc;
-        return 200 '{"apiBase":"${SANGAM_PUBLIC_API_BASE}","oidc":{"issuer":"${SANGAM_OIDC_ISSUER}","clientId":"${SANGAM_OIDC_CLIENT_ID}"},"defaultLocale":"${SANGAM_DEFAULT_LOCALE}","locales":"${SANGAM_LOCALES}","environment":"${SANGAM_ENV_LABEL}","traceUrlTemplate":"","teams":{"enabled":false},"dsc":{"agentUrl":""},"session":{"idleMinutes":${SANGAM_UI_IDLE_MINUTES_CHECKED}}}';
+        return 200 '{"apiBase":"${SANGAM_PUBLIC_API_BASE}","oidc":{"issuer":"${SANGAM_OIDC_ISSUER}","clientId":"${SANGAM_OIDC_CLIENT_ID}"},"defaultLocale":"${SANGAM_DEFAULT_LOCALE}","locales":"${SANGAM_LOCALES}","environment":"${SANGAM_ENV_LABEL}","traceUrlTemplate":"","teams":{"enabled":false},"dsc":{"agentUrl":""},"session":{"idleMinutes":${SANGAM_UI_IDLE_MINUTES_CHECKED}},"fonts":{"manifest":"${SANGAM_FONTS_MANIFEST}"}}';
     }
 
     # API and the Sangam-authenticated Operaton REST: /sangam/api/... -> <upstream>/api/... (prefix removed).

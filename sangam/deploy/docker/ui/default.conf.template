@@ -16,6 +16,9 @@ server {
     server_name  _;
     root         /usr/share/nginx/html;
     index        index.html;
+    # EV-M-0969, as in deploy/presentation/sangam-path.conf.template: nginx's own redirects (the directory redirect of
+    # try_files $uri/, e.g. /assets -> /assets/) name a path only, never this container's scheme, host and port 8080.
+    absolute_redirect off;
 
     client_max_body_size 50m;   # attachments go through the API (X.2.5 attachment rules)
     gzip on;

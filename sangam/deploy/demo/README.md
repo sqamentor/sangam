@@ -10,7 +10,7 @@ and does not deploy anything itself.
 | `keycloak-clients-sangam.json` | The `sangam-ui` client (public, PKCE) and the `sangam-server` client (bearer-only) for the existing realm `oneifms`. It contains no secrets. |
 | `generate-demo-keys.sh` | Host-side key generation (openssl only, idempotent, prints no key material) into `SANGAM_SECRETS_DIR` |
 | `DB-REQUIREMENT.md` | The database engine, version, size and backup |
-| `../../../sangam-handoff/2026-11-19/DEMO-GO-LIVE-RUNBOOK.md` (outside the repo) | The steps, the owner's yes for each one, and the rollback |
+| `DEMO-GO-LIVE-RUNBOOK.md` | The steps, the owner's yes for each one, the hard preconditions of the data load, and the rollback. This is the source; the hand-over folder carries a copy |
 
 ## Images (no registry)
 
