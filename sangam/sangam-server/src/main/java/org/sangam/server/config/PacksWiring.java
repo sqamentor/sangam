@@ -315,8 +315,8 @@ public class PacksWiring {
     }
 
     /**
-     * Per-tenant pack provisioning through the REST API: after {@code AdminPort.createTenant} /
-     * {@code AdminPort.updateTenant} (status ACTIVE), and before {@code PackagePort.transition} with action
+     * Per-tenant pack provisioning through the REST API: after {@code AdminPort.createTenant},
+     * {@code AdminPort.updateTenant} and {@code AdminPort.activateTenant} (status ACTIVE), and before {@code PackagePort.transition} with action
      * {@code deploy}, the packs are ensured for that tenant ({@link PacksTenantDeployer#ensureDeployed}). Implemented as
      * a decorator around whichever AdminPort / PackagePort bean is active (sangam-rest default or a module bridge).
      */
@@ -333,6 +333,13 @@ public class PacksWiring {
             }
         };
     }
+
+    /**
+     * The AdminPort calls after which a tenant can be ACTIVE: create, update (PUT with status ACTIVE) and, register
+     * E-33 (e), {@code activateTenant}, the route {@code POST /admin/tenants/{id}/activate} of AJ-01 step 10.
+     */
+    private static final java.util.Set<String> PROVISIONING_CALLS =
+            java.util.Set.of("createTenant", "updateTenant", "activateTenant");
 
     private static Object provisioning(Object target, ObjectProvider<PacksTenantDeployer> deployer) {
         Class<?> port = target instanceof org.sangam.rest.port.AdminPort ? org.sangam.rest.port.AdminPort.class
@@ -351,7 +358,7 @@ public class PacksWiring {
                 throw e.getCause();
             }
             if (port == org.sangam.rest.port.AdminPort.class && result instanceof org.sangam.rest.port.AdminPort.Tenant t
-                    && (name.equals("createTenant") || name.equals("updateTenant")) && "ACTIVE".equals(t.status())) {
+                    && PROVISIONING_CALLS.contains(name) && "ACTIVE".equals(t.status())) {
                 ensure(deployer, t.id());
             }
             return result;

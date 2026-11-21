@@ -21,7 +21,8 @@ import org.slf4j.LoggerFactory;
  * Deploys the discovered packs (sangam-packs §2) for one tenant: one engine deployment per pack
  * ({@code pack:<id>@<version>}, duplicate filtering on, {@code ModelGuard} checks), so repeated calls are idempotent.
  * Called at start-up for {@code sangam.packs.tenants} and, from WS-REST, when a tenant is created or activated
- * ({@code POST/PUT /admin/tenants}) or before a tenant's first package deploy. Each call is audited
+ * ({@code POST/PUT /admin/tenants}, {@code POST /admin/tenants/{id}/activate}) or before a tenant's first package
+ * deploy. Each call is audited
  * ({@code PACKS_DEPLOYED} on {@code sec:<tenant>}).
  *
  * <p>DEC-225-4 ({@link #useProfileTables}): with the packs, the tenant's own delegation tables from its configuration
