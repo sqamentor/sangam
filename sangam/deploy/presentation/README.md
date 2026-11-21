@@ -43,7 +43,7 @@ Front:
 | `SANGAM_OIDC_ISSUER` | (none, required) | issuer URL, e.g. `https://<keycloak>/realms/oneifms` |
 | `SANGAM_OIDC_CLIENT_ID` | `sangam-ui` | public PKCE client |
 | `SANGAM_DEFAULT_LOCALE`, `SANGAM_LOCALES` | `en`, `en` | English only in 0.1.0 (Q-06) |
-| `SANGAM_ENV_LABEL` | empty | environment badge text; leave empty |
+| `SANGAM_ENV_LABEL` | empty | sent to the browser as `environment` in `/sangam/config.json`; the UI shows it nowhere and reads it only to choose the sign-in mode (`dev` = development token, anything else OIDC); leave empty |
 | `SANGAM_UI_IDLE_MINUTES` | `30` | UI idle sign-out, 1-480 |
 | `SANGAM_CSP_CONNECT_EXTRA` | empty | extra `connect-src` origins, if any |
 

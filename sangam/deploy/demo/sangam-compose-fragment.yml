@@ -195,7 +195,10 @@ services:
       SANGAM_OIDC_CLIENT_ID: sangam-ui
       SANGAM_DEFAULT_LOCALE: en
       SANGAM_LOCALES: en
-      SANGAM_ENV_LABEL: demo
+      # Register E-27: empty, as deploy/presentation/README.md says. The value becomes "environment" in
+      # /sangam/config.json, which every browser reads; the UI shows it nowhere and only reads it to choose the sign-in
+      # mode (the value dev means the development token, anything else OIDC).
+      SANGAM_ENV_LABEL: ""
       SANGAM_UI_IDLE_MINUTES: "30"
       SANGAM_CSP_CONNECT_EXTRA: ${SANGAM_CSP_CONNECT_EXTRA:?the auth origin, e.g. https://<auth host>}
     read_only: true

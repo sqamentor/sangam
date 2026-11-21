@@ -1,15 +1,19 @@
 # SPDX-License-Identifier: Apache-2.0
 """Hard preconditions before the demo data load on demo.ifms.dev (DEMO-E2E lane, 2026-11-19). Standard library only.
 
-  python3 -I deploy/presentation/demo_preflight.py money      # stops unless no payment can leave Sangam
+  python3 -I deploy/presentation/demo_preflight.py money      # stops unless the tenant's payments stay inside Sangam
   python3 -I deploy/presentation/demo_preflight.py smoke      # loads 2 cases first and checks where they stopped
 
-money: reads the tenant's environment bindings named pfms.payment (GET /env-bindings?name=pfms.payment, permission
-  package.read, SANGAM_ADMIN_TOKEN) and stops (exit 1) when an APPROVED binding does not name a sandbox or held rail.
-  No binding at all is safe for money (nothing can pay) but the COMPLETED cases of the data set will then not close:
-  it says so and stops too, so the deployer decides with the owner. It also refuses when SANGAM_CONNECTORS_ENV (the
-  output of `docker exec <server> env`, saved to a file and passed as SANGAM_CONNECTORS_ENV=<file>) shows a payment
-  connector URL that is set.
+money: asks the server whether the tenant is one of its sandbox tenants (GET /me with SANGAM_ADMIN_TOKEN, field
+  `sandbox`; no permission needed) and stops (exit 1) unless the answer is true. For a sandbox tenant
+  (sangam.demo.sandbox-tenants, the fragment's SANGAM_DEMO_SANDBOXTENANTS) the payee check, the payment and the bank
+  statement are answered inside the server by its simulator and marked sandbox; for any other tenant a payment step
+  calls whatever connector is configured, or stops as an incident. The check does not read the tenant's environment
+  bindings (GET /env-bindings): a binding is a named endpoint of a package manifest, read when a package is
+  activated; no payment is routed by it and the sandbox writes none (register E-27). It also refuses when
+  SANGAM_CONNECTORS_ENV (the output of `docker exec <server> env`, saved to a file and passed as
+  SANGAM_CONNECTORS_ENV=<file>) shows a payment connector URL that is set; without that file it says that the
+  server's connector variables were not looked at.
 smoke: runs load_presentation_data.py on a data set of two cases that pay nothing (BILL-0005 stops at pc_dealing,
   GPF-0002 at sn_sanction; they carry claimPeriod and qualifyingService as strings over REST) and stops unless both
   report that they wait at their task. Only then load the rest.
@@ -24,7 +28,6 @@ import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data", "ifms-jaipur-fy2026-27.json")
-SAFE_WORDS = ("sandbox", "held", "sim")
 SMOKE = {"BILL-0005": "pc_dealing", "GPF-0002": "sn_sanction"}
 
 
@@ -42,20 +45,19 @@ def money():
             k, _, v = line.strip().partition("=")
             if k.startswith("SANGAM_CONNECTORS_") and any(w in k for w in ("PAYGOV", "PFMS", "IFMS")) and v.strip():
                 fail(f"{k} is set on the server: a payment connector is configured")
-    req = urllib.request.Request(base.rstrip("/") + "/env-bindings?name=pfms.payment",
+    req = urllib.request.Request(base.rstrip("/") + "/me",
                                  headers={"Authorization": f"Bearer {token}", "Accept": "application/json"})
     with urllib.request.urlopen(req, timeout=30) as r:
-        body = json.load(r)
-    items = body if isinstance(body, list) else body.get("items", [])
-    approved = [b for b in items if str(b.get("state", "APPROVED")).upper() == "APPROVED"]
-    if not approved:
-        fail("no APPROVED pfms.payment binding: nothing can pay, but the COMPLETED cases will not close; "
-             "decide with the owner (bind the sandbox connector) before the load")
-    for b in approved:
-        text = json.dumps(b).lower()
-        if not any(w in text for w in SAFE_WORDS):
-            fail(f"pfms.payment binding {b.get('name')} / env {b.get('env')} is not a sandbox or held rail")
-    print(f"OK: {len(approved)} pfms.payment binding(s), all sandbox or held")
+        me = json.load(r)
+    tenant = me.get("tenantId") if isinstance(me, dict) else None
+    if not isinstance(me, dict) or me.get("sandbox") is not True:
+        fail(f"tenant {tenant} is not a sandbox tenant of this server (GET /me does not say sandbox: true): a payment "
+             "step would call a configured connector or stop as an incident; the server's sandbox tenant list "
+             "(sangam.demo.sandbox-tenants) is set with the owner's yes, before the load")
+    print(f"OK: tenant {tenant} is a sandbox tenant: payee check, payment and bank statement are answered inside the "
+          "server and marked sandbox; " + ("no payment connector URL is set on the server" if envfile else
+                                           "SANGAM_CONNECTORS_ENV was not given, so the server's connector variables "
+                                           "were not looked at"))
 
 
 def smoke():
