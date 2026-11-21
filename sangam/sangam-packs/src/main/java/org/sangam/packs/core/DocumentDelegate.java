@@ -57,6 +57,7 @@ public class DocumentDelegate implements JavaDelegate {
         }
         Object no = r.data().getOrDefault("documentNo", r.externalRef());
         ex.setVariable(rv, no == null ? opId : no.toString());
-        Vars.audit(ex, "DOCUMENT_ISSUED", Vars.map("template", tpl, "documentNo", no));
+        // the connector is named so that a document number the demo sandbox made up is marked simulated (Vars.audit)
+        Vars.audit(ex, "DOCUMENT_ISSUED", Vars.map("template", tpl, "documentNo", no, "connector", "docs.issue"));
     }
 }

@@ -409,6 +409,66 @@ class SandboxBillJourneyTest {
     }
 
     @Test
+    void theListIsExactlyTheTwoChecksEachWithItsShippedAnswerAndNeitherMovesMoney() {
+        assertEquals(SANDBOX_CHECKS, DemoSandbox.CHECK_CONNECTORS);
+        assertEquals(Map.of("ifms.duplicateBill", "duplicate=false", "docs.issue", ""), DemoSandbox.checkAnswers());
+        for (String id : DemoSandbox.CHECK_CONNECTORS) {
+            assertEquals(java.util.Optional.of(org.sangam.packs.spi.MoneyMovement.NONE),
+                    org.sangam.packs.spi.ConnectorMoneyMovements.declared(id), id + " is declared as moving no money");
+            assertFalse(DemoSandbox.PAYMENT_CONNECTORS.contains(id) || DemoSandbox.STATEMENT_CONNECTORS.contains(id), id);
+        }
+        DemoSandbox.install(Set.of("t-demo"));
+        assertTrue(DemoSandbox.simulates("t-demo", "ifms.duplicateBill"));
+        assertTrue(DemoSandbox.simulates("t-demo", "docs.issue"));
+        assertTrue(DemoSandbox.simulates("t-demo", "pfms.payment"), "W-5 is unchanged");
+        assertFalse(DemoSandbox.simulates("t-demo", "rail.ekuber"));
+        assertFalse(DemoSandbox.simulates("t-demo", "ledger.consume"));
+        assertFalse(DemoSandbox.simulates("t-real", "ifms.duplicateBill"));
+        assertFalse(DemoSandbox.simulates(null, "ifms.duplicateBill"));
+    }
+
+    @Test
+    void theCheckSimulatorRefusesEveryOtherTenantAndEveryOtherConnectorWhenCalledDirectly() {
+        DemoSandbox.install(Set.of("t-demo"));
+        for (String id : DemoSandbox.CHECK_CONNECTORS) {
+            ConnectorRequest other = new ConnectorRequest("t-real", id, "check", "op-d-" + id, "BK/d", "pi-d",
+                    Map.of("payee", "X"), "h-d-" + id);
+            assertEquals(DemoSandbox.REFUSED, DemoSandbox.CHECKS.query(other).reasonCode(), id);
+            assertEquals(DemoSandbox.REFUSED, DemoSandbox.CHECKS.submit(other).reasonCode(), id);
+            assertEquals(DemoSandbox.REFUSED, DemoSandbox.CHECKS.lookup("t-real", id, "op-d-" + id).reasonCode(), id);
+            assertEquals(DemoSandbox.REFUSED, DemoSandbox.CHECKS.cancel("t-real", id, "op-d-" + id, "x").reasonCode(), id);
+            assertTrue(org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+                    () -> DemoSandbox.CHECKS.openReconciliation(new org.sangam.packs.port.ReconciliationRequest("t-real",
+                            id, "op-d-" + id, "BK/d", "pi-d", "UNKNOWN_OUTCOME", Map.of()))).getMessage()
+                    .startsWith(DemoSandbox.REFUSED));
+        }
+        // the listed tenant is answered, and the answer says it is the sandbox's
+        ConnectorResult dup = DemoSandbox.CHECKS.query(new ConnectorRequest("t-demo", "ifms.duplicateBill", "check", null,
+                "BK/e", "pi-e", Map.of("payee", "X"), "h-e"));
+        assertEquals(org.sangam.packs.port.OperationStatus.COMPLETED, dup.status());
+        assertEquals(false, dup.data().get("duplicate"));
+        assertEquals(true, dup.data().get(DemoSandbox.AUDIT_KEY));
+        ConnectorRequest doc = new ConnectorRequest("t-demo", "docs.issue", "payment-advice", "op-e-doc", "BK/e", "pi-e",
+                Map.of("template", "payment-advice"), "h-e-doc");
+        ConnectorResult first = DemoSandbox.CHECKS.submit(doc);
+        assertEquals(org.sangam.packs.port.OperationStatus.COMPLETED, first.status());
+        assertTrue(String.valueOf(first.data().get("documentNo")).startsWith("DOC/"), first.data().toString());
+        assertEquals(true, first.data().get(DemoSandbox.AUDIT_KEY));
+        assertEquals(first.data().get("documentNo"), DemoSandbox.CHECKS.submit(doc).data().get("documentNo"),
+                "a repeat of the same operation gets the same number");
+        // a connector that is not on the list is never answered by the check simulator, whoever asks
+        for (String id : List.of("pfms.payment", "ifms.payment", "bank.transfer", "bank.statement", "rail.ekuber",
+                "ledger.consume", "ifms.budget", "docs.render", "paygov.fee")) {
+            ConnectorRequest r = new ConnectorRequest("t-demo", id, "call", "op-f-" + id, "BK/f", "pi-f", Map.of(),
+                    "h-f-" + id);
+            assertEquals(DemoSandbox.NOT_LISTED, DemoSandbox.CHECKS.query(r).reasonCode(), id);
+            assertEquals(DemoSandbox.NOT_LISTED, DemoSandbox.CHECKS.submit(r).reasonCode(), id);
+            assertEquals(DemoSandbox.NOT_LISTED, DemoSandbox.CHECKS.lookup("t-demo", id, "op-f-" + id).reasonCode(), id);
+            assertEquals(DemoSandbox.NOT_LISTED, DemoSandbox.CHECKS.cancel("t-demo", id, "op-f-" + id, "x").reasonCode(), id);
+        }
+    }
+
+    @Test
     void aListedConnectorOfAnotherTenantIsStillNotConfiguredAndItsBillStops() {
         DemoSandbox.install(List.of("t-some-other-tenant"));
         production();

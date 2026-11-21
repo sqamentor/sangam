@@ -267,6 +267,12 @@ public class PacksWiring {
                     + "sandbox=true; production mode {}; every other tenant is unchanged", t, SANDBOX_TENANTS_PROPERTY,
                     org.sangam.packs.sim.DemoSandbox.PAYMENT_CONNECTORS.stream().sorted().toList(),
                     ProductionEnvironment.isProduction(env) ? "stays on" : "is off");
+            // register E-26: the outside checks of the bill journey the sandbox answers for these tenants, by id
+            LOG.warn("DEMO SANDBOX tenants {}: the outside checks {} are SIMULATED for them from {} (no outside system is "
+                    + "asked), each audited with its connector, simulated=true and sandbox=true; every other connector "
+                    + "and every other tenant is unchanged", t,
+                    org.sangam.packs.sim.DemoSandbox.CHECK_CONNECTORS.stream().sorted().toList(),
+                    org.sangam.packs.sim.DemoSandbox.CHECK_ANSWERS);
         }
         return t;
     }

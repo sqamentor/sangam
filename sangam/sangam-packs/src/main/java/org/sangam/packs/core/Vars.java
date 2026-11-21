@@ -399,7 +399,12 @@ public final class Vars {
                 str(t, OPERATION_ID), sandboxMarked(tenant, details), now()));
     }
 
-    /** Owner option (b): every pack audit event of a demo sandbox tenant carries {@code sandbox=true}. */
+    /**
+     * Owner option (b): every pack audit event of a demo sandbox tenant carries {@code sandbox=true}. Register E-26:
+     * an event whose detail {@code connector} names a connector the sandbox answers for that tenant (a payment rail,
+     * the statement, a listed outside check) carries {@code simulated=true} as well, so the record of a simulated
+     * answer never reads as the outside system's.
+     */
     static Map<String, Object> sandboxMarked(String tenant, Map<String, Object> details) {
         if (!org.sangam.packs.sim.DemoSandbox.isSandbox(tenant)) {
             return details;
@@ -409,6 +414,10 @@ public final class Vars {
             m.putAll(details);
         }
         m.put(org.sangam.packs.sim.DemoSandbox.AUDIT_KEY, true);
+        Object connector = m.get("connector");
+        if (connector != null && org.sangam.packs.sim.DemoSandbox.simulates(tenant, connector.toString())) {
+            m.put(org.sangam.packs.sim.DemoSandbox.SIMULATED_KEY, true);
+        }
         return m;
     }
 
