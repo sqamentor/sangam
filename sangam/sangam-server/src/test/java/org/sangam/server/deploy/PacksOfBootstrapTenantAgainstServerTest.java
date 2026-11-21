@@ -375,7 +375,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
             // the difficult cases: the requester, and any other system identity of a start, cannot decide
             for (SecurityIdentity self : List.of(SecurityIdentity.system(TENANT, "tenant-onboarding"),
                     SecurityIdentity.system(TENANT, "install-bootstrap"))) {
-                assertThrows(org.sangam.security.SangamSecurityException.SodViolation.class,
+                assertThrows(org.sangam.core.security.SangamSecurityException.SodViolation.class,
                         () -> tx.inTransaction(c -> { security.policies().approve(c, self, pending.get(0)); return null; }),
                         "a system identity (" + self.onBehalfOf() + ") cannot approve a change the system requested");
             }
