@@ -60,12 +60,21 @@ public final class SecurityIdentityAdminBridge implements IdentityAdminPort {
     private final IdentityAdminPort fallback;
     private final RestProperties props;
 
+    /** Where the decision on a requested leave is recorded (ASSIGNMENT_APPROVED / ASSIGNMENT_REJECTED); may be null. */
+    private final org.sangam.rest.port.AuditPort audit;
+
     public SecurityIdentityAdminBridge(SangamSecurity security, TxSupport tx, IdentityAdminPort fallback,
                                        RestProperties props) {
+        this(security, tx, fallback, props, null);
+    }
+
+    public SecurityIdentityAdminBridge(SangamSecurity security, TxSupport tx, IdentityAdminPort fallback,
+                                       RestProperties props, org.sangam.rest.port.AuditPort audit) {
         this.security = security;
         this.tx = tx;
         this.fallback = fallback;
         this.props = props;
+        this.audit = audit;
     }
 
     // ------------------------------------------------------------------ default adapter
@@ -75,9 +84,35 @@ public final class SecurityIdentityAdminBridge implements IdentityAdminPort {
         return fallback.assignmentImpact(ctx, assignment);
     }
 
+    /**
+     * Register E-31(a), AJ-04 step 5: a requested leave ({@code POST /me/leave-requests}, a {@code REQUESTED} row of
+     * sangam-security) is decided by {@code PostingService.decideLeave}: the approver needs the posting admin right
+     * and is neither the requester nor the officer on leave (422 SOD_VIOLATION); approval makes the leave and its
+     * substitute postings effective, a rejection only closes the request; decided once (409 INVALID_TRANSITION). The
+     * decision and its reason are recorded as the default adapter records them. Any other id: the default adapter.
+     */
     @Override
     public AdminPort.Assignment decideAssignment(RequestContext ctx, String assignmentId, boolean approve, String reason) {
-        return fallback.decideAssignment(ctx, assignmentId, approve, reason);
+        boolean leave = run(c -> security.postings().leave(c, ctx.tenantId(), assignmentId).isPresent());
+        if (!leave) {
+            return fallback.decideAssignment(ctx, assignmentId, approve, reason);
+        }
+        return tx.inTx(() -> {
+            AdminPort.Assignment a = SecurityAdminBridge.leaveAssignment(ctx.tenantId(),
+                    run(c -> security.postings().decideLeave(c, actor(ctx), assignmentId, approve)));
+            if (audit != null) {
+                java.util.Map<String, Object> p = new java.util.LinkedHashMap<>();
+                p.put("assignmentId", assignmentId);
+                p.put("seatId", a.seatId());
+                p.put("personId", a.personId());
+                p.put("kind", a.kind());
+                p.put("reason", reason);
+                p.put("actor", ctx.actor());
+                p.values().removeIf(java.util.Objects::isNull);
+                audit.record(ctx, "sec:" + ctx.tenantId(), approve ? "ASSIGNMENT_APPROVED" : "ASSIGNMENT_REJECTED", p);
+            }
+            return a;
+        });
     }
 
     @Override

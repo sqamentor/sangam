@@ -234,6 +234,17 @@ public interface AdminPort {
 
     Assignment createAssignment(RequestContext ctx, Assignment assignment);
 
+    /**
+     * An officer's own request for leave with a substitute (kind LEAVE_SUBSTITUTE; AJ-04 step 5, S14,
+     * {@code POST /me/leave-requests}): pending until another person decides it
+     * ({@code IdentityAdminPort.decideAssignment}; the requester cannot approve). The default adapter records the
+     * assignment as {@link #createAssignment} does and keeps the decision beside it; an adapter with its own leave
+     * model overrides this.
+     */
+    default Assignment requestLeaveSubstitute(RequestContext ctx, Assignment assignment) {
+        return createAssignment(ctx, assignment);
+    }
+
     Assignment endAssignment(RequestContext ctx, String id, LocalDate validTo, String reason);
 
     Page<Delegation> delegations(RequestContext ctx, AdminFilter filter, Page.PageRequest page);

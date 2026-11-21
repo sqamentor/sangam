@@ -579,7 +579,8 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
         if (substitute.equals(ctx.principalId())) {
             throw ApiProblem.unprocessable("SOD_VIOLATION", "You cannot be your own substitute");
         }
-        AdminPort.Assignment created = admin.createAssignment(ctx, new AdminPort.Assignment(null, ctx.tenantId(),
+        // AJ-04 step 5, S14: a request, pending until another person decides it (POST /admin/assignments/{id}/approve)
+        AdminPort.Assignment created = admin.requestLeaveSubstitute(ctx, new AdminPort.Assignment(null, ctx.tenantId(),
                 r.seatId(), substitute, "LEAVE_SUBSTITUTE", r.from(), r.to(), r.seatId(), null, ctx.principalId(),
                 null, false));
         Map<String, Object> p = new LinkedHashMap<>();

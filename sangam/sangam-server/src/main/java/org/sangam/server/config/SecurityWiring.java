@@ -285,7 +285,7 @@ public class SecurityWiring {
             org.sangam.rest.support.DocumentStore store) {
         IdentityAdminPort fallback = new JdbcIdentityAdminAdapter(store, admin, tasks, permissions, audit, props,
                 env.getProperty("sangam.outbound.enabled", Boolean.class, false));
-        return new SecurityIdentityAdminBridge(security, tx, fallback, props);
+        return new SecurityIdentityAdminBridge(security, tx, fallback, props, audit);
     }
 
     /** For sangam-flowable-ports' {@code IdmFacade} (FLOWABLE-INTO-OPERATON FC-42). */
