@@ -67,7 +67,8 @@ import org.springframework.core.env.Environment;
  *       simulator / in-memory defaults (logged).</li>
  *   <li>{@link PackRegistry#discover()} + {@link PackDeployer}, and the {@link PacksTenantDeployer} hook; packs are
  *       deployed at start-up for {@code sangam.packs.tenants} when {@code sangam.packs.deploy-on-start} is true
- *       (default: true on the h2 profile, false elsewhere).</li>
+ *       (default: true on the h2 profile, false elsewhere), for tenants of this installation only; an id that is no
+ *       tenant is skipped and named at ERROR (register E-33 c).</li>
  * </ul>
  * Disable with {@code sangam.modules.packs.enabled=false}.
  */
@@ -364,29 +365,66 @@ public class PacksWiring {
         }
     }
 
-    /** Start-up deployment of the packs for the configured tenants (dev: on by default). */
+    /**
+     * Start-up deployment of the packs for the configured tenants (dev: on by default). It runs after
+     * {@link FirstAdminBootstrap} ({@link FirstAdminBootstrap#ORDER}), so the tenant of the install exists first, and
+     * it deploys only for tenants of this installation (register E-33 c, {@link #deployAtStart}).
+     */
     @Bean
-    public ApplicationRunner sangamPacksDeployOnStart(PacksTenantDeployer deployer, Environment env) {
+    public ApplicationRunner sangamPacksDeployOnStart(PacksTenantDeployer deployer, Environment env,
+            ObjectProvider<SangamSecurity> security, TxSupport tx) {
         return args -> {
-            boolean h2 = Arrays.asList(env.getActiveProfiles()).contains("h2");
-            if (!env.getProperty("sangam.packs.deploy-on-start", Boolean.class, h2)) {
-                return;
-            }
-            List<String> tenants = new ArrayList<>();
-            for (String t : env.getProperty("sangam.packs.tenants",
-                    env.getProperty("sangam.security.dev-token.tenant", "dev")).split(",")) {
-                if (!t.isBlank()) {
-                    tenants.add(t.trim());
-                }
-            }
-            for (String t : tenants) {
-                try {
-                    deployer.deploy(t);
-                } catch (RuntimeException e) {
-                    LOG.error("Pack deployment for tenant {} failed: {}", t, e.toString());
-                }
-            }
+            SangamSecurity sec = security.getIfAvailable();
+            deployAtStart(deployer::deploy, env,
+                    sec == null ? null : id -> tx.withConnection(c -> sec.tenants().find(c, id).isPresent()));
         };
+    }
+
+    /** {@value}: the tenants whose packs are deployed at start-up, comma-separated. */
+    static final String TENANTS_PROPERTY = "sangam.packs.tenants";
+
+    /**
+     * The start-up deployment: when {@code sangam.packs.deploy-on-start} is true (default: only under profile h2),
+     * {@code deploy} is called for each id of {@value #TENANTS_PROPERTY} (default: the dev-token tenant), in order,
+     * each id once. Register E-33 (c): an id that is no tenant ({@code isTenant}, the tenant directory of
+     * sangam-security) is skipped and named at ERROR; before, every shipped pack was deployed and an audit chain
+     * begun under an id nobody could ever use. The other ids are deployed all the same, as after a failed deployment.
+     * {@code isTenant} is null when there is no tenant directory (sangam-security absent); then every id is deployed.
+     *
+     * @return the ids {@code deploy} was called for, in order
+     */
+    static List<String> deployAtStart(java.util.function.Consumer<String> deploy, Environment env,
+            java.util.function.Predicate<String> isTenant) {
+        boolean h2 = Arrays.asList(env.getActiveProfiles()).contains("h2");
+        if (!env.getProperty("sangam.packs.deploy-on-start", Boolean.class, h2)) {
+            return List.of();
+        }
+        String listed = env.getProperty(TENANTS_PROPERTY);
+        boolean configured = listed != null; // an empty list is a list: nothing is deployed
+        java.util.Set<String> tenants = new java.util.LinkedHashSet<>();
+        for (String t : (configured ? listed : env.getProperty("sangam.security.dev-token.tenant", "dev")).split(",")) {
+            if (!t.isBlank()) {
+                tenants.add(t.trim());
+            }
+        }
+        List<String> called = new ArrayList<>();
+        for (String t : tenants) {
+            try {
+                if (isTenant != null && !isTenant.test(t)) {
+                    LOG.error("Start-up pack deployment: '{}' ({}) is no tenant of this installation, so no pack is "
+                            + "deployed for it. Create the tenant first (onboarding, or sangam.security.first-admins.* "
+                            + "for the first tenant of an install) or take the id out of {}.", t,
+                            configured ? TENANTS_PROPERTY : "the default of " + TENANTS_PROPERTY
+                                    + ", sangam.security.dev-token.tenant", TENANTS_PROPERTY);
+                    continue;
+                }
+                called.add(t);
+                deploy.accept(t);
+            } catch (RuntimeException e) {
+                LOG.error("Pack deployment for tenant {} failed: {}", t, e.toString());
+            }
+        }
+        return called;
     }
 
     /** {@value}: the tenant {@link FirstAdminBootstrap} creates and appoints the first administrators of. */

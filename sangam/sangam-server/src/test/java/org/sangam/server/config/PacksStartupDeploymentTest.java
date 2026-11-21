@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -17,6 +18,9 @@ import org.springframework.mock.env.MockEnvironment;
  * (d) Spring Boot sorts the runners with the order comparator and keeps no order among runners that declare none
  * (they are collected in an identity map), so "the tenant exists before its packs are deployed" must be declared:
  * the first-admins runner sorts before every runner without an order, the pack runner among them.
+ * <p>
+ * (c) The start-up deployment ({@code PacksWiring.deployAtStart}) deploys only for ids that are tenants of the
+ * installation; the switch, its profile default, the default tenant and the handling of a failure are as before.
  */
 class PacksStartupDeploymentTest {
 
@@ -32,5 +36,72 @@ class PacksStartupDeploymentTest {
             runners.sort(AnnotationAwareOrderComparator.INSTANCE);
             assertTrue(runners.get(0) == firstAdmins, "first whichever way the two were collected");
         }
+    }
+
+    // ------------------------------------------------------------------ (c) which ids the start-up deployment takes
+
+    private static List<String> deployed(MockEnvironment env, java.util.function.Predicate<String> isTenant) {
+        List<String> calls = new ArrayList<>();
+        List<String> returned = PacksWiring.deployAtStart(calls::add, env, isTenant);
+        assertEquals(calls, returned, "the ids it reports are the ids it deployed for");
+        return calls;
+    }
+
+    private static MockEnvironment on(String tenants) {
+        MockEnvironment env = new MockEnvironment().withProperty("sangam.packs.deploy-on-start", "true");
+        return tenants == null ? env : env.withProperty("sangam.packs.tenants", tenants);
+    }
+
+    @Test
+    void aListedIdThatIsNoTenantIsSkippedAndTheTenantsBesideItAreDeployed() {
+        java.util.Set<String> directory = java.util.Set.of("GOI.FIN", "RJ.PHED");
+        assertEquals(List.of("GOI.FIN", "RJ.PHED"), deployed(on("GOI.OTHER, GOI.FIN,RJ.PHED"), directory::contains),
+                "in the order listed, without the id that is no tenant");
+        assertEquals(List.of(), deployed(on("GOI.OTHER"), directory::contains), "no tenant at all: nothing is deployed");
+        assertEquals(List.of("GOI.FIN"), deployed(on("GOI.FIN,GOI.FIN, GOI.FIN"), directory::contains), "each id once");
+        assertEquals(List.of(), deployed(on("goi.fin"), directory::contains), "a tenant id is matched exactly");
+    }
+
+    @Test
+    void theDefaultTenantIsCheckedLikeAListedOne() {
+        MockEnvironment env = on(null).withProperty("sangam.security.dev-token.tenant", "GOI.FIN");
+        assertEquals(List.of("GOI.FIN"), deployed(env, "GOI.FIN"::equals), "the dev-token tenant, when it is a tenant");
+        assertEquals(List.of(), deployed(env, id -> false), "and not when it is none");
+        assertEquals(List.of("dev"), deployed(on(null), "dev"::equals), "without a dev-token tenant the id is dev");
+    }
+
+    @Test
+    void withoutATenantDirectoryEveryListedIdIsDeployedAsBefore() {
+        assertEquals(List.of("a", "b.c"), deployed(on("a, b.c"), null), "sangam-security absent: nothing to check against");
+    }
+
+    @Test
+    void theSwitchAndItsProfileDefaultAreUnchanged() {
+        assertEquals(List.of(), deployed(new MockEnvironment().withProperty("sangam.packs.tenants", "a"), id -> true),
+                "off by default outside profile h2");
+        MockEnvironment h2 = new MockEnvironment().withProperty("sangam.packs.tenants", "a");
+        h2.setActiveProfiles("h2");
+        assertEquals(List.of("a"), deployed(h2, id -> true), "on by default under profile h2");
+        h2.setProperty("sangam.packs.deploy-on-start", "false");
+        assertEquals(List.of(), deployed(h2, id -> true), "switched off under h2");
+        assertEquals(List.of(), deployed(on(""), id -> true), "an empty list is a list: no default tenant is taken");
+    }
+
+    @Test
+    void aFailedDeploymentOrAFailedLookUpOfOneIdDoesNotStopTheOthers() {
+        List<String> calls = new ArrayList<>();
+        List<String> returned = PacksWiring.deployAtStart(id -> {
+            calls.add(id);
+            if (id.equals("a")) {
+                throw new IllegalStateException("pack rejected");
+            }
+        }, on("a,b,c"), id -> {
+            if (id.equals("b")) {
+                throw new IllegalStateException("directory unavailable");
+            }
+            return true;
+        });
+        assertEquals(List.of("a", "c"), calls, "b could not be looked up and is not deployed; c is");
+        assertEquals(List.of("a", "c"), returned);
     }
 }
