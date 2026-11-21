@@ -44,16 +44,30 @@ class PayeeConnectorUnknownPayeeTest {
                 Map.of("payee", "A", "payeeAccount", "00004207100101", "ifsc", "ZXRJ9JPR001"), null);
     }
 
+    /**
+     * Follow-up 2 (vi), integrator 2026-11-21 (joint decision EV-M-0964): an unregistered payee is refused fail-closed,
+     * with a reason, never passed through as NOT_FOUND. The answer is a business failure with its own code and a
+     * message that says why; the bill's payee check then reads FAILED and the bill is rejected
+     * (PAYEE_CHECK_NOT_CONFIRMED), the failed check audited with this code (ConnectorCallDelegate).
+     */
     @Test
-    void aPayeeTheRegistryDoesNotHoldIsAnsweredAsNotFoundNotAsADirectoryError() {
+    void aPayeeTheRegistryDoesNotHoldIsRefusedAsNotRegistered() {
         ConnectorResult r = new PayeeConnector(answering(new PayeeDirectory.Resolution(null, "NOT_FOUND", false, false,
                 List.of()))).invoke(resolve());
+        ConnectorResult.BusinessFailure f = assertInstanceOf(ConnectorResult.BusinessFailure.class, r, String.valueOf(r));
+        assertEquals("PAYEE_NOT_REGISTERED", f.code());
+        assertFalse(f.message() == null || f.message().isBlank(), "the refusal says why: " + f);
+        assertFalse(f.output().containsKey("partyId"), "no party, so no party id: " + f.output());
+    }
+
+    @Test
+    void aPayeeTheRegistryHoldsIsAnsweredAsBefore() {
+        ConnectorResult r = new PayeeConnector(answering(new PayeeDirectory.Resolution("PTY-9", "ACTIVE", true, false,
+                List.of()))).invoke(resolve());
         ConnectorResult.Success s = assertInstanceOf(ConnectorResult.Success.class, r, String.valueOf(r));
-        assertEquals("NOT_FOUND", s.output().get("partyStatus"));
-        assertEquals(false, s.output().get("multiple"), "nobody else holds the account");
-        assertEquals(false, s.output().get("verified"));
-        assertEquals(0, s.output().get("matchCount"));
-        assertFalse(s.output().containsKey("partyId"), "no party, so no party id: " + s.output());
+        assertEquals("PTY-9", s.output().get("partyId"));
+        assertEquals("ACTIVE", s.output().get("partyStatus"));
+        assertEquals(false, s.output().get("multiple"));
     }
 
     @Test

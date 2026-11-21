@@ -139,10 +139,18 @@ class DemoLoaderSequenceAgainstServerTest {
     static final Map<String, String> BILL_JOURNEY_OPEN = Map.of(
             "BILL-0003", "target PAYMENT_HELD: the sandbox pays unless the case carries sim_pfms_payment=PENDING; the data"
                     + " set has it under h2Directives only and load_presentation_data.py does not send it, so the bill is"
-                    + " paid and closed",
-            "ADV-0001", "the advance sets ledgerId=RECOVERY for its recovery schedule and the bill it calls asks that"
-                    + " ledger for funds: 'ledger RECOVERY not defined for GOI' (LEDGER_REQUEST_INVALID), so the bill is"
-                    + " rejected FUNDS_NOT_CONFIRMED");
+                    + " paid and closed. SANGAM.md defines no payment-hold directive for a hosted load (Follow-up 2"
+                    + " (iii)), so none is added: a named gap",
+            "ADV-0001", "IFMS ledger RECOVERY not available: the advance's recovery schedule and the bill it calls ask"
+                    + " ledger RECOVERY ('ledger RECOVERY not defined for GOI', LEDGER_REQUEST_INVALID), so the bill is"
+                    + " rejected FUNDS_NOT_CONFIRMED; closes when the IFMS ledger connector exists (Follow-up 2 (iv))");
+
+    /**
+     * Follow-up 2 (v): the cases the presentation data's own set-up makes reachable (load_presentation_data.py,
+     * section {@code setup} of the data set: payees registered in the party registry, budget released through
+     * ALLOCATE and DISTRIBUTE). Never a gap: each must stand at its target.
+     */
+    static final List<String> SETUP_CASES = List.of("BA-0001");
 
     /** {@link #sequence(ConfigurableApplicationContext, String, List)} with the open gaps of this server. */
     static void sequence(ConfigurableApplicationContext ctx, String label, List<String> steps, java.util.Set<String> gaps)
@@ -203,6 +211,10 @@ class DemoLoaderSequenceAgainstServerTest {
                 }
                 if (!step(status, "sandbox marks", () -> sandboxMarks(ctx, api))) {
                     wrong.add("sandbox marks failed");
+                }
+                if (!step(status, "data set-up", () -> dataSetup(api, ends, loaderOut[0]))) {
+                    // Follow-up 2 (v), (vi): never an open gap
+                    wrong.add("data set-up failed");
                 }
             }
         }
@@ -698,6 +710,51 @@ class DemoLoaderSequenceAgainstServerTest {
     }
 
     /**
+     * Follow-up 2 (v) and (vi): what the data set's own set-up must have done on the server, through the API only,
+     * after two runs of the loader (the smoke run and the full run): every payee of the data set is exactly one party
+     * of the registry, found by its bank account (a second run registers nobody twice); the loader says what it
+     * released and that the amounts are assumed; and each case of {@link #SETUP_CASES} stands at its target.
+     */
+    private static String dataSetup(String api, List<End> ends, String loaderOut) throws Exception {
+        String admin = PresentationSeedAgainstServerTest.token("rajendra.sharma", List.of("sangam-tenant-admin", "sangam-user"));
+        List<String> wrong = new ArrayList<>();
+        JsonNode data = JSON.readTree(DATA.toFile());
+        int payees = 0;
+        for (JsonNode p : data.path("payees")) {
+            String account = p.path("payeeAccount").asText() + "@" + p.path("ifsc").asText();
+            HttpResponse<String> r = HTTP.send(HttpRequest.newBuilder(URI.create(api + "/registry/parties?idType=BANK_ACCOUNT&idValue="
+                    + URLEncoder.encode(account, StandardCharsets.UTF_8))).header("Authorization", "Bearer " + admin)
+                    .header("X-Purpose", "payment").GET().build(), HttpResponse.BodyHandlers.ofString());
+            JsonNode found = r.statusCode() == 200 ? JSON.readTree(r.body()) : null;
+            int n = found == null ? -1 : (found.isArray() ? found : found.path("items")).size();
+            if (n != 1) {
+                wrong.add("payee " + p.path("employeeId").asText() + ": " + n + " parties hold its account (HTTP "
+                        + r.statusCode() + "), expected exactly 1");
+            }
+            payees++;
+        }
+        if (payees == 0) {
+            wrong.add("the data set names no payee");
+        }
+        List<String> released = new ArrayList<>();
+        for (String line : loaderOut.split("\\R")) {
+            if (line.contains("set-up budget")) {
+                released.add(line.strip());
+            }
+        }
+        if (released.isEmpty() || released.stream().anyMatch(l -> !l.contains("ASSUMED"))) {
+            wrong.add("the loader does not report the budget it released, each amount marked ASSUMED: " + released);
+        }
+        for (End e : ends) {
+            if (SETUP_CASES.contains(e.id()) && !e.atTarget()) {
+                wrong.add(e.id() + " (target " + e.target() + "): " + e.text());
+            }
+        }
+        assertTrue(wrong.isEmpty(), String.join("; ", wrong));
+        return payees + " payees each one party of the registry by account; " + released + "; " + SETUP_CASES + " at target";
+    }
+
+    /**
      * Register E-26 and its follow-up 1: a simulated outside check never reads as an answer of the outside system. For
      * every bill case: the duplicate-bill check has exactly one audit record per bill version, it names the connector
      * and says {@code simulated=true} and {@code sandbox=true}, and the case holds {@code dupSandbox=true} while it is
@@ -1066,6 +1123,10 @@ class DemoLoaderSequenceAgainstServerTest {
         env.put("SANGAM_API_BASE", api);
         // how long a case may show no task before the loader reads it as settled (its default is 30 s)
         env.put("SANGAM_PRESENTATION_SETTLE_SECONDS", "12");
+        // Follow-up 2 (v): the data set's set-up (payees, budget) is tenant administration, done with the token the
+        // live runbook already gives the seed and the preflight (SANGAM_ADMIN_TOKEN)
+        env.put("SANGAM_ADMIN_TOKEN", PresentationSeedAgainstServerTest.token("rajendra.sharma",
+                List.of("sangam-tenant-admin", "sangam-user")));
         Matcher m = Pattern.compile("keycloak \\S+: user (\\S+) roles (\\S+) seats").matcher(plan.out());
         while (m.find()) {
             env.put("SANGAM_PRESENTATION_TOKEN_" + m.group(1).toUpperCase(Locale.ROOT).replace('.', '_').replace('-', '_'),

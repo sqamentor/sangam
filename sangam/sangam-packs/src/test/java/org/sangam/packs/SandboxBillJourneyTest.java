@@ -398,6 +398,38 @@ class SandboxBillJourneyTest {
                 "the installed gateway is not asked");
     }
 
+    /**
+     * Follow-up 2 (vi), integrator 2026-11-21 (EV-M-0964): an unregistered payee is refused fail-closed with an audited
+     * reason. The party registry refuses the payee (registry.party payee.resolve: FAILED PAYEE_NOT_REGISTERED,
+     * PayeeConnector); the bill is rejected PAYEE_CHECK_NOT_CONFIRMED, and the refused check is on the case's audit
+     * trail with its connector and its reason code (before: a query the installed gateway answered wrote no event, so
+     * the rejection named no cause).
+     */
+    @Test
+    void anUnregisteredPayeeIsRefusedAndTheRefusalIsAudited() {
+        DemoSandbox.install(List.of(PackTestTenant.ID));
+        production();
+        JsonNode c = caseOf("BILL-0001");
+        String bk = c.path("businessKey").asText() + "/unregistered";
+        Map<String, String> directives = boundAnswers();
+        directives.put("sim_registry_party", "FAILED:PAYEE_NOT_REGISTERED");
+        List<String> done = run(c, bk, directives);
+        assertEquals("FAILED", driver.var(bk, "payeeStatus"), "tasks " + done);
+        assertEquals("PAYEE_NOT_REGISTERED", driver.var(bk, "payeeReasonCode"));
+        assertTrue(driver.ended(bk), "fail-closed: the bill does not go on, it is rejected: tasks " + done + ", open " + open(bk));
+        assertEquals("REJECTED", String.valueOf(driver.var(bk, "caseState")));
+        assertEquals("PAYEE_CHECK_NOT_CONFIRMED", String.valueOf(driver.var(bk, "rejectionReasonCodes")));
+        List<PackAuditEvent> refusals = audit.timeline(bk).stream()
+                .filter(e -> "registry.party".equals(e.details().get("connector"))).toList();
+        assertEquals(1, refusals.size(), "one audit record of the refused payee check: " + audit.timeline(bk));
+        assertEquals("EXT_OP_FAILED", refusals.get(0).type());
+        assertEquals("PAYEE_NOT_REGISTERED", refusals.get(0).details().get("reasonCode"));
+        assertEquals("payee.resolve", refusals.get(0).details().get("operation"));
+        assertNull(refusals.get(0).details().get("simulated"), "the registry is Sangam's own, not simulated");
+        assertTrue(audit.timeline(bk).stream().anyMatch(e -> "CASE_REJECTED".equals(e.type())
+                && String.valueOf(e.details().get("reasons")).contains("PAYEE_CHECK_NOT_CONFIRMED")), "rejection audited");
+    }
+
     @Test
     void anUnlistedConnectorOfASandboxTenantIsStillNotConfigured() {
         DemoSandbox.install(List.of(PackTestTenant.ID));
