@@ -401,8 +401,9 @@ public class PacksWiring {
      * The start-up deployment: when {@code sangam.packs.deploy-on-start} is true (default: only under profile h2),
      * {@code deploy} is called for each id of {@value #TENANTS_PROPERTY} (default: the dev-token tenant), in order,
      * each id once. A list that is set never switches the deployment on by itself (owner decision E-33 a, option a4);
-     * the dev-token default applies only when the list is not set at all, and an install that deploys at start-up
-     * lists its tenants. Register E-33 (c): an id that is no tenant ({@code isTenant}, the tenant directory of
+     * the dev-token default applies only under profile h2 when the list is not set at all. On any other profile a
+     * start with the deployment on and no list stops with an {@link IllegalStateException} naming both settings
+     * (owner decision E-33 follow-up 2, EV-M-0966). Register E-33 (c): an id that is no tenant ({@code isTenant}, the tenant directory of
      * sangam-security) is skipped and named at ERROR; before, every shipped pack was deployed and an audit chain
      * begun under an id nobody could ever use. The other ids are deployed all the same, as after a failed deployment.
      * {@code isTenant} is null when there is no tenant directory (sangam-security absent); then every id is deployed.
@@ -417,6 +418,13 @@ public class PacksWiring {
         }
         String listed = env.getProperty(TENANTS_PROPERTY);
         boolean configured = listed != null; // an empty list is a list: nothing is deployed
+        if (!configured && !h2) {
+            // owner decision E-33 follow-up 2 (EV-M-0966, "Refuse outside tests"): only profile h2 falls back to the
+            // dev-token tenant; anywhere else a start that deploys at start-up names its tenants or does not start
+            throw new IllegalStateException("sangam.packs.deploy-on-start=true needs sangam.packs.tenants "
+                    + "(SANGAM_PACKS_TENANTS): list the tenants whose packs are deployed at start-up, comma-separated, "
+                    + "or set sangam.packs.deploy-on-start=false. Only profile h2 falls back to the dev-token tenant.");
+        }
         java.util.Set<String> tenants = new java.util.LinkedHashSet<>();
         for (String t : (configured ? listed : env.getProperty("sangam.security.dev-token.tenant", "dev")).split(",")) {
             if (!t.isBlank()) {
