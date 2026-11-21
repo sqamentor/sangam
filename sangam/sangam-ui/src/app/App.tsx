@@ -190,10 +190,11 @@ function Home() {
   if ((me?.seats?.length ?? 0) > 0 && hasRole(...WORK)) return <Navigate to="/tasks" replace />;
   const first = NAV.find((a) => a.roles.length > 0 && hasRole(...a.roles));
   if (first) return <Navigate to="/welcome" replace />;
-  // U12i: a caller whose My work comes from a permission alone (a supervisor: team.read, no role) lands on the first
-  // page of his My work, as the menu shows it. Help is open to everyone; a caller with no job group lands on About.
-  const work = visibleNav(me).find((a) => a.id === 'work');
-  return <Navigate to={work ? work.sections[0].items[0].to : '/help/about'} replace />;
+  // U12i and owner answer 2026-11-21: a caller whose menu comes from a permission alone lands on the first page his
+  // permissions open, as the menu shows it (a supervisor with team.read: Team workload; a data protection officer with
+  // compliance.read: Data protection). Help is open to everyone; only a caller with no job group lands on About.
+  const own = visibleNav(me).find((a) => a.id !== 'help');
+  return <Navigate to={own ? own.sections[0].items[0].to : '/help/about'} replace />;
 }
 
 const WORK: Role[] = ['TASK_USER'];
