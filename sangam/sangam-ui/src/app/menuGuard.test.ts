@@ -143,3 +143,18 @@ describe('U12e: Retention is not open to an auditor', () => {
     }
   });
 });
+
+describe('U12f: the list of organisations is for platform administrators only (decision 397 Q5)', () => {
+  it('the route refuses an organisation admin, as the menu already did', () => {
+    const tenantAdmin = callerOf('sangam-tenant-admin');
+    expect(tenantAdmin.roles).toContain('ADMIN');
+    expect(tenantAdmin.roles).not.toContain('PLATFORM_ADMIN');
+    expect(menuRoutes(tenantAdmin)).not.toContain('/admin/tenants');
+    expect(opens(tenantAdmin, '/admin/tenants')).toBe(false);
+  });
+  it('a platform administrator keeps it, in the route and in the menu; nobody else opens it', () => {
+    expect(opens(callerOf('sangam-admin'), '/admin/tenants')).toBe(true);
+    expect(menuRoutes(callerOf('sangam-admin'))).toContain('/admin/tenants');
+    expect(SERVER_GROUPS.filter((g) => opens(callerOf(g), '/admin/tenants'))).toEqual(['sangam-admin']);
+  });
+});
