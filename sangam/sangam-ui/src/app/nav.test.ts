@@ -93,8 +93,9 @@ describe('persona menus', () => {
     expect(menuOf(['OPERATOR'])).toEqual(['work', 'find', 'monitor', 'reports', 'help']);
     expect(routesOf(['OPERATOR'])).not.toContain('/ops/engine');
   });
-  it('a designer sees Design with Test run', () => {
-    expect(menuOf(['MODELLER'])).toEqual(['design', 'help']);
+  it('a designer sees Design with Test run, and Deployments from Monitor and fix (U12c)', () => {
+    expect(menuOf(['MODELLER'])).toEqual(['design', 'monitor', 'help']);
+    expect(routesOf(['MODELLER']).filter((r) => r.startsWith('/ops'))).toEqual(['/ops/deployments']);
     expect(routesOf(['MODELLER'])).toContain('/design/test');
   });
   it('a tenant admin sees Set up without the organisations list (Q5); a platform admin sees it', () => {

@@ -203,7 +203,8 @@ export const NAV: NavArea[] = [
       {
         label: sec('monitor', 'maintenance'),
         items: [
-          e('monitor', 'deployments', '/ops/deployments'),
+          // U12c: the route admits designers too (deployment.read); they see this one entry of the group.
+          e('monitor', 'deployments', '/ops/deployments', { access: { roles: [...OPS, ...MODEL], perms: [] } }),
           e('monitor', 'cleanup', '/ops/cleanup'),
           e('monitor', 'tools', '/ops/tools'),
           e('monitor', 'engine', '/ops/engine', { only: ['PLATFORM_OPERATOR'] }),
