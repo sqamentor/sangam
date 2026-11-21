@@ -1,0 +1,6 @@
+{
+  "modules": "sangam-rest-core",
+  "dbs": "",
+  "chunks": "A-contracts",
+  "ui": false
+}
