@@ -69,22 +69,16 @@ async function postToTheChainSeats(): Promise<string[]> {
   return notes;
 }
 
-/** The open tasks of the case, each with the seat whose holder is shown it. */
+/** The open tasks of the case, each with the seat it waits for (the task's own seatId, as the administrator's list names it). */
 async function openTasks(businessKey: string): Promise<{ id: string; key: string; seat: string }[]> {
-  const out: { id: string; key: string; seat: string }[] = [];
-  for (const seat of SEATS) {
-    const api = await admin(seat);
-    try {
-      const res = await api.get('tasks', { params: { businessKey, size: 100 } });
-      if (!res.ok()) continue;
-      for (const task of items(await res.json())) {
-        if (!out.some((x) => x.id === task.id)) out.push({ id: String(task.id), key: String(task.taskDefinitionKey), seat });
-      }
-    } finally {
-      await api.dispose();
-    }
+  const api = await admin();
+  try {
+    const res = await api.get('tasks', { params: { businessKey, size: 100 } });
+    if (!res.ok()) return [];
+    return items(await res.json()).map((task) => ({ id: String(task.id), key: String(task.taskDefinitionKey), seat: String(task.seatId ?? '') }));
+  } finally {
+    await api.dispose();
   }
-  return out;
 }
 
 async function actAs(page: Page, seat: string): Promise<void> {
@@ -96,13 +90,21 @@ async function actAs(page: Page, seat: string): Promise<void> {
 
 /** Opens the task as the holder of its seat and records the first decision the server allows, through the dialog. */
 async function decide(page: Page, task: { id: string; key: string; seat: string }): Promise<string> {
-  await page.goto(`/tasks/${encodeURIComponent(task.id)}`);
+  expect(SEATS, `${task.key} waits for a seat of the chain (seatId "${task.seat}")`).toContain(task.seat);
+  await page.goto('/tasks');
   await actAs(page, task.seat);
   await page.goto(`/tasks/${encodeURIComponent(task.id)}`);
   const claim = page.getByRole('button', { name: t('task.claim'), exact: true });
-  if (await claim.isVisible().catch(() => false)) await claim.click();
   const bar = page.getByRole('group', { name: t('task.decisions') });
-  await expect(bar).toBeVisible();
+  // the decisions are offered to the person who has taken the task: claim it first where the page offers that
+  try {
+    await expect(claim.or(bar).first()).toBeVisible();
+    if (!(await bar.isVisible()) && (await claim.isVisible())) await claim.click();
+    await expect(bar).toBeVisible();
+  } catch (e) {
+    const shown = (await page.locator('main').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 350);
+    throw new Error(`${task.key} at ${task.seat}: no decision is offered. The page shows: ${shown}`);
+  }
   let action = '';
   for (const a of ['FORWARD', 'APPROVE', 'COMPLETE']) {
     const b = bar.getByRole('button', { name: t(`task.action.${a}`), exact: true });
@@ -232,7 +234,7 @@ test('the walkthrough of the presentation: sign-in, seat, bill, dealing hand and
   await step('7 audit verify', async () => {
     await page.goto(`/audit/timeline/${encodeURIComponent(businessKey)}`);
     await page.getByRole('button', { name: t('audit.verify') }).click();
-    const verified = page.getByText(t('audit.chainValid'));
+    const verified = page.locator('strong', { hasText: t('audit.chainValid') });
     await expect(verified).toBeVisible();
     const line = (await verified.locator('xpath=..').innerText()).replace(/\s+/g, ' ');
     expect(Number((line.match(/(\d+)/) ?? ['0', '0'])[1]), `events checked: ${line}`).toBeGreaterThan(0);
