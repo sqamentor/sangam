@@ -6,8 +6,8 @@
  * bare role with no permissions.
  */
 import { describe, expect, it } from 'vitest';
-import { ROUTES, menuGroups, menuRoutes } from './routeGuards.testkit';
-import { callerOf } from './serverGroups.testkit';
+import { ROUTES, menuGroups, menuRoutes, opens } from './routeGuards.testkit';
+import { SERVER_GROUPS, callerOf } from './serverGroups.testkit';
 
 const DEPARTMENT_TOOLS = ['/m/ledger', '/m/billing', '/m/programmes', '/m/resources', '/m/queues', '/m/rosters', '/m/geo', '/m/field', '/m/ai'];
 const FIND_MODULES = ['/m/case-files', '/m/committees', '/m/references', '/m/registry'];
@@ -64,5 +64,29 @@ describe('U12a: a menu group shows only for the callers it is meant for', () => 
     expect(menuRoutes(admin)).toEqual(expect.arrayContaining(['/analytics', '/analytics/reports', '/analytics/alerts', '/analytics/mining', '/analytics/agents', '/m/compliance']));
     // a data protection officer (no role) still reaches Data protection by permission (M-028)
     expect(menuGroups(callerOf('sangam-dpo'))).toEqual(['reports', 'help']);
+  });
+});
+
+describe('U12b: the INTEGRATION role is not let into pages its permissions cannot load', () => {
+  // first calls: GET /ops/workers ops.read (OpsConsoleController), GET /events/channels event.admin
+  // (EventFormController), GET /admin/service-principals admin.read (IdentityAdminController), GET /admin/services
+  // admin.read (RegistryController); sangam-integration holds none of them
+  const PAGES: [string, string][] = [
+    ['/ops/workers', 'ops.read'],
+    ['/ops/events', 'event.admin'],
+    ['/admin/principals', 'admin.read'],
+    ['/admin/services', 'admin.read'],
+  ];
+  it.each(PAGES)('%s (first call needs %s) refuses sangam-integration', (path, permission) => {
+    const integration = callerOf('sangam-integration');
+    expect(integration.roles).toEqual(['INTEGRATION']);
+    expect(integration.permissions).not.toContain(permission);
+    expect(opens(integration, path)).toBe(false);
+  });
+  it('no route names the INTEGRATION role any more, and the callers who had these pages keep them', () => {
+    expect(ROUTES.filter((r) => r.roles?.includes('INTEGRATION')).map((r) => r.path)).toEqual([]);
+    for (const p of ['/ops/workers', '/ops/events']) for (const g of ['sangam-operator', 'sangam-engine-admin', 'sangam-admin']) expect(opens(callerOf(g), p), `${g} ${p}`).toBe(true);
+    for (const p of ['/admin/principals', '/admin/services']) for (const g of ['sangam-tenant-admin', 'sangam-admin']) expect(opens(callerOf(g), p), `${g} ${p}`).toBe(true);
+    expect(SERVER_GROUPS).toContain('sangam-integration');
   });
 });
