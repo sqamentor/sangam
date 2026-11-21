@@ -291,18 +291,23 @@ def setup_budget(base, ds, tok, dry):
 
 def setup(base, ds, dry):
     """The data set's set-up (payees, budget) with a tenant administrator's token (SANGAM_ADMIN_TOKEN, the token the
-    seed and the preflight use). Without it nothing is set up and the load is refused: the cases would only fail."""
+    seed and the preflight use). Without it nothing is set up and the load is refused: the cases would only fail.
+    The payees and the budget are set up independently: a refusal of one is reported and does not stop the other (a
+    budget release needs no payee)."""
     if not (ds.get("payees") or (ds.get("setup") or {}).get("budget")):
         return []
     tok = os.environ.get("SANGAM_ADMIN_TOKEN")
     if not dry and not tok:
         print("  set-up refused: SANGAM_ADMIN_TOKEN is not set")
         return ["set-up (SANGAM_ADMIN_TOKEN is not set)"]
-    try:
-        return setup_payees(base, ds, tok, dry) + setup_budget(base, ds, tok, dry)
-    except Refused as e:
-        print(f"  set-up stopped: {e}")
-        return [f"set-up ({e})"]
+    wrong = []
+    for part, run in (("payees", setup_payees), ("budget", setup_budget)):
+        try:
+            wrong += run(base, ds, tok, dry)
+        except Refused as e:
+            print(f"  set-up of the {part} stopped: {e}")
+            wrong.append(f"set-up of the {part} ({e})")
+    return wrong
 
 
 def main():
