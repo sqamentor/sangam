@@ -18,7 +18,7 @@ permissions:
   contents: read
 
 # Toolchains (downloads batch 2, owner 2026-11-12, CI-first), pinned exactly: .NET SDK 8.0.404, Go 1.27.4 (decision 190; go.mod floor 1.26), PHP 8.3 with
-# composer 2.8.3 (phpunit 11.5.0 and its closure pinned exactly in sdks/php/composer.lock, CR-18; composer.json keeps ^11.5 so
+# composer 2.8.3 (phpunit 11.5.58 and its closure pinned exactly in sdks/php/composer.lock, CR-18; composer.json keeps ^11.5.58 so
 # "composer validate --strict" stays clean), xunit 2.9.2 / Microsoft.NET.Test.Sdk 17.11.1 /
 # xunit.runner.visualstudio 2.8.2 (exact in the test csproj), Kotlin 2.0.21 (sdks/kotlin/pom.xml), Gradle 8.10.2,
 # openapi-generator-cli 7.10.0 from Maven Central fetched with -C (the build fails on a checksum mismatch; Kotlin and the
@@ -178,7 +178,7 @@ jobs:
         working-directory: sangam/sdks/php
         run: |
           composer validate --strict
-          # CR-18: exact versions from the committed composer.lock (phpunit 11.5.0 and its closure); install never re-resolves
+          # CR-18: exact versions from the committed composer.lock (phpunit 11.5.58 and its closure); install never re-resolves
           composer install --no-interaction --prefer-dist
           vendor/bin/phpunit
 
