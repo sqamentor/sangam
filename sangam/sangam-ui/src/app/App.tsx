@@ -304,7 +304,7 @@ function AuthedRoutes() {
           <Route path="/admin/templates" element={g(ADMIN, <Templates />)} />
           <Route path="/admin/channels" element={g(ADMIN, <ConversationalChannels />)} />
           <Route path="/admin/agents" element={g(ADMIN, <AgentDefinitions />)} />
-          <Route path="/admin/retention" element={g([...ADMIN, 'AUDITOR'], <RetentionClasses />)} />
+          <Route path="/admin/retention" element={g(ADMIN, <RetentionClasses />)} />
 
           <Route path="/modeller" element={g(MODEL, <Packages />)} />
           <Route path="/modeller/review" element={g(MODEL, <ReviewQueue />)} />
