@@ -53,6 +53,17 @@ class StandardsProfileTest(unittest.TestCase):
         self.assertIn("Rejected at deploy \\| worker", md)
         self.assertEqual(p, json.loads(json.dumps(p)))
 
+    def test_partial_is_a_status_below_supported_and_needs_a_note(self):
+        row = dict(COMPAT["rows"][0], notation="CMMN", construct="DiscretionaryItem", status="PARTIAL",
+                   note="Partial: applicable items listed, runtime planning not supported")
+        p = g.profile({"rows": [row]}, [], "0.1.0")
+        self.assertEqual("PARTIAL", p["constructs"][0]["status"])
+        self.assertEqual(1, next(n for n in p["notations"] if n["notation"] == "CMMN")["counts"]["PARTIAL"])
+        self.assertIn("| DiscretionaryItem | Partial |", g.markdown(p))
+        for empty in ("", "   ", None):
+            with self.assertRaises(SystemExit):
+                g.profile({"rows": [dict(row, note=empty)]}, [], "0.1.0")
+
     def test_unknown_status_is_refused(self):
         bad = {"rows": [dict(COMPAT["rows"][0], status="MAYBE")]}
         with self.assertRaises(SystemExit):

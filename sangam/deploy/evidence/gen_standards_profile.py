@@ -37,6 +37,8 @@ STATUS = [
     ("SUPPORTED_WITH_RULES", "Supported with rules", "Deploys and runs under the Sangam rule in the note (a required "
                                                      "attribute, a binding default or a limit)."),
     ("PORTED", "Ported", "Not run by the base engine; Sangam provides the behaviour (see the note)."),
+    ("PARTIAL", "Partial", "Only the part named in the note works; the rest of the construct is not supported in "
+                           "this release. Not a support claim for the whole construct."),
     ("NOT_EXECUTABLE", "Not executable", "Accepted in a model as documentation; it has no runtime effect."),
     ("REJECTED", "Rejected", "Refused at deployment."),
     ("UNSUPPORTED", "Unsupported", "Not supported in this release (see the note for what happens to a model that "
@@ -78,6 +80,9 @@ def profile(compat, feel, version):
             raise SystemExit("unknown status %s for %s:%s" % (r["status"], r["notation"], r["construct"]))
         if r["notation"] not in [n for n, _ in NOTATIONS]:
             raise SystemExit("unknown notation %s" % r["notation"])
+        if r["status"] == "PARTIAL" and not (r.get("note") or "").strip():
+            # A PARTIAL row without a note would hide which part works: refuse it (coordinator ruling, C3 = B)
+            raise SystemExit("PARTIAL row %s:%s needs a note naming what works" % (r["notation"], r["construct"]))
         rows.append({"notation": r["notation"], "construct": r["construct"], "status": r["status"],
                      "modeller": r.get("modeller"), "engineParses": r.get("engine") == "PARSED",
                      "note": r.get("note") or "", "source": r.get("source") or "", "xml": list(r.get("xml") or [])})

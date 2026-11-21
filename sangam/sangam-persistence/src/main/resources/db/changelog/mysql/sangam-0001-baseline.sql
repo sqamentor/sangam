@@ -16,7 +16,7 @@ CREATE TABLE SANGAM_LEASE (
   attempt_no INT NOT NULL,
   worker_id VARCHAR(255),
   expires_at_ms BIGINT,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   cancel_requested SMALLINT NOT NULL,
   capability_class VARCHAR(32),
   exclusive_scope VARCHAR(255),
@@ -116,7 +116,7 @@ CREATE TABLE SANGAM_ENGINE_INCIDENT (
   engine_work_id VARCHAR(64),
   operation_id VARCHAR(64),
   message LONGTEXT,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   created_at DATETIME(6) NOT NULL,
   closed_at DATETIME(6),
   close_reason VARCHAR(32),
@@ -873,7 +873,7 @@ CREATE TABLE ATTACHMENT (
   size_bytes BIGINT NOT NULL,
   declared_mime VARCHAR(255) NOT NULL,
   sniffed_mime VARCHAR(255),
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   scan_engine VARCHAR(64),
   scan_result VARCHAR(1000),
   created_at DATETIME(6) NOT NULL,
@@ -920,7 +920,7 @@ CREATE TABLE PACKAGE_VERSION (
   package_key VARCHAR(255) NOT NULL,
   version INT NOT NULL,
   package_hash VARBINARY(32) NOT NULL,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   manifest_json LONGTEXT NOT NULL,
   signature LONGBLOB,
   author VARCHAR(255) NOT NULL,
@@ -1418,7 +1418,7 @@ CREATE TABLE PACK_LEDGER_POSTING (
   account VARCHAR(255) NOT NULL,
   reference VARCHAR(255) NOT NULL,
   delta BIGINT NOT NULL,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   balance_after BIGINT NOT NULL,
   created_at DATETIME(6) NOT NULL,
   reversed_at DATETIME(6),
@@ -1469,7 +1469,7 @@ CREATE TABLE SANGAM_PAUSE (
   paused_by VARCHAR(255) NOT NULL,
   reason VARCHAR(1000),
   total_paused_ms BIGINT NOT NULL,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   resumed_at_ms BIGINT,
   CONSTRAINT PK_SANGAM_PAUSE PRIMARY KEY (process_instance_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
@@ -5724,7 +5724,7 @@ CREATE TABLE EXEC_PARTITION (
   owner_incarnation VARCHAR(64),
   owner_epoch BIGINT DEFAULT 0 NOT NULL,
   lease_expires_at DATETIME(6),
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   drain_deadline DATETIME(6),
   map_epoch BIGINT NOT NULL,
   CONSTRAINT PK_EXEC_PARTITION PRIMARY KEY (partition_id)
@@ -5736,7 +5736,7 @@ CREATE TABLE EXEC_PARTITION (
 CREATE TABLE EXEC_SLOT (
   slot INT NOT NULL,
   partition_id INT NOT NULL,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   from_partition INT,
   move_started_at DATETIME(6),
   map_epoch BIGINT NOT NULL,
@@ -5751,7 +5751,7 @@ CREATE TABLE EXEC_MAP (
   cluster_id VARCHAR(64) NOT NULL,
   current_map_epoch BIGINT NOT NULL,
   target_map_epoch BIGINT,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   coordinator_node VARCHAR(64),
   coordinator_epoch BIGINT DEFAULT 0 NOT NULL,
   coordinator_expires_at DATETIME(6),
@@ -6064,7 +6064,7 @@ CREATE TABLE OPS_UTC_RUN (
   source_zone VARCHAR(64) NOT NULL,
   cutover_at DATETIME(6) NOT NULL,
   fingerprint VARCHAR(64) NOT NULL,
-  state VARCHAR(32) NOT NULL,
+  state VARCHAR(64) NOT NULL,
   rows_read BIGINT DEFAULT 0 NOT NULL,
   converted BIGINT DEFAULT 0 NOT NULL,
   already_utc BIGINT DEFAULT 0 NOT NULL,
@@ -6354,6 +6354,63 @@ CREATE TABLE TEAM_TASK_FILTER (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 CREATE INDEX TEAM_TASK_FILTER_NAME ON TEAM_TASK_FILTER (tenant_id, name);
 --rollback DROP TABLE TEAM_TASK_FILTER;
+
+--changeset sangam:0048-01-port_case_ext_task dbms:mysql,mariadb
+--comment: P-5 case external tasks keyed to the case execution
+CREATE TABLE PORT_CASE_EXT_TASK (
+  id_ VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  case_inst_id VARCHAR(64) NOT NULL,
+  case_exec_id VARCHAR(64) NOT NULL,
+  case_def_id VARCHAR(64) NOT NULL,
+  activity_id VARCHAR(255) NOT NULL,
+  topic VARCHAR(255) NOT NULL,
+  worker_id VARCHAR(255),
+  lock_exp_time DATETIME(6),
+  retries INT,
+  error_msg VARCHAR(255),
+  priority INT NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  version_ BIGINT NOT NULL,
+  CONSTRAINT PK_PORT_CASE_EXT_TASK PRIMARY KEY (id_)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE UNIQUE INDEX PORT_CASE_EXT_TASK_EXEC ON PORT_CASE_EXT_TASK (case_exec_id);
+CREATE INDEX PORT_CASE_EXT_TASK_FETCH ON PORT_CASE_EXT_TASK (topic, lock_exp_time);
+CREATE INDEX PORT_CASE_EXT_TASK_CASE ON PORT_CASE_EXT_TASK (tenant_id, case_inst_id);
+--rollback DROP TABLE PORT_CASE_EXT_TASK;
+
+--changeset sangam:0048-02-port_case_migration dbms:mysql,mariadb
+--comment: P-5 case migration audit
+CREATE TABLE PORT_CASE_MIGRATION (
+  id_ VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  case_inst_id VARCHAR(64) NOT NULL,
+  source_def_id VARCHAR(64) NOT NULL,
+  target_def_id VARCHAR(64) NOT NULL,
+  migrated_by VARCHAR(255) NOT NULL,
+  reason VARCHAR(255) NOT NULL,
+  executions INT NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_PORT_CASE_MIGRATION PRIMARY KEY (id_)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX PORT_CASE_MIGRATION_CASE ON PORT_CASE_MIGRATION (tenant_id, case_inst_id);
+--rollback DROP TABLE PORT_CASE_MIGRATION;
+
+--changeset sangam:0048-03-port_case_file_item dbms:mysql,mariadb
+--comment: C1 CMMN case file item lifecycle state
+CREATE TABLE PORT_CASE_FILE_ITEM (
+  tenant_id VARCHAR(64) NOT NULL,
+  case_inst_id VARCHAR(64) NOT NULL,
+  item_id VARCHAR(255) NOT NULL,
+  variable_name VARCHAR(255) NOT NULL,
+  definition_type VARCHAR(255),
+  state VARCHAR(64) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  version_ BIGINT NOT NULL,
+  CONSTRAINT PK_PORT_CASE_FILE_ITEM PRIMARY KEY (case_inst_id, item_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX PORT_CASE_FILE_ITEM_TENANT ON PORT_CASE_FILE_ITEM (tenant_id, case_inst_id);
+--rollback DROP TABLE PORT_CASE_FILE_ITEM;
 
 --changeset sangam:0016-03-form_draft-alter dbms:mysql,mariadb
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int

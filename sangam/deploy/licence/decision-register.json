@@ -2609,6 +2609,13 @@
    ],
    "spdx": "MIT"
   },
+  "pkg:npm/cmmn-moddle@5.0.0": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
   "pkg:npm/component-props@1.1.1": {
    "decision": "ACCEPTED WITH CONDITIONS",
    "distributions": [
@@ -2882,6 +2889,13 @@
    ],
    "spdx": "MIT"
   },
+  "pkg:npm/min-dash@3.8.1": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
   "pkg:npm/min-dash@5.1.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
@@ -2904,6 +2918,20 @@
    "spdx": "MIT"
   },
   "pkg:npm/moddle-xml@12.3.2": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
+  "pkg:npm/moddle-xml@7.5.0": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
+  "pkg:npm/moddle@4.1.0": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"
@@ -2995,6 +3023,13 @@
    "spdx": "MIT"
   },
   "pkg:npm/saxen@11.2.0": {
+   "decision": "ACCEPTED FOR DEFINED USE",
+   "distributions": [
+    "ui"
+   ],
+   "spdx": "MIT"
+  },
+  "pkg:npm/saxen@8.1.2": {
    "decision": "ACCEPTED FOR DEFINED USE",
    "distributions": [
     "ui"

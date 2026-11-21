@@ -51,7 +51,7 @@
     "DecisionTask": { "status": "SUPPORTED", "note": "", "source": "Operaton DefaultCmmnElementHandlerRegistry" },
     "Milestone": { "status": "SUPPORTED", "note": "", "source": "Operaton DefaultCmmnElementHandlerRegistry" },
     "Sentry": { "status": "SUPPORTED", "note": "Entry and exit criteria with if-part conditions.", "source": "Operaton CmmnTransform" },
-    "DiscretionaryItem": { "status": "SUPPORTED", "note": "Planning table with manual start.", "source": "Operaton CmmnTransform" },
+    "DiscretionaryItem": { "status": "PARTIAL", "note": "Partial: applicable items listed (applicabilityRule + roles), runtime planning not supported.", "source": "sangam-flowable-ports PlanningService (owner ruling C3 = B)" },
     "TimerEventListener": { "status": "REJECTED", "note": "Rejected at deploy: Operaton registers no handler, so it never fires (D-08); FC-55 at Stage E.", "source": "sangam-engine SangamCmmnTransformListener" },
     "UserEventListener": { "status": "REJECTED", "note": "Rejected at deploy (D-08); FC-55 at Stage E.", "source": "sangam-engine SangamCmmnTransformListener" },
     "RepetitionRule": { "status": "SUPPORTED_WITH_RULES", "note": "Condition-based repetition only; collections and max count are Stage E (FC-57).", "source": "FLOWABLE-INTO-OPERATON FC-57" },
