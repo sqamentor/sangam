@@ -49,7 +49,8 @@ import org.springframework.test.context.DynamicPropertySource;
  *
  * <p>The server runs its background work (job executor, relays, sweepers) during the test. A table that changes while
  * no request is made is that background work; such tables are found by a control interval first, printed, and left
- * out of the comparison. {@code FLD_DEVICE} may never be among them.
+ * out of the comparison. {@code FLD_DEVICE} may never be among them. What every admitted request writes (the tenant
+ * request quota window) is found the same way, by a read-only control GET, and may be that table only.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("h2")
@@ -98,6 +99,19 @@ class FieldPullWritesOnlyLastSeenH2Test {
         System.out.println("PARKED-DEC P-2 | tables compared: " + idle2.size() + " | changed with no request (left out): "
                 + background);
         assertTrue(!background.contains("FLD_DEVICE"), "FLD_DEVICE changes without a request: " + background);
+
+        // control request: what any admitted API request writes, shown on a read-only GET of the same module. The
+        // tenant request quota (JdbcTenantQuotas, SEC_TENANT_QUOTA_WINDOW) counts every request; CI run 44871829988
+        // found it among the tables the pulls changed. Only that table may be request accounting.
+        Map<String, List<String>> ctl1 = snapshot();
+        HttpResponse<String> read = send("GET", "/field/devices", null);
+        assertEquals(200, read.statusCode(), "GET /field/devices: " + read.body());
+        Set<String> accounting = changed(ctl1, snapshot());
+        accounting.removeAll(background);
+        System.out.println("PARKED-DEC P-2 | changed by a read-only control GET (request accounting, left out): " + accounting);
+        assertTrue(Set.of("SEC_TENANT_QUOTA_WINDOW").containsAll(accounting),
+                "a read-only GET changed more than the request quota: " + accounting);
+        background.addAll(accounting);
 
         Map<String, List<String>> before = snapshot();
         Map<String, String> deviceBefore = deviceRow(device);
