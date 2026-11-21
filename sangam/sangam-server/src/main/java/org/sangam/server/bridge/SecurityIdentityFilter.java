@@ -120,22 +120,7 @@ public final class SecurityIdentityFilter extends OncePerRequestFilter {
      * refusal stands and the failure is logged.
      */
     private void seatDenied(SecurityIdentity who, HttpServletRequest req, String seat, String actingFor) {
-        Map<String, Object> p = new LinkedHashMap<>();
-        p.put("action", req.getMethod() + " " + req.getRequestURI());
-        p.put("seat_id", seat);
-        p.put("acted_for_seat_id", actingFor);
-        p.put("person_id", who.personId());
-        p.put("outcome", "DENIED");
-        p.put("reason", SeatHoldings.NOT_HELD);
-        try {
-            tx.inTransaction(c -> {
-                security.audit().denial(c, who, org.sangam.security.audit.SecurityEventType.AUTH_DENIED, null, p);
-                return null;
-            });
-        } catch (RuntimeException e) {
-            org.slf4j.LoggerFactory.getLogger(SecurityIdentityFilter.class).warn(
-                    "the AUTH_DENIED record of a refused seat context could not be written: {}", e.toString());
-        }
+        new SeatDenialAudit(tx, security).record(who, req, seat, actingFor);   // the one writer (also E-32(g))
     }
 
     @Override

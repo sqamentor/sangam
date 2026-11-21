@@ -228,7 +228,9 @@ public class SecurityWiring {
         return new SecurityChainContributions(
                 new TokenAuthenticationFilters.ApiTokenFilter(sangamProductTransactions, security.tokens()),
                 new SecurityIdentityFilter(sangamProductTransactions, security, props, logins,
-                        ProductionEnvironment.developmentDefaultsAllowed(env)));
+                        ProductionEnvironment.developmentDefaultsAllowed(env)),
+                // E-32(g): a seat refused by the token's seats claim is written to the audit trail too
+                new org.sangam.server.bridge.SeatDenialAudit(sangamProductTransactions, security));
     }
 
     // ---------------------------------------------------------------- sangam-rest ports on sangam-security
