@@ -37,7 +37,7 @@ The contract fields are:
 - `apiBase` (default `/api/v1`, same origin);
 - `oidc.issuer` and `oidc.clientId`;
 - `defaultLocale` (`en` | `hi`);
-- `locales`;
+- `locales` (the languages offered; the standard image and the Helm chart set `en`, so the language switch is hidden; a deployment sets `SANGAM_LOCALES=en,hi` or chart value `ui.locales` to offer Hindi);
 - `environment`.
 
 The UI also reads these optional extras:
@@ -157,7 +157,7 @@ its Chromium and Firefox browsers are installed by the local binary (`node_modul
 | Seat context and "acted for" (S02, IX.5 rule 4) | Seat switcher in the header. The contract headers are `X-Sangam-Seat` for the substantive seat and `X-Sangam-Acting-For-Seat` for an additional charge or leave substitute | `AuthProvider.tsx`, `app/Layout.tsx` |
 | Typed API client (ARCHITECTURE §4) | Covers: Bearer auth; `Idempotency-Key` on every mutation, reused on a safe retry (R41, CX-4); problem+json; `X-Total-Count` / `X-Total-Count-Capped` ("more than N", A-16); ETag / If-Match; `/engine-rest` base | `src/api/client.ts` |
 | Contract adapters | Contract shapes are mapped to view models, tolerating proposed extra fields. R33 TypedValue maps are converted both ways | `src/api/adapters.ts`, `src/api/endpoints.ts` |
-| i18n Hindi + English (R54, T32) | i18next. All strings live in `src/i18n/locales/{en,hi}.json`. There is a language switch in the banner and on sign-in. Number and date formats follow `en-IN` / `hi-IN`. `scripts/check-i18n.mjs` fails on any missing key; dynamic keys are listed in `scripts/i18n-dynamic.json` | `src/i18n/*` |
+| i18n Hindi + English (R54, T32) | i18next. All strings live in `src/i18n/locales/{en,hi}.json`. The language switch in the banner and on sign-in is shown only when the deployment offers more than one language (`locales`; English only by default, owner decisions Q-06, 397 Q11 and 2026-11-21). Number and date formats follow `en-IN` / `hi-IN`. `scripts/check-i18n.mjs` fails on any missing key; dynamic keys are listed in `scripts/i18n-dynamic.json` | `src/i18n/*` |
 | Fonts, air-gapped (owner decisions 120, 121) | Noto Sans and Noto Sans Devanagari (OFL-1.1): the approved files in `sangam/deploy/fonts`, copied into the build as `dist/fonts/noto/` by `scripts/deploy-fonts.mjs`, which fails the build when a file differs from its recorded SHA-256. No @fontsource packages and no Sakal Bharati. The language → font map puts a site's state-government font first, then a central one, then Noto. Per-tenant override comes from `/config.json` `fonts` or `/fonts/site/fonts.json`. See [FONTS.md](FONTS.md) | `src/fonts.ts`, `scripts/deploy-fonts.mjs`, `vite.config.ts`, `FONTS.md` |
 | No CDN at runtime | The CSP meta allows `'self'` only. `scripts/check-no-cdn.mjs` scans `index.html` and `dist` | `index.html`, `scripts/check-no-cdn.mjs` |
 | Accessibility (GIGW / WCAG 2.1 AA, R55) | See the list below the table | `components/ui.tsx`, `styles.css` |
