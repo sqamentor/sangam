@@ -8,8 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
@@ -22,6 +25,7 @@ import org.sangam.rest.adapter.operaton.OperatonProcessAdapter;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.ProcessPort;
 import org.sangam.rest.support.RestProperties;
+import org.sangam.rest.support.TxSupport;
 
 /**
  * Register E-33 (g): {@code POST /process-instances} by key for a tenant that has no definition of the key answered
@@ -35,8 +39,42 @@ class ProcessStartNotFoundH2Test {
         return new ProcessPort.StartProcessRequest(key, "E-33/g/" + UUID.randomUUID(), Map.of(), null, null, null, null);
     }
 
+    /** The transaction seam of the adapter without Spring: the work runs at once, on one connection of the test. */
+    private static TxSupport tx(JdbcDataSource ds, Connection connection) {
+        return new TxSupport(ds, TxSupport.detectDialect(ds)) {
+            @Override
+            public <T> T inTxWithStatus(Function<TxStatus, T> work) {
+                return work.apply(new TxStatus() {
+                    @Override
+                    public void setRollbackOnly() {
+                    }
+
+                    @Override
+                    public boolean isRollbackOnly() {
+                        return false;
+                    }
+                });
+            }
+
+            @Override
+            public <T> T inNewTx(Supplier<T> work) {
+                return work.get();
+            }
+
+            @Override
+            public Connection connection() {
+                return connection;
+            }
+
+            @Override
+            public void afterCommit(Runnable work) {
+                work.run();
+            }
+        };
+    }
+
     @Test
-    void aStartOfAKeyTheTenantDoesNotHaveNamesTheKeyAndTheCallersTenant() {
+    void aStartOfAKeyTheTenantDoesNotHaveNamesTheKeyAndTheCallersTenant() throws Exception {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:startnotfound" + UUID.randomUUID().toString().replace("-", "")
                 + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
@@ -45,13 +83,13 @@ class ProcessStartNotFoundH2Test {
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true"); // empty in-memory database owned by this test
         s.setJobExecutorActivate(false);
-        try (OperatonEngineAdapter a = SangamEngineFactory.build(ds, s, "h2")) {
+        try (OperatonEngineAdapter a = SangamEngineFactory.build(ds, s, "h2"); Connection connection = ds.getConnection()) {
             ProcessEngine engine = a.processEngine();
             a.deploy("GOI.OTHER", "waitMsg", Map.of("waitMsg.bpmn",
                     MessageCaptureCorrelationKeyH2Test.BPMN.getBytes(StandardCharsets.UTF_8)));
             OperatonProcessAdapter rest = new OperatonProcessAdapter(engine.getRuntimeService(),
                     engine.getRepositoryService(), engine.getHistoryService(), engine.getExternalTaskService(),
-                    MessageCaptureCorrelationKeyH2Test.tx(ds), MessageCaptureCorrelationKeyH2Test.audit(),
+                    tx(ds, connection), MessageCaptureCorrelationKeyH2Test.audit(),
                     new RestProperties(), new OperatonOperationIds(engine.getRuntimeService(),
                             engine.getHistoryService(), engine.getExternalTaskService()));
 

@@ -222,7 +222,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
             assertEquals(other, ctx.getEnvironment().getProperty("sangam.packs.tenants"), TENANTS + " binds");
             assertEquals(List.of(), installed(ctx, TENANT), "a tenant that is not listed gets no pack");
             assertEquals(null, tenantStatus(ctx, other), "no such tenant exists");
-            List<String> refused = output.getOut().lines().filter(l -> l.contains(NOT_A_TENANT)).toList();
+            List<String> refused = notATenantLines(output);
             fact("env " + TENANTS + "=" + other + " (no such tenant)", "0 packs for " + TENANT + " (not listed); "
                     + installed(ctx, other).size() + " of " + shipped + " packs and " + deployments(ctx, other).size()
                     + " deployments under the id " + other + ", which has no tenant row; its audit chain "
@@ -244,7 +244,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
             assertEquals(shipped, installed(ctx, TENANT).size(), "the tenant created in the same start gets its packs");
             assertEquals(List.of(), installed(ctx, other), "the id beside it that is no tenant gets none");
             assertEquals(List.of(), chain(ctx, other), "and no audit chain of its own");
-            List<String> refused = output.getOut().lines().filter(l -> l.contains(NOT_A_TENANT)).toList();
+            List<String> refused = notATenantLines(output);
             assertEquals(2, refused.size(), "one such line per start (this is the second start of the test): " + refused);
             assertFalse(refused.get(1).contains("'" + TENANT + "'"), "the tenant that exists is not named: " + refused.get(1));
             fact("env " + TENANTS + "=" + other + ", " + TENANT + " (fresh database)", installed(ctx, TENANT).size() + " of "
@@ -585,6 +585,11 @@ class PacksOfBootstrapTenantAgainstServerTest {
     static List<String> chain(ConfigurableApplicationContext ctx, String tenant) throws java.sql.SQLException {
         return query(ctx, "SELECT event_type FROM AUDIT_EVENT WHERE tenant_id=? AND chain_id=? ORDER BY seq", tenant,
                 "sec:" + tenant);
+    }
+
+    /** The server's log lines saying an id is no tenant; this test's own fact lines, which quote them, are left out. */
+    private static List<String> notATenantLines(CapturedOutput output) {
+        return output.getOut().lines().filter(l -> l.contains(NOT_A_TENANT) && !l.startsWith("PACKS-TENANT |")).toList();
     }
 
     /** The role ids of a tenant (SEC_ROLE), sorted. */
