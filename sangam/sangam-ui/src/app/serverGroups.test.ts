@@ -61,4 +61,11 @@ describe('the server groups the menu tests are built from', () => {
     expect(callerOf('sangam-integration').roles).toEqual(['INTEGRATION']);
     expect(serverMe('sangam-user', 'sangam-supervisor').permissions).toEqual(expect.arrayContaining(['task.read', 'team.read']));
   });
+
+  it('pins the callers App.landing.test.tsx writes out (a jsdom test cannot read the Java source)', () => {
+    expect(callerOf('sangam-supervisor')).toEqual({ groups: ['sangam-supervisor'], roles: [], permissions: ['team.read', 'team.write'] });
+    expect(callerOf('sangam-worker')).toEqual({ groups: ['sangam-worker'], roles: [], permissions: ['document.read', 'document.write', 'event.publish', 'message.send', 'work.execute'] });
+    expect(callerOf('sangam-tenant-admin').roles).toEqual(['ADMIN', 'ANALYST']);
+    expect(callerOf('sangam-tenant-admin').permissions).toEqual(expect.arrayContaining(['admin.read', 'admin.write', 'analytics.read', 'team.read', 'team.write', 'tenant.admin']));
+  });
 });

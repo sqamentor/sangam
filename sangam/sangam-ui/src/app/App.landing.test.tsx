@@ -29,7 +29,12 @@ vi.mock('../areas/tasklist/TaskInbox', () => ({ TaskInbox: () => <p>inbox</p>, d
 vi.mock('../areas/tasklist/TeamWorkload', () => ({ TeamWorkload: () => <p>team workload</p> }));
 
 import { App } from './App';
-import { callerOf } from './serverGroups.testkit';
+
+// What GET /me reports for these server groups. A jsdom test may not read the Java source (Vite fs.allow), so the
+// values are written out here and serverGroups.test.ts checks the same values against Permissions.java.
+const SUPERVISOR = { roles: [] as string[], permissions: ['team.read', 'team.write'] };
+const WORKER = { roles: [] as string[], permissions: ['document.read', 'document.write', 'event.publish', 'message.send', 'work.execute'] };
+const TENANT_ADMIN = { roles: ['ADMIN', 'ANALYST'], permissions: ['admin.read', 'admin.write', 'analytics.read', 'team.read', 'team.write', 'tenant.admin'] };
 
 afterEach(() => {
   cleanup();
@@ -57,10 +62,8 @@ it('a signed-in person without a seat stays on /welcome', async () => {
 // U12i: Home looked at roles only, so a supervisor (group sangam-supervisor: no role, team.read) was sent to
 // /help/about although the menu shows him My work with Team workload.
 it('a caller holding only team.read lands on My work (Team workload), not on /help/about', async () => {
-  const supervisor = callerOf('sangam-supervisor');
-  expect(supervisor).toEqual({ groups: ['sangam-supervisor'], roles: [], permissions: ['team.read', 'team.write'] });
-  auth.roles = supervisor.roles;
-  auth.permissions = supervisor.permissions;
+  auth.roles = SUPERVISOR.roles;
+  auth.permissions = SUPERVISOR.permissions;
   auth.seats = [];
   const { findByText } = render(<App />);
   await waitFor(() => expect(window.location.pathname).toBe('/team'));
@@ -68,18 +71,16 @@ it('a caller holding only team.read lands on My work (Team workload), not on /he
 }, 30_000);
 
 it('a caller with no job group at all still lands on /help/about', async () => {
-  const worker = callerOf('sangam-worker');
-  auth.roles = worker.roles;
-  auth.permissions = worker.permissions;
+  auth.roles = WORKER.roles;
+  auth.permissions = WORKER.permissions;
   auth.seats = [];
   render(<App />);
   await waitFor(() => expect(window.location.pathname).toBe('/help/about'));
 }, 30_000);
 
 it('an organisation admin (team.read and the role ADMIN) keeps /welcome', async () => {
-  const admin = callerOf('sangam-tenant-admin');
-  auth.roles = admin.roles;
-  auth.permissions = admin.permissions;
+  auth.roles = TENANT_ADMIN.roles;
+  auth.permissions = TENANT_ADMIN.permissions;
   auth.seats = [];
   render(<App />);
   await waitFor(() => expect(window.location.pathname).toBe('/welcome'));
