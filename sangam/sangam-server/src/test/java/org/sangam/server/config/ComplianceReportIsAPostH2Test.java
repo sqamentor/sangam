@@ -11,6 +11,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -61,6 +63,22 @@ class ComplianceReportIsAPostH2Test {
     static void settings(DynamicPropertyRegistry r) {
         r.add("spring.security.oauth2.resourceserver.jwt.issuer-uri", () -> AcceptanceIdp.get().issuer());
         r.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri", () -> AcceptanceIdp.get().jwksUri());
+        // a report needs the tenant's jurisdiction (409 JURISDICTION_NOT_SET without one): the India pack, as the
+        // compose file sets it; the log archive is kept out of the module directory
+        r.add("sangam.compliance.jurisdictions", () -> "IN");
+        r.add("sangam.compliance.organisation-name", () -> "Register P-1 test");
+        r.add("sangam.compliance.log-archive.country", () -> "IN");
+        r.add("sangam.compliance.log-archive.root", () -> ARCHIVE.toString());
+    }
+
+    static final Path ARCHIVE = archive();
+
+    static Path archive() {
+        try {
+            return Files.createTempDirectory("p1-compliance-logs");
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
     }
 
     @LocalServerPort
@@ -151,13 +169,19 @@ class ComplianceReportIsAPostH2Test {
     void aGetAnswers405AndWritesNothing() throws Exception {
         Rows before = rows();
         String query = "?from=" + FROM + "&to=" + TO;
-        for (String q : new String[]{query, query + "&verifyChains=true&format=json", query + "&format=html", ""}) {
-            HttpResponse<String> r = send("GET", PATH + q, null, "application/json, text/html", null, true);
-            assertEquals(405, r.statusCode(), "GET " + PATH + q + " -> " + where(r));
+        String[] queries = {query, query + "&verifyChains=true&format=json", query + "&format=html", ""};
+        java.util.List<HttpResponse<String>> answers = new java.util.ArrayList<>();
+        for (String q : queries) {
+            answers.add(send("GET", PATH + q, null, "application/json, text/html", null, true));
+        }
+        assertEquals(before, rows(), "the " + queries.length + " GETs of " + PATH
+                + " wrote report rows or report audit events (statuses " + answers.stream().map(HttpResponse::statusCode).toList() + ")");
+        for (int i = 0; i < queries.length; i++) {
+            HttpResponse<String> r = answers.get(i);
+            assertEquals(405, r.statusCode(), "GET " + PATH + queries[i] + " -> " + where(r));
             assertEquals("METHOD_NOT_ALLOWED", Json.tree(r.body()).path("code").asText(), where(r));
             assertTrue(r.headers().firstValue("X-Sangam-Report-Hash").isEmpty(), "a refused GET carries no report hash");
         }
-        assertEquals(before, rows(), "a GET of " + PATH + " wrote a report row or a report audit event");
     }
 
     @Test
