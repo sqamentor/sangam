@@ -42,6 +42,12 @@ async function shell(environment: string): Promise<string> {
   window.history.replaceState(null, '', '/welcome');
   const { container, unmount } = render(<App />);
   await waitFor(() => expect(screen.getByRole('navigation', { name: /primary/i })).toBeTruthy());
+  // The page itself is lazy: compare settled pages, never a loading skeleton against a loaded page (both renders wait
+  // for the page title and for no busy region in main)
+  await waitFor(() => {
+    expect(container.querySelector('#page-title')).toBeTruthy();
+    expect(container.querySelector('main [aria-busy="true"]')).toBeNull();
+  });
   // React's useId counts across roots (_r_0_, then _r_1_ in the next render): the generated ids are not the label's doing
   const html = container.innerHTML.replace(/_r_[0-9a-z]+_/g, '_r_');
   unmount();

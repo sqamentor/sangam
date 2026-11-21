@@ -84,6 +84,7 @@ M = open and in the menu (for a sub-page: the entry above it); o = open, the pag
 | /admin/delegations | ADMIN, PLATFORM_ADMIN | /admin/delegations | . | . | . | . | . | M | M | . | . | . | . | . | . | . | . | . |
 | /admin/delegations/:id | ADMIN, PLATFORM_ADMIN | /admin/delegations | . | . | . | . | . | M | M | . | . | . | . | . | . | . | . | . |
 | /admin/policies | ADMIN, PLATFORM_ADMIN | /admin/policies | . | . | . | . | . | M | M | . | . | . | . | . | . | . | . | . |
+| /admin/policy-changes | ADMIN, PLATFORM_ADMIN | /admin/policy-changes | . | . | . | . | . | M | M | . | . | . | . | . | . | . | . | . |
 | /admin/sod | ADMIN, PLATFORM_ADMIN | /admin/sod | . | . | . | . | . | M | M | . | . | . | . | . | . | . | . | . |
 | /admin/users | ADMIN, PLATFORM_ADMIN | /admin/users | . | . | . | . | . | M | M | . | . | . | . | . | . | . | . | . |
 | /admin/groups | ADMIN, PLATFORM_ADMIN | /admin/groups | . | . | . | . | . | M | M | . | . | . | . | . | . | . | . | . |
@@ -127,7 +128,7 @@ M = open and in the menu (for a sub-page: the entry above it); o = open, the pag
 
 Redirects: /inbox to /tasks; /ops/task-dashboard to /team; /ops/debugger to /design/test.
 
-Totals: 115 routes x 16 groups = 1840 cells; M 345, o 112, . 1358, R 25, X 0.
+Totals: 116 routes x 16 groups = 1856 cells; M 347, o 112, . 1372, R 25, X 0.
 
 ## Open without a menu entry (R), each intended
 
@@ -168,8 +169,8 @@ Totals: 115 routes x 16 groups = 1840 cells; M 345, o 112, . 1358, R 25, X 0.
 | sangam-operator | OPERATOR, ANALYST | work, find, monitor, reports, help | 46 |
 | sangam-auditor | AUDITOR, ANALYST | find, monitor, reports, help | 19 |
 | sangam-dpo | - | reports, help | 6 |
-| sangam-tenant-admin | ADMIN, ANALYST | work, monitor, setup, reports, help | 44 |
-| sangam-admin | ADMIN, PLATFORM_ADMIN, PLATFORM_OPERATOR, ANALYST | work, find, design, monitor, setup, reports, help | 75 |
+| sangam-tenant-admin | ADMIN, ANALYST | work, monitor, setup, reports, help | 45 |
+| sangam-admin | ADMIN, PLATFORM_ADMIN, PLATFORM_OPERATOR, ANALYST | work, find, design, monitor, setup, reports, help | 76 |
 | sangam-engine-admin | PLATFORM_OPERATOR | monitor, help | 23 |
 | sangam-model-author | MODELLER | design, monitor, help | 14 |
 | sangam-model-reviewer | REVIEWER | design, monitor, help | 14 |
