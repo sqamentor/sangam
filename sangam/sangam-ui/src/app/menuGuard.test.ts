@@ -38,7 +38,7 @@ describe('U12a: a menu group shows only for the callers it is meant for', () => 
   });
 
   it('an operator and an engine administrator do not get Design (it held only Test run)', () => {
-    for (const g of ['sangam-operator', 'sangam-engine-admin', 'sangam-admin']) {
+    for (const g of ['sangam-operator', 'sangam-engine-admin']) {
       expect(menuGroups(callerOf(g)), g).not.toContain('design');
       expect(menuRoutes(callerOf(g)), g).not.toContain('/design/test');
     }
@@ -46,8 +46,9 @@ describe('U12a: a menu group shows only for the callers it is meant for', () => 
     for (const g of ['sangam-model-author', 'sangam-model-reviewer', 'sangam-model-approver']) expect(menuRoutes(callerOf(g)), g).toContain('/design/test');
   });
 
-  it('an organisation admin and a platform admin do not get Track and find (it held four module entries)', () => {
-    for (const g of ['sangam-tenant-admin', 'sangam-admin']) {
+  it('an organisation admin does not get Track and find (it held four module entries); the platform admin keeps his links', () => {
+    expect(menuRoutes(callerOf('sangam-admin'))).toEqual(expect.arrayContaining([...FIND_MODULES, '/design/test']));
+    for (const g of ['sangam-tenant-admin']) {
       expect(menuGroups(callerOf(g)), g).not.toContain('find');
       for (const r of FIND_MODULES) expect(menuRoutes(callerOf(g)), `${g} ${r}`).not.toContain(r);
     }
@@ -236,19 +237,14 @@ const INTENDED: Record<string, string[]> = {
     '/m/programmes | sangam-auditor',
     '/m/geo | sangam-auditor',
   ],
-  'U12a: Track and find is not in an administrator\'s menu (he holds the module reads; route guards unchanged)': [
+  'U12a: Track and find is not in an organisation admin\'s menu (he holds the module reads; route guards unchanged)': [
     '/m/registry | sangam-tenant-admin',
-    '/m/registry | sangam-admin',
     '/m/case-files | sangam-tenant-admin',
-    '/m/case-files | sangam-admin',
     '/m/committees | sangam-tenant-admin',
-    '/m/committees | sangam-admin',
     '/m/references | sangam-tenant-admin',
-    '/m/references | sangam-admin',
   ],
   'U12a: Design is the designers\' group; Test run alone does not bring it to operators (route guard unchanged)': [
     '/design/test | sangam-operator',
-    '/design/test | sangam-admin',
     '/design/test | sangam-engine-admin',
   ],
   'U12g: Extra fields is an administrator entry; the ruling changes the menu only, the guard (form.read) stays as built': [
@@ -283,7 +279,7 @@ describe('every route against its menu entry, per server group', () => {
     const intended = Object.values(INTENDED).flat();
     expect(new Set(intended).size).toBe(intended.length);
     expect(cells('R').sort()).toEqual([...intended].sort());
-    expect(intended).toHaveLength(32);
+    expect(intended).toHaveLength(27);
   });
 
   it('every menu entry is a route of the table, and every caller\'s menu is covered by the table', () => {

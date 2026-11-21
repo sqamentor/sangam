@@ -36,13 +36,13 @@ M = open and in the menu (for a sub-page: the entry above it); o = open, the pag
 | /my/dsc-certificates | TASK_USER, OPERATOR, PLATFORM_ADMIN, perm task.write | /my/dsc-certificates | M | . | M | . | . | . | M | . | . | . | . | . | . | . | . | . |
 | /privacy/:tenant? | signed in | - | o | o | o | o | o | o | o | o | o | o | o | o | o | o | o | o |
 | /modeller/compatibility | MODELLER, REVIEWER | /modeller/compatibility | . | . | . | . | . | . | . | . | M | M | M | . | . | . | . | . |
-| /m/registry | TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, AUDITOR, perm registry.read | /m/registry | M | . | M | M | . | R | R | . | . | . | . | . | . | . | . | . |
+| /m/registry | TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, AUDITOR, perm registry.read | /m/registry | M | . | M | M | . | R | M | . | . | . | . | . | . | . | . | . |
 | /m/resources | TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, AUDITOR, perm resources.read | /m/resources | M | . | M | R | . | M | M | . | . | . | . | . | . | . | . | . |
 | /m/queues | TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, AUDITOR, perm resources.read | /m/queues | M | . | M | R | . | M | M | . | . | . | . | . | . | . | . | . |
 | /m/rosters | TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, AUDITOR, perm resources.read | /m/rosters | M | . | M | R | . | M | M | . | . | . | . | . | . | . | . | . |
-| /m/case-files | TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, AUDITOR, perm case.read | /m/case-files | M | . | M | M | . | R | R | . | . | . | . | . | . | . | . | . |
-| /m/committees | TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, AUDITOR, perm case.read | /m/committees | M | . | M | M | . | R | R | . | . | . | . | . | . | . | . | . |
-| /m/references | TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, AUDITOR, perm case.read | /m/references | M | . | M | M | . | R | R | . | . | . | . | . | . | . | . | . |
+| /m/case-files | TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, AUDITOR, perm case.read | /m/case-files | M | . | M | M | . | R | M | . | . | . | . | . | . | . | . | . |
+| /m/committees | TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, AUDITOR, perm case.read | /m/committees | M | . | M | M | . | R | M | . | . | . | . | . | . | . | . | . |
+| /m/references | TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, AUDITOR, perm case.read | /m/references | M | . | M | M | . | R | M | . | . | . | . | . | . | . | . | . |
 | /m/ledger | TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, AUDITOR, perm ledger.read | /m/ledger | M | . | M | R | . | M | M | . | . | . | . | . | . | . | . | . |
 | /m/billing | TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, AUDITOR, perm billing.read | /m/billing | M | . | M | R | . | M | M | . | . | . | . | . | . | . | . | . |
 | /m/programmes | TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, AUDITOR, perm programme.read | /m/programmes | M | . | M | R | . | M | M | . | . | . | . | . | . | . | . | . |
@@ -75,7 +75,7 @@ M = open and in the menu (for a sub-page: the entry above it); o = open, the pag
 | /ops/notifications | OPERATOR, PLATFORM_OPERATOR | /ops/notifications | . | . | M | . | . | . | M | M | . | . | . | . | . | . | . | . |
 | /ops/deployments | OPERATOR, PLATFORM_OPERATOR, MODELLER, REVIEWER | /ops/deployments | . | . | M | . | . | . | M | M | M | M | M | . | . | . | . | . |
 | /ops/cleanup | OPERATOR, PLATFORM_OPERATOR | /ops/cleanup | . | . | M | . | . | . | M | M | . | . | . | . | . | . | . | . |
-| /design/test | OPERATOR, PLATFORM_OPERATOR, MODELLER, REVIEWER | /design/test | . | . | R | . | . | . | R | R | M | M | M | . | . | . | . | . |
+| /design/test | OPERATOR, PLATFORM_OPERATOR, MODELLER, REVIEWER | /design/test | . | . | R | . | . | . | M | R | M | M | M | . | . | . | . | . |
 | /ops/audit-log | OPERATOR, PLATFORM_OPERATOR, AUDITOR | /ops/audit-log | . | . | M | M | . | . | M | M | . | . | . | . | . | . | . | . |
 | /admin/tenants | PLATFORM_ADMIN | /admin/tenants | . | . | . | . | . | . | M | . | . | . | . | . | . | . | . | . |
 | /admin/org | ADMIN, PLATFORM_ADMIN | /admin/org | . | . | . | . | . | M | M | . | . | . | . | . | . | . | . | . |
@@ -127,7 +127,7 @@ M = open and in the menu (for a sub-page: the entry above it); o = open, the pag
 
 Redirects: /inbox to /tasks; /ops/task-dashboard to /team; /ops/debugger to /design/test.
 
-Totals: 115 routes x 16 groups = 1840 cells; M 339, o 112, . 1357, R 32, X 0.
+Totals: 115 routes x 16 groups = 1840 cells; M 344, o 112, . 1357, R 27, X 0.
 
 ## Open without a menu entry (R), each intended
 
@@ -139,17 +139,13 @@ Totals: 115 routes x 16 groups = 1840 cells; M 339, o 112, . 1357, R 32, X 0.
 | /admin/custom-fields | sangam-user | U12g: Extra fields is an administrator entry; the ruling changes the menu only, the guard (form.read) stays as built |
 | /admin/custom-fields | sangam-operator | U12g: Extra fields is an administrator entry; the ruling changes the menu only, the guard (form.read) stays as built |
 | /admin/custom-fields | sangam-model-author | U12g: Extra fields is an administrator entry; the ruling changes the menu only, the guard (form.read) stays as built |
-| /m/registry | sangam-tenant-admin | U12a: Track and find is not in an administrator's menu (he holds the module reads; route guards unchanged) |
-| /m/registry | sangam-admin | U12a: Track and find is not in an administrator's menu (he holds the module reads; route guards unchanged) |
+| /m/registry | sangam-tenant-admin | U12a: Track and find is not in an organisation admin's menu (he holds the module reads; route guards unchanged) |
 | /m/resources | sangam-auditor | U12a: Department tools are not in an auditor's menu (he holds the module reads; route guards unchanged) |
 | /m/queues | sangam-auditor | U12a: Department tools are not in an auditor's menu (he holds the module reads; route guards unchanged) |
 | /m/rosters | sangam-auditor | U12a: Department tools are not in an auditor's menu (he holds the module reads; route guards unchanged) |
-| /m/case-files | sangam-tenant-admin | U12a: Track and find is not in an administrator's menu (he holds the module reads; route guards unchanged) |
-| /m/case-files | sangam-admin | U12a: Track and find is not in an administrator's menu (he holds the module reads; route guards unchanged) |
-| /m/committees | sangam-tenant-admin | U12a: Track and find is not in an administrator's menu (he holds the module reads; route guards unchanged) |
-| /m/committees | sangam-admin | U12a: Track and find is not in an administrator's menu (he holds the module reads; route guards unchanged) |
-| /m/references | sangam-tenant-admin | U12a: Track and find is not in an administrator's menu (he holds the module reads; route guards unchanged) |
-| /m/references | sangam-admin | U12a: Track and find is not in an administrator's menu (he holds the module reads; route guards unchanged) |
+| /m/case-files | sangam-tenant-admin | U12a: Track and find is not in an organisation admin's menu (he holds the module reads; route guards unchanged) |
+| /m/committees | sangam-tenant-admin | U12a: Track and find is not in an organisation admin's menu (he holds the module reads; route guards unchanged) |
+| /m/references | sangam-tenant-admin | U12a: Track and find is not in an organisation admin's menu (he holds the module reads; route guards unchanged) |
 | /m/ledger | sangam-auditor | U12a: Department tools are not in an auditor's menu (he holds the module reads; route guards unchanged) |
 | /m/billing | sangam-auditor | U12a: Department tools are not in an auditor's menu (he holds the module reads; route guards unchanged) |
 | /m/programmes | sangam-auditor | U12a: Department tools are not in an auditor's menu (he holds the module reads; route guards unchanged) |
@@ -160,7 +156,6 @@ Totals: 115 routes x 16 groups = 1840 cells; M 339, o 112, . 1357, R 32, X 0.
 | /ops/events | sangam-operator | U12h: Event types is hidden from a caller without event.admin; the record changes the menu only, not the guard |
 | /ops/events | sangam-engine-admin | U12h: Event types is hidden from a caller without event.admin; the record changes the menu only, not the guard |
 | /design/test | sangam-operator | U12a: Design is the designers' group; Test run alone does not bring it to operators (route guard unchanged) |
-| /design/test | sangam-admin | U12a: Design is the designers' group; Test run alone does not bring it to operators (route guard unchanged) |
 | /design/test | sangam-engine-admin | U12a: Design is the designers' group; Test run alone does not bring it to operators (route guard unchanged) |
 | /audit | sangam-user | decision 397 Q6: a task user reads a request's history from inside the request; no audit entries in his menu |
 | /audit/timeline/:businessKey | sangam-user | decision 397 Q6: a task user reads a request's history from inside the request; no audit entries in his menu |
@@ -176,7 +171,7 @@ Totals: 115 routes x 16 groups = 1840 cells; M 339, o 112, . 1357, R 32, X 0.
 | sangam-auditor | AUDITOR, ANALYST | find, monitor, reports, help | 19 |
 | sangam-dpo | - | reports, help | 6 |
 | sangam-tenant-admin | ADMIN, ANALYST | work, setup, reports, help | 43 |
-| sangam-admin | ADMIN, PLATFORM_ADMIN, PLATFORM_OPERATOR, ANALYST | work, monitor, setup, reports, help | 70 |
+| sangam-admin | ADMIN, PLATFORM_ADMIN, PLATFORM_OPERATOR, ANALYST | work, find, design, monitor, setup, reports, help | 75 |
 | sangam-engine-admin | PLATFORM_OPERATOR | monitor, help | 23 |
 | sangam-model-author | MODELLER | design, monitor, help | 14 |
 | sangam-model-reviewer | REVIEWER | design, monitor, help | 14 |

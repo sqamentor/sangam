@@ -75,12 +75,19 @@ const mod = (group: string, entry: string, to: string, extra: Partial<NavItem> =
  * admitted by the server permission of its screen, which more callers hold than the group is meant for (every staff
  * role holds the module reads), so such an entry also names whose job it is with `only`; its route guard is unchanged.
  */
-/** Department tools: not an auditor's work (an auditor holds the module reads, Permissions.java GROUP_AUDITOR). */
+/**
+ * Department tools: not an auditor's work (an auditor holds the module reads, Permissions.java GROUP_AUDITOR; the
+ * section has 9 entries, of which he saw 7). Deviation from the U12a wording, as ruled on 2026-11-21: an organisation
+ * admin keeps them. His My work is his anyway through Team workload and Shared task lists (team.read, decision 404), and
+ * he alone holds the admin permissions of these tools.
+ */
 const DEPARTMENT: Role[] = ['TASK_USER', 'OPERATOR', 'ADMIN', 'PLATFORM_ADMIN'];
-/** Track and find: the group's own roles; administrators hold the module reads too. */
+/** Track and find: the group's own roles; an organisation admin holds the module reads too and is not one of them. */
 const FIND: Role[] = ['TASK_USER', 'OPERATOR', 'AUDITOR'];
 const dept = (entry: string, to: string) => mod('work', entry, to, { only: DEPARTMENT });
-const find = (entry: string, to: string) => mod('find', entry, to, { only: FIND });
+/** The platform administrator ("*") keeps a menu link to every page he can open (ruling of 2026-11-21). */
+const PLATFORM: Role[] = ['PLATFORM_ADMIN'];
+const find = (entry: string, to: string) => mod('find', entry, to, { only: [...FIND, ...PLATFORM] });
 
 export const NAV: NavArea[] = [
   {
@@ -162,8 +169,8 @@ export const NAV: NavArea[] = [
           e('design', 'review', '/modeller/review'),
           e('design', 'recordTypes', '/modeller/data-objects'),
           e('design', 'screens', '/modeller/pages'),
-          // U12a: the route admits operators too (App.tsx), but Design is the designers' group.
-          e('design', 'testRun', '/design/test', { access: { roles: [...MODEL, ...OPS], perms: [] }, only: MODEL }),
+          // U12a: the route admits operators too (App.tsx), but Design is the designers' group (and the platform administrator's link).
+          e('design', 'testRun', '/design/test', { access: { roles: [...MODEL, ...OPS], perms: [] }, only: [...MODEL, ...PLATFORM] }),
         ],
       },
       {
