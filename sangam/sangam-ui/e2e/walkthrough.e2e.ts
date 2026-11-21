@@ -23,6 +23,8 @@ import { test, expect } from './support/fixtures';
 import { API_BASE, devToken, t } from './support/env';
 
 const OPEN_STEPS: Record<string, string> = {
+  // ui.yml run 44882890962 (tenant GOI.E2E, EV-M-0961 A): the bill passes bl_bindingHold but opens no task within
+  // 45 s; this spec now funds the head first (fundTheBillHead). Kept open until a run shows the steps green.
   // ui.yml run 44863340501 (chromium and firefox): the bill started on the Start page stops at the task bl_bindingHold
   // ("Profile binding missing: bind the bill type in the profile, then check again"); the test-mode tenant has no
   // profile binding for the bill type, so the case never reaches the PAO chain, and the task list names no seat for
@@ -74,6 +76,60 @@ async function postToTheChainSeats(): Promise<string[]> {
     await api.dispose();
   }
   return notes;
+}
+
+/**
+ * The budget behind the bill: Rs 10 lakh on ledger BUDGET for the bill's head and DDO, ALLOCATE at the first stage and
+ * DISTRIBUTE through every stage to the bill's DDO at the consuming stage, the way the presentation funds its grant
+ * (DemoLoaderSequenceAgainstServerTest.fund; stages of profile GOI > IN > REGIME-WESTMINSTER-SUPPLY). The bill's funds
+ * step asks ledger.available for (headOfAccount, ddoCode); with nothing distributed it waits at bl_hold. Each run
+ * funds the head again (new idempotency keys, references with the run's key), so the amount only grows.
+ */
+const LEDGER_STAGES = ['APPROPRIATION', 'ALLOCATION', 'RELEASE', 'AUTHORISATION', 'SUB_ALLOTMENT'];
+const HEAD = '2054-00-001-01-00-13';
+const DDO = 'DDO-1';
+const FUNDS = '1000000.00';
+
+async function fundTheBillHead(run: string): Promise<string> {
+  const api = await admin();
+  try {
+    const period = fiscalYear(new Date());
+    const account = (stage: string, holder: string) => ({ period, line: HEAD, holder, stage });
+    const operate = async (operation: string, from: Json, to?: Json) => {
+      const res = await api.post('ledger/by-ledger/operations', {
+        params: { ledger: 'BUDGET' },
+        headers: { 'Idempotency-Key': randomUUID() },
+        data: {
+          operation, account: from, ...(to ? { target: to } : {}), amount: FUNDS,
+          reference: `BUDGET/${period}/${HEAD}/${operation}/${String(from.stage)}${to ? `>${String(to.stage)}` : ''}/${run}`,
+          auditRef: 'Budget distribution order, walkthrough', fromCommitment: false, fromEncumbrance: false, holdIfShort: false,
+        },
+      });
+      const body = await res.text();
+      expect(res.status(), `${operation} ${JSON.stringify(from)}: ${body.slice(0, 300)}`).toBe(200);
+      expect((JSON.parse(body) as Json).applied, `${operation} applied: ${body.slice(0, 300)}`).toBe(true);
+    };
+    let at = account(LEDGER_STAGES[0], '-');
+    await operate('ALLOCATE', at);
+    for (let i = 1; i < LEDGER_STAGES.length; i++) {
+      const next = account(LEDGER_STAGES[i], i === LEDGER_STAGES.length - 1 ? DDO : '-');
+      await operate('DISTRIBUTE', at, next);
+      at = next;
+    }
+    const res = await api.get('ledger/by-ledger/accounts', { params: { ledger: 'BUDGET', period, line: HEAD, holder: DDO, stage: at.stage } });
+    const rows = items(await res.json());
+    expect(rows.length, `the consuming account of ${DDO}: ${JSON.stringify(rows).slice(0, 300)}`).toBe(1);
+    return `Rs ${FUNDS} through ${LEDGER_STAGES.length} stages; available to ${DDO} at ${at.stage}: ${String(rows[0].available)} ${String(rows[0].currency ?? '')}`;
+  } finally {
+    await api.dispose();
+  }
+}
+
+/** The Indian financial year (April to March) of a date, as the ledger names its period: 2026-27. */
+function fiscalYear(d: Date): string {
+  const ist = new Date(d.getTime() + 330 * 60_000);
+  const start = ist.getUTCMonth() >= 3 ? ist.getUTCFullYear() : ist.getUTCFullYear() - 1;
+  return `${start}-${String((start + 1) % 100).padStart(2, '0')}`;
 }
 
 /** The open tasks of the case, each with the seat it waits for (the task's own seatId, as the administrator's list names it). */
@@ -154,7 +210,9 @@ test('the walkthrough of the presentation: sign-in, seat, bill, dealing hand and
   await step('0 postings', async () => {
     const notes = await postToTheChainSeats();
     expect(notes, 'office, seats and postings of the signed-in person').toEqual([]);
-    return `${SEATS.length} seats held`;
+    // ui.yml run 44882890962 (tenant GOI.E2E): without a budget the bill opened no task in 45 s (steps 4, 5)
+    const funds = await fundTheBillHead(businessKey);
+    return `${SEATS.length} seats held; ${funds}`;
   });
 
   await step('1 sign-in', async () => {
