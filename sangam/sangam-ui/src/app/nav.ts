@@ -210,7 +210,8 @@ export const NAV: NavArea[] = [
           e('monitor', 'engine', '/ops/engine', { only: ['PLATFORM_OPERATOR'] }),
           // The engine's own saved filters (no organisation of their own): platform identities only, as before.
           e('monitor', 'engineFilters', '/ops/engine/filters', { access: { roles: ['PLATFORM_OPERATOR', 'PLATFORM_ADMIN'], perms: [] } }),
-          e('monitor', 'operatorLog', '/ops/audit-log'),
+          // U12d: the route admits an auditor too (history.read); he sees this one entry of the group.
+          e('monitor', 'operatorLog', '/ops/audit-log', { access: { roles: [...OPS, 'AUDITOR'], perms: [] } }),
         ],
       },
     ],
