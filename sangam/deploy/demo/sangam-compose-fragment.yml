@@ -16,10 +16,13 @@
 # Secrets: every ${VAR:?} below is REQUIRED and has NO value in this file. The deployer puts the values in
 # sangam-demo.env (never committed) or exports them from the host's secret store.
 # Images: loaded from the CI hand-over artifact (docker load, see README.md); never pulled from a registry.
-# Money: no payment rail is configured (connector base URLs empty, simulators off), so a bill payment cannot leave
-# Sangam; it stops HELD / as an incident (SD-553: money paths are NOT YET for IFMS).
-# HARD PRECONDITIONS before the demo data load (runbook P1-P3): demo_preflight.py money (pfms.payment binding sandbox or
-# held, no payment connector URL set), persona tokens from a temporary Keycloak client, demo_preflight.py smoke first.
+# Money: no payment rail is configured (connector base URLs empty, simulators off), so no payment can leave Sangam
+# (SD-553: money paths are NOT YET for IFMS). For GOI.FIN, the sandbox tenant (SANGAM_DEMO_SANDBOXTENANTS below), the
+# payee check, the payment and the bank statement are answered inside the server and marked sandbox; for any other
+# tenant a payment step has no connector and stops as an incident.
+# HARD PRECONDITIONS before the demo data load (DEMO-GO-LIVE-RUNBOOK.md, P1-P4): demo_preflight.py money (GET /me says
+# sandbox: true, no payment connector URL set), persona tokens from the authorization-code flow of sangam-ui (realm
+# oneifms has no password-grant client), demo_preflight.py smoke first, funds through the ledger API.
 
 networks:
   sangam-internal:
