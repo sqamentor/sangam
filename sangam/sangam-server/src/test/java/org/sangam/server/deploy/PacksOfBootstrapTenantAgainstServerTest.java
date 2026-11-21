@@ -6,8 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.sangam.server.config.KeyAttestation;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.IOException;
@@ -57,8 +60,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * under profile h2, and there {@code sangam.packs.tenants} falls back to the dev-token tenant, which is the fragment's
  * SANGAM_TENANT_DEFAULT. So "as deployed" sets the postgres default (false) here, and what a name binds to is read
  * from the property the wiring reads, never taken from the fact that packs were deployed.
+ * <p>
+ * Not silently: a start that leaves the first-admins tenant without a pack says so in the server log, at WARN, with
+ * the tenant and the two settings ({@link #NO_PACKS}); a start that deploys them does not.
  */
+@ExtendWith(OutputCaptureExtension.class)
 class PacksOfBootstrapTenantAgainstServerTest {
+
+    /** The words of the start-up warning for a first-admins tenant without packs (PacksWiring). */
+    static final String NO_PACKS = "has no workflow pack deployed";
 
     static final String TENANT = "GOI.FIN";
     /** The two settings as environment names (Spring's system-environment mapping of the property names). */
@@ -90,9 +100,17 @@ class PacksOfBootstrapTenantAgainstServerTest {
      * demo has no platform issuer).
      */
     @Test
-    void asDeployedTheTenantHasNoPackAndNoCallOfItsAdministratorsDeploysOne() throws Exception {
+    void asDeployedTheTenantHasNoPackAndNoCallOfItsAdministratorsDeploysOne(CapturedOutput output) throws Exception {
         Host host = Host.h2(dir.resolve("as-deployed"));
         try (ConfigurableApplicationContext ctx = host.startAsDeployed()) {
+            // not silently: the start itself says that the tenant it created has no pack, and how it gets them
+            List<String> warned = output.getOut().lines().filter(l -> l.contains(NO_PACKS)).toList();
+            fact("as deployed: start-up log lines saying the tenant has no pack", warned.size()
+                    + (warned.isEmpty() ? "" : ": " + warned.get(0)));
+            assertEquals(1, warned.size(), "one WARN line of the start names the tenant without packs");
+            assertTrue(warned.get(0).contains("WARN") && warned.get(0).contains(TENANT)
+                    && warned.get(0).contains("sangam.packs.deploy-on-start") && warned.get(0).contains("sangam.packs.tenants"),
+                    "at WARN, with the tenant and the two settings: " + warned.get(0));
             String api = api(ctx);
             int shipped = shipped(ctx);
             assertTrue(shipped > 0, "packs are on the class path of the server: " + shipped);
@@ -215,7 +233,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
      * A second start deploys nothing.
      */
     @Test
-    void onAFreshDatabaseTheStartThatCreatesTheTenantDeploysItsPacks() throws Exception {
+    void onAFreshDatabaseTheStartThatCreatesTheTenantDeploysItsPacks(CapturedOutput output) throws Exception {
         Host host = Host.h2(dir.resolve("fresh"));
         Consumer<Map<String, Object>> settings = env -> {
             Host.WITHOUT_PACK_SETTINGS.accept(env);
@@ -246,6 +264,9 @@ class PacksOfBootstrapTenantAgainstServerTest {
             fact("fresh database: deployments of the tenant", all.size() + " (" + first.size() + " packs), the same after "
                     + "the second start");
         }
+        // the pack runner ran before FirstAdminBootstrap in the first start; the warning is judged after both
+        assertEquals(List.of(), output.getOut().lines().filter(l -> l.contains(NO_PACKS)).toList(),
+                "neither start warns: the tenant has its packs when the start is over");
     }
 
     // ------------------------------------------------------------------ the fragment
