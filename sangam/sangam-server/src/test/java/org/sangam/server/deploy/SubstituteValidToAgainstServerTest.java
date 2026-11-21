@@ -15,7 +15,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * AJ-04 step 4 ("charge ends: open forms get CX-1, tasks back to the seat's holder; DELEGATION_EXPIRED"), PER-4 ("must
  * never use substitute authority after valid-to"), IX.5 rule 4, K7. The "delegate" of the specification is the holder
  * of an acting posting (additional charge, leave substitute): {@code DELEGATION_GRANTED} and {@code DELEGATION_EXPIRED}
- * are the events of such a posting.
+ * are the events of such a posting. Settled by joint decision EV-M-0962 (Q-C): SANGAM.md IX.5 rule 4 (line 3994, "A
+ * substitute seat holder acts with delegated authority for a date range") and the Delegation row of the coverage table
+ * (line 2150, valid-from/to, substituted authority) define delegation as a substitute acting for a date range; no
+ * person-to-person delegation is a seat context.
  * <p>
  * Acting under the posting within its dates and the refusal after valid-to were in place (E-24). Fail-first on
  * 42439c36: no timer ran at valid-to ({@code PostingService.expireDue} had no caller), so {@code DELEGATION_EXPIRED}
