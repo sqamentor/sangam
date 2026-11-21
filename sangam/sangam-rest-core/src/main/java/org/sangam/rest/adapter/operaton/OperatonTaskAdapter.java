@@ -107,10 +107,8 @@ public class OperatonTaskAdapter implements TaskPort {
         if (ctx.tenantId() != null) {
             q.tenantIdIn(ctx.tenantId());
         }
-        String section = f == null ? null : f.section();
+        String section = f == null ? null : f.section();   // E-32(e): null is the default visibility (TaskSections)
         if (section == null) {
-            // Seats are modelled as candidate groups; the default visibility puts its candidateGroupIn in an OR branch,
-            // so a candidateGroup/seatId filter below does not clash with it
             TaskSections.visible(ctx, q);
         } else if (!TaskSections.apply(ctx, q, section, () -> acting)) {
             return new Page<>(List.of(), 0, false);   // ACTING_FOR without an acting seat: the section is empty
@@ -272,11 +270,7 @@ public class OperatonTaskAdapter implements TaskPort {
 
     private volatile java.util.function.Function<RequestContext, List<String>> actingSeats = c -> List.of();
 
-    /**
-     * E-32(e): the seats the caller holds now by additional charge or leave substitute, the {@code ACTING_FOR} section
-     * of {@code GET /tasks?section=} (bound by {@link OperatonWorkspaceAdapter}, which counts the same section).
-     * Unbound: none, so the section lists nothing.
-     */
+    /** E-32(e): the caller's acting seats of section ACTING_FOR, bound by {@link OperatonWorkspaceAdapter}. */
     public void setActingSeats(java.util.function.Function<RequestContext, List<String>> actingSeats) {
         this.actingSeats = actingSeats == null ? c -> List.of() : actingSeats;
     }
@@ -497,7 +491,7 @@ public class OperatonTaskAdapter implements TaskPort {
             if (t.getAssignee() == null) {
                 return;
             }
-            if (!t.getAssignee().equals(ctx.principalId()) && !seesAll(ctx)) {
+            if (!t.getAssignee().equals(ctx.principalId()) && !TaskSections.seesAll(ctx)) {
                 throw ApiProblem.notPermitted("task.unclaim");
             }
             OperatonSupport.run(() -> tasks.setAssignee(taskId, null));
@@ -786,7 +780,7 @@ public class OperatonTaskAdapter implements TaskPort {
             throw ApiProblem.notFound("task", taskId);
         }
         OperatonSupport.checkTenant(ctx, t.getTenantId(), "task", taskId);
-        if (!seesAll(ctx) && !involved(ctx, t)) {
+        if (!TaskSections.seesAll(ctx) && !involved(ctx, t)) {
             throw ApiProblem.notFound("task", taskId);
         }
         return t;
@@ -813,10 +807,6 @@ public class OperatonTaskAdapter implements TaskPort {
             }
         }
         return false;
-    }
-
-    private static boolean seesAll(RequestContext ctx) {
-        return ctx.inGroup("sangam-admin") || ctx.inGroup("sangam-operator") || ctx.inGroup("sangam-system");
     }
 
     /** K3: the caller holds the task, or it is unassigned and the caller is a candidate. */

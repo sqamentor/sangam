@@ -253,10 +253,14 @@ describe('P35/P45 inbox filter sidebar and card variables', () => {
     await saveFilter('Leave pool', '');
     const side = screen.getByRole('complementary', { name: T('task.filterSidebar') });
     fireEvent.click(within(side).getByRole('button', { name: T('task.allWork') }));
-    await waitFor(() => expect(lastCall(api.page, '/tasks')?.[1]).toEqual(expect.objectContaining({ section: 'MY_SEAT', mine: undefined, processDefinitionKey: undefined, variableNames: undefined })));
+    await waitFor(() => expect(lastCall(api.page, '/tasks')?.[1]).toEqual(expect.objectContaining({ section: 'MY_SEAT', processDefinitionKey: undefined, variableNames: undefined })));
+    // E-32(e): the section is the server's predicate; nothing is derived from it
+    expect((lastCall(api.page, '/tasks')?.[1] as Record<string, unknown> | undefined)?.mine).toBeUndefined();
     fireEvent.click(within(side).getByRole('button', { name: 'Leave pool' }));
     expect(within(side).getByRole('button', { name: 'Leave pool' }).getAttribute('aria-pressed')).toBe('true');
-    await waitFor(() => expect(lastCall(api.page, '/tasks')?.[1]).toEqual(expect.objectContaining({ section: 'POOL', unassigned: undefined, state: undefined, processDefinitionKey: 'leave' })));
+    await waitFor(() => expect(lastCall(api.page, '/tasks')?.[1]).toEqual(expect.objectContaining({ section: 'POOL', processDefinitionKey: 'leave' })));
+    expect((lastCall(api.page, '/tasks')?.[1] as Record<string, unknown> | undefined)?.unassigned).toBeUndefined();
+    expect((lastCall(api.page, '/tasks')?.[1] as Record<string, unknown> | undefined)?.state).toBeUndefined();
   });
 
   it('P35 filters persist per person and can be deleted', async () => {
