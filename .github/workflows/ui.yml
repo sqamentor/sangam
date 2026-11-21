@@ -172,7 +172,14 @@ jobs:
           # codes are refused with PRINCIPAL_KEY_NOT_CONFIGURED.
           principal_key=$(python3 -I -c "import base64, secrets; print(base64.b64encode(secrets.token_bytes(32)).decode())")
           echo "::add-mask::$principal_key"
+          # Joint decision EV-M-0961 (A), register L-3: the tenant of the development token is a scope under a shipped
+          # profile. ProfileResolver resolves a tenant id by its dot prefixes (GOI, then GOI.E2E), so GOI.E2E runs on the
+          # shipped chain GOI > IN > REGIME-WESTMINSTER-SUPPLY, as the presentation tenant GOI.FIN does; the default "dev"
+          # of application-h2.yaml has no profile ("Tenant dev has no active profile"), and the bill then stops at
+          # bl_bindingHold. Bootstrap, JIT provisioning and the packs deployed at start follow the same variable. Test
+          # configuration only: no profile or product data changes.
           docker run -d --name sangam-server --network e2e -e SANGAM_DEV_TOKEN="$token" \
+            -e SANGAM_TENANT_DEFAULT=GOI.E2E \
             -e SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF=secret://compliance/principal-key \
             -e SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY="$principal_key" \
             -e SANGAM_SECURITY_CORS_ALLOWEDORIGINS=https://host.e2e.test \
