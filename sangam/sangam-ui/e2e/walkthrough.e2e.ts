@@ -183,8 +183,13 @@ test('the walkthrough of the presentation: sign-in, seat, bill, dealing hand and
     await page.getByLabel(t('start.businessKey')).fill(businessKey);
     const type = page.getByLabel(/^Bill type/);
     await expect(type).toBeVisible();
-    const values = await type.locator('option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value).filter((v) => v));
-    await type.selectOption(values.includes('CONTINGENT') ? 'CONTINGENT' : values[0]);
+    // a pack form's select comes to the start screen as a text field today (adapters.ts packForm); either is filled
+    if ((await type.evaluate((e) => e.tagName)) === 'SELECT') {
+      const values = await type.locator('option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value).filter((v) => v));
+      await type.selectOption(values.includes('CONTINGENT') ? 'CONTINGENT' : values[0]);
+    } else {
+      await type.fill('CONTINGENT');
+    }
     await page.getByLabel(/^Head of account/).fill('2054-00-001-01-00-13');
     await page.getByLabel(/^Amount/).fill('42350');
     await page.getByLabel(/^Payee bank account/).fill('00004207100101');
