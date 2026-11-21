@@ -300,6 +300,34 @@ class PacksOfBootstrapTenantAgainstServerTest {
                 "neither start warns: the tenant has its packs when the start is over");
     }
 
+    /**
+     * Register E-33 (f): the tenant the bootstrap creates has the module defaults a tenant created through the API
+     * gets ({@code SecurityKeysWiring.sangamModuleDefaultsOnboarding}): every module role template. A second start
+     * leaves the tenant's roles as they were. The packs play no part, so the start-up deployment is off.
+     */
+    @Test
+    void theTenantTheBootstrapCreatesHasTheModuleDefaults() throws Exception {
+        Host host = Host.h2(dir.resolve("defaults"));
+        List<String> roles;
+        try (ConfigurableApplicationContext ctx = host.startAsDeployed()) {
+            assertEquals("CREATED", tenantStatus(ctx, TENANT), "FirstAdminBootstrap created the tenant");
+            Set<String> templates = new TreeSet<>(ctx.getBean(org.sangam.security.SangamSecurity.class).defaults()
+                    .roleTemplates().keySet());
+            assertFalse(templates.isEmpty(), "the server has module role templates");
+            roles = roles(ctx, TENANT);
+            Set<String> missing = new TreeSet<>(templates);
+            missing.removeAll(roles);
+            fact("fresh database: module role templates of " + TENANT, (templates.size() - missing.size()) + " of "
+                    + templates.size() + " installed; missing " + missing + "; roles of the tenant " + roles.size());
+            assertEquals(Set.of(), missing, "every module role template is installed for the tenant the bootstrap created");
+            assertTrue(roles.contains(org.sangam.security.admin.TenantAdminService.TENANT_ADMIN_ROLE),
+                    "and its administrators are appointed as before: " + roles);
+        }
+        try (ConfigurableApplicationContext ctx = host.startAsDeployed()) {
+            assertEquals(roles, roles(ctx, TENANT), "a second start leaves the roles of the tenant as they were");
+        }
+    }
+
     // ------------------------------------------------------------------ the fragment
 
     /**
@@ -557,6 +585,11 @@ class PacksOfBootstrapTenantAgainstServerTest {
     static List<String> chain(ConfigurableApplicationContext ctx, String tenant) throws java.sql.SQLException {
         return query(ctx, "SELECT event_type FROM AUDIT_EVENT WHERE tenant_id=? AND chain_id=? ORDER BY seq", tenant,
                 "sec:" + tenant);
+    }
+
+    /** The role ids of a tenant (SEC_ROLE), sorted. */
+    static List<String> roles(ConfigurableApplicationContext ctx, String tenant) throws java.sql.SQLException {
+        return query(ctx, "SELECT role_id FROM SEC_ROLE WHERE tenant_id=? ORDER BY role_id", tenant);
     }
 
     static String tenantStatus(ConfigurableApplicationContext ctx, String tenant) throws java.sql.SQLException {
