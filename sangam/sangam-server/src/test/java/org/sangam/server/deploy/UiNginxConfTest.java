@@ -95,4 +95,58 @@ class UiNginxConfTest {
     void thePresentationPathPassesTheHostWithItsPort() throws IOException {
         assertEquals("$http_host", proxiedHost(read(DEPLOY.resolve("presentation/sangam-path.conf.template"))));
     }
+
+    /** The directives directly in the {@code server { ... }} block: every nested block (location, types) removed. */
+    private static String serverLevel(String conf) {
+        Matcher head = Pattern.compile("(?m)^server\\s*\\{").matcher(conf);
+        assertTrue(head.find(), "a server block");
+        StringBuilder out = new StringBuilder();
+        int depth = 0;
+        for (int i = head.end() - 1; i < conf.length(); i++) {
+            char c = conf.charAt(i);
+            if (c == '{') {
+                depth++;
+                continue;
+            }
+            if (c == '}' && --depth == 0) {
+                return out.toString();
+            }
+            if (depth == 1 && c != '}') {
+                out.append(c);
+            }
+        }
+        throw new AssertionError("unbalanced server block");
+    }
+
+    /**
+     * EV-M-0969: nginx's defaults (absolute_redirect on, port_in_redirect on) turn a redirect into an absolute URL with
+     * the container's own port, so behind the host's proxy GET demo.ifms.dev/sangam went to http://demo.ifms.dev:8080/sangam/.
+     * With absolute_redirect off at server level every redirect nginx makes (an explicit return 301 and its own
+     * directory redirects, /assets -> /assets/) carries the relative Location the browser resolves against the address
+     * it used. ui.yml (e2e job) checks the same on the running fronts.
+     */
+    private static void assertRelativeRedirects(String conf) {
+        String server = serverLevel(conf);
+        assertTrue(Pattern.compile("(?m)^\\s*absolute_redirect\\s+off\\s*;").matcher(server).find(),
+                "'absolute_redirect off;' directly in the server block");
+        assertTrue(!Pattern.compile("absolute_redirect\\s+on|port_in_redirect\\s+on|server_name_in_redirect\\s+on").matcher(conf).find(),
+                "no directive switches absolute redirects back on");
+        Matcher r = Pattern.compile("return\\s+(30[1278])\\s+(\\S+?);").matcher(conf);
+        while (r.find()) {
+            assertTrue(r.group(2).startsWith("/") && !r.group(2).startsWith("//"),
+                    "redirect " + r.group(0) + " names a path, not a scheme, host or port");
+        }
+    }
+
+    @Test
+    void theUiImageRedirectsWithARelativeLocation() throws IOException {
+        assertRelativeRedirects(read(DEPLOY.resolve("docker/ui/default.conf.template")));
+    }
+
+    @Test
+    void thePresentationPathRedirectsWithARelativeLocation() throws IOException {
+        String conf = read(DEPLOY.resolve("presentation/sangam-path.conf.template"));
+        assertTrue(conf.contains("location = /sangam { return 301 /sangam/; }"), "GET /sangam answers 301 to /sangam/");
+        assertRelativeRedirects(conf);
+    }
 }
