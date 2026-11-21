@@ -166,6 +166,13 @@ set equals the server's (`sangam-spring-boot-starter/README.md:87-92`).
 - Only an identity from `sangam.security.platform-issuer` is a platform administrator.
 - In a tenant token, `sangam-admin` becomes `sangam-tenant-admin` (`Permissions.java:112-121`; `deploy/README.md:144-149`).
 
+**Four-eyes policy changes (register E-33 follow-up 3, IFMS EV-M-0968)**
+- Every tenant has four-eyes on: a policy change through `POST /api/v1/admin/policies` or `DELETE /api/v1/admin/policies/by-id` is stored `PENDING` and applies only when a second person approves it (`PolicyAdminService`). A tenant created by `sangam.security.first-admins.*` starts with six pending self-service grants of the module defaults, requested by `system` with the reason `module default (self-service)`.
+- The queue: `GET /api/v1/admin/policies/changes?status=PENDING|APPLIED|REJECTED|SUPERSEDED` (default `PENDING`, newest request first, the caller's tenant only, `X-Total-Count`) and `GET /api/v1/admin/policies/changes/{id}`. Each change carries the policy it applies, `requestedBy`, `requestReason`, and once decided `decidedBy`, `decidedAt` and `decisionReason`. The request reason is never overwritten (column `SEC_POLICY_CHANGE.decision_reason`, changeset `0050-01`).
+- The decision: `POST /api/v1/admin/policies/changes/{id}/approve` or `/reject`, body `{"reason": "..."}` (required), with an `Idempotency-Key`. Approve applies the change in the same transaction and writes `GRANT_CHANGED` or `DENY_CHANGED` with `change_id`, `requested_by`, `decided_by` and `reason`. Reject applies nothing and writes `POLICY_CHANGE_PENDING` with operation `REJECT`.
+- Who decides: a holder of `policy.admin` (`sangam-tenant-admin`) with policy CHANGE_GRANT in sangam-security. The requester decides neither way (no self-approve, no self-reject, no withdraw), and a system identity never decides: `422 SOD_VIOLATION`, audited `SOD_VIOLATION_BLOCKED`. A change requested by `system` is decided by any person who holds the permission. Another tenant's id or none is `404 NOT_FOUND`; a change already decided or superseded is `409 CHANGE_NOT_PENDING`.
+- The screen: Set up, Access rule approvals (`/admin/policy-changes`).
+
 ## 7. Security tokens and scopes (decisions 358, 368, 370)
 
 **Ways to authenticate**
