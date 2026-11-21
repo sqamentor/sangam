@@ -62,6 +62,21 @@ class ProcessStartNotFoundH2Test {
             }
 
             @Override
+            public <T> T withReadConnection(org.sangam.core.api.ReadWork<T> work) {
+                return work.read(connection);
+            }
+
+            @Override
+            public <T> T inReadTx(org.sangam.core.api.ReadSupplier<T> work) {
+                return work.read();
+            }
+
+            @Override
+            public <T> T inNewReadTx(org.sangam.core.api.ReadWork<T> work) {
+                return work.read(connection);
+            }
+
+            @Override
             public Connection connection() {
                 return connection;
             }

@@ -88,6 +88,25 @@ class TaskActRefusalAuditH2Test {
                     throw new IllegalStateException(e);
                 }
             }
+
+            /** Read work in a leaf transaction of its own (Transactions contract: not through inTransaction). */
+            @Override
+            public <R> R read(org.sangam.core.api.ReadWork<R> work) {
+                leafTransactions.incrementAndGet();
+                try (Connection c = fx.raw.getConnection()) {
+                    c.setAutoCommit(false);
+                    try {
+                        R r = work.read(c);
+                        c.commit();
+                        return r;
+                    } catch (RuntimeException e) {
+                        c.rollback();
+                        throw e;
+                    }
+                } catch (java.sql.SQLException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
         };
     }
 

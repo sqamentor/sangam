@@ -107,6 +107,23 @@ class IdempotencyOutcomeClassificationH2Test {
             }
         }
 
+        /** Read work joins the current transaction, or runs in one of its own (as inTxWithStatus). */
+        @Override
+        public <T> T withReadConnection(org.sangam.core.api.ReadWork<T> work) {
+            return inTxWithStatus(status -> work.read(current.get()));
+        }
+
+        @Override
+        public <T> T inReadTx(org.sangam.core.api.ReadSupplier<T> work) {
+            return inTxWithStatus(status -> work.read());
+        }
+
+        /** Read work in a new transaction on its own connection, the outer one suspended (as inNewTx). */
+        @Override
+        public <T> T inNewReadTx(org.sangam.core.api.ReadWork<T> work) {
+            return inNewTx(() -> work.read(current.get()));
+        }
+
         @Override
         public Connection connection() {
             return current.get();
