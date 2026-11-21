@@ -16,7 +16,7 @@ CREATE TABLE SANGAM_LEASE (
   attempt_no NUMBER(10) NOT NULL,
   worker_id VARCHAR2(255 CHAR),
   expires_at_ms NUMBER(19),
-  state VARCHAR2(32 CHAR) NOT NULL,
+  state VARCHAR2(64 CHAR) NOT NULL,
   cancel_requested NUMBER(5) NOT NULL,
   capability_class VARCHAR2(32 CHAR),
   exclusive_scope VARCHAR2(255 CHAR),
@@ -116,7 +116,7 @@ CREATE TABLE SANGAM_ENGINE_INCIDENT (
   engine_work_id VARCHAR2(64 CHAR),
   operation_id VARCHAR2(64 CHAR),
   message CLOB,
-  state VARCHAR2(32 CHAR) NOT NULL,
+  state VARCHAR2(64 CHAR) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL,
   closed_at TIMESTAMP WITH TIME ZONE,
   close_reason VARCHAR2(32 CHAR),
@@ -873,7 +873,7 @@ CREATE TABLE ATTACHMENT (
   size_bytes NUMBER(19) NOT NULL,
   declared_mime VARCHAR2(255 CHAR) NOT NULL,
   sniffed_mime VARCHAR2(255 CHAR),
-  state VARCHAR2(32 CHAR) NOT NULL,
+  state VARCHAR2(64 CHAR) NOT NULL,
   scan_engine VARCHAR2(64 CHAR),
   scan_result VARCHAR2(1000 CHAR),
   created_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -920,7 +920,7 @@ CREATE TABLE PACKAGE_VERSION (
   package_key VARCHAR2(255 CHAR) NOT NULL,
   version NUMBER(10) NOT NULL,
   package_hash RAW(32) NOT NULL,
-  state VARCHAR2(32 CHAR) NOT NULL,
+  state VARCHAR2(64 CHAR) NOT NULL,
   manifest_json CLOB NOT NULL,
   signature BLOB,
   author VARCHAR2(255 CHAR) NOT NULL,
@@ -1418,7 +1418,7 @@ CREATE TABLE PACK_LEDGER_POSTING (
   account VARCHAR2(255 CHAR) NOT NULL,
   reference VARCHAR2(255 CHAR) NOT NULL,
   delta NUMBER(19) NOT NULL,
-  state VARCHAR2(32 CHAR) NOT NULL,
+  state VARCHAR2(64 CHAR) NOT NULL,
   balance_after NUMBER(19) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL,
   reversed_at TIMESTAMP WITH TIME ZONE,
@@ -1469,7 +1469,7 @@ CREATE TABLE SANGAM_PAUSE (
   paused_by VARCHAR2(255 CHAR) NOT NULL,
   reason VARCHAR2(1000 CHAR),
   total_paused_ms NUMBER(19) NOT NULL,
-  state VARCHAR2(32 CHAR) NOT NULL,
+  state VARCHAR2(64 CHAR) NOT NULL,
   resumed_at_ms NUMBER(19),
   CONSTRAINT PK_SANGAM_PAUSE PRIMARY KEY (process_instance_id)
 );
@@ -5724,7 +5724,7 @@ CREATE TABLE EXEC_PARTITION (
   owner_incarnation VARCHAR2(64 CHAR),
   owner_epoch NUMBER(19) DEFAULT 0 NOT NULL,
   lease_expires_at TIMESTAMP WITH TIME ZONE,
-  state VARCHAR2(32 CHAR) NOT NULL,
+  state VARCHAR2(64 CHAR) NOT NULL,
   drain_deadline TIMESTAMP WITH TIME ZONE,
   map_epoch NUMBER(19) NOT NULL,
   CONSTRAINT PK_EXEC_PARTITION PRIMARY KEY (partition_id)
@@ -5736,7 +5736,7 @@ CREATE TABLE EXEC_PARTITION (
 CREATE TABLE EXEC_SLOT (
   slot NUMBER(10) NOT NULL,
   partition_id NUMBER(10) NOT NULL,
-  state VARCHAR2(32 CHAR) NOT NULL,
+  state VARCHAR2(64 CHAR) NOT NULL,
   from_partition NUMBER(10),
   move_started_at TIMESTAMP WITH TIME ZONE,
   map_epoch NUMBER(19) NOT NULL,
@@ -5751,7 +5751,7 @@ CREATE TABLE EXEC_MAP (
   cluster_id VARCHAR2(64 CHAR) NOT NULL,
   current_map_epoch NUMBER(19) NOT NULL,
   target_map_epoch NUMBER(19),
-  state VARCHAR2(32 CHAR) NOT NULL,
+  state VARCHAR2(64 CHAR) NOT NULL,
   coordinator_node VARCHAR2(64 CHAR),
   coordinator_epoch NUMBER(19) DEFAULT 0 NOT NULL,
   coordinator_expires_at TIMESTAMP WITH TIME ZONE,
@@ -6064,7 +6064,7 @@ CREATE TABLE OPS_UTC_RUN (
   source_zone VARCHAR2(64 CHAR) NOT NULL,
   cutover_at TIMESTAMP WITH TIME ZONE NOT NULL,
   fingerprint VARCHAR2(64 CHAR) NOT NULL,
-  state VARCHAR2(32 CHAR) NOT NULL,
+  state VARCHAR2(64 CHAR) NOT NULL,
   rows_read NUMBER(19) DEFAULT 0 NOT NULL,
   converted NUMBER(19) DEFAULT 0 NOT NULL,
   already_utc NUMBER(19) DEFAULT 0 NOT NULL,
@@ -6354,6 +6354,63 @@ CREATE TABLE TEAM_TASK_FILTER (
 );
 CREATE INDEX TEAM_TASK_FILTER_NAME ON TEAM_TASK_FILTER (tenant_id, name);
 --rollback DROP TABLE TEAM_TASK_FILTER;
+
+--changeset sangam:0048-01-port_case_ext_task dbms:oracle
+--comment: P-5 case external tasks keyed to the case execution
+CREATE TABLE PORT_CASE_EXT_TASK (
+  id_ VARCHAR2(64 CHAR) NOT NULL,
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  case_inst_id VARCHAR2(64 CHAR) NOT NULL,
+  case_exec_id VARCHAR2(64 CHAR) NOT NULL,
+  case_def_id VARCHAR2(64 CHAR) NOT NULL,
+  activity_id VARCHAR2(255 CHAR) NOT NULL,
+  topic VARCHAR2(255 CHAR) NOT NULL,
+  worker_id VARCHAR2(255 CHAR),
+  lock_exp_time TIMESTAMP WITH TIME ZONE,
+  retries NUMBER(10),
+  error_msg VARCHAR2(255 CHAR),
+  priority NUMBER(10) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  version_ NUMBER(19) NOT NULL,
+  CONSTRAINT PK_PORT_CASE_EXT_TASK PRIMARY KEY (id_)
+);
+CREATE UNIQUE INDEX PORT_CASE_EXT_TASK_EXEC ON PORT_CASE_EXT_TASK (case_exec_id);
+CREATE INDEX PORT_CASE_EXT_TASK_FETCH ON PORT_CASE_EXT_TASK (topic, lock_exp_time);
+CREATE INDEX PORT_CASE_EXT_TASK_CASE ON PORT_CASE_EXT_TASK (tenant_id, case_inst_id);
+--rollback DROP TABLE PORT_CASE_EXT_TASK;
+
+--changeset sangam:0048-02-port_case_migration dbms:oracle
+--comment: P-5 case migration audit
+CREATE TABLE PORT_CASE_MIGRATION (
+  id_ VARCHAR2(64 CHAR) NOT NULL,
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  case_inst_id VARCHAR2(64 CHAR) NOT NULL,
+  source_def_id VARCHAR2(64 CHAR) NOT NULL,
+  target_def_id VARCHAR2(64 CHAR) NOT NULL,
+  migrated_by VARCHAR2(255 CHAR) NOT NULL,
+  reason VARCHAR2(255 CHAR) NOT NULL,
+  executions NUMBER(10) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_PORT_CASE_MIGRATION PRIMARY KEY (id_)
+);
+CREATE INDEX PORT_CASE_MIGRATION_CASE ON PORT_CASE_MIGRATION (tenant_id, case_inst_id);
+--rollback DROP TABLE PORT_CASE_MIGRATION;
+
+--changeset sangam:0048-03-port_case_file_item dbms:oracle
+--comment: C1 CMMN case file item lifecycle state
+CREATE TABLE PORT_CASE_FILE_ITEM (
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  case_inst_id VARCHAR2(64 CHAR) NOT NULL,
+  item_id VARCHAR2(255 CHAR) NOT NULL,
+  variable_name VARCHAR2(255 CHAR) NOT NULL,
+  definition_type VARCHAR2(255 CHAR),
+  state VARCHAR2(64 CHAR) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  version_ NUMBER(19) NOT NULL,
+  CONSTRAINT PK_PORT_CASE_FILE_ITEM PRIMARY KEY (case_inst_id, item_id)
+);
+CREATE INDEX PORT_CASE_FILE_ITEM_TENANT ON PORT_CASE_FILE_ITEM (tenant_id, case_inst_id);
+--rollback DROP TABLE PORT_CASE_FILE_ITEM;
 
 --changeset sangam:0016-03-form_draft-alter dbms:oracle
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int

@@ -79,7 +79,7 @@ TABLES = [
         ("work_id", "{str64}", "NOT NULL"), ("tenant_id", "{str64}", ""), ("topic", "{str}", ""),
         ("root_id", "{str64}", ""), ("operation_id", "{str64}", ""), ("lock_version", "{long}", "NOT NULL"),
         ("attempt_id", "{str64}", ""), ("attempt_no", "{int}", "NOT NULL"), ("worker_id", "{str}", ""),
-        ("expires_at_ms", "{long}", ""), ("state", "{str32}", "NOT NULL"), ("cancel_requested", "{small}", "NOT NULL"),
+        ("expires_at_ms", "{long}", ""), ("state", "{str64}", "NOT NULL"), ("cancel_requested", "{small}", "NOT NULL"),
         ("capability_class", "{str32}", ""), ("exclusive_scope", "{str}", ""), ("updated_at_ms", "{long}", "NOT NULL"),
     ], ["work_id"], [("SANGAM_LEASE_EXPIRY", False, ["state", "expires_at_ms"]),
                      ("SANGAM_LEASE_ROOT", False, ["root_id"]),
@@ -117,7 +117,7 @@ TABLES = [
         ("root_id", "{str64}", ""), ("process_instance_id", "{str64}", ""), ("execution_id", "{str64}", ""),
         ("activity_id", "{str}", ""), ("process_definition_id", "{str}", ""), ("configuration", "{str}", ""),
         ("engine_work_id", "{str64}", ""), ("operation_id", "{str64}", ""), ("message", "{text}", ""),
-        ("state", "{str32}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"), ("closed_at", "{ts}", ""),
+        ("state", "{str64}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"), ("closed_at", "{ts}", ""),
         ("close_reason", "{str32}", ""),
     ], ["incident_id"], [("SANGAM_INCIDENT_OPEN", False, ["tenant_id", "state", "incident_type"])]),
     # ------------------------------------------------------------------ X.2.2 R41
@@ -375,7 +375,7 @@ TABLES = [
         ("draft_id", "{str64}", ""), ("task_id", "{str64}", ""), ("field_path", "{str}", "NOT NULL"),
         ("uploader_principal_id", "{str}", "NOT NULL"), ("uploader_seat_id", "{str64}", ""), ("object_key", "{str1k}", "NOT NULL"),
         ("sha256", "{bytes32}", ""), ("size_bytes", "{long}", "NOT NULL"), ("declared_mime", "{str}", "NOT NULL"),
-        ("sniffed_mime", "{str}", ""), ("state", "{str32}", "NOT NULL"), ("scan_engine", "{str64}", ""),
+        ("sniffed_mime", "{str}", ""), ("state", "{str64}", "NOT NULL"), ("scan_engine", "{str64}", ""),
         ("scan_result", "{str1k}", ""), ("created_at", "{ts}", "NOT NULL"), ("available_at", "{ts}", ""),
         ("records_category", "{str32}", ""),
     ], ["attachment_id"], [("ATTACHMENT_ROOT", False, ["tenant_id", "root_id"]), ("ATTACHMENT_STATE", False, ["state", "created_at"])]),
@@ -392,7 +392,7 @@ TABLES = [
     ], ["tenant_id", "pack_key", "config_key"], []),
     ("0011-03", "hash-pinned executable package versions and lifecycle (R43, X.2.4)", "PACKAGE_VERSION", [
         ("tenant_id", "{str64}", "NOT NULL"), ("package_key", "{str}", "NOT NULL"), ("version", "{int}", "NOT NULL"),
-        ("package_hash", "{bytes32}", "NOT NULL"), ("state", "{str32}", "NOT NULL"), ("manifest_json", "{text}", "NOT NULL"),
+        ("package_hash", "{bytes32}", "NOT NULL"), ("state", "{str64}", "NOT NULL"), ("manifest_json", "{text}", "NOT NULL"),
         ("signature", "{blob}", ""), ("author", "{str}", "NOT NULL"), ("reviewer", "{str}", ""), ("deployer", "{str}", ""),
         ("engine_deployment_id", "{str64}", ""), ("retention_class", "{str32}", ""), ("created_at", "{ts}", "NOT NULL"),
         ("state_changed_at", "{ts}", "NOT NULL"),
@@ -566,7 +566,7 @@ TABLES = [
     ], ["tenant_id", "ledger", "account"], []),
     ("0015-03", "pack ledger postings, idempotent by reference; reversal by reference (LedgerStore)", "PACK_LEDGER_POSTING", [
         ("tenant_id", "{str64}", "NOT NULL"), ("ledger", "{str64}", "NOT NULL"), ("account", "{str}", "NOT NULL"),
-        ("reference", "{str}", "NOT NULL"), ("delta", "{money}", "NOT NULL"), ("state", "{str32}", "NOT NULL"),
+        ("reference", "{str}", "NOT NULL"), ("delta", "{money}", "NOT NULL"), ("state", "{str64}", "NOT NULL"),
         ("balance_after", "{money}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"), ("reversed_at", "{ts}", ""),
     ], ["tenant_id", "ledger", "account", "reference"], []),
     ("0015-04", "per-item batch aggregation, first outcome wins (GP-09, GP-49; BatchLedger)", "PACK_BATCH_ITEM", [
@@ -585,7 +585,7 @@ TABLES = [
     ("0012-02", "pause/resume balances: paused instances and deadline shift (D-32, R79)", "SANGAM_PAUSE", [
         ("process_instance_id", "{str64}", "NOT NULL"), ("tenant_id", "{str64}", ""), ("paused_at_ms", "{long}", "NOT NULL"),
         ("paused_by", "{str}", "NOT NULL"), ("reason", "{str1k}", ""), ("total_paused_ms", "{long}", "NOT NULL"),
-        ("state", "{str32}", "NOT NULL"), ("resumed_at_ms", "{long}", ""),
+        ("state", "{str64}", "NOT NULL"), ("resumed_at_ms", "{long}", ""),
     ], ["process_instance_id"], []),
     # ------------------------------------------------------------------ sangam-rest default adapters (WS-REST)
     # Typed, tenant-scoped JSON documents for REST-owned state that has no module table: registries (R71/R79/R82/
@@ -1095,18 +1095,18 @@ TABLES = [
     ("0039-01", "R39 executor partitions: owner, fencing epoch and lease (X.2.1.3, X.2.1.4); off by default",
      "EXEC_PARTITION", [
         ("partition_id", "{int}", "NOT NULL"), ("owner_node", "{str64}", ""), ("owner_incarnation", "{str64}", ""),
-        ("owner_epoch", "{long}", "DEFAULT 0 NOT NULL"), ("lease_expires_at", "{ts}", ""), ("state", "{str32}", "NOT NULL"),
+        ("owner_epoch", "{long}", "DEFAULT 0 NOT NULL"), ("lease_expires_at", "{ts}", ""), ("state", "{str64}", "NOT NULL"),
         ("drain_deadline", "{ts}", ""), ("map_epoch", "{long}", "NOT NULL"),
     ], ["partition_id"], []),
     ("0039-02", "R39 slot to partition map; every slot in exactly one row, STABLE or MOVING (X.2.1.2 I-1)",
      "EXEC_SLOT", [
-        ("slot", "{int}", "NOT NULL"), ("partition_id", "{int}", "NOT NULL"), ("state", "{str32}", "NOT NULL"),
+        ("slot", "{int}", "NOT NULL"), ("partition_id", "{int}", "NOT NULL"), ("state", "{str64}", "NOT NULL"),
         ("from_partition", "{int}", ""), ("move_started_at", "{ts}", ""), ("map_epoch", "{long}", "NOT NULL"),
     ], ["slot"], [("EXEC_SLOT_PARTITION", False, ["partition_id", "state", "slot"])]),
     ("0039-03", "R39 versioned slot map and the fenced rebalance coordinator lease (X.2.1.6, X.2.1.7)",
      "EXEC_MAP", [
         ("cluster_id", "{str64}", "NOT NULL"), ("current_map_epoch", "{long}", "NOT NULL"),
-        ("target_map_epoch", "{long}", ""), ("state", "{str32}", "NOT NULL"), ("coordinator_node", "{str64}", ""),
+        ("target_map_epoch", "{long}", ""), ("state", "{str64}", "NOT NULL"), ("coordinator_node", "{str64}", ""),
         ("coordinator_epoch", "{long}", "DEFAULT 0 NOT NULL"), ("coordinator_expires_at", "{ts}", ""),
     ], ["cluster_id"], []),
     ("0039-04", "R39 executor nodes: a fresh incarnation per process start, heartbeat and drain flag (X.2.1.3)",
@@ -1267,7 +1267,7 @@ TABLES = [
         ("run_id", "{str64}", "NOT NULL"), ("tool_version", "{str64}", "NOT NULL"), ("table_name", "{str64}", "NOT NULL"),
         ("columns_json", "{text}", "NOT NULL"), ("provenance_column", "{str64}", "NOT NULL"),
         ("tenant_filter", "{str64}", ""), ("source_zone", "{str64}", "NOT NULL"), ("cutover_at", "{ts}", "NOT NULL"),
-        ("fingerprint", "{str64}", "NOT NULL"), ("state", "{str32}", "NOT NULL"),
+        ("fingerprint", "{str64}", "NOT NULL"), ("state", "{str64}", "NOT NULL"),
         ("rows_read", "{long}", "DEFAULT 0 NOT NULL"), ("converted", "{long}", "DEFAULT 0 NOT NULL"),
         ("already_utc", "{long}", "DEFAULT 0 NOT NULL"), ("already_converted", "{long}", "DEFAULT 0 NOT NULL"),
         ("unresolved", "{long}", "DEFAULT 0 NOT NULL"), ("matched", "{long}", "DEFAULT 0 NOT NULL"),
@@ -1408,6 +1408,30 @@ TABLES = [
         ("owner_id", "{str}", ""), ("query_json", "{text}", "NOT NULL"), ("properties_json", "{text}", ""),
         ("row_version", "{int}", "NOT NULL"), ("created_by", "{str}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"),
     ], ["tenant_id", "filter_id"], [("TEAM_TASK_FILTER_NAME", False, ["tenant_id", "name"])]),
+    # PATCHES.md P-5 (R10-cmmn, owner ruling 2026-11-17): native CMMN case external tasks, one row per ACTIVE case
+    # execution of a task with sangam:topic (sangam-flowable-ports CaseExternalTaskService; shape = PortsSchema).
+    ("0048-01", "P-5 case external tasks keyed to the case execution", "PORT_CASE_EXT_TASK", [
+        ("id_", "{str64}", "NOT NULL"), ("tenant_id", "{str64}", "NOT NULL"), ("case_inst_id", "{str64}", "NOT NULL"),
+        ("case_exec_id", "{str64}", "NOT NULL"), ("case_def_id", "{str64}", "NOT NULL"), ("activity_id", "{str}", "NOT NULL"),
+        ("topic", "{str}", "NOT NULL"), ("worker_id", "{str}", ""), ("lock_exp_time", "{ts}", ""), ("retries", "{int}", ""),
+        ("error_msg", "{str}", ""), ("priority", "{int}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"),
+        ("version_", "{long}", "NOT NULL"),
+    ], ["id_"], [("PORT_CASE_EXT_TASK_EXEC", True, ["case_exec_id"]),
+                 ("PORT_CASE_EXT_TASK_FETCH", False, ["topic", "lock_exp_time"]),
+                 ("PORT_CASE_EXT_TASK_CASE", False, ["tenant_id", "case_inst_id"])]),
+    # PATCHES.md P-5 case migration (ruling A1): one audit row per migration - who, from, to, why.
+    ("0048-02", "P-5 case migration audit", "PORT_CASE_MIGRATION", [
+        ("id_", "{str64}", "NOT NULL"), ("tenant_id", "{str64}", "NOT NULL"), ("case_inst_id", "{str64}", "NOT NULL"),
+        ("source_def_id", "{str64}", "NOT NULL"), ("target_def_id", "{str64}", "NOT NULL"), ("migrated_by", "{str}", "NOT NULL"),
+        ("reason", "{str}", "NOT NULL"), ("executions", "{int}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"),
+    ], ["id_"], [("PORT_CASE_MIGRATION_CASE", False, ["tenant_id", "case_inst_id"])]),
+    # Owner ruling C1 (R10-cmmn): CMMN case file item lifecycle (AVAILABLE / DISCARDED), written only by the engine-side
+    # case variable listener of sangam-flowable-ports CaseFileItemService.
+    ("0048-03", "C1 CMMN case file item lifecycle state", "PORT_CASE_FILE_ITEM", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("case_inst_id", "{str64}", "NOT NULL"), ("item_id", "{str}", "NOT NULL"),
+        ("variable_name", "{str}", "NOT NULL"), ("definition_type", "{str}", ""), ("state", "{str64}", "NOT NULL"),
+        ("updated_at", "{ts}", "NOT NULL"), ("version_", "{long}", "NOT NULL"),
+    ], ["case_inst_id", "item_id"], [("PORT_CASE_FILE_ITEM_TENANT", False, ["tenant_id", "case_inst_id"])]),
 ]
 
 # Column additions to tables created above, each its own changeset (applied changesets are never edited).

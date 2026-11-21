@@ -180,7 +180,9 @@ public final class SangamSchema {
             // M-103 OCR transcripts reviewed before knowledge-base ingest (decision 378; 0045-23), sangam-ai AiSchema
             "AI_OCR_TRANSCRIPT",
             // shared saved task lists of a tenant (owner decision 404; 0047-01), sangam-rest JdbcTaskFilterAdapter
-            "TEAM_TASK_FILTER");
+            "TEAM_TASK_FILTER",
+            // native CMMN case external tasks (PATCHES.md P-5; 0048-01), sangam-flowable-ports CaseExternalTaskService
+            "PORT_CASE_EXT_TASK", "PORT_CASE_MIGRATION", "PORT_CASE_FILE_ITEM");
 
     /**
      * Changesets that alter a table created earlier (generator {@code ALTERS}): FORM_DRAFT.form_version_hash,
