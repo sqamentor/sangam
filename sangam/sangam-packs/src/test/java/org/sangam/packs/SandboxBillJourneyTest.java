@@ -63,13 +63,17 @@ class SandboxBillJourneyTest {
     static final List<String> CASES = List.of("BILL-0001", "BILL-0002", "BILL-0003", "BILL-0004", "BILL-0005",
             "GPF-0001", "ADV-0001");
     /**
-     * The pack connector ids bound to an integration connector for GOI.FIN on the server as deployed (line
-     * {@code DEMO-SEQUENCE | connectors} of DemoLoaderSequenceAgainstServerTest; CI run 44846993120).
+     * The pack connector ids an integration connector answers for GOI.FIN on the server as deployed (line
+     * {@code DEMO-SEQUENCE | connectors} of DemoLoaderSequenceAgainstServerTest; CI run 44846993120). The manifests
+     * also bind {@code notify.email} (to {@code smtp}) and {@code notify.sms} (to {@code sms-dlt-sim}), but a
+     * production server registers neither connector (CI run 44861638229: "no connector 'smtp' for tenant GOI.FIN"),
+     * so they are not configured either; a notification that fails never stops a case.
      */
     static final Set<String> BOUND = Set.of("config.classification", "config.documentType", "config.profile",
             "config.series", "esign.sign", "ledger.allocate", "ledger.available", "ledger.consume",
-            "ledger.distribute", "ledger.encumber", "ledger.release", "ledger.releaseHolds", "notify.email",
-            "notify.sms", "registry.party");
+            "ledger.distribute", "ledger.encumber", "ledger.release", "ledger.releaseHolds", "registry.party");
+    /** The notification channels: no connector answers them on the server as deployed, and none is needed. */
+    static final Set<String> NOTIFICATIONS = Set.of("notify.sms", "notify.email", "notify.inapp");
     /** The ids the sandbox answers beyond W-5's payment rails and statement: the list of register E-26. */
     static final Set<String> SANDBOX_CHECKS = Set.of("ifms.duplicateBill", "docs.issue");
     static final String NOT_CONFIGURED = "CONNECTOR_NOT_CONFIGURED";
@@ -317,13 +321,14 @@ class SandboxBillJourneyTest {
         }
         assertEquals(List.of(), notAtTarget, "every case reaches its target with every connector simulated");
         assertEquals(CALLED, seen);
-        // of everything these cases call, only the listed ids and one notification channel have nobody on the server
+        // of everything these cases call, only the listed ids and the notification channels have nobody on the server
         Set<String> nobody = new TreeSet<>();
         seen.values().forEach(nobody::addAll);
         nobody.removeAll(BOUND);
         nobody.removeAll(DemoSandbox.PAYMENT_CONNECTORS);
         nobody.removeAll(DemoSandbox.STATEMENT_CONNECTORS);
-        assertEquals(new TreeSet<>(Set.of("docs.issue", "ifms.duplicateBill", "notify.inapp")), nobody);
+        nobody.removeAll(NOTIFICATIONS);
+        assertEquals(new TreeSet<>(SANDBOX_CHECKS), nobody);
     }
 
     // ------------------------------------------------------------------ the sandbox tenant
@@ -352,12 +357,13 @@ class SandboxBillJourneyTest {
             // exactly the listed ids (and W-5's) are simulated, each said so in the audit trail
             Set<String> expected = new TreeSet<>(CALLED.get(id));
             expected.removeAll(BOUND);
-            expected.remove("notify.inapp");
+            expected.removeAll(NOTIFICATIONS);
             if (!sim.equals(expected)) {
                 wrong.add(id + ": simulated per audit " + sim + ", expected " + expected);
             }
-            // the in-app notification has no connector on the server; a notification never stops a case
-            Set<String> mayBeRefused = CALLED.get(id).contains("notify.inapp") ? Set.of("notify.inapp") : Set.of();
+            // the notifications have no connector on the server; a notification never stops a case
+            Set<String> mayBeRefused = new TreeSet<>(CALLED.get(id));
+            mayBeRefused.retainAll(NOTIFICATIONS);
             if (!refused.equals(mayBeRefused)) {
                 wrong.add(id + ": refused by the installed gateway " + refused + ", expected " + mayBeRefused);
             }
