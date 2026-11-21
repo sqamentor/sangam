@@ -58,6 +58,7 @@ public final class PacksTenantDeployer {
         }
         // DEC-225-4: the profile's own tables are checked before any pack is deployed, so a refused set leaves the
         // tenant as it was
+        long began = System.nanoTime();
         ProfileTableDeployer.Plan plan = planTables(tenantId);
         List<PackDeployer.Result> results;
         try {
@@ -88,7 +89,9 @@ public final class PacksTenantDeployer {
         } catch (RuntimeException e) {
             LOG.warn("PACKS_DEPLOYED audit for tenant {} failed: {}", tenantId, e.toString());
         }
-        LOG.info("Deployed {} packs for tenant {}", packs.size(), tenantId);
+        // register E-33 (8): what a start pays for this tenant; "new" is 0 when every pack was already deployed
+        LOG.info("Deployed {} packs for tenant {} in {} ms ({} new deployments)", packs.size(), tenantId,
+                (System.nanoTime() - began) / 1_000_000, results.stream().filter(PackDeployer.Result::newDeployment).count());
         return out;
     }
 

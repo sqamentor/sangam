@@ -74,5 +74,14 @@ the number of packs the image ships (the server log of the start says `Deployed 
 the same number) and the second one definition. The tenant's audit chain `sec:GOI.FIN` gets one `PACKS_DEPLOYED`
 event per start.
 
+Since register E-33: on a fresh database the tenant is created first (`TENANT_CREATED` is the first event of
+`sec:GOI.FIN`, then `PACKS_DEPLOYED`), and with it the module role templates and self-service grants a tenant
+created through the API gets. An id in `SANGAM_PACKS_TENANTS` that is no tenant of the installation gets no pack:
+the start names it at ERROR ("is no tenant of this installation") and deploys for the tenants beside it, so keep
+the list equal to `SANGAM_SECURITY_FIRSTADMINS_TENANT`. The log line of each start is
+`Deployed <n> packs for tenant GOI.FIN in <ms> ms (<new> new deployments)`; `<new>` is 0 on every start after the
+first. A process start of a key the tenant does not have answers `404` with
+`no process with key '<key>' is deployed for tenant 'GOI.FIN'`.
+
 Connectors are a separate matter (register E-26): with the packs deployed, cases still stop where a pack calls a
 connector that nothing answers on the demo. No `SANGAM_CONNECTORS_*` value is part of this change.
