@@ -5,7 +5,9 @@ import type { ReactElement } from 'react';
  * Owner decisions 338 and 342 on the officer compliance screens, with the API client mocked:
  * - 338: the consent and rights registers send the principal reference in a POST body to .../search; no request
  *   carries it in a URL or a query parameter;
- * - 342: the evidence report sends `from` and `to` as instants in the tenant's zone, and sends nothing without one.
+ * - 342: the evidence report sends `from` and `to` as instants in the tenant's zone, and sends nothing without one;
+ * - register P-1 (owner decision 2026-11-20): generating the report writes (CMP_REPORT and an audit event), so both
+ *   buttons send a POST with the period in the body; no GET of /compliance/reports is made.
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -69,14 +71,37 @@ describe('decision 342: the evidence report period in the tenant zone', () => {
 
   it('sends the start of the first day and the start of the day after the last, as instants in the tenant zone', async () => {
     setTenantLocale({ zone: 'Asia/Kolkata' });
-    api.get.mockResolvedValue({ reportId: 'rep-1', hash: 'h', content: {} });
+    api.post.mockResolvedValue({ reportId: 'rep-1', hash: 'h', content: {} });
     show(<EvidenceReport />);
     expect(screen.getByText(T('mod.compliance.reportZone', { zone: 'Asia/Kolkata' }))).toBeTruthy();
     pick('2026-11-01', '2026-11-30');
     fireEvent.click(generate());
     await waitFor(() =>
-      expect(api.get).toHaveBeenCalledWith('/compliance/reports', { from: '2026-10-31T18:30:00.000Z', to: '2026-11-30T18:30:00.000Z', verifyChains: true, format: 'json' }),
+      expect(api.post).toHaveBeenCalledWith('/compliance/reports', { from: '2026-10-31T18:30:00.000Z', to: '2026-11-30T18:30:00.000Z', verifyChains: true, format: 'json' }),
     );
+    expect(await screen.findByText('rep-1')).toBeTruthy();
+    // P-1: generation is never a GET, and the period is in no URL or query
+    expect(api.get).not.toHaveBeenCalled();
+    expect(urls()).not.toContain('2026-10-31');
+  });
+
+  it('P-1: the HTML download is a POST with the period and format html in the body', async () => {
+    setTenantLocale({ zone: 'Asia/Kolkata' });
+    api.download.mockResolvedValue(undefined);
+    show(<EvidenceReport />);
+    pick('2026-11-01', '2026-11-30');
+    fireEvent.click(screen.getByLabelText(new RegExp(T('mod.compliance.verifyChains'))));
+    fireEvent.click(screen.getByRole('button', { name: T('mod.compliance.downloadHtml') }));
+    await waitFor(() =>
+      expect(api.download).toHaveBeenCalledWith('/compliance/reports', undefined, 'compliance-report.html', {
+        from: '2026-10-31T18:30:00.000Z',
+        to: '2026-11-30T18:30:00.000Z',
+        verifyChains: false,
+        format: 'html',
+      }),
+    );
+    expect(api.get).not.toHaveBeenCalled();
+    expect(api.post).not.toHaveBeenCalled();
   });
 
   it('without the tenant zone the report cannot be asked for', () => {
@@ -85,6 +110,7 @@ describe('decision 342: the evidence report period in the tenant zone', () => {
     pick('2026-11-01', '2026-11-30');
     expect(generate().disabled).toBe(true);
     expect(api.get).not.toHaveBeenCalled();
+    expect(api.post).not.toHaveBeenCalled();
   });
 
   it('a last day before the first is refused before any call', () => {
