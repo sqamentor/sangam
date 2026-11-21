@@ -1,0 +1,6 @@
+{
+  "modules": "",
+  "dbs": "oracle,sqlserver,mysql",
+  "chunks": "A-contracts",
+  "ui": false
+}
