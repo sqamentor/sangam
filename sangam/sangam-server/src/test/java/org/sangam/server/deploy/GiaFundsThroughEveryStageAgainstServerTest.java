@@ -79,7 +79,7 @@ class GiaFundsThroughEveryStageAgainstServerTest {
                     + " amount " + funded.get("amount") + " | " + grant);
             assertEquals("COMPLETED", grant.fundsStatus, "ledger.available answered: " + grant);
             assertFalse(grant.reached.contains("bl_hold"), "GIA-0001 is not held for budget: " + grant);
-            assertTrue(grant.reached.contains("bl_encumber"), "GIA-0001 goes on to the encumbrance: " + grant);
+            assertEquals("bl_encumber", grant.decided, "GIA-0001 goes on to the encumbrance: " + grant);
 
             // control: the same amount on a head of the same ledger on which nothing was allocated or distributed
             Map<String, Object> unfunded = new LinkedHashMap<>(funded);
@@ -87,7 +87,8 @@ class GiaFundsThroughEveryStageAgainstServerTest {
             Outcome control = fundsStep(engine, "LOADER-WALK/L-2/control", unfunded);
             System.out.println("LOADER-WALK | L-2 | control head " + unfunded.get("headOfAccount") + " holder " + unfunded.get("ddoCode")
                     + " amount " + unfunded.get("amount") + " | " + control);
-            assertFalse(control.reached.contains("bl_encumber"), "a head without funds does not pass the funds check: " + control);
+            assertTrue(!"bl_encumber".equals(control.decided) && !"undecided".equals(control.decided),
+                    "a head without funds does not pass the funds check: " + control);
 
             // for the record, not asserted: a contingent bill of the data set as it is (its own head and DDO code)
             Map<String, Object> bill = variables(caseOf("BILL-0001"));
@@ -101,12 +102,17 @@ class GiaFundsThroughEveryStageAgainstServerTest {
         }
     }
 
-    private record Outcome(String fundsStatus, Object fundsAvailable, Object reasonCode, TreeSet<String> reached, List<String> incidents) {
+    /** {@code decided}: where the gateway sent the case (bl_hold, bl_rjFunds_code, bl_encumber), or "undecided". */
+    private record Outcome(String fundsStatus, Object fundsAvailable, Object reasonCode, String decided, TreeSet<String> reached,
+                           List<String> incidents) {
     }
 
     /**
      * Starts the shipped bill at the step before its funds query, waits until the gateway after the query has decided
-     * (or the step failed), reads what happened from the engine's history and removes the instance again.
+     * (or the step failed), reads what happened from the engine and removes the instance again. The decision is where
+     * the case stands after the gateway: {@code bl_encumber} is entered behind an asynchronous point, so the case
+     * standing there (or a job that failed there: the instance did not run the bill's earlier steps, so the
+     * encumbrance itself is not this test's subject and is not waited for) is the "funds available" branch.
      */
     private static Outcome fundsStep(ProcessEngine engine, String businessKey, Map<String, Object> variables) throws Exception {
         ProcessInstance pi = engine.getRuntimeService().createProcessInstanceByKey("sangam-ifms-bill")
@@ -114,6 +120,7 @@ class GiaFundsThroughEveryStageAgainstServerTest {
                 .startBeforeActivity("bl_funds_clear").execute();
         TreeSet<String> reached = new TreeSet<>();
         List<String> incidents = new ArrayList<>();
+        String decided = "undecided";
         long until = System.currentTimeMillis() + 120_000;
         while (System.currentTimeMillis() < until) {
             reached.clear();
@@ -125,13 +132,23 @@ class GiaFundsThroughEveryStageAgainstServerTest {
             for (Incident i : engine.getRuntimeService().createIncidentQuery().processInstanceId(pi.getId()).list()) {
                 incidents.add(i.getActivityId() + ": " + i.getIncidentMessage());
             }
-            if (reached.contains("bl_hold") || reached.contains("bl_encumber") || reached.contains("bl_rjFunds_code") || !incidents.isEmpty()) {
+            List<String> stands = engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(pi.getId()).count() > 0
+                    ? engine.getRuntimeService().getActiveActivityIds(pi.getId()) : List.of();
+            if (reached.contains("bl_hold")) {
+                decided = "bl_hold";
+            } else if (reached.contains("bl_rjFunds_code")) {
+                decided = "bl_rjFunds_code";
+            } else if (reached.contains("bl_encumber") || stands.contains("bl_encumber")
+                    || incidents.stream().anyMatch(i -> i.startsWith("bl_encumber:"))) {
+                decided = "bl_encumber";
+            }
+            if (!"undecided".equals(decided) || !incidents.isEmpty()) {
                 break;
             }
             Thread.sleep(500);
         }
         Outcome out = new Outcome(String.valueOf(variable(engine, pi.getId(), "fundsStatus")), variable(engine, pi.getId(), "fundsAvailable"),
-                variable(engine, pi.getId(), "fundsReasonCode"), new TreeSet<>(reached), List.copyOf(incidents));
+                variable(engine, pi.getId(), "fundsReasonCode"), decided, new TreeSet<>(reached), List.copyOf(incidents));
         if (engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(pi.getId()).count() > 0) {
             engine.getRuntimeService().deleteProcessInstance(pi.getId(), "L-2 funds check of the test", true, true);
         }
