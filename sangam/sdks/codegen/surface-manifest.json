@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 993,
- "operations": 1182,
- "schemas": 901,
+ "paths": 997,
+ "operations": 1186,
+ "schemas": 902,
  "tags": [
   "AI",
   "Admin",
@@ -72,8 +72,8 @@
    "class": "AdminApi",
    "tag": "Admin",
    "pathPrefix": "",
-   "operations": 34,
-   "maxLines": 678
+   "operations": 29,
+   "maxLines": 574
   },
   {
    "class": "AdminAssignmentsApi",
@@ -95,6 +95,13 @@
    "pathPrefix": "org-units",
    "operations": 6,
    "maxLines": 148
+  },
+  {
+   "class": "AdminPoliciesApi",
+   "tag": "Admin",
+   "pathPrefix": "policies",
+   "operations": 9,
+   "maxLines": 203
   },
   {
    "class": "AdminPowerTablesApi",
@@ -577,7 +584,7 @@
    "tag": "Tasks",
    "pathPrefix": "",
    "operations": 15,
-   "maxLines": 333
+   "maxLines": 335
   },
   {
    "class": "TenantOperationsApi",
@@ -1261,6 +1268,7 @@
   "PoisonInboundItem",
   "PoisonInboundParked",
   "Policy",
+  "PolicyChange",
   "PolicyMatch",
   "PolicyVersion",
   "PortalConsent",
@@ -2812,48 +2820,96 @@
    "method": "GET",
    "path": "/admin/policies",
    "tag": "Admin",
-   "apiClass": "AdminApi",
-   "java": "AdminApi#listPolicies",
-   "typescript": "admin.listPolicies",
-   "python": "admin.list_policies",
-   "dotnet": "AdminApi#ListPoliciesAsync",
-   "php": "AdminApi#listPolicies"
+   "apiClass": "AdminPoliciesApi",
+   "java": "AdminPoliciesApi#listPolicies",
+   "typescript": "adminPolicies.listPolicies",
+   "python": "admin_policies.list_policies",
+   "dotnet": "AdminPoliciesApi#ListPoliciesAsync",
+   "php": "AdminPoliciesApi#listPolicies"
   },
   {
    "operationId": "createPolicy",
    "method": "POST",
    "path": "/admin/policies",
    "tag": "Admin",
-   "apiClass": "AdminApi",
-   "java": "AdminApi#createPolicy",
-   "typescript": "admin.createPolicy",
-   "python": "admin.create_policy",
-   "dotnet": "AdminApi#CreatePolicyAsync",
-   "php": "AdminApi#createPolicy"
+   "apiClass": "AdminPoliciesApi",
+   "java": "AdminPoliciesApi#createPolicy",
+   "typescript": "adminPolicies.createPolicy",
+   "python": "admin_policies.create_policy",
+   "dotnet": "AdminPoliciesApi#CreatePolicyAsync",
+   "php": "AdminPoliciesApi#createPolicy"
   },
   {
    "operationId": "deletePolicy",
    "method": "DELETE",
    "path": "/admin/policies/by-id",
    "tag": "Admin",
-   "apiClass": "AdminApi",
-   "java": "AdminApi#deletePolicy",
-   "typescript": "admin.deletePolicy",
-   "python": "admin.delete_policy",
-   "dotnet": "AdminApi#DeletePolicyAsync",
-   "php": "AdminApi#deletePolicy"
+   "apiClass": "AdminPoliciesApi",
+   "java": "AdminPoliciesApi#deletePolicy",
+   "typescript": "adminPolicies.deletePolicy",
+   "python": "admin_policies.delete_policy",
+   "dotnet": "AdminPoliciesApi#DeletePolicyAsync",
+   "php": "AdminPoliciesApi#deletePolicy"
   },
   {
    "operationId": "getPolicyVersion",
    "method": "GET",
    "path": "/admin/policies/version",
    "tag": "Admin",
-   "apiClass": "AdminApi",
-   "java": "AdminApi#getPolicyVersion",
-   "typescript": "admin.getPolicyVersion",
-   "python": "admin.get_policy_version",
-   "dotnet": "AdminApi#GetPolicyVersionAsync",
-   "php": "AdminApi#getPolicyVersion"
+   "apiClass": "AdminPoliciesApi",
+   "java": "AdminPoliciesApi#getPolicyVersion",
+   "typescript": "adminPolicies.getPolicyVersion",
+   "python": "admin_policies.get_policy_version",
+   "dotnet": "AdminPoliciesApi#GetPolicyVersionAsync",
+   "php": "AdminPoliciesApi#getPolicyVersion"
+  },
+  {
+   "operationId": "listPolicyChanges",
+   "method": "GET",
+   "path": "/admin/policies/changes",
+   "tag": "Admin",
+   "apiClass": "AdminPoliciesApi",
+   "java": "AdminPoliciesApi#listPolicyChanges",
+   "typescript": "adminPolicies.listPolicyChanges",
+   "python": "admin_policies.list_policy_changes",
+   "dotnet": "AdminPoliciesApi#ListPolicyChangesAsync",
+   "php": "AdminPoliciesApi#listPolicyChanges"
+  },
+  {
+   "operationId": "getPolicyChange",
+   "method": "GET",
+   "path": "/admin/policies/changes/{id}",
+   "tag": "Admin",
+   "apiClass": "AdminPoliciesApi",
+   "java": "AdminPoliciesApi#getPolicyChange",
+   "typescript": "adminPolicies.getPolicyChange",
+   "python": "admin_policies.get_policy_change",
+   "dotnet": "AdminPoliciesApi#GetPolicyChangeAsync",
+   "php": "AdminPoliciesApi#getPolicyChange"
+  },
+  {
+   "operationId": "approvePolicyChange",
+   "method": "POST",
+   "path": "/admin/policies/changes/{id}/approve",
+   "tag": "Admin",
+   "apiClass": "AdminPoliciesApi",
+   "java": "AdminPoliciesApi#approvePolicyChange",
+   "typescript": "adminPolicies.approvePolicyChange",
+   "python": "admin_policies.approve_policy_change",
+   "dotnet": "AdminPoliciesApi#ApprovePolicyChangeAsync",
+   "php": "AdminPoliciesApi#approvePolicyChange"
+  },
+  {
+   "operationId": "rejectPolicyChange",
+   "method": "POST",
+   "path": "/admin/policies/changes/{id}/reject",
+   "tag": "Admin",
+   "apiClass": "AdminPoliciesApi",
+   "java": "AdminPoliciesApi#rejectPolicyChange",
+   "typescript": "adminPolicies.rejectPolicyChange",
+   "python": "admin_policies.reject_policy_change",
+   "dotnet": "AdminPoliciesApi#RejectPolicyChangeAsync",
+   "php": "AdminPoliciesApi#rejectPolicyChange"
   },
   {
    "operationId": "listTenants",
@@ -4648,12 +4704,12 @@
    "method": "POST",
    "path": "/admin/policies/explain",
    "tag": "Admin",
-   "apiClass": "AdminApi",
-   "java": "AdminApi#explainPolicy",
-   "typescript": "admin.explainPolicy",
-   "python": "admin.explain_policy",
-   "dotnet": "AdminApi#ExplainPolicyAsync",
-   "php": "AdminApi#explainPolicy"
+   "apiClass": "AdminPoliciesApi",
+   "java": "AdminPoliciesApi#explainPolicy",
+   "typescript": "adminPolicies.explainPolicy",
+   "python": "admin_policies.explain_policy",
+   "dotnet": "AdminPoliciesApi#ExplainPolicyAsync",
+   "php": "AdminPoliciesApi#explainPolicy"
   },
   {
    "operationId": "listSodExceptions",
