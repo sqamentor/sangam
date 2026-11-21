@@ -281,13 +281,8 @@ public final class SyncService {
 
     // ------------------------------------------------------------------ pull
 
-    /**
-     * The device pull. It records the device's contact ({@code FLD_DEVICE.last_seen_at}, {@link DeviceRegistry#touch})
-     * and changes nothing else (register P-2, owner decision 2026-11-20: it stays a GET), so it is write work and runs
-     * in {@code inTransaction}, never as {@code ReadWork}, whose statement is that nothing is written.
-     */
     public PullResult pull(String tenantId, String principalId, String deviceId, long cursor) {
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             DeviceRegistry.Device d = devices.requireActive(c, tenantId, deviceId, principalId);
             List<Object> params = new ArrayList<>(List.of(tenantId, cursor, principalId));
             String unitClause = "";
