@@ -8,6 +8,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.sangam.core.security.SecurityIdentity;
 import org.sangam.server.config.KeyAttestation;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -36,6 +37,7 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -326,6 +328,117 @@ class PacksOfBootstrapTenantAgainstServerTest {
         try (ConfigurableApplicationContext ctx = host.startAsDeployed()) {
             assertEquals(roles, roles(ctx, TENANT), "a second start leaves the roles of the tenant as they were");
         }
+    }
+
+    /**
+     * Owner answer to E-33 (EV-M-0960, 2026-11-21: "Yes, keep four-eyes"): the self-service grants among the module
+     * defaults of the tenant the bootstrap creates are not applied by the start; they wait as four-eyes policy changes
+     * ({@code POLICY_CHANGE_PENDING}), requested by the system. They reach the queue of the tenant's administrators,
+     * each identity resolved as the server resolves a request, and a second person approves them: each change is then
+     * APPLIED, decided by that person, its grant in force and audited ({@code GRANT_CHANGED}). The requester cannot
+     * decide its own change, and no system identity of a start can either (every one has person id "system").
+     */
+    @Test
+    void theFourEyesPolicyChangesOfTheBootstrapTenantReachItsApproversAndASecondPersonApprovesThem() throws Exception {
+        Host host = Host.h2(dir.resolve("four-eyes"));
+        try (ConfigurableApplicationContext ctx = host.startAsDeployed()) {
+            org.sangam.security.SangamSecurity security = ctx.getBean(org.sangam.security.SangamSecurity.class);
+            org.sangam.core.layer.Transactions tx = org.sangam.core.layer.Transactions.of(ctx.getBean(javax.sql.DataSource.class));
+            List<String> chain = chain(ctx, TENANT);
+            long pendingEvents = chain.stream().filter("POLICY_CHANGE_PENDING"::equals).count();
+            List<String> pending = query(ctx, "SELECT change_id FROM SEC_POLICY_CHANGE WHERE tenant_id=? AND status='PENDING'"
+                    + " ORDER BY change_id", TENANT);
+            List<String> requesters = query(ctx, "SELECT DISTINCT requested_by FROM SEC_POLICY_CHANGE WHERE tenant_id=?", TENANT);
+            List<String> policies = query(ctx, "SELECT policy_id FROM SEC_POLICY_CHANGE WHERE tenant_id=? ORDER BY policy_id", TENANT);
+            fact("four-eyes: fresh database, policy changes of " + TENANT, pending.size() + " PENDING, "
+                    + pendingEvents + " POLICY_CHANGE_PENDING on sec:" + TENANT + ", requested by " + requesters
+                    + ", policies " + policies);
+            assertEquals(6, pendingEvents, "the six self-service grants wait for four-eyes: " + chain);
+            assertEquals(6, pending.size(), "one PENDING change per event");
+            assertEquals(List.of("system"), requesters, "requested by the start (module defaults), no person");
+            assertEquals(List.of(), active(ctx, policies), "no self-service grant is in force before the approval");
+
+            SecurityIdentity rajendra = resolved(ctx, "rajendra.sharma");
+            SecurityIdentity meenakshi = resolved(ctx, "meenakshi.kanwar");
+            for (SecurityIdentity approver : List.of(rajendra, meenakshi)) {
+                List<String> queue = tx.inTransaction(c -> security.policies().pending(c, approver)).stream()
+                        .map(org.sangam.security.admin.PolicyAdminService.PolicyChange::changeId).sorted().toList();
+                List<String> listed = tx.inTransaction(c -> security.directory().policyChanges(c, approver, "PENDING",
+                        0, 100, 1000)).items().stream()
+                        .map(org.sangam.security.admin.PolicyAdminService.PolicyChange::changeId).sorted().toList();
+                fact("four-eyes: queue of " + approver.personId(), queue.size() + " pending (directory list "
+                        + listed.size() + "), roles " + new TreeSet<>(approver.roles()));
+                assertEquals(pending, queue, "every pending change is in the queue of " + approver.personId());
+                assertEquals(pending, listed, "and in the directory list of pending changes");
+            }
+
+            // the difficult cases: the requester, and any other system identity of a start, cannot decide
+            for (SecurityIdentity self : List.of(SecurityIdentity.system(TENANT, "tenant-onboarding"),
+                    SecurityIdentity.system(TENANT, "install-bootstrap"))) {
+                assertThrows(org.sangam.security.SangamSecurityException.SodViolation.class,
+                        () -> tx.inTransaction(c -> { security.policies().approve(c, self, pending.get(0)); return null; }),
+                        "a system identity (" + self.onBehalfOf() + ") cannot approve a change the system requested");
+            }
+            assertEquals(6, query(ctx, "SELECT change_id FROM SEC_POLICY_CHANGE WHERE tenant_id=? AND status='PENDING'",
+                    TENANT).size(), "the refused attempts changed nothing");
+
+            // a second person approves: three by each administrator
+            long grantsBefore = chain(ctx, TENANT).stream().filter("GRANT_CHANGED"::equals).count();
+            for (int i = 0; i < pending.size(); i++) {
+                SecurityIdentity approver = i % 2 == 0 ? rajendra : meenakshi;
+                String id = pending.get(i);
+                tx.inTransaction(c -> { security.policies().approve(c, approver, id); return null; });
+            }
+            List<String> decided = query(ctx, "SELECT status || ' by ' || decided_by FROM SEC_POLICY_CHANGE WHERE tenant_id=?"
+                    + " ORDER BY change_id", TENANT);
+            List<String> after = chain(ctx, TENANT);
+            long grants = after.stream().filter("GRANT_CHANGED"::equals).count() - grantsBefore;
+            List<String> inForce = active(ctx, policies);
+            fact("four-eyes: after the approvals", "changes " + decided + "; GRANT_CHANGED +" + grants + "; grants in force "
+                    + inForce.size() + " of " + policies.size());
+            assertEquals(List.of("APPLIED by meenakshi.kanwar", "APPLIED by meenakshi.kanwar", "APPLIED by meenakshi.kanwar",
+                    "APPLIED by rajendra.sharma", "APPLIED by rajendra.sharma", "APPLIED by rajendra.sharma"),
+                    decided.stream().sorted().toList(), "each change applied, decided by the person who approved it");
+            assertEquals(6, grants, "each applied change is audited on sec:" + TENANT);
+            assertEquals(policies, inForce, "every self-service grant is in force");
+            assertEquals(List.of(), tx.inTransaction(c -> security.policies().pending(c, rajendra)), "the queue is empty");
+        }
+        try (ConfigurableApplicationContext ctx = host.startAsDeployed()) {
+            assertEquals(List.of(), query(ctx, "SELECT change_id FROM SEC_POLICY_CHANGE WHERE tenant_id=? AND status='PENDING'",
+                    TENANT), "a further start requests nothing new");
+            assertEquals(6, chain(ctx, TENANT).stream().filter("POLICY_CHANGE_PENDING"::equals).count(),
+                    "and audits no new pending change");
+        }
+    }
+
+    /** The policy ids among {@code ids} that are ACTIVE for the tenant, sorted. */
+    private static List<String> active(ConfigurableApplicationContext ctx, List<String> ids) throws java.sql.SQLException {
+        List<String> out = new ArrayList<>();
+        for (String id : query(ctx, "SELECT policy_id FROM SEC_POLICY WHERE tenant_id=? AND status='ACTIVE' ORDER BY policy_id",
+                TENANT)) {
+            if (ids.contains(id)) {
+                out.add(id);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * The identity of a first administrator as the server resolves a request of theirs (SecurityIdentityFilter: the
+     * token identity, resolved against the organisation model, then limited to tenant groups), from the token the
+     * other tests of this class send.
+     */
+    private static SecurityIdentity resolved(ConfigurableApplicationContext ctx, String person) {
+        org.sangam.security.SangamSecurity security = ctx.getBean(org.sangam.security.SangamSecurity.class);
+        Set<String> groups = Set.of("sangam-tenant-admin", "sangam-user");
+        SecurityIdentity raw = new SecurityIdentity(TENANT, person, person, groups, groups, Set.of(), Set.of(), "OIDC",
+                null, null, false, Map.of("preferred_username", person));
+        SecurityIdentity resolved = new org.sangam.security.identity.ResolvedIdentityCache(security.dialect(),
+                security.principals()).resolve(org.sangam.core.layer.Transactions.of(ctx.getBean(javax.sql.DataSource.class)),
+                raw, false, person, null);
+        resolved = org.sangam.server.security.PlatformIssuers.tenant(resolved);
+        assertEquals(person, resolved.personId(), "resolved to the person FirstAdminBootstrap appointed");
+        return resolved;
     }
 
     // ------------------------------------------------------------------ the fragment
