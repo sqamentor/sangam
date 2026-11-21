@@ -50,7 +50,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>the state as deployed: the tenant exists and serves, no pack is deployed for it, a start is 404, and no call a
  *       tenant administrator can make deploys one;</li>
  *   <li>the two pack settings bind under their environment names, in both spellings, for a tenant id with a dot; a
- *       tenant that is not listed gets nothing and a listed id that is no tenant gets the packs all the same;</li>
+ *       tenant that is not listed gets nothing, and a listed id that is no tenant gets nothing either: the start says
+ *       so at ERROR and deploys for the tenants beside it (register E-33 c);</li>
  *   <li>a fresh database: the start that creates the tenant also deploys its packs;</li>
  *   <li>the fragment carries the two settings for its first-admins tenant, and a restart from it deploys the packs of
  *       the tenant that already exists (seats, postings and funds untouched), once: a further start deploys nothing
@@ -69,6 +70,8 @@ class PacksOfBootstrapTenantAgainstServerTest {
 
     /** The words of the start-up warning for a first-admins tenant without packs (PacksWiring). */
     static final String NO_PACKS = "has no workflow pack deployed";
+    /** The words of the start-up error for an id of the tenant list that is no tenant (PacksWiring, register E-33 c). */
+    static final String NOT_A_TENANT = "is no tenant of this installation";
 
     static final String TENANT = "GOI.FIN";
     /** The two settings as environment names (Spring's system-environment mapping of the property names). */
@@ -187,7 +190,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
      * packs and GOI.FIN, not listed, gets none.
      */
     @Test
-    void thePackSettingsBindUnderTheirEnvironmentNames() throws Exception {
+    void thePackSettingsBindUnderTheirEnvironmentNames(CapturedOutput output) throws Exception {
         int shipped;
         try (ConfigurableApplicationContext ctx = Host.h2(dir.resolve("default")).start(Host.WITHOUT_PACK_SETTINGS)) {
             shipped = shipped(ctx);
@@ -208,6 +211,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
                 fact("env " + name + "=false", "binds: sangam.packs.deploy-on-start=false, 0 packs for " + TENANT);
             }
         }
+        // register E-33 (c): an id in the list that is no tenant gets nothing, and the start says so
         String other = "GOI.OTHER";
         try (ConfigurableApplicationContext ctx = Host.h2(dir.resolve("other")).start(env -> {
             Host.WITHOUT_PACK_SETTINGS.accept(env);
@@ -217,11 +221,34 @@ class PacksOfBootstrapTenantAgainstServerTest {
             assertEquals("true", ctx.getEnvironment().getProperty("sangam.packs.deploy-on-start"));
             assertEquals(other, ctx.getEnvironment().getProperty("sangam.packs.tenants"), TENANTS + " binds");
             assertEquals(List.of(), installed(ctx, TENANT), "a tenant that is not listed gets no pack");
-            assertEquals(shipped, installed(ctx, other).size(), "the listed id gets the packs");
-            assertEquals(null, tenantStatus(ctx, other), "although no such tenant exists");
+            assertEquals(null, tenantStatus(ctx, other), "no such tenant exists");
+            List<String> refused = output.getOut().lines().filter(l -> l.contains(NOT_A_TENANT)).toList();
             fact("env " + TENANTS + "=" + other + " (no such tenant)", "0 packs for " + TENANT + " (not listed); "
-                    + installed(ctx, other).size() + " of " + shipped + " packs deployed under the id " + other
-                    + ", which has no tenant row; its audit chain " + chain(ctx, other));
+                    + installed(ctx, other).size() + " of " + shipped + " packs and " + deployments(ctx, other).size()
+                    + " deployments under the id " + other + ", which has no tenant row; its audit chain "
+                    + chain(ctx, other) + "; start-up lines saying so: " + refused);
+            assertEquals(List.of(), installed(ctx, other), "an id that is no tenant gets no pack");
+            assertEquals(List.of(), deployments(ctx, other), "and no other deployment");
+            assertEquals(List.of(), chain(ctx, other), "and no audit chain of its own");
+            assertEquals(1, refused.size(), "one line of the start names the id that is no tenant: " + refused);
+            assertTrue(refused.get(0).contains("ERROR") && refused.get(0).contains(other)
+                    && refused.get(0).contains("sangam.packs.tenants"), "at ERROR, with the id and the setting: " + refused);
+        }
+        // the difficult case: the same list also names the tenant this very start creates (fresh database)
+        try (ConfigurableApplicationContext ctx = Host.h2(dir.resolve("mixed")).start(env -> {
+            Host.WITHOUT_PACK_SETTINGS.accept(env);
+            env.put(ON, "true");
+            env.put(TENANTS, other + ", " + TENANT);
+        })) {
+            assertEquals("CREATED", tenantStatus(ctx, TENANT), "created by FirstAdminBootstrap in this start");
+            assertEquals(shipped, installed(ctx, TENANT).size(), "the tenant created in the same start gets its packs");
+            assertEquals(List.of(), installed(ctx, other), "the id beside it that is no tenant gets none");
+            assertEquals(List.of(), chain(ctx, other), "and no audit chain of its own");
+            List<String> refused = output.getOut().lines().filter(l -> l.contains(NOT_A_TENANT)).toList();
+            assertEquals(2, refused.size(), "one such line per start (this is the second start of the test): " + refused);
+            assertFalse(refused.get(1).contains("'" + TENANT + "'"), "the tenant that exists is not named: " + refused.get(1));
+            fact("env " + TENANTS + "=" + other + ", " + TENANT + " (fresh database)", installed(ctx, TENANT).size() + " of "
+                    + shipped + " packs for " + TENANT + ", " + installed(ctx, other).size() + " for " + other);
         }
     }
 
