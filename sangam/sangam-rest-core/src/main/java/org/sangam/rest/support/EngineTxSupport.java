@@ -84,7 +84,7 @@ public final class EngineTxSupport extends TxSupport {
             return work.apply(joined);
         }
         try {
-            return engine.inEngineReadTransaction(c -> {
+            return engine.inEngineTransaction(c -> {
                 Frame f = new Frame(c, null);
                 current.set(f);
                 try {
