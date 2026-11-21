@@ -36,7 +36,9 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Register E-25: on demo.ifms.dev the tenant GOI.FIN, created by FirstAdminBootstrap in production mode, has no
@@ -314,8 +316,12 @@ class PacksOfBootstrapTenantAgainstServerTest {
         List<String> all;
         long definitions;
         Map<String, String> cases;
-        // register E-26 Follow-up 2 (vi): the payee custody vault, for this test only (open decision, see the constant)
-        try (ConfigurableApplicationContext ctx = host.start(env -> { }, DemoLoaderSequenceAgainstServerTest.PAYEE_CUSTODY_FOR_THIS_TEST)) {
+        // register E-26 Follow-up 2 (vi): the payee custody vault, for this test only (open decision, see the constant),
+        // added to the attested host as any new key is: refused until the custodian attests it, then started
+        String refused = host.addKey(DemoLoaderSequenceAgainstServerTest.PAYEE_CUSTODY_FOR_THIS_TEST);
+        fact(label + ": payee custody key added (this test only)", "the start with it was refused before the custodian"
+                + " attested it (" + firstLine(refused) + "); every later start has it, over the new attestation");
+        try (ConfigurableApplicationContext ctx = host.start(env -> { })) {
             assertEquals("true", ctx.getEnvironment().getProperty("sangam.packs.deploy-on-start"),
                     "the fragment's environment switches the start-up deployment on (no profile default is relied on)");
             assertEquals(TENANT, ctx.getEnvironment().getProperty("sangam.packs.tenants"),
@@ -337,7 +343,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
             assertFalse(cases.isEmpty(), "cases are open after step 4a");
             all = deployments(ctx, TENANT);
         }
-        try (ConfigurableApplicationContext ctx = host.start(env -> { }, DemoLoaderSequenceAgainstServerTest.PAYEE_CUSTODY_FOR_THIS_TEST)) {
+        try (ConfigurableApplicationContext ctx = host.start(env -> { })) {
             assertEquals(packs, installed(ctx, TENANT), "a further start deploys nothing: the same deployments");
             assertEquals(all, deployments(ctx, TENANT), "packs and the tenant's own tables alike");
             assertEquals(definitions, definitions(ctx, TENANT), "and no new definition version");
@@ -388,6 +394,8 @@ class PacksOfBootstrapTenantAgainstServerTest {
         private final DemoComposeFragmentStartupTest.Keys keys;
         private final String[] profiles;
         private final boolean h2;
+        /** Key settings added after the bootstrap ({@link #addKey}), on every later start. */
+        private final List<String> added = new ArrayList<>();
         private Map<String, String> attested;
 
         Host(Path dir, DemoComposeFragmentStartupTest.Keys keys, String... profiles) {
@@ -420,6 +428,7 @@ class PacksOfBootstrapTenantAgainstServerTest {
             Map<String, String> flow = new LinkedHashMap<>();
             // the fragment does not set the log archive; keep this test's segments out of the module directory
             List<String> settings = new ArrayList<>(List.of("--sangam.compliance.log-archive.root=" + dir.resolve("compliance-logs")));
+            settings.addAll(added);
             settings.addAll(List.of(more));
             boolean first = attested == null;
             if (first) {
@@ -449,6 +458,29 @@ class PacksOfBootstrapTenantAgainstServerTest {
             return ctx;
         }
 
+        /**
+         * A key added to a host after its bootstrap, by the key-rotation procedure of decisions 387 (4) and 390 (4): the
+         * start with the new key is refused as not attested (it still writes the fingerprint export), the custodian
+         * signs the new export, and every later start has the key, over that attestation. Returns the refusal chain.
+         */
+        String addKey(String setting) throws Exception {
+            assertNotNull(attested, "a key is added to a host after its bootstrap start");
+            String refusal = null;
+            try (ConfigurableApplicationContext ctx = start(env -> { }, setting)) {
+                fail("a start with a key the custodian has not attested must be refused");
+            } catch (RuntimeException e) {
+                StringBuilder chain = new StringBuilder();
+                for (Throwable t = e; t != null; t = t.getCause()) {
+                    chain.append(t.getClass().getSimpleName()).append(": ").append(t.getMessage()).append('\n');
+                }
+                refusal = chain.toString();
+            }
+            assertTrue(refusal.contains("KEY_ATTESTATION_INVALID") && refusal.contains("is not attested"), refusal);
+            attested = attest(dir.resolve("key-fingerprints.txt"));
+            added.add(setting);
+            return refusal;
+        }
+
         private Map<String, String> attest(Path export) throws Exception {
             List<KeyAttestation.Key> keysOfExport = Files.readAllLines(export, StandardCharsets.UTF_8).stream()
                     .filter(l -> !l.isBlank() && !l.startsWith("#")).map(l -> l.split(" ", 4))
@@ -468,6 +500,13 @@ class PacksOfBootstrapTenantAgainstServerTest {
     }
 
     // ------------------------------------------------------------------ what is read from a started server
+
+    /** The refusal's reason, from its code to the end of that line. */
+    private static String firstLine(String chain) {
+        int at = Math.max(0, chain.indexOf("KEY_ATTESTATION_INVALID"));
+        int end = chain.indexOf('\n', at);
+        return chain.substring(at, end < 0 ? chain.length() : end);
+    }
 
     private static void fact(String name, String value) {
         System.out.println("PACKS-TENANT | " + name + " | " + value);

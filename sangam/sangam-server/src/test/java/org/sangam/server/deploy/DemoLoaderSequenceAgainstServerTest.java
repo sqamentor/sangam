@@ -78,7 +78,9 @@ class DemoLoaderSequenceAgainstServerTest {
      * refused (409 "no vault service is configured to hold clear identifier values (type BANK_ACCOUNT)") and, with an
      * unregistered payee refused, no bill gets past its payee check. This setting, a test value and no secret, switches
      * the vault on for the packs-deployed runs of this test ONLY, to show the journey once the host has one; it is not
-     * in the fragment and is not proposed for it here.
+     * in the fragment and is not proposed for it here. On an attested host it is a new key like any other: the start
+     * with it is refused (KEY_ATTESTATION_INVALID) until the custodian attests it (CI 44876928751), so the attested
+     * runs add it as a key rotation (PacksOfBootstrapTenantAgainstServerTest.Host#addKey).
      */
     static final String PAYEE_CUSTODY_FOR_THIS_TEST = "--sangam.compliance.national-id-vault.hmac-pepper="
             + java.util.Base64.getEncoder().encodeToString("E-26 payee custody, this test only".getBytes(StandardCharsets.UTF_8));
