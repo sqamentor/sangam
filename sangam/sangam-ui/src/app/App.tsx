@@ -7,7 +7,7 @@ import { useAuth } from '../auth/AuthProvider';
 import type { Role } from '../api/types';
 import { config } from '../config';
 import { Layout } from './Layout';
-import { NAV } from './nav';
+import { NAV, visibleNav } from './nav';
 import { ROUTE_ACCESS, TEAM_READ, canAccess, type Access } from './access';
 import { AuthCallback, SignIn } from '../areas/auth/SignIn';
 import { IdleSession } from '../auth/IdleSession';
@@ -187,9 +187,12 @@ function Home() {
   // Owner 2026-11-17 (R8-present): a seat holder who can work tasks lands on their own work queue, the inbox of
   // their seat; everyone else keeps Welcome.
   if ((me?.seats?.length ?? 0) > 0 && hasRole(...WORK)) return <Navigate to="/tasks" replace />;
-  // Help is open to everyone; a caller with no job group at all lands on About.
   const first = NAV.find((a) => a.roles.length > 0 && hasRole(...a.roles));
-  return <Navigate to={first ? '/welcome' : '/help/about'} replace />;
+  if (first) return <Navigate to="/welcome" replace />;
+  // U12i: a caller whose My work comes from a permission alone (a supervisor: team.read, no role) lands on the first
+  // page of his My work, as the menu shows it. Help is open to everyone; a caller with no job group lands on About.
+  const work = visibleNav(me).find((a) => a.id === 'work');
+  return <Navigate to={work ? work.sections[0].items[0].to : '/help/about'} replace />;
 }
 
 const WORK: Role[] = ['TASK_USER'];
