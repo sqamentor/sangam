@@ -61,6 +61,13 @@ export const TEAM_READ: Access = { roles: [], perms: ['team.read'] };
 export const TEAM_WRITE: Access = { roles: [], perms: ['team.write'] };
 
 /**
+ * U12h: GET /events/channels and GET /events/definitions need event.admin (EventFormController), held by
+ * sangam-tenant-admin and sangam-admin ("*") and not by sangam-operator. No role stands in for it: the route guard and
+ * the menu entry of Event types admit exactly the callers for whom /me reports the permission (owner, 2026-11-21).
+ */
+export const EVENT_ADMIN: Access = { roles: [], perms: ['event.admin'] };
+
+/**
  * Route → requirement, for the routes whose screens call module APIs. The permission is the one the server checks
  * on the screen's first call (the first tab's list):
  */
@@ -108,6 +115,7 @@ export const ROUTE_ACCESS: Record<string, Access> = {
   // M-031 GET /custom-fields: form.read (TenantCustomFieldController.java:170); held by USER_BASE groups (TASK_USER,
   // OPERATOR, Permissions.java:113-123), sangam-model-author (MODELLER, :134) and sangam-admin. Defining and retiring need
   // tenant.admin (:190, :212); the server refuses them to a holder of form.read alone.
+  // U12g: the menu entry is limited to administrators in nav.ts; this route guard is unchanged.
   '/admin/custom-fields': { roles: ['PLATFORM_ADMIN'], perms: ['form.read'] },
   // M-032 POST /admin/security/module-defaults: tenant.admin (SecurityDefaultsController.java:48), held by
   // sangam-tenant-admin (Permissions.java:128, role ADMIN) and sangam-admin.

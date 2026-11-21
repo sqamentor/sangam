@@ -65,12 +65,14 @@ ENV SANGAM_TEAMS_ENABLED=false \
     SANGAM_TEAMS_FRAME_ANCESTORS="" \
     SANGAM_DSC_AGENT_ORIGIN="" \
     SANGAM_UI_IDLE_MINUTES=15
+# Q6 (owner, 2026-11-21; decisions Q-06 and 397 Q11): English only by default, so the language switch is hidden. A
+# deployment that wants the switch sets SANGAM_LOCALES=en,hi (the UI code and the Hindi catalogue stay in the image).
 ENV SANGAM_API_UPSTREAM=http://sangam-server:8080 \
     SANGAM_PUBLIC_API_BASE=/api/v1 \
     SANGAM_OIDC_ISSUER=http://localhost:8180/realms/sangam \
     SANGAM_OIDC_CLIENT_ID=sangam-ui \
     SANGAM_DEFAULT_LOCALE=en \
-    SANGAM_LOCALES=en,hi \
+    SANGAM_LOCALES=en \
     SANGAM_ENV_LABEL=dev \
     SANGAM_CSP_CONNECT_EXTRA="" \
     SANGAM_TRACE_URL_TEMPLATE="" \

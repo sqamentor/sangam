@@ -45,7 +45,8 @@ describe('M-028 route guards', () => {
     // /privacy/:tenant? (M-033): the privacy policy is public on the server (security: [], SecurityConfig.java:80-81).
     // /inbox (UI-DEMO-6), /ops/task-dashboard and /ops/debugger (decision 397): redirects to guarded routes; they render
     // nothing themselves. /help/glossary and /help/shortcuts: static help, no server call.
-    const open = new Set(['/', '*', '/welcome', '/account', '/pages/:key', '/help/accessibility', '/help/about', '/help/glossary', '/help/shortcuts', '/privacy/:tenant?', '/inbox', '/ops/task-dashboard', '/ops/debugger', ...SIGNED_IN_ROUTES]);
+    // /verify/:tenant? (Q7 part 3): public on the server; a signed-in caller sees the form inside the page frame.
+    const open = new Set(['/verify/:tenant?', '/', '*', '/welcome', '/account', '/pages/:key', '/help/accessibility', '/help/about', '/help/glossary', '/help/shortcuts', '/privacy/:tenant?', '/inbox', '/ops/task-dashboard', '/ops/debugger', ...SIGNED_IN_ROUTES]);
     const unguarded = routes().filter((r) => !r.guarded).map((r) => r.path);
     expect(unguarded.filter((p) => !open.has(p))).toEqual([]);
     for (const p of SIGNED_IN_ROUTES) expect(unguarded).toContain(p);
@@ -123,8 +124,8 @@ describe('UI-DEMO-6: menu entries and addresses', () => {
   /** A route path of App.tsx as a matcher: :param matches one segment, a trailing * the rest, an optional :param? may be absent. */
   const matcher = (route: string) =>
     new RegExp(`^${route.replace(/\/:\w+\?/g, '(?:/[^/]+)?').replace(/:\w+/g, '[^/]+').replace(/\/\*$/, '(?:/.*)?')}$`);
-  // /verify/:tenant? is public and served by Gate outside the authenticated table (App.tsx).
-  const paths = () => [...routes().map((r) => r.path).filter((p) => p !== '*'), '/verify/:tenant?'];
+  // /verify/:tenant? is in the authenticated table (inside the page frame) and, for a signed-out caller, served by Gate.
+  const paths = () => routes().map((r) => r.path).filter((p) => p !== '*');
   const resolves = (to: string) => paths().some((r) => matcher(r).test(to.split('?')[0]));
 
   it('every menu entry opens a real route, not the not-found page', () => {

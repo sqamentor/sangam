@@ -8,7 +8,7 @@
  * guard in App.tsx, so the menu never offers a screen that the guard would refuse.
  */
 import type { Me, Role } from '../api/types';
-import { ROUTE_ACCESS, TEAM_READ, canAccess, type Access } from './access';
+import { EVENT_ADMIN, ROUTE_ACCESS, TEAM_READ, canAccess, type Access } from './access';
 
 export interface NavItem {
   to: string;
@@ -69,7 +69,25 @@ export const MODULE_OF: Readonly<Record<string, string>> = {
   '/m/geo': 'geo',
   '/m/compliance': 'compliance',
 };
-const mod = (group: string, entry: string, to: string) => e(group, entry, to, { access: ROUTE_ACCESS[to], module: MODULE_OF[to] });
+const mod = (group: string, entry: string, to: string, extra: Partial<NavItem> = {}) => e(group, entry, to, { access: ROUTE_ACCESS[to], module: MODULE_OF[to], ...extra });
+/**
+ * U12a (owner, 2026-11-21): a group shows only for the callers it is meant for. An entry with its own `access` is
+ * admitted by the server permission of its screen, which more callers hold than the group is meant for (every staff
+ * role holds the module reads), so such an entry also names whose job it is with `only`; its route guard is unchanged.
+ */
+/**
+ * Department tools: not an auditor's work (an auditor holds the module reads, Permissions.java GROUP_AUDITOR; the
+ * section has 9 entries, of which he saw 7). Deviation from the U12a wording, as ruled on 2026-11-21: an organisation
+ * admin keeps them. His My work is his anyway through Team workload and Shared task lists (team.read, decision 404), and
+ * he alone holds the admin permissions of these tools.
+ */
+const DEPARTMENT: Role[] = ['TASK_USER', 'OPERATOR', 'ADMIN', 'PLATFORM_ADMIN'];
+/** Track and find: the group's own roles; an organisation admin holds the module reads too and is not one of them. */
+const FIND: Role[] = ['TASK_USER', 'OPERATOR', 'AUDITOR'];
+const dept = (entry: string, to: string) => mod('work', entry, to, { only: DEPARTMENT });
+/** The platform administrator ("*") keeps a menu link to every page he can open (ruling of 2026-11-21). */
+const PLATFORM: Role[] = ['PLATFORM_ADMIN'];
+const find = (entry: string, to: string) => mod('find', entry, to, { only: [...FIND, ...PLATFORM] });
 
 export const NAV: NavArea[] = [
   {
@@ -94,15 +112,15 @@ export const NAV: NavArea[] = [
       {
         label: sec('work', 'department'),
         items: [
-          mod('work', 'ledger', '/m/ledger'),
-          mod('work', 'billing', '/m/billing'),
-          mod('work', 'programmes', '/m/programmes'),
-          mod('work', 'resources', '/m/resources'),
-          mod('work', 'queues', '/m/queues'),
-          mod('work', 'rosters', '/m/rosters'),
-          mod('work', 'geo', '/m/geo'),
-          mod('work', 'fieldSetup', '/m/field'),
-          mod('work', 'ai', '/m/ai'),
+          dept('ledger', '/m/ledger'),
+          dept('billing', '/m/billing'),
+          dept('programmes', '/m/programmes'),
+          dept('resources', '/m/resources'),
+          dept('queues', '/m/queues'),
+          dept('rosters', '/m/rosters'),
+          dept('geo', '/m/geo'),
+          dept('fieldSetup', '/m/field'),
+          dept('ai', '/m/ai'),
         ],
       },
     ],
@@ -127,14 +145,14 @@ export const NAV: NavArea[] = [
     id: 'find',
     label: 'menu.find.title',
     // The guard of /documents (App.tsx AUDIT).
-    roles: ['TASK_USER', 'OPERATOR', 'AUDITOR'],
+    roles: FIND,
     sections: [
       {
         items: [
-          mod('find', 'caseFiles', '/m/case-files'),
-          mod('find', 'committees', '/m/committees'),
-          mod('find', 'references', '/m/references'),
-          mod('find', 'registers', '/m/registry'),
+          find('caseFiles', '/m/case-files'),
+          find('committees', '/m/committees'),
+          find('references', '/m/references'),
+          find('registers', '/m/registry'),
           e('find', 'documents', '/documents'),
         ],
       },
@@ -151,7 +169,8 @@ export const NAV: NavArea[] = [
           e('design', 'review', '/modeller/review'),
           e('design', 'recordTypes', '/modeller/data-objects'),
           e('design', 'screens', '/modeller/pages'),
-          e('design', 'testRun', '/design/test', { access: { roles: [...MODEL, ...OPS], perms: [] } }),
+          // U12a: the route admits operators too (App.tsx), but Design is the designers' group (and the platform administrator's link).
+          e('design', 'testRun', '/design/test', { access: { roles: [...MODEL, ...OPS], perms: [] }, only: [...MODEL, ...PLATFORM] }),
         ],
       },
       {
@@ -184,20 +203,23 @@ export const NAV: NavArea[] = [
           e('monitor', 'outbox', '/ops/outbox'),
           e('monitor', 'workers', '/ops/workers'),
           e('monitor', 'notifications', '/ops/notifications'),
-          e('monitor', 'events', '/ops/events'),
+          // U12h: the page and its route guard follow event.admin, which an operator does not hold and an organisation admin does.
+          e('monitor', 'events', '/ops/events', { access: EVENT_ADMIN }),
           e('monitor', 'money', '/ops/reconciliation'),
         ],
       },
       {
         label: sec('monitor', 'maintenance'),
         items: [
-          e('monitor', 'deployments', '/ops/deployments'),
+          // U12c: the route admits designers too (deployment.read); they see this one entry of the group.
+          e('monitor', 'deployments', '/ops/deployments', { access: { roles: [...OPS, ...MODEL], perms: [] } }),
           e('monitor', 'cleanup', '/ops/cleanup'),
           e('monitor', 'tools', '/ops/tools'),
           e('monitor', 'engine', '/ops/engine', { only: ['PLATFORM_OPERATOR'] }),
           // The engine's own saved filters (no organisation of their own): platform identities only, as before.
           e('monitor', 'engineFilters', '/ops/engine/filters', { access: { roles: ['PLATFORM_OPERATOR', 'PLATFORM_ADMIN'], perms: [] } }),
-          e('monitor', 'operatorLog', '/ops/audit-log'),
+          // U12d: the route admits an auditor too (history.read); he sees this one entry of the group.
+          e('monitor', 'operatorLog', '/ops/audit-log', { access: { roles: [...OPS, 'AUDITOR'], perms: [] } }),
         ],
       },
     ],
@@ -243,7 +265,8 @@ export const NAV: NavArea[] = [
           // channels.read is a module read held by every staff role; the status page is an administrator's job.
           e('setup', 'channelStatus', '/m/channels', { access: ROUTE_ACCESS['/m/channels'], module: MODULE_OF['/m/channels'], only: ['ADMIN', 'PLATFORM_ADMIN'] }),
           e('setup', 'agents', '/admin/agents'),
-          mod('setup', 'customFields', '/admin/custom-fields'),
+          // U12g: form.read (the list call) is held by every task user, operator and designer; the page is an administrator's job.
+          mod('setup', 'customFields', '/admin/custom-fields', { only: ['ADMIN', 'PLATFORM_ADMIN'] }),
         ],
       },
       {
