@@ -84,6 +84,20 @@ class DemoComposeFragmentStartupTest {
         return (Map<String, Object>) server.get("environment");
     }
 
+    /** The value the fragment itself gives an env name of sangam-server (a literal, never a ${...} of the host). */
+    static String fragmentValue(String name) {
+        try {
+            Object v = serverEnvironment().get(name);
+            if (!(v instanceof String s) || s.contains("${")) {
+                throw new AssertionError("the fragment's " + name + " must be a quoted literal, is " + v
+                        + (v == null ? "" : " (" + v.getClass().getSimpleName() + ")"));
+            }
+            return s;
+        } catch (IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+    }
+
     @Test
     void fragmentCarriesTheProductionStartSet() throws IOException {
         Set<String> missing = new TreeSet<>(REQUIRED);
@@ -256,10 +270,22 @@ class DemoComposeFragmentStartupTest {
     /** As above, with further command-line settings of a test (each named and explained where it is passed). */
     static ConfigurableApplicationContext start(Keys keys, Map<String, String> keyFlow, List<String> settings,
                                                 String... profiles) throws IOException {
+        return start(keys, keyFlow, settings, env -> { }, profiles);
+    }
+
+    /**
+     * As above, on an environment the test edits after it was filled from the fragment's names (register E-25): with a
+     * name the fragment does not carry (a setting under test, in the spelling under test), or without a name it does
+     * carry (the fragment of an image that is already deployed).
+     */
+    static ConfigurableApplicationContext start(Keys keys, Map<String, String> keyFlow, List<String> settings,
+                                                java.util.function.Consumer<Map<String, Object>> edit,
+                                                String... profiles) throws IOException {
         Map<String, Object> env = new LinkedHashMap<>();
         for (String name : serverEnvironment().keySet()) {
             env.put(name, keyFlow.containsKey(name) ? keyFlow.get(name) : keys.value(name));
         }
+        edit.accept(env);
         StandardEnvironment environment = new StandardEnvironment();
         // the "-systemEnvironment" suffix gives the source Spring Boot's env-name mapping, as on the container
         environment.getPropertySources().addFirst(new SystemEnvironmentPropertySource("demo-fragment-systemEnvironment", env));
@@ -360,6 +386,9 @@ class DemoComposeFragmentStartupTest {
                 case "SANGAM_TRUSTED_PROXIES" -> "172.29.250.0/24,173.245.48.0/20,2400:cb00::/32";
                 case "SANGAM_CLIENT_IP_HEADERS" -> "CF-Connecting-IP,X-Forwarded-For";
                 case "SANGAM_INTEGRATION_SIMULATORS_ENABLED", "SANGAM_OTLP_ENABLED" -> "false";
+                // register E-25: not secrets and not host facts, so the fragment's own values are the ones started
+                // with (PacksOfBootstrapTenantAgainstServerTest checks what they are)
+                case "SANGAM_PACKS_DEPLOY_ON_START", "SANGAM_PACKS_TENANTS" -> fragmentValue(name);
                 default -> throw new AssertionError("no test value for the fragment's env name " + name
                         + ": add one here (and a binding check if it is a production setting)");
             };

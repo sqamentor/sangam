@@ -144,6 +144,10 @@ class DemoLoaderSequenceAgainstServerTest {
             }
         }
         status.add("DEMO-SEQUENCE | connectors | INFO | " + connectors(ctx));
+        if (steps.contains("3b smoke") || steps.contains("4a cases")) {
+            // register E-25 point 4: one line per case, so the report lists every case
+            stops(ctx).forEach(s -> status.add("DEMO-SEQUENCE | stop | INFO | " + s));
+        }
         if (steps.contains("4a cases") && !step(status, "ui seats", () -> uiSeats(ctx, api))) {
             // register E-24 follow-up 1: never an open gap
             wrong.add("ui seats failed");
@@ -193,6 +197,74 @@ class DemoLoaderSequenceAgainstServerTest {
             (sim ? sandbox : bindings.binding(TENANT, id).isPresent() ? bound : nobody).add(id);
         }
         return "bound " + bound + "; sandbox " + sandbox + "; NOT CONFIGURED " + nobody;
+    }
+
+    /**
+     * Register E-25 point 4: where each case of the data set (and the two smoke cases, which are among them) stands,
+     * read from the engine. Per case: its target, then every open process instance of its tree (the case's own and the
+     * processes it called) with the activities it waits at, the open tasks with their seats, and every incident and
+     * failed job with its message; {@code waits for connector} names the connector ids of {@link #connectors} that such
+     * a message cites. A case that was never started, or has ended, says so.
+     */
+    static List<String> stops(ConfigurableApplicationContext ctx) throws Exception {
+        org.operaton.bpm.engine.ProcessEngine engine = ctx.getBean(org.operaton.bpm.engine.ProcessEngine.class);
+        java.util.Set<String> known = new java.util.TreeSet<>();
+        Matcher ids = Pattern.compile("[a-z][A-Za-z0-9]*\\.[A-Za-z][A-Za-z0-9]*").matcher(connectors(ctx));
+        while (ids.find()) {
+            known.add(ids.group());
+        }
+        List<String> out = new ArrayList<>();
+        for (JsonNode c : JSON.readTree(DATA.toFile()).path("cases")) {
+            String bk = c.path("businessKey").asText();
+            String head = c.path("id").asText() + " (" + c.path("process").asText() + ", target " + c.path("target").asText()
+                    + (c.path("stopAt").asText("").isEmpty() ? "" : " at " + c.path("stopAt").asText()) + "): ";
+            List<org.operaton.bpm.engine.runtime.ProcessInstance> roots = engine.getRuntimeService()
+                    .createProcessInstanceQuery().tenantIdIn(TENANT).processInstanceBusinessKey(bk).rootProcessInstances().list();
+            if (roots.isEmpty()) {
+                long ended = engine.getHistoryService().createHistoricProcessInstanceQuery().tenantIdIn(TENANT)
+                        .processInstanceBusinessKey(bk).rootProcessInstances().finished().count();
+                out.add(head + (ended > 0 ? "ended" : "not started"));
+                continue;
+            }
+            List<String> at = new ArrayList<>();
+            java.util.Set<String> waitsFor = new java.util.TreeSet<>();
+            for (org.operaton.bpm.engine.runtime.ProcessInstance root : roots) {
+                for (org.operaton.bpm.engine.runtime.ProcessInstance pi : engine.getRuntimeService()
+                        .createProcessInstanceQuery().rootProcessInstanceId(root.getId()).list()) {
+                    String key = engine.getRepositoryService().getProcessDefinition(pi.getProcessDefinitionId()).getKey();
+                    StringBuilder sb = new StringBuilder(key).append(" at ")
+                            .append(new java.util.TreeSet<>(engine.getRuntimeService().getActiveActivityIds(pi.getId())));
+                    for (org.operaton.bpm.engine.task.Task t : engine.getTaskService().createTaskQuery()
+                            .processInstanceId(pi.getId()).list()) {
+                        java.util.Set<String> seats = new java.util.TreeSet<>();
+                        for (org.operaton.bpm.engine.task.IdentityLink l : engine.getTaskService().getIdentityLinksForTask(t.getId())) {
+                            if (l.getGroupId() != null) {
+                                seats.add(l.getGroupId());
+                            }
+                        }
+                        sb.append(", open task ").append(t.getTaskDefinitionKey()).append(" for ")
+                                .append(t.getAssignee() != null ? t.getAssignee() : seats.toString());
+                    }
+                    List<String> messages = new ArrayList<>();
+                    for (org.operaton.bpm.engine.runtime.Incident i : engine.getRuntimeService().createIncidentQuery()
+                            .processInstanceId(pi.getId()).list()) {
+                        messages.add("incident " + i.getIncidentType() + " at " + i.getActivityId() + ": " + i.getIncidentMessage());
+                    }
+                    for (org.operaton.bpm.engine.runtime.Job j : engine.getManagementService().createJobQuery()
+                            .processInstanceId(pi.getId()).withException().list()) {
+                        messages.add("failed job (retries left " + j.getRetries() + "): " + j.getExceptionMessage());
+                    }
+                    for (String m : messages) {
+                        known.stream().filter(String.valueOf(m)::contains).forEach(waitsFor::add);
+                        String line = String.valueOf(m).replaceAll("\\s+", " ");
+                        sb.append(", ").append(line.length() > 260 ? line.substring(0, 260) + "..." : line);
+                    }
+                    at.add(sb.toString());
+                }
+            }
+            out.add(head + String.join(" | ", at) + (waitsFor.isEmpty() ? "" : " | waits for connector " + waitsFor));
+        }
+        return out;
     }
 
     /**

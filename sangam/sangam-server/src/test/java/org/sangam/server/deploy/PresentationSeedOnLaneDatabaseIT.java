@@ -1,28 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.deploy;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.sangam.server.acceptance.AcceptanceDatabase;
-import org.sangam.server.config.KeyAttestation;
-import org.springframework.context.ConfigurableApplicationContext;
 
 /**
  * EV-M-0932: the presentation seed passed on H2 ({@link PresentationSeedAgainstServerTest}) while on demo.ifms.dev
@@ -34,10 +22,13 @@ import org.springframework.context.ConfigurableApplicationContext;
  * ({@code postgres,oidc}, production on), GOI.FIN created only by FirstAdminBootstrap (profile null), the schema applied
  * by a first start and the serving start in {@code SANGAM_LIQUIBASE_MODE=validate} over the custodian's attestation.
  * No fixture beyond what the fragment and the API create.
+ * <p>
+ * Register E-25: the image as deployed (the fragment without the two pack settings) has no pack for GOI.FIN; a restart
+ * from the fragment deploys them through {@code SANGAM_PACKS_DEPLOY_ON_START} and {@code SANGAM_PACKS_TENANTS}, and a
+ * further start changes nothing ({@link PacksOfBootstrapTenantAgainstServerTest#liveLike}). Only here is the fragment's
+ * own profile at work: under {@code postgres} nothing deploys packs at start unless the settings say so.
  */
 class PresentationSeedOnLaneDatabaseIT {
-
-    private static final String ENV = "demo-ifms";
 
     @TempDir
     Path dir;
@@ -89,57 +80,15 @@ class PresentationSeedOnLaneDatabaseIT {
                 + "/" + database;
         DemoComposeFragmentStartupTest.Keys keys = new DemoComposeFragmentStartupTest.Keys(dir, url, owner, password,
                 "postgres,oidc");
-        Path export = dir.resolve("key-fingerprints.txt");
-        // the fragment does not set the log archive; keep this test's segments out of the module directory
-        List<String> logs = List.of("--sangam.compliance.log-archive.root=" + dir.resolve("compliance-logs"));
-        List<String> packsAtStart = new java.util.ArrayList<>(logs);
-        packsAtStart.addAll(DemoLoaderSequenceAgainstServerTest.PACKS_AT_START);
-
-        // start 1: the schema as the migrate-only one-shot applies it, and the one-time key bootstrap. The one-shot
-        // itself ends with System.exit, so this start does what it does (LiquibaseMode.applySystemProperties): the
-        // product changelog is applied and Operaton creates its schema in this run only (schema-update=true)
-        List<String> migrate = new java.util.ArrayList<>(logs);
-        migrate.add("--operaton.bpm.database.schema-update=true");
-        try (ConfigurableApplicationContext first = DemoComposeFragmentStartupTest.start(keys, Map.of(
-                "SANGAM_LIQUIBASE_MODE", "startup", "SANGAM_KEYS_BOOTSTRAP", "true",
-                "SANGAM_KEYS_FINGERPRINT_EXPORT", export.toString(), "SANGAM_KEYS_ATTESTATION", "",
-                "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", ""), migrate, "postgres", "oidc")) {
-            assertEquals(Boolean.TRUE, first.isActive());
-        }
-
-        // the custodian signs this environment's export (as DemoComposeFragmentStartupTest)
-        List<KeyAttestation.Key> attested = Files.readAllLines(export, StandardCharsets.UTF_8).stream()
-                .filter(l -> !l.isBlank() && !l.startsWith("#")).map(l -> l.split(" ", 4))
-                .map(t -> new KeyAttestation.Key(t[1], t[3])).distinct().toList();
-        assertFalse(attested.isEmpty());
-        KeyPair custodian = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
-        Path attestation = dir.resolve("key-attestation.json");
-        Files.writeString(attestation, KeyAttestation.sign(ENV, "2026-11-20T00:00:00Z", attested, custodian.getPrivate()),
-                StandardCharsets.UTF_8);
-
-        // start 2: the serving start of demo.ifms.dev: validate mode, bootstrap off, over the attestation
-        try (ConfigurableApplicationContext ctx = DemoComposeFragmentStartupTest.start(keys, Map.of(
-                "SANGAM_LIQUIBASE_MODE", "validate", "SANGAM_KEYS_BOOTSTRAP", "false",
-                "SANGAM_KEYS_FINGERPRINT_EXPORT", export.toString(), "SANGAM_KEYS_ATTESTATION", attestation.toString(),
-                "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", Base64.getEncoder().encodeToString(custodian.getPublic().getEncoded())),
-                logs, "postgres", "oidc")) {
-            // the tenant as on demo.ifms.dev (the stored, compacted org unit refusal), then the live steps in order
-            DemoLoaderSequenceAgainstServerTest.sequence(ctx, "PostgreSQL lane, validate start, as deployed",
-                    List.of("2c seed", "3a funds", "3b smoke"));
-        } finally {
-            org.sangam.packs.sim.DemoSandbox.install(java.util.Set.of());
-        }
-
-        // start 3: the same database and keys, with the packs deployed for GOI.FIN at start (configuration only)
-        try (ConfigurableApplicationContext ctx = DemoComposeFragmentStartupTest.start(keys, Map.of(
-                "SANGAM_LIQUIBASE_MODE", "validate", "SANGAM_KEYS_BOOTSTRAP", "false",
-                "SANGAM_KEYS_FINGERPRINT_EXPORT", export.toString(), "SANGAM_KEYS_ATTESTATION", attestation.toString(),
-                "SANGAM_KEYS_CUSTODIAN_PUBLIC_KEY", Base64.getEncoder().encodeToString(custodian.getPublic().getEncoded())),
-                packsAtStart, "postgres", "oidc")) {
-            DemoLoaderSequenceAgainstServerTest.sequence(ctx, "PostgreSQL lane, validate start, packs deployed at start",
-                    List.of("3b smoke", "4a cases"));
-        } finally {
-            org.sangam.packs.sim.DemoSandbox.install(java.util.Set.of());
-        }
+        // The demo host's history and then the way that needs no new image (register E-25), as on the H2 stand-in:
+        // start 1 applies the schema as the migrate-only one-shot does (the one-shot itself ends with System.exit, so
+        // this start does what it does, LiquibaseMode.applySystemProperties: the product changelog is applied and
+        // Operaton creates its schema in this run only, schema-update=true) and is the one-time key bootstrap; every
+        // later start is the serving start of demo.ifms.dev (validate mode, bootstrap off, over the custodian's
+        // attestation). Starts 1 and 2 are the image as deployed now (steps 2c, 3a, 3b); start 3 is a restart from the
+        // fragment, whose two pack settings deploy the packs of GOI.FIN (steps 3b, 4a, the per-case stop list);
+        // start 4 changes nothing.
+        PacksOfBootstrapTenantAgainstServerTest.liveLike(
+                new PacksOfBootstrapTenantAgainstServerTest.Host(dir, keys, "postgres", "oidc"), "PostgreSQL lane, validate start");
     }
 }
