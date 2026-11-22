@@ -29,9 +29,54 @@ import org.sangam.packs.spi.SangamPack;
 public final class PackStartOffice {
 
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static volatile PackRegistry shipped;
 
     private PackStartOffice() {
+    }
+
+    /** What a start of one pack needs: the pack's office and its seed seat ids (small values, not the pack). */
+    record Start(String office, Set<String> seedSeats) {
+
+        static Start of(SangamPack pack) {
+            Set<String> seats = new HashSet<>();
+            pack.descriptor().seats().forEach(s -> seats.add(s.id()));
+            return new Start(PackStartOffice.of(pack), Set.copyOf(seats));
+        }
+
+        /** Puts the office as {@code officeId} unless the start names an office or starts from a seed seat. */
+        Map<String, Object> applyTo(Map<String, Object> vars) {
+            Object given = vars.get("officeId");
+            Object seat = vars.get("actingSeat");
+            boolean seedSeat = seat != null && seedSeats.contains(seat.toString());
+            if (!seedSeat && (given == null || given.toString().isBlank()) && office != null) {
+                vars.put("officeId", office);
+            }
+            return vars;
+        }
+    }
+
+    /**
+     * The start of each shipped pack by main process key, the first pack in registry order for a key. Computed once per
+     * test JVM; the registry itself is not kept, so no pack resource stays reachable from a static (R9-statics,
+     * TestClassStaticsReleasedTest).
+     */
+    private static final class Shipped {
+        static final Map<String, Start> BY_MAIN_PROCESS = compute();
+
+        private static Map<String, Start> compute() {
+            Map<String, Start> out = new HashMap<>();
+            for (SangamPack p : PackRegistry.discover().all()) {
+                Start start = null;
+                for (String key : p.descriptor().mainProcesses()) {
+                    if (!out.containsKey(key)) {
+                        if (start == null) {
+                            start = Start.of(p);
+                        }
+                        out.put(key, start);
+                    }
+                }
+            }
+            return Map.copyOf(out);
+        }
     }
 
     /**
@@ -39,28 +84,17 @@ public final class PackStartOffice {
      * {@code vars} (which may be immutable). A key of no pack's main process is left unchanged.
      */
     public static Map<String, Object> apply(String processKey, Map<String, Object> vars) {
-        if (shipped == null) {
-            shipped = PackRegistry.discover();
-        }
         Map<String, Object> out = new HashMap<>(vars);
-        shipped.all().stream().filter(p -> p.descriptor().mainProcesses().contains(processKey)).findFirst()
-                .ifPresent(p -> apply(p, out));
+        Start start = Shipped.BY_MAIN_PROCESS.get(processKey);
+        if (start != null) {
+            start.applyTo(out);
+        }
         return out;
     }
 
     /** Puts the pack's office as {@code officeId} unless the start names an office or starts from a seed seat. */
     static Map<String, Object> apply(SangamPack pack, Map<String, Object> vars) {
-        PackDescriptor p = pack.descriptor();
-        Object given = vars.get("officeId");
-        Object seat = vars.get("actingSeat");
-        boolean seedSeat = seat != null && p.seats().stream().anyMatch(s -> s.id().equals(seat.toString()));
-        if (!seedSeat && (given == null || given.toString().isBlank())) {
-            String office = of(pack);
-            if (office != null) {
-                vars.put("officeId", office);
-            }
-        }
-        return vars;
+        return Start.of(pack).applyTo(vars);
     }
 
     /**
