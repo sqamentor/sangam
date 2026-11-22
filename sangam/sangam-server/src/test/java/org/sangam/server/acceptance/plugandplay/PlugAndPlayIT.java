@@ -127,7 +127,7 @@ class PlugAndPlayIT extends AbstractAcceptanceIT {
             JsonNode inst = t.call("GET", "/api/v1/process-instances/" + pid, null);
             if (inst.path("ended").asBoolean()) {
                 assertThat(biz.path("reachesWaitState").asBoolean())
-                        .as("the scenario expects a wait state, the run ended (e.g. rejected): " + inst).isFalse();
+                        .as("the scenario expects a wait state, the run ended (e.g. rejected): " + inst + probe(key)).isFalse();
                 // ended through its model, not terminated (cancelled or deleted)
                 assertThat(inst.path("state").asText()).as(inst.toString()).isEqualTo("COMPLETED");
                 return;
@@ -137,10 +137,10 @@ class PlugAndPlayIT extends AbstractAcceptanceIT {
                 Thread.sleep(2000);
                 JsonNode again = t.call("GET", "/api/v1/process-instances/" + pid, null);
                 assertThat(again.path("state").asText()).as(again.toString()).isNotEqualTo("CANCELLED");
-                assertThat(again.path("ended").asBoolean()).as("the run must wait, not end: " + again).isFalse();
+                assertThat(again.path("ended").asBoolean()).as("the run must wait, not end: " + again + probe(key)).isFalse();
                 // a run held by a failed job or an incident (e.g. an unresolvable call activity) is not a wait state
                 JsonNode stuck = t.call("GET", "/api/v1/process-instances?businessKey=" + key + "&withIncidents=true", null);
-                assertThat(stuck.size()).as("the run waits in an incident: " + stuck).isZero();
+                assertThat(stuck.size()).as("the run waits in an incident: " + stuck + probe(key)).isZero();
                 // the scenario's connector outcomes (e.g. the bill type resolved by the catalogue): proves the
                 // process data reached the connectors instead of running on defaults
                 JsonNode vars = t.call("GET", "/api/v1/process-instances/" + pid + "/variables", null);
@@ -162,6 +162,54 @@ class PlugAndPlayIT extends AbstractAcceptanceIT {
         }
         throw new AssertionError("process " + pid + " did not finish");
     }
+    @org.springframework.beans.factory.annotation.Autowired
+    org.operaton.bpm.engine.ProcessEngine probeEngine;
+
+    /** DIAG ONLY, never merged: states and reason codes by allow-list, no other variable value. */
+    private String probe(String key) {
+        StringBuilder b = new StringBuilder("\nAT-PROBE begin");
+        try {
+            org.operaton.bpm.engine.HistoryService h = probeEngine.getHistoryService();
+            for (var p : h.createHistoricProcessInstanceQuery().processInstanceBusinessKey(key).list()) {
+                b.append("\nAT-PROBE process=").append(p.getProcessDefinitionKey()).append(" state=").append(p.getState());
+                for (var a : h.createHistoricActivityInstanceQuery().processInstanceId(p.getId()).list()) {
+                    if (a.getActivityType().toLowerCase().contains("endevent") || a.getEndTime() == null) {
+                        b.append("\nAT-PROBE   activity=").append(a.getActivityId()).append(" type=").append(a.getActivityType())
+                                .append(a.getEndTime() == null ? " open" : " ended");
+                    }
+                }
+                for (String name : java.util.List.of("caseState", "state", "payeeStatus", "payeeReasonCode",
+                        "rejectionReasonCodes", "docValid", "clsValid", "dupStatus", "fundsStatus", "paoOutcome",
+                        "routingDecisionKey")) {
+                    for (var v : h.createHistoricVariableInstanceQuery().processInstanceId(p.getId()).variableName(name).list()) {
+                        b.append("\nAT-PROBE   ").append(name).append('=').append(masked(String.valueOf(v.getValue())));
+                    }
+                }
+                for (var i : h.createHistoricIncidentQuery().processInstanceId(p.getId()).list()) {
+                    b.append("\nAT-PROBE   incident activity=").append(i.getActivityId()).append(" message=")
+                            .append(masked(i.getIncidentMessage()));
+                }
+                for (var j : h.createHistoricJobLogQuery().processInstanceId(p.getId()).failureLog().list()) {
+                    b.append("\nAT-PROBE   failed job activity=").append(j.getActivityId());
+                    String[] trace = String.valueOf(h.getHistoricJobLogExceptionStacktrace(j.getId())).split("\n");
+                    b.append("\nAT-PROBE     exception=").append(masked(trace[0]));
+                    for (String line : trace) {
+                        if (line.startsWith("Caused by")) {
+                            b.append("\nAT-PROBE     ").append(masked(line));
+                        }
+                    }
+                }
+            }
+        } catch (RuntimeException e) {
+            b.append("\nAT-PROBE failed ").append(masked(e.toString()));
+        }
+        return b.append("\nAT-PROBE end").toString();
+    }
+
+    private static String masked(String s) {
+        return s == null ? "null" : s.replaceAll("[0-9]{6,}", "<digits>");
+    }
+
     private void simple(String id) throws Exception {
         JsonNode s = scenario(id);
         onboard(s.path("request"));

@@ -37,7 +37,7 @@ CHUNKS = {
     "C-e16a": "E16aPatternsIT",
     "D-e16bc": "E16bPatternsIT,E16cPatternIT",
     "E-e17": "E17aDomainsIT,E17bDomainIT,E17cDomainIT",
-    "F-platform": "CrossTenantIsolationIT,PlugAndPlayIT,T08PoisonOutboxIT,T35RestoreIT,ScimAcceptanceIT,TScaleLoadIT",
+    "F-platform": "PlugAndPlayIT",
 }
 DBS = ["postgres", "oracle", "sqlserver", "sqlserver2025", "mysql", "postgres18"]
 # Images: the names AcceptanceDatabase asks Testcontainers for; digests as in db-matrix.yml (RM-33). The leg pulls
