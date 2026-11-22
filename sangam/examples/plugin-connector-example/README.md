@@ -64,3 +64,5 @@ Enable the pack and bind its connector when onboarding a tenant:
  "connectors": [{"packConnector": "example.post", "connectorId": "example.echo-ledger", "operation": "post",
                  "test": {"operation": "post", "input": {"amount": "1"}, "invoke": true}}]}
 ```
+
+Every connector a pack declares in `pack.json` must state `moneyMovement`: `OUT`, `IN` or `NONE` (ARCH-JURIS, ea27576f). A pack whose connector leaves it out is refused at load. This example's `example.post` only echoes a posting to its own ledger, so it is `NONE`.
