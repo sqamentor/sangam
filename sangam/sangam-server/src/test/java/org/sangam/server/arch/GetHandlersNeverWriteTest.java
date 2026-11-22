@@ -227,6 +227,21 @@ class GetHandlersNeverWriteTest {
             "org.sangam.rest.modules.connectorshealth.HealthHooksFallbackController.cdsDiscovery",
             "org.sangam.rest.web.InstalledModulesController.capabilities");
 
+    static List<String> ratchetViolations(int flaggedCount, Set<String> flagged, Set<String> sources,
+            Set<String> recordedFlagged, Set<String> clean) {
+        return ratchetViolations(flaggedCount, flagged, sources, recordedFlagged.size(), clean);
+    }
+
+    @Test
+    void aNewlyFlaggedHandlerFailsEvenWhenTheCountIsUnchanged() {
+        Set<String> sources = Set.of("a.A.clean", "a.A.w1", "a.A.w2", "a.A.fresh");
+        Set<String> recorded = Set.of("a.A.w1", "a.A.w2");
+        assertTrue(ratchetViolations(2, recorded, sources, recorded, Set.of("a.A.clean")).isEmpty(), "the recorded list");
+        List<String> swap = ratchetViolations(2, Set.of("a.A.w1", "a.A.fresh"), sources, recorded, Set.of("a.A.clean"));
+        assertTrue(swap.size() == 1 && swap.get(0).contains("a.A.fresh") && swap.get(0).contains("newly flagged"),
+                "a swap at the same count must fail on the new handler: " + swap);
+    }
+
     static List<String> ratchetViolations(int flaggedCount, Set<String> flagged, Set<String> sources, int recorded,
             Set<String> clean) {
         List<String> out = new ArrayList<>();
