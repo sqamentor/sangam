@@ -38,7 +38,8 @@ class UtilConnectionRoutingKeyTest {
     private void assertRoutesTo(String packId, String bpmnPath, String key, String dir, String office, List<String> roles)
             throws Exception {
         String bpmn = resource(bpmnPath);
-        assertTrue(bpmn.contains("routingDecisionKey=" + key + ";"), packId + " sets its own routingDecisionKey " + key);
+        assertTrue(Pattern.compile("routingDecisionKey=" + Pattern.quote(key) + "[;<]").matcher(bpmn).find(),
+                packId + " sets its own routingDecisionKey " + key);
         String dmn = resource(dir + key + ".dmn");
         Matcher m = Pattern.compile("<outputEntry[^>]*><text>&quot;([A-Z-]+)&quot;</text>|<outputEntry[^>]*><text>\"([A-Z-]+)\"</text>")
                 .matcher(dmn);
