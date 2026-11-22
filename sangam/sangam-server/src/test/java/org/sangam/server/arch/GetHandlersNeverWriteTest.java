@@ -170,11 +170,13 @@ class GetHandlersNeverWriteTest {
             }
         }
         Set<String> bad = new TreeSet<>();
+        Set<String> flagged = new TreeSet<>();
         for (M src : model.sources) {
             // a mapping on an interface method reaches the implementations
             M hit = next.containsKey(src) ? src
                     : model.targets(src).stream().filter(next::containsKey).findFirst().orElse(null);
             if (hit != null) {
+                flagged.add(src.toString());
                 List<String> path = new ArrayList<>();
                 if (!hit.equals(src)) {
                     path.add(src.toString());
@@ -202,7 +204,58 @@ class GetHandlersNeverWriteTest {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        assertTrue(bad.isEmpty(), msg.toString());
+        Set<String> sourceNames = new TreeSet<>();
+        model.sources.forEach(s -> sourceNames.add(s.toString()));
+        List<String> violations = ratchetViolations(bad.size(), flagged, sourceNames, RECORDED_FLAGGED, CLEAN_HANDLERS);
+        assertTrue(violations.isEmpty(), String.join("\n", violations) + "\n" + msg);
+    }
+
+    /**
+     * C3 ratchet (joint decision EV-M-0990, CONTRACT-REGISTER row of 2026-11-22): the recorded number of GET handlers
+     * that reach a write. Lower it when a fix lands; never raise it. The accepted writes on GET (R6) are listed in the
+     * register; the full redesign (option A) is its own backlog row.
+     */
+    static final int RECORDED_FLAGGED = 463;
+
+    /** The GET handlers that reach no write; each must stay a GET handler and stay clean. */
+    static final Set<String> CLEAN_HANDLERS = Set.of(
+            "org.sangam.server.web.OpenApiController.openApi",
+            "org.sangam.server.web.ProblemErrorController.error",
+            "org.sangam.server.web.UiPluginController.list",
+            "org.sangam.server.web.UiPluginController.asset",
+            "org.sangam.rest.compliance.ComplianceController.jurisdiction",
+            "org.sangam.rest.modules.connectorshealth.HealthHooksFallbackController.cdsDiscovery",
+            "org.sangam.rest.web.InstalledModulesController.capabilities");
+
+    static List<String> ratchetViolations(int flaggedCount, Set<String> flagged, Set<String> sources, int recorded,
+            Set<String> clean) {
+        List<String> out = new ArrayList<>();
+        if (flaggedCount > recorded) {
+            out.add(flaggedCount + " GET handlers reach a write, above the recorded " + recorded
+                    + " (C3 ratchet, EV-M-0990)");
+        }
+        for (String c : new TreeSet<>(clean)) {
+            if (!sources.contains(c)) {
+                out.add("clean handler " + c + " is no longer a GET handler; update CLEAN_HANDLERS and the register");
+            } else if (flagged.contains(c)) {
+                out.add("clean handler " + c + " now reaches a write (C3 ratchet, EV-M-0990)");
+            }
+        }
+        return out;
+    }
+
+    @Test
+    void theRatchetFailsAboveTheRecordedCountOrWhenACleanHandlerIsFlagged() {
+        Set<String> sources = Set.of("a.A.clean", "a.A.w1", "a.A.w2");
+        Set<String> clean = Set.of("a.A.clean");
+        assertTrue(ratchetViolations(2, Set.of("a.A.w1", "a.A.w2"), sources, 2, clean).isEmpty(), "at the count");
+        assertTrue(ratchetViolations(1, Set.of("a.A.w1"), sources, 2, clean).isEmpty(), "below the count");
+        assertTrue(ratchetViolations(2, Set.of("a.A.w1", "a.A.w2"), sources, 1, clean).get(0).contains("above the recorded"),
+                "above the count");
+        assertTrue(ratchetViolations(1, Set.of("a.A.clean"), sources, 2, clean).get(0).contains("now reaches a write"),
+                "clean handler flagged");
+        assertTrue(ratchetViolations(0, Set.of(), Set.of("a.A.w1"), 2, clean).get(0).contains("no longer a GET handler"),
+                "clean handler gone");
     }
 
     // ------------------------------------------------------------------ bytecode
