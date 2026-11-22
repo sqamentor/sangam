@@ -1,0 +1,6 @@
+{
+  "modules": "sangam-core",
+  "dbs": "postgres",
+  "chunks": "F-platform",
+  "ui": false
+}
