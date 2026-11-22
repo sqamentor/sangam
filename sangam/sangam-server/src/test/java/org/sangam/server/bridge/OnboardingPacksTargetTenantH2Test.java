@@ -267,6 +267,11 @@ class OnboardingPacksTargetTenantH2Test {
         List<List<String>> duringSecond = new ArrayList<>();
         Fixture[] holder = new Fixture[1];
         Fixture f = fixture(pack("onb.core", List.of(), () -> { }), pack("onb.app", List.of("onb.core"), () -> {
+            // PackDeployer's money-path check opens every pack's models while it checks the first one: the resource
+            // fails only once the first pack is deployed, so the throw is in the middle of the deploy
+            if (holder[0].packDeployments(TARGET, "pack:onb.core@1.0.0") == 0) {
+                return;
+            }
             Authentication now = holder[0].ids().getCurrentAuthentication();
             duringSecond.add(now == null ? null : now.getTenantIds());
             throw new IllegalStateException("pack resource unreadable mid-deploy");
