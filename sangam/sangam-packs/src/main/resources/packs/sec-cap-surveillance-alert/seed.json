@@ -11,14 +11,14 @@
       "role": "ANALYST",
       "office": "BROKER-SURV",
       "level": "HEAD_OFFICE",
-      "reportsTo": "COMPLIANCE-OFFICER",
+      "reportsTo": "COMPLIANCE-OFFICER-SURV",
       "name": {
         "en": "Surveillance analyst",
         "hi": "निगरानी विश्लेषक"
       }
     },
     {
-      "id": "COMPLIANCE-OFFICER",
+      "id": "COMPLIANCE-OFFICER-SURV",
       "role": "COMPLIANCE",
       "office": "BROKER-SURV",
       "level": "HEAD_OFFICE",
@@ -37,8 +37,8 @@
       "from": "2026-01-01"
     },
     {
-      "seat": "COMPLIANCE-OFFICER",
-      "person": "csv.compliance-officer",
+      "seat": "COMPLIANCE-OFFICER-SURV",
+      "person": "csv.compliance-officer-surv",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

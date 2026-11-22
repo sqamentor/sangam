@@ -11,7 +11,7 @@
       "role": "CODER",
       "office": "BILLING-OFFICE",
       "level": "HEAD_OFFICE",
-      "reportsTo": "REV-CYCLE-MGR",
+      "reportsTo": "REV-CYCLE-MGR-BILLING",
       "name": {
         "en": "Medical coder",
         "es": "Codificador médico"
@@ -22,7 +22,7 @@
       "role": "BILLER",
       "office": "BILLING-OFFICE",
       "level": "HEAD_OFFICE",
-      "reportsTo": "REV-CYCLE-MGR",
+      "reportsTo": "REV-CYCLE-MGR-BILLING",
       "name": {
         "en": "Biller",
         "es": "Facturador"
@@ -33,14 +33,14 @@
       "role": "DENIALS",
       "office": "BILLING-OFFICE",
       "level": "HEAD_OFFICE",
-      "reportsTo": "REV-CYCLE-MGR",
+      "reportsTo": "REV-CYCLE-MGR-BILLING",
       "name": {
         "en": "Denial analyst",
         "es": "Analista de denegaciones"
       }
     },
     {
-      "id": "REV-CYCLE-MGR",
+      "id": "REV-CYCLE-MGR-BILLING",
       "role": "RCM",
       "office": "BILLING-OFFICE",
       "level": "HEAD_OFFICE",
@@ -71,8 +71,8 @@
       "from": "2026-01-01"
     },
     {
-      "seat": "REV-CYCLE-MGR",
-      "person": "ucl.rev-cycle-mgr",
+      "seat": "REV-CYCLE-MGR-BILLING",
+      "person": "ucl.rev-cycle-mgr-billing",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

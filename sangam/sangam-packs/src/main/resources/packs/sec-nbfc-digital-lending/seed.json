@@ -11,14 +11,14 @@
       "role": "CREDITOFFICER",
       "office": "NBFC-CREDIT",
       "level": "HEAD_OFFICE",
-      "reportsTo": "CREDIT-HEAD",
+      "reportsTo": "CREDIT-HEAD-NBFC",
       "name": {
         "en": "Credit officer (RE)",
         "hi": "ऋण अधिकारी"
       }
     },
     {
-      "id": "CREDIT-HEAD",
+      "id": "CREDIT-HEAD-NBFC",
       "role": "CREDITHEAD",
       "office": "NBFC-CREDIT",
       "level": "HEAD_OFFICE",
@@ -37,8 +37,8 @@
       "from": "2026-01-01"
     },
     {
-      "seat": "CREDIT-HEAD",
-      "person": "ndl.credit-head",
+      "seat": "CREDIT-HEAD-NBFC",
+      "person": "ndl.credit-head-nbfc",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

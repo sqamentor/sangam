@@ -7,18 +7,18 @@
   ],
   "seats": [
     {
-      "id": "LINE-MANAGER",
+      "id": "LINE-MANAGER-PMS",
       "role": "MANAGER",
       "office": "PMS",
       "level": "HEAD_OFFICE",
-      "reportsTo": "REVIEWER",
+      "reportsTo": "REVIEWER-PMS",
       "name": {
         "en": "Line manager",
         "hi": "प्रबंधक"
       }
     },
     {
-      "id": "REVIEWER",
+      "id": "REVIEWER-PMS",
       "role": "REVIEWER",
       "office": "PMS",
       "level": "HEAD_OFFICE",
@@ -75,14 +75,14 @@
   ],
   "holdings": [
     {
-      "seat": "LINE-MANAGER",
-      "person": "hap.line-manager",
+      "seat": "LINE-MANAGER-PMS",
+      "person": "hap.line-manager-pms",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     },
     {
-      "seat": "REVIEWER",
-      "person": "hap.reviewer",
+      "seat": "REVIEWER-PMS",
+      "person": "hap.reviewer-pms",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     },

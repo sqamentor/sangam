@@ -7,7 +7,7 @@
   ],
   "seats": [
     {
-      "id": "DPO",
+      "id": "DPO-PRIVACY",
       "role": "DPO",
       "office": "PRIVACY",
       "level": "HEAD_OFFICE",
@@ -31,8 +31,8 @@
   ],
   "holdings": [
     {
-      "seat": "DPO",
-      "person": "ldr.dpo",
+      "seat": "DPO-PRIVACY",
+      "person": "ldr.dpo-privacy",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     },

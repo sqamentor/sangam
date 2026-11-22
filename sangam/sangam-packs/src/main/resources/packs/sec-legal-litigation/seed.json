@@ -7,7 +7,7 @@
   ],
   "seats": [
     {
-      "id": "LEGAL-COUNSEL",
+      "id": "LEGAL-COUNSEL-LIT",
       "role": "COUNSEL",
       "office": "LEGAL",
       "level": "HEAD_OFFICE",
@@ -31,8 +31,8 @@
   ],
   "holdings": [
     {
-      "seat": "LEGAL-COUNSEL",
-      "person": "llt.legal-counsel",
+      "seat": "LEGAL-COUNSEL-LIT",
+      "person": "llt.legal-counsel-lit",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     },

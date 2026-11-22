@@ -33,7 +33,7 @@
       "role": "SUPERVISOR",
       "office": "COLLECTIONS",
       "level": "HEAD_OFFICE",
-      "reportsTo": "BRANCH-MGR",
+      "reportsTo": "BRANCH-MGR-COLL",
       "name": {
         "en": "Collections supervisor",
         "hi": "वसूली पर्यवेक्षक"
@@ -44,36 +44,36 @@
       "role": "AO",
       "office": "COLLECTIONS",
       "level": "HEAD_OFFICE",
-      "reportsTo": "BRANCH-MGR",
+      "reportsTo": "BRANCH-MGR-COLL",
       "name": {
         "en": "Authorised officer (SARFAESI)",
         "hi": "प्राधिकृत अधिकारी (सरफेसी)"
       }
     },
     {
-      "id": "BRANCH-MGR",
+      "id": "BRANCH-MGR-COLL",
       "role": "BRANCHMGR",
       "office": "COLLECTIONS",
       "level": "HEAD_OFFICE",
-      "reportsTo": "ZONAL-CREDIT",
+      "reportsTo": "ZONAL-CREDIT-COLL",
       "name": {
         "en": "Branch manager",
         "hi": "शाखा प्रबंधक"
       }
     },
     {
-      "id": "ZONAL-CREDIT",
+      "id": "ZONAL-CREDIT-COLL",
       "role": "ZONALCREDIT",
       "office": "COLLECTIONS",
       "level": "HEAD_OFFICE",
-      "reportsTo": "CREDIT-HEAD",
+      "reportsTo": "CREDIT-HEAD-COLL",
       "name": {
         "en": "Zonal credit head",
         "hi": "क्षेत्रीय ऋण प्रमुख"
       }
     },
     {
-      "id": "CREDIT-HEAD",
+      "id": "CREDIT-HEAD-COLL",
       "role": "CREDITHEAD",
       "office": "COLLECTIONS",
       "level": "HEAD_OFFICE",
@@ -110,20 +110,20 @@
       "from": "2026-01-01"
     },
     {
-      "seat": "BRANCH-MGR",
-      "person": "bco.branch-mgr",
+      "seat": "BRANCH-MGR-COLL",
+      "person": "bco.branch-mgr-coll",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     },
     {
-      "seat": "ZONAL-CREDIT",
-      "person": "bco.zonal-credit",
+      "seat": "ZONAL-CREDIT-COLL",
+      "person": "bco.zonal-credit-coll",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     },
     {
-      "seat": "CREDIT-HEAD",
-      "person": "bco.credit-head",
+      "seat": "CREDIT-HEAD-COLL",
+      "person": "bco.credit-head-coll",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

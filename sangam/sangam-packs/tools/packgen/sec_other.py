@@ -121,7 +121,7 @@ def health_abdm_consent():
                     'Request health records | स्वास्थ्य अभिलेख का अनुरोध',
                     ['patientName*', 'abhaNumber*', 'purposeOfUse*', 'hiTypes*', 'consentValidity'])
     d = s.setv('hx_defaults', 'Configuration', defaults='abhaNumber=@customerId;purposeOfUse=CAREMGT;'
-               'hiTypes=DiagnosticReport,Prescription;consentValidity=P30D;clinicianSeat=TREATING-DOCTOR')
+               'hiTypes=DiagnosticReport,Prescription;consentValidity=P30D;clinicianSeat=TREATING-DOCTOR-HIU')
     bg = s.xgw('hx_btgGw', 'Break the glass?')
     s.seq(st, d, bg)
     bt = s.user('hx_btg', 'Emergency access justification | आपातकालीन पहुँच का औचित्य', '${clinicianSeat}',
@@ -169,7 +169,7 @@ def health_abdm_consent():
     s.flow(cv, pj)
     pu = s.conn('hx_purge', 'Purge fetched records', 'records.purge', 'purge', 'submit', 'abhaNumber', 'purge', step='purge')
     s.seq(pj, pu, end_ok(p, s, 'hx_end', 'Consent lifecycle closed'))
-    simple_seeds(pk, 'HIU', [('TREATING-DOCTOR', 'DOCTOR', 'PRIVACY-OFFICER', 'Treating doctor', 'उपचारकर्ता चिकित्सक'),
+    simple_seeds(pk, 'HIU', [('TREATING-DOCTOR-HIU', 'DOCTOR', 'PRIVACY-OFFICER', 'Treating doctor', 'उपचारकर्ता चिकित्सक'),
                              ('PRIVACY-OFFICER', 'PRIVACY', None, 'Privacy officer', 'गोपनीयता अधिकारी')], 'hhx')
 
 
@@ -716,7 +716,7 @@ def mfg_batch_release():
                {'processKey': 'sangam-up18-capa', 'linkType': 'deviation', 'inherit': 'batchNo,productCode'})
     g2, m2 = maybe(s, 'br_devOpt', 'deviationFound', dv, dv, 'Deviation?')
     s.flow(qg, g2, None, 'accept', default=True)
-    qa = s.user('br_qa', 'QA review and release decision | क्यूए समीक्षा एवं निर्गमन निर्णय', 'QA-HEAD',
+    qa = s.user('br_qa', 'QA review and release decision | क्यूए समीक्षा एवं निर्गमन निर्णय', 'QA-HEAD-PLANT',
                 form='sec-mfg-batch-release/qa', decision=('releaseDecision', ['release', 'reject']), fields=['remarks*'],
                 sod=True, bind='release')
     s.flow(m2, qa)
@@ -730,8 +730,8 @@ def mfg_batch_release():
     rj = s.end('br_endRejected', 'Batch rejected')
     s.flow(rg, rj, None, 'reject', default=True)
     s.flow(qg, rj, "qcDecision == 'reject'", 'QC failed')
-    simple_seeds(pk, 'PLANT', [('QC-ANALYST', 'QC', 'QA-HEAD', 'QC analyst', 'गुणवत्ता नियंत्रण विश्लेषक'),
-                               ('QA-HEAD', 'QAHEAD', None, 'Head of quality assurance', 'गुणवत्ता आश्वासन प्रमुख')], 'mbr')
+    simple_seeds(pk, 'PLANT', [('QC-ANALYST', 'QC', 'QA-HEAD-PLANT', 'QC analyst', 'गुणवत्ता नियंत्रण विश्लेषक'),
+                               ('QA-HEAD-PLANT', 'QAHEAD', None, 'Head of quality assurance', 'गुणवत्ता आश्वासन प्रमुख')], 'mbr')
 
 
 # ============================================================================================ education
@@ -1042,7 +1042,7 @@ def legal_dpdp():
     s = p.root
     st = start_form(p, s, 'dr_start', 'Request received', 'sec-legal-dpdp-rights/request', 'Data principal request | डेटा प्रधान अनुरोध',
                     ['customerId*', 'requestType*', 'description', 'applicantRef'])
-    d = s.setv('dr_defaults', 'Configuration', defaults='requestType=ACCESS;dpoSeat=DPO;applicantRef=@customerId')
+    d = s.setv('dr_defaults', 'Configuration', defaults='requestType=ACCESS;dpoSeat=DPO-PRIVACY;applicantRef=@customerId')
     # SL-115: identity verification fails closed (cleared before the query; no default stands in): no request is acted
     # on for an identity the check did not confirm
     ive, iv = checked_query(s, 'dr_idv', 'Verify identity', 'idv.verify', 'verify', 'customerId', 'id', ['idVerified'])
@@ -1091,7 +1091,7 @@ def legal_dpdp():
     pk.dmn('sec-legal-dpdp-tat', 'Data principal request period (DPDP Rules 2025 r.14; verify per right)', 'FIRST',
            [('Request type', 'requestType', 'string')], [('respondSpec', 'Respond within', 'string')],
            [(['-'], [q('90D')], 'grievance redressal within 90 days')])
-    simple_seeds(pk, 'PRIVACY', [('DPO', 'DPO', 'GRO-PRIVACY', 'Data protection officer', 'डेटा संरक्षण अधिकारी'),
+    simple_seeds(pk, 'PRIVACY', [('DPO-PRIVACY', 'DPO', 'GRO-PRIVACY', 'Data protection officer', 'डेटा संरक्षण अधिकारी'),
                                  ('GRO-PRIVACY', 'GRO', None, 'Grievance officer (privacy)', 'शिकायत अधिकारी (गोपनीयता)')], 'ldr')
 
 

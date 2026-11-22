@@ -7,7 +7,7 @@
   ],
   "seats": [
     {
-      "id": "CREDIT-HEAD",
+      "id": "CREDIT-HEAD-DLG",
       "role": "CREDITHEAD",
       "office": "NBFC-DLG",
       "level": "HEAD_OFFICE",
@@ -20,8 +20,8 @@
   ],
   "holdings": [
     {
-      "seat": "CREDIT-HEAD",
-      "person": "ndg.credit-head",
+      "seat": "CREDIT-HEAD-DLG",
+      "person": "ndg.credit-head-dlg",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

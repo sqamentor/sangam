@@ -51,7 +51,7 @@
       }
     },
     {
-      "id": "AML-COMPLIANCE",
+      "id": "AML-COMPLIANCE-TREASURY",
       "role": "COMPLIANCE",
       "office": "TREASURY",
       "level": "HEAD_OFFICE",
@@ -88,8 +88,8 @@
       "from": "2026-01-01"
     },
     {
-      "seat": "AML-COMPLIANCE",
-      "person": "bpy.aml-compliance",
+      "seat": "AML-COMPLIANCE-TREASURY",
+      "person": "bpy.aml-compliance-treasury",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

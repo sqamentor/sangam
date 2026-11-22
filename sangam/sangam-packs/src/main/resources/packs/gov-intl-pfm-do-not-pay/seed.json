@@ -11,14 +11,14 @@
       "role": "SCREENINGOFFICER",
       "office": "TREASURY",
       "level": "HEAD_OFFICE",
-      "reportsTo": "ACCOUNTING-OFFICER",
+      "reportsTo": "ACCOUNTING-OFFICER-TREASURY",
       "name": {
         "en": "Payee screening officer",
         "hi": "प्राप्तकर्ता जाँच अधिकारी"
       }
     },
     {
-      "id": "ACCOUNTING-OFFICER",
+      "id": "ACCOUNTING-OFFICER-TREASURY",
       "role": "ACCOUNTING-OFFICER",
       "office": "TREASURY",
       "level": "HEAD_OFFICE",
@@ -37,8 +37,8 @@
       "from": "2026-01-01"
     },
     {
-      "seat": "ACCOUNTING-OFFICER",
-      "person": "idn.accounting-officer",
+      "seat": "ACCOUNTING-OFFICER-TREASURY",
+      "person": "idn.accounting-officer-treasury",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

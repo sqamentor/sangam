@@ -11,14 +11,14 @@
       "role": "SUSPENSECLERK",
       "office": "TREASURY",
       "level": "HEAD_OFFICE",
-      "reportsTo": "ACCOUNTING-OFFICER",
+      "reportsTo": "ACCOUNTING-OFFICER-TREASURY",
       "name": {
         "en": "Suspense clearing clerk",
         "hi": "उचंत निपटान लिपिक"
       }
     },
     {
-      "id": "ACCOUNTING-OFFICER",
+      "id": "ACCOUNTING-OFFICER-TREASURY",
       "role": "ACCOUNTING-OFFICER",
       "office": "TREASURY",
       "level": "HEAD_OFFICE",
@@ -37,8 +37,8 @@
       "from": "2026-01-01"
     },
     {
-      "seat": "ACCOUNTING-OFFICER",
-      "person": "isu.accounting-officer",
+      "seat": "ACCOUNTING-OFFICER-TREASURY",
+      "person": "isu.accounting-officer-treasury",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

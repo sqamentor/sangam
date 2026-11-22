@@ -11,14 +11,14 @@
       "role": "AGENCY",
       "office": "AGENCY",
       "level": "HEAD_OFFICE",
-      "reportsTo": "PRINCIPAL-OFFICER",
+      "reportsTo": "PRINCIPAL-OFFICER-AGENCY",
       "name": {
         "en": "Agency administration",
         "hi": "एजेंसी प्रशासन"
       }
     },
     {
-      "id": "PRINCIPAL-OFFICER",
+      "id": "PRINCIPAL-OFFICER-AGENCY",
       "role": "PO",
       "office": "AGENCY",
       "level": "HEAD_OFFICE",
@@ -37,8 +37,8 @@
       "from": "2026-01-01"
     },
     {
-      "seat": "PRINCIPAL-OFFICER",
-      "person": "iag.principal-officer",
+      "seat": "PRINCIPAL-OFFICER-AGENCY",
+      "person": "iag.principal-officer-agency",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

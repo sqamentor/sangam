@@ -7,7 +7,7 @@
   ],
   "seats": [
     {
-      "id": "FINANCIAL-COUNSELOR",
+      "id": "FINANCIAL-COUNSELOR-GFE",
       "role": "FINCOUNSEL",
       "office": "PROVIDER",
       "level": "HEAD_OFFICE",
@@ -42,8 +42,8 @@
   ],
   "holdings": [
     {
-      "seat": "FINANCIAL-COUNSELOR",
-      "person": "ugf.financial-counselor",
+      "seat": "FINANCIAL-COUNSELOR-GFE",
+      "person": "ugf.financial-counselor-gfe",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     },

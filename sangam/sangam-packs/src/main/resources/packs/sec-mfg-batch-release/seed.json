@@ -11,14 +11,14 @@
       "role": "QC",
       "office": "PLANT",
       "level": "HEAD_OFFICE",
-      "reportsTo": "QA-HEAD",
+      "reportsTo": "QA-HEAD-PLANT",
       "name": {
         "en": "QC analyst",
         "hi": "गुणवत्ता नियंत्रण विश्लेषक"
       }
     },
     {
-      "id": "QA-HEAD",
+      "id": "QA-HEAD-PLANT",
       "role": "QAHEAD",
       "office": "PLANT",
       "level": "HEAD_OFFICE",
@@ -37,8 +37,8 @@
       "from": "2026-01-01"
     },
     {
-      "seat": "QA-HEAD",
-      "person": "mbr.qa-head",
+      "seat": "QA-HEAD-PLANT",
+      "person": "mbr.qa-head-plant",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

@@ -11,14 +11,14 @@
       "role": "CUSTODIAN",
       "office": "BRANCH-LC",
       "level": "HEAD_OFFICE",
-      "reportsTo": "BRANCH-MGR",
+      "reportsTo": "BRANCH-MGR-LC",
       "name": {
         "en": "Documents custodian",
         "hi": "दस्तावेज़ अभिरक्षक"
       }
     },
     {
-      "id": "BRANCH-MGR",
+      "id": "BRANCH-MGR-LC",
       "role": "BRANCHMGR",
       "office": "BRANCH-LC",
       "level": "HEAD_OFFICE",
@@ -37,8 +37,8 @@
       "from": "2026-01-01"
     },
     {
-      "seat": "BRANCH-MGR",
-      "person": "blc.branch-mgr",
+      "seat": "BRANCH-MGR-LC",
+      "person": "blc.branch-mgr-lc",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

@@ -70,7 +70,7 @@ def fiscal_transparency():
                         fields=['publicationSet*', 'reportPeriod*'], doc=None))
     d = s.setv('ft_defaults', 'Configuration', defaults='ledgerId=BUDGET;publicationSet=IN_YEAR_REPORT;'
                                                        'publisherSeat=TRANSPARENCY-OFFICER;'
-                                                       'approverSeat=ACCOUNTING-OFFICER')
+                                                       'approverSeat=ACCOUNTING-OFFICER-TREASURY')
     r = s.rule('ft_cfg', 'Publication deadline (DMN)', 'intl-pfm-publication-calendar')
     dl = clock(s, 'ft_due', 'publication', '${publicationSpec}')
     xe, xg = _check(p, s, 'ft_extract', 'Ledger extract', 'ledger.report', 'report',
@@ -104,9 +104,9 @@ def fiscal_transparency():
               [q('30D')], 'SYNTHETIC 30-day publication deadline',
               'country publication deadlines not verified (PFM-056, PEFA PI-9)')
     simple_seeds(pk, 'TREASURY', [
-        ('TRANSPARENCY-OFFICER', 'TRANSPARENCYOFFICER', 'ACCOUNTING-OFFICER', 'Fiscal transparency officer',
+        ('TRANSPARENCY-OFFICER', 'TRANSPARENCYOFFICER', 'ACCOUNTING-OFFICER-TREASURY', 'Fiscal transparency officer',
          'राजकोषीय पारदर्शिता अधिकारी'),
-        ('ACCOUNTING-OFFICER', 'ACCOUNTING-OFFICER', None, 'Accounting officer', 'लेखा अधिकारी')], 'ift')
+        ('ACCOUNTING-OFFICER-TREASURY', 'ACCOUNTING-OFFICER', None, 'Accounting officer', 'लेखा अधिकारी')], 'ift')
 
 
 # ------------------------------------------------------------------------------------------------ PFM-065
@@ -268,7 +268,7 @@ def pefa_evidence():
     p.forms.append(dict(key='gov-intl-pfm-pefa-evidence/request', name='PEFA evidence request | पीईएफए साक्ष्य अनुरोध',
                         decision=None, fields=['assessmentRef*', 'reportPeriod*', 'indicatorSet'], doc=None))
     d = s.setv('pf_defaults', 'Configuration', defaults='ledgerId=BUDGET;indicatorSet=PI-1..PI-31;'
-                                                       'coordinatorSeat=PEFA-COORDINATOR;reviewerSeat=ACCOUNTING-OFFICER')
+                                                       'coordinatorSeat=PEFA-COORDINATOR;reviewerSeat=ACCOUNTING-OFFICER-TREASURY')
     xe, xg = _check(p, s, 'pf_extract', 'Ledger report set', 'ledger.report', 'pefaEvidence',
                     'ledgerId,indicatorSet,reportPeriod', 'extract', ['extractDatasetRef'], '${coordinatorSeat}',
                     'Ledger report set not confirmed: check the ledger | लेजर रिपोर्ट की पुष्टि नहीं')
@@ -289,8 +289,8 @@ def pefa_evidence():
     s.flow(doc, end_ok(p, s, 'pf_end', 'Evidence pack issued', outcome='ISSUED', data=['extractDatasetRef']))
     s.side_exits('pf')
     simple_seeds(pk, 'TREASURY', [
-        ('PEFA-COORDINATOR', 'PEFACOORDINATOR', 'ACCOUNTING-OFFICER', 'PEFA coordinator', 'पीईएफए समन्वयक'),
-        ('ACCOUNTING-OFFICER', 'ACCOUNTING-OFFICER', None, 'Accounting officer', 'लेखा अधिकारी')], 'ipf2')
+        ('PEFA-COORDINATOR', 'PEFACOORDINATOR', 'ACCOUNTING-OFFICER-TREASURY', 'PEFA coordinator', 'पीईएफए समन्वयक'),
+        ('ACCOUNTING-OFFICER-TREASURY', 'ACCOUNTING-OFFICER', None, 'Accounting officer', 'लेखा अधिकारी')], 'ipf2')
 
 
 def build():

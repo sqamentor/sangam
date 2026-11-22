@@ -48,7 +48,7 @@ def bank_dea():
     c = pk.proc('sangam-sec-bank-dormancy-account', 'Dormancy of one account', '', start={'materialFields': 'key,amount,payeeAccount,currency,purpose'})
     s = c.root
     a = s.start('da_start', 'Account inactive', initiator=None)
-    d = s.setv('da_defaults', 'Configuration', defaults='yearsInactive=2;applicantRef=@key;opsSeat=OPS-CHECKER')
+    d = s.setv('da_defaults', 'Configuration', defaults='yearsInactive=2;applicantRef=@key;opsSeat=OPS-CHECKER-DEA')
     r = s.rule('da_rule', 'Inoperative / unclaimed (DMN)', 'sec-bank-dormancy')
     g = s.xgw('da_gw', 'Action?')
     s.seq(a, d, r, g)
@@ -86,7 +86,7 @@ def bank_dea():
     st = start_form(cl, s, 'dc_start', 'Claim or reactivation request', 'sec-bank-inoperative-deposits/claim',
                     'Reactivation / claim | पुनः सक्रियण / दावा', ['customerId*', 'accountNo*', 'claimantType*', 'documents'])
     d = s.setv('dc_defaults', 'Configuration', defaults='accountNo=@customerId;claimantType=HOLDER;transferredToDea=false;'
-               'opsSeat=OPS-CHECKER;applicantRef=@customerId')
+               'opsSeat=OPS-CHECKER-DEA;applicantRef=@customerId')
     kv = s.user('dc_kyc', 'Verify KYC and entitlement (holder, nominee, legal heir) | केवाईसी एवं पात्रता सत्यापन',
                 '${opsSeat}', form='sec-bank-inoperative-deposits/verify', decision=('claimDecision', ['approve', 'reject']),
                 fields=['transferredToDea', 'documents', 'remarks'], sod=True)
@@ -109,7 +109,7 @@ def bank_dea():
            [('dormancyAction', 'Action', 'string')],
            [(['>= 10'], [q('DEA')], 'DEA Fund Scheme 2014: unclaimed for 10 years'),
             (['>= 2'], [q('INOPERATIVE')], 'inoperative after 2 years'), (['-'], [q('NONE')], '')])
-    simple_seeds(pk, 'BRANCH-DEA', [('OPS-CHECKER', 'OPSCHECKER', None, 'Operations checker', 'संचालन जाँचकर्ता')], 'bdv')
+    simple_seeds(pk, 'BRANCH-DEA', [('OPS-CHECKER-DEA', 'OPSCHECKER', None, 'Operations checker', 'संचालन जाँचकर्ता')], 'bdv')
 
 
 # ============================================================================================ NBFC: DLG cap
@@ -169,7 +169,7 @@ def nbfc_dlg():
            [(['<= 120'], ['true'], 'within 120 days of overdue'), (['-'], ['false'], '')])
     authority(pk, 'sec-nbfc-dlg-authority', 'DLG approver', [('-', 'CREDITHEAD', 'board-approved policy')])
     powers(pk, 'sec-nbfc-dlg-powers', [('CREDITHEAD', 10000000000, '')])
-    simple_seeds(pk, 'NBFC-DLG', [('CREDIT-HEAD', 'CREDITHEAD', None, 'Head of credit', 'ऋण प्रमुख')], 'ndg')
+    simple_seeds(pk, 'NBFC-DLG', [('CREDIT-HEAD-DLG', 'CREDITHEAD', None, 'Head of credit', 'ऋण प्रमुख')], 'ndg')
 
 
 # ============================================================================================ capital markets
@@ -187,7 +187,7 @@ def cap_surveillance():
     st = start_form(p, s, 'sv_start', 'Alert received', 'sec-cap-surveillance-alert/alert', 'Surveillance alert | निगरानी चेतावनी',
                     ['clientCode*', 'alertType*', 'description'])
     d = s.setv('sv_defaults', 'Configuration', defaults='clientCode=@customerId;alertType=VOLUME_SPIKE;analystSeat=SURV-ANALYST;'
-               'coSeat=COMPLIANCE-OFFICER;applicantRef=@clientCode')
+               'coSeat=COMPLIANCE-OFFICER-SURV;applicantRef=@clientCode')
     ck = clock(s, 'sv_clock', 'alert', '${alertProcessSpec}')
     r = s.rule('sv_tl', 'Processing timeline (DMN)', 'sec-cap-surveillance-tl')
     s.seq(st, d, r, ck)
@@ -225,8 +225,8 @@ def cap_surveillance():
     pk.dmn('sec-cap-surveillance-tl', 'Alert processing timeline (exchange circulars; verify)', 'FIRST',
            [('Alert type', 'alertType', 'string')], [('alertProcessSpec', 'Process within', 'string')],
            [(['-'], [q('45D')], 'alerts processed within 45 days of generation (verify)')])
-    simple_seeds(pk, 'BROKER-SURV', [('SURV-ANALYST', 'ANALYST', 'COMPLIANCE-OFFICER', 'Surveillance analyst', 'निगरानी विश्लेषक'),
-                                     ('COMPLIANCE-OFFICER', 'COMPLIANCE', None, 'Compliance officer', 'अनुपालन अधिकारी')], 'csv')
+    simple_seeds(pk, 'BROKER-SURV', [('SURV-ANALYST', 'ANALYST', 'COMPLIANCE-OFFICER-SURV', 'Surveillance analyst', 'निगरानी विश्लेषक'),
+                                     ('COMPLIANCE-OFFICER-SURV', 'COMPLIANCE', None, 'Compliance officer', 'अनुपालन अधिकारी')], 'csv')
 
 
 def cap_corporate_action():
@@ -343,7 +343,7 @@ def ins_death_claim():
                         'amount=@sumAssured;caseType=DEATH_CLAIM;routingDecisionKey=sec-ins-death-authority;'
                         'powersDecisionKey=sec-ins-death-powers;executionConnector=claims.pay;executionStep=death-claim;'
                         'reconcileRequired=true;executionPayloadFields=policyNo,claimantName,amount;'
-                        'appellateSeat=CLAIMS-REVIEW-COMMITTEE;handlerSeat=LIFE-CLAIMS;investigatorSeat=INVESTIGATOR')
+                        'appellateSeat=CLAIMS-REVIEW-COMMITTEE-LIFE;handlerSeat=LIFE-CLAIMS;investigatorSeat=INVESTIGATOR-LIFE')
     # SL-115: the policy status fails closed (cleared before the query; no default stands in)
     cve, cv = checked_query(s, 'dc_cover', 'Policy status', 'policy.coverCheck', 'check', 'policyNo', 'cover',
                             ['coverActive'])
@@ -389,11 +389,11 @@ def ins_death_claim():
             (['-'], ['false', q('45D'), q('15D')], 's.45: no repudiation after 3 years; settle in 15 days (verify)')])
     authority(pk, 'sec-ins-death-authority', 'Death claim authority', [('<= 2500000', 'CLAIMSMGR', ''), ('-', 'CLAIMSHEAD', '')])
     powers(pk, 'sec-ins-death-powers', [('CLAIMSMGR', 2500000, ''), ('CLAIMSHEAD', 10000000000, '')])
-    simple_seeds(pk, 'LIFE-CLAIMS', [('LIFE-CLAIMS', 'HANDLER', 'CLAIMS-MGR', 'Life claims handler', 'जीवन दावा संचालक'),
-                                     ('INVESTIGATOR', 'INVESTIGATOR', 'CLAIMS-MGR', 'Claim investigator', 'दावा अन्वेषक'),
-                                     ('CLAIMS-MGR', 'CLAIMSMGR', 'CLAIMS-HEAD', 'Claims manager', 'दावा प्रबंधक'),
-                                     ('CLAIMS-HEAD', 'CLAIMSHEAD', None, 'Head of claims', 'दावा प्रमुख'),
-                                     ('CLAIMS-REVIEW-COMMITTEE', 'CRC', None, 'Claims review committee', 'दावा समीक्षा समिति')], 'idc')
+    simple_seeds(pk, 'LIFE-CLAIMS', [('LIFE-CLAIMS', 'HANDLER', 'CLAIMS-MGR-LIFE', 'Life claims handler', 'जीवन दावा संचालक'),
+                                     ('INVESTIGATOR-LIFE', 'INVESTIGATOR', 'CLAIMS-MGR-LIFE', 'Claim investigator', 'दावा अन्वेषक'),
+                                     ('CLAIMS-MGR-LIFE', 'CLAIMSMGR', 'CLAIMS-HEAD-LIFE', 'Claims manager', 'दावा प्रबंधक'),
+                                     ('CLAIMS-HEAD-LIFE', 'CLAIMSHEAD', None, 'Head of claims', 'दावा प्रमुख'),
+                                     ('CLAIMS-REVIEW-COMMITTEE-LIFE', 'CRC', None, 'Claims review committee', 'दावा समीक्षा समिति')], 'idc')
 
 
 def ins_reinsurance():
@@ -478,7 +478,7 @@ def ins_intermediary():
     eg = s.xgw('ag_examGw', 'Passed?')
     s.flow(er, eg)
     s.flow(eg, ex, '!examPassed', 'retake')
-    ap = s.user('ag_appoint', 'Background check and appointment | पृष्ठभूमि जाँच एवं नियुक्ति', 'PRINCIPAL-OFFICER',
+    ap = s.user('ag_appoint', 'Background check and appointment | पृष्ठभूमि जाँच एवं नियुक्ति', 'PRINCIPAL-OFFICER-AGENCY',
                 form='sec-ins-intermediary-licensing/appoint', decision=('appointDecision', ['approve', 'reject']),
                 fields=['remarks*'], sod=True)
     s.flow(eg, ap, None, 'passed', default=True)
@@ -500,8 +500,8 @@ def ins_intermediary():
            [('eligible', 'Eligible', 'boolean')],
            [([q('AGENT'), q('10TH,12TH,GRADUATE').replace(',', '","'), '-'], ['true'], 'minimum 10th / 12th by location'),
             ([q('BROKER'), '-', '>= 7500000'], ['true'], 'direct broker net worth (verify)'), (['-', '-', '-'], ['false'], '')])
-    simple_seeds(pk, 'AGENCY', [('AGENCY-ADMIN', 'AGENCY', 'PRINCIPAL-OFFICER', 'Agency administration', 'एजेंसी प्रशासन'),
-                                ('PRINCIPAL-OFFICER', 'PO', None, 'Designated person (agency)', 'नामित व्यक्ति (एजेंसी)')], 'iag')
+    simple_seeds(pk, 'AGENCY', [('AGENCY-ADMIN', 'AGENCY', 'PRINCIPAL-OFFICER-AGENCY', 'Agency administration', 'एजेंसी प्रशासन'),
+                                ('PRINCIPAL-OFFICER-AGENCY', 'PO', None, 'Designated person (agency)', 'नामित व्यक्ति (एजेंसी)')], 'iag')
 
 
 # ============================================================================================ healthcare
@@ -1166,7 +1166,7 @@ def hr_appraisal():
     c = pk.proc('sangam-sec-hr-appraisal', 'Appraisal of one employee', '', start={'materialFields': 'key'})
     s = c.root
     a = s.start('ap_start', 'Employee in scope', initiator=None)
-    d = s.setv('ap_defaults', 'Configuration', defaults='employeeGroup=EMPLOYEE;managerSeat=LINE-MANAGER;reviewerSeat=REVIEWER')
+    d = s.setv('ap_defaults', 'Configuration', defaults='employeeGroup=EMPLOYEE;managerSeat=LINE-MANAGER-PMS;reviewerSeat=REVIEWER-PMS')
     se, sd = s.sla_task('ap_self', 'Self-appraisal | स्व-मूल्यांकन', 'employeeGroup', form='sec-hr-appraisal/self', decision=None,
                         fields=['achievements*'], spec='10WD')
     me, md = s.sla_task('ap_manager', 'Manager rating | प्रबंधक रेटिंग', 'managerSeat', form='sec-hr-appraisal/manager',
@@ -1193,8 +1193,8 @@ def hr_appraisal():
     e = end_ok(c, s, 'ap_end', 'Appraised')
     s.flow(ah, e)
     s.flow(at, e)
-    simple_seeds(pk, 'PMS', [('LINE-MANAGER', 'MANAGER', 'REVIEWER', 'Line manager', 'प्रबंधक'),
-                             ('REVIEWER', 'REVIEWER', 'HR-BP', 'Reviewer', 'समीक्षक'),
+    simple_seeds(pk, 'PMS', [('LINE-MANAGER-PMS', 'MANAGER', 'REVIEWER-PMS', 'Line manager', 'प्रबंधक'),
+                             ('REVIEWER-PMS', 'REVIEWER', 'HR-BP', 'Reviewer', 'समीक्षक'),
                              ('HR-BP', 'HRBP', None, 'HR business partner', 'मानव संसाधन व्यवसाय साझेदार'),
                              ('CALIB-1', 'COMMITTEE', None, 'Calibration member 1', 'अंशांकन सदस्य 1'),
                              ('CALIB-2', 'COMMITTEE', None, 'Calibration member 2', 'अंशांकन सदस्य 2'),
@@ -1214,7 +1214,7 @@ def legal_litigation():
     s = p.root
     st = start_form(p, s, 'lt_start', 'Notice / summons received or claim to file', 'sec-legal-litigation/intake',
                     'Legal matter intake | विधिक मामला प्रविष्टि', ['matterType*', 'counterpartyName*', 'court', 'amount', 'documents'])
-    d = s.setv('lt_defaults', 'Configuration', defaults='matterType=SUMMONS;counterpartyName=X;court=CIVIL;counselSeat=LEGAL-COUNSEL;'
+    d = s.setv('lt_defaults', 'Configuration', defaults='matterType=SUMMONS;counterpartyName=X;court=CIVIL;counselSeat=LEGAL-COUNSEL-LIT;'
                'appealRecommended=false')
     r = s.rule('lt_rule', 'Response and appeal periods (DMN)', 'sec-legal-periods')
     ck = clock(s, 'lt_clock', 'response', '${responseSpec}')
@@ -1272,7 +1272,7 @@ def legal_litigation():
             ([q('COMMERCIAL')], [q('30D'), q('60D')], 'Commercial Courts Act s.13: 60 days'),
             ([q('CONSUMER')], [q('30D'), q('45D')], 'CPA 2019: version 30 (+15) days; appeal 45 days'),
             (['-'], [q('30D'), q('90D')], 'outward suit: file before limitation (3 years for contracts)')])
-    simple_seeds(pk, 'LEGAL', [('LEGAL-COUNSEL', 'COUNSEL', 'LEGAL-HEAD', 'In-house counsel', 'आंतरिक अधिवक्ता'),
+    simple_seeds(pk, 'LEGAL', [('LEGAL-COUNSEL-LIT', 'COUNSEL', 'LEGAL-HEAD', 'In-house counsel', 'आंतरिक अधिवक्ता'),
                                ('LEGAL-HEAD', 'GC', None, 'General counsel', 'प्रधान विधि अधिकारी')], 'llt')
 
 

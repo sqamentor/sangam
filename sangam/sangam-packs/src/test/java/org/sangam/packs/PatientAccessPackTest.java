@@ -181,7 +181,7 @@ class PatientAccessPackTest {
         assertEquals(List.of("pm_review"), openTasks(bk), "nothing is submitted before the review");
         assertTrue(calls(bk, "payer.metricsReport").isEmpty());
         assertNotNull(driver.var(bk, "metricsReportDueAt"), "the report clock is set");
-        driver.run(bk, t -> PackDriver.Answer.of("upa.compliance-officer", "COMPLIANCE-OFFICER",
+        driver.run(bk, t -> PackDriver.Answer.of("upa.compliance-officer-payer", "COMPLIANCE-OFFICER-PAYER",
                 "metricsDecision", "submitReport", "metricsReview", "checked against the API usage log"), 40);
         assertTrue(reached(bk, "pm_end"), "submitted with a confirmed receipt");
         assertEquals(1, calls(bk, "payer.metricsReport").size());
@@ -192,7 +192,7 @@ class PatientAccessPackTest {
     void anUnconfirmedReceiptHoldsTheCycle() {
         String bk = run(METRICS, "reportingPeriod", "2026", "sim_payer_metricsReport", "FAILED:RECIPIENT_DOWN");
         driver.run(bk, t -> "pm_review".equals(t.getTaskDefinitionKey())
-                ? PackDriver.Answer.of("upa.compliance-officer", "COMPLIANCE-OFFICER", "metricsDecision", "submitReport",
+                ? PackDriver.Answer.of("upa.compliance-officer-payer", "COMPLIANCE-OFFICER-PAYER", "metricsDecision", "submitReport",
                         "metricsReview", "checked") : null, 40);
         assertEquals(List.of("pm_submitHold"), openTasks(bk));
         assertFalse(reached(bk, "pm_end"), "closed as reported without a receipt");

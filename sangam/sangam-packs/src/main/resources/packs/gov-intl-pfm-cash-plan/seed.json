@@ -11,14 +11,14 @@
       "role": "CASHMANAGER",
       "office": "TREASURY",
       "level": "HEAD_OFFICE",
-      "reportsTo": "BUDGET-OFFICE",
+      "reportsTo": "BUDGET-OFFICE-TREASURY",
       "name": {
         "en": "Cash manager (treasury)",
         "hi": "नकद प्रबंधक"
       }
     },
     {
-      "id": "BUDGET-OFFICE",
+      "id": "BUDGET-OFFICE-TREASURY",
       "role": "BUDGETOFFICE",
       "office": "TREASURY",
       "level": "HEAD_OFFICE",
@@ -37,8 +37,8 @@
       "from": "2026-01-01"
     },
     {
-      "seat": "BUDGET-OFFICE",
-      "person": "icp.budget-office",
+      "seat": "BUDGET-OFFICE-TREASURY",
+      "person": "icp.budget-office-treasury",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

@@ -7,7 +7,7 @@
   ],
   "seats": [
     {
-      "id": "OPS-CHECKER",
+      "id": "OPS-CHECKER-RK",
       "role": "OPSCHECKER",
       "office": "BRANCH-RK",
       "level": "HEAD_OFFICE",
@@ -20,8 +20,8 @@
   ],
   "holdings": [
     {
-      "seat": "OPS-CHECKER",
-      "person": "brk.ops-checker",
+      "seat": "OPS-CHECKER-RK",
+      "person": "brk.ops-checker-rk",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

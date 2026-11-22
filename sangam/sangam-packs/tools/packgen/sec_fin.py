@@ -173,7 +173,7 @@ def bank_rekyc():
     c = pk.proc('sangam-sec-bank-rekyc-customer', 'Re-KYC of one customer', '', start={'materialFields': 'key'})
     s = c.root
     a1 = s.start('rkc_start', 'Customer due', initiator=None)
-    d = s.setv('rkc_defaults', 'Configuration', defaults='reminderGap=P30D;reviewSeat=OPS-CHECKER;changeInDetails=false;'
+    d = s.setv('rkc_defaults', 'Configuration', defaults='reminderGap=P30D;reviewSeat=OPS-CHECKER-RK;changeInDetails=false;'
                'applicantRef=@key')
     n1 = s.notify('rkc_intimate', 'Advance intimation', 'rekyc-due', 'sms,email,inapp', 'applicantRef')
     w1 = s.egw('rkc_wait1', 'Response or reminder')
@@ -217,7 +217,7 @@ def bank_rekyc():
                 'restrict', step='restrict')
     s.flow(dg, rs, None, 'restrict', default=True)
     s.flow(rs, s.end('rkc_endRestricted', 'Restricted pending KYC', listeners=[c.item_listener('RESTRICTED')]))
-    simple_seeds(pk, 'BRANCH-RK', [('OPS-CHECKER', 'OPSCHECKER', None, 'Operations checker', 'संचालन जाँचकर्ता')], 'brk')
+    simple_seeds(pk, 'BRANCH-RK', [('OPS-CHECKER-RK', 'OPSCHECKER', None, 'Operations checker', 'संचालन जाँचकर्ता')], 'brk')
 
 
 def bank_loan_origination():
@@ -469,11 +469,11 @@ def bank_collections():
     simple_seeds(pk, 'COLLECTIONS', [
         ('COLL-AGENT-1', 'AGENT', 'COLL-SUPERVISOR', 'Collection agent 1', 'वसूली एजेंट 1'),
         ('COLL-AGENT-2', 'AGENT', 'COLL-SUPERVISOR', 'Collection agent 2', 'वसूली एजेंट 2'),
-        ('COLL-SUPERVISOR', 'SUPERVISOR', 'BRANCH-MGR', 'Collections supervisor', 'वसूली पर्यवेक्षक'),
-        ('AUTHORISED-OFFICER', 'AO', 'BRANCH-MGR', 'Authorised officer (SARFAESI)', 'प्राधिकृत अधिकारी (सरफेसी)'),
-        ('BRANCH-MGR', 'BRANCHMGR', 'ZONAL-CREDIT', 'Branch manager', 'शाखा प्रबंधक'),
-        ('ZONAL-CREDIT', 'ZONALCREDIT', 'CREDIT-HEAD', 'Zonal credit head', 'क्षेत्रीय ऋण प्रमुख'),
-        ('CREDIT-HEAD', 'CREDITHEAD', None, 'Chief credit officer', 'मुख्य ऋण अधिकारी')], 'bco')
+        ('COLL-SUPERVISOR', 'SUPERVISOR', 'BRANCH-MGR-COLL', 'Collections supervisor', 'वसूली पर्यवेक्षक'),
+        ('AUTHORISED-OFFICER', 'AO', 'BRANCH-MGR-COLL', 'Authorised officer (SARFAESI)', 'प्राधिकृत अधिकारी (सरफेसी)'),
+        ('BRANCH-MGR-COLL', 'BRANCHMGR', 'ZONAL-CREDIT-COLL', 'Branch manager', 'शाखा प्रबंधक'),
+        ('ZONAL-CREDIT-COLL', 'ZONALCREDIT', 'CREDIT-HEAD-COLL', 'Zonal credit head', 'क्षेत्रीय ऋण प्रमुख'),
+        ('CREDIT-HEAD-COLL', 'CREDITHEAD', None, 'Chief credit officer', 'मुख्य ऋण अधिकारी')], 'bco')
 
 
 def bank_loan_closure():
@@ -526,7 +526,7 @@ def bank_loan_closure():
     noc = s.conn('lc_noc', 'Issue NOC', 'docs.noc', 'issue', 'submit', 'loanAccountNo,customerId', 'noc', step='noc')
     s.flow(sat, noc)
     comp = s.user('lc_compute', 'Compute compensation (Rs 5,000 / day, delay attributable) | क्षतिपूर्ति की गणना',
-                  'BRANCH-MGR', form='sec-bank-loan-closure/compensation', decision=None,
+                  'BRANCH-MGR-LC', form='sec-bank-loan-closure/compensation', decision=None,
                   fields=['delayDays*', 'compensationAmount*', 'remarks'], sod=True)
     g2 = s.xgw('lc_compGw', 'Released late?')
     m2 = s.xgw('lc_compMerge')
@@ -540,8 +540,8 @@ def bank_loan_closure():
     s.flow(pg, m2, None, 'not attributable', default=True)
     s.flow(pay, m2)
     s.flow(m2, end_ok(p, s, 'lc_end', 'Closed'))
-    simple_seeds(pk, 'BRANCH-LC', [('DOCS-CUSTODIAN', 'CUSTODIAN', 'BRANCH-MGR', 'Documents custodian', 'दस्तावेज़ अभिरक्षक'),
-                                   ('BRANCH-MGR', 'BRANCHMGR', None, 'Branch manager', 'शाखा प्रबंधक')], 'blc')
+    simple_seeds(pk, 'BRANCH-LC', [('DOCS-CUSTODIAN', 'CUSTODIAN', 'BRANCH-MGR-LC', 'Documents custodian', 'दस्तावेज़ अभिरक्षक'),
+                                   ('BRANCH-MGR-LC', 'BRANCHMGR', None, 'Branch manager', 'शाखा प्रबंधक')], 'blc')
 
 
 def bank_payment():
@@ -565,7 +565,7 @@ def bank_payment():
                         'routingDecisionKey=sec-bank-pay-checker;powersDecisionKey=sec-bank-pay-powers;'
                         'executionConnector=bank.transfer;executionStep=pay;reconcileRequired=true;'
                         'executionPayloadFields=payee,account,ifsc,amount,paymentRail;outputTemplate=payment-advice;'
-                        'appealAllowed=false;complianceSeat=AML-COMPLIANCE')
+                        'appealAllowed=false;complianceSeat=AML-COMPLIANCE-TREASURY')
     # SL-115: beneficiary validation and screening fail closed (each cleared before its query; no default stands in)
     bve, bv = checked_query(s, 'py_bene', 'Validate beneficiary name', 'bene.validate', 'lookup', 'account,ifsc,payee',
                             'bene', ['beneNameMatch'])
@@ -670,7 +670,7 @@ def bank_payment():
         ('PAY-CHECKER', 'PAYCHECKER', 'PAY-AUTH', 'Payment checker', 'भुगतान जाँचकर्ता'),
         ('PAY-AUTH', 'PAYAUTH', 'TREASURY-HEAD', 'Payment authoriser', 'भुगतान प्राधिकारी'),
         ('TREASURY-HEAD', 'TREASURYHEAD', None, 'Head of treasury operations', 'कोष संचालन प्रमुख'),
-        ('AML-COMPLIANCE', 'COMPLIANCE', None, 'AML compliance officer', 'धन-शोधन निवारण अनुपालन अधिकारी')], 'bpy')
+        ('AML-COMPLIANCE-TREASURY', 'COMPLIANCE', None, 'AML compliance officer', 'धन-शोधन निवारण अनुपालन अधिकारी')], 'bpy')
     pk.accept('SEC-BANK-PY-1', 'Above-band payment needs two different approvers', ['SEC-BANK-020', 'UP-05'],
               'amount = 3,000,000 by NEFT; beneficiary name matches, screening clear (simulator answers, SL-115)',
               'the checker approves', 'an authoriser task opens; the checker cannot take it',
@@ -882,7 +882,7 @@ def bank_cheque():
     n = s.notify('cq_notify', 'Tell the customer the same day', 'cheque-returned', 'sms,email', 'applicantRef')
     r = s.rule('cq_rule', 'Charges and repeated dishonour (DMN)', 'sec-bank-cheque-rules')
     s.seq(st, d, m, n, r)
-    wd = s.user('cq_withdraw', 'Withdraw cheque facility (repeated dishonour) | चेक सुविधा वापस लें', 'BRANCH-MGR',
+    wd = s.user('cq_withdraw', 'Withdraw cheque facility (repeated dishonour) | चेक सुविधा वापस लें', 'BRANCH-MGR-CLR',
                 form='sec-bank-cheque-return/withdraw', decision=None, fields=['remarks*'])
     g, mg = maybe(s, 'cq_rep', 'withdrawChequeBook', wd, wd, 'Repeated dishonour?')
     s.flow(r, g)
@@ -921,8 +921,8 @@ def bank_cheque():
              'dishonour four times in a financial year for 1 crore or more'),
             ([q('FUNDS_INSUFFICIENT'), '-', '-'], ['false', '500'], ''),
             (['-', '-', '-'], ['false', '0'], 'technical reasons: no charge to the customer')])
-    simple_seeds(pk, 'CLEARING', [('PAYEE-DESK', 'PAYEE', 'BRANCH-MGR', 'Payee legal desk', 'आदाता विधि डेस्क'),
-                                  ('BRANCH-MGR', 'BRANCHMGR', None, 'Branch manager', 'शाखा प्रबंधक')], 'bcq')
+    simple_seeds(pk, 'CLEARING', [('PAYEE-DESK', 'PAYEE', 'BRANCH-MGR-CLR', 'Payee legal desk', 'आदाता विधि डेस्क'),
+                                  ('BRANCH-MGR-CLR', 'BRANCHMGR', None, 'Branch manager', 'शाखा प्रबंधक')], 'bcq')
 
 
 def bank_dispute():
@@ -1280,8 +1280,8 @@ def nbfc_digital_lending():
     authority(pk, 'sec-nbfc-dl-authority', 'Digital loan authority', [('<= 200000', 'CREDITOFFICER', ''),
                                                                        ('-', 'CREDITHEAD', '')])
     powers(pk, 'sec-nbfc-dl-powers', [('CREDITOFFICER', 200000, ''), ('CREDITHEAD', 50000000, '')])
-    simple_seeds(pk, 'NBFC-CREDIT', [('CREDIT-OFFICER', 'CREDITOFFICER', 'CREDIT-HEAD', 'Credit officer (RE)', 'ऋण अधिकारी'),
-                                     ('CREDIT-HEAD', 'CREDITHEAD', None, 'Head of credit (RE)', 'ऋण प्रमुख')], 'ndl')
+    simple_seeds(pk, 'NBFC-CREDIT', [('CREDIT-OFFICER', 'CREDITOFFICER', 'CREDIT-HEAD-NBFC', 'Credit officer (RE)', 'ऋण अधिकारी'),
+                                     ('CREDIT-HEAD-NBFC', 'CREDITHEAD', None, 'Head of credit (RE)', 'ऋण प्रमुख')], 'ndl')
 
 
 # ============================================================================================ capital markets
@@ -1485,7 +1485,7 @@ def ins_motor_claim():
                         'powersDecisionKey=sec-ins-claim-powers;sanctionSla=7D;executionConnector=claims.pay;'
                         'executionStep=pay-claim;reconcileRequired=true;executionPayloadFields=policyNo,amount,garageId;'
                         'garageId=REIMBURSEMENT;outputTemplate=settlement-letter;appellateSeat=GRIEVANCE-CELL;'
-                        'handlerSeat=CLAIMS-HANDLER')
+                        'handlerSeat=CLAIMS-HANDLER-MOTOR')
     # SL-115: the cover check fails closed (cleared before the query; no default stands in)
     cve, cv = checked_query(s, 'mc_cover', 'Cover check', 'policy.coverCheck', 'check', 'policyNo,lossDate', 'cover',
                             ['coverActive'])
@@ -1583,7 +1583,7 @@ def ins_motor_claim():
     powers(pk, 'sec-ins-claim-powers', [('CLAIMSMGR', 200000, ''), ('ZONALCLAIMS', 2500000, ''),
                                         ('CLAIMSHEAD', 1000000000, '')])
     simple_seeds(pk, 'CLAIMS-MOTOR', [
-        ('CLAIMS-HANDLER', 'HANDLER', 'CLAIMS-MGR', 'Claims handler', 'दावा संचालक'),
+        ('CLAIMS-HANDLER-MOTOR', 'HANDLER', 'CLAIMS-MGR', 'Claims handler', 'दावा संचालक'),
         ('SIU', 'SIU', 'CLAIMS-HEAD', 'Special investigation unit', 'विशेष जाँच इकाई'),
         ('TP-LEGAL', 'LEGAL', 'CLAIMS-HEAD', 'Third-party legal desk', 'तृतीय पक्ष विधि डेस्क'),
         ('CLAIMS-MGR', 'CLAIMSMGR', 'ZONAL-CLAIMS', 'Claims manager', 'दावा प्रबंधक'),

@@ -241,7 +241,7 @@ def suspense_ageing():
                         fields=['suspenseAccount*', 'suspenseItemRef*', 'amount*', 'postedOn*', 'description'], doc=None))
     d = s.setv('su_defaults', 'Configuration',
                defaults='suspenseAccount=SUSPENSE;suspenseItemRef=@customerId;amount=0;ledgerId=ACCOUNTS;'
-                        'clearingSeat=SUSPENSE-CLERK;accountingSeat=ACCOUNTING-OFFICER')
+                        'clearingSeat=SUSPENSE-CLERK;accountingSeat=ACCOUNTING-OFFICER-TREASURY')
     r = s.rule('su_cfg', 'Suspense clearance period (DMN)', 'intl-pfm-suspense-ageing')
     ce, cx = s.sla_task('su_clear', 'Clear the suspense item to the correct head | उचंत मद का निपटान', 'clearingSeat',
                         form='gov-intl-pfm-suspense-ageing/clear', decision=('clearDecision', ['cleared', 'proposeWriteOff']),
@@ -278,8 +278,8 @@ def suspense_ageing():
     pk.placeholder('intl-pfm-suspense-ageing', 'SYNTHETIC 30-day clearance period',
                    'country suspense clearance period not verified (INTERNATIONAL-PFM-REQUIREMENTS PFM-051, section 5)')
     simple_seeds(pk, 'TREASURY', [
-        ('SUSPENSE-CLERK', 'SUSPENSECLERK', 'ACCOUNTING-OFFICER', 'Suspense clearing clerk', 'उचंत निपटान लिपिक'),
-        ('ACCOUNTING-OFFICER', 'ACCOUNTING-OFFICER', None, 'Accounting officer', 'लेखा अधिकारी')], 'isu')
+        ('SUSPENSE-CLERK', 'SUSPENSECLERK', 'ACCOUNTING-OFFICER-TREASURY', 'Suspense clearing clerk', 'उचंत निपटान लिपिक'),
+        ('ACCOUNTING-OFFICER-TREASURY', 'ACCOUNTING-OFFICER', None, 'Accounting officer', 'लेखा अधिकारी')], 'isu')
 
 
 def build():

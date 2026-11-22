@@ -7,7 +7,7 @@
   ],
   "seats": [
     {
-      "id": "CLAIMS-HANDLER",
+      "id": "CLAIMS-HANDLER-MOTOR",
       "role": "HANDLER",
       "office": "CLAIMS-MOTOR",
       "level": "HEAD_OFFICE",
@@ -86,8 +86,8 @@
   ],
   "holdings": [
     {
-      "seat": "CLAIMS-HANDLER",
-      "person": "imc.claims-handler",
+      "seat": "CLAIMS-HANDLER-MOTOR",
+      "person": "imc.claims-handler-motor",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     },

@@ -11,14 +11,14 @@
       "role": "PAYEE",
       "office": "CLEARING",
       "level": "HEAD_OFFICE",
-      "reportsTo": "BRANCH-MGR",
+      "reportsTo": "BRANCH-MGR-CLR",
       "name": {
         "en": "Payee legal desk",
         "hi": "आदाता विधि डेस्क"
       }
     },
     {
-      "id": "BRANCH-MGR",
+      "id": "BRANCH-MGR-CLR",
       "role": "BRANCHMGR",
       "office": "CLEARING",
       "level": "HEAD_OFFICE",
@@ -37,8 +37,8 @@
       "from": "2026-01-01"
     },
     {
-      "seat": "BRANCH-MGR",
-      "person": "bcq.branch-mgr",
+      "seat": "BRANCH-MGR-CLR",
+      "person": "bcq.branch-mgr-clr",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

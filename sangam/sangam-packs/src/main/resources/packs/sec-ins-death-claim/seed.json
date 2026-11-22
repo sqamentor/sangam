@@ -11,36 +11,36 @@
       "role": "HANDLER",
       "office": "LIFE-CLAIMS",
       "level": "HEAD_OFFICE",
-      "reportsTo": "CLAIMS-MGR",
+      "reportsTo": "CLAIMS-MGR-LIFE",
       "name": {
         "en": "Life claims handler",
         "hi": "जीवन दावा संचालक"
       }
     },
     {
-      "id": "INVESTIGATOR",
+      "id": "INVESTIGATOR-LIFE",
       "role": "INVESTIGATOR",
       "office": "LIFE-CLAIMS",
       "level": "HEAD_OFFICE",
-      "reportsTo": "CLAIMS-MGR",
+      "reportsTo": "CLAIMS-MGR-LIFE",
       "name": {
         "en": "Claim investigator",
         "hi": "दावा अन्वेषक"
       }
     },
     {
-      "id": "CLAIMS-MGR",
+      "id": "CLAIMS-MGR-LIFE",
       "role": "CLAIMSMGR",
       "office": "LIFE-CLAIMS",
       "level": "HEAD_OFFICE",
-      "reportsTo": "CLAIMS-HEAD",
+      "reportsTo": "CLAIMS-HEAD-LIFE",
       "name": {
         "en": "Claims manager",
         "hi": "दावा प्रबंधक"
       }
     },
     {
-      "id": "CLAIMS-HEAD",
+      "id": "CLAIMS-HEAD-LIFE",
       "role": "CLAIMSHEAD",
       "office": "LIFE-CLAIMS",
       "level": "HEAD_OFFICE",
@@ -51,7 +51,7 @@
       }
     },
     {
-      "id": "CLAIMS-REVIEW-COMMITTEE",
+      "id": "CLAIMS-REVIEW-COMMITTEE-LIFE",
       "role": "CRC",
       "office": "LIFE-CLAIMS",
       "level": "HEAD_OFFICE",
@@ -70,26 +70,26 @@
       "from": "2026-01-01"
     },
     {
-      "seat": "INVESTIGATOR",
-      "person": "idc.investigator",
+      "seat": "INVESTIGATOR-LIFE",
+      "person": "idc.investigator-life",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     },
     {
-      "seat": "CLAIMS-MGR",
-      "person": "idc.claims-mgr",
+      "seat": "CLAIMS-MGR-LIFE",
+      "person": "idc.claims-mgr-life",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     },
     {
-      "seat": "CLAIMS-HEAD",
-      "person": "idc.claims-head",
+      "seat": "CLAIMS-HEAD-LIFE",
+      "person": "idc.claims-head-life",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     },
     {
-      "seat": "CLAIMS-REVIEW-COMMITTEE",
-      "person": "idc.claims-review-committee",
+      "seat": "CLAIMS-REVIEW-COMMITTEE-LIFE",
+      "person": "idc.claims-review-committee-life",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

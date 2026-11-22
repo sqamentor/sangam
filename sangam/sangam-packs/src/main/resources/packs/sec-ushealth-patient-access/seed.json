@@ -29,7 +29,7 @@
       }
     },
     {
-      "id": "COMPLIANCE-OFFICER",
+      "id": "COMPLIANCE-OFFICER-PAYER",
       "role": "PAYERCOMPLIANCE",
       "office": "PAYER",
       "level": "HEAD_OFFICE",
@@ -54,8 +54,8 @@
       "from": "2026-01-01"
     },
     {
-      "seat": "COMPLIANCE-OFFICER",
-      "person": "upa.compliance-officer",
+      "seat": "COMPLIANCE-OFFICER-PAYER",
+      "person": "upa.compliance-officer-payer",
       "basis": "SUBSTANTIVE",
       "from": "2026-01-01"
     }

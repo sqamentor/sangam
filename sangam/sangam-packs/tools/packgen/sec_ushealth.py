@@ -430,7 +430,7 @@ def claim():
     d = s.setv('cl_defaults', 'Configuration',
                defaults='patientName=@customerId;memberId=@customerId;payerId=SIMPAYER;payerProgram=COMMERCIAL;'
                         'providerNpi=1234567893;patientControlNumber=@customerId;totalCharge=100;claimType=837P;'
-                        'frequency=1;coderSeat=CODER;billerSeat=BILLER;denialSeat=DENIAL-ANALYST;rcmSeat=REV-CYCLE-MGR;'
+                        'frequency=1;coderSeat=CODER;billerSeat=BILLER;denialSeat=DENIAL-ANALYST;rcmSeat=REV-CYCLE-MGR-BILLING;'
                         'ledgerId=RECEIVABLES;line=CLAIM;period=OPEN;'
                         'receivableRaised=null;correctionNo=0;eraTraceNumber=no-trace')
     cfg = s.rule('cl_cfg', 'Timely filing, follow-up and appeal windows (DMN)', 'sec-ushealth-claim-clocks')
@@ -622,10 +622,10 @@ def claim():
             ([q('29')], [q('WRITE_OFF')], 'timely filing expired'),
             (['-'], [q('REVIEW')], '')])
     useeds(pk, 'BILLING-OFFICE', [
-        ('CODER', 'CODER', 'REV-CYCLE-MGR', 'Medical coder', 'Codificador médico'),
-        ('BILLER', 'BILLER', 'REV-CYCLE-MGR', 'Biller', 'Facturador'),
-        ('DENIAL-ANALYST', 'DENIALS', 'REV-CYCLE-MGR', 'Denial analyst', 'Analista de denegaciones'),
-        ('REV-CYCLE-MGR', 'RCM', None, 'Revenue cycle manager', 'Gerente del ciclo de ingresos')], 'ucl')
+        ('CODER', 'CODER', 'REV-CYCLE-MGR-BILLING', 'Medical coder', 'Codificador médico'),
+        ('BILLER', 'BILLER', 'REV-CYCLE-MGR-BILLING', 'Biller', 'Facturador'),
+        ('DENIAL-ANALYST', 'DENIALS', 'REV-CYCLE-MGR-BILLING', 'Denial analyst', 'Analista de denegaciones'),
+        ('REV-CYCLE-MGR-BILLING', 'RCM', None, 'Revenue cycle manager', 'Gerente del ciclo de ingresos')], 'ucl')
 
 
 # ============================================================================================ GFE and PPDR
@@ -646,7 +646,7 @@ def gfe():
                'Scheduling | Programación', ['patientName*', 'serviceDescription*', 'scheduledDate', 'daysUntilService*'])
     d = s.setv('gf_defaults', 'Configuration',
                defaults='patientName=@customerId;daysUntilService=10;expectedCharges=0;billedAmount=0;'
-                        'gfeSeat=FINANCIAL-COUNSELOR;billingSeat=PATIENT-BILLING;complianceSeat=COMPLIANCE')
+                        'gfeSeat=FINANCIAL-COUNSELOR-GFE;billingSeat=PATIENT-BILLING;complianceSeat=COMPLIANCE')
     r = s.rule('gf_cfg', 'GFE timeframe and dispute threshold (DMN)', 'sec-ushealth-gfe-config')
     s.seq(st, d, r)
     ge, gx = s.sla_task('gf_estimate', 'Prepare and deliver the good-faith estimate (with co-providers) | '
@@ -697,7 +697,7 @@ def gfe():
             (['-'], [q('1WD'), '400', q('-P120D')], 'under 3 days: no GFE duty; SYNTHETIC courtesy')],
            doc='US-HLT-110, US-HLT-112. $400 and 120 days: verify current CMS figures.')
     useeds(pk, 'PROVIDER', [
-        ('FINANCIAL-COUNSELOR', 'FINCOUNSEL', 'COMPLIANCE', 'Financial counselor', 'Asesor financiero'),
+        ('FINANCIAL-COUNSELOR-GFE', 'FINCOUNSEL', 'COMPLIANCE', 'Financial counselor', 'Asesor financiero'),
         ('PATIENT-BILLING', 'PATBILL', 'COMPLIANCE', 'Patient billing', 'Facturación al paciente'),
         ('COMPLIANCE', 'COMPLIANCE', None, 'Compliance officer', 'Oficial de cumplimiento')], 'ugf')
 
@@ -1360,7 +1360,7 @@ def patient_access():
                'Usage metrics report | Informe de métricas de uso', ['payerProgram*', 'reportingPeriod*'])
     d = s.setv('pm_defaults', 'Configuration',
                defaults='payerProgram=MA;reportingPeriod=NOT_STATED;interopSeat=INTEROP-ANALYST;'
-                        'complianceSeat=COMPLIANCE-OFFICER')
+                        'complianceSeat=COMPLIANCE-OFFICER-PAYER')
     pgw = s.xgw('pm_periodGw', 'Reporting period stated?')
     s.seq(st, d, pgw)
     s.flow(pgw, unconfirmed_hold(p, s, 'pm_periodHold', 'Reporting period not stated: state it before anything is '
@@ -1439,7 +1439,7 @@ def patient_access():
     useeds(pk, 'PAYER', [
         ('INTEROP-ANALYST', 'INTEROP', 'MEMBER-SERVICES', 'Interoperability analyst', 'Analista de interoperabilidad'),
         ('MEMBER-SERVICES', 'MEMBERSVC', None, 'Member services', 'Servicios al afiliado'),
-        ('COMPLIANCE-OFFICER', 'PAYERCOMPLIANCE', None, 'Compliance officer', 'Oficial de cumplimiento')], 'upa')
+        ('COMPLIANCE-OFFICER-PAYER', 'PAYERCOMPLIANCE', None, 'Compliance officer', 'Oficial de cumplimiento')], 'upa')
 
 
 def build():

@@ -228,7 +228,7 @@ def standard_reports():
     p.forms.append(dict(key='gov-intl-pfm-standard-reports/period', name='Report period | रिपोर्ट अवधि', decision=None,
                         fields=['reportSet*', 'reportPeriod*', 'ledgerId'], doc=None))
     d = s.setv('sr_defaults', 'Configuration', defaults='ledgerId=BUDGET;reportSet=MONTHLY;'
-                                                       'preparerSeat=ACCOUNTS-OFFICER;reviewerSeat=ACCOUNTING-OFFICER')
+                                                       'preparerSeat=ACCOUNTS-OFFICER;reviewerSeat=ACCOUNTING-OFFICER-TREASURY')
     r = s.rule('sr_cfg', 'Report due date (DMN)', 'intl-pfm-report-calendar')
     dl = clock(s, 'sr_due', 'report', '${reportDueSpec}')
     xe, xg = _check(p, s, 'sr_extract', 'Ledger extract', 'ledger.report', 'report', 'ledgerId,reportSet,reportPeriod',
@@ -256,8 +256,8 @@ def standard_reports():
               [q('15D')], 'SYNTHETIC 15-day report deadline',
               'country in-year and annual report deadlines not verified (PFM-040, PEFA PI-28)')
     simple_seeds(pk, 'TREASURY', [
-        ('ACCOUNTS-OFFICER', 'ACCOUNTSOFFICER', 'ACCOUNTING-OFFICER', 'Accounts officer', 'लेखा अधिकारी (तैयारी)'),
-        ('ACCOUNTING-OFFICER', 'ACCOUNTING-OFFICER', None, 'Accounting officer', 'लेखा अधिकारी')], 'isr')
+        ('ACCOUNTS-OFFICER', 'ACCOUNTSOFFICER', 'ACCOUNTING-OFFICER-TREASURY', 'Accounts officer', 'लेखा अधिकारी (तैयारी)'),
+        ('ACCOUNTING-OFFICER-TREASURY', 'ACCOUNTING-OFFICER', None, 'Accounting officer', 'लेखा अधिकारी')], 'isr')
 
 
 # ------------------------------------------------------------------------------------------------ 3 cash plan
@@ -277,7 +277,7 @@ def cash_plan():
     p.forms.append(dict(key='gov-intl-pfm-cash-plan/period', name='Cash plan period | नकद योजना अवधि', decision=None,
                         fields=['planPeriod*', 'ledgerId'], doc=None))
     d = s.setv('cp_defaults', 'Configuration', defaults='ledgerId=BUDGET;cashManagerSeat=CASH-MANAGER;'
-                                                       'budgetOfficeSeat=BUDGET-OFFICE')
+                                                       'budgetOfficeSeat=BUDGET-OFFICE-TREASURY')
     r = s.rule('cp_cfg', 'Cash plan cycle (DMN)', 'intl-pfm-cash-plan')
     fe, fg = _check(p, s, 'cp_forecast', 'Cash forecast', 'ledger.cashForecast', 'forecast',
                     'ledgerId,planPeriod,cashPlanHorizon', 'forecast', ['forecastRef'], '${cashManagerSeat}',
@@ -312,8 +312,8 @@ def cash_plan():
               [q('MONTHLY'), q('P30D')], 'SYNTHETIC monthly horizon, 30-day update',
               'country cash-planning horizon and update cycle not verified (PFM-047, PEFA PI-21.2)')
     simple_seeds(pk, 'TREASURY', [
-        ('CASH-MANAGER', 'CASHMANAGER', 'BUDGET-OFFICE', 'Cash manager (treasury)', 'नकद प्रबंधक'),
-        ('BUDGET-OFFICE', 'BUDGETOFFICE', None, 'Budget office', 'बजट कार्यालय')], 'icp')
+        ('CASH-MANAGER', 'CASHMANAGER', 'BUDGET-OFFICE-TREASURY', 'Cash manager (treasury)', 'नकद प्रबंधक'),
+        ('BUDGET-OFFICE-TREASURY', 'BUDGETOFFICE', None, 'Budget office', 'बजट कार्यालय')], 'icp')
 
 
 # ------------------------------------------------------------------------------------------------ 4 transfer deadline
@@ -389,7 +389,7 @@ def budget_accounting_reconciliation():
     p.forms.append(dict(key='gov-intl-pfm-budget-accounting-reconciliation/period', name='Reconciliation period | '
                         'मिलान अवधि', decision=None, fields=['reconPeriod*', 'ledgerId'], doc=None))
     d = s.setv('br_defaults', 'Configuration', defaults='ledgerId=BUDGET;accountantSeat=ACCOUNTANT;'
-                                                       'reviewerSeat=ACCOUNTING-OFFICER')
+                                                       'reviewerSeat=ACCOUNTING-OFFICER-TREASURY')
     oe, oq = checked_query(s, 'br_outturn', 'Budget outturn (ledger)', 'ledger.outturn', 'outturn',
                            'ledgerId,reconPeriod', 'outturn', ['outturnAmount'])
     ae, aq = checked_query(s, 'br_accounts', 'Expense (financial statements)', 'accounts.statement', 'expense',
@@ -426,8 +426,8 @@ def budget_accounting_reconciliation():
                        data=['outturnAmount', 'accountingAmount', 'differenceAmount']))
     s.side_exits('br')
     simple_seeds(pk, 'TREASURY', [
-        ('ACCOUNTANT', 'ACCOUNTANT', 'ACCOUNTING-OFFICER', 'Accountant (financial statements)', 'लेखाकार'),
-        ('ACCOUNTING-OFFICER', 'ACCOUNTING-OFFICER', None, 'Accounting officer', 'लेखा अधिकारी')], 'ibr')
+        ('ACCOUNTANT', 'ACCOUNTANT', 'ACCOUNTING-OFFICER-TREASURY', 'Accountant (financial statements)', 'लेखाकार'),
+        ('ACCOUNTING-OFFICER-TREASURY', 'ACCOUNTING-OFFICER', None, 'Accounting officer', 'लेखा अधिकारी')], 'ibr')
 
 
 # ------------------------------------------------------------------------------------------------ 6 replenishment
@@ -517,7 +517,7 @@ def do_not_pay():
     st = s.start('dn_start', 'Payment to screen', form='gov-intl-pfm-do-not-pay/payment')
     p.forms.append(dict(key='gov-intl-pfm-do-not-pay/payment', name='Payment to screen | जाँच हेतु भुगतान',
                         decision=None, fields=['payee*', 'payeeIdentifier*', 'paymentRef*', 'amount'], doc=None))
-    d = s.setv('dn_defaults', 'Configuration', defaults='screeningSeat=PAYEE-SCREENING;reviewerSeat=ACCOUNTING-OFFICER')
+    d = s.setv('dn_defaults', 'Configuration', defaults='screeningSeat=PAYEE-SCREENING;reviewerSeat=ACCOUNTING-OFFICER-TREASURY')
     se, sg = _check(p, s, 'dn_screen', 'Screen the payee', 'payee.exclusion', 'screen', 'payee,payeeIdentifier',
                     'exclusion', ['exclusionMatch'], '${screeningSeat}',
                     'Screening not confirmed: payment held, confirm the lists | जाँच की पुष्टि नहीं, भुगतान रोका')
@@ -544,8 +544,8 @@ def do_not_pay():
                       data=['matchDecision']), None, 'false positive', default=True)
     s.side_exits('dn')
     simple_seeds(pk, 'TREASURY', [
-        ('PAYEE-SCREENING', 'SCREENINGOFFICER', 'ACCOUNTING-OFFICER', 'Payee screening officer', 'प्राप्तकर्ता जाँच अधिकारी'),
-        ('ACCOUNTING-OFFICER', 'ACCOUNTING-OFFICER', None, 'Accounting officer', 'लेखा अधिकारी')], 'idn')
+        ('PAYEE-SCREENING', 'SCREENINGOFFICER', 'ACCOUNTING-OFFICER-TREASURY', 'Payee screening officer', 'प्राप्तकर्ता जाँच अधिकारी'),
+        ('ACCOUNTING-OFFICER-TREASURY', 'ACCOUNTING-OFFICER', None, 'Accounting officer', 'लेखा अधिकारी')], 'idn')
 
 
 def build():
