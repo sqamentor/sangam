@@ -206,16 +206,22 @@ class GetHandlersNeverWriteTest {
         }
         Set<String> sourceNames = new TreeSet<>();
         model.sources.forEach(s -> sourceNames.add(s.toString()));
-        List<String> violations = ratchetViolations(bad.size(), flagged, sourceNames, RECORDED_FLAGGED, CLEAN_HANDLERS);
+        List<String> violations = ratchetViolations(bad.size(), flagged, sourceNames, recordedFlagged(), CLEAN_HANDLERS);
         assertTrue(violations.isEmpty(), String.join("\n", violations) + "\n" + msg);
     }
 
     /**
-     * C3 ratchet (joint decision EV-M-0990, CONTRACT-REGISTER row of 2026-11-22): the recorded number of GET handlers
-     * that reach a write. Lower it when a fix lands; never raise it. The accepted writes on GET (R6) are listed in the
-     * register; the full redesign (option A) is its own backlog row.
+     * C3 ratchet (joint decision EV-M-0990, CONTRACT-REGISTER rows of 2026-11-22): the recorded number of GET handlers
+     * that reach a write, and by name in {@link #RECORDED_LIST}. Joint decision EV-M-0999 raised it once, from 463 to
+     * 465, for AdminController.policyChanges and AdminController.policyChange (GET /admin/policies/changes and
+     * /admin/policies/changes/{id}): their only data write is the accepted R6 AUTH_DENIED audit, reached through
+     * AuthorizationService.require. Lower both when a fix lands. Any later raise, or any name added to the list, needs
+     * its own joint decision with path evidence; it is never done in a merge. The full redesign is backlog M-151.
      */
-    static final int RECORDED_FLAGGED = 463;
+    static final int RECORDED_FLAGGED = 465;
+
+    /** The flagged handlers by name, next to this class in the test resources. */
+    static final String RECORDED_LIST = "get-handlers-flagged.txt";
 
     /** The GET handlers that reach no write; each must stay a GET handler and stay clean. */
     static final Set<String> CLEAN_HANDLERS = Set.of(
@@ -229,7 +235,45 @@ class GetHandlersNeverWriteTest {
 
     static List<String> ratchetViolations(int flaggedCount, Set<String> flagged, Set<String> sources,
             Set<String> recordedFlagged, Set<String> clean) {
-        return ratchetViolations(flaggedCount, flagged, sources, recordedFlagged.size(), clean);
+        List<String> out = ratchetViolations(flaggedCount, flagged, sources, recordedFlagged.size(), clean);
+        for (String f : new TreeSet<>(flagged)) {
+            if (!recordedFlagged.contains(f)) {
+                out.add("GET handler " + f + " is newly flagged: it is not in " + RECORDED_LIST
+                        + " (EV-M-0999; adding it needs its own joint decision with path evidence)");
+            }
+        }
+        if (flaggedCount != flagged.size()) {
+            // the list holds names without descriptors, so an overload could hide behind a recorded name
+            out.add(flaggedCount + " flagged handlers have only " + flagged.size()
+                    + " distinct names; give each GET handler its own method name (EV-M-0999)");
+        }
+        return out;
+    }
+
+    private static Set<String> recordedFlagged() {
+        try (InputStream in = GetHandlersNeverWriteTest.class.getResourceAsStream(RECORDED_LIST)) {
+            assertTrue(in != null, RECORDED_LIST + " is missing from the test resources");
+            Set<String> names = new TreeSet<>();
+            new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).lines()
+                    .filter(l -> !l.isBlank() && !l.startsWith("#")).forEach(names::add);
+            return names;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Test
+    void theRecordedListHasTheRecordedCount() {
+        Set<String> recorded = recordedFlagged();
+        assertTrue(recorded.size() == RECORDED_FLAGGED,
+                RECORDED_LIST + " has " + recorded.size() + " names, the recorded count is " + RECORDED_FLAGGED);
+    }
+
+    @Test
+    void anOverloadCannotHideBehindARecordedName() {
+        Set<String> recorded = Set.of("a.A.w1", "a.A.w2");
+        List<String> out = ratchetViolations(2, Set.of("a.A.w1"), recorded, recorded, Set.of());
+        assertTrue(out.size() == 1 && out.get(0).contains("distinct names"), "overload at the same count: " + out);
     }
 
     @Test
