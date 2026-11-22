@@ -1,0 +1,6 @@
+{
+  "modules": "sangam-onboarding,sangam-server",
+  "dbs": "",
+  "chunks": "",
+  "ui": false
+}
