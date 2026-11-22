@@ -232,8 +232,12 @@ class PlugAndPlayIT extends AbstractAcceptanceIT {
     void at7ExportImportDiff() throws Exception {
         JsonNode s = scenario("AT-7");
         String source = s.at("/source").asText();
-        assumeTrue(maker().send("GET", "/api/v1/onboarding/runs?tenant=" + source, null).body().size() > 0,
-                "AT-1 did not onboard its tenant; AT-7 needs it");
+        boolean live = false;
+        for (JsonNode run : maker().send("GET", "/api/v1/onboarding/runs?tenant=" + source, null).body()) {
+            live |= "LIVE".equals(run.path("status").asText());
+        }
+        // a run that stopped before GO_LIVE has no ACTIVE profile to export (AT-1 reports that failure itself)
+        assumeTrue(live, "AT-1 did not bring its tenant LIVE; AT-7 needs it");
         JsonNode exported = maker().call("GET", "/api/v1/onboarding/tenants/by-tenant/bundle?tenant=" + source, null);
         assertThat(exported.path("signature").isMissingNode()).as("the bundle must be signed").isFalse();
         Map<String, Object> imp = AccHttp.JSON.convertValue(s.path("import"), Map.class);

@@ -22,10 +22,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import org.operaton.bpm.engine.IdentityService;
 import org.operaton.bpm.engine.ProcessEngine;
+import org.operaton.bpm.engine.impl.identity.Authentication;
 import org.operaton.bpm.engine.repository.Deployment;
 import org.sangam.config.master.SeedLoader;
 import org.sangam.config.store.JdbcConfigStore;
@@ -224,8 +227,18 @@ public final class OnboardingBridges {
         }
     }
 
-    /** Per-tenant deployment on the cell engine. */
+    /**
+     * Per-tenant deployment on the cell engine.
+     *
+     * <p>Joint decision EV-M-0986, option A: the PACKS step is a job of the run's tenant (the maker's home tenant), and
+     * the job executor runs it as that tenant, which SL-13 ({@code TenantScopedCreation}) refuses to let deploy into
+     * another one. So the engine calls for the target tenant, and only those, run as exactly the target tenant
+     * ({@link #asTenant}).
+     */
     public static final class Packs implements OnboardingPorts.PackInstallPort {
+        /** The engine user of the calls made as the target tenant; it has no group, so it is never an engine admin. */
+        private static final String PRINCIPAL = "tenant-onboarding";
+
         private final ProcessEngine engine;
         private final PackDeployer deployer;
         private final PacksTenantDeployer tenantDeployer;
@@ -238,6 +251,10 @@ public final class OnboardingBridges {
 
         @Override
         public Map<String, String> installed(String tenant) {
+            return asTenant(tenant, () -> installedPacks(tenant));
+        }
+
+        private Map<String, String> installedPacks(String tenant) {
             Map<String, String> out = new LinkedHashMap<>();
             for (Deployment d : engine.getRepositoryService().createDeploymentQuery().tenantIdIn(tenant).list()) {
                 String n = d.getName();
@@ -258,7 +275,7 @@ public final class OnboardingBridges {
         @Override
         public Map<String, String> deploy(String tenant, List<String> ids) {
             Map<String, String> out = new LinkedHashMap<>();
-            for (PackDeployer.Result r : deployer.deploy(ids, tenant)) {
+            for (PackDeployer.Result r : asTenant(tenant, () -> deployer.deploy(ids, tenant))) {
                 out.put(r.packId() + "@" + r.version(), r.deploymentId());
             }
             return out;
@@ -269,12 +286,34 @@ public final class OnboardingBridges {
             var b = engine.getRepositoryService().createDeployment().name("onboarding-overrides:" + tenant)
                     .tenantId(tenant).enableDuplicateFiltering(false);
             dmn.forEach((key, xml) -> b.addString(key + ".dmn", xml));
-            return b.deploy().getId();
+            return asTenant(tenant, () -> b.deploy().getId());
         }
 
         @Override
         public void select(String tenant, Set<String> ids) {
             tenantDeployer.select(tenant, ids);
+        }
+
+        /**
+         * Runs {@code work} with an engine authentication of exactly {@code tenant}, then restores the caller's, also
+         * after a throw (pattern of {@code EngineRestTenantFilter}). A blank tenant is refused: never a shared scope.
+         */
+        private <T> T asTenant(String tenant, Supplier<T> work) {
+            if (tenant == null || tenant.isBlank()) {
+                throw new IllegalArgumentException("the target tenant is required");
+            }
+            IdentityService ids = engine.getIdentityService();
+            Authentication previous = ids.getCurrentAuthentication();
+            ids.setAuthentication(PRINCIPAL, List.of(), List.of(tenant));
+            try {
+                return work.get();
+            } finally {
+                if (previous == null) {
+                    ids.clearAuthentication();
+                } else {
+                    ids.setAuthentication(previous);
+                }
+            }
         }
     }
 

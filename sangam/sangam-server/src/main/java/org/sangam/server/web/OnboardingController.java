@@ -20,6 +20,8 @@ import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.Permissions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +36,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/onboarding")
 public class OnboardingController {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OnboardingController.class);
 
     public record ApproveRequest(String presentedHash) {
     }
@@ -82,6 +86,31 @@ public class OnboardingController {
         return s;
     }
 
+    /**
+     * The IFMS maker rule (joint decisions EV-M-0986, EV-M-0994): a non-platform identity acting for any tenant other
+     * than its own (or for none) may not start onboarding; the refusal is audited in the caller's own tenant. It comes
+     * before {@link #svc} and only narrows: whoever passes still needs the platform administrator gate there.
+     */
+    private void requireMakerScope(RequestContext ctx, String target, String route) {
+        if (ctx.inGroup(Permissions.GROUP_PLATFORM) || (target != null && target.equals(ctx.tenantId()))) {
+            return;
+        }
+        Map<String, Object> refusal = new LinkedHashMap<>();
+        refusal.put("route", route);
+        refusal.put("maker", ctx.principalId());
+        refusal.put("makerTenant", ctx.tenantId());
+        refusal.put("targetTenant", target);
+        refusal.put("actor", ctx.actor());
+        try {
+            audit.record(ctx, "onb:" + ctx.tenantId(), "ONBOARDING_START_REFUSED", refusal);
+        } catch (RuntimeException e) {
+            // still refused: a failed audit write never turns the refusal into a start
+            LOG.error("ONBOARDING_START_REFUSED audit for tenant {} failed", ctx.tenantId(), e);
+        }
+        throw ApiProblem.forbidden("ONBOARDING_OTHER_TENANT",
+                "Only a platform operator may start onboarding for a tenant other than the caller's own");
+    }
+
     private static <T> T call(Supplier<T> work) {
         try {
             return work.get();
@@ -100,6 +129,7 @@ public class OnboardingController {
 
     @PostMapping("/runs")
     public OnboardingRun start(RequestContext ctx, @RequestBody OnboardingRequest body) {
+        requireMakerScope(ctx, body.tenantId(), "POST /onboarding/runs");
         OnboardingService s = svc(ctx);
         return call(() -> s.start(body, ctx.principalId()));
     }
@@ -170,6 +200,9 @@ public class OnboardingController {
     /** Verifies the signature, then dry-runs or starts the onboarding of the target tenant. */
     @PostMapping("/bundles/import")
     public Map<String, Object> importBundle(RequestContext ctx, @RequestBody BundleImportRequest body) {
+        if (!Boolean.TRUE.equals(body.dryRun())) {
+            requireMakerScope(ctx, body.targetTenant(), "POST /onboarding/bundles/import");
+        }
         OnboardingService s = svc(ctx);
         return call(() -> {
             OnboardingRequest req = bundles.getObject().toRequest(body.bundle(), body.targetTenant(), body.name(), body.names(),

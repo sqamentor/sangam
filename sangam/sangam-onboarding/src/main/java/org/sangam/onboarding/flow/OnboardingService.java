@@ -422,10 +422,19 @@ public final class OnboardingService {
             return;
         }
         ports.packs().select(req.tenantId(), new LinkedHashSet<>(r.order()));
-        out.put("deployments", ports.packs().deploy(req.tenantId(), r.order()));
+        Map<String, String> deployments = ports.packs().deploy(req.tenantId(), r.order());
+        out.put("deployments", deployments);
+        // EV-M-0986 condition (2): the deploy acts as the target tenant, so its row names who caused it and for whom
+        Map<String, Object> deployed = new LinkedHashMap<>();
+        deployed.put("maker", run.maker());
+        deployed.put("targetTenant", req.tenantId());
+        deployed.put("packs", new ArrayList<>(deployments.keySet()));
         if (!req.dmnOverrides().isEmpty()) {
-            out.put("decisionOverrides", ports.packs().deployDecisionOverrides(req.tenantId(), req.dmnOverrides()));
+            String overrides = ports.packs().deployDecisionOverrides(req.tenantId(), req.dmnOverrides());
+            out.put("decisionOverrides", overrides);
+            deployed.put("decisionOverrides", overrides);
         }
+        audit(run, "PACKS_DEPLOYED", run.maker(), deployed);
     }
 
     private List<Problem> checkBindings(OnboardingRequest req, PackDependencyResolver.Resolution packs) {
