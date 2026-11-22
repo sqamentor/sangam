@@ -228,7 +228,7 @@ jobs:
         run: |
           $RL run --check ui-e2e --ledger-dir "$LEDGER" --expect node_modules/@playwright/test/package.json -- bash -c '
             set -uo pipefail
-            npm run e2e -- --reporter=list,html,json; rc=$?
+            npm run e2e -- --project=chromium --retries=0 --reporter=line,html,json; rc=$?
             python3 -I - e2e-results.json "$rc" <<"PY"
           import json, sys
           path, rc = sys.argv[1], int(sys.argv[2])
@@ -281,11 +281,15 @@ jobs:
           check http://127.0.0.1:8080/assets /assets/
           docker rm -f sangam-front-path > /dev/null
           exit $bad
+      - name: DIAGNOSTIC server log (temporary, diag branch only)
+        if: always()
+        run: |
+          docker logs sangam-server 2>&1 | grep -nE 'ERROR|WARN|Exception|refused|PROFILE|profile' | grep -v 'DEBUG' | tail -n 400 || true
       - name: Server log on failure
         if: failure()
         run: docker logs sangam-server
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: failure()
+        if: always()
         with:
           name: playwright-report
           path: sangam/sangam-ui/playwright-report/
