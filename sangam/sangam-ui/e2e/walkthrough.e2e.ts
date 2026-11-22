@@ -338,6 +338,11 @@ test('the walkthrough of the presentation: sign-in, seat, bill, dealing hand and
     const tasks = await get('task', { processInstanceBusinessKey: businessKey });
     console.log(`CASE | engine tasks ${tasks.status} | ${JSON.stringify(Array.isArray(tasks.body) ? tasks.body.map((x) => ({ id: x.id, key: x.taskDefinitionKey, assignee: x.assignee, pi: x.processInstanceId })) : tasks.body).slice(0, 1500)}`);
     const api = await admin();
+    const types = await api.get('registry/parties/config/identifier-types');
+    console.log(`CASE | identifier types ${types.status()} | ${(await types.text()).slice(0, 1500)}`);
+    const probe = { kind: 'PERSON', name: 'Mahesh Kumar Yadav', identifiers: [{ type: 'BANK_ACCOUNT', value: '00004207100101' }] };
+    const match = await api.post('registry/parties/match', { headers: { 'Idempotency-Key': randomUUID() }, data: probe });
+    console.log(`CASE | POST registry/parties/match ${match.status()} | ${(await match.text()).slice(0, 1500)}`);
     const st = await api.get('tasks', { params: { businessKey, size: 100 } });
     console.log(`CASE | GET /tasks?businessKey ${st.status()} | ${(await st.text()).slice(0, 1500)}`);
     for (const s of SEATS) {
