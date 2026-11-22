@@ -1,0 +1,6 @@
+{
+  "modules": "",
+  "dbs": "postgres",
+  "chunks": "A-contracts,B-engine",
+  "ui": false
+}
