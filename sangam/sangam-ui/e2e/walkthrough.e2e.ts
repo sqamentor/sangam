@@ -37,8 +37,10 @@ const STACK_LABEL = 'test mode, development-only in-memory vault; proves nothing
 const OPEN_STEPS: Record<string, string> = {
   // ui.yml run 44863340501 (tenant dev): the bill stopped at bl_bindingHold; cured by tenant GOI.E2E (EV-M-0961 A).
   // ui.yml run 44991180271 (GOI.E2E, head funded): the bill was rejected PAYEE_NOT_REGISTERED at bl_payee, because
-  // this spec registered no payee. It now does; the steps stay open until a run shows them passing.
-  '4 dealing hand acts': 'not yet shown passing with a registered payee (without one: PAYEE_NOT_REGISTERED at bl_payee, ui.yml 44991180271)',
+  // this spec registered no payee. It now does.
+  // ui.yml run 44994716752 (payee registered): the bill waits at pc_distribute; this spec read its seat from the list's
+  // empty seatId. It now reads the candidate group; the steps stay open until a run shows them passing.
+  '4 dealing hand acts': 'not yet shown passing; last seen waiting at pc_distribute (ui.yml 44994716752)',
   '5 PAO acts': 'as step 4: the case has not been shown reaching pc_pao',
 };
 
@@ -231,13 +233,24 @@ function fiscalYear(d: Date): string {
   return `${start}-${String((start + 1) % 100).padStart(2, '0')}`;
 }
 
-/** The open tasks of the case, each with the seat it waits for (the task's own seatId, as the administrator's list names it). */
+/**
+ * The open tasks of the case, each with the seat it waits for: the task's one candidate group, as GET /tasks/{id}
+ * names it. The list's seatId is empty for these tasks (ui.yml run 44994716752, pc_distribute).
+ */
 async function openTasks(businessKey: string): Promise<{ id: string; key: string; seat: string }[]> {
   const api = await admin();
   try {
     const res = await api.get('tasks', { params: { businessKey, size: 100 } });
     if (!res.ok()) return [];
-    return items(await res.json()).map((task) => ({ id: String(task.id), key: String(task.taskDefinitionKey), seat: String(task.seatId ?? '') }));
+    const open: { id: string; key: string; seat: string }[] = [];
+    for (const task of items(await res.json())) {
+      const read = await api.get(`tasks/${encodeURIComponent(String(task.id))}`);
+      if (!read.ok()) throw new Error(`GET tasks/{id} of ${String(task.taskDefinitionKey)}: ${read.status()} ${(await read.text()).slice(0, 300)}`);
+      const groups = ((await read.json()) as { candidateGroups?: string[] }).candidateGroups ?? [];
+      // none or several: joined, so decide() refuses it (it accepts only one seat of the chain)
+      open.push({ id: String(task.id), key: String(task.taskDefinitionKey), seat: groups.join(',') });
+    }
+    return open;
   } finally {
     await api.dispose();
   }
