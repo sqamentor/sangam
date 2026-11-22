@@ -195,7 +195,7 @@ def pension():
                'routingDecisionKey=pension-sanction-authority;powersDecisionKey=pension-powers;'
                'executionConnector=ag.pensionCase;executionStep=ag;'
                'executionOperation=submitPensionCase;reconcileRequired=false;ackWindow=P7D;outputTemplate=ppo;'
-               'appealAllowed=true;appellateSeat=HOD-P;verifySeat=HOO-P;amount=0;averageEmoluments=0;ageNextBirthday=61')
+               'appealAllowed=true;appellateSeat=HOD-P;verifySeat=PENSION-SO-P;amount=0;averageEmoluments=0;ageNextBirthday=61')
     comp = s.rule('ps_compute', 'Pension computation (DMN)', 'pension-computation')
     amt = s.setv('ps_amount', 'Amount for power check', values='amount=@pensionAmount')
     scr = core(s, 'ps_scrutiny', 'Pension section scrutiny (core)', 'scrutiny')
@@ -314,7 +314,11 @@ def pension():
                                    'r.59, r.44(1))')],
            doc='Pension sanction power (SL-30). CCS (Pension) Rules 2021 r.59 (HoO completes Form 7 and assesses the '
                'pension) and r.44(1) (maximum 1,25,000 a month); corpus S45, IFMS-CENTRAL IFC-174 / IFC-179 (verified).')
+    # joint decision EV-M-1000 (A) a1: the service record is verified by the pension section officer, a seat other than
+    # the Head of Office who sanctions under r.59 (IX.5 rule 5: one seat never verifies and sanctions the same case)
     simple_seeds(pk, 'OFFICE-P', [('PENSION-CLERK', 'PENSION-CLERK', 'HOO-P', 'Pension clerk', 'पेंशन लिपिक'),
+                                  ('PENSION-SO-P', 'PENSION-SO', 'HOO-P', 'Pension section officer',
+                                   'पेंशन अनुभाग अधिकारी'),
                                   ('HOO-P', 'HOO', 'HOD-P', 'Head of Office', 'कार्यालय प्रमुख'),
                                   ('HOD-P', 'HOD', None, 'Head of Department', 'विभागाध्यक्ष'),
                                   ('PAO-P', 'PAO', None, 'Pay and accounts officer', 'वेतन एवं लेखा अधिकारी')], 'pn')

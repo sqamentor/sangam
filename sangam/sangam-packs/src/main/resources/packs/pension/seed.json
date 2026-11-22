@@ -18,6 +18,17 @@
       }
     },
     {
+      "id": "PENSION-SO-P",
+      "role": "PENSION-SO",
+      "office": "OFFICE-P",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "HOO-P",
+      "name": {
+        "en": "Pension section officer",
+        "hi": "पेंशन अनुभाग अधिकारी"
+      }
+    },
+    {
       "id": "HOO-P",
       "role": "HOO",
       "office": "OFFICE-P",
@@ -59,6 +70,12 @@
       "from": "2026-01-01"
     },
     {
+      "seat": "PENSION-SO-P",
+      "person": "pn.pension-so-p",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
       "seat": "HOO-P",
       "person": "pn.hoo-p",
       "basis": "SUBSTANTIVE",
@@ -83,6 +100,13 @@
       "name": {
         "en": "Pension clerk",
         "hi": "पेंशन लिपिक"
+      }
+    },
+    {
+      "code": "PENSION-SO",
+      "name": {
+        "en": "Pension section officer",
+        "hi": "पेंशन अनुभाग अधिकारी"
       }
     },
     {
