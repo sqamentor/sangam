@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_dbt_batch_sanction_authority" name="DBT batch sanctioning authority (directorate)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="dbt-batch-sanction-authority" name="DBT batch sanctioning authority (directorate)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
+    <decisionTable id="dbt-batch-sanction-authority_t" hitPolicy="FIRST">
+      <input id="dbt-batch-sanction-authority_i0" label="Amount"><inputExpression id="dbt-batch-sanction-authority_ie0" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="dbt-batch-sanction-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="dbt-batch-sanction-authority_r0"><description>Joint Director</description>
+        <inputEntry id="dbt-batch-sanction-authority_r0_i0"><text>&lt;= 100000000</text></inputEntry>
+        <outputEntry id="dbt-batch-sanction-authority_r0_o0"><text>"JD"</text></outputEntry>
+      </rule>
+      <rule id="dbt-batch-sanction-authority_r1"><description>Director</description>
+        <inputEntry id="dbt-batch-sanction-authority_r1_i0"><text>&gt; 100000000</text></inputEntry>
+        <outputEntry id="dbt-batch-sanction-authority_r1_o0"><text>"DIRECTOR"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

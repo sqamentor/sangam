@@ -35,6 +35,27 @@
         "en": "DDO (DBT)",
         "hi": "आहरण एवं संवितरण अधिकारी (डीबीटी)"
       }
+    },
+    {
+      "id": "JD-WEL",
+      "role": "JD",
+      "office": "DIR-WEL",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "DIR-W",
+      "name": {
+        "en": "Joint Director",
+        "hi": "संयुक्त निदेशक"
+      }
+    },
+    {
+      "id": "DIR-W",
+      "role": "DIRECTOR",
+      "office": "DIR-WEL",
+      "level": "HEAD_OFFICE",
+      "name": {
+        "en": "Director",
+        "hi": "निदेशक"
+      }
     }
   ],
   "holdings": [],

@@ -636,7 +636,7 @@ def dbt_batch():
     p.forms.append(dict(key='dbt-batch/batch', name='DBT batch | डीबीटी बैच', decision=None,
                         fields=['schemeId*', 'documents'], doc=None))
     d = s.setv('db_defaults', 'Configuration', defaults='caseType=GRANT;batchTotal=0;period=current;'
-               'routingDecisionKey=p3-sanction-authority;amount=0;retryReasons=ACCOUNT_INVALID,ACCOUNT_CLOSED,'
+               'routingDecisionKey=dbt-batch-sanction-authority;amount=0;retryReasons=ACCOUNT_INVALID,ACCOUNT_CLOSED,'
                'AADHAAR_NOT_SEEDED,NAME_MISMATCH;dbtCellSeat=DBT-CELL')
     ld = s.svc('db_load', 'Load sanctioned beneficiary list', C['BATCH'],
                {'op': 'LOAD', 'connector': 'dbt.beneficiaryList', 'sampleSize': '5'}, async_=True)
@@ -705,13 +705,23 @@ def dbt_batch():
            [([q('ACCOUNT_INVALID')], [q('BANK-DESK')], ''), ([q('ACCOUNT_CLOSED')], [q('BANK-DESK')], ''),
             ([q('NAME_MISMATCH')], [q('BANK-DESK')], ''), ([q('AADHAAR_NOT_SEEDED')], [q('DBT-CELL')], ''),
             (['-'], [q('DDO-DBT')], 'other rejections to the DDO')])
+    # owner decision P-6 (B) 'Directorate sanction (b1)': the batch sanction is the directorate's (DIR-WEL), never the
+    # district officer's (DWO sits below the batch office); bands as the welfare powers (JD up to 10 lakh, then Director)
+    pk.dmn('dbt-batch-sanction-authority', 'DBT batch sanctioning authority (directorate)', 'FIRST',
+           [('Amount', 'amount', 'money')], [('competentRole', 'Competent role', 'string')],
+           [(['<= 1000000'], [q('JD')], 'Joint Director'), (['> 1000000'], [q('DIRECTOR')], 'Director')])
     pk.seeds(offices=[{'id': 'DIR-WEL', 'parent': ''}],
              seats=[{'id': 'DBT-CELL', 'role': 'DBTCELL', 'office': 'DIR-WEL',
                      'name': {'en': 'DBT cell', 'hi': 'डीबीटी प्रकोष्ठ'}},
                     {'id': 'BANK-DESK', 'role': 'BANKDESK', 'office': 'DIR-WEL',
                      'name': {'en': 'Bank coordination desk', 'hi': 'बैंक समन्वय डेस्क'}},
                     {'id': 'DDO-DBT', 'role': 'DDO', 'office': 'DIR-WEL',
-                     'name': {'en': 'DDO (DBT)', 'hi': 'आहरण एवं संवितरण अधिकारी (डीबीटी)'}}],
+                     'name': {'en': 'DDO (DBT)', 'hi': 'आहरण एवं संवितरण अधिकारी (डीबीटी)'}},
+                    # owner decision P-6 (B) 'Directorate sanction (b1)': the batch is sanctioned at the directorate;
+                    # the same seats as gov.p3 declares (IX.5 rule 1: one seat per id, same designation and office)
+                    {'id': 'JD-WEL', 'role': 'JD', 'office': 'DIR-WEL', 'reportsTo': 'DIR-W',
+                     'name': {'en': 'Joint Director', 'hi': 'संयुक्त निदेशक'}},
+                    {'id': 'DIR-W', 'role': 'DIRECTOR', 'office': 'DIR-WEL', 'name': {'en': 'Director', 'hi': 'निदेशक'}}],
              holdings=[], roles=[])
     pk.accept('GP-49', 'Partial batch failure resends only the failures', ['GP-09', 'GP-49'],
               'five beneficiaries, two fail with ACCOUNT_CLOSED', 'the bank desk corrects; the cell resends',

@@ -24,6 +24,10 @@
       "path": "packs/dbt-batch/dbt-failure-routing.dmn"
     },
     {
+      "kind": "DMN",
+      "path": "packs/dbt-batch/dbt-batch-sanction-authority.dmn"
+    },
+    {
       "kind": "FORM",
       "path": "packs/dbt-batch/forms/batch.form.json"
     },
@@ -185,5 +189,13 @@
       "limitTable": "sangam-core-powers",
       "ruleCaseType": "GRANT"
     }
+  },
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
   }
 }
