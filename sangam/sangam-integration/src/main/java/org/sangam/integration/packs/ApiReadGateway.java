@@ -31,4 +31,13 @@ public interface ApiReadGateway {
      * gives empty (nothing can be said yet; the run-time check is the guard).
      */
     Optional<String> readOnlyRefusal(ConnectorRequest request);
+
+    /**
+     * The outcome of an earlier effect, asked by an API read (register P-3, CodeQL alert 596; the data-object record
+     * operation {@code GET}): the answer of {@code ConnectorGateway.lookup}, and the operation's row is never changed.
+     * Where {@code ConnectorGateway.lookup} would mark an operation of a process instance {@code RETRY_REQUESTED}
+     * (outcome UNKNOWN and the external system has no record of it), this answers UNKNOWN and leaves the row as it
+     * is: the process's own lookup, or reconciliation, makes that change.
+     */
+    ConnectorResult lookupReadOnly(String tenantId, String connector, String operationId);
 }

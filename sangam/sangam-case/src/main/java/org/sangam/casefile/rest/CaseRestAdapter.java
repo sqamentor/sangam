@@ -91,7 +91,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<CaseConfigRegistry.ConfigEntry> configs(ApiContext ctx, String kind) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             require(c, ctx, CASE_FILE, "READ", ALL);
             return m.config().list(c, ctx.tenant(), kind);
         });
@@ -107,7 +107,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public Paging.PageResult<CaseFileService.CaseFile> list(ApiContext ctx, CaseFileService.Filter filter, Paging.PageRequest page) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             SqlPredicate visible = auth.visible(c, ctx.identity(), CASE_FILE, "READ", "cf");
             return m.cases().list(c, ctx.tenant(), filter, visible, page);
         });
@@ -115,12 +115,12 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public CaseView get(ApiContext ctx, String caseId) {
-        return tx(c -> view(c, ctx, m.caseLinks().resolve(c, ctx.tenant(), caseId).caseId()));
+        return m.tx().read(c -> view(c, ctx, m.caseLinks().resolve(c, ctx.tenant(), caseId).caseId()));
     }
 
     @Override
     public CaseView byNumber(ApiContext ctx, String caseNumber) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             CaseFileService.CaseFile cf = m.cases().byNumber(c, ctx.tenant(), caseNumber)
                     .orElseThrow(() -> CaseFileException.notFound("case", caseNumber));
             return view(c, ctx, m.caseLinks().resolve(c, ctx.tenant(), cf.caseId()).caseId());
@@ -233,7 +233,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<PartyService.Party> partyCandidates(ApiContext ctx, Map<String, Object> identifiers, String name) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             require(c, ctx, CASE_FILE, "READ_SENSITIVE", ALL);
             return m.parties().candidates(c, ctx.tenant(), identifiers, name);
         });
@@ -273,7 +273,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<PartyService.Conflict> conflicts(ApiContext ctx, String caseId, String partyId, String role) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             require(c, ctx, CASE_FILE, "READ", caseId);
             CaseFileService.CaseFile cf = m.cases().get(c, ctx.tenant(), caseId);
             List<PartyService.Conflict> out = new ArrayList<>();
@@ -287,7 +287,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<PartyService.DuplicateCandidate> duplicates(ApiContext ctx, String caseId) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             require(c, ctx, CASE_FILE, "READ", caseId);
             CaseFileService.CaseFile cf = m.cases().get(c, ctx.tenant(), caseId);
             List<String> partyIds = m.parties().caseParties(c, ctx.tenant(), caseId, false).stream().map(PartyService.CaseParty::partyId).toList();
@@ -298,7 +298,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<PartyService.CaseParty> casesOfParty(ApiContext ctx, String partyId) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             require(c, ctx, CASE_FILE, "READ_SENSITIVE", ALL);
             return m.parties().casesOf(c, ctx.tenant(), partyId).stream()
                     .filter(p -> auth.allow(c, ctx.identity(), CASE_FILE, "READ", p.caseId())).toList();
@@ -352,7 +352,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public InputStream openDocument(ApiContext ctx, String caseId, String documentId, int version) {
-        tx(c -> {
+        m.tx().read(c -> {
             require(c, ctx, CASE_FILE, "READ", caseId);
             CaseContentsService.Document d = m.contents().document(c, ctx.tenant(), documentId);
             if (!d.caseId().equals(caseId)) {
@@ -377,7 +377,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<CaseContentsService.Note> notes(ApiContext ctx, String caseId) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             require(c, ctx, CASE_FILE, "READ", caseId);
             boolean officer = auth.allow(c, ctx.identity(), CASE_FILE, "MODIFY", caseId);
             return m.contents().notes(c, ctx.tenant(), caseId, ctx.actor(), officer);
@@ -402,7 +402,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<CaseTimelineService.Entry> timeline(ApiContext ctx, String caseId, int limit, boolean includeEngineHistory) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             require(c, ctx, CASE_FILE, "READ", caseId);
             if (includeEngineHistory) {
                 require(c, ctx, CASE_FILE, "READ_HISTORY", caseId);
@@ -466,7 +466,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<HearingService.Hearing> causeList(ApiContext ctx, String forum, Instant from, Instant to) {
-        return tx(c -> m.hearings().causeList(c, ctx.tenant(), forum, from, to).stream()
+        return m.tx().read(c -> m.hearings().causeList(c, ctx.tenant(), forum, from, to).stream()
                 .filter(h -> auth.allow(c, ctx.identity(), CASE_FILE, "READ", h.caseId())).toList());
     }
 
@@ -482,7 +482,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<DeadlineService.Deadline> dueBefore(ApiContext ctx, String scopeType, Instant before, int limit) {
-        return tx(c -> m.deadlines().dueBefore(c, ctx.tenant(), scopeType, before, limit).stream()
+        return m.tx().read(c -> m.deadlines().dueBefore(c, ctx.tenant(), scopeType, before, limit).stream()
                 .filter(d -> allowScope(c, ctx, "READ", d.scopeType(), d.scopeId())).toList());
     }
 
@@ -517,13 +517,13 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<CommitteeService.Committee> committees(ApiContext ctx, String kind, boolean activeOnly) {
-        return tx(c -> m.committees().list(c, ctx.tenant(), kind, activeOnly).stream()
+        return m.tx().read(c -> m.committees().list(c, ctx.tenant(), kind, activeOnly).stream()
                 .filter(x -> auth.allow(c, ctx.identity(), COMMITTEE, "READ", x.committeeId())).toList());
     }
 
     @Override
     public CommitteeView committee(ApiContext ctx, String committeeId) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             require(c, ctx, COMMITTEE, "READ", committeeId);
             return new CommitteeView(m.committees().get(c, ctx.tenant(), committeeId), m.committees().members(c, ctx.tenant(), committeeId, null),
                     m.committees().quorumRequired(c, ctx.tenant(), committeeId));
@@ -576,7 +576,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<MeetingService.Meeting> meetings(ApiContext ctx, String committeeId, Instant from, Instant to) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             if (committeeId != null) {
                 require(c, ctx, COMMITTEE, "READ", committeeId);
                 return m.meetings().list(c, ctx.tenant(), committeeId, from, to);
@@ -588,7 +588,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public MeetingView meeting(ApiContext ctx, String meetingId) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             requireMeeting(c, ctx, "READ", meetingId);
             String t = ctx.tenant();
             return new MeetingView(m.meetings().get(c, t, meetingId), m.meetings().agenda(c, t, meetingId), m.meetings().attendance(c, t, meetingId),
@@ -701,7 +701,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public MeetingService.QuorumStatus quorum(ApiContext ctx, String meetingId) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             requireMeeting(c, ctx, "READ", meetingId);
             return m.meetings().quorum(c, ctx.tenant(), meetingId);
         });
@@ -770,7 +770,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<ActionItemService.ActionItem> actions(ApiContext ctx, String meetingId, String committeeId, String ownerSeat, boolean openOnly) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             boolean ownSeat = ownerSeat != null && ctx.identity().seats().contains(ownerSeat);
             if (!ownSeat) {
                 if (meetingId != null) {
@@ -834,7 +834,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<ActionItemService.Pendency> pendency(ApiContext ctx, String committeeId) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             require(c, ctx, COMMITTEE, "READ", committeeId == null ? ALL : committeeId);
             return m.actions().pendency(c, ctx.tenant(), committeeId);
         });
@@ -842,7 +842,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<ActionItemService.ActionItem> atrReport(ApiContext ctx, String meetingId) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             requireMeeting(c, ctx, "READ", meetingId);
             return m.actions().atrReport(c, ctx.tenant(), meetingId);
         });
@@ -869,12 +869,12 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public Paging.PageResult<ReferenceService.Reference> references(ApiContext ctx, ReferenceService.Filter filter, Paging.PageRequest page) {
-        return tx(c -> m.references().list(c, ctx.tenant(), filter, auth.visible(c, ctx.identity(), CASE_REFERENCE, "READ", "r"), page));
+        return m.tx().read(c -> m.references().list(c, ctx.tenant(), filter, auth.visible(c, ctx.identity(), CASE_REFERENCE, "READ", "r"), page));
     }
 
     @Override
     public ReferenceView reference(ApiContext ctx, String referenceId) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             require(c, ctx, CASE_REFERENCE, "READ", referenceId);
             String t = ctx.tenant();
             return new ReferenceView(m.references().get(c, t, referenceId), m.references().moves(c, t, referenceId),
@@ -966,7 +966,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
 
     @Override
     public List<ReferenceService.Pendency> pendency(ApiContext ctx, String kind, Duration dueSoonWindow) {
-        return tx(c -> {
+        return m.tx().read(c -> {
             require(c, ctx, CASE_REFERENCE, "READ", ALL);
             return m.references().pendency(c, ctx.tenant(), kind, dueSoonWindow);
         });

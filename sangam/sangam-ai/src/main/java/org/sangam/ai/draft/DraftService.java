@@ -136,7 +136,7 @@ public final class DraftService {
     }
 
     public Optional<Draft> find(String tenantId, String id) {
-        return tx.inTransaction(c -> read(c, tenantId, id));
+        return tx.read(c -> read(c, tenantId, id));
     }
 
     @SuppressWarnings("unchecked")
@@ -176,7 +176,7 @@ public final class DraftService {
             params.add(stateOrNull);
         }
         sql.append(" ORDER BY created_at DESC");
-        return tx.inTransaction(c -> Jdbc.query(c, sql.toString(), rs -> new DraftSummary(rs.getString(1), Kind.valueOf(rs.getString(2)), State.valueOf(rs.getString(3)),
+        return tx.read(c -> Jdbc.query(c, sql.toString(), rs -> new DraftSummary(rs.getString(1), Kind.valueOf(rs.getString(2)), State.valueOf(rs.getString(3)),
                 rs.getString(4), rs.getTimestamp(5).toInstant()), params.toArray()));
     }
 }

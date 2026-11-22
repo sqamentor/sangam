@@ -46,10 +46,18 @@ public final class DemoAnswersGateway implements ConnectorGateway {
 
     /** The shipped demo answers, connector to directive, sorted. */
     public static Map<String, String> shippedAnswers() {
+        return answers(RESOURCE);
+    }
+
+    /**
+     * The answers of a classpath resource in the format of {@value #RESOURCE}, connector to directive, sorted. A line
+     * with an empty directive lists its connector without a directive: the simulator answers it its own way.
+     */
+    public static Map<String, String> answers(String resource) {
         Properties p = new Properties();
-        try (InputStream in = DemoAnswersGateway.class.getClassLoader().getResourceAsStream(RESOURCE)) {
+        try (InputStream in = DemoAnswersGateway.class.getClassLoader().getResourceAsStream(resource)) {
             if (in == null) {
-                throw new IllegalStateException("missing " + RESOURCE);
+                throw new IllegalStateException("missing " + resource);
             }
             p.load(in);
         } catch (IOException e) {
@@ -68,7 +76,7 @@ public final class DemoAnswersGateway implements ConnectorGateway {
     ConnectorRequest withAnswer(ConnectorRequest r) {
         Object own = r.payload().get(SimulatorConnectorGateway.DIRECTIVE);
         String answer = answers.get(r.connector());
-        if (answer == null || (own != null && !own.toString().isBlank())) {
+        if (answer == null || answer.isBlank() || (own != null && !own.toString().isBlank())) {
             return r;
         }
         Map<String, Object> payload = new LinkedHashMap<>(r.payload());

@@ -153,3 +153,46 @@ in the bill is at the dealing hand DH-1 (69ccc49e).
   i.e. `HOO-1`; a return goes to `DDO-1` (`ifms-gpf-return-target.dmn`).
 - Bill, PAO chain: `BD-1` distributes, `DH-1` checks, `AAO-1` checks, `PAO-1` passes, objects or returns, `SS-1`
   second signature; payee confirmation at the dealing hand `DH-1` (69ccc49e); reply to an objection at the initiator seat.
+
+## 7. What the demo sandbox tenant simulates (waiver W-5, register E-26)
+
+`SANGAM_DEMO_SANDBOXTENANTS: GOI.FIN` is a per-tenant exception inside production mode. For GOI.FIN only, and for the
+connector ids below only, the in-process simulator answers; every answer carries `sandbox=true`, every audit event of
+the tenant carries `sandbox=true`, and an audit event that names one of these connectors carries `simulated=true` as
+well. Every other tenant, and every other connector without a binding, is refused as before
+(`CONNECTOR_NOT_CONFIGURED`). No outside address is configured for any of them.
+
+| Connector id | What it is | Money | What the sandbox answers | Leaves the list when |
+|---|---|---|---|---|
+| `pfms.payment`, `ifms.payment`, `pfms.dbt`, `bank.transfer` | payment rails (W-5) | out | paid, reference `UTR…` | a real PFMS adapter is bound |
+| `bank.statement` | the statement a payment is matched against (W-5) | none | shows the simulated payment | with the rails |
+| verified payee (port, no connector id) | payee version on the payment date (W-5) | none | `SIM-PV-<employee id>` | a real verified-payee adapter is installed |
+| `ifms.duplicateBill` | duplicate or similar claim check of a bill (E-26) | none | "no duplicate found" for every bill | a real IFMS endpoint answers the check |
+| `docs.issue` | number of an issued document: payment advice, sanction order, rejection order (E-26) | none | `DOC/<8 characters>`; nothing is rendered | a document service is bound to `docs.issue` |
+
+The answers of the two E-26 ids are data: `sangam-packs/src/main/resources/org/sangam/packs/sim/sandbox-answers.properties`.
+In the UI the tenant shows the badge "Sandbox" on every page (from `GET /me`, `sandbox=true`); the audit events carry
+`sandbox` and `simulated` in their details.
+
+What the bill journey also needs on the tenant, none of it a connector (found by the sequence test
+`DemoLoaderSequenceAgainstServerTest`, lines `DEMO-SEQUENCE`):
+
+- budget for the account each bill is charged to (its head of account and its `ddoCode`, at the consuming stage of
+  ledger BUDGET). A bill whose account holds less than the bill waits at "Held for budget". For this data set:
+  head `2054-00-001-01-00-13`, Rs 1,97,050 for `JPR-DDO-0420` (BILL-0001..0005) and Rs 1,50,000 for `DDO-1` (GPF-0001);
+- payees named by account (payee, `payeeAccount`, `ifsc`), not by a party id the registry did not issue, and each a
+  party of the registry: a payee the registry does not hold is refused (`registry.party` answers
+  `PAYEE_NOT_REGISTERED`, the bill is rejected `PAYEE_CHECK_NOT_CONFIRMED`, the refused check is audited
+  `EXT_OP_FAILED` with that reason code). `load_presentation_data.py` registers the six payees of the data set
+  (`payees`) by account through `POST /registry/parties` unless the registry already holds them;
+- budget for BA-0001: `load_presentation_data.py` releases `setup.budget` through the ledger API (ALLOCATE, then
+  DISTRIBUTE) with `SANGAM_ADMIN_TOKEN`. The amount is ASSUMED, not an IFMS figure:
+
+  | Ledger | Head | Stages | Amount | Why |
+  |---|---|---|---|---|
+  | BUDGET, FY 2026-27 | `2054-00-097-01-00-01` | APPROPRIATION > ALLOCATION > RELEASE (holder `-`) | Rs 43,00,000 | BA-0001 distributes Rs 25,00,000 from the released stage; BA-0002 Rs 18,00,000 once sanctioned |
+
+- not reached, named gaps: BILL-0003 (the sandbox pays, so the bill closes instead of standing at "payment held";
+  SANGAM.md defines no payment-hold directive for a hosted load, so the loader sends none) and ADV-0001 ("IFMS
+  ledger RECOVERY not available": the advance's bill asks ledger `RECOVERY`; it closes when the IFMS ledger connector
+  exists, no RECOVERY ledger is defined here).

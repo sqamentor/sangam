@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Admin (34 operations). */
+/** Typed operations of Admin (29 operations). */
 final class AdminApi
 {
     public function __construct(private readonly Calls $calls)
@@ -207,107 +207,6 @@ final class AdminApi
             $req->body($body);
         }
         return $this->calls->model($req, $options, Model\Delegation::class);
-    }
-
-    /**
-     * List policys
-     *
-     * Tenant-scoped admin list.
-     *
-     * GET /admin/policies (operationId listPolicies); permission policy.admin.
-     * @param string|null $q query q
-     * @param string|null $parentId query parentId
-     * @param string|null $orgUnitId query orgUnitId
-     * @param string|null $seatId query seatId
-     * @param string|null $personId query personId
-     * @param string|null $kind query kind
-     * @param string|null $activeOn query activeOn
-     * @param bool|null $includeInactive query includeInactive
-     * @param int|null $page query page
-     * @param int|null $size query size
-     * @return Page<Model\Policy>
-     */
-    public function listPolicies(?string $q = null, ?string $parentId = null, ?string $orgUnitId = null, ?string $seatId = null, ?string $personId = null, ?string $kind = null, ?string $activeOn = null, ?bool $includeInactive = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
-    {
-        $req = ApiRequest::get('/admin/policies');
-        $req->query('q', $q);
-        $req->query('parentId', $parentId);
-        $req->query('orgUnitId', $orgUnitId);
-        $req->query('seatId', $seatId);
-        $req->query('personId', $personId);
-        $req->query('kind', $kind);
-        $req->query('activeOn', $activeOn);
-        $req->query('includeInactive', $includeInactive);
-        $req->query('page', $page);
-        $req->query('size', $size);
-        return $this->calls->page($req, $options, Model\Policy::class, $page, $size);
-    }
-
-    /**
-     * Create policy
-     *
-     * Creates and audits on the tenant security chain.
-     *
-     * POST /admin/policies (operationId createPolicy); permission policy.admin; result stored atomically with the state change.
-     * @param Model\Policy|array $body request body
-     * @return Model\Policy|null
-     */
-    public function createPolicy(Model\Policy|array $body, ?RequestOptions $options = null): ?Model\Policy
-    {
-        $req = ApiRequest::post('/admin/policies');
-        if ($body !== null) {
-            $req->body($body);
-        }
-        return $this->calls->model($req, $options, Model\Policy::class);
-    }
-
-    /**
-     * Delete policy
-     *
-     * Deletes (reason audited).
-     *
-     * DELETE /admin/policies/by-id (operationId deletePolicy); permission policy.admin; result stored atomically with the state change.
-     * @param string $id query id
-     * @param string|null $reason query reason
-     */
-    public function deletePolicy(string $id, ?string $reason = null, ?RequestOptions $options = null): void
-    {
-        $req = ApiRequest::delete('/admin/policies/by-id');
-        $req->query('id', $id);
-        $req->query('reason', $reason);
-        $this->calls->none($req, $options);
-    }
-
-    /**
-     * Policy version
-     *
-     * Current policy_version of the tenant (VI.4 rule 5).
-     *
-     * GET /admin/policies/version (operationId getPolicyVersion); permission policy.admin.
-     * @return Model\PolicyVersion|null
-     */
-    public function getPolicyVersion(?RequestOptions $options = null): ?Model\PolicyVersion
-    {
-        $req = ApiRequest::get('/admin/policies/version');
-        return $this->calls->model($req, $options, Model\PolicyVersion::class);
-    }
-
-    /**
-     * Explain an authorization decision
-     *
-     * Which grants and denies match (deny wins, A-13) at the current policy version (VI.4).
-     *
-     * POST /admin/policies/explain (operationId explainPolicy); permission policy.admin.
-     * @param Model\ExplainRequest|array $body request body
-     * @return Model\ExplainResult|null
-     */
-    public function explainPolicy(Model\ExplainRequest|array $body, ?RequestOptions $options = null): ?Model\ExplainResult
-    {
-        $req = ApiRequest::post('/admin/policies/explain');
-        if ($body !== null) {
-            $req->body($body);
-        }
-        return $this->calls->model($req, $options, Model\ExplainResult::class);
     }
 
     /**

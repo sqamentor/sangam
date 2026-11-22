@@ -173,7 +173,7 @@ public class SecurityConfig {
         org.sangam.server.bridge.SecurityChainContributions contributions = module.getIfAvailable();
         // IX.5 rules 1 and 4, K7: who holds a seat now. With sangam-security its identity filter (below) resolves it
         // from the postings; without the module (development only, decision 75) the admin store is the seat directory.
-        http.addFilterAfter(contributions != null ? new PrincipalAttributeFilter()
+        http.addFilterAfter(contributions != null ? new PrincipalAttributeFilter(null, contributions.seatRefusal())
                 : new PrincipalAttributeFilter(new org.sangam.server.security.AdminStoreSeatHoldings(
                         adminPort::getIfAvailable, new org.sangam.rest.support.BusinessDates(businessClock::getIfAvailable))),
                 AuthorizationFilter.class);

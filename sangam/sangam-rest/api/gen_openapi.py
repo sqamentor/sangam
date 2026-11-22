@@ -953,7 +953,9 @@ op("get", "/tasks", "listTasks", "Tasks", "List tasks",
            q("maxPriority", "int", "Only tasks of at most this priority"),
            q("dueBefore", "dt", "Only tasks due strictly before this ISO-8601 date-time with offset (tasks without a due date never match); 400 VALIDATION_FAILED when malformed or not after dueAfter"),
            q("dueAfter", "dt", "Only tasks due strictly after this ISO-8601 date-time with offset (tasks without a due date never match)"),
-           q("overdue", "bool", "true: only tasks due before the server's current time (combined with dueBefore, the earlier bound applies); false: no condition")])
+           q("overdue", "bool", "true: only tasks due before the server's current time (combined with dueBefore, the earlier bound applies); false: no condition"),
+           dict(q("section", desc="Inbox section (S03, register E-32(e)): the task predicate of the section of the same name in GET /tasks/counts, under the same seat context, so the list and its count agree (X-Total-Count equals the count when no other filter is given). MY_SEAT: assigned to me, or a candidate task of the request seat (X-Sangam-Acting-For-Seat when named, else X-Sangam-Seat); ACTING_FOR: a candidate task of a seat I hold now by ADDITIONAL_CHARGE or LEAVE_SUBSTITUTE (listed under either seat context; claim and complete still need the task's seat as the request's seat context, K7); POOL: visible and unassigned; ESCALATED: visible and escalated; RETURNED: visible and the case decision is RETURNED; ALL: visible. Every other filter narrows the section. Absent: no section predicate. Unknown value: 400 VALIDATION_FAILED"),
+                schema={"type": "string", "enum": ["MY_SEAT", "ACTING_FOR", "POOL", "ESCALATED", "RETURNED", "ALL"]})])
 op("get", "/tasks/{id}", "getTask", "Tasks", "Get a task", "Task with variables (field masks applied, K11), the material payload hash and case version (VI.4 rule 5).",
    ["VI.4", "R47"], params=[ID], resp=(200, "TaskDetail"), perm="task.read", errors=GET_E)
 op("get", "/tasks/{id}/variables", "getTaskVariables", "Tasks", "Task variables", "Variables visible on the task (K11).", ["VI.4"],
@@ -1297,6 +1299,52 @@ crud("/admin/policies", "Policy", "Policy", "Policies", "admin.policy", "policy.
      update=False, get=False, by_id=True)
 op("get", "/admin/policies/version", "getPolicyVersion", "Admin", "Policy version", "Current policy_version of the tenant (VI.4 rule 5).",
    ["VI.4"], resp=(200, "PolicyVersion"), perm="policy.admin", errors=STD_R)
+# E-33 follow-up 2 (joint decision EV-M-0966): the four-eyes queue of policy changes (tenant four_eyes on). A change
+# requested through /admin/policies, by the module defaults of a new tenant or by any other caller waits PENDING
+# (POLICY_CHANGE_PENDING) until a second person decides it here.
+schema("PolicyChange", "A requested policy change of the caller's tenant (four-eyes, VI.4, R43). `policy` is the definition "
+       "the change applies (for DELETE the policy as it is). requestedBy is a person id, or `system` for a change the "
+       "server requested (module defaults of a new tenant).",
+       "id policyId operation status policy:Policy requestedBy requestedAt:dt requestReason decidedBy decidedAt:dt "
+       "decisionReason",
+       ["id", "policyId", "operation", "status", "requestedBy", "requestedAt"],
+       enums={"operation": ["CREATE", "UPDATE", "DELETE"], "status": ["PENDING", "APPLIED", "REJECTED", "SUPERSEDED"]},
+       descs={"requestReason": "The reason given with the request (R42); never overwritten by the decision",
+              "decidedBy": "Person who approved or rejected it; null while PENDING (for SUPERSEDED the system step)",
+              "decidedAt": "When it was decided (database time); null while PENDING",
+              "decisionReason": "The reason given with the approval or rejection (R42); null while PENDING"})
+CHANGE_ID = pp("id", "Change id, a UUID the server generates (SEC_POLICY_CHANGE)")
+CHANGE_ID["schema"]["format"] = "uuid"  # decision 393: proven by schema
+op("get", "/admin/policies/changes", "listPolicyChanges", "Admin", "Policy changes",
+   "Policy changes of the caller's tenant, newest request first; status PENDING (the default) is the approver's queue. "
+   "Needs policy read in sangam-security (403 ACTION_NOT_PERMITTED, audited AUTH_DENIED). 421 TENANT_MOVED / "
+   "TENANT_NOT_ON_INSTANCE as on every operation (M-016).", ["VI.4", "R43", "R19"],
+   list_=True, params=[q("status", enum=["PENDING", "APPLIED", "REJECTED", "SUPERSEDED"],
+                         desc="Default PENDING")], resp=(200, "array:PolicyChange"), perm="policy.admin", errors=STD_R)
+op("get", "/admin/policies/changes/{id}", "getPolicyChange", "Admin", "Policy change",
+   "One policy change of the caller's tenant; 404 NOT_FOUND for an id of another tenant or none. 421 as on every "
+   "operation (M-016).", ["VI.4", "R43"],
+   params=[CHANGE_ID], resp=(200, "PolicyChange"), perm="policy.admin", errors=GET_E)
+for act, verb, effect in (("approve", "Approve", "APPLIED: the change is applied in the same transaction and audited "
+                           "GRANT_CHANGED or DENY_CHANGED (new_policy_version, change_id, requested_by, decided_by, "
+                           "reason)"),
+                          ("reject", "Reject", "REJECTED: nothing is applied; audited POLICY_CHANGE_PENDING with "
+                           "operation REJECT (change_id, policy_id, requested_by, decided_by, reason), as the SUPERSEDE "
+                           "of decision 392")):
+    op("post", "/admin/policies/changes/{id}/" + act, act + "PolicyChange", "Admin", verb + " a policy change",
+       "Four-eyes decision of a PENDING change (R43): " + effect + ". The body's reason is stored as decisionReason; "
+       "requestReason is kept. The decider must hold policy change-grant in sangam-security (403 ACTION_NOT_PERMITTED, "
+       "audited AUTH_DENIED) and must not be the requester, for approve and reject alike (no self-reject, no withdraw): "
+       "422 SOD_VIOLATION, audited SOD_VIOLATION_BLOCKED. A system identity never decides (422 SOD_VIOLATION); a change "
+       "requested by `system` is decided by any person who holds the permission. 404 NOT_FOUND (no such change of the "
+       "caller's tenant), 409 CHANGE_NOT_PENDING (already decided or superseded), 400 VALIDATION_FAILED (reason "
+       "missing) and, for approve, 400 POLICY_REJECTED (a change that no longer compiles, e.g. several principals, "
+       "decision 392). Idempotency-Key: a replay answers the stored result; 503 AUDIT_UNAVAILABLE when a replay's "
+       "IDEMPOTENT_REPLAY audit row cannot be written (every idempotent command, RM-10). 421 TENANT_MOVED / "
+       "TENANT_NOT_ON_INSTANCE as on every operation (M-016).",
+       ["VI.4", "R43", "R41", "R42", "CX-8"], params=[CHANGE_ID], body="ReasonRequest",
+       resp=(200, "PolicyChange"), cmd="admin.policy-change." + act, perm="policy.admin",
+       errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "Conflict", "Unprocessable"))
 crud("/admin/tenants", "Tenant", "Tenant", "Tenants", "admin.tenant", "tenant.admin", "tenant.admin", ["EC-17", "R19"], delete=False)
 
 # Ops
@@ -1506,7 +1554,7 @@ op("post", "/me/leave-requests", "requestLeave", "Me", "Request leave with a sub
 
 TQ = [ID]
 op("get", "/tasks/counts", "getTaskCounts", "Workspace", "Inbox counts",
-   "Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the list; a capped count is the string \"N+\" (A-16, K2).",
+   "Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the list; a capped count is the string \"N+\" (A-16, K2). Each count is the predicate of GET /tasks?section=<name> (S03).",
    ["VI.4", "A-16", "R76"], resp=(200, {"application/json": {"schema": {"type": "object", "additionalProperties": {
        "anyOf": [{"type": "integer", "format": "int64"}, {"type": "string", "pattern": "^[0-9]+\\+$"}]}}}}),
    perm="task.read", errors=WS_E)
@@ -2058,7 +2106,16 @@ schema("ComplianceLogSegment", "A sealed, hash-chained log segment in the home-c
        "segmentId from:dt to:dt events:long sha256 prevSha256 uri")
 schema("ComplianceAuditVerification", "Audit-chain and log-segment integrity of the tenant.",
        "ok:bool chains:obj latestSegment:obj latestSegmentVerified:bool verifiedAt:dt")
-schema("ComplianceReport", "Compliance evidence report (JSON; `?format=html` returns the HTML rendering). X-Sangam-Report-Hash carries its hash.",
+# register P-1 (owner decision 2026-11-20, "Move to POST"; CodeQL alert 298): generating the report inserts CMP_REPORT
+# and writes the audit event, so it is a POST with this body; the GET of /compliance/reports is removed (corrections:
+# in sangam-api-deprecations.yaml)
+schema("ComplianceReportRequest", "The period [from, to) of a compliance evidence report to generate, and how it is answered.",
+       "from:dt to:dt verifyChains:bool format", ["from", "to"], enums={"format": ["json", "html"]},
+       descs={"from": "Start of the period (inclusive). Required.",
+              "to": "End of the period (exclusive). Required.",
+              "verifyChains": "Verify the tenant's audit chains for the report. Default true.",
+              "format": "`json` (default) answers the report as application/json; `html` answers its HTML rendering as text/html."})
+schema("ComplianceReport", "Compliance evidence report (JSON; format `html` in the request returns the HTML rendering). X-Sangam-Report-Hash carries its hash.",
        "reportId hash content:obj json html")
 schema("ComplianceJurisdiction", "The tenant's active jurisdiction pack: languages, rights, authorities, contact roles, limits.",
        "code name homeCountry timeZone defaultLanguage languages:list:obj rights:list:obj authorities:list:obj "
@@ -2219,12 +2276,13 @@ op("post", C + "/logs/segments/seal", "sealComplianceLogs", "Compliance", "Seal 
 op("get", C + "/logs/verify", "verifyComplianceLogs", "Compliance", "Verify audit and log integrity",
    "Verifies the tenant's audit chains and the latest sealed segment.", CR + ["R42", "X.2.3.4"],
    resp=(200, "ComplianceAuditVerification"), perm="audit.read", errors=STD_R)
-op("get", C + "/reports", "getComplianceReport", "Compliance", "Compliance evidence report",
-   "Evidence report for [from, to); `format=html` returns text/html.", CR + ["R42"],
-   params=[q("from", "dt", required=True), q("to", "dt", required=True), q("verifyChains", "bool"),
-           q("format", enum=["json", "html"])],
+op("post", C + "/reports", "generateComplianceReport", "Compliance", "Generate the compliance evidence report",
+   "Generates the evidence report for [from, to), stores its hash (CMP_REPORT) and writes the audit event "
+   "CMP_EVIDENCE_REPORT_GENERATED; format `html` returns text/html. X-Sangam-Report-Hash carries the hash. A missing "
+   "`from` or `to` is 400 VALIDATION_FAILED. Generation writes, so there is no GET of this path (405).",
+   CR + ["R42", "R41"], body="ComplianceReportRequest",
    resp=(200, {"application/json": {"schema": R("ComplianceReport")}, "text/html": {"schema": {"type": "string"}}}),
-   perm="audit.read", errors=STD_R)
+   cmd="compliance.report.generate", perm="audit.read", errors=STD_R)
 op("get", C + "/jurisdiction", "getComplianceJurisdiction", "Compliance", "Active jurisdiction pack",
    "Code, languages, rights, authorities, contact roles and limits of the tenant's jurisdiction (for the UI).", CR,
    resp=(200, "ComplianceJurisdiction"), perm="authenticated", errors=("Unauthorized",))

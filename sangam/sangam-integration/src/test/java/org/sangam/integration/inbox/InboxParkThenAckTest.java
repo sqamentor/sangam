@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.integration.inbox;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -190,6 +191,11 @@ class InboxParkThenAckTest {
         Transactions broken = new Transactions() {
             @Override
             public <T> T inTransaction(Function<Connection, T> work) {
+                throw new IllegalStateException("database down");
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
                 throw new IllegalStateException("database down");
             }
         };

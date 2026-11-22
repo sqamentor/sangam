@@ -119,7 +119,8 @@ class StartCatalogueStartFormTest {
             String bk = "CATALOGUE/" + pd.getKey();
             engine.getIdentityService().setAuthentication("catalogue.user", List.of(), List.of(PackTestTenant.ID));
             try {
-                ProcessInstance pi = engine.getRuntimeService().startProcessInstanceById(pd.getId(), bk, vars);
+                ProcessInstance pi = engine.getRuntimeService().startProcessInstanceById(pd.getId(), bk,
+                        PackStartOffice.apply(pd.getKey(), vars));
                 started++;
                 driver.runJobs();
                 engine.getRuntimeService().createIncidentQuery().list().stream()

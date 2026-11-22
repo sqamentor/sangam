@@ -52,6 +52,11 @@ class ProductBatchServiceSkipLockedFenceH2Test {
             public <T> T inTransaction(java.util.function.Function<Connection, T> work) {
                 return tx.inTransaction(c -> work.apply(racing(c, armed, raced)));
             }
+
+            @Override
+            public <T> T read(org.sangam.core.api.ReadWork<T> work) {
+                return tx.read(c -> work.read(racing(c, armed, raced)));
+            }
         };
         AtomicInteger calls = new AtomicInteger();
         ProductBatchService batches = new ProductBatchService(Dialect.POSTGRESQL, racing, 3,

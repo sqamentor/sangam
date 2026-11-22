@@ -84,7 +84,7 @@ class BankPaymentConcurrenceTest {
         v.put("paymentRail", "NEFT");
         v.put(org.sangam.packs.core.Vars.INITIATOR_PERSON, "bpy.pay-maker");
         v.put(org.sangam.packs.core.Vars.INITIATOR_SEAT, "PAY-MAKER");
-        engine.getRuntimeService().createProcessInstanceByKey(KEY).businessKey(bk).setVariables(v)
+        engine.getRuntimeService().createProcessInstanceByKey(KEY).businessKey(bk).setVariables(PackStartOffice.apply(KEY, v))
                 .processDefinitionTenantId(PackTestTenant.ID).execute();
         return bk;
     }

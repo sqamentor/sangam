@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.compliance.rights;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -83,6 +84,11 @@ class PrincipalOtpChallengesH2Test {
         Transactions tx = new Transactions() {
             @Override
             public <T> T inTransaction(Function<Connection, T> work) {
+                throw new AssertionError("the tests pass their own connection");
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
                 throw new AssertionError("the tests pass their own connection");
             }
         };
@@ -319,6 +325,15 @@ class PrincipalOtpChallengesH2Test {
             public <T> T inTransaction(Function<Connection, T> work) {
                 try (Connection d = DriverManager.getConnection(url, "sa", "")) {
                     return work.apply(d);
+                } catch (java.sql.SQLException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                try (Connection d = DriverManager.getConnection(url, "sa", "")) {
+                    return work.read(d);
                 } catch (java.sql.SQLException e) {
                     throw new IllegalStateException(e);
                 }

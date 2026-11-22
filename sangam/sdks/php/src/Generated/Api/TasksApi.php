@@ -48,11 +48,12 @@ final class TasksApi
      * @param string|null $dueBefore query dueBefore
      * @param string|null $dueAfter query dueAfter
      * @param bool|null $overdue query overdue
+     * @param string|null $section query section
      * @param int|null $page query page
      * @param int|null $size query size
      * @return Page<Model\Task>
      */
-    public function listTasks(?string $assignee = null, ?bool $mine = null, ?bool $unassigned = null, ?string $candidateGroup = null, ?string $seatId = null, ?string $processInstanceId = null, ?string $caseInstanceId = null, ?string $businessKey = null, ?string $processDefinitionKey = null, ?string $taskDefinitionKey = null, ?string $state = null, ?string $sortBy = null, ?string $currency = null, ?string $sortOrder = null, ?array $variableNames = null, ?string $filterId = null, ?int $priority = null, ?int $minPriority = null, ?int $maxPriority = null, ?string $dueBefore = null, ?string $dueAfter = null, ?bool $overdue = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
+    public function listTasks(?string $assignee = null, ?bool $mine = null, ?bool $unassigned = null, ?string $candidateGroup = null, ?string $seatId = null, ?string $processInstanceId = null, ?string $caseInstanceId = null, ?string $businessKey = null, ?string $processDefinitionKey = null, ?string $taskDefinitionKey = null, ?string $state = null, ?string $sortBy = null, ?string $currency = null, ?string $sortOrder = null, ?array $variableNames = null, ?string $filterId = null, ?int $priority = null, ?int $minPriority = null, ?int $maxPriority = null, ?string $dueBefore = null, ?string $dueAfter = null, ?bool $overdue = null, ?string $section = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
         $req = ApiRequest::get('/tasks');
         $req->query('assignee', $assignee);
@@ -77,6 +78,7 @@ final class TasksApi
         $req->query('dueBefore', $dueBefore);
         $req->query('dueAfter', $dueAfter);
         $req->query('overdue', $overdue);
+        $req->query('section', $section);
         $req->query('page', $page);
         $req->query('size', $size);
         return $this->calls->page($req, $options, Model\Task::class, $page, $size);

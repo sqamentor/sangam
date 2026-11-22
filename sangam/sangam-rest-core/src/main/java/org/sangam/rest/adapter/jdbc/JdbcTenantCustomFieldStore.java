@@ -51,7 +51,7 @@ public final class JdbcTenantCustomFieldStore implements Store {
 
     @Override
     public List<FieldDefinition> versions(String tenantId, String objectType, String key) {
-        return tx.withConnection(c -> Jdbc.query(c, "SELECT " + COLS + " FROM TENANT_CUSTOM_FIELD"
+        return tx.withReadConnection(c -> Jdbc.query(c, "SELECT " + COLS + " FROM TENANT_CUSTOM_FIELD"
                         + " WHERE tenant_id=? AND object_type=? AND field_key=? ORDER BY version",
                 JdbcTenantCustomFieldStore::map, tenantId, objectType, key));
     }
@@ -67,7 +67,7 @@ public final class JdbcTenantCustomFieldStore implements Store {
 
     @Override
     public List<FieldDefinition> history(String tenantId) {
-        return tx.withConnection(c -> Jdbc.query(c, "SELECT " + COLS + " FROM TENANT_CUSTOM_FIELD"
+        return tx.withReadConnection(c -> Jdbc.query(c, "SELECT " + COLS + " FROM TENANT_CUSTOM_FIELD"
                         + " WHERE tenant_id=? ORDER BY object_type, field_key, version",
                 JdbcTenantCustomFieldStore::map, tenantId));
     }

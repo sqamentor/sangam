@@ -93,11 +93,11 @@ public final class GeoService {
     }
 
     public Optional<JurisdictionLayer> layer(String tenantId, String code) {
-        return tx.inTransaction(c -> store.layer(c, tenantId, code));
+        return tx.read(c -> store.layer(c, tenantId, code));
     }
 
     public List<JurisdictionLayer> layers(String tenantId) {
-        return tx.inTransaction(c -> store.layers(c, tenantId));
+        return tx.read(c -> store.layers(c, tenantId));
     }
 
     private JurisdictionLayer requireLayer(Connection c, String tenantId, String code) {
@@ -218,7 +218,7 @@ public final class GeoService {
         if (hit != null) {
             return Optional.of(hit);
         }
-        return tx.inTransaction(c -> store.feature(c, tenantId, featureId)).map(f -> remember(tenantId, f));
+        return tx.read(c -> store.feature(c, tenantId, featureId)).map(f -> remember(tenantId, f));
     }
 
     /** Current version of a code in a layer (any level; the deepest level wins if a code repeats across levels). */
@@ -232,7 +232,7 @@ public final class GeoService {
 
     public List<GeoFeature> features(String tenantId, String layer, String level, String parentId, boolean includeHistory,
                                      int offset, int limit) {
-        return tx.inTransaction(c -> store.list(c, tenantId, layer, level, parentId, !includeHistory, offset, limit));
+        return tx.read(c -> store.list(c, tenantId, layer, level, parentId, !includeHistory, offset, limit));
     }
 
     /** Root-first ancestry of a feature, including the feature itself. */
@@ -255,7 +255,7 @@ public final class GeoService {
 
     /** All active features of the layer that contain the point, deepest level first. */
     public List<GeoFeature> containing(String tenantId, String layer, GeoPoint p) {
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             JurisdictionLayer l = requireLayer(c, tenantId, layer);
             List<GeoFeature> cands = load(c, tenantId, index.containingCandidates(c, tenantId, layer, p));
             List<GeoFeature> hits = new ArrayList<>();
@@ -293,7 +293,7 @@ public final class GeoService {
     public List<NearestFeature> nearestFeatures(String tenantId, String layer, GeoPoint p, int n, double maxMeters) {
         int want = Math.max(1, n);
         double cap = maxMeters > 0 ? maxMeters : DEFAULT_MAX_SEARCH_M;
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             requireLayer(c, tenantId, layer);
             List<String> ids = index.nearestCandidates(c, tenantId, layer, p, want);
             List<NearestFeature> ranked;
@@ -351,7 +351,7 @@ public final class GeoService {
     }
 
     public Optional<GeoStore.ObjectGeometry> objectGeometry(String tenantId, String objectType, String objectId, String attribute) {
-        return tx.inTransaction(c -> store.objectGeometry(c, tenantId, objectType, objectId, attribute == null ? "location" : attribute));
+        return tx.read(c -> store.objectGeometry(c, tenantId, objectType, objectId, attribute == null ? "location" : attribute));
     }
 
     public void deleteObjectGeometry(String tenantId, String objectType, String objectId) {
@@ -366,7 +366,7 @@ public final class GeoService {
                                                Set<String> requiredTags) {
         int want = Math.max(1, n);
         double cap = maxMeters > 0 ? maxMeters : DEFAULT_MAX_SEARCH_M;
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             double r = Math.min(cap, 1_000);
             List<Nearest.Ranked> ranked;
             while (true) {
@@ -396,7 +396,7 @@ public final class GeoService {
     }
 
     public Optional<Geofence> fence(String tenantId, String fenceId) {
-        return tx.inTransaction(c -> store.fence(c, tenantId, fenceId));
+        return tx.read(c -> store.fence(c, tenantId, fenceId));
     }
 
     public void deactivateFence(String tenantId, String fenceId, String actor) {
@@ -467,7 +467,7 @@ public final class GeoService {
     }
 
     public List<ExternalLayer> externals(String tenantId) {
-        return tx.inTransaction(c -> store.externals(c, tenantId));
+        return tx.read(c -> store.externals(c, tenantId));
     }
 
     // ================================================================== helpers

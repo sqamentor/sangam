@@ -12,6 +12,7 @@ use Sangam\Sdk\Generated\Api\AdminApi;
 use Sangam\Sdk\Generated\Api\AdminAssignmentsApi;
 use Sangam\Sdk\Generated\Api\AdminGroupsApi;
 use Sangam\Sdk\Generated\Api\AdminOrgUnitsApi;
+use Sangam\Sdk\Generated\Api\AdminPoliciesApi;
 use Sangam\Sdk\Generated\Api\AdminPowerTablesApi;
 use Sangam\Sdk\Generated\Api\AdminSecurityApi;
 use Sangam\Sdk\Generated\Api\AdminTenantsApi;
@@ -92,7 +93,7 @@ use Sangam\Sdk\Generated\Api\WorkApi;
 use Sangam\Sdk\Generated\Api\WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1182 operations on 993 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1186 operations on 997 paths,
  * one property per API class (a tag, or a sub-path of a large tag). Use SangamClient::api().
  */
 final class SangamApis
@@ -102,6 +103,7 @@ final class SangamApis
     public readonly AdminAssignmentsApi $adminAssignments;
     public readonly AdminGroupsApi $adminGroups;
     public readonly AdminOrgUnitsApi $adminOrgUnits;
+    public readonly AdminPoliciesApi $adminPolicies;
     public readonly AdminPowerTablesApi $adminPowerTables;
     public readonly AdminSecurityApi $adminSecurity;
     public readonly AdminTenantsApi $adminTenants;
@@ -189,6 +191,7 @@ final class SangamApis
         $this->adminAssignments = new AdminAssignmentsApi($calls);
         $this->adminGroups = new AdminGroupsApi($calls);
         $this->adminOrgUnits = new AdminOrgUnitsApi($calls);
+        $this->adminPolicies = new AdminPoliciesApi($calls);
         $this->adminPowerTables = new AdminPowerTablesApi($calls);
         $this->adminSecurity = new AdminSecurityApi($calls);
         $this->adminTenants = new AdminTenantsApi($calls);

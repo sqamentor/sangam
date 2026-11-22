@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.compliance.breach;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -79,6 +80,11 @@ class DpdpBreachReportedH2Test {
         Transactions tx = new Transactions() {
             @Override
             public <T> T inTransaction(Function<Connection, T> work) {
+                throw new AssertionError("not used by these calls");
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
                 throw new AssertionError("not used by these calls");
             }
         };

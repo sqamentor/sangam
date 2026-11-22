@@ -49,6 +49,7 @@ import {
   OrgHierarchy,
   POLICY_ACTIONS,
   Policies,
+  PolicyChanges,
   RetentionClasses,
   RoutingStrategies,
   Seats,
@@ -620,6 +621,68 @@ describe('SoD exceptions', () => {
     fireEvent.click(within(r1).getByRole('button', { name: T('admin.reject') }));
     reasonAndConfirm('No business need shown');
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/sod-exceptions/x1/reject', { reason: 'No business need shown' }));
+  });
+});
+
+// ====================================================================== four-eyes policy changes (E-33, EV-M-0968)
+
+/** Evidence: Admin.tsx PolicyChanges, endpoints.ts policyChanges/decidePolicyChange, contract /admin/policies/changes. */
+describe('four-eyes policy changes', () => {
+  const grant = (principalId: string) => ({ id: 'p1', effect: 'GRANT', principalType: 'GROUP', principalId, resourceType: 'PROCESS_INSTANCE', resourceId: '*', actions: ['READ'] });
+  const changes = [
+    { id: 'c1', policyId: 'p1', operation: 'CREATE', status: 'PENDING', policy: grant('clerks'), requestedBy: 'system', requestedAt: '2026-11-21T06:00:00Z', requestReason: 'module default (self-service)' },
+    { id: 'c2', policyId: 'p2', operation: 'CREATE', status: 'PENDING', policy: { ...grant('auditors'), id: 'p2' }, requestedBy: 'demo', requestedAt: '2026-11-21T06:05:00Z', requestReason: 'admin API' },
+  ];
+
+  it('lists the pending queue first, with what each change applies and the request reason', async () => {
+    pages['/admin/policies/changes'] = pageOf(changes);
+    show(<PolicyChanges />);
+    const r1 = rowWith(await screen.findByText('module default (self-service)').then((e) => e.textContent!));
+    expect(within(r1).getByText(/GROUP:clerks/)).toBeTruthy();
+    expect(within(r1).getByText(T('admin.changeOp.CREATE'))).toBeTruthy();
+    expect(api.page).toHaveBeenCalledWith('/admin/policies/changes', expect.objectContaining({ status: 'PENDING' }));
+  });
+
+  it("the requester's own change has no approve or reject; another's is decided with a reason", async () => {
+    pages['/admin/policies/changes'] = pageOf(changes);
+    show(<PolicyChanges />);
+    const own = rowWith(await screen.findByText('admin API').then((e) => e.textContent!));
+    expect(within(own).queryByRole('button', { name: T('admin.approve') })).toBeNull();
+    expect(within(own).queryByRole('button', { name: T('admin.reject') })).toBeNull();
+    expect(within(own).getByText(T('admin.policyChangeOwn'))).toBeTruthy();
+    fireEvent.click(within(rowWith('module default (self-service)')).getByRole('button', { name: T('admin.approve') }));
+    reasonAndConfirm('Checked against the office order');
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/policies/changes/c1/approve', { reason: 'Checked against the office order' }));
+  });
+
+  it('a reject sends its reason to the reject route', async () => {
+    pages['/admin/policies/changes'] = pageOf(changes);
+    show(<PolicyChanges />);
+    fireEvent.click(within(rowWith(await screen.findByText('module default (self-service)').then((e) => e.textContent!))).getByRole('button', { name: T('admin.reject') }));
+    reasonAndConfirm('Not for this department');
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/policies/changes/c1/reject', { reason: 'Not for this department' }));
+  });
+
+  it('a decided change shows its decider and decision reason and offers no action; the status filter asks the server', async () => {
+    pages['/admin/policies/changes'] = pageOf([
+      { ...changes[0], status: 'REJECTED', decidedBy: 'meenakshi.kanwar', decidedAt: '2026-11-21T07:00:00Z', decisionReason: 'Not for this department' },
+    ]);
+    show(<PolicyChanges />);
+    const r = rowWith(await screen.findByText('meenakshi.kanwar: Not for this department').then((e) => e.textContent!));
+    expect(within(r).queryByRole('button', { name: T('admin.approve') })).toBeNull();
+    fireEvent.change(screen.getByLabelText(L('admin.status')), { target: { value: 'REJECTED' } });
+    await waitFor(() => expect(api.page).toHaveBeenCalledWith('/admin/policies/changes', expect.objectContaining({ status: 'REJECTED' })));
+  });
+
+  it('a refused decision (422 SOD_VIOLATION) is shown, and the change stays in the list', async () => {
+    pages['/admin/policies/changes'] = pageOf(changes);
+    api.post.mockRejectedValueOnce(problem(422, 'SOD_VIOLATION', 'the requester cannot approve their own policy change'));
+    show(<PolicyChanges />);
+    fireEvent.click(within(rowWith(await screen.findByText('module default (self-service)').then((e) => e.textContent!))).getByRole('button', { name: T('admin.approve') }));
+    const d = reasonAndConfirm('Checked, fine');
+    expect(await within(d).findByText('the requester cannot approve their own policy change')).toBeTruthy();
+    expect(d.hasAttribute('open')).toBe(true);
+    expect(screen.getByText('module default (self-service)')).toBeTruthy();
   });
 });
 

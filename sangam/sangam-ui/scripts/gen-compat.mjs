@@ -138,7 +138,7 @@ let n = 0;
 for (const r of matrix.rows) {
   n += 1;
   const deploy = r.status === 'REJECTED' ? 'must fail with the rule message' : r.status === 'UNSUPPORTED' ? 'must fail or be flagged non-executable' : r.status === 'NOT_EXECUTABLE' ? 'deploys; ignored at runtime' : 'must succeed';
-  const run = r.status === 'SUPPORTED' || r.status === 'SUPPORTED_WITH_RULES' || r.status === 'PORTED' ? 'scenario passes' : 'n/a';
+  const run = r.status === 'SUPPORTED' || r.status === 'SUPPORTED_WITH_RULES' || r.status === 'PORTED' ? 'scenario passes' : r.status === 'PARTIAL' ? 'scenario of the listed part passes' : 'n/a';
   lines.push(`| ${n} | ${r.notation} | ${r.construct} | ${r.modeller} | ${deploy} | ${run} | ${r.note.replace(/\|/g, '/')} |`);
 }
 lines.push('', '**Also required (R46):**', '', '- MIWG reference models import and export unchanged (syntactic interchange, kept separate from runtime equivalence, R44).', '- Flowable-authored models: run the import assessment (EC-21) and compare it with this matrix.', '- Hindi labels (`i18n.hi`) in forms survive a round-trip.', '- Watermark visible in every editor after reload (LIC-8).', '');

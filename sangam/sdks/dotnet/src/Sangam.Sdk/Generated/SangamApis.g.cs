@@ -6,7 +6,7 @@ namespace Sangam.Sdk.Generated;
 using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 /// <summary>
-/// The generated typed surface of sangam-api.yaml 0.1.0: 1182 operations on 993 paths, one property per API class (a tag, or a sub-path of a large tag). Use SangamClient.Api.
+/// The generated typed surface of sangam-api.yaml 0.1.0: 1186 operations on 997 paths, one property per API class (a tag, or a sub-path of a large tag). Use SangamClient.Api.
 /// </summary>
 public sealed class SangamApis
 {
@@ -18,6 +18,7 @@ public sealed class SangamApis
         AdminAssignments = new AdminAssignmentsApi(calls);
         AdminGroups = new AdminGroupsApi(calls);
         AdminOrgUnits = new AdminOrgUnitsApi(calls);
+        AdminPolicies = new AdminPoliciesApi(calls);
         AdminPowerTables = new AdminPowerTablesApi(calls);
         AdminSecurity = new AdminSecurityApi(calls);
         AdminTenants = new AdminTenantsApi(calls);
@@ -103,6 +104,7 @@ public sealed class SangamApis
     public AdminAssignmentsApi AdminAssignments { get; }
     public AdminGroupsApi AdminGroups { get; }
     public AdminOrgUnitsApi AdminOrgUnits { get; }
+    public AdminPoliciesApi AdminPolicies { get; }
     public AdminPowerTablesApi AdminPowerTables { get; }
     public AdminSecurityApi AdminSecurity { get; }
     public AdminTenantsApi AdminTenants { get; }

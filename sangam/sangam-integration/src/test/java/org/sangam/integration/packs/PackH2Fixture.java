@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.integration.packs;
 
+import org.sangam.core.api.ReadWork;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -67,6 +68,23 @@ final class PackH2Fixture implements AutoCloseable {
                     c.setAutoCommit(false);
                     try {
                         T r = work.apply(c);
+                        c.commit();
+                        return r;
+                    } catch (RuntimeException e) {
+                        c.rollback();
+                        throw e;
+                    }
+                } catch (SQLException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                try (Connection c = DriverManager.getConnection(url, "sa", "")) {
+                    c.setAutoCommit(false);
+                    try {
+                        T r = work.read(c);
                         c.commit();
                         return r;
                     } catch (RuntimeException e) {

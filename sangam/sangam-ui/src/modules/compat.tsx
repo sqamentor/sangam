@@ -87,7 +87,7 @@ export function CompatibilityMatrix() {
       <div className="filters">
         <SearchBox label={t('common.search')} value={q} onChange={setQ} />
         <SelectField label={t('fld.notation')} value={notation} onChange={setNotation} placeholder={t('common.all')} options={['BPMN', 'DMN', 'CMMN'].map((v) => ({ value: v, label: v }))} />
-        <SelectField label={t('admin.status')} value={status} onChange={setStatus} placeholder={t('common.all')} options={['SUPPORTED', 'SUPPORTED_WITH_RULES', 'PORTED', 'NOT_EXECUTABLE', 'REJECTED', 'UNSUPPORTED'].map((v) => ({ value: v, label: t(`opt.${v}`) }))} />
+        <SelectField label={t('admin.status')} value={status} onChange={setStatus} placeholder={t('common.all')} options={['SUPPORTED', 'SUPPORTED_WITH_RULES', 'PORTED', 'PARTIAL', 'NOT_EXECUTABLE', 'REJECTED', 'UNSUPPORTED'].map((v) => ({ value: v, label: t(`opt.${v}`) }))} />
       </div>
       <DataTable
         caption={t('mod.compat.title')}

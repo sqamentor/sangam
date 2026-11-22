@@ -203,8 +203,25 @@ public class SecurityWiring {
         return () -> {
             if (workspace.getIfAvailable() instanceof org.sangam.rest.adapter.operaton.OperatonWorkspaceAdapter w) {
                 w.setOwnHoldings(new org.sangam.server.bridge.OwnSeatHoldings(security, tx));
+                // E-32(c), E-31(a): the officer acted for and the holder of a substitute seat, without the admin directory
+                w.setSeatHolders(new org.sangam.server.bridge.SeatHolderDirectory(security, tx));
             }
         };
+    }
+
+    /**
+     * Register E-31(b): the timer at valid-to of an acting posting (SANGAM.md J-P1-E06, AJ-04 step 4). Every
+     * {@code sangam.security.posting-expiry-interval} (default one minute) one {@code DELEGATION_EXPIRED} is written
+     * for each additional charge or leave substitution that has ended; the seat itself is refused from valid-to on
+     * by the K7 check of every request, with or without this timer.
+     */
+    @Bean
+    public org.sangam.server.bridge.PostingExpiryScheduler sangamPostingExpiryScheduler(
+            Transactions sangamProductTransactions, SangamSecurity security, org.springframework.core.env.Environment env) {
+        return new org.sangam.server.bridge.PostingExpiryScheduler(
+                () -> sangamProductTransactions.inTransaction(c -> security.postings().expireDue(c)),
+                env.getProperty("sangam.security.posting-expiry-interval", java.time.Duration.class,
+                        org.sangam.server.bridge.PostingExpiryScheduler.DEFAULT_INTERVAL));
     }
 
     @Bean
@@ -226,7 +243,9 @@ public class SecurityWiring {
         return new SecurityChainContributions(
                 new TokenAuthenticationFilters.ApiTokenFilter(sangamProductTransactions, security.tokens()),
                 new SecurityIdentityFilter(sangamProductTransactions, security, props, logins,
-                        ProductionEnvironment.developmentDefaultsAllowed(env)));
+                        ProductionEnvironment.developmentDefaultsAllowed(env)),
+                // E-32(g): a seat refused by the token's seats claim is written to the audit trail too
+                new org.sangam.server.bridge.SeatDenialAudit(sangamProductTransactions, security));
     }
 
     // ---------------------------------------------------------------- sangam-rest ports on sangam-security
@@ -283,7 +302,7 @@ public class SecurityWiring {
             org.sangam.rest.support.DocumentStore store) {
         IdentityAdminPort fallback = new JdbcIdentityAdminAdapter(store, admin, tasks, permissions, audit, props,
                 env.getProperty("sangam.outbound.enabled", Boolean.class, false));
-        return new SecurityIdentityAdminBridge(security, tx, fallback, props);
+        return new SecurityIdentityAdminBridge(security, tx, fallback, props, audit);
     }
 
     /** For sangam-flowable-ports' {@code IdmFacade} (FLOWABLE-INTO-OPERATON FC-42). */

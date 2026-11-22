@@ -303,25 +303,21 @@ public final class JdbcIdentityAdminAdapter implements IdentityAdminPort {
             JdbcSupport.oneOf(status, "status", SOD_STATUSES);
         }
         String tenant = JdbcSupport.tenant(ctx);
-        List<SodException> all = tx.inTx(() -> {
-            // Expiry is applied on read and persisted.
-            tx.withConnection(c -> Jdbc.update(c, "UPDATE SEC_SOD_EXCEPTION SET status='EXPIRED' WHERE tenant_id=?"
-                    + " AND status IN ('PENDING','APPROVED') AND expires_at IS NOT NULL AND expires_at < "
-                    + tx.dialect().now(), tenant));
-            return loadSod(tenant, null).stream().filter(e -> status == null || status.equals(e.status()))
-                    .sorted(Comparator.comparing(SodException::expiresAt, Comparator.nullsLast(Comparator.naturalOrder())))
-                    .toList();
-        });
+        // Round 9 CSRF: a read never writes; expiry is loadSod's effective status (enforcement checks expires_at)
+        List<SodException> all = loadSod(tenant, null).stream().filter(e -> status == null || status.equals(e.status()))
+                .sorted(Comparator.comparing(SodException::expiresAt, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
         return Page.slice(all, page, props.getCountCap());
     }
 
     private static final String SOD_COLS = "exception_id, case_id, person_id, duty, reason, requested_by, status,"
             + " approved_by, expires_at";
 
-    /** The SoD exceptions of a tenant ({@code id} null) or one of them, mapped back to the REST record. */
+    /** The SoD exceptions of a tenant ({@code id} null) or one of them; PENDING/APPROVED past expires_at is EXPIRED. */
     private List<SodException> loadSod(String tenant, String id) {
         DocMap<Map<String, Object>>.View extra = sodExtra.in(tenant);
-        return tx.withConnection(c -> Jdbc.query(c, "SELECT " + SOD_COLS + " FROM SEC_SOD_EXCEPTION WHERE tenant_id=?"
+        java.time.Instant now = java.time.Instant.now();
+        return tx.withReadConnection(c -> Jdbc.query(c, "SELECT " + SOD_COLS + " FROM SEC_SOD_EXCEPTION WHERE tenant_id=?"
                         + (id == null ? "" : " AND exception_id=?") + " ORDER BY created_at",
                 rs -> {
                     String exId = rs.getString("exception_id");
@@ -330,8 +326,11 @@ public final class JdbcIdentityAdminAdapter implements IdentityAdminPort {
                     String rule = "*".equals(duty) ? caseId : caseId + "/" + duty;
                     Map<String, Object> x = extra.get(exId);
                     String personName = x == null || x.get("personName") == null ? null : String.valueOf(x.get("personName"));
+                    java.time.Instant expires = Jdbc.instant(rs, "expires_at");
+                    String st = rs.getString("status");
+                    st = ("PENDING".equals(st) || "APPROVED".equals(st)) && expires != null && expires.isBefore(now) ? "EXPIRED" : st;
                     return new SodException(exId, rule, rs.getString("person_id"), personName, rs.getString("reason"),
-                            Jdbc.instant(rs, "expires_at"), rs.getString("status"), rs.getString("approved_by"),
+                            expires, st, rs.getString("approved_by"),
                             rs.getString("requested_by"));
                 }, id == null ? new Object[]{tenant} : new Object[]{tenant, id}));
     }

@@ -682,7 +682,9 @@ ui:
   replicaCount: 2
   environmentLabel: production
   defaultLocale: en
-  locales: en,hi
+  # Languages the UI offers (SANGAM_LOCALES). English only by default (owner, 2026-11-21; decisions Q-06 and 397 Q11):
+  # with one language the switch is hidden. Set "en,hi" to offer Hindi and show the switch.
+  locales: en
   cspConnectExtra: ""
   # M-044 (owner decision 57): link to the operator's trace viewer with the placeholder {traceId}, e.g.
   # https://tracing.example.gov.in/trace/{traceId} (SANGAM_TRACE_URL_TEMPLATE, served in /config.json). Empty = no

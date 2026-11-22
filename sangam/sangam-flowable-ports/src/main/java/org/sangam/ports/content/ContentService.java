@@ -178,23 +178,23 @@ public class ContentService {
     }
 
     public Optional<ContentItem> item(String id) {
-        return tx.inTransaction(c -> Jdbc.one(c, "SELECT id, tenant_id, name, mime_type, scope_type, scope_id, task_id, current_version,"
+        return tx.read(c -> Jdbc.one(c, "SELECT id, tenant_id, name, mime_type, scope_type, scope_id, task_id, current_version,"
                 + " deleted_flag, created_by, created_at FROM CONTENT_ITEM WHERE id = ?", ContentService::mapItem, id));
     }
 
     public List<ContentItem> byScope(String tenant, String scopeType, String scopeId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT id, tenant_id, name, mime_type, scope_type, scope_id, task_id, current_version,"
+        return tx.read(c -> Jdbc.query(c, "SELECT id, tenant_id, name, mime_type, scope_type, scope_id, task_id, current_version,"
                 + " deleted_flag, created_by, created_at FROM CONTENT_ITEM WHERE tenant_id = ? AND scope_type = ? AND scope_id = ?"
                 + " AND deleted_flag = 0 ORDER BY created_at", ContentService::mapItem, tenant, scopeType, scopeId));
     }
 
     public List<ContentVersion> versions(String itemId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT item_id, version, store_key, size_bytes, sha256, scan_state, created_by, created_at"
+        return tx.read(c -> Jdbc.query(c, "SELECT item_id, version, store_key, size_bytes, sha256, scan_state, created_by, created_at"
                 + " FROM CONTENT_VERSION WHERE item_id = ? ORDER BY version", ContentService::mapVersion, itemId));
     }
 
     public Optional<ContentVersion> version(String itemId, int version) {
-        return tx.inTransaction(c -> Jdbc.one(c, "SELECT item_id, version, store_key, size_bytes, sha256, scan_state, created_by, created_at"
+        return tx.read(c -> Jdbc.one(c, "SELECT item_id, version, store_key, size_bytes, sha256, scan_state, created_by, created_at"
                 + " FROM CONTENT_VERSION WHERE item_id = ? AND version = ?", ContentService::mapVersion, itemId, version));
     }
 

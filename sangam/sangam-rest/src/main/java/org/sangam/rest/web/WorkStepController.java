@@ -97,7 +97,7 @@ public class WorkStepController {
         permissions.require(ctx, Permissions.OPS_READ);
         Telemetry.workId(id);
         UUID op = work.operationIdOfWork(ctx, id).orElse(null);
-        List<WorkStepJournal.Step> steps = tx.inTx(() -> op != null
+        List<WorkStepJournal.Step> steps = tx.inReadTx(() -> op != null
                 ? journal.listByOperation(tx.connection(), ctx.tenantId(), op)
                 : journal.listByWork(tx.connection(), ctx.tenantId(), id));
         if (op == null && steps.isEmpty()) {

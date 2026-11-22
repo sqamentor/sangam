@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.acceptance.gov;
 
+import org.sangam.core.api.ReadWork;
 import java.sql.Connection;
 import java.time.Duration;
 import java.time.Instant;
@@ -144,6 +145,11 @@ final class GovATenantAdapter implements EngineAdapter {
     @Override
     public <T> T inEngineTransaction(Function<Connection, T> work) {
         return d.inEngineTransaction(work);
+    }
+
+    @Override
+    public <T> T inEngineReadTransaction(ReadWork<T> work) {
+        return d.inEngineReadTransaction(work);
     }
 
     @Override

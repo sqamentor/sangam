@@ -110,7 +110,7 @@
     "completing": "Completing sign-in…",
     "devMode": "Dev token mode",
     "sandbox": "Sandbox",
-    "sandboxNotice": "Demo sandbox tenant: verified payees and payments are simulated, no real money moves",
+    "sandboxNotice": "Sandbox tenant: payees, payments, the duplicate-bill check and issued document numbers are simulated. No real money moves.",
     "devNotice": "Development mode: the server's dev profile accepts a static token. Never use this in production.",
     "devToken": "Dev token",
     "idleSignedOut": "You were signed out after {{minutes}} minutes without activity. Sign in again to continue.",
@@ -1133,6 +1133,12 @@
     "candidateSeats": "Candidate seats",
     "channelsDesc": "Chat and messaging channels that may start processes or complete simple tasks.",
     "channelsTitle": "Conversation channels",
+    "changeOp": {
+      "CREATE": "New rule",
+      "UPDATE": "Changed rule",
+      "DELETE": "Rule removed"
+    },
+    "changeOperation": "Change",
     "checkResult": "Check result",
     "checkTable": "Check gaps and overlaps",
     "claimLimit": "Claim limit",
@@ -1142,6 +1148,7 @@
     "connector": "Connector",
     "database": "Database",
     "deactivate": "Deactivate",
+    "decision": "Decision",
     "delegDesc": "Versioned DMN tables: seat × case type × amount band. Changes need approval by a competent authority.",
     "delegEditorDesc": "Edit the decision table, add test cases, check, then submit for approval.",
     "delegTitle": "Delegation of powers",
@@ -1222,6 +1229,10 @@
     "policiesDesc": "Allow and deny policies. Each compiles to an object check and a SQL predicate.",
     "policiesTitle": "Policies",
     "policy": "Policy",
+    "policyChangeOwn": "Your request. Another administrator decides it.",
+    "policyChangesDesc": "Changes to access rules wait here until a second administrator approves or rejects them, with a reason. Whoever asked for a change cannot decide it.",
+    "policyChangesNone": "No changes with this status.",
+    "policyChangesTitle": "Access rule approvals",
     "policyConditionNotEditable": "This screen cannot set or keep a policy condition, so the server refuses to save it.",
     "policyVersion": "Policy version",
     "previewImpact": "Preview impact",
@@ -1233,6 +1244,9 @@
     "protocol": "Protocol",
     "recordCategory": "Record category",
     "reject": "Reject",
+    "requestReason": "Reason for the request",
+    "requestedAt": "Requested",
+    "requestedBy": "Requested by",
     "relieve": "Relieve",
     "requestException": "Request exception",
     "resource": "Resource",
@@ -1837,6 +1851,7 @@
     "DEPLOYED": "Deployed",
     "RETIRED": "Retired",
     "SUPERSEDED": "Superseded",
+    "APPLIED": "Applied",
     "ENDED": "Ended",
     "ALLOW": "Allow",
     "GRANT": "Grant",
@@ -3054,6 +3069,7 @@
     "OUT_OF_SERVICE": "Out of service",
     "owner": "Owner",
     "PALETTE": "Palette",
+    "PARTIAL": "Partial",
     "PARSED": "Parsed",
     "PARTY": "Party",
     "PAUSED": "Paused",
@@ -4579,6 +4595,10 @@
       "policies": {
         "label": "Access rules",
         "help": "Who may see and do what."
+      },
+      "policyChanges": {
+        "label": "Access rule approvals",
+        "help": "Changes to access rules that wait for a second administrator."
       },
       "sod": {
         "label": "Duty conflict exceptions",

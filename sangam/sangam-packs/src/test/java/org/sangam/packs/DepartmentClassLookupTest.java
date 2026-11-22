@@ -139,7 +139,7 @@ class DepartmentClassLookupTest {
         for (int i = 0; i + 1 < kv.length; i += 2) {
             v.put(kv[i].toString(), kv[i + 1]);
         }
-        engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(v)
+        engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(PackStartOffice.apply(key, v))
                 .processDefinitionTenantId(PackTestTenant.ID).execute();
         return bk;
     }

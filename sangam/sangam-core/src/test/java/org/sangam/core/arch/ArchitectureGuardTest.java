@@ -88,11 +88,11 @@ class ArchitectureGuardTest {
         CLASS_SIZE_ALLOWED.put("sangam-registry/src/main/java/org/sangam/registry/custody/CustodyService.java", 1118);
         CLASS_SIZE_ALLOWED.put("sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java", 1042);
         CLASS_SIZE_ALLOWED.put("sangam-server/src/main/java/org/sangam/server/bridge/CellTenantMover.java", 983);
-        CLASS_SIZE_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/operaton/OperatonTaskAdapter.java", 972);
+        CLASS_SIZE_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/operaton/OperatonTaskAdapter.java", 969);
         CLASS_SIZE_ALLOWED.put("sangam-case/src/main/java/org/sangam/casefile/rest/CaseRestAdapter.java", 974);
         CLASS_SIZE_ALLOWED.put("sangam-resources/src/main/java/org/sangam/resources/booking/BookingService.java", 913);
         CLASS_SIZE_ALLOWED.put("sangam-integration/src/main/java/org/sangam/integration/pipeline/PipelineRunner.java", 825);
-        CLASS_SIZE_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/jdbc/JdbcIdentityAdminAdapter.java", 821);
+        CLASS_SIZE_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/jdbc/JdbcIdentityAdminAdapter.java", 820);
     }
 
     /**

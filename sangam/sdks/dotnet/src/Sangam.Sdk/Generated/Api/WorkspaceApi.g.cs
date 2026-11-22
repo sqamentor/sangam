@@ -17,7 +17,7 @@ public sealed class WorkspaceApi
 
     /// <summary>
     /// Inbox counts
-    /// Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the list; a capped count is the string "N+" (A-16, K2).
+    /// Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the list; a capped count is the string "N+" (A-16, K2). Each count is the predicate of GET /tasks?section=&lt;name&gt; (S03).
     /// GET /tasks/counts (operationId getTaskCounts); permission task.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GetTaskCountsAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

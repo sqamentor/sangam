@@ -257,9 +257,13 @@ export const http = {
   page,
 };
 
-/** Downloads a protected resource with the bearer token and hands it to the browser as a file. */
-export async function download(path: string, query?: Query, fallbackName = 'download'): Promise<void> {
-  const res = await raw('GET', path, { query, headers: { Accept: '*/*' } });
+/**
+ * Downloads a protected resource with the bearer token and hands it to the browser as a file. With `body` the file is
+ * the answer of a POST that carries it as JSON (an operation that writes when it produces the file, such as
+ * POST /compliance/reports); without one it is a GET.
+ */
+export async function download(path: string, query?: Query, fallbackName = 'download', body?: unknown): Promise<void> {
+  const res = await raw(body === undefined ? 'GET' : 'POST', path, { query, body, headers: { Accept: '*/*' } });
   const blob = await res.blob();
   const cd = res.headers.get('Content-Disposition') ?? '';
   const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);

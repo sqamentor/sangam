@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.compliance.identity;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -97,6 +98,18 @@ class EncryptedNationalIdVaultH2Test {
                 try (Connection c = DriverManager.getConnection(url, "sa", "")) {
                     c.setAutoCommit(false);
                     T out = work.apply(c);
+                    c.commit();
+                    return out;
+                } catch (java.sql.SQLException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                try (Connection c = DriverManager.getConnection(url, "sa", "")) {
+                    c.setAutoCommit(false);
+                    T out = work.read(c);
                     c.commit();
                     return out;
                 } catch (java.sql.SQLException e) {

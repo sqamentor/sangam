@@ -7,8 +7,8 @@ import { useAuth } from '../auth/AuthProvider';
 import type { Role } from '../api/types';
 import { config } from '../config';
 import { Layout } from './Layout';
-import { NAV } from './nav';
-import { ROUTE_ACCESS, TEAM_READ, canAccess, type Access } from './access';
+import { NAV, visibleNav } from './nav';
+import { EVENT_ADMIN, ROUTE_ACCESS, TEAM_READ, canAccess, type Access } from './access';
 import { AuthCallback, SignIn } from '../areas/auth/SignIn';
 import { IdleSession } from '../auth/IdleSession';
 import { Loading, Notice, PageHeader } from '../components/ui';
@@ -49,6 +49,7 @@ const mOp = () => import('../modules/operaton');
 const mBulk = () => import('../modules/bulk');
 const RegistryPage = named(mReg, 'RegistryPage');
 const PublicVerify = named(mReg, 'PublicVerify');
+const VerifyDocument = named(mReg, 'VerifyDocument');
 const ResourcesPage = named(mRes, 'ResourcesPage');
 const QueuesPage = named(mRes, 'QueuesPage');
 const QueueDisplay = named(mRes, 'QueueDisplay');
@@ -123,6 +124,7 @@ const Assignments = named(ad, 'Assignments');
 const DelegationTables = named(ad, 'DelegationTables');
 const DelegationTableEditor = named(ad, 'DelegationTableEditor');
 const Policies = named(ad, 'Policies');
+const PolicyChanges = named(ad, 'PolicyChanges');
 const SodExceptions = named(ad, 'SodExceptions');
 const Users = named(ad, 'Users');
 const Groups = named(ad, 'Groups');
@@ -187,9 +189,13 @@ function Home() {
   // Owner 2026-11-17 (R8-present): a seat holder who can work tasks lands on their own work queue, the inbox of
   // their seat; everyone else keeps Welcome.
   if ((me?.seats?.length ?? 0) > 0 && hasRole(...WORK)) return <Navigate to="/tasks" replace />;
-  // Help is open to everyone; a caller with no job group at all lands on About.
   const first = NAV.find((a) => a.roles.length > 0 && hasRole(...a.roles));
-  return <Navigate to={first ? '/welcome' : '/help/about'} replace />;
+  if (first) return <Navigate to="/welcome" replace />;
+  // U12i and owner answer 2026-11-21: a caller whose menu comes from a permission alone lands on the first page his
+  // permissions open, as the menu shows it (a supervisor with team.read: Team workload; a data protection officer with
+  // compliance.read: Data protection). Help is open to everyone; only a caller with no job group lands on About.
+  const own = visibleNav(me).find((a) => a.id !== 'help');
+  return <Navigate to={own ? own.sections[0].items[0].to : '/help/about'} replace />;
 }
 
 const WORK: Role[] = ['TASK_USER'];
@@ -275,8 +281,11 @@ function AuthedRoutes() {
           <Route path="/ops/migration" element={g(OPS, <Migration />)} />
           <Route path="/ops/jobs" element={g(OPS, <Jobs />)} />
           <Route path="/ops/outbox" element={g(OPS, <OutboxInbox />)} />
-          <Route path="/ops/workers" element={g([...OPS, 'INTEGRATION'], <Workers />)} />
-          <Route path="/ops/events" element={g([...OPS, 'INTEGRATION'], <EventRegistry />)} />
+          {/* U12b: sangam-integration holds none of the permissions these four pages load with (ops.read, event.admin,
+              admin.read), so its role is not in their guards; a console for that persona (PER-9) is a later decision */}
+          <Route path="/ops/workers" element={g(OPS, <Workers />)} />
+          {/* U12h (owner, 2026-11-21): the page loads with event.admin, so the guard follows that permission, not a role */}
+          <Route path="/ops/events" element={<Guard access={EVENT_ADMIN}>{<EventRegistry />}</Guard>} />
           <Route path="/ops/notifications" element={g(OPS, <NotificationFailures />)} />
           <Route path="/ops/deployments" element={g([...OPS, ...MODEL], <Deployments />)} />
           <Route path="/ops/cleanup" element={g(OPS, <Cleanup />)} />
@@ -284,25 +293,27 @@ function AuthedRoutes() {
           <Route path="/ops/debugger" element={<Navigate to="/design/test" replace />} />
           <Route path="/ops/audit-log" element={g([...OPS, 'AUDITOR'], <OperatorAudit />)} />
 
-          <Route path="/admin/tenants" element={g(ADMIN, <Tenants />)} />
+          {/* U12f, decision 397 Q5: the list of organisations is for platform administrators only, as in the menu */}
+          <Route path="/admin/tenants" element={g(['PLATFORM_ADMIN'], <Tenants />)} />
           <Route path="/admin/org" element={g(ADMIN, <OrgHierarchy />)} />
           <Route path="/admin/seats" element={g(ADMIN, <Seats />)} />
           <Route path="/admin/assignments" element={g(ADMIN, <Assignments />)} />
           <Route path="/admin/delegations" element={g(ADMIN, <DelegationTables />)} />
           <Route path="/admin/delegations/:id" element={g(ADMIN, <DelegationTableEditor />)} />
           <Route path="/admin/policies" element={g(ADMIN, <Policies />)} />
+          <Route path="/admin/policy-changes" element={g(ADMIN, <PolicyChanges />)} />
           <Route path="/admin/sod" element={g(ADMIN, <SodExceptions />)} />
           <Route path="/admin/users" element={g(ADMIN, <Users />)} />
           <Route path="/admin/groups" element={g(ADMIN, <Groups />)} />
           <Route path="/admin/idp" element={g(ADMIN, <IdentityProviders />)} />
-          <Route path="/admin/principals" element={g([...ADMIN, 'INTEGRATION'], <ServicePrincipals />)} />
-          <Route path="/admin/services" element={g([...ADMIN, 'INTEGRATION'], <ServiceRegistry />)} />
+          <Route path="/admin/principals" element={g(ADMIN, <ServicePrincipals />)} />
+          <Route path="/admin/services" element={g(ADMIN, <ServiceRegistry />)} />
           <Route path="/admin/sla" element={g(ADMIN, <SlaModels />)} />
           <Route path="/admin/routing" element={g(ADMIN, <RoutingStrategies />)} />
           <Route path="/admin/templates" element={g(ADMIN, <Templates />)} />
           <Route path="/admin/channels" element={g(ADMIN, <ConversationalChannels />)} />
           <Route path="/admin/agents" element={g(ADMIN, <AgentDefinitions />)} />
-          <Route path="/admin/retention" element={g([...ADMIN, 'AUDITOR'], <RetentionClasses />)} />
+          <Route path="/admin/retention" element={g(ADMIN, <RetentionClasses />)} />
 
           <Route path="/modeller" element={g(MODEL, <Packages />)} />
           <Route path="/modeller/review" element={g(MODEL, <ReviewQueue />)} />
@@ -331,6 +342,8 @@ function AuthedRoutes() {
           <Route path="/portal/consents" element={g(CITIZEN, <PortalConsents />)} />
           <Route path="/portal/notices" element={g(CITIZEN, <PortalNotices />)} />
 
+          {/* Q7 part 3: public on the server, so no guard; signed-out callers get PublicVerify from Gate */}
+          <Route path="/verify/:tenant?" element={<VerifyDocument />} />
           <Route path="/help/accessibility" element={<Accessibility />} />
           <Route path="/help/about" element={<About />} />
           <Route path="/help/glossary" element={<Glossary />} />
@@ -359,8 +372,12 @@ function Gate() {
   const { status } = useAuth();
   const loc = useLocation();
   if (loc.pathname === config().oidc.redirectPath) return <AuthCallback />;
-  // Public page: certificate verification (QR).
-  if (loc.pathname.startsWith('/verify')) return <Suspense fallback={<Loading />}><Routes><Route path="/verify/:tenant?" element={<PublicVerify />} /></Routes></Suspense>;
+  // Public page: certificate verification (QR), without the page frame. Q7 part 3: a signed-in caller gets the same
+  // form inside the frame (AuthedRoutes, /verify/:tenant?). While the sign-in state is being read neither is shown, so
+  // a signed-in caller who reloads the page does not see the public form first; a caller without a stored session is
+  // 'anonymous' at once (AuthProvider reads the browser's own store), and a failed GET /me ('error') gets the public form.
+  if (loc.pathname.startsWith('/verify') && status === 'loading') return <Loading />;
+  if (loc.pathname.startsWith('/verify') && status !== 'authenticated') return <Suspense fallback={<Loading />}><Routes><Route path="/verify/:tenant?" element={<PublicVerify />} /></Routes></Suspense>;
   if (status === 'loading') return <Loading />;
   // M-033: the privacy policy is public (SecurityConfig.java:80-81); signed-in callers see it inside the app chrome.
   if (status !== 'authenticated' && loc.pathname.startsWith('/privacy')) return <Suspense fallback={<Loading />}><Routes><Route path="/privacy/:tenant?" element={<PublicPrivacy />} /></Routes></Suspense>;

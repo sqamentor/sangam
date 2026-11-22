@@ -16339,41 +16339,32 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
   /compliance/reports:
-    get:
-      operationId: getComplianceReport
+    post:
+      operationId: generateComplianceReport
       tags:
       - Compliance
-      summary: Compliance evidence report
-      description: Evidence report for [from, to); `format=html` returns text/html.
+      summary: Generate the compliance evidence report
+      description: Generates the evidence report for [from, to), stores its hash (CMP_REPORT) and writes the audit event CMP_EVIDENCE_REPORT_GENERATED;
+        format `html` returns text/html. X-Sangam-Report-Hash carries the hash. A missing `from` or `to` is 400 VALIDATION_FAILED. Generation
+        writes, so there is no GET of this path (405).
+      x-sangam-command-type: compliance.report.generate
+      x-sangam-idempotent: true
       parameters:
-      - name: from
-        in: query
-        schema:
-          type: string
-          format: date-time
-        required: true
-      - name: to
-        in: query
-        schema:
-          type: string
-          format: date-time
-        required: true
-      - name: verifyChains
-        in: query
-        schema:
-          type: boolean
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - json
-          - html
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
       x-sangam-permission: audit.read
       x-sangam-requirements:
       - GOV-4
       - R53
       - R42
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplianceReportRequest'
       responses:
         '200':
           description: Success
@@ -16384,12 +16375,23 @@ paths:
             text/html:
               schema:
                 type: string
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /compliance/jurisdiction:
     get:
       operationId: getComplianceJurisdiction
@@ -55234,6 +55236,30 @@ components:
         verifiedAt:
           type: string
           format: date-time
+    ComplianceReportRequest:
+      type: object
+      description: The period [from, to) of a compliance evidence report to generate, and how it is answered.
+      properties:
+        from:
+          type: string
+          format: date-time
+          description: Start of the period (inclusive). Required.
+        to:
+          type: string
+          format: date-time
+          description: End of the period (exclusive). Required.
+        verifyChains:
+          type: boolean
+          description: Verify the tenant's audit chains for the report. Default true.
+        format:
+          type: string
+          enum:
+          - json
+          - html
+          description: '`json` (default) answers the report as application/json; `html` answers its HTML rendering as text/html.'
+      required:
+      - from
+      - to
     ComplianceReport:
       type: object
       description: Compliance evidence report (JSON; `?format=html` returns the HTML rendering). X-Sangam-Report-Hash carries its hash.

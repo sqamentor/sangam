@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.assembly.integration;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -53,6 +54,14 @@ class IntegrationSweepsTest {
         @Override
         @SuppressWarnings("unchecked")
         public <T> T inTransaction(Function<Connection, T> work) {
+            opened.incrementAndGet();
+            if (fail) {
+                throw new IllegalStateException("database unavailable");
+            }
+            return (T) List.of();
+        }
+
+        public <T> T read(ReadWork<T> work) {
             opened.incrementAndGet();
             if (fail) {
                 throw new IllegalStateException("database unavailable");

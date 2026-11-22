@@ -35,7 +35,14 @@ async function boot() {
   if (view === 'auth-start') {
     render(<TeamsPopupStatus state="starting" />);
     await teamsSdk.initialize(HOST_TIMEOUT_MS);
-    await startPopupLogin(mgr);
+    try {
+      await startPopupLogin(mgr);
+    } catch (e) {
+      // E-29(a): the sign-in could not be started (identity provider not reachable, discovery refused). The pop-up
+      // says so and the tab that opened it is told, as for a failed end of the sign-in below.
+      render(<TeamsPopupStatus state="failed" />);
+      teamsSdk.notifyFailure(e instanceof Error ? e.message : 'failed');
+    }
     return;
   }
   if (view === 'auth-end') {

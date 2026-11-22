@@ -126,3 +126,16 @@ condition = "AND"
 regexTarget = "line"
 paths = ['''^sangam/sangam-integration/src/main/java/org/sangam/integration/connector/gov/EsignRequestSigner\.java$''']
 regexes = ['''^\s*public EsignRequestSigner\(PrivateKey key, X509Certificate certificate, Profile profile\) \{\s*$''']
+
+# 9. E-1 (code-scanning alerts 895, 896; HISTORY ONLY, commits bbe4de04 and c1c65ab6 on feat/round10-cmmn). The
+#    sentry-access-token rule reads the identifier updateCaseSentryPart (a CMMN sentry part) followed by a pinned
+#    SHA-256 of that public Operaton MyBatis statement as a Sentry token. The match must be exactly the identifier, the
+#    64-hex digest and the closing quote, in this one file; any other shape or file is still reported
+#    (.github/scripts/test_gitleaks_allowlists.py, run by the gitleaks job).
+[[allowlists]]
+description = "SHA-256 of the Operaton updateCaseSentryPart statement in CaseMigrationEngineContractTest"
+targetRules = ["sentry-access-token"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''^sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/cmmn/CaseMigrationEngineContractTest\.java$''']
+regexes = ['''^updateCaseSentryPart, [0-9a-f]{64}"$''']

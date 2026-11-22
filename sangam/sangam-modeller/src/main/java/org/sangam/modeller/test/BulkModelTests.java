@@ -72,7 +72,7 @@ public final class BulkModelTests {
     }
 
     public List<Map<String, Object>> reports(String tenantId, String packageId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT report FROM MOD_TEST_RUN WHERE tenant_id=? AND package_id=? ORDER BY created_at DESC", rs -> Json.readMap(rs.getString(1)), tenantId, packageId));
+        return tx.read(c -> Jdbc.query(c, "SELECT report FROM MOD_TEST_RUN WHERE tenant_id=? AND package_id=? ORDER BY created_at DESC", rs -> Json.readMap(rs.getString(1)), tenantId, packageId));
     }
 
     /** Exports test cases and their mock rules from design, sealed with a hash, for import on a runtime environment. */

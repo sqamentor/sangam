@@ -60,6 +60,20 @@ public final class DenialAudit {
     }
 
     /**
+     * The {@code AUTH_DENIED} fields of a refused action, as {@code AuthorizationService.require} writes them
+     * (action, resource type and id, outcome, reason), in that order; a mutable map the caller may add to.
+     */
+    public static Map<String, Object> refusal(String action, String resourceType, String resourceId, String reason) {
+        Map<String, Object> p = new java.util.LinkedHashMap<>();
+        p.put("action", action);
+        p.put("resource_type", resourceType);
+        p.put("resource_id", resourceId);
+        p.put("outcome", "DENIED");
+        p.put("reason", reason);
+        return p;
+    }
+
+    /**
      * Appends {@code eventType} to the denial chain of {@code chainId} and commits it on its own. The payload is the
      * one {@link JdbcAuditAdapter#record} would store (sanitised values plus the actor).
      *

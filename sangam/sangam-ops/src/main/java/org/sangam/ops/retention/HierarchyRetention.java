@@ -46,7 +46,7 @@ public final class HierarchyRetention {
 
     /** {@code retentionByKey}: definition key to retention; a root key with no entry is kept. */
     public List<Tree> plan(String tenantId, Map<String, Duration> retentionByKey, Instant now, Predicate<String> onHold, int limit) {
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             List<Tree> out = new ArrayList<>();
             List<String[]> roots = Jdbc.query(c, "SELECT r.ID_, r.PROC_DEF_KEY_ FROM ACT_HI_PROCINST r WHERE r.TENANT_ID_=? AND r.ID_=r.ROOT_PROC_INST_ID_ AND r.END_TIME_ IS NOT NULL ORDER BY r.END_TIME_",
                     rs -> new String[]{rs.getString(1), rs.getString(2)}, tenantId);
@@ -169,7 +169,7 @@ public final class HierarchyRetention {
     }
 
     public List<Run> runs(String tenantId) {
-        return tx.inTransaction(c -> org.sangam.core.layer.Jdbc.query(c, "SELECT run_id,tenant_id,plan_id,plan_hash,reason,purged,executed_by,executed_at FROM OPS_RETENTION_RUN WHERE tenant_id=? ORDER BY executed_at DESC",
+        return tx.read(c -> org.sangam.core.layer.Jdbc.query(c, "SELECT run_id,tenant_id,plan_id,plan_hash,reason,purged,executed_by,executed_at FROM OPS_RETENTION_RUN WHERE tenant_id=? ORDER BY executed_at DESC",
                 rs -> new Run(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getInt(6), rs.getString(7),
                         org.sangam.core.layer.Jdbc.instant(rs, "executed_at")), tenantId));
     }

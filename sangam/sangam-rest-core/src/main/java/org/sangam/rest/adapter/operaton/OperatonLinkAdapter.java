@@ -63,7 +63,7 @@ public class OperatonLinkAdapter implements LinkPort {
             }
         }
         String t = tenant(ctx);
-        List<EntityLink> stored = tx.withConnection(c -> Jdbc.query(c, "SELECT " + LINK_COLS + " FROM INSTANCE_LINK"
+        List<EntityLink> stored = tx.withReadConnection(c -> Jdbc.query(c, "SELECT " + LINK_COLS + " FROM INSTANCE_LINK"
                 + " WHERE tenant_id=? AND ((source_type=? AND source_id=?) OR (target_type=? AND target_id=?))",
                 OperatonLinkAdapter::row, t, scope, scopeId, scope, scopeId));
         for (EntityLink l : stored) {

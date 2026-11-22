@@ -153,7 +153,8 @@ export const api = {
   // ------------------------------------------------------------ tasks
   tasks: {
     /**
-     * GET /tasks. Inbox sections map onto contract filters; `section` is also sent for the richer server. M-042:
+     * GET /tasks. Register E-32(e): `section` is the server's predicate of the inbox section, the one GET /tasks/counts
+     * counts with (S03), so no other filter is derived from it (mine=true would narrow My seat to claimed tasks). M-042:
      * `currency` (ISO 4217) keeps only tasks whose indexed amount is in that currency; the server requires it with
      * sortBy=amount (400 VALIDATION_FAILED otherwise), and the inbox only offers the amount sort once one is chosen.
      */
@@ -166,9 +167,6 @@ export const api = {
         processDefinitionKey: q.packKey,
         section: s,
         slaState: q.slaState,
-        mine: s === 'MY_SEAT' ? true : undefined,
-        unassigned: s === 'POOL' ? true : undefined,
-        state: s === 'ESCALATED' || s === 'RETURNED' ? s : undefined,
         seatId: q.seatId,
         variableNames: q.variableNames?.length ? q.variableNames : undefined, // P45 card variables
         currency: q.currency || undefined,
@@ -685,6 +683,10 @@ export const api = {
     policyVersion: () => http.get<{ version?: number; policyVersion?: number }>('/admin/policies/version'),
     explain: (body: { principalId: string; action: string; resourceType: string; resourceId: string }) =>
       http.post<{ allowed: boolean; matched: { policyId: string; effect: 'ALLOW' | 'DENY'; scope: string }[]; policyVersion: number }>('/admin/policies/explain', body),
+    /** Four-eyes policy changes (E-33): status PENDING (the server's default) is the approver's queue. */
+    policyChanges: (q: ListQuery & { status?: T.PolicyChange['status'] }) => http.page<T.PolicyChange>('/admin/policies/changes', q),
+    decidePolicyChange: (id: string, approve: boolean, reason: string) =>
+      http.post<T.PolicyChange>(`/admin/policies/changes/${enc(id)}/${approve ? 'approve' : 'reject'}`, { reason }),
     sodExceptions: (q: ListQuery) => http.page<T.SodException>('/admin/sod-exceptions', q),
     saveSodException: (e: Partial<T.SodException>) => http.post<T.SodException>('/admin/sod-exceptions', e),
     decideSodException: (id: string, approve: boolean, reason: string) => http.post<void>(`/admin/sod-exceptions/${enc(id)}/${approve ? 'approve' : 'reject'}`, { reason }),

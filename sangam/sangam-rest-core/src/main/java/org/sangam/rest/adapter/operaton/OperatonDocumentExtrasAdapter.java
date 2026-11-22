@@ -100,15 +100,15 @@ public class OperatonDocumentExtrasAdapter implements DocumentExtrasPort {
     /** All versions of the logical document that {@code documentId} belongs to, ordered by version. */
     private List<Attachment> chain(RequestContext ctx, String documentId) {
         documents.get(ctx, documentId); // tenant check and 404
-        Attachment a = OperatonSupport.call(() -> tasks.getAttachment(documentId));
+        Attachment a = OperatonSupport.readCall(() -> tasks.getAttachment(documentId));
         Map<String, Object> meta = OperatonDocumentAdapter.meta(a);
         String root = String.valueOf(meta.getOrDefault("documentId", rootOf(a)));
         List<Attachment> scope = new ArrayList<>();
         if (a.getTaskId() != null) {
-            scope.addAll(OperatonSupport.call(() -> tasks.getTaskAttachments(a.getTaskId())));
+            scope.addAll(OperatonSupport.readCall(() -> tasks.getTaskAttachments(a.getTaskId())));
         }
         if (a.getProcessInstanceId() != null) {
-            scope.addAll(OperatonSupport.call(() -> tasks.getProcessInstanceAttachments(a.getProcessInstanceId())));
+            scope.addAll(OperatonSupport.readCall(() -> tasks.getProcessInstanceAttachments(a.getProcessInstanceId())));
         }
         Map<String, Attachment> byId = new LinkedHashMap<>();
         for (Attachment x : scope) {

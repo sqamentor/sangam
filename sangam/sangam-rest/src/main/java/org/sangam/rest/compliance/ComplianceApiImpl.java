@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.compliance;
 
+import org.sangam.core.api.ReadWork;
 import java.sql.Connection;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -51,6 +52,10 @@ public final class ComplianceApiImpl implements ComplianceRestService {
         return compliance.tx.inTransaction(work);
     }
 
+    private <T> T rtx(ReadWork<T> work) {
+        return compliance.tx.read(work);
+    }
+
     private ComplianceConfig cfg(String tenant) {
         return compliance.config.forTenant(tenant);
     }
@@ -68,7 +73,7 @@ public final class ComplianceApiImpl implements ComplianceRestService {
 
     @Override
     public ConsentNoticeService.RenderedNotice notice(String tenantId, String key, Integer version, String language) {
-        return tx(c -> compliance.notices.get(c, tenantId, key, version, language(tenantId, language)));
+        return rtx(c -> compliance.notices.get(c, tenantId, key, version, language(tenantId, language)));
     }
 
     @Override
@@ -78,7 +83,7 @@ public final class ComplianceApiImpl implements ComplianceRestService {
 
     @Override
     public ConsentNoticeService.RenderedNotice privacyPolicy(String tenantId, String language) {
-        return tx(c -> compliance.notices.privacyPolicy(c, tenantId, language(tenantId, language)));
+        return rtx(c -> compliance.notices.privacyPolicy(c, tenantId, language(tenantId, language)));
     }
 
     @Override
@@ -88,7 +93,7 @@ public final class ComplianceApiImpl implements ComplianceRestService {
 
     @Override
     public List<PurposeDefinition> purposes(SecurityIdentity id) {
-        return tx(c -> compliance.purposes.list(c, id.tenantId()));
+        return rtx(c -> compliance.purposes.list(c, id.tenantId()));
     }
 
     // ---------------------------------------------------------------- consents
@@ -146,7 +151,7 @@ public final class ComplianceApiImpl implements ComplianceRestService {
 
     @Override
     public List<ConsentService.Consent> consents(SecurityIdentity id, String principalRef) {
-        return tx(c -> {
+        return rtx(c -> {
             List<ConsentService.Consent> list = compliance.consents.history(c, id.tenantId(), principalRef);
             compliance.audit.personalDataRead(c, id.tenantId(), principalRef, id.personId(), "consents", list.size(), null);
             return list;
@@ -179,7 +184,7 @@ public final class ComplianceApiImpl implements ComplianceRestService {
 
     @Override
     public DataSubjectRightsService.RightsRequest rightsRequest(SecurityIdentity id, String requestId, boolean officer) {
-        return tx(c -> {
+        return rtx(c -> {
             DataSubjectRightsService.RightsRequest r = compliance.rights.get(c, id.tenantId(), requestId);
             if (!id.personId().equals(r.principalRef())) {
                 if (!officer) {
@@ -194,7 +199,7 @@ public final class ComplianceApiImpl implements ComplianceRestService {
 
     @Override
     public List<DataSubjectRightsService.RightsRequest> rightsRequestsOf(SecurityIdentity id, String principalRef) {
-        return tx(c -> {
+        return rtx(c -> {
             List<DataSubjectRightsService.RightsRequest> list = compliance.rights.forPrincipal(c, id.tenantId(), principalRef);
             compliance.audit.personalDataRead(c, id.tenantId(), principalRef, id.personId(), "rights-requests", list.size(),
                     null);
@@ -214,7 +219,7 @@ public final class ComplianceApiImpl implements ComplianceRestService {
 
     @Override
     public BreachIncidentService.Breach breach(SecurityIdentity id, String breachId) {
-        return tx(c -> compliance.breaches.get(c, id.tenantId(), breachId));
+        return rtx(c -> compliance.breaches.get(c, id.tenantId(), breachId));
     }
 
     @Override
@@ -228,7 +233,7 @@ public final class ComplianceApiImpl implements ComplianceRestService {
 
     @Override
     public IncidentReportingService.Incident incident(SecurityIdentity id, String incidentId) {
-        return tx(c -> compliance.incidents.get(c, id.tenantId(), incidentId));
+        return rtx(c -> compliance.incidents.get(c, id.tenantId(), incidentId));
     }
 
     @Override
@@ -254,7 +259,7 @@ public final class ComplianceApiImpl implements ComplianceRestService {
 
     @Override
     public LawfulRequestService.LawfulRequest lawfulRequest(SecurityIdentity id, String requestId) {
-        return tx(c -> compliance.lawfulRequests.get(c, id.tenantId(), requestId));
+        return rtx(c -> compliance.lawfulRequests.get(c, id.tenantId(), requestId));
     }
 
     @Override
@@ -303,7 +308,7 @@ public final class ComplianceApiImpl implements ComplianceRestService {
 
     @Override
     public List<ContactDirectory.Contact> contacts(SecurityIdentity id) {
-        return tx(c -> compliance.contacts.all(c, id.tenantId()));
+        return rtx(c -> compliance.contacts.all(c, id.tenantId()));
     }
 
     @Override
@@ -357,7 +362,7 @@ public final class ComplianceApiImpl implements ComplianceRestService {
 
     @Override
     public List<org.sangam.compliance.ports.CompliancePorts.ActiveHold> legalHolds(SecurityIdentity id, String rootId) {
-        return tx(c -> compliance.legalHolds.active(c, id.tenantId(), rootId));
+        return rtx(c -> compliance.legalHolds.active(c, id.tenantId(), rootId));
     }
 
     @Override
@@ -376,7 +381,7 @@ public final class ComplianceApiImpl implements ComplianceRestService {
 
     @Override
     public Map<String, Object> verifyAudit(SecurityIdentity id) {
-        return tx(c -> {
+        return rtx(c -> {
             Map<String, Object> m = new LinkedHashMap<>();
             AuditIntegrityVerifier.Result chains = compliance.integrity.verifyTenant(c, id.tenantId(), MAX_CHAINS);
             m.put("chains", chains);
@@ -393,6 +398,7 @@ public final class ComplianceApiImpl implements ComplianceRestService {
     @Override
     public ComplianceEvidenceReportGenerator.Report report(SecurityIdentity id, Instant from, Instant to,
                                                            boolean verifyChains) {
+        // a write (CMP_REPORT, audit event CMP_EVIDENCE_REPORT_GENERATED): the write callback, never the read twin
         return tx(c -> compliance.reports.generate(c, id.tenantId(), from, to, verifyChains, id.personId()));
     }
 

@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Admin (34 operations).
+/// Typed operations of Admin (29 operations).
 /// </summary>
 public sealed class AdminApi
 {
@@ -140,75 +140,6 @@ public sealed class AdminApi
         var req = ApiRequest.Post($"/admin/delegations/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/revoke");
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.Delegation?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// List policys
-    /// Tenant-scoped admin list.
-    /// GET /admin/policies (operationId listPolicies); permission policy.admin.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.Policy>> ListPoliciesAsync(string? q = null, string? parentId = null, string? orgUnitId = null, string? seatId = null, string? personId = null, string? kind = null, global::System.DateOnly? activeOn = null, bool? includeInactive = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/admin/policies");
-        req.WithQuery("q", GeneratedCalls.Q(q));
-        req.WithQuery("parentId", GeneratedCalls.Q(parentId));
-        req.WithQuery("orgUnitId", GeneratedCalls.Q(orgUnitId));
-        req.WithQuery("seatId", GeneratedCalls.Q(seatId));
-        req.WithQuery("personId", GeneratedCalls.Q(personId));
-        req.WithQuery("kind", GeneratedCalls.Q(kind));
-        req.WithQuery("activeOn", GeneratedCalls.Q(activeOn));
-        req.WithQuery("includeInactive", GeneratedCalls.Q(includeInactive));
-        req.WithQuery("page", GeneratedCalls.Q(page));
-        req.WithQuery("size", GeneratedCalls.Q(size));
-        return await _calls.PageAsync<M.Policy>(req, options, page, size, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Create policy
-    /// Creates and audits on the tenant security chain.
-    /// POST /admin/policies (operationId createPolicy); permission policy.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<M.Policy?> CreatePolicyAsync(M.Policy body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Post($"/admin/policies");
-        if (body is not null) req.WithBody(body);
-        return await _calls.JsonAsync<M.Policy?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Delete policy
-    /// Deletes (reason audited).
-    /// DELETE /admin/policies/by-id (operationId deletePolicy); permission policy.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task DeletePolicyAsync(string id, string? reason = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Delete($"/admin/policies/by-id");
-        req.WithQuery("id", GeneratedCalls.Q(id));
-        req.WithQuery("reason", GeneratedCalls.Q(reason));
-        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Policy version
-    /// Current policy_version of the tenant (VI.4 rule 5).
-    /// GET /admin/policies/version (operationId getPolicyVersion); permission policy.admin.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<M.PolicyVersion?> GetPolicyVersionAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/admin/policies/version");
-        return await _calls.JsonAsync<M.PolicyVersion?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Explain an authorization decision
-    /// Which grants and denies match (deny wins, A-13) at the current policy version (VI.4).
-    /// POST /admin/policies/explain (operationId explainPolicy); permission policy.admin.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<M.ExplainResult?> ExplainPolicyAsync(M.ExplainRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Post($"/admin/policies/explain");
-        if (body is not null) req.WithBody(body);
-        return await _calls.JsonAsync<M.ExplainResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

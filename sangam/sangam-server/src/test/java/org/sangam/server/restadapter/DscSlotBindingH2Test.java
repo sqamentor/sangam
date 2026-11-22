@@ -195,7 +195,7 @@ class DscSlotBindingH2Test {
 
     /** The server's binding check and consumption, as PacksWiring builds it. */
     static AuditDocumentSlotBindings bindings() {
-        return new AuditDocumentSlotBindings(fx.tx::withConnection,
+        return new AuditDocumentSlotBindings(fx.tx.joinedTransactions(),
                 org.sangam.server.config.PacksWiring::engineCommand, new org.sangam.core.layer.AuditChain(fx.tx.dialect()));
     }
 

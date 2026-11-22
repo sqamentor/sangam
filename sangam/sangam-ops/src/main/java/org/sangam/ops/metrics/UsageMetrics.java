@@ -69,7 +69,7 @@ public final class UsageMetrics {
 
     /** One tenant's rows; the caller's authorization on that tenant is checked by the REST layer. */
     public List<Metric> read(String tenantId, LocalDate from, LocalDate toInclusive) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT tenant_id,day_utc,metric,value_num FROM OPS_USAGE_DAILY WHERE tenant_id=? AND day_utc>=? AND day_utc<=? ORDER BY day_utc,metric",
+        return tx.read(c -> Jdbc.query(c, "SELECT tenant_id,day_utc,metric,value_num FROM OPS_USAGE_DAILY WHERE tenant_id=? AND day_utc>=? AND day_utc<=? ORDER BY day_utc,metric",
                 rs -> new Metric(rs.getString(1), rs.getString(2), rs.getString(3), rs.getLong(4)), tenantId, from.toString(), toInclusive.toString()));
     }
 }

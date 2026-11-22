@@ -64,7 +64,44 @@ class PortalConsentSubmissionTest {
         }
 
         @Override
+        public <T> T inReadTx(org.sangam.core.api.ReadSupplier<T> work) {
+            calls.add("tx:begin");
+            depth++;
+            try {
+                T r = work.read();
+                calls.add("tx:commit");
+                return r;
+            } catch (RuntimeException e) {
+                calls.add("tx:rollback");
+                throw e;
+            } finally {
+                depth--;
+            }
+        }
+
+        @Override
+        public <T> T withReadConnection(org.sangam.core.api.ReadWork<T> work) {
+            calls.add("tx:begin");
+            depth++;
+            try {
+                T r = work.read(connection());
+                calls.add("tx:commit");
+                return r;
+            } catch (RuntimeException e) {
+                calls.add("tx:rollback");
+                throw e;
+            } finally {
+                depth--;
+            }
+        }
+
+        @Override
         public <T> T inNewTx(Supplier<T> work) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public <T> T inNewReadTx(org.sangam.core.api.ReadWork<T> work) {
             throw new UnsupportedOperationException();
         }
 

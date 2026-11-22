@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.ports.support;
 
+import org.sangam.core.api.ReadWork;
 import org.operaton.bpm.engine.ProcessEngine;
 import org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.operaton.bpm.engine.impl.context.Context;
@@ -77,6 +78,12 @@ public final class EngineTx {
             public <T> T inTransaction(Function<Connection, T> work) {
                 // connection(): installs the FW-23 rollback guard, so product rows written here roll back with the command
                 return execute(engine, cc -> work.apply(connection()));
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                // connection(): installs the FW-23 rollback guard, so product rows written here roll back with the command
+                return execute(engine, cc -> work.read(connection()));
             }
         };
     }

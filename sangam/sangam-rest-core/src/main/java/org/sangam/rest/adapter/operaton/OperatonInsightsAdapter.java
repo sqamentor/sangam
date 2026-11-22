@@ -149,7 +149,7 @@ public class OperatonInsightsAdapter implements InsightsPort {
         if (range.to() != null) {
             q.startedBefore(Date.from(range.to()));
         }
-        List<HistoricTaskInstance> list = OperatonSupport.call(() -> q.listPage(0, SAMPLE));
+        List<HistoricTaskInstance> list = OperatonSupport.readCall(() -> q.listPage(0, SAMPLE));
         Instant now = Instant.now();
         Map<String, long[]> counts = new TreeMap<>();
         Map<String, String> names = new HashMap<>();
@@ -222,13 +222,13 @@ public class OperatonInsightsAdapter implements InsightsPort {
         if (range.processDefinitionKey() == null || range.processDefinitionKey().isBlank()) {
             throw ApiProblem.badRequest("VALIDATION_FAILED", "processDefinitionKey is required");
         }
-        ProcessDefinition def = OperatonSupport.call(() -> repository.createProcessDefinitionQuery()
+        ProcessDefinition def = OperatonSupport.readCall(() -> repository.createProcessDefinitionQuery()
                 .processDefinitionKey(range.processDefinitionKey()).tenantIdIn(ctx.tenantId())
                 .includeProcessDefinitionsWithoutTenantId().latestVersion().singleResult());
         if (def == null) {
             throw ApiProblem.notFound("process definition", range.processDefinitionKey());
         }
-        BpmnModelInstance model = OperatonSupport.call(() -> repository.getBpmnModelInstance(def.getId()));
+        BpmnModelInstance model = OperatonSupport.readCall(() -> repository.getBpmnModelInstance(def.getId()));
         Graph graph = Graph.of(model);
 
         var q = history.createHistoricActivityInstanceQuery().processDefinitionId(def.getId())
@@ -240,11 +240,11 @@ public class OperatonInsightsAdapter implements InsightsPort {
         if (range.to() != null) {
             q.startedBefore(Date.from(range.to()));
         }
-        List<HistoricActivityInstance> acts = OperatonSupport.call(() -> q.listPage(0, ACTIVITY_SAMPLE));
+        List<HistoricActivityInstance> acts = OperatonSupport.readCall(() -> q.listPage(0, ACTIVITY_SAMPLE));
         Set<String> finished = new HashSet<>();
         var fq = history.createHistoricProcessInstanceQuery().processDefinitionId(def.getId())
                 .tenantIdIn(ctx.tenantId()).finished();
-        OperatonSupport.call(() -> fq.listPage(0, SAMPLE)).forEach(h -> {
+        OperatonSupport.readCall(() -> fq.listPage(0, SAMPLE)).forEach(h -> {
             if (h.getDeleteReason() == null) {
                 finished.add(h.getId());
             }
@@ -461,7 +461,7 @@ public class OperatonInsightsAdapter implements InsightsPort {
         } else if (range.to() != null) {
             q.startedBefore(Date.from(range.to()));
         }
-        return OperatonSupport.call(() -> q.orderByProcessInstanceStartTime().desc().listPage(0, SAMPLE));
+        return OperatonSupport.readCall(() -> q.orderByProcessInstanceStartTime().desc().listPage(0, SAMPLE));
     }
 
     private static boolean inRange(Instant i, AnalyticsPort.Range r) {

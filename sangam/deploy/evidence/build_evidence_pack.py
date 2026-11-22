@@ -42,7 +42,7 @@ SCOPE_NOTE = """## Scope and limits
   performed by a CERT-In-empanelled auditor, before hosting, every year and after major changes (GOV-3).
 - The compliance report in `06-compliance` was generated from a **fresh development instance** (H2, no tenant data).
   It shows what the product implements. Each department must generate its own report from its production install
-  (`GET /api/v1/compliance/reports`), which also covers logs, NTP and hosting evidence that depend on the deployment.
+  (`POST /api/v1/compliance/reports`), which also covers logs, NTP and hosting evidence that depend on the deployment.
 - Deployer evidence not in this pack: penetration test results, hosting and network configuration, 180-day log
   retention (R51), backup and restore records (T26/T27), incident contacts.
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.restadapter;
 
+import org.sangam.core.api.ReadWork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -76,6 +77,24 @@ class RestDenialAuditH2Test {
                     c.setAutoCommit(false);
                     try {
                         R r = work.apply(c);
+                        c.commit();
+                        return r;
+                    } catch (RuntimeException e) {
+                        c.rollback();
+                        throw e;
+                    }
+                } catch (java.sql.SQLException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+
+            @Override
+            public <R> R read(ReadWork<R> work) {
+                leafTransactions.incrementAndGet();
+                try (Connection c = fx.raw.getConnection()) {
+                    c.setAutoCommit(false);
+                    try {
+                        R r = work.read(c);
                         c.commit();
                         return r;
                     } catch (RuntimeException e) {

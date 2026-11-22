@@ -93,9 +93,56 @@ public class OpsWiring {
         return new ScopedVariables(d, Transactions.of(ds), new AuditChain(d), env.getProperty("sangam.ops.vars.cache-millis", Long.class, 30_000L));
     }
 
+    /**
+     * Secrets are stored only as {@link FieldEncryptor} envelopes under the tenant data keys of the security module.
+     * Register E-31(d), joint decision EV-M-0962 (Q-E): without the security module (the development start of owner
+     * decision 75) there is no field encryptor, and the server still starts; the secret store then fails closed: every
+     * write and every read of a value is refused (never stored or returned in plain text).
+     */
     @Bean
-    public SecretAdmin sangamSecretAdmin(TxSupport tx, DataSource ds, FieldEncryptor encryptor) {
-        return new SecretAdmin(tx.dialect(), Transactions.of(ds), new AuditChain(tx.dialect()), encryptor);
+    public SecretAdmin sangamSecretAdmin(TxSupport tx, DataSource ds, ObjectProvider<FieldEncryptor> encryptor) {
+        FieldEncryptor fe = encryptor.getIfAvailable();
+        if (fe == null) {
+            LOG.warn("sangam-ops: {}", NoFieldEncryptor.REASON);
+            fe = new NoFieldEncryptor();
+        }
+        return new SecretAdmin(tx.dialect(), Transactions.of(ds), new AuditChain(tx.dialect()), fe);
+    }
+
+    /** The field encryptor of a start without the security module: it refuses every call (fail closed). */
+    static final class NoFieldEncryptor implements FieldEncryptor {
+
+        static final String REASON = "no security module, so no field encryptor: the secret store refuses every write"
+                + " and read of a secret value (fail closed)";
+
+        private static IllegalStateException refused() {
+            return new IllegalStateException(REASON);
+        }
+
+        @Override
+        public String encrypt(String tenantId, String context, String plaintext) {
+            throw refused();
+        }
+
+        @Override
+        public String decrypt(String tenantId, String context, String envelope) {
+            throw refused();
+        }
+
+        @Override
+        public String encryptJson(String tenantId, String context, Map<String, ?> json) {
+            throw refused();
+        }
+
+        @Override
+        public Map<String, Object> decryptJson(String tenantId, String context, String envelope) {
+            throw refused();
+        }
+
+        @Override
+        public String reencrypt(String tenantId, String context, String envelope) {
+            throw refused();
+        }
     }
 
     /** Tenant-scoped resolver over the encrypted secret store; values only ever leave through this. */

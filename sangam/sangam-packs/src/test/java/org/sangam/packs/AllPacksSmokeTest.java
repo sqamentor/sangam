@@ -157,7 +157,7 @@ class AllPacksSmokeTest {
                 // owner decision E1: a batch item payment is started only by its parent's FAN_OUT under the batch
                 // sanction (driven by the parent's own tests); started on its own it must be held, never paid
                 try {
-                    String piId = engine.getRuntimeService().startProcessInstanceByKey(pd.getKey(), bk, bag())
+                    String piId = engine.getRuntimeService().startProcessInstanceByKey(pd.getKey(), bk, PackStartOffice.apply(pd.getKey(), bag()))
                             .getId();
                     driver.runJobs();
                     // no exception: the item waits before its release (e.g. a review); it must not have been released
@@ -177,7 +177,7 @@ class AllPacksSmokeTest {
             try {
                 Map<String, Object> vars = bag();
                 vars.put("campaignId", "SMOKE/sangam-recruitment-campaign");
-                engine.getRuntimeService().startProcessInstanceByKey(pd.getKey(), bk, vars);
+                engine.getRuntimeService().startProcessInstanceByKey(pd.getKey(), bk, PackStartOffice.apply(pd.getKey(), vars));
                 started++;
                 driver.runJobs();
             } catch (RuntimeException e) {

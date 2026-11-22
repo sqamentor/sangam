@@ -70,7 +70,7 @@ class PilotScenarioTest {
 
     /** Starts the definition of the test tenant; another tenant's deployments of the same key exist in this engine. */
     static void start(String key, String bk, Map<String, Object> v) {
-        engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(v)
+        engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(PackStartOffice.apply(key, v))
                 .processDefinitionTenantId(PackTestTenant.ID).execute();
     }
 
@@ -187,7 +187,7 @@ class PilotScenarioTest {
         Map<String, Object> v = vars("workName", "Road", "estimateAmount", 90_000_000L, "budgetHead", "5054",
                 "officeId", office, "actingSeat", "AE-WK", "initiator", "wk.ae-wk");
         var b = engine.getRuntimeService().createProcessInstanceByKey("sangam-works-project").businessKey(bk)
-                .setVariables(v);
+                .setVariables(PackStartOffice.apply("sangam-works-project", v));
         b = tenant != null ? b.processDefinitionTenantId(tenant) : b.processDefinitionTenantId(PackTestTenant.ID);
         String root = b.execute().getId();
         driver.run(bk, t -> "sc_scrutiny".equals(t.getTaskDefinitionKey())

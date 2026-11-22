@@ -102,7 +102,7 @@ public final class DocumentClassifier {
     }
 
     public Evaluation evaluate(String tenantId, String templateKey, int version) {
-        return tx.inTransaction(c -> Jdbc.one(c, "SELECT COUNT(*), COALESCE(SUM(CASE WHEN label=corrected_label THEN 1 ELSE 0 END),0) FROM AI_CLASSIFICATION "
+        return tx.read(c -> Jdbc.one(c, "SELECT COUNT(*), COALESCE(SUM(CASE WHEN label=corrected_label THEN 1 ELSE 0 END),0) FROM AI_CLASSIFICATION "
                         + "WHERE tenant_id=? AND template_key=? AND template_version=? AND corrected_label IS NOT NULL",
                 rs -> new Evaluation(rs.getLong(1), rs.getLong(2)), tenantId, templateKey, version).orElseThrow());
     }
@@ -112,7 +112,7 @@ public final class DocumentClassifier {
     }
 
     public List<Row> list(String tenantId) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT id,source_ref,label,confidence,status,corrected_label,reviewed_by,reviewed_at FROM AI_CLASSIFICATION WHERE tenant_id=? ORDER BY created_at DESC",
+        return tx.read(c -> Jdbc.query(c, "SELECT id,source_ref,label,confidence,status,corrected_label,reviewed_by,reviewed_at FROM AI_CLASSIFICATION WHERE tenant_id=? ORDER BY created_at DESC",
                 rs -> new Row(rs.getString(1), rs.getString(2), rs.getString(6) != null ? rs.getString(6) : rs.getString(3), rs.getBigDecimal(4),
                         rs.getString(5), rs.getString(7), rs.getTimestamp(8) == null ? null : rs.getTimestamp(8).toInstant()), tenantId));
     }

@@ -85,7 +85,7 @@ public final class AssignmentService {
     }
 
     public Assignment get(String tenantId, String id) {
-        return tx.inTransaction(c -> get(c, tenantId, id));
+        return tx.read(c -> get(c, tenantId, id));
     }
 
     public Assignment get(Connection c, String tenantId, String id) {
@@ -115,7 +115,7 @@ public final class AssignmentService {
         sql.append(" ORDER BY due_at, assignment_id");
         int lim = Math.max(1, Math.min(500, limit <= 0 ? 50 : limit));
         int off = Math.max(0, offset);
-        return tx.inTransaction(c -> {
+        return tx.read(c -> {
             List<Assignment> all = Jdbc.query(c, sql.toString(), AssignmentService::map, p.toArray());
             return all.subList(Math.min(off, all.size()), Math.min(off + lim, all.size()));
         });

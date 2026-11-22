@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.modules.registry;
 
+import org.sangam.core.api.ReadWork;
 import java.util.function.Function;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -55,6 +56,11 @@ public class RegistryRestConfiguration {
             @Override
             public <T> T inTransaction(Function<java.sql.Connection, T> work) {
                 return tx.withConnection(work);
+            }
+
+            @Override
+            public <T> T read(ReadWork<T> work) {
+                return tx.withReadConnection(work);
             }
         };
         return new RegistryRestSupport(joined, RegistryRestConfiguration::currentCaller);

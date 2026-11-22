@@ -471,17 +471,14 @@ public sealed class ComplianceApi
     }
 
     /// <summary>
-    /// Compliance evidence report
-    /// Evidence report for [from, to); `format=html` returns text/html.
-    /// GET /compliance/reports (operationId getComplianceReport); permission audit.read.
+    /// Generate the compliance evidence report
+    /// Generates the evidence report for [from, to), stores its hash (CMP_REPORT) and writes the audit event CMP_EVIDENCE_REPORT_GENERATED; format `html` returns text/html. X-Sangam-Report-Hash carries the hash. A missing `from` or `to` is 400 VALIDATION_FAILED. Generation writes, so there is no GET of this path (405).
+    /// POST /compliance/reports (operationId generateComplianceReport); permission audit.read; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.ComplianceReport?> GetComplianceReportAsync(global::System.DateTimeOffset from, global::System.DateTimeOffset to, bool? verifyChains = null, string? format = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.ComplianceReport?> GenerateComplianceReportAsync(M.ComplianceReportRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/compliance/reports");
-        req.WithQuery("from", GeneratedCalls.Q(from));
-        req.WithQuery("to", GeneratedCalls.Q(to));
-        req.WithQuery("verifyChains", GeneratedCalls.Q(verifyChains));
-        req.WithQuery("format", GeneratedCalls.Q(format));
+        var req = ApiRequest.Post($"/compliance/reports");
+        if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.ComplianceReport?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 

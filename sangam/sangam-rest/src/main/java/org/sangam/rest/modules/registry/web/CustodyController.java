@@ -57,36 +57,36 @@ public class CustodyController {
                                   @RequestParam(required = false) String label,
                                   @RequestParam(defaultValue = "0") int page,
                                   @RequestParam(defaultValue = "50") int size) {
-        return support.tx((c, ctx) -> custody.list(c, ctx,
+        return support.rtx((c, ctx) -> custody.list(c, ctx,
                 new CustodyService.Query(typeKey, custodian, caseRef, containerId, state, label, page, size)));
     }
 
     @GetMapping("/items/{id}")
     public CustodyItem get(@PathVariable String id) {
-        return support.tx((c, ctx) -> custody.get(c, ctx, id));
+        return support.rtx((c, ctx) -> custody.get(c, ctx, id));
     }
 
     /** Decision 393: the value can carry '/' or ':', so it is a required query parameter. */
     @GetMapping("/items/by-label")
     public CustodyItem byLabel(@RequestParam("label") String label) {
-        return support.tx((c, ctx) -> custody.byLabel(c, ctx, label));
+        return support.rtx((c, ctx) -> custody.byLabel(c, ctx, label));
     }
 
     @GetMapping("/items/{id}/events")
     public List<CustodyEvent> events(@PathVariable String id) {
-        return support.tx((c, ctx) -> custody.events(c, ctx, id));
+        return support.rtx((c, ctx) -> custody.events(c, ctx, id));
     }
 
     @GetMapping("/items/{id}/verify")
     public CustodyService.ChainVerification verify(@PathVariable String id) {
-        return support.tx((c, ctx) -> custody.verifyChain(c, ctx, id));
+        return support.rtx((c, ctx) -> custody.verifyChain(c, ctx, id));
     }
 
     // ------------------------------------------------------------------------------------------- transfers
 
     @GetMapping("/items/{id}/transfers")
     public List<CustodyTransfer> transfers(@PathVariable String id) {
-        return support.tx((c, ctx) -> custody.transfers(c, ctx, id));
+        return support.rtx((c, ctx) -> custody.transfers(c, ctx, id));
     }
 
     @PostMapping("/items/{id}/transfers")
@@ -105,14 +105,14 @@ public class CustodyController {
 
     @GetMapping("/transfers/{transferId}")
     public CustodyTransfer transfer(@PathVariable String transferId) {
-        return support.tx((c, ctx) -> custody.transfer(c, ctx, transferId));
+        return support.rtx((c, ctx) -> custody.transfer(c, ctx, transferId));
     }
 
     @GetMapping("/transfers/pending")
     public List<CustodyTransfer> pending(@RequestParam String toCustodian,
                                          @RequestParam(defaultValue = "0") int page,
                                          @RequestParam(defaultValue = "50") int size) {
-        return support.tx((c, ctx) -> custody.pendingFor(c, ctx, toCustodian, page, size));
+        return support.rtx((c, ctx) -> custody.pendingFor(c, ctx, toCustodian, page, size));
     }
 
     @PostMapping("/transfers/{transferId}/accept")
@@ -180,7 +180,7 @@ public class CustodyController {
 
     @GetMapping("/items/{id}/disposal-orders")
     public List<DisposalOrder> disposalOrders(@PathVariable String id) {
-        return support.tx((c, ctx) -> custody.disposalOrders(c, ctx, id));
+        return support.rtx((c, ctx) -> custody.disposalOrders(c, ctx, id));
     }
 
     @PostMapping("/items/{id}/disposal-orders")
@@ -192,7 +192,7 @@ public class CustodyController {
 
     @GetMapping("/disposal-orders/{orderId}")
     public DisposalOrder disposalOrder(@PathVariable String orderId) {
-        return support.tx((c, ctx) -> custody.disposalOrder(c, ctx, orderId));
+        return support.rtx((c, ctx) -> custody.disposalOrder(c, ctx, orderId));
     }
 
     @PostMapping("/disposal-orders/{orderId}/execute")
@@ -215,7 +215,7 @@ public class CustodyController {
     public CustodyService.GapReport gapCheck(@RequestParam(required = false) Long inTransitHours,
                                              @RequestParam(required = false) Long staleDays,
                                              @RequestParam(defaultValue = "100") int limit) {
-        return support.tx((c, ctx) -> custody.gapCheck(c, ctx,
+        return support.rtx((c, ctx) -> custody.gapCheck(c, ctx,
                 inTransitHours == null ? Duration.ofHours(24) : Duration.ofHours(inTransitHours),
                 staleDays == null ? null : Duration.ofDays(staleDays), limit));
     }

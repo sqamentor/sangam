@@ -541,7 +541,7 @@ class AIApi:
         return cast("dict[str, Any]", self._c.json(req, options))
 
 class AdminApi:
-    """``Admin`` (34 operations)."""
+    """``Admin`` (29 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -639,58 +639,6 @@ class AdminApi:
         req = ApiRequest("POST", f"/admin/delegations/{seg(str(id))}/revoke")
         req.body = body
         return cast("M.Delegation", self._c.json(req, options))
-
-    def list_policies(self, *, q: Optional[str] = None, parent_id: Optional[str] = None, org_unit_id: Optional[str] = None, seat_id: Optional[str] = None, person_id: Optional[str] = None, kind: Optional[str] = None, active_on: Optional[str] = None, include_inactive: Optional[bool] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Policy]:
-        """List policys
-
-        Tenant-scoped admin list.
-
-        ``GET /admin/policies`` (operationId ``listPolicies``); permission ``policy.admin``.
-        """
-        req = ApiRequest("GET", f"/admin/policies", query={"q": q, "parentId": parent_id, "orgUnitId": org_unit_id, "seatId": seat_id, "personId": person_id, "kind": kind, "activeOn": active_on, "includeInactive": include_inactive, "page": page, "size": size})
-        return cast("Page[M.Policy]", self._c.page(req, options, page, size))
-
-    def create_policy(self, body: M.Policy, *, options: Optional[RequestOptions] = None) -> M.Policy:
-        """Create policy
-
-        Creates and audits on the tenant security chain.
-
-        ``POST /admin/policies`` (operationId ``createPolicy``); permission ``policy.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("POST", f"/admin/policies")
-        req.body = body
-        return cast("M.Policy", self._c.json(req, options))
-
-    def delete_policy(self, *, id: str, reason: Optional[str] = None, options: Optional[RequestOptions] = None) -> None:
-        """Delete policy
-
-        Deletes (reason audited).
-
-        ``DELETE /admin/policies/by-id`` (operationId ``deletePolicy``); permission ``policy.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("DELETE", f"/admin/policies/by-id", query={"id": id, "reason": reason})
-        self._c.none(req, options)
-
-    def get_policy_version(self, *, options: Optional[RequestOptions] = None) -> M.PolicyVersion:
-        """Policy version
-
-        Current policy_version of the tenant (VI.4 rule 5).
-
-        ``GET /admin/policies/version`` (operationId ``getPolicyVersion``); permission ``policy.admin``.
-        """
-        req = ApiRequest("GET", f"/admin/policies/version")
-        return cast("M.PolicyVersion", self._c.json(req, options))
-
-    def explain_policy(self, body: M.ExplainRequest, *, options: Optional[RequestOptions] = None) -> M.ExplainResult:
-        """Explain an authorization decision
-
-        Which grants and denies match (deny wins, A-13) at the current policy version (VI.4).
-
-        ``POST /admin/policies/explain`` (operationId ``explainPolicy``); permission ``policy.admin``.
-        """
-        req = ApiRequest("POST", f"/admin/policies/explain")
-        req.body = body
-        return cast("M.ExplainResult", self._c.json(req, options))
 
     def list_sod_exceptions(self, *, status: Optional[Literal["PENDING", "APPROVED", "REJECTED", "EXPIRED"]] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.SodException]:
         """SoD exceptions
@@ -1121,6 +1069,106 @@ class AdminOrgUnitsApi:
         req = ApiRequest("POST", f"/admin/org-units/import")
         _multipart(req, body)
         return cast("M.OrgUnitImportResult", self._c.json(req, options))
+
+class AdminPoliciesApi:
+    """``Admin /policies`` (9 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def list_policies(self, *, q: Optional[str] = None, parent_id: Optional[str] = None, org_unit_id: Optional[str] = None, seat_id: Optional[str] = None, person_id: Optional[str] = None, kind: Optional[str] = None, active_on: Optional[str] = None, include_inactive: Optional[bool] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Policy]:
+        """List policys
+
+        Tenant-scoped admin list.
+
+        ``GET /admin/policies`` (operationId ``listPolicies``); permission ``policy.admin``.
+        """
+        req = ApiRequest("GET", f"/admin/policies", query={"q": q, "parentId": parent_id, "orgUnitId": org_unit_id, "seatId": seat_id, "personId": person_id, "kind": kind, "activeOn": active_on, "includeInactive": include_inactive, "page": page, "size": size})
+        return cast("Page[M.Policy]", self._c.page(req, options, page, size))
+
+    def create_policy(self, body: M.Policy, *, options: Optional[RequestOptions] = None) -> M.Policy:
+        """Create policy
+
+        Creates and audits on the tenant security chain.
+
+        ``POST /admin/policies`` (operationId ``createPolicy``); permission ``policy.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/policies")
+        req.body = body
+        return cast("M.Policy", self._c.json(req, options))
+
+    def delete_policy(self, *, id: str, reason: Optional[str] = None, options: Optional[RequestOptions] = None) -> None:
+        """Delete policy
+
+        Deletes (reason audited).
+
+        ``DELETE /admin/policies/by-id`` (operationId ``deletePolicy``); permission ``policy.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("DELETE", f"/admin/policies/by-id", query={"id": id, "reason": reason})
+        self._c.none(req, options)
+
+    def get_policy_version(self, *, options: Optional[RequestOptions] = None) -> M.PolicyVersion:
+        """Policy version
+
+        Current policy_version of the tenant (VI.4 rule 5).
+
+        ``GET /admin/policies/version`` (operationId ``getPolicyVersion``); permission ``policy.admin``.
+        """
+        req = ApiRequest("GET", f"/admin/policies/version")
+        return cast("M.PolicyVersion", self._c.json(req, options))
+
+    def list_policy_changes(self, *, status: Optional[Literal["PENDING", "APPLIED", "REJECTED", "SUPERSEDED"]] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.PolicyChange]:
+        """Policy changes
+
+        Policy changes of the caller's tenant, newest request first; status PENDING (the default) is the approver's queue. Needs policy read in sangam-security (403 ACTION_NOT_PERMITTED, audited AUTH_DENIED). 421 TENANT_MOVED / TENANT_NOT_ON_INSTANCE as on every operation (M-016).
+
+        ``GET /admin/policies/changes`` (operationId ``listPolicyChanges``); permission ``policy.admin``.
+        """
+        req = ApiRequest("GET", f"/admin/policies/changes", query={"status": status, "page": page, "size": size})
+        return cast("Page[M.PolicyChange]", self._c.page(req, options, page, size))
+
+    def get_policy_change(self, id: str, *, options: Optional[RequestOptions] = None) -> M.PolicyChange:
+        """Policy change
+
+        One policy change of the caller's tenant; 404 NOT_FOUND for an id of another tenant or none. 421 as on every operation (M-016).
+
+        ``GET /admin/policies/changes/{id}`` (operationId ``getPolicyChange``); permission ``policy.admin``.
+        """
+        req = ApiRequest("GET", f"/admin/policies/changes/{seg(str(id))}")
+        return cast("M.PolicyChange", self._c.json(req, options))
+
+    def approve_policy_change(self, id: str, body: M.ReasonRequest, *, options: Optional[RequestOptions] = None) -> M.PolicyChange:
+        """Approve a policy change
+
+        Four-eyes decision of a PENDING change (R43): APPLIED: the change is applied in the same transaction and audited GRANT_CHANGED or DENY_CHANGED (new_policy_version, change_id, requested_by, decided_by, reason). The body's reason is stored as decisionReason; requestReason is kept. The decider must hold policy change-grant in sangam-security (403 ACTION_NOT_PERMITTED, audited AUTH_DENIED) and must not be the requester, for approve and reject alike (no self-reject, no withdraw): 422 SOD_VIOLATION, audited SOD_VIOLATION_BLOCKED. A system identity never decides (422 SOD_VIOLATION); a change requested by `system` is decided by any person who holds the permission. 404 NOT_FOUND (no such change of the caller's tenant), 409 CHANGE_NOT_PENDING (already decided or superseded), 400 VALIDATION_FAILED (reason missing) and, for approve, 400 POLICY_REJECTED (a change that no longer compiles, e.g. several principals, decision 392). Idempotency-Key: a replay answers the stored result; 503 AUDIT_UNAVAILABLE when a replay's IDEMPOTENT_REPLAY audit row cannot be written (every idempotent command, RM-10). 421 TENANT_MOVED / TENANT_NOT_ON_INSTANCE as on every operation (M-016).
+
+        ``POST /admin/policies/changes/{id}/approve`` (operationId ``approvePolicyChange``); permission ``policy.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/policies/changes/{seg(str(id))}/approve")
+        req.body = body
+        return cast("M.PolicyChange", self._c.json(req, options))
+
+    def reject_policy_change(self, id: str, body: M.ReasonRequest, *, options: Optional[RequestOptions] = None) -> M.PolicyChange:
+        """Reject a policy change
+
+        Four-eyes decision of a PENDING change (R43): REJECTED: nothing is applied; audited POLICY_CHANGE_PENDING with operation REJECT (change_id, policy_id, requested_by, decided_by, reason), as the SUPERSEDE of decision 392. The body's reason is stored as decisionReason; requestReason is kept. The decider must hold policy change-grant in sangam-security (403 ACTION_NOT_PERMITTED, audited AUTH_DENIED) and must not be the requester, for approve and reject alike (no self-reject, no withdraw): 422 SOD_VIOLATION, audited SOD_VIOLATION_BLOCKED. A system identity never decides (422 SOD_VIOLATION); a change requested by `system` is decided by any person who holds the permission. 404 NOT_FOUND (no such change of the caller's tenant), 409 CHANGE_NOT_PENDING (already decided or superseded), 400 VALIDATION_FAILED (reason missing) and, for approve, 400 POLICY_REJECTED (a change that no longer compiles, e.g. several principals, decision 392). Idempotency-Key: a replay answers the stored result; 503 AUDIT_UNAVAILABLE when a replay's IDEMPOTENT_REPLAY audit row cannot be written (every idempotent command, RM-10). 421 TENANT_MOVED / TENANT_NOT_ON_INSTANCE as on every operation (M-016).
+
+        ``POST /admin/policies/changes/{id}/reject`` (operationId ``rejectPolicyChange``); permission ``policy.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/policies/changes/{seg(str(id))}/reject")
+        req.body = body
+        return cast("M.PolicyChange", self._c.json(req, options))
+
+    def explain_policy(self, body: M.ExplainRequest, *, options: Optional[RequestOptions] = None) -> M.ExplainResult:
+        """Explain an authorization decision
+
+        Which grants and denies match (deny wins, A-13) at the current policy version (VI.4).
+
+        ``POST /admin/policies/explain`` (operationId ``explainPolicy``); permission ``policy.admin``.
+        """
+        req = ApiRequest("POST", f"/admin/policies/explain")
+        req.body = body
+        return cast("M.ExplainResult", self._c.json(req, options))
 
 class AdminPowerTablesApi:
     """``Admin /power-tables`` (8 operations)."""
@@ -3748,14 +3796,15 @@ class ComplianceApi:
         req = ApiRequest("GET", f"/compliance/logs/verify")
         return cast("M.ComplianceAuditVerification", self._c.json(req, options))
 
-    def get_compliance_report(self, *, from_: str, to: str, verify_chains: Optional[bool] = None, format: Optional[Literal["json", "html"]] = None, options: Optional[RequestOptions] = None) -> M.ComplianceReport:
-        """Compliance evidence report
+    def generate_compliance_report(self, body: M.ComplianceReportRequest, *, options: Optional[RequestOptions] = None) -> M.ComplianceReport:
+        """Generate the compliance evidence report
 
-        Evidence report for [from, to); `format=html` returns text/html.
+        Generates the evidence report for [from, to), stores its hash (CMP_REPORT) and writes the audit event CMP_EVIDENCE_REPORT_GENERATED; format `html` returns text/html. X-Sangam-Report-Hash carries the hash. A missing `from` or `to` is 400 VALIDATION_FAILED. Generation writes, so there is no GET of this path (405).
 
-        ``GET /compliance/reports`` (operationId ``getComplianceReport``); permission ``audit.read``.
+        ``POST /compliance/reports`` (operationId ``generateComplianceReport``); permission ``audit.read``; result stored atomically with the state change.
         """
-        req = ApiRequest("GET", f"/compliance/reports", query={"from": from_, "to": to, "verifyChains": verify_chains, "format": format})
+        req = ApiRequest("POST", f"/compliance/reports")
+        req.body = body
         return cast("M.ComplianceReport", self._c.json(req, options))
 
     def get_compliance_jurisdiction(self, *, options: Optional[RequestOptions] = None) -> M.ComplianceJurisdiction:
@@ -12094,14 +12143,14 @@ class TasksApi:
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
 
-    def list_tasks(self, *, assignee: Optional[str] = None, mine: Optional[bool] = None, unassigned: Optional[bool] = None, candidate_group: Optional[str] = None, seat_id: Optional[str] = None, process_instance_id: Optional[str] = None, case_instance_id: Optional[str] = None, business_key: Optional[str] = None, process_definition_key: Optional[str] = None, task_definition_key: Optional[str] = None, state: Optional[str] = None, sort_by: Optional[str] = None, currency: Optional[str] = None, sort_order: Optional[str] = None, variable_names: Optional[list[str]] = None, filter_id: Optional[str] = None, priority: Optional[int] = None, min_priority: Optional[int] = None, max_priority: Optional[int] = None, due_before: Optional[str] = None, due_after: Optional[str] = None, overdue: Optional[bool] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Task]:
+    def list_tasks(self, *, assignee: Optional[str] = None, mine: Optional[bool] = None, unassigned: Optional[bool] = None, candidate_group: Optional[str] = None, seat_id: Optional[str] = None, process_instance_id: Optional[str] = None, case_instance_id: Optional[str] = None, business_key: Optional[str] = None, process_definition_key: Optional[str] = None, task_definition_key: Optional[str] = None, state: Optional[str] = None, sort_by: Optional[str] = None, currency: Optional[str] = None, sort_order: Optional[str] = None, variable_names: Optional[list[str]] = None, filter_id: Optional[str] = None, priority: Optional[int] = None, min_priority: Optional[int] = None, max_priority: Optional[int] = None, due_before: Optional[str] = None, due_after: Optional[str] = None, overdue: Optional[bool] = None, section: Optional[Literal["MY_SEAT", "ACTING_FOR", "POOL", "ESCALATED", "RETURNED", "ALL"]] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Task]:
         """List tasks
 
         Tasks visible to the caller through the one authorization predicate (VI.4 rules 1–3, K2); BPMN user tasks and CMMN human tasks.
 
         ``GET /tasks`` (operationId ``listTasks``); permission ``task.read``.
         """
-        req = ApiRequest("GET", f"/tasks", query={"assignee": assignee, "mine": mine, "unassigned": unassigned, "candidateGroup": candidate_group, "seatId": seat_id, "processInstanceId": process_instance_id, "caseInstanceId": case_instance_id, "businessKey": business_key, "processDefinitionKey": process_definition_key, "taskDefinitionKey": task_definition_key, "state": state, "sortBy": sort_by, "currency": currency, "sortOrder": sort_order, "variableNames": variable_names, "filterId": filter_id, "priority": priority, "minPriority": min_priority, "maxPriority": max_priority, "dueBefore": due_before, "dueAfter": due_after, "overdue": overdue, "page": page, "size": size})
+        req = ApiRequest("GET", f"/tasks", query={"assignee": assignee, "mine": mine, "unassigned": unassigned, "candidateGroup": candidate_group, "seatId": seat_id, "processInstanceId": process_instance_id, "caseInstanceId": case_instance_id, "businessKey": business_key, "processDefinitionKey": process_definition_key, "taskDefinitionKey": task_definition_key, "state": state, "sortBy": sort_by, "currency": currency, "sortOrder": sort_order, "variableNames": variable_names, "filterId": filter_id, "priority": priority, "minPriority": min_priority, "maxPriority": max_priority, "dueBefore": due_before, "dueAfter": due_after, "overdue": overdue, "section": section, "page": page, "size": size})
         return cast("Page[M.Task]", self._c.page(req, options, page, size))
 
     def get_task(self, id: str, *, options: Optional[RequestOptions] = None) -> M.TaskDetail:
@@ -12983,7 +13032,7 @@ class WorkspaceApi:
     def get_task_counts(self, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Inbox counts
 
-        Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the list; a capped count is the string "N+" (A-16, K2).
+        Count per inbox section (MY_SEAT, ACTING_FOR, POOL, ESCALATED, RETURNED, ALL) through the same authorization predicate as the list; a capped count is the string "N+" (A-16, K2). Each count is the predicate of GET /tasks?section=<name> (S03).
 
         ``GET /tasks/counts`` (operationId ``getTaskCounts``); permission ``task.read``.
         """
@@ -13054,7 +13103,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1182 operations on 993 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1186 operations on 997 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)
@@ -13063,6 +13112,7 @@ class SangamApis:
         self.admin_assignments = AdminAssignmentsApi(calls)
         self.admin_groups = AdminGroupsApi(calls)
         self.admin_org_units = AdminOrgUnitsApi(calls)
+        self.admin_policies = AdminPoliciesApi(calls)
         self.admin_power_tables = AdminPowerTablesApi(calls)
         self.admin_security = AdminSecurityApi(calls)
         self.admin_tenants = AdminTenantsApi(calls)

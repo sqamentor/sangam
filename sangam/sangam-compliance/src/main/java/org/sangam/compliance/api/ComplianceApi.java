@@ -92,7 +92,10 @@ public interface ComplianceApi {
     /** POST /logs/segments:seal, GET /logs/verify — ADMIN / READ_AUDIT */
     Map<String, Object> verifyAudit(SecurityIdentity id);
 
-    /** GET /reports?from=&to= (JSON or text/html) — READ_AUDIT */
+    /**
+     * POST /reports {from, to, verifyChains, format} (JSON or text/html) — READ_AUDIT. Generating writes: the report's
+     * hash is stored in CMP_REPORT and audited, so the route is a POST (register P-1), never a GET.
+     */
     ComplianceEvidenceReportGenerator.Report report(SecurityIdentity id, Instant from, Instant to, boolean verifyChains);
 
     /** GET /jurisdiction — the active pack (code, languages, rights, authorities, limits) for the UI */

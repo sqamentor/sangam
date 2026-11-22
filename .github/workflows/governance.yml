@@ -57,7 +57,6 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      LEDGER: ${{ github.workspace }}/results
       REPORT_ONLY: ${{ inputs.mode == 'release' && '' || '--report-only' }}
       L: sangam/deploy/licence
     steps:
@@ -65,12 +64,27 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.13.7"
+      - name: Results ledger outside the checkout (E-3)
+        # The ledger is CI output; it lives under the runner's temp folder so the clean-tree check sees only test leftovers.
+        run: echo "LEDGER=$RUNNER_TEMP/results" >> "$GITHUB_ENV"
       - name: Licence, release, chart-guard and bundle-gate script unit tests (deploy/licence, deploy/helm, deploy/airgap test_*.py)
         run: |
           $RL_PY run --check licence-script-tests --ledger-dir "$LEDGER" -- bash -c \
             'set -e; for d in sangam/deploy/licence sangam/deploy/helm sangam/deploy/airgap; do python -I -m unittest discover -s "$d" -p "test_*.py" -v; done'
         env:
           RL_PY: python -I sangam/deploy/licence/results_ledger.py
+      - name: Clean tree after the tests (E-3)
+        # E-3: the test phase must leave the checkout exactly as checked out. Every path git reports (untracked,
+        # modified, deleted) is printed and fails the job; build output lives in ignored folders (target/, node_modules/).
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          dirty=$(git status --porcelain --untracked-files=all)
+          if [ -n "$dirty" ]; then
+            while IFS= read -r line; do echo "::error::the test phase left the tree dirty: $line"; done <<< "$dirty"
+            exit 1
+          fi
+          echo "tree clean after the tests"
       - name: Actions pinned to commit SHAs (CR-10)
         run: python -I $L/results_ledger.py run --check workflow-pins --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check pins --check contexts .github/workflows
       - name: No status-masking construct (CR-01)
@@ -96,7 +110,7 @@ jobs:
         if: always()
         with:
           name: ledger-governance
-          path: results/
+          path: ${{ runner.temp }}/results/
           if-no-files-found: error
 
   dco:

@@ -180,7 +180,9 @@ public final class SangamSchema {
             // M-103 OCR transcripts reviewed before knowledge-base ingest (decision 378; 0045-23), sangam-ai AiSchema
             "AI_OCR_TRANSCRIPT",
             // shared saved task lists of a tenant (owner decision 404; 0047-01), sangam-rest JdbcTaskFilterAdapter
-            "TEAM_TASK_FILTER");
+            "TEAM_TASK_FILTER",
+            // native CMMN case external tasks (PATCHES.md P-5; 0048-01), sangam-flowable-ports CaseExternalTaskService
+            "PORT_CASE_EXT_TASK", "PORT_CASE_MIGRATION", "PORT_CASE_FILE_ITEM");
 
     /**
      * Changesets that alter a table created earlier (generator {@code ALTERS}): FORM_DRAFT.form_version_hash,
@@ -213,13 +215,14 @@ public final class SangamSchema {
      * changeset PG_CONFIG to PG_PROGRAMME_CONFIG (0046-01, decision 388: pg_catalog.pg_config shadowed the table on
      * PostgreSQL); plus SEC_SCIM_RESOURCE.person_id (0046-02) and its backfill with the unique index SEC_SCIM_PERSON
      * (0046-03, decision 393 (a): opaque SCIM ids); plus LDG_ACCOUNTING.payload_json (0049-01, owner decision 126 and
-     * the audited GL export waiver: the exact GL payload of each kept accounting entry).
+     * the audited GL export waiver: the exact GL payload of each kept accounting entry); plus
+     * SEC_POLICY_CHANGE.decision_reason (0050-01, E-33 follow-up 3 (b): the decision reason beside the request reason).
      * The PostgreSQL changelog also holds optional extension changesets (generator {@code PG_EXTENSION_OPTIONAL}: the
      * pgvector column AI_KB_CHUNK.embedding_vec, 0044-08, decision 170). They are recorded only where the extension is
      * enabled, so they are not in this count.
      * The changelog holds {@code PRODUCT_TABLES.size() + ADDITIONAL_CHANGESETS} changesets.
      */
-    public static final int ADDITIONAL_CHANGESETS = 97;
+    public static final int ADDITIONAL_CHANGESETS = 98;
 
     /** Liquibase dbms names used in the changelogs. */
     public enum Dbms {

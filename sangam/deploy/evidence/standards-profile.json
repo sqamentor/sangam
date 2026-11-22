@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "inputs": {
     "compatibility": "sangam-ui/src/modeller/compatibility.json",
-    "compatibilityGeneratedAt": "2026-11-18T00:04:26.287Z",
+    "compatibilityGeneratedAt": "2026-11-18T01:11:30.167Z",
     "feelPolicy": "SANGAM.md X.0g (ADR-D-26)"
   },
   "notations": [
@@ -14,6 +14,7 @@
         "SUPPORTED": 25,
         "SUPPORTED_WITH_RULES": 7,
         "PORTED": 2,
+        "PARTIAL": 0,
         "NOT_EXECUTABLE": 4,
         "REJECTED": 2,
         "UNSUPPORTED": 2
@@ -26,6 +27,7 @@
         "SUPPORTED": 8,
         "SUPPORTED_WITH_RULES": 0,
         "PORTED": 2,
+        "PARTIAL": 0,
         "NOT_EXECUTABLE": 1,
         "REJECTED": 0,
         "UNSUPPORTED": 6
@@ -35,9 +37,10 @@
       "notation": "CMMN",
       "standard": "CMMN 1.1",
       "counts": {
-        "SUPPORTED": 9,
+        "SUPPORTED": 8,
         "SUPPORTED_WITH_RULES": 3,
         "PORTED": 0,
+        "PARTIAL": 1,
         "NOT_EXECUTABLE": 0,
         "REJECTED": 2,
         "UNSUPPORTED": 0
@@ -775,18 +778,6 @@
     },
     {
       "notation": "CMMN",
-      "construct": "DiscretionaryItem",
-      "status": "SUPPORTED",
-      "modeller": "SOURCE_EDITOR",
-      "engineParses": true,
-      "note": "Planning table with manual start.",
-      "source": "Operaton CmmnTransform",
-      "xml": [
-        "discretionaryItem"
-      ]
-    },
-    {
-      "notation": "CMMN",
       "construct": "ManualActivationRule",
       "status": "SUPPORTED",
       "modeller": "SOURCE_EDITOR",
@@ -879,6 +870,18 @@
       "source": "FLOWABLE-INTO-OPERATON FC-57",
       "xml": [
         "repetitionRule"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "DiscretionaryItem",
+      "status": "PARTIAL",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": true,
+      "note": "Partial: applicable items listed (applicabilityRule + roles), runtime planning not supported.",
+      "source": "sangam-flowable-ports PlanningService (owner ruling C3 = B)",
+      "xml": [
+        "discretionaryItem"
       ]
     },
     {

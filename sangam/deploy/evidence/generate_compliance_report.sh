@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # R52: produces the sangam-compliance evidence report for a release. Starts the release jar as a local process
-# (profile h2, dev token, loopback only, no container), fetches GET /api/v1/compliance/reports as JSON and HTML, stops.
+# (profile h2, dev token, loopback only, no container), generates the report with POST /api/v1/compliance/reports
+# (JSON body, one Idempotency-Key per call; generation writes CMP_REPORT and an audit event, so it is not a GET), once
+# as JSON and once as HTML, stops.
 # The result describes a fresh instance with no tenant data; see the scope note in the pack's INDEX.md.
 #
 # Usage: generate_compliance_report.sh <server-jar> <output-dir>
@@ -29,8 +31,10 @@ curl -fsS "http://127.0.0.1:$PORT/readyz" >/dev/null
 
 FROM="$(date -u -d '1 day ago' +%Y-%m-%dT%H:%M:%SZ)"; TO="$(date -u -d '1 hour' +%Y-%m-%dT%H:%M:%SZ)"
 for fmt in json html; do
-  curl -fsS -H "Authorization: Bearer $TOKEN" \
-    "http://127.0.0.1:$PORT/api/v1/compliance/reports?from=$FROM&to=$TO&verifyChains=true&format=$fmt" \
+  curl -fsS -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+    -H "Idempotency-Key: evidence-report-$fmt-$(date +%s)-$$" \
+    --data "{\"from\":\"$FROM\",\"to\":\"$TO\",\"verifyChains\":true,\"format\":\"$fmt\"}" \
+    "http://127.0.0.1:$PORT/api/v1/compliance/reports" \
     -o "$OUT/compliance-evidence-report.$fmt"
 done
 test -s "$OUT/compliance-evidence-report.json" && test -s "$OUT/compliance-evidence-report.html"

@@ -68,11 +68,11 @@ public class InstanceLinkService {
     }
 
     public List<Link> outgoing(String tenant, String sourceType, String sourceId) {
-        return tx.inTransaction(c -> query(c, "tenant_id = ? AND source_type = ? AND source_id = ?", org.sangam.core.layer.TenantKey.of(tenant), sourceType, sourceId));
+        return tx.read(c -> query(c, "tenant_id = ? AND source_type = ? AND source_id = ?", org.sangam.core.layer.TenantKey.of(tenant), sourceType, sourceId));
     }
 
     public List<Link> incoming(String tenant, String targetType, String targetId) {
-        return tx.inTransaction(c -> query(c, "tenant_id = ? AND target_type = ? AND target_id = ?", org.sangam.core.layer.TenantKey.of(tenant), targetType, targetId));
+        return tx.read(c -> query(c, "tenant_id = ? AND target_type = ? AND target_id = ?", org.sangam.core.layer.TenantKey.of(tenant), targetType, targetId));
     }
 
     /** Every link under one root (whole hierarchy of a root process or case, FLOWABLE-INTO-OPERATON FC-32). */

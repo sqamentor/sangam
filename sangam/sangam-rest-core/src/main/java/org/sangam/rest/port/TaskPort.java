@@ -25,12 +25,25 @@ public interface TaskPort {
      * @param dueBefore     only tasks due strictly before this instant (tasks without a due date never match)
      * @param dueAfter      only tasks due strictly after this instant (tasks without a due date never match)
      * @param overdue       true: only tasks due strictly before the server's current time; false or null: no condition
+     * @param section       inbox section (S03, register E-32(e)): one of {@link #SECTIONS}, the predicate of the count
+     *                      of the same name in {@code GET /tasks/counts}; null: no section predicate
      */
     record TaskFilter(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId,
                       String processInstanceId, String caseInstanceId, String businessKey, String processDefinitionKey,
                       String taskDefinitionKey, String state, String sortBy, String sortOrder,
                       List<String> variableNames, String currency, Integer priority, Integer minPriority,
-                      Integer maxPriority, Instant dueBefore, Instant dueAfter, Boolean overdue) {
+                      Integer maxPriority, Instant dueBefore, Instant dueAfter, Boolean overdue, String section) {
+
+        public TaskFilter(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId,
+                          String processInstanceId, String caseInstanceId, String businessKey,
+                          String processDefinitionKey, String taskDefinitionKey, String state, String sortBy,
+                          String sortOrder, List<String> variableNames, String currency, Integer priority,
+                          Integer minPriority, Integer maxPriority, Instant dueBefore, Instant dueAfter,
+                          Boolean overdue) {
+            this(assignee, mine, unassigned, candidateGroup, seatId, processInstanceId, caseInstanceId, businessKey,
+                    processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder, variableNames, currency, priority,
+                    minPriority, maxPriority, dueBefore, dueAfter, overdue, null);
+        }
 
         public TaskFilter(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId,
                           String processInstanceId, String caseInstanceId, String businessKey,
@@ -55,6 +68,16 @@ public interface TaskPort {
                 throw ApiProblem.badRequest("VALIDATION_FAILED",
                         "at most " + MAX_CARD_VARIABLES + " variableNames per request");
             }
+            if (section != null && !SECTIONS.contains(section)) {
+                throw ApiProblem.badRequest("VALIDATION_FAILED", "section must be one of " + String.join(", ", SECTIONS));
+            }
+        }
+
+        /** The same filter with the inbox section {@code s}. */
+        public TaskFilter withSection(String s) {
+            return new TaskFilter(assignee, mine, unassigned, candidateGroup, seatId, processInstanceId, caseInstanceId,
+                    businessKey, processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder, variableNames,
+                    currency, priority, minPriority, maxPriority, dueBefore, dueAfter, overdue, s);
         }
 
         public TaskFilter(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId,
@@ -76,6 +99,9 @@ public interface TaskPort {
 
     /** Upper bound of {@link TaskFilter#variableNames} (each name is one variable read per listed task). */
     int MAX_CARD_VARIABLES = 20;
+
+    /** The inbox sections of {@code GET /tasks?section=} and {@code GET /tasks/counts} (S03), in their order. */
+    List<String> SECTIONS = List.of("MY_SEAT", "ACTING_FOR", "POOL", "ESCALATED", "RETURNED", "ALL");
 
     /**
      * FLOWABLE-INTO-OPERATON FC-52 lifecycle fields included: state, claimTime/claimedBy, lastUpdated.

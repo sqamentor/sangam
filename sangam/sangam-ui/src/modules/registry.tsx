@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { http } from '../api/client';
 import { useAction } from '../lib/hooks';
 import { LanguageSwitch } from '../app/Layout';
-import { JsonView, Notice, ProblemAlert, TextField } from '../components/ui';
+import { JsonView, Notice, PageHeader, ProblemAlert, TextField } from '../components/ui';
 import { ModulePage, c, f, type ScreenDef } from './engine';
 import { fiscalStartMonthOptions, numberSeriesFields } from './registryNumbering';
 
@@ -324,10 +324,11 @@ export function RegistryPage() {
 }
 
 /**
- * Public verification of an instrument or a register extract (no sign-in; the server rate-limits). Reachable at
- * /verify (and /verify/:tenant?code=...) so a QR code on a certificate can open it directly.
+ * The verification form of an instrument or a register extract: the issuer, the code and the kind, filled from the
+ * address (/verify/:tenant?code=...&kind=...) so a QR code on a certificate can open it directly. The calls are public
+ * on the server (no sign-in; the server rate-limits). intro is left out where the page header already says it.
  */
-export function PublicVerify() {
+function VerifyForm({ intro = true }: { intro?: boolean }) {
   const { t } = useTranslation();
   const params = useParams();
   const search = new URLSearchParams(window.location.search);
@@ -347,13 +348,8 @@ export function PublicVerify() {
       .then((r) => r && setResult(r));
   const valid = result && (result.valid === true || result.status === 'VALID' || result.state === 'ACTIVE');
   return (
-    <main id="main" className="signin" tabIndex={-1}>
-      <div className="signin-card">
-        <LanguageSwitch />
-        <h1 id="page-title" tabIndex={-1}>
-          {t('mod.verify.title')}
-        </h1>
-        <p>{t('mod.verify.intro')}</p>
+    <>
+        {intro && <p>{t('mod.verify.intro')}</p>}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -383,7 +379,35 @@ export function PublicVerify() {
           </>
         )}
         <p className="muted small">{t('mod.verify.privacy')}</p>
+    </>
+  );
+}
+
+/**
+ * The public page (no sign-in, no page frame): reachable at /verify by anyone, also from a QR code on a certificate.
+ */
+export function PublicVerify() {
+  const { t } = useTranslation();
+  return (
+    <main id="main" className="signin" tabIndex={-1}>
+      <div className="signin-card">
+        <LanguageSwitch />
+        <h1 id="page-title" tabIndex={-1}>
+          {t('mod.verify.title')}
+        </h1>
+        <VerifyForm />
       </div>
     </main>
+  );
+}
+
+/** Q7 part 3 (owner, 2026-11-21): the same form inside the normal page frame, for a signed-in caller (Help menu). */
+export function VerifyDocument() {
+  const { t } = useTranslation();
+  return (
+    <>
+      <PageHeader title={t('mod.verify.title')} description={t('mod.verify.intro')} />
+      <VerifyForm intro={false} />
+    </>
   );
 }

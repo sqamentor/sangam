@@ -3908,7 +3908,7 @@ export interface ComplianceRenderedNotice {
 }
 
 /**
- * Compliance evidence report (JSON; `?format=html` returns the HTML rendering). X-Sangam-Report-Hash carries its hash.
+ * Compliance evidence report (JSON; format `html` in the request returns the HTML rendering). X-Sangam-Report-Hash carries its hash.
  *
  * Schema `ComplianceReport`.
  */
@@ -3918,6 +3918,22 @@ export interface ComplianceReport {
   content?: Record<string, unknown>;
   json?: string;
   html?: string;
+}
+
+/**
+ * The period [from, to) of a compliance evidence report to generate, and how it is answered.
+ *
+ * Schema `ComplianceReportRequest`.
+ */
+export interface ComplianceReportRequest {
+  /** Start of the period (inclusive). Required. */
+  from: string;
+  /** End of the period (exclusive). Required. */
+  to: string;
+  /** Verify the tenant's audit chains for the report. Default true. */
+  verifyChains?: boolean;
+  /** `json` (default) answers the report as application/json; `html` answers its HTML rendering as text/html. One of: json, html. */
+  format?: 'json' | 'html';
 }
 
 /**
@@ -9000,6 +9016,31 @@ export interface Policy {
   policyVersion?: number;
   createdBy?: string;
   createdAt?: string;
+}
+
+/**
+ * A requested policy change of the caller's tenant (four-eyes, VI.4, R43). `policy` is the definition the change applies (for DELETE the policy as it is). requestedBy is a person id, or `system` for a change the server requested (module defaults of a new tenant).
+ *
+ * Schema `PolicyChange`.
+ */
+export interface PolicyChange {
+  id: string;
+  policyId: string;
+  /**  One of: CREATE, UPDATE, DELETE. */
+  operation: 'CREATE' | 'UPDATE' | 'DELETE';
+  /**  One of: PENDING, APPLIED, REJECTED, SUPERSEDED. */
+  status: 'PENDING' | 'APPLIED' | 'REJECTED' | 'SUPERSEDED';
+  policy?: Policy;
+  requestedBy: string;
+  requestedAt: string;
+  /** The reason given with the request (R42); never overwritten by the decision */
+  requestReason?: string;
+  /** Person who approved or rejected it; null while PENDING (for SUPERSEDED the system step) */
+  decidedBy?: string;
+  /** When it was decided (database time); null while PENDING */
+  decidedAt?: string;
+  /** The reason given with the approval or rejection (R42); null while PENDING */
+  decisionReason?: string;
 }
 
 /**

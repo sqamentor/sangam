@@ -21,8 +21,9 @@ import org.sangam.security.org.OrgModel;
 /**
  * Packs {@link SeatDirectory} on sangam-security's organisation model (IX.5 rules 1, 2, 4; K7): effective-dated
  * postings, additional charge and delegation from {@code PostingService}, seat designation and office from
- * {@code SeatService}, and the escalation seat. Seat ids are the candidate groups. A date is evaluated at noon in the
- * tenant's business zone ({@link org.sangam.core.time.BusinessClock}), so an order effective "from" a date counts for the whole day.
+ * {@code SeatService}, and the escalation seat. Seat ids are the candidate groups. The current business date is evaluated at
+ * the instant of the action, another date at noon in the tenant's business zone ({@link org.sangam.core.time.BusinessClock}).
+ * A role serving an office is looked up at the office, then its ancestor units (IX.5 rule 2).
  */
 public final class PacksSeatDirectory implements SeatDirectory {
 
@@ -68,7 +69,24 @@ public final class PacksSeatDirectory implements SeatDirectory {
 
     @Override
     public Optional<String> seatForRole(String tenantId, String roleCode, String officeId) {
-        return eligibleSeats(tenantId, roleCode, officeId, businessClock.today(tenantId)).stream().findFirst();
+        if (officeId == null || officeId.isBlank()) {
+            return Optional.empty();
+        }
+        // IX.5 rule 2: the case office, then its ancestor units up to the root (as InMemorySeatDirectory); no seat up
+        // to the root is no seat, never a seat of another branch or of a unit below the office
+        Instant at = at(tenantId, null);
+        return db(c -> {
+            List<String> units = new java.util.ArrayList<>();
+            units.add(officeId);
+            units.addAll(security.orgUnits().ancestorsAt(c, tenantId, officeId, at));
+            for (String unit : units) {
+                List<String> seats = security.seats().seatsInUnit(c, tenantId, unit, roleCode, at);
+                if (!seats.isEmpty()) {
+                    return Optional.of(seats.get(0));
+                }
+            }
+            return Optional.<String>empty();
+        });
     }
 
     @Override
@@ -81,11 +99,11 @@ public final class PacksSeatDirectory implements SeatDirectory {
 
     @Override
     public Optional<String> escalationSeatOf(String tenantId, String seatId) {
-        return db(c -> security.postings().escalationSeat(c, tenantId, seatId, Instant.now()));
+        return db(c -> security.postings().escalationSeat(c, tenantId, seatId, businessClock.clock().instant()));
     }
 
     private Optional<OrgModel.Seat> seat(String tenantId, String seatId) {
-        return db(c -> security.seats().seatAt(c, tenantId, seatId, Instant.now()));
+        return db(c -> security.seats().seatAt(c, tenantId, seatId, businessClock.clock().instant()));
     }
 
     private static SeatHolding map(SecurityPorts.SeatHolder h, ZoneId zone) {
@@ -98,9 +116,17 @@ public final class PacksSeatDirectory implements SeatDirectory {
         return new SeatHolding(h.seatId(), h.personId(), basis, h.postingId(), from, to);
     }
 
+    /**
+     * The instant a business date is evaluated at. Today (or no date) is the instant of the action: "the person holding
+     * the seat on that date acts" (IX.5 rule 1), so a seat placed or a posting made earlier today serves at once, and
+     * one placed later than now does not serve yet. Another date is evaluated at its business noon, so an order
+     * effective "from" a date counts for that whole day.
+     */
     private Instant at(String tenantId, LocalDate date) {
-        ZoneId zone = businessClock.zone(tenantId);
-        return (date == null ? businessClock.today(tenantId) : date).atTime(12, 0).atZone(zone).toInstant();
+        if (date == null || date.equals(businessClock.today(tenantId))) {
+            return businessClock.clock().instant();
+        }
+        return date.atTime(12, 0).atZone(businessClock.zone(tenantId)).toInstant();
     }
 
     private <T> T db(Function<Connection, T> work) {

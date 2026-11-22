@@ -58,7 +58,7 @@ public class DebuggerService {
     }
 
     public Set<String> breakpoints(String tenant, String definitionKey) {
-        return tx.inTransaction(c -> Jdbc.query(c, "SELECT activity_id FROM DEBUG_BREAKPOINT WHERE tenant_id = ? AND definition_key = ?",
+        return tx.read(c -> Jdbc.query(c, "SELECT activity_id FROM DEBUG_BREAKPOINT WHERE tenant_id = ? AND definition_key = ?",
                 rs -> rs.getString(1), tenant, definitionKey)).stream().collect(Collectors.toSet());
     }
 

@@ -131,6 +131,10 @@ services:
       # Owner decision 2026-11-19 (option (b), "enable for GOI.FIN"): demo sandbox tenant (sangam.demo.sandbox-tenants).
       # GOI.FIN only: verified payee, payment and bank statement answered by the in-process simulator, audit marked
       # sandbox=true, UI shows "Sandbox"; no real money. No production guard is relaxed.
+      # Register E-26 (owner 2026-11-21, "Add bill journey"): for GOI.FIN only the sandbox also answers the outside
+      # checks ifms.duplicateBill ("no duplicate found") and docs.issue (a document number), from simulator data;
+      # each is audited with its connector, simulated=true and sandbox=true. No money rail is added and no outside
+      # address is configured for them. Every other connector without a binding stays refused.
       SANGAM_DEMO_SANDBOXTENANTS: GOI.FIN
       # EV-M-0916: the supported tenant creation (FirstAdminBootstrap). At start-up it creates GOI.FIN if missing and
       # appoints the two tenant administrators; it changes nothing once GOI.FIN has a tenant-admin role, so the two lines
