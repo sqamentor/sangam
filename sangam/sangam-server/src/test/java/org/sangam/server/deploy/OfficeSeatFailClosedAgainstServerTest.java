@@ -164,26 +164,23 @@ class OfficeSeatFailClosedAgainstServerTest {
         }
 
         /**
-         * IX.5 rule 7 on the REST start: the initiator, in seat {@value #CLERK_A} of office A, starts the case with
-         * {@code X-Sangam-Seat} and no officeId; the case takes office A, so the step is on seat A only.
+         * IX.5 rule 7: the initiator, acting in seat {@value #CLERK_A} of office A, starts the case with no officeId;
+         * the case takes office A (resolved through PacksSeatDirectory on the server's org model), so the step is on
+         * seat A only. The core sanction block is not startable from the tasklist (422 PROCESS_NOT_STARTABLE, a
+         * product rule), so it is started as a calling pack starts it, with the starter's seat in {@code actingSeat}.
          */
         void restStartTakesTheStarterSeatsOffice() throws Exception {
-            String label = "rest-start-starter-seat";
-            String bk = "FC/" + label + "/" + java.util.UUID.randomUUID().toString().substring(0, 8);
-            HttpResponse<String> r = send("POST", "/process-instances", token(INITIATOR, SO), Map.of("X-Sangam-Seat", CLERK_A),
-                    map("key", KEY, "businessKey", bk, "variables", Map.of("amount", 5000, "caseType", "GENERAL")));
-            fact(label, "POST /process-instances with X-Sangam-Seat " + CLERK_A + ": " + r.statusCode() + " " + code(r));
-            check(label, r.statusCode() / 100 == 2, "the REST start is accepted: " + r.statusCode() + " " + r.body());
-            if (r.statusCode() / 100 != 2) {
+            String label = "starter-seat-office";
+            Started s = start(label, Map.of("actingSeat", CLERK_A));
+            check(label, s.refusal() == null, "the case starts (" + s.refusal() + ")");
+            if (s.refusal() != null) {
                 return;
             }
-            String pid = JSON.readTree(r.body()).path("id").asText();
-            Object office = historic(pid, "officeId");
-            var task = engine.getTaskService().createTaskQuery().processInstanceBusinessKey(bk).taskDefinitionKey("sn_sanction")
-                    .singleResult();
-            fact(label, "officeId " + office + ", task " + (task == null ? null : groups(task.getId())));
+            Object office = historic(s.pid(), "officeId");
+            fact(label, "officeId " + office + ", task candidate groups " + groups(s.taskId()));
             check(label, OFFICE_A.equals(office), "the case takes the starter seat's office " + OFFICE_A + ": " + office);
-            check(label, task != null && groups(task.getId()).equals(List.of(SEAT_A)), "the task is on " + SEAT_A + " only");
+            check(label, groups(s.taskId()).equals(List.of(SEAT_A)), "the task is on " + SEAT_A + " only: " + groups(s.taskId()));
+            otherOfficerIsRefused(label, s);
         }
 
         // ------------------------------------------------------------------ boundary: J-P1-E07 kept
