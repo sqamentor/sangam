@@ -1,0 +1,6 @@
+{
+  "modules": "sangam-onboarding,sangam-server",
+  "dbs": "postgres",
+  "chunks": "A-contracts,F-platform",
+  "ui": false
+}
