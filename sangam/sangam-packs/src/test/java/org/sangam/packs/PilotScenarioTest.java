@@ -18,6 +18,7 @@ import org.sangam.packs.PackDriver.Answer;
 import org.operaton.bpm.engine.task.IdentityLink;
 import org.operaton.bpm.engine.task.Task;
 import org.sangam.packs.port.PackRuntime;
+import org.sangam.packs.sim.InMemorySeatDirectory;
 import org.sangam.packs.spi.PackDeployer;
 import org.sangam.packs.spi.PackRegistry;
 
@@ -38,6 +39,9 @@ class PilotScenarioTest {
         PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
         new PackDeployer(engine, PackRegistry.discover()).deployAll(PackTestTenant.ID);
+        // EV-M-1013 (F), fixture only: the sample office of works-config (gov2_works.py) is a child unit of the seeded
+        // DIV-WK, so IX.5 rule 2 (the office, then its ancestors) reaches the works seats from a case of that office
+        ((InMemorySeatDirectory) PackRuntime.seats()).addOffice(PackTestTenant.ID, "DIV-WK-AAFIRST", "DIV-WK");
         driver = new PackDriver(engine);
     }
 
