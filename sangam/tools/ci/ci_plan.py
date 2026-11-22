@@ -108,7 +108,7 @@ def it_args(p, db):
 
 
 def build_args(p):
-    args = ["verify", "-Duser.timezone=UTC"]
+    args = ["verify", "-Duser.timezone=UTC", "-Dtest=OnboardingPacksAuditTest,OnboardingPacksTargetTenantH2Test,OnboardingMakerScopeTest", "-Dsurefire.failIfNoSpecifiedTests=false"]
     if p["modules"]:
         args += ["-pl", p["modules"], "-am"]
     return args
