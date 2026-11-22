@@ -820,7 +820,7 @@ def util_connection():
                defaults='areaType=MUNICIPAL;loadKw=5;worksRequired=false;compensationDue=false;scrutinySeat=SUBDIV-CLERK;'
                         'scrutinySla=1WD;pauseOnClarification=true;executionConnector=pg.collect;executionStep=charges;'
                         'verifyApproval=false;reconcileRequired=false;executionPayloadFields=applicantName,loadKw;'
-                        'appealAllowed=false')
+                        'appealAllowed=false;routingDecisionKey=sec-util-connection-authority')
     r = s.rule('uc_sop', 'Standard of performance (DMN)', 'sec-util-sop')
     ck = clock(s, 'uc_clock', 'connection', '${connSpec}')
     sc = core(s, 'uc_scrutiny', 'Document scrutiny (core)', 'scrutiny')
@@ -880,6 +880,11 @@ def util_connection():
            [('connSpec', 'Connect within', 'string'), ('compensationAmount', 'Compensation (SYNTHETIC, SERC notifies)', 'money')],
            [([q('METRO')], [q('7D'), '1000'], ''), ([q('MUNICIPAL')], [q('15D'), '1000'], ''),
             (['-'], [q('30D'), '500'], 'rural / hilly')])
+    # owner decision P-6 (C) 'AE of sub-division': the money-out sanction of the connection case (compensation credit)
+    # is the sub-division AE's, by the pack's own table; never the core default bands (SO, no seat in a sub-division)
+    pk.dmn('sec-util-connection-authority', 'New connection sanctioning authority', 'FIRST',
+           [('Amount', 'amount', 'money')], [('competentRole', 'Competent role', 'string')],
+           [(['-'], [q('AE')], 'Assistant engineer of the sub-division')])
     simple_seeds(pk, 'SUBDIVISION', [('SUBDIV-CLERK', 'CLERK', 'AE-SUBDIV', 'Sub-division clerk', 'उप-संभाग लिपिक'),
                                      ('JE-FIELD', 'JE', 'AE-SUBDIV', 'Junior engineer', 'कनिष्ठ अभियंता'),
                                      ('AE-SUBDIV', 'AE', None, 'Assistant engineer', 'सहायक अभियंता')], 'uuc')

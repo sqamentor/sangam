@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_util_connection_authority" name="New connection sanctioning authority" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-util-connection-authority" name="New connection sanctioning authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.3">
+    <decisionTable id="sec-util-connection-authority_t" hitPolicy="FIRST">
+      <input id="sec-util-connection-authority_i0" label="Amount"><inputExpression id="sec-util-connection-authority_ie0" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="sec-util-connection-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="sec-util-connection-authority_r0"><description>Assistant engineer of the sub-division</description>
+        <inputEntry id="sec-util-connection-authority_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-util-connection-authority_r0_o0"><text>"AE"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

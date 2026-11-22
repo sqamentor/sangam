@@ -20,6 +20,10 @@
       "path": "packs/sec-util-new-connection/sec-util-sop.dmn"
     },
     {
+      "kind": "DMN",
+      "path": "packs/sec-util-new-connection/sec-util-connection-authority.dmn"
+    },
+    {
       "kind": "FORM",
       "path": "packs/sec-util-new-connection/forms/apply.form.json"
     },
@@ -113,6 +117,7 @@
     "currency": "INR",
     "exponent": 2,
     "variables": [
+      "amount",
       "compensationAmount",
       "estimateAmount"
     ]
