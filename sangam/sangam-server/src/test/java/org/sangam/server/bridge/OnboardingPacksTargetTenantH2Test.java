@@ -123,6 +123,7 @@ class OnboardingPacksTargetTenantH2Test {
             return engine.getIdentityService();
         }
 
+        /** The engine's tenant check applies: under another tenant's identity this counts 0, whatever is deployed. */
         long packDeployments(String tenant, String name) {
             return engine.getRepositoryService().createDeploymentQuery().tenantIdIn(tenant).deploymentName(name).count();
         }
@@ -220,17 +221,22 @@ class OnboardingPacksTargetTenantH2Test {
                 seen.add(f.ids().getCurrentAuthentication().getTenantIds());
                 Map<String, String> out = f.packs().deploy(TARGET, List.of("onb.core", "onb.app"));
                 seen.add(out.keySet());
-                seen.add(f.packs().installed(TARGET));
                 seen.add(f.packs().deployDecisionOverrides(TARGET, Map.of("onb_override", DMN)));
                 // the job continues as the maker's tenant after the bridge call
                 seen.add(f.ids().getCurrentAuthentication().getTenantIds());
             });
+            // a later step, as in onboarding: a deployment is not visible to a query of the command that creates it
+            inJobOfMakerTenant(f, ex -> {
+                seen.add(f.packs().installed(TARGET));
+                seen.add(f.ids().getCurrentAuthentication().getTenantIds());
+            });
             assertEquals(List.of(MAKER_TENANT), seen.get(0), "the job runs as the maker's tenant (Operaton ExecuteJobsCmd)");
             assertEquals(Set.of("onb.core@1.0.0", "onb.app@1.0.0"), seen.get(1));
-            assertEquals(Map.of("onb.core", "1.0.0", "onb.app", "1.0.0"), seen.get(2),
+            assertNotNull(seen.get(2));
+            assertEquals(List.of(MAKER_TENANT), seen.get(3), "the maker tenant's identity is back after the bridge call");
+            assertEquals(Map.of("onb.core", "1.0.0", "onb.app", "1.0.0"), seen.get(4),
                     "installed() sees the target tenant's packs");
-            assertNotNull(seen.get(3));
-            assertEquals(List.of(MAKER_TENANT), seen.get(4), "the maker tenant's identity is back after the bridge call");
+            assertEquals(List.of(MAKER_TENANT), seen.get(5), "the maker tenant's identity is back after installed()");
             assertEquals(1, f.packDeployments(TARGET, "pack:onb.core@1.0.0"));
             assertEquals(1, f.packDeployments(TARGET, "pack:onb.app@1.0.0"));
             assertEquals(1, f.packDeployments(TARGET, "onboarding-overrides:" + TARGET));
@@ -253,11 +259,12 @@ class OnboardingPacksTargetTenantH2Test {
                         "refused after the bridge ran: the bridge grants nothing to its caller");
                 assertTrue(e.getMessage().contains("of tenant " + MAKER_TENANT + " may not be created in tenant " + TARGET),
                         e.getMessage());
-                assertEquals(0, f.packDeployments(TARGET, "direct"));
-                assertEquals(1, f.packDeployments(TARGET, "pack:onb.core@1.0.0"));
             } finally {
                 f.ids().clearAuthentication();
             }
+            // counted with no identity: as the maker's tenant both counts would be 0
+            assertEquals(0, f.packDeployments(TARGET, "direct"));
+            assertEquals(1, f.packDeployments(TARGET, "pack:onb.core@1.0.0"));
         }
     }
 
@@ -284,7 +291,6 @@ class OnboardingPacksTargetTenantH2Test {
                         () -> f.packs().deploy(TARGET, List.of("onb.core", "onb.app")));
                 assertEquals("pack resource unreadable mid-deploy", e.getMessage());
                 assertEquals(List.of(List.of(TARGET)), duringSecond, "the second pack ran as exactly the target tenant");
-                assertEquals(1, f.packDeployments(TARGET, "pack:onb.core@1.0.0"), "the first pack was deployed before the throw");
                 Authentication after = f.ids().getCurrentAuthentication();
                 assertEquals("acc-job", after.getUserId());
                 assertEquals(List.of("g1"), after.getGroupIds());
@@ -296,6 +302,7 @@ class OnboardingPacksTargetTenantH2Test {
             } finally {
                 f.ids().clearAuthentication();
             }
+            assertEquals(1, f.packDeployments(TARGET, "pack:onb.core@1.0.0"), "the first pack was deployed before the throw");
             // platform code (no engine authentication): none again afterwards
             assertThrows(IllegalStateException.class, () -> f.packs().deploy(TARGET, List.of("onb.app")));
             assertNull(f.ids().getCurrentAuthentication(), "no identity before, none after");
