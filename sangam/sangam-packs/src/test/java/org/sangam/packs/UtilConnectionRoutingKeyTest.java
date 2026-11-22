@@ -20,6 +20,9 @@ import org.sangam.packs.spi.PackRegistry;
  * P-6 Step 2, owner decisions (B) "Directorate sanction (b1)" and (C) "AE of sub-division" ([JOINT-DECISION]): a
  * pack's money sanction routes by the pack's own routing table to a role the pack's office has a seat of, never by the
  * core default bands ({@code sangam-core-competent-authority}: SO and up) nor to a seat below the case office.
+ * <p>
+ * The owner chose the authorities only, no amount and no money power. That the dbt-batch table has the two bands JD
+ * and DIRECTOR is ASSUMED, pending the owner (EV-M-1011); this test pins the present assumption, not a decision.
  */
 class UtilConnectionRoutingKeyTest {
 

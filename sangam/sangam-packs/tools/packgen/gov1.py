@@ -705,11 +705,17 @@ def dbt_batch():
            [([q('ACCOUNT_INVALID')], [q('BANK-DESK')], ''), ([q('ACCOUNT_CLOSED')], [q('BANK-DESK')], ''),
             ([q('NAME_MISMATCH')], [q('BANK-DESK')], ''), ([q('AADHAAR_NOT_SEEDED')], [q('DBT-CELL')], ''),
             (['-'], [q('DDO-DBT')], 'other rejections to the DDO')])
-    # owner decision P-6 (B) 'Directorate sanction (b1)': the batch sanction is the directorate's (DIR-WEL), never the
-    # district officer's (DWO sits below the batch office); bands as the welfare powers (JD up to 10 lakh, then Director)
+    # owner decision P-6 (B) 'Directorate sanction (b1)' chose the authority only: the directorate (DIR-WEL).
+    # ASSUMED, pending the owner (EV-M-1011), NOT an owner decision: the amounts and which directorate role takes which
+    # band (JD up to 10 lakh, Director above), copied from p3-sanction-authority; with them, batches up to 2 lakh move
+    # from DWO to JD. Not to be merged until the owner answers.
     pk.dmn('dbt-batch-sanction-authority', 'DBT batch sanctioning authority (directorate)', 'FIRST',
            [('Amount', 'amount', 'money')], [('competentRole', 'Competent role', 'string')],
-           [(['<= 1000000'], [q('JD')], 'Joint Director'), (['> 1000000'], [q('DIRECTOR')], 'Director')])
+           [(['<= 1000000'], [q('JD')], 'Joint Director; band ASSUMED, pending the owner (EV-M-1011)'),
+            (['> 1000000'], [q('DIRECTOR')], 'Director; band ASSUMED, pending the owner (EV-M-1011)')],
+           doc='The directorate as sanctioning authority is the owner decision P-6 (B). The amount bands and the role '
+               'of each band are ASSUMED, pending the owner (EV-M-1011): they are copied from p3-sanction-authority '
+               'and are not an owner decision.')
     pk.seeds(offices=[{'id': 'DIR-WEL', 'parent': ''}],
              seats=[{'id': 'DBT-CELL', 'role': 'DBTCELL', 'office': 'DIR-WEL',
                      'name': {'en': 'DBT cell', 'hi': 'डीबीटी प्रकोष्ठ'}},
@@ -717,7 +723,8 @@ def dbt_batch():
                      'name': {'en': 'Bank coordination desk', 'hi': 'बैंक समन्वय डेस्क'}},
                     {'id': 'DDO-DBT', 'role': 'DDO', 'office': 'DIR-WEL',
                      'name': {'en': 'DDO (DBT)', 'hi': 'आहरण एवं संवितरण अधिकारी (डीबीटी)'}},
-                    # owner decision P-6 (B) 'Directorate sanction (b1)': the batch is sanctioned at the directorate;
+                    # owner decision P-6 (B) 'Directorate sanction (b1)': the batch is sanctioned at the directorate
+                    # (which of these two seats for which amount is ASSUMED, pending the owner, EV-M-1011);
                     # the same seats as gov.p3 declares (IX.5 rule 1: one seat per id, same designation and office)
                     {'id': 'JD-WEL', 'role': 'JD', 'office': 'DIR-WEL', 'reportsTo': 'DIR-W',
                      'name': {'en': 'Joint Director', 'hi': 'संयुक्त निदेशक'}},
