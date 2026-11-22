@@ -129,7 +129,14 @@ class OnboardingPacksTargetTenantH2Test {
     }
 
     private static Fixture fixture(SangamPack... packs) {
+        return fixture(false, packs);
+    }
+
+    private static Fixture fixture(boolean jobExecutor, SangamPack... packs) {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setJobExecutorActivate(jobExecutor);
+        s.setJobWaitTimeInMillis(50);
+        s.setJobMaxWait(250);
         s.setSystemAuditScope("system:platform");
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
@@ -149,16 +156,55 @@ class OnboardingPacksTargetTenantH2Test {
                 new OnboardingBridges.Packs(a.processEngine(), deployer, new PacksTenantDeployer(deployer, registry, null)));
     }
 
-    /** Runs {@code step} inside a real async job of the maker's tenant, as the onboarding PACKS step runs. */
+    /**
+     * Runs {@code step} inside a real async job of the maker's tenant, executed by the job executor as the onboarding
+     * PACKS step is. Only that path authenticates the job with its tenant: {@code ExecuteJobsCmd} sets
+     * {@code [job tenant]} in its job-executor branch (javap 2.2.1, offsets 168-194); {@code ManagementService#executeJob}
+     * skips it (offset 165). The step's throwable, if any, is rethrown here.
+     */
     private static void inJobOfMakerTenant(Fixture f, Consumer<DelegateExecution> step) {
         String key = UUID.randomUUID().toString();
-        STEPS.put(key, step);
+        java.util.concurrent.atomic.AtomicReference<Throwable> failure = new java.util.concurrent.atomic.AtomicReference<>();
+        java.util.concurrent.atomic.AtomicBoolean ran = new java.util.concurrent.atomic.AtomicBoolean();
+        STEPS.put(key, ex -> {
+            try {
+                step.accept(ex);
+            } catch (RuntimeException | Error e) {
+                failure.set(e);
+                throw e;
+            } finally {
+                ran.set(true);
+            }
+        });
         try {
             f.adapter().deploy(MAKER_TENANT, "onboarding-like", Map.of("onbjob.bpmn", JOB_BPMN.getBytes(StandardCharsets.UTF_8)));
             String pid = f.adapter().startProcess(MAKER_TENANT, "onbjob", "BK-" + key, Map.of("step", key));
-            var job = f.engine().getManagementService().createJobQuery().processInstanceId(pid).singleResult();
-            assertEquals(MAKER_TENANT, job.getTenantId(), "the job belongs to the maker's tenant");
-            f.engine().getManagementService().executeJob(job.getId());
+            long end = System.currentTimeMillis() + 60_000;
+            while (System.currentTimeMillis() < end && !ran.get()) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError(e);
+                }
+            }
+            assertTrue(ran.get(), "the job executor ran the step");
+            if (failure.get() instanceof RuntimeException r) {
+                throw r;
+            }
+            if (failure.get() instanceof Error e) {
+                throw e;
+            }
+            long until = System.currentTimeMillis() + 30_000;
+            while (System.currentTimeMillis() < until && f.engine().getRuntimeService().createProcessInstanceQuery()
+                    .processInstanceId(pid).count() > 0) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError(e);
+                }
+            }
         } finally {
             STEPS.remove(key);
         }
@@ -167,9 +213,9 @@ class OnboardingPacksTargetTenantH2Test {
     /** (i) the bridge path deploys into the target tenant, from a job of the maker's tenant. */
     @Test
     void aJobOfTheMakersTenantDeploysThePacksIntoTheTargetTenant() {
-        Fixture f = fixture(pack("onb.core", List.of(), () -> { }), pack("onb.app", List.of("onb.core"), () -> { }));
+        Fixture f = fixture(true, pack("onb.core", List.of(), () -> { }), pack("onb.app", List.of("onb.core"), () -> { }));
         try (OperatonEngineAdapter ignored = f.adapter()) {
-            List<Object> seen = new ArrayList<>();
+            List<Object> seen = new java.util.concurrent.CopyOnWriteArrayList<>();
             inJobOfMakerTenant(f, ex -> {
                 seen.add(f.ids().getCurrentAuthentication().getTenantIds());
                 Map<String, String> out = f.packs().deploy(TARGET, List.of("onb.core", "onb.app"));
