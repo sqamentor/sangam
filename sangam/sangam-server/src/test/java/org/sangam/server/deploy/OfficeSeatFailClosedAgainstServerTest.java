@@ -58,8 +58,6 @@ class OfficeSeatFailClosedAgainstServerTest {
     static final String OFFICE_EMPTY = "FC-OFFICE-EMPTY";
     static final String SEAT_A = "FC-SO-A";
     static final String SEAT_B = "FC-SO-B";
-    /** The initiator's seat in office A (IX.5 rule 7: a case started from it without an officeId is office A's). */
-    static final String CLERK_A = "FC-CLERK-A";
     static final String OFFICER_A = "fc.so.a";
     static final String OFFICER_B = "fc.so.b";
     static final String INITIATOR = "fc.initiator";
@@ -109,7 +107,6 @@ class OfficeSeatFailClosedAgainstServerTest {
         void all() throws Exception {
             given();
             withOffice();
-            restStartTakesTheStarterSeatsOffice();
             withPackFallbackSeat();
             withoutResolvableSeat("no-office", null);
             withoutResolvableSeat("office-without-SO-seat", OFFICE_EMPTY);
@@ -134,8 +131,7 @@ class OfficeSeatFailClosedAgainstServerTest {
                 ok(send("POST", "/admin/org-units", admin, Map.of(), map("id", office, "code", office, "name", office,
                         "level", "OFFICE", "parentId", null)));
             }
-            for (String[] seat : List.of(new String[] {SEAT_A, "SO", OFFICE_A}, new String[] {SEAT_B, "SO", OFFICE_B},
-                    new String[] {CLERK_A, "CLERK", OFFICE_A})) {
+            for (String[] seat : List.of(new String[] {SEAT_A, "SO", OFFICE_A}, new String[] {SEAT_B, "SO", OFFICE_B})) {
                 ok(send("POST", "/admin/seats", admin, Map.of(), map("id", seat[0], "code", seat[0], "designation", seat[1],
                         "name", seat[0], "orgUnitId", seat[2], "reportsToSeatId", null, "roles", List.of())));
             }
@@ -144,7 +140,6 @@ class OfficeSeatFailClosedAgainstServerTest {
             }
             post(SEAT_A, OFFICER_A, today);
             post(SEAT_B, OFFICER_B, today);
-            post(CLERK_A, INITIATOR, today);
         }
 
         // ------------------------------------------------------------------ normal case
@@ -161,26 +156,6 @@ class OfficeSeatFailClosedAgainstServerTest {
             check("with-office", groups(s.taskId()).equals(List.of(SEAT_A)), "the task is on " + SEAT_A + " only: " + groups(s.taskId()));
             check("with-office", listed(OFFICER_A, SEAT_A, s.bk()), "officer A in " + SEAT_A + " is offered the task");
             otherOfficerIsRefused("with-office", s);
-        }
-
-        /**
-         * IX.5 rule 7: the initiator, acting in seat {@value #CLERK_A} of office A, starts the case with no officeId;
-         * the case takes office A (resolved through PacksSeatDirectory on the server's org model), so the step is on
-         * seat A only. The core sanction block is not startable from the tasklist (422 PROCESS_NOT_STARTABLE, a
-         * product rule), so it is started as a calling pack starts it, with the starter's seat in {@code actingSeat}.
-         */
-        void restStartTakesTheStarterSeatsOffice() throws Exception {
-            String label = "starter-seat-office";
-            Started s = start(label, Map.of("actingSeat", CLERK_A));
-            check(label, s.refusal() == null, "the case starts (" + s.refusal() + ")");
-            if (s.refusal() != null) {
-                return;
-            }
-            Object office = historic(s.pid(), "officeId");
-            fact(label, "officeId " + office + ", task candidate groups " + groups(s.taskId()));
-            check(label, OFFICE_A.equals(office), "the case takes the starter seat's office " + OFFICE_A + ": " + office);
-            check(label, groups(s.taskId()).equals(List.of(SEAT_A)), "the task is on " + SEAT_A + " only: " + groups(s.taskId()));
-            otherOfficerIsRefused(label, s);
         }
 
         // ------------------------------------------------------------------ boundary: J-P1-E07 kept

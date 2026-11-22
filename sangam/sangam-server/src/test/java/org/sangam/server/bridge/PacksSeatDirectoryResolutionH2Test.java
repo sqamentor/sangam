@@ -131,4 +131,14 @@ class PacksSeatDirectoryResolutionH2Test {
         assertEquals(Optional.empty(), dir.seatForRole(T, "SO", "NO-SUCH-UNIT"));
         assertEquals(Optional.empty(), dir.seatForRole(T, "SO", "DEPT"), "never a seat below the office");
     }
+
+    // ------------------------------------------------------------------ the starter seat's office (IX.5 rule 7)
+
+    /** PackStartListener reads the starter seat's office through this port on the server's org model. */
+    @Test
+    void theStarterSeatsOfficeIsItsOrgUnit() {
+        assertEquals(Optional.of("OFFICE-A"), dir.officeOf(T, "SO-A"));
+        assertEquals(Optional.of("DEPT"), dir.officeOf(T, "HOD"));
+        assertEquals(Optional.empty(), dir.officeOf(T, "NO-SUCH-SEAT"), "an unknown seat gives no office");
+    }
 }
