@@ -16,6 +16,7 @@ import org.sangam.onboarding.flow.OnboardingException;
 import org.sangam.onboarding.flow.OnboardingService;
 import org.sangam.onboarding.port.OnboardingPorts;
 import org.sangam.rest.port.ApiProblem;
+import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.Permissions;
@@ -56,15 +57,17 @@ public class OnboardingController {
     private final ObjectProvider<PackDependencyResolver> resolver;
     private final ObjectProvider<OnboardingService.Ports> ports;
     private final PermissionPort permissions;
+    private final AuditPort audit;
 
     public OnboardingController(ObjectProvider<OnboardingService> service, ObjectProvider<BundleService> bundles,
                                 ObjectProvider<PackDependencyResolver> resolver, ObjectProvider<OnboardingService.Ports> ports,
-                                PermissionPort permissions) {
+                                PermissionPort permissions, AuditPort audit) {
         this.service = service;
         this.bundles = bundles;
         this.resolver = resolver;
         this.ports = ports;
         this.permissions = permissions;
+        this.audit = audit;
     }
 
     private OnboardingService svc(RequestContext ctx) {
