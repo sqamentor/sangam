@@ -16,21 +16,30 @@
  * `WALKTHROUGH | <step> | PASS or FAIL | evidence`. OPEN_STEPS lists the steps that are known not to pass on this
  * stack, each with its recorded cause: such a step is run and reported but does not fail the spec; when it passes,
  * the spec fails until the step is taken off the list, so the list cannot go stale. Every other step must pass.
+ *
+ * The payee. A payee the party registry does not hold is refused (EV-M-0964, PAYEE_NOT_REGISTERED; the second test
+ * below), so step 0 registers a synthetic payee of the run through POST /registry/parties (EV-M-1012). This server is
+ * in test mode with the development-only in-memory vault: that registration proves nothing for the host. It is ACTIVE
+ * at once, with no second approver: an open question (EV-M-1012), not an approval.
+ *
+ * No retries in this file: a retry draws new ids, and would hide a refusal that depends on the id
+ * (NATIONAL_ID_NOT_TOKENISED, EV-M-1012).
  */
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { request, type APIRequestContext, type Page } from '@playwright/test';
 import { test, expect } from './support/fixtures';
 import { API_BASE, devToken, t } from './support/env';
 
+test.describe.configure({ retries: 0 });
+
+const STACK_LABEL = 'test mode, development-only in-memory vault; proves nothing for the host';
+
 const OPEN_STEPS: Record<string, string> = {
-  // ui.yml run 44882890962 (tenant GOI.E2E, EV-M-0961 A): the bill passes bl_bindingHold but opens no task within
-  // 45 s; this spec now funds the head first (fundTheBillHead). Kept open until a run shows the steps green.
-  // ui.yml run 44863340501 (chromium and firefox): the bill started on the Start page stops at the task bl_bindingHold
-  // ("Profile binding missing: bind the bill type in the profile, then check again"); the test-mode tenant has no
-  // profile binding for the bill type, so the case never reaches the PAO chain, and the task list names no seat for
-  // that task (seatId empty). Not a wait for the sandbox bill journey (register E-26): that is the demo build's.
-  '4 dealing hand acts': 'the bill stops at bl_bindingHold on the e2e stack: no profile binding for the bill type in the test-mode tenant',
-  '5 PAO acts': 'as step 4: the case does not reach pc_pao on the e2e stack',
+  // ui.yml run 44863340501 (tenant dev): the bill stopped at bl_bindingHold; cured by tenant GOI.E2E (EV-M-0961 A).
+  // ui.yml run 44991180271 (GOI.E2E, head funded): the bill was rejected PAYEE_NOT_REGISTERED at bl_payee, because
+  // this spec registered no payee. It now does; the steps stay open until a run shows them passing.
+  '4 dealing hand acts': 'not yet shown passing with a registered payee (without one: PAYEE_NOT_REGISTERED at bl_payee, ui.yml 44991180271)',
+  '5 PAO acts': 'as step 4: the case has not been shown reaching pc_pao',
 };
 
 const OFFICE = 'E2E-WALK-OFFICE';
@@ -125,6 +134,96 @@ async function fundTheBillHead(run: string): Promise<string> {
   }
 }
 
+interface Payee {
+  name: string;
+  account: string;
+}
+
+/**
+ * A synthetic payee, new for each run: both browsers share one server, and a second holder of one account would send
+ * the bill to payee review. Not a real person or account. The account has 14 digits and starts with 0000.
+ */
+function syntheticPayee(): Payee {
+  const word = () => {
+    const w = [...randomBytes(9)].map((b) => String.fromCharCode(97 + (b % 26))).join('');
+    return w[0].toUpperCase() + w.slice(1);
+  };
+  return { name: `${word()} ${word()}`, account: `0000${randomInt(1_000_000_000, 10_000_000_000)}` };
+}
+
+/** The parties the bill's payee check counts as holders: the bill's form has no IFSC, so it probes name and bare account. */
+async function holders(api: APIRequestContext, payee: Payee): Promise<Json[]> {
+  const res = await api.post('registry/parties/match', {
+    headers: { 'Idempotency-Key': randomUUID() },
+    data: { kind: 'PERSON', name: payee.name, identifiers: [{ type: 'BANK_ACCOUNT', value: payee.account }] },
+  });
+  expect(res.status(), await res.text()).toBe(200);
+  return items(await res.json()).filter((m) => m.decision !== 'NON_MATCH');
+}
+
+/** Registers the payee through the product's own API; no vault is configured and nothing is written to the database directly. */
+async function registerPayee(payee: Payee): Promise<string> {
+  const api = await admin();
+  try {
+    expect(await holders(api, payee), 'the synthetic payee is not registered yet').toEqual([]);
+    const res = await api.post('registry/parties', {
+      headers: { 'Idempotency-Key': randomUUID(), 'X-Purpose': 'payment' },
+      data: {
+        kind: 'PERSON', name: payee.name, source: 'payments', attributes: { nonReal: true },
+        identifiers: [{ type: 'BANK_ACCOUNT', value: payee.account }],
+      },
+    });
+    const body = await res.text();
+    expect(res.status(), `POST registry/parties: ${body.slice(0, 300)}`).toBe(201);
+    const party = (JSON.parse(body) as { party: { id: string; status: string } }).party;
+    const held = await holders(api, payee);
+    expect(held, "the bill's payee check finds exactly one holder").toHaveLength(1);
+    return `synthetic payee ${party.id} registered, ${party.status} (no second approver: open); ${STACK_LABEL}`;
+  } finally {
+    await api.dispose();
+  }
+}
+
+interface CaseState {
+  activities: string[];
+  open: string[];
+  incidents: string[];
+  payee: Json;
+}
+
+/** Where the case stands, read-only, through the Sangam-authenticated Operaton REST. */
+async function caseState(businessKey: string): Promise<CaseState> {
+  const eng = await request.newContext({
+    baseURL: `${API_BASE.replace(/\/api\/v1\/?$/, '')}/engine-rest/`,
+    extraHTTPHeaders: { Authorization: `Bearer ${devToken()}`, Accept: 'application/json' },
+  });
+  try {
+    const get = async (path: string, params: Record<string, string>) => {
+      const res = await eng.get(path, { params });
+      expect(res.status(), `GET ${path}`).toBe(200);
+      return items(await res.json());
+    };
+    const state: CaseState = { activities: [], open: [], incidents: [], payee: {} };
+    for (const pi of await get('history/process-instance', { processInstanceBusinessKey: businessKey })) {
+      const processInstanceId = String(pi.id);
+      for (const a of await get('history/activity-instance', { processInstanceId, sortBy: 'startTime', sortOrder: 'asc' })) {
+        state.activities.push(String(a.activityId));
+        if (!a.endTime) state.open.push(String(a.activityId));
+      }
+      for (const i of await get('incident', { processInstanceId })) {
+        state.incidents.push(`${String(i.activityId)}: ${String(i.incidentMessage ?? '').slice(0, 500)}`);
+      }
+      if (pi.processDefinitionKey !== BILL) continue;
+      for (const v of await get('history/variable-instance', { processInstanceId })) {
+        if (/^payee(Status|ReasonCode|Multiple|Verified|NotVerifiedReason)$/.test(String(v.name))) state.payee[String(v.name)] = v.value;
+      }
+    }
+    return state;
+  } finally {
+    await eng.dispose();
+  }
+}
+
 /** The Indian financial year (April to March) of a date, as the ledger names its period: 2026-27. */
 function fiscalYear(d: Date): string {
   const ist = new Date(d.getTime() + 330 * 60_000);
@@ -206,13 +305,17 @@ test('the walkthrough of the presentation: sign-in, seat, bill, dealing hand and
   };
   const businessKey = `E2E-WALK/BILL/${randomUUID()}`;
   const done: string[] = [];
+  const payee = syntheticPayee();
+  test.info().annotations.push({ type: 'walkthrough', description: STACK_LABEL });
 
   await step('0 postings', async () => {
     const notes = await postToTheChainSeats();
     expect(notes, 'office, seats and postings of the signed-in person').toEqual([]);
     // ui.yml run 44882890962 (tenant GOI.E2E): without a budget the bill opened no task in 45 s (steps 4, 5)
     const funds = await fundTheBillHead(businessKey);
-    return `${SEATS.length} seats held; ${funds}`;
+    // before the bill starts: an unregistered payee is refused (EV-M-0964; ui.yml run 44991180271)
+    const registered = await registerPayee(payee);
+    return `${SEATS.length} seats held; ${funds}; ${registered}`;
   });
 
   await step('1 sign-in', async () => {
@@ -259,8 +362,8 @@ test('the walkthrough of the presentation: sign-in, seat, bill, dealing hand and
     }
     await page.getByLabel(/^Head of account/).fill('2054-00-001-01-00-13');
     await page.getByLabel(/^Amount/).fill('42350');
-    await page.getByLabel(/^Payee bank account/).fill('00004207100101');
-    await page.getByLabel(/^Payee(?! bank)/).fill('Mahesh Kumar Yadav');
+    await page.getByLabel(/^Payee bank account/).fill(payee.account);
+    await page.getByLabel(/^Payee(?! bank)/).fill(payee.name);
     await page.getByLabel(/^DDO code/).fill('DDO-1');
     await page.getByRole('button', { name: t('start.submit') }).click();
     await expect(page).toHaveURL(/\/tasks/);
@@ -289,6 +392,11 @@ test('the walkthrough of the presentation: sign-in, seat, bill, dealing hand and
 
   await step('4 dealing hand acts', () => through('pc_dealing'));
   await step('5 PAO acts', () => through('pc_pao'));
+  try {
+    report.push(`WALKTHROUGH | case after step 5 | INFO | ${JSON.stringify(await caseState(businessKey))} | ${STACK_LABEL}`);
+  } catch (e) {
+    failed.push(`case after step 5 could not be read: ${String((e as Error).message ?? e)}`);
+  }
 
   await step('6 dashboard', async () => {
     await page.goto('/ops');
@@ -317,4 +425,35 @@ test('the walkthrough of the presentation: sign-in, seat, bill, dealing hand and
     test.info().annotations.push({ type: 'walkthrough', description: line });
   }
   expect(failed, report.join('\n')).toEqual([]);
+});
+
+test('a bill for a payee the registry does not hold is refused', async () => {
+  test.setTimeout(90_000);
+  expect(await postToTheChainSeats(), 'office, seats and postings of the signed-in person').toEqual([]);
+  const payee = syntheticPayee();
+  const businessKey = `E2E-WALK/BILL-UNREGISTERED/${randomUUID()}`;
+  const api = await admin('DDO-1');
+  try {
+    const text = (value: string) => ({ type: 'String', value });
+    const started = await api.post('process-instances', {
+      headers: { 'Idempotency-Key': randomUUID() },
+      data: {
+        key: BILL,
+        businessKey,
+        variables: {
+          billType: text('CONTINGENT'), headOfAccount: text(HEAD), amount: { type: 'Long', value: 4235000 },
+          payee: text(payee.name), payeeAccount: text(payee.account), ddoCode: text(DDO),
+        },
+      },
+    });
+    expect(started.status(), await started.text()).toBe(201);
+  } finally {
+    await api.dispose();
+  }
+  let state: CaseState | undefined;
+  await expect
+    .poll(async () => (state = await caseState(businessKey)).activities, { timeout: 45_000 })
+    .toContain('bl_rjPayeeCheck_endRejected');
+  expect(state!.payee).toMatchObject({ payeeStatus: 'FAILED', payeeReasonCode: 'PAYEE_NOT_REGISTERED' });
+  expect(state!.activities, 'the refused bill never reaches the funds step').not.toContain('bl_funds');
 });
